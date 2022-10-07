@@ -327,7 +327,8 @@ class CVPySDK(object):
             attempts=0,
             headers=None,
             stream=False,
-            files=None):
+            files=None,
+            **kwargs):
         """Makes the request of the type specified in the argument 'method'.
 
             Args:
@@ -376,6 +377,10 @@ class CVPySDK(object):
                         }
 
                     default: None
+
+                Kwargs supported values:
+
+                    remove_processing_info  (bool)      --  removes the processing instruction info from response.json()
 
             Returns:
                 tuple:
@@ -434,6 +439,14 @@ class CVPySDK(object):
                 response = self._request(method=method, url=url, headers=headers)
             else:
                 raise SDKException('CVPySDK', '102', 'HTTP method {} not supported'.format(method))
+
+            # Processinginfo removal from response. It is under try catch to handle different response cases
+            # (Eg:DownloadStream API will return file stream in response)
+            try:
+                if kwargs.get('remove_processing_info', True) and 'processinginstructioninfo' in response.json():
+                    del response.json()['processinginstructioninfo']
+            except Exception as e:
+                pass
 
             if response.status_code == httplib.UNAUTHORIZED and headers['Authtoken'] is not None:
                 if attempts < 3:

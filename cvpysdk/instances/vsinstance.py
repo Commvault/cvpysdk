@@ -59,8 +59,6 @@ import re
 from importlib import import_module
 from inspect import getmembers, isclass, isabstract
 
-from past.builtins import basestring
-
 from ..instance import Instance
 from ..exception import SDKException
 
@@ -73,7 +71,7 @@ VSINSTANCE_TYPE = {
     403: "azure_stack",
     501: "red_hat_virtualization",
     601: "nutanix_ahv",
-    701: "oraclavm",
+    701: "oraclevm",
     801: "fusioncompute",
     901: "openstack",
     1101: "oracle_cloud",
@@ -136,7 +134,9 @@ class VirtualServerInstance(Instance):
         for member in instance_members:
             if self._commcell_object.client_groups.has_clientgroup(member):
                 client_group = self._commcell_object.client_groups.get(member)
-                instance_proxies.extend(client_group.associated_clients)
+                clients_obj = self._commcell_object.clients
+                instance_proxies.extend(list(set(clients_obj.virtualization_access_nodes).intersection(
+                    set(clients.lower() for clients in client_group.associated_clients))))
             else:
                 instance_proxies.append(member)
 
@@ -184,7 +184,7 @@ class VirtualServerInstance(Instance):
         if not isinstance(clients_list, list):
             raise SDKException('Instance', '101')
         for client_name in clients_list:
-            if not isinstance(client_name, basestring):
+            if not isinstance(client_name, str):
                 raise SDKException('Instance', '105')
 
         client_json_list = []

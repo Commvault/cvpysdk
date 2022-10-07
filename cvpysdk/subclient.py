@@ -56,6 +56,8 @@ Subclients:
 
     add_postgresql_subclient()  --  Adds a new postgresql subclient to the backupset.
 
+     add_mysql_subclient()  --  Adds a new mysql subclient to the instance.
+
     add_virtual_server_subclient()  -- adds a new virtual server subclient to the backupset
 
     add_onedrive_subclient()   --  adds a new onedrive subclient to the instance
@@ -171,15 +173,11 @@ import math
 import time
 import copy
 from base64 import b64encode
-from past.builtins import basestring
-from future.standard_library import install_aliases
 from .job import Job
 from .job import JobController
 from .schedules import Schedules
 from .exception import SDKException
 from .schedules import SchedulePattern
-
-install_aliases()
 
 
 class Subclients(object):
@@ -502,7 +500,7 @@ class Subclients(object):
                 SDKException:
                     if type of the subclient name argument is not string
         """
-        if not isinstance(subclient_name, basestring):
+        if not isinstance(subclient_name, str):
             raise SDKException('Subclient', '101')
 
         return self._subclients and subclient_name.lower() in self._subclients
@@ -545,7 +543,7 @@ class Subclients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def add(self, subclient_name, storage_policy,
+    def add(self, subclient_name, storage_policy=None,
             subclient_type=None, description='', advanced_options=None,
             pre_scan_cmd=None):
         """Adds a new subclient to the backupset.
@@ -555,6 +553,8 @@ class Subclients(object):
 
                 storage_policy      (str)   --  name of the storage policy to be associated
                 with the subclient
+
+                    default: None
 
                 subclient_type      (str)   --  type of subclient for sql server
 
@@ -602,9 +602,8 @@ class Subclients(object):
                     if subclient already exists with the given name
 
         """
-        if not (isinstance(subclient_name, basestring) and
-                isinstance(storage_policy, basestring) and
-                isinstance(description, basestring)):
+        if not (isinstance(subclient_name, str) and
+                isinstance(description, str)):
             raise SDKException('Subclient', '101')
 
         if self.has_subclient(subclient_name):
@@ -623,7 +622,7 @@ class Subclients(object):
                     sorted(self._instance_object.backupsets.all_backupsets)[0]
                 )
 
-        if not self._commcell_object.storage_policies.has_policy(
+        if storage_policy and not self._commcell_object.storage_policies.has_policy(
                 storage_policy):
             raise SDKException(
                 'Subclient',
@@ -662,6 +661,10 @@ class Subclients(object):
                 }
             }
         }
+
+        if storage_policy is None:
+            del request_json["subClientProperties"]["commonProperties"]["storageDevice"]
+
         if pre_scan_cmd is not None:
             request_json["subClientProperties"]["commonProperties"]["prepostProcess"] = {
                 "runAs": 1,
@@ -676,15 +679,15 @@ class Subclients(object):
         return self._process_add_request(request_json)
 
     def add_oracle_logical_dump_subclient(
-                                 self,
-                                 subclient_name,
-                                 storage_policy,
-                                 dump_dir,
-                                 user_name,
-                                 domain_name,
-                                 password,
-                                 full_mode,
-                                 schema_value = None):
+            self,
+            subclient_name,
+            storage_policy,
+            dump_dir,
+            user_name,
+            domain_name,
+            password,
+            full_mode,
+            schema_value=None):
         """
         Method to add subclient for oracle logical dump.
         This method add two type of subclient full mode
@@ -725,18 +728,17 @@ class Subclients(object):
                     if storage policy does not exist
 
         """
-        if not (isinstance(subclient_name, basestring) and
-                isinstance(storage_policy, basestring) and
-                isinstance(dump_dir, basestring) and
-                isinstance(user_name,basestring) and
-                isinstance(domain_name, basestring) and
-                isinstance(password, basestring) and
+        if not (isinstance(subclient_name, str) and
+                isinstance(storage_policy, str) and
+                isinstance(dump_dir, str) and
+                isinstance(user_name, str) and
+                isinstance(domain_name, str) and
+                isinstance(password, str) and
                 isinstance(full_mode, bool)):
             raise SDKException('Subclient', '101')
         if (full_mode == False and not
-                isinstance(schema_value, list)):
-            raise SDKException('Subclient','101')
-
+        isinstance(schema_value, list)):
+            raise SDKException('Subclient', '101')
 
         if self.has_subclient(subclient_name):
             raise SDKException(
@@ -764,61 +766,60 @@ class Subclients(object):
             )
 
         request_json = {
-                "subClientProperties": {
-                    "subClientEntity": {
-                        "clientName": self._client_object.client_name,
-                        "instanceName": self._instance_object.instance_name,
-                        "appName": self._agent_object.agent_name,
-                        "backupsetName": self._backupset_object.backupset_name,
-                        "subclientName": subclient_name
+            "subClientProperties": {
+                "subClientEntity": {
+                    "clientName": self._client_object.client_name,
+                    "instanceName": self._instance_object.instance_name,
+                    "appName": self._agent_object.agent_name,
+                    "backupsetName": self._backupset_object.backupset_name,
+                    "subclientName": subclient_name
+                },
+                "oracleSubclientProp": {
+                    "data": False,
+                    "archiveDelete": False,
+                    "useSQLConntect": False,
+                    "dbSubclientType": 2,
+                    "mergeIncImageCopies": False,
+                    "selectiveOnlineFull": False,
+                    "protectBackupRecoveryArea": False,
+                    "selectArchiveLogDestForBackup": False,
+                    "backupSPFile": False,
+                    "backupControlFile": False,
+                    "backupArchiveLog": False,
+                    "validate": False,
+                },
+                "commonProperties": {
+                    "snapCopyInfo": {
+                        "useSeparateProxyForSnapToTape": False,
+                        "checkProxyForSQLIntegrity": False,
+                        "snapToTapeProxyToUseSource": False,
+                        "isSnapBackupEnabled": False,
+                        "IsOracleSposDriverEnabled": False,
+                        "isRMANEnableForTapeMovement": False
                     },
-                    "oracleSubclientProp": {
-                        "data": False,
-                        "archiveDelete": False,
-                        "useSQLConntect": False,
-                        "dbSubclientType": 2,
-                        "mergeIncImageCopies": False,
-                        "selectiveOnlineFull": False,
-                        "protectBackupRecoveryArea": False,
-                        "selectArchiveLogDestForBackup": False,
-                        "backupSPFile": False,
-                        "backupControlFile": False,
-                        "backupArchiveLog": False,
-                        "validate": False,
+                    "dbDumpConfig": {
+                        "fullMode": True,
+                        "database": "",
+                        "dumpDir": dump_dir,
+                        "parallelism": 2,
+                        "overrideInstanceUser": True,
+                        "sqlConnect": {
+                            "password": b64encode(password.encode()).decode(),
+                            "domainName": domain_name,
+                            "userName": user_name
+                        }
                     },
-                    "commonProperties": {
-                        "snapCopyInfo": {
-                            "useSeparateProxyForSnapToTape": False,
-                            "checkProxyForSQLIntegrity": False,
-                            "snapToTapeProxyToUseSource": False,
-                            "isSnapBackupEnabled": False,
-                            "IsOracleSposDriverEnabled": False,
-                            "isRMANEnableForTapeMovement": False
+                    "storageDevice": {
+                        "dataBackupStoragePolicy": {
+                            "storagePolicyName": storage_policy
                         },
-                        "dbDumpConfig": {
-                            "fullMode": True,
-                            "database": "",
-                            "dumpDir": dump_dir,
-                            "parallelism": 2,
-                            "overrideInstanceUser": True,
-                            "sqlConnect": {
-                                "password": b64encode(password.encode()).decode(),
-                                "domainName": domain_name,
-                                "userName": user_name
-                            }
-                        },
-                        "storageDevice": {
-                            "dataBackupStoragePolicy": {
-                                "storagePolicyName": storage_policy
-                            },
-                            "deDuplicationOptions": {
-                                "enableDeduplication": True
-                            }
+                        "deDuplicationOptions": {
+                            "enableDeduplication": True
                         }
                     }
                 }
             }
-
+        }
 
         if (full_mode == False):
             request_json["subClientProperties"]["commonProperties"]["dbDumpConfig"]["fullMode"] = False
@@ -871,8 +872,8 @@ class Subclients(object):
                     if subclient already exists with the given name
 
         """
-        if not (isinstance(subclient_name, basestring) and
-                isinstance(storage_policy, basestring) and
+        if not (isinstance(subclient_name, str) and
+                isinstance(storage_policy, str) and
                 isinstance(contents, list)):
             raise SDKException('Subclient', '101')
 
@@ -922,6 +923,115 @@ class Subclients(object):
                 "postgreSQLSubclientProp": {
                     "numberOfBackupStreams": no_of_streams,
                     "collectObjectListDuringBackup": collect_object_list
+                },
+                "content": content_list
+            }
+        }
+
+        return self._process_add_request(request_json)
+
+    def add_mysql_subclient(
+            self,
+            subclient_name,
+            storage_policy,
+            contents,
+            **kwargs
+    ):
+        """Adds a new mysql subclient to the instance.
+
+            Args:
+                subclient_name          (str)   --  name of the new subclient to add
+
+                storage_policy          (str)   --  name of the storage policy to be associated
+                with the subclient
+
+                contents                (list)  --  database list to be added as subclient content
+
+                kwargs      (dict)  -- dict of keyword arguments as follows
+
+                    no_of_backup_streams    (int)   --  No of backup streams to be used
+                    default: 1
+
+                    no_of_log_backup_streams    (int)   -- No of Transaction log backup streams
+                    default: 1
+
+                    full_instance_xtrabackup    (bool)  -- True if XtraBackup is selected for subclient
+                    default: False
+
+            Returns:
+                object  -   instance of the Subclient class
+
+            Raises:
+                SDKException:
+                    if subclient name argument is not of type string
+
+                    if storage policy argument is not of type string
+
+                    if conetnts argument is not of type list
+
+                    if contents is empty list
+
+                    if failed to create subclient
+
+                    if response is empty
+
+                    if response is not success
+
+                    if subclient already exists with the given name
+
+        """
+        if not (isinstance(subclient_name, str) and
+                isinstance(storage_policy, str) and
+                isinstance(contents, list)):
+            raise SDKException('Subclient', '101')
+
+        if self.has_subclient(subclient_name):
+            raise SDKException(
+                'Subclient', '102', 'Subclient "{0}" already exists.'.format(
+                    subclient_name)
+            )
+
+        if not self._commcell_object.storage_policies.has_policy(
+                storage_policy):
+            raise SDKException(
+                'Subclient',
+                '102',
+                'Storage Policy: "{0}" does not exist in the Commcell'.format(
+                    storage_policy)
+            )
+
+        if not contents:
+            raise SDKException(
+                'Subclient',
+                '102',
+                'Content list cannot be empty'
+            )
+
+        content_list = []
+        for content in contents:
+            content_list.append({"mySQLContent": {"databaseName": content}})
+
+        request_json = {
+            "subClientProperties": {
+                "contentOperationType": 2,
+                "subClientEntity": {
+                    "clientName": self._client_object.client_name,
+                    "appName": self._agent_object.agent_name,
+                    "instanceName": self._instance_object.instance_name,
+                    "backupsetName": "defaultDummyBackupSet",
+                    "subclientName": subclient_name
+                },
+                "commonProperties": {
+                    "storageDevice": {
+                        "dataBackupStoragePolicy": {
+                            "storagePolicyName": storage_policy
+                        }
+                    },
+                },
+                "mySqlSubclientProp": {
+                    "numberOfBackupStreams": kwargs.get('no_of_backup_streams'),
+                    "numberOfTransactionLogStreams": kwargs.get('no_of_log_backup_streams'),
+                    "fullInstanceXtraBackup": kwargs.get('full_instance_xtrabackup')
                 },
                 "content": content_list
             }
@@ -1015,7 +1125,7 @@ class Subclients(object):
                     if subclient already exists with the given name
 
         """
-        if not (isinstance(subclient_name, basestring) and
+        if not (isinstance(subclient_name, str) and
                 isinstance(subclient_content, list)):
             raise SDKException('Subclient', '101')
 
@@ -1054,7 +1164,7 @@ class Subclients(object):
             Returns:
 
             """
-            return{
+            return {
                 "equalsOrNotEquals": item_content.get('equal_value', True),
                 "name": item_content.get('id', ''),
                 "displayName": item_content.get('display_name', ''),
@@ -1062,6 +1172,7 @@ class Subclients(object):
                 "allOrAnyChildren": item.get('allOrAnyChildren', True),
                 "type": item_content['type'] if isinstance(item_content['type'], int) else item_content['type'].value
             }
+
         for item in subclient_content:
             _temp_list = []
             _temp_dict = {}
@@ -1117,10 +1228,10 @@ class Subclients(object):
                     'Storage Policy: "{0}" does not exist in the Commcell'.format(kwargs.get('storage_policy'))
                 )
             request_json['subClientProperties']['commonProperties']['storageDevice'] = {
-                        "dataBackupStoragePolicy": {
-                            "storagePolicyName": kwargs.get('storage_policy')
-                        }
-                    }
+                "dataBackupStoragePolicy": {
+                    "storagePolicyName": kwargs.get('storage_policy')
+                }
+            }
         else:
             raise SDKException('Subclient', '102', 'Either Plan or Storage policy should be given as input')
 
@@ -1161,8 +1272,8 @@ class Subclients(object):
 
                 """
 
-        if not (isinstance(subclient_name, basestring) and
-                isinstance(server_plan, basestring)):
+        if not (isinstance(subclient_name, str) and
+                isinstance(server_plan, str)):
             raise SDKException('Subclient', '101')
 
         if self.has_subclient(subclient_name):
@@ -1235,7 +1346,7 @@ class Subclients(object):
 
                     if no subclient exists with the given name
         """
-        if not isinstance(subclient_name, basestring):
+        if not isinstance(subclient_name, str):
             raise SDKException('Subclient', '101')
         else:
             subclient_name = subclient_name.lower()
@@ -1273,7 +1384,7 @@ class Subclients(object):
 
                     if no subclient exists with the given name
         """
-        if not isinstance(subclient_name, basestring):
+        if not isinstance(subclient_name, str):
             raise SDKException('Subclient', '101')
         else:
             subclient_name = subclient_name.lower()
@@ -1373,8 +1484,8 @@ class Subclient(object):
             'virtual server': [VirtualServerSubclient, VMInstanceSubclient],
             'cloud apps': CloudAppsSubclient,
             'sql server': SQLServerSubclient,
-            'nas': NASSubclient,        # SP11 or lower CS honors NAS as the Agent Name
-            'ndmp': NASSubclient,       # SP12 and above honors NDMP as the Agent Name
+            'nas': NASSubclient,  # SP11 or lower CS honors NAS as the Agent Name
+            'ndmp': NASSubclient,  # SP12 and above honors NDMP as the Agent Name
             'sap hana': SAPHANASubclient,
             'oracle': OracleSubclient,
             'oracle rac': OracleSubclient,
@@ -1390,7 +1501,7 @@ class Subclient(object):
             'db2': DB2Subclient,
             'informix': InformixSubclient,
             'active directory': ADSubclient,
-            'sharepoint server': [SharepointV1Subclient,SharepointSubclient],
+            'sharepoint server': [SharepointV1Subclient, SharepointSubclient],
             "azure ad": AzureAdSubclient
         }
 
@@ -1568,11 +1679,11 @@ class Subclient(object):
 
         """
         try:
-            backup = eval('self.%s' % attr_name)        # Take backup of old value
+            backup = eval('self.%s' % attr_name)  # Take backup of old value
         except (AttributeError, KeyError):
             backup = None
 
-        exec("self.%s = %s" % (attr_name, 'value'))     # set new value
+        exec("self.%s = %s" % (attr_name, 'value'))  # set new value
 
         request_json = self._get_subclient_properties_json()
 
@@ -1616,7 +1727,7 @@ class Subclient(object):
                 update_request  (str)  --  update request specifying the details to update
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -1885,7 +1996,7 @@ c
     @property
     def subclient_guid(self):
         """Returns the SubclientGUID"""
-        return self._subclient_properties.get('subClientEntity' , {}).get('subclientGUID')
+        return self._subclient_properties.get('subClientEntity', {}).get('subclientGUID')
 
     @display_name.setter
     def display_name(self, display_name):
@@ -2154,7 +2265,7 @@ c
 
                     if the type of value input is not string
         """
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             self._set_subclient_properties(
                 "_commonProperties['description']", value)
         else:
@@ -2176,7 +2287,7 @@ c
                     if failed to update storage policy name
 
         """
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             value = value.lower()
 
             if not self._commcell_object.storage_policies.has_policy(value):
@@ -2209,7 +2320,7 @@ c
 
     def enable_trueup(self):
         """Setter for the TrueUp Option for a Subclient"""
-        if 'isTrueUpOptionEnabled'in self._commonProperties:
+        if 'isTrueUpOptionEnabled' in self._commonProperties:
             self._set_subclient_properties("_commonProperties['isTrueUpOptionEnabled']", True)
 
     def enable_trueup_days(self, days=30):
@@ -2284,7 +2395,7 @@ c
                 SDKException:
                     if failed to enable intelli snap for subclient
         """
-        if not isinstance(snap_engine_name, basestring):
+        if not isinstance(snap_engine_name, str):
             raise SDKException("Subclient", "101")
 
         properties_dict = {
@@ -2330,7 +2441,7 @@ c
             proxy_name(str) -- Name of the proxy to be used
 
         """
-        if not isinstance(proxy_name, basestring):
+        if not isinstance(proxy_name, str):
             raise SDKException("Subclient", "101")
 
         properties_dict = {
@@ -2421,7 +2532,7 @@ c
         if 'performanceMode' in storage:
             data_backup_storage_device = storage['performanceMode']["perfCRCDetails"]
             malist = []
-            for each_ma in data_backup_storage_device :
+            for each_ma in data_backup_storage_device:
                 malist.append(each_ma['perfMa'])
             return malist
 
@@ -2619,12 +2730,12 @@ c
                 copy_precedence         (int)   --  copy precedence value of storage policy copy
                     default: None
 
-                from_time           (str)       --  time to retore the contents after
+                from_time           (str)       --  time to restore the contents after
                         format: YYYY-MM-DD HH:MM:SS
 
                     default: None
 
-                to_time           (str)         --  time to retore the contents before
+                to_time           (str)         --  time to restore the contents before
                         format: YYYY-MM-DD HH:MM:SS
 
                     default: None
@@ -2723,12 +2834,12 @@ c
                 copy_precedence         (int)   --  copy precedence value of storage policy copy
                     default: None
 
-                from_time           (str)       --  time to retore the contents after
+                from_time           (str)       --  time to restore the contents after
                         format: YYYY-MM-DD HH:MM:SS
 
                     default: None
 
-                to_time           (str)         --  time to retore the contents before
+                to_time           (str)         --  time to restore the contents before
                         format: YYYY-MM-DD HH:MM:SS
 
                     default: None
@@ -2981,7 +3092,7 @@ c
                     if the type of value input is not string
 
         """
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             self._set_subclient_properties(
                 "_commonProperties['storageDevice']['softwareCompression']", value
             )
@@ -3050,7 +3161,7 @@ c
 
         """
 
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             self._set_subclient_properties("_commonProperties['encryptionFlag']", value)
         else:
             raise SDKException('Subclient', '101')
@@ -3175,8 +3286,8 @@ c
                     }
                 })
             else:
-                raise SDKException('Subclient','102', 'Plan does not exist')
-        elif isinstance(value, basestring):
+                raise SDKException('Subclient', '102', 'Plan does not exist')
+        elif isinstance(value, str):
             if self._commcell_object.plans.has_plan(value):
                 self.update_properties({
                     'planEntity': {
@@ -3184,7 +3295,7 @@ c
                     }
                 })
             else:
-                raise SDKException('Subclient','102', 'Plan does not exist')
+                raise SDKException('Subclient', '102', 'Plan does not exist')
         elif value is None:
             self.update_properties({
                 'removePlanAssociation': True

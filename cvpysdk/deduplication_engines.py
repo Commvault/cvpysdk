@@ -80,8 +80,6 @@ Store:
 
     refresh()                   - refreshes store properties
 
-    all_substores()             - returns list of all substores in a store
-
     has_substore()              - checks if a substore exists in a store
 
     get()                      - gets a substore class object for provided substore id
@@ -94,7 +92,42 @@ Store:
 
     run_ddb_verification()      - starts DDB verification job for store
 
-    enable_store_pruning        -  Property to get the current state of store pruning or enable/disable store pruning
+    config_only_move_partition()    - performs config-only ddb move operation on specified substore
+
+    move_partition()            - performs normal ddb move operation on specified substore
+
+Attributes
+----------
+    **all_substores**       -- returns list of all substores present on a deduplication store
+
+    **store_flags**         -- returns the deduplication flags on store
+
+    **store_name**          -- returns the store display name
+
+    **store_id**            -- return the store id
+
+    **version**             -- returns deduplication store version
+
+    **status**              -- returns the store display name
+
+    **storage_policy_name** -- returns storage policy name associated with store
+
+    **copy_name**           -- returns copy name associated with store
+
+    **copy_id**             -- returns copy id the store is associated to
+
+    **enable_store_pruning**            -- returns whether purning is enabled or disabled on store
+
+    **enable_store_pruning.setter**     -- sets store purning value to true or false
+
+    **enable_garbage_collection**       -- returns garbage collection property value for store
+
+    **enable_garbage_collection.setter** -- sets garbage collection property value for store
+
+    **enable_journal_pruning**           --  Returns the value of journal pruning property
+
+    **enable_journal_pruning.setter**    --  Sets the value of journal pruning property
+
 
 Substore:
     __init__(commcell_object, storage_policy_name, copy_name,
@@ -113,18 +146,17 @@ Substore:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from past.builtins import basestring
-from future.standard_library import install_aliases
 from enum import Enum
 
 from .exception import SDKException
 from .job import Job
 
-install_aliases()
 
 
 class StoreFlags(Enum):
     IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED = 536870912
+    IDX_SIDBSTORE_FLAGS_DDB_NEEDS_AUTO_RESYNC = 33554432
+    IDX_SIDBSTORE_FLAGS_DDB_UNDER_MAINTENANCE = 16777216
 
 
 class DeduplicationEngines(object):
@@ -238,7 +270,7 @@ class DeduplicationEngines(object):
                 SDKException:
                     if type of the storage policy and copy name arguments are not string
         """
-        if not isinstance(storage_policy_name, basestring) and not isinstance(copy_name, basestring):
+        if not isinstance(storage_policy_name, str) and not isinstance(copy_name, str):
             raise SDKException('Storage', '101')
         return self._engines and (storage_policy_name.lower(), copy_name.lower()) in self._engines
 
@@ -260,7 +292,7 @@ class DeduplicationEngines(object):
 
                 if no engine exists with given storage policy and copy name
         """
-        if not isinstance(storage_policy_name, basestring) and  not isinstance(copy_name, basestring):
+        if not isinstance(storage_policy_name, str) and  not isinstance(copy_name, str):
             raise SDKException('Storage', '101')
 
         storage_policy_name = storage_policy_name.lower()
@@ -716,6 +748,50 @@ class Store(object):
             self._commcell_object.qoperation_execute(request_json)
         self.refresh()
 
+    @property
+    def enable_journal_pruning(self):
+        """returns journal pruning property value for store"""
+        if (self._extended_flags & 8) == 0:
+            return False
+        return True
+
+    @enable_journal_pruning.setter
+    def enable_journal_pruning(self, value):
+        """sets enable journal pruning with true or false
+        Args:
+              value (bool) -- value to enable journal pruning
+        """
+        if not self._extended_flags & 8 and value or self.version == -1:
+
+            if value:
+                new_value = self._extended_flags | 8
+            else:
+                new_value = self._extended_flags & ~8
+
+            request_json = {
+                "EVGui_ParallelDedupConfigReq": {
+                    "processinginstructioninfo": "",
+                    "SIDBStore": {
+                        "SIDBStoreId": self.store_id,
+                        "SIDBStoreName": self.store_name,
+                        "extendedFlags": new_value,
+                        "flags": self._store_flags,
+                        "minObjSizeKB": 50,
+                        "oldestEligibleObjArchiveTime": -1
+                    },
+                    "appTypeGroupId": 0,
+                    "commCellId": 2,
+                    "copyId": self.copy_id,
+                    "operation": 3
+                }
+            }
+            self._commcell_object.qoperation_execute(request_json)
+            self.refresh()
+        elif self._extended_flags & 8 and value:
+            raise SDKException("Response", '500', "Journal pruning is already enabled.")
+        else:
+            raise SDKException("Response", '500', "Journal pruning once enabled cannot be disabled.")
+
     def seal_deduplication_database(self):
         """ Seals the deduplication database """
 
@@ -816,7 +892,7 @@ class Store(object):
         response_string = self._commcell_object._update_response_(response.text)
         raise SDKException('Response', '101', response_string)
 
-    def run_space_reclaimation(self, level=3, clean_orphan_data=False, use_scalable_resource=False):
+    def run_space_reclaimation(self, level=3, clean_orphan_data=False, use_scalable_resource=True, num_streams="max"):
         """
         runs DDB Space reclaimation job with provided level
 
@@ -828,7 +904,9 @@ class Store(object):
                         Default: False
 
             use_scalable_resource (bool)    - Use Scalable Resource Allocation while running DDB Space Reclamation Job
+                        Default: True
 
+            num_streams (str)   -- Number of streams with which job will run.
         Returns:
              object - instance of Job class for DDB Verification job
 
@@ -847,6 +925,12 @@ class Store(object):
 
         if not isinstance(use_scalable_resource, bool):
             raise SDKException('Storage', '101')
+
+        use_max_streams = "true"
+        max_num_of_streams = 0
+        if str(num_streams) != "max":
+            max_num_of_streams = int(num_streams)
+            use_max_streams = "false"
 
         level_map = {
             1: 80,
@@ -880,8 +964,8 @@ class Store(object):
                             "backupOpts": {
                                 "mediaOpt": {
                                     "auxcopyJobOption": {
-                                        "useMaximumStreams": "true",
-                                        "maxNumberOfStreams": 0,
+                                        "useMaximumStreams": use_max_streams,
+                                        "maxNumberOfStreams": max_num_of_streams,
                                         "allCopies": "true",
                                         "mediaAgent": {
                                             "mediaAgentName": ""
@@ -895,7 +979,8 @@ class Store(object):
                                     "ddbVerificationLevel": "DDB_DEFRAGMENTATION",
                                     "backupLevel": "FULL",
                                     "defragmentationPercentage": level_map.get(level),
-                                    "ocl": clean_orphan_data
+                                    "ocl": clean_orphan_data,
+                                    "runDefrag": "true"
                                 }
                             }
                         },
@@ -922,7 +1007,7 @@ class Store(object):
         raise SDKException('Response', '101', response_string)
 
     def run_ddb_verification(self, incremental_verification=True, quick_verification=True,
-                             use_scalable_resource=False):
+                             use_scalable_resource=True):
         """
         runs deduplication data verification(dv2) job with verification type and dv2 option
 
@@ -934,6 +1019,7 @@ class Store(object):
                                             Default: True (quick verification)
 
             use_scalable_resource (bool)    - Use Scalable Resource Allocation while running DDB Verification Job
+                                            Default: True
 
         Returns:
              object - instance of Job class for DDB Verification job
@@ -1021,6 +1107,170 @@ class Store(object):
         response_string = self._commcell_object._update_response_(response.text)
         raise SDKException('Response', '101', response_string)
 
+    def config_only_move_partition(self, substoreid, dest_path, dest_ma_name):
+        """
+        runs config-only ddb move operation on specified substore
+
+        Args:
+            substoreid - (int) - substore Id for partition to be moved
+
+            dest_path - (str) - full path for partition destination directory
+
+            dest_ma_name - (str) - destination media agent name
+
+        Returns:
+             boolean - returns true or false value depending on success of config only
+        """
+        dest_ma = self._commcell_object.media_agents.get(dest_ma_name)
+        dest_ma_id = int(dest_ma.media_agent_id)
+        substore = self.get(substoreid)
+
+        request_json = {
+            "MediaManager_CanDDBMoveRunReq": {
+                "intReserveFiled1": 0,
+                "sourceMaId": substore.media_agent_id,
+                "flags": 1,
+                "targetPath": dest_path,
+                "stringReserveField1": "",
+                "storeId": self.store_id,
+                "subStoreId": substoreid,
+                "targetMAId": dest_ma_id,
+                "sourcePath": substore.path
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_json
+        )
+
+        if flag:
+            if response and response.json():
+                if "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+                    o_str = 'DDB move job failed\nError: "{0}"'.format(error_message)
+                    raise SDKException('Storage', '102', o_str)
+                else:
+                    return flag
+            raise SDKException('Response', '102')
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException('Response', '101', response_string)
+
+    def move_partition(self, substoreid, dest_path, dest_ma_name):
+        """
+        runs normal ddb move operation on specified substore
+
+        Args:
+            substoreid - (int) - substore Id for partition to be moved
+
+            dest_path - (str) - full path for partition destination directory
+
+            dest_ma_name - (str) - destination media agent name
+
+        Returns:
+             object - instance of Job class for DDB Move job
+
+        Raises:
+             SDKException:
+                if DDB Move job failed
+
+                if response if empty
+
+                if response in not success
+        """
+        dest_ma = self._commcell_object.media_agents.get(dest_ma_name)
+        dest_ma_id = int(dest_ma.media_agent_id)
+        substore = self.get(substoreid)
+
+        request_json = {
+            "TMMsg_CreateTaskReq": {
+                "taskInfo": {
+                    "associations": [
+                        {
+                            "sidbStoreId": self.store_id,
+                            "_type_": 18,
+                            "appName": ""
+                        }
+                    ],
+                    "task": {
+                        "ownerId": 1,
+                        "taskType": 1,
+                        "ownerName": "admin",
+                        "sequenceNumber": 0,
+                        "initiatedFrom": 1,
+                        "policyType": 0,
+                        "taskId": 0,
+                        "taskFlags": {
+                            "disabled": False
+                        }
+                    },
+                    "subTasks": [
+                        {
+                            "subTaskOperation": 1,
+                            "subTask": {
+                                "subTaskType": 1,
+                                "operationType": 5013
+                            },
+                            "options": {
+                                "adminOpts": {
+                                    "contentIndexingOption": {
+                                        "subClientBasedAnalytics": False
+                                    },
+                                    "libraryOption": {
+                                        "operation": 20,
+                                        "ddbMoveOption": {
+                                            "flags": 2,
+                                            "subStoreList": [
+                                                {
+                                                    "srcPath": substore.path,
+                                                    "storeId": self.store_id,
+                                                    "changeOnlyDB": False,
+                                                    "destPath": dest_path,
+                                                    "subStoreId": substoreid,
+                                                    "destMediaAgent": {
+                                                        "name": dest_ma_name,
+                                                        "id": dest_ma_id
+                                                    },
+                                                    "srcMediaAgent": {
+                                                        "name": substore.media_agent,
+                                                        "id": substore.media_agent_id
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                },
+                                "restoreOptions": {
+                                    "virtualServerRstOption": {
+                                        "isBlockLevelReplication": False
+                                    },
+                                    "commonOptions": {
+                                        "syncRestore": False
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_json
+        )
+
+        if flag:
+            if response and response.json():
+                if "jobIds" in response.json():
+                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                elif "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+                    o_str = 'DDB move job failed\nError: "{0}"'.format(error_message)
+                    raise SDKException('Storage', '102', o_str)
+                raise SDKException('Storage', '108')
+            raise SDKException('Response', '102')
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException('Response', '101', response_string)
+
 
 class SubStore(object):
     """Class to performing substore level operations for Deduplication engine"""
@@ -1061,6 +1311,7 @@ class SubStore(object):
         self._substore_properties = store._substores[self._substore_id]
         self._path = self._substore_properties['Path']
         self._media_agent = self._substore_properties['MediaAgent']['name']
+        self._media_agent_id = self._substore_properties['MediaAgent']['id']
 
     def refresh(self):
         """refresh the properties of a substore"""
@@ -1088,6 +1339,11 @@ class SubStore(object):
     def media_agent(self):
         """returns media agent for the substore"""
         return self._media_agent
+
+    @property
+    def media_agent_id(self):
+        """returns media agent id for the substore"""
+        return self._media_agent_id
 
     @property
     def path(self):

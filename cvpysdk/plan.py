@@ -135,8 +135,6 @@ from __future__ import unicode_literals
 import copy
 from enum import Enum
 
-from past.builtins import basestring
-
 from .exception import SDKException
 
 from .activateapps.constants import TargetApps, PlanConstants
@@ -292,8 +290,8 @@ class Plans(object):
                     if there is a failure in getting the template
 
         """
-        if not (isinstance(plan_sub_type, basestring) and
-                isinstance(plan_type, basestring)):
+        if not (isinstance(plan_sub_type, str) and
+                isinstance(plan_type, str)):
             raise SDKException('Plan', '101')
         else:
             template_url = self._services['GET_PLAN_TEMPLATE'] % (plan_type, plan_sub_type)
@@ -369,7 +367,7 @@ class Plans(object):
                 "archiver" : ("9", "150994951")
         }
         
-        if not isinstance(plan_type, basestring):
+        if not isinstance(plan_type, str):
             raise SDKException('Plan', '101')
         elif plan_type.lower() not in plan_type_subtype:
             raise SDKException('Plan', '102', 'Invalid Plan Type Passed as Parameter')
@@ -406,7 +404,7 @@ class Plans(object):
                     if type of the plan name argument is not string
 
         """
-        if not isinstance(plan_name, basestring):
+        if not isinstance(plan_name, str):
             raise SDKException('Plan', '101')
 
         return self._plans and plan_name.lower() in self._plans
@@ -426,7 +424,7 @@ class Plans(object):
 
                     if no plan exists with the given name
         """
-        if not isinstance(plan_name, basestring):
+        if not isinstance(plan_name, str):
             raise SDKException('Plan', '101')
         else:
             plan_name = plan_name.lower()
@@ -461,7 +459,7 @@ class Plans(object):
 
                     if no plan exists with the given name
         """
-        if not isinstance(plan_name, basestring):
+        if not isinstance(plan_name, str):
             raise SDKException('Plan', '101')
         else:
             plan_name = plan_name.lower()
@@ -565,8 +563,8 @@ class Plans(object):
                 if Plan already exists
 
         """
-        if not (isinstance(plan_name, basestring) and
-                isinstance(plan_sub_type, basestring)):
+        if not (isinstance(plan_name, str) and
+                isinstance(plan_sub_type, str)):
             raise SDKException('Plan', '101')
         else:
             if self.has_plan(plan_name):
@@ -824,8 +822,8 @@ class Plans(object):
 
         """
         extraction_policy_list = []
-        if not (isinstance(plan_name, basestring) and
-                isinstance(index_server, basestring)):
+        if not (isinstance(plan_name, str) and
+                isinstance(index_server, str)):
             raise SDKException('Plan', '101')
         request_json = self._get_plan_template("DataClassification", "MSP")
         request_json['plan']['summary']['description'] = "DC Plan Created from CvPySDK."
@@ -1254,7 +1252,7 @@ class Plan(object):
                 if inheritance rules are not followed
 
         """
-        if not isinstance(plan_name, basestring):
+        if not isinstance(plan_name, str):
             raise SDKException('Plan', '101', 'Plan name must be string value')
         else:
             if self._commcell_object.plans.has_plan(plan_name):
@@ -1702,7 +1700,7 @@ class Plan(object):
     @plan_name.setter
     def plan_name(self, value):
         """modifies the plan name"""
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             req_json = {
                 'summary': {
                     'plan': {
@@ -1935,6 +1933,11 @@ class Plan(object):
         """returns the DC plan related CI properties from Plan"""
         return self._dc_plan_props
 
+    @property
+    def properties(self):
+        """Returns the configured properties for the Plan"""
+        return self._plan_properties
+
     def refresh(self):
         """Refresh the properties of the Plan."""
         self._properties = self._get_plan_properties()
@@ -2027,7 +2030,7 @@ class Plan(object):
                             if failed to get exisitng association details
 
         """
-        if not isinstance(user_or_group_name, basestring) or not isinstance(role_name, basestring):
+        if not isinstance(user_or_group_name, str) or not isinstance(role_name, str):
             raise SDKException('Plan', '101')
         if ops_type not in [1, 3]:
             raise SDKException('Plan', '102', "Sharing operation type provided is not supported")
@@ -2063,18 +2066,18 @@ class Plan(object):
             user_obj = self._commcell_object.users.get(user_or_group_name)
             user_id = user_obj.user_id
             request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['userId'] = int(user_id)
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = "13"
+            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = 13
             request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['userName'] = user_or_group_name
         elif external_user:
             request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['groupId'] = 0
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = "62"
+            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = 62
             request_json['securityAssociations']['associations'][0]['userOrGroup'][0][
                 'externalGroupName'] = user_or_group_name
         else:
             grp_obj = self._commcell_object.user_groups.get(user_or_group_name)
             grp_id = grp_obj.user_group_id
             request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['userGroupId'] = int(grp_id)
-            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = "15"
+            request_json['securityAssociations']['associations'][0]['userOrGroup'][0]['_type_'] = 15
             request_json['securityAssociations']['associations'][0]['userOrGroup'][0][
                 'userGroupName'] = user_or_group_name
 
@@ -2133,7 +2136,7 @@ class Plan(object):
                             if plan is not of type Data classification plan
 
         """
-        if not isinstance(schedule_name, basestring) or not isinstance(pattern_json, dict):
+        if not isinstance(schedule_name, str) or not isinstance(pattern_json, dict):
             raise SDKException('Plan', '101')
         if self.plan_type not in [PlanTypes.DC.value]:
             raise SDKException('Plan', '102', "Add/Modify Schedule is supported only for DC Plan via CvpySDK")
@@ -2147,6 +2150,8 @@ class Plan(object):
             'subTaskName'] = schedule_name
         request_json['schedule']['subTasks'][0]['pattern'] = pattern_json
         request_json['schedule']['subTasks'][0]['options']['adminOpts']['contentIndexingOption']['operationType'] = ops_type
+        if self._dc_plan_props['targetApps'][0] == TargetApps.FS.value:
+            request_json['schedule']['subTasks'][0]['subTask']['operationType'] = 5022
         self._update_plan_props(request_json)
 
     def edit_plan(self, **kwargs):

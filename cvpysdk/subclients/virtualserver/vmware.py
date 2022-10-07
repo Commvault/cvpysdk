@@ -44,7 +44,6 @@ VMWareVirtualServerSubclient:
 from cvpysdk.storage import RPStore
 from cvpysdk.subclients.vssubclient import VirtualServerSubclient
 from cvpysdk.virtualmachinepolicies import VirtualMachinePolicy
-from past.builtins import basestring
 from ...exception import SDKException
 
 
@@ -109,19 +108,19 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence       (int)         --  copy precedence value
                                                         default: 0
 
-                disk_option           (basestring)  --  disk provisioning for the restored vm
+                disk_option           (str)  --  disk provisioning for the restored vm
                                                         Options for input are: 'Original',
                                                         'Thick Lazy Zero', 'Thin',
                                                         'Thick Eager Zero'
                                                         default: Original
 
-                transport_mode        (basestring)  --  transport mode to be used for
+                transport_mode        (str)  --  transport mode to be used for
                                                         the restore.
                                                         Options for input are: 'Auto', 'SAN',
                                                         ''Hot Add', NBD', 'NBD SSL'
                                                         default: Auto
 
-                proxy_client          (basestring)  --  proxy client to be used for restore
+                proxy_client          (str)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
                 to_time                 (int)       -- End time to select the job for restore
@@ -130,7 +129,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                 **kwargs                         : Arbitrary keyword arguments Properties as of
                                                      full_vm_restore_in_place
                     eg:
-                    media_agent         (basestring)   -- media agent
+                    media_agent         (str)   -- media agent
 
                     v2_details          (dict)       -- details for v2 subclient
                                                     eg: check clients.vmclient.VMClient._child_job_subclient_details
@@ -154,7 +153,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         restore_option = {"media_agent": kwargs.get("media_agent", None), "v2_details": kwargs.get("v2_details", None)}
 
         # check input parameters are correct
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException('Subclient', '101')
 
         disk_option_value = self._disk_option[disk_option]
@@ -215,13 +214,13 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                 restored_vm_name         (str)    --  new name of vm. If nothing is passed,
                                                       'del' is appended to the original vm name
 
-                vcenter_client    (basestring)    --  name of the vcenter client where the VM
+                vcenter_client    (str)    --  name of the vcenter client where the VM
                                                       should be restored.
 
-                esx_host          (basestring)    --  destination esx host. Restores to the source
+                esx_host          (str)    --  destination esx host. Restores to the source
                                                       VM esx if this value is not specified
 
-                datastore         (basestring)    --  datastore where the restored VM should be
+                datastore         (str)    --  datastore where the restored VM should be
                                                       located. Restores to the source VM datastore
                                                       if this value is not specified
 
@@ -234,17 +233,17 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence          (int)    --  copy precedence value
                                                       default: 0
 
-                disk_option       (basestring)    --  disk provisioning for the  restored vm
+                disk_option       (str)    --  disk provisioning for the  restored vm
                                                       Options for input are: 'Original',
                                                       'Thick Lazy Zero', 'Thin', 'Thick Eager Zero'
                                                       default: 'Original'
 
-                transport_mode    (basestring)    --  transport mode to be used for the restore.
+                transport_mode    (str)    --  transport mode to be used for the restore.
                                                       Options for input are: 'Auto', 'SAN',
                                                       'Hot Add', 'NBD', 'NBD SSL'
                                                       default: Auto
 
-                proxy_client      (basestring)    --  destination proxy client
+                proxy_client      (str)    --  destination proxy client
 
                 to_time             (Int)         --  End time to select the job for restore
                                                     default: None
@@ -252,21 +251,21 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                 **kwargs                         : Arbitrary keyword arguments Properties as of
                                                      full_vm_restore_out_of_place
                     eg:
-                    source_ip           (basestring)    --  IP of the source VM
+                    source_ip           (str)    --  IP of the source VM
 
-                    destination_ip      (basestring)    --  IP of the destination VM
+                    destination_ip      (str)    --  IP of the destination VM
 
-                    destComputerName  (basestring)    --  Hostname of the restored vm
+                    destComputerName  (str)    --  Hostname of the restored vm
 
-                    source_subnet  (basestring)    --  subnet of the source vm
+                    source_subnet  (str)    --  subnet of the source vm
 
-                    source_gateway  (basestring)    --  gateway of the source vm
+                    source_gateway  (str)    --  gateway of the source vm
 
-                    destination_subnet  (basestring)    --  subnet of the restored vm
+                    destination_subnet  (str)    --  subnet of the restored vm
 
-                    destination_gateway  (basestring)    --  gateway of the restored vm
+                    destination_gateway  (str)    --  gateway of the restored vm
 
-                    media_agent         (basestring)   --  media agent for restore
+                    media_agent         (str)   --  media agent for restore
 
                     restore_option      (dict)     --  complete dictionary with all advanced options
                         default: {}
@@ -300,7 +299,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             else:
                 restore_option[key] = None
         # check mandatory input parameters are correct
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException('Subclient', '101')
 
         if copy_precedence:
@@ -312,8 +311,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             restore_option['client_name'] = proxy_client
 
         if restored_vm_name:
-            if not (isinstance(vm_to_restore, basestring) or
-                    isinstance(restored_vm_name, basestring)):
+            if not (isinstance(vm_to_restore, str) or
+                    isinstance(restored_vm_name, str)):
                 raise SDKException('Subclient', '101')
             restore_option['restore_new_name'] = restored_vm_name
 
@@ -355,10 +354,10 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         """Restores the disk specified in the input paths list to the same location
 
             Args:
-                vm_name             (basestring)    --  Name of the VM added in subclient content
+                vm_name             (str)    --  Name of the VM added in subclient content
                                                         whose  disk is selected for restore
 
-                destination_path        (basestring)    --  Staging (destination) path to restore the
+                destination_path        (str)    --  Staging (destination) path to restore the
                                                         disk.
 
                 disk_name                 (list)    --  name of the disk which has to be restored
@@ -366,13 +365,13 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                                                         name of the disk)
                                                         default: None
 
-                proxy_client        (basestring)    --  Destination proxy client to be used
+                proxy_client        (str)    --  Destination proxy client to be used
                                                         default: None
 
                 copy_precedence            (int)    --  SP copy precedence from which browse has to
                                                          be performed
 
-                convert_to          (basestring)    --  disk format for the restored disk
+                convert_to          (str)    --  disk format for the restored disk
                                                         (applicable only when the vmdk disk is
                                                         selected for restore). Allowed values are
                                                         "VHDX" or "VHD"
@@ -406,8 +405,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             disk_extn = self._get_disk_extension(disk_name)
 
         # check if inputs are correct
-        if not (isinstance(vm_name, basestring) and
-                isinstance(destination_path, basestring) and
+        if not (isinstance(vm_name, str) and
+                isinstance(destination_path, str) and
                 isinstance(disk_name, list) and
                 disk_extn == '.vmdk'):
             raise SDKException('Subclient', '101')
@@ -486,17 +485,17 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         """Attaches the Disks to the provided vm
 
             Args:
-                vm_name             (basestring)    --  Name of the VM added in subclient content
+                vm_name             (str)    --  Name of the VM added in subclient content
                                                         whose  disk is selected for restore
 
                 vcenter             (dict)          --  Dictinoary of vcenter, username and creds
 
-                esx                 (basestring)    --  Esx host where the vm resides
+                esx                 (str)    --  Esx host where the vm resides
 
                 datastore               (string)    --  Datastore where disks will be restoed to
                                                         default: None
 
-                proxy_client        (basestring)    --  Destination proxy client to be used
+                proxy_client        (str)    --  Destination proxy client to be used
                                                         default: None
 
                 copy_precedence            (int)    --  SP copy precedence from which browse has to
@@ -534,7 +533,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             disk_extn = self._get_disk_extension(disk_name)
 
         # check if inputs are correct
-        if not (isinstance(vm_name, basestring) and
+        if not (isinstance(vm_name, str) and
                 isinstance(disk_name, list) and
                 disk_extn == '.vmdk'):
             raise SDKException('Subclient', '101')
@@ -548,7 +547,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
 
         if not disk_name:  # if disk names are not provided, restore all vmdk disks
             for each_disk_path in disk_list:
-                disk_name.append(each_disk_path.split('\\')[-1])
+                disk_name.append(disk_info_dict[each_disk_path]['snap_display_name'])
 
         else:  # else, check if the given VM has a disk with the list of disks in disk_name.
             for each_disk in disk_name:
@@ -614,14 +613,14 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                                                            restored VM.
                                                            default: {}
 
-                        azure_client    (basestring):      name of the AzureRM client
+                        azure_client    (str):      name of the AzureRM client
                                                            where the VM should be
                                                            restored.
 
-                        resource_group   (basestring):      destination Resource group
+                        resource_group   (str):      destination Resource group
                                                             in the AzureRM
 
-                        storage_account  (basestring):    storage account where the
+                        storage_account  (str):    storage account where the
                                                           restored VM should be located
                                                           in AzureRM
 
@@ -631,7 +630,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                         power_on               (bool):    power on the  restored VM
                                                           default: True
 
-                        instance_size    (basestring):    Instance Size of restored VM
+                        instance_size    (str):    Instance Size of restored VM
 
                         public_ip              (bool):    If True, creates the Public IP of
                                                           restored VM
@@ -641,15 +640,15 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                         copy_precedence         (int):    copy precedence value
                                                           default: 0
 
-                        proxy_client      (basestring):   destination proxy client
+                        proxy_client      (str):   destination proxy client
 
-                        networkDisplayName(basestring):   destination network display name
+                        networkDisplayName(str):   destination network display name
 
-                        networkrsg        (basestring):   destination network display name's security group
+                        networkrsg        (str):   destination network display name's security group
 
-                        destsubid         (basestring):   destination subscription id
+                        destsubid         (str):   destination subscription id
 
-                        subnetId          (basestring):   destination subet id
+                        subnetId          (str):   destination subet id
 
 
 
@@ -670,13 +669,13 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         if restore_option is None:
             restore_option = {}
 
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException('Subclient', '101')
 
         if not isinstance(vm_to_restore, list):
             vm_to_restore = [vm_to_restore]
         # check mandatory input parameters are correct
-        if not isinstance(azure_client, basestring):
+        if not isinstance(azure_client, str):
             raise SDKException('Subclient', '101')
 
         subclient = self._set_vm_conversion_defaults(azure_client, restore_option)
@@ -726,7 +725,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                 This converts the AzureRM to Hyper-v VM
                 Args:
 
-                    hyperv_client(basestring):  name of the hyper-V client
+                    hyperv_client(str):  name of the hyper-V client
                                                     where the VM should restored.
 
                     vm_to_restore(dict):    dict containing the VM name(s) to restore as
@@ -735,10 +734,10 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                                                 restored VM.
                                                 default: {}
 
-                    DestinationPath   (basestring): DestinationPath
+                    DestinationPath   (str): DestinationPath
                                                         in the Hyper-V client
 
-                    proxy_client(basestring):   destination proxy client
+                    proxy_client(str):   destination proxy client
 
                     overwrite   (bool):    overwrite the existing VM
                                                 default: True
@@ -749,7 +748,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                     copy_precedence   (int):    copy precedence value
                                                     default: 0
 
-                    Destination_network   (basestring):      Destination network
+                    Destination_network   (str):      Destination network
                                                             in the Hyper-V client
 
                     Returns:
@@ -770,7 +769,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         restore_option = {}
 
         # check mandatory input parameters are correct
-        if not isinstance(hyperv_client, basestring):
+        if not isinstance(hyperv_client, str):
             raise SDKException('Subclient', '101')
 
         if not isinstance(vm_to_restore, list):
@@ -899,13 +898,13 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                         Args:
                                 vm_to_restore          (list):     provide the VM names to restore
 
-                                google_cloud_client    (basestring):      name of the Google Cloud client
+                                google_cloud_client    (str):      name of the Google Cloud client
                                                                    where the VM should be
                                                                    restored.
 
-                                esx_host               (basestring): Zone of the restored VM in Google Cloud
+                                esx_host               (str): Zone of the restored VM in Google Cloud
 
-                                vmSize                 (basestring): vmSize of the restoed VM
+                                vmSize                 (str): vmSize of the restoed VM
 
                                 overwrite              (bool):    overwrite the existing VM
                                                                   default: True
@@ -913,21 +912,21 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                                 power_on               (bool):    power on the  restored VM
                                                                   default: True
 
-                                vcenter_client    (basestring)    --  name of the vcenter client where the VM
+                                vcenter_client    (str)    --  name of the vcenter client where the VM
                                                       should be restored.
 
                                 copy_precedence         (int):    copy precedence value
                                                                   default: 0
 
-                                proxy_client      (basestring):   destination proxy client
+                                proxy_client      (str):   destination proxy client
 
-                                esx_server        (basestring):    Name of the destination virtualization Client
+                                esx_server        (str):    Name of the destination virtualization Client
 
-                                nics              (basestring):   Network Configurations of the VM
+                                nics              (str):   Network Configurations of the VM
 
-                                datacenter        (basestring):   Project ID of the restored VM
+                                datacenter        (str):   Project ID of the restored VM
 
-                                projectId         (basestring):   project ID where the new VM has to be created
+                                projectId         (str):   project ID where the new VM has to be created
 
                             Returns:
                                 object - instance of the Job class for this restore job
@@ -948,7 +947,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             restore_option = {}
 
         # check mandatory input parameters are correct
-        if not isinstance(google_cloud_client, basestring):
+        if not isinstance(google_cloud_client, str):
             raise SDKException('Subclient', '101')
 
         subclient = self._set_vm_conversion_defaults(google_cloud_client, restore_option)

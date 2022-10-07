@@ -70,6 +70,8 @@ Commcell:
 
     download_software()         --  triggers the Download Software job with the given options
 
+    copy_software()             --  triggers the Copy Software job with the given options
+
     sync_remote_cache()         --  syncs remote cache
 
     get_remote_cache()     		--  returns the instance of the RemoteCache class
@@ -123,6 +125,8 @@ Commcell:
 
     _get_commserv_metadata()               -- Returns back the commserv metadata on this commcell
 
+    _get_commserv_oem_id()               -- Returns back the commserv OEM ID on this commcell
+
     enable_privacy()                    --  Enables users to enable data privacy on commcell
 
     disable_privacy()                   --  Enables users to disable data privacy on commcell
@@ -132,6 +136,10 @@ Commcell:
     reset_company()             --  Switch back to Commcell
     
     allow_users_to_enable_passkey()     --      Enable or Disable passkey authorization for company administrators and client owners
+
+    get_sla_configuration()         --  gets the sla configuration details at commcell level
+
+    get_workload_region()           --  gets the current workload region
 
 Commcell instance Attributes
 ============================
@@ -156,7 +164,9 @@ Commcell instance Attributes
 
     **commcell_id**             --  returns the `CommCell` ID
 
-    **commser_metadata**        -- returns the commserv metadata of the commserv
+    **commserv_metadata**       -- returns the commserv metadata of the commserv
+
+    **commserv_oem_id**         -- returns the commserv OEM ID of the commserv
 
     **webconsole_hostname**     --  returns the host name of the `webconsole`,
     class instance is connected to
@@ -313,7 +323,6 @@ import getpass
 import socket
 
 from base64 import b64encode
-from past.builtins import basestring
 
 from requests.exceptions import SSLError
 from requests.exceptions import Timeout
@@ -367,6 +376,7 @@ from .backup_network_pairs import BackupNetworkPairs
 from .reports import report
 from .recovery_targets import RecoveryTargets
 from .drorchestration.replication_groups import ReplicationGroups
+from .drorchestration.failovergroups import FailoverGroups
 from .drorchestration.blr_pairs import BLRPairs
 from .job import JobManagement
 from .index_server import IndexServers
@@ -557,6 +567,7 @@ class Commcell(object):
         self._version_info = None
         self._is_linux_commserv = None
         self._commserv_metadata = None
+        self._commserv_oem_id = None
 
         self._id = None
         self._clients = None
@@ -601,6 +612,7 @@ class Commcell(object):
         self._backup_network_pairs = None
         self._reports = None
         self._replication_groups = None
+        self._failover_groups = None
         self._recovery_targets = None
         self._blr_pairs = None
         self._job_management = None
@@ -887,11 +899,16 @@ class Commcell(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def get_gxglobalparam_value(self):
+    def get_gxglobalparam_value(self, parameters):
         """Makes a rest api call to get values from GXGlobalParam
 
+            Args:
+                parameters      (str/list)  --  The single parameter name or list of parameter names to get value for
+
             Returns:
-                dict    -   json response received from the server
+                str     --      If parameters argument is a string. None if the parameter is not found in response
+
+                list    --      If parameters argument is a list.
 
             Raises:
                 SDKException:
@@ -900,16 +917,34 @@ class Commcell(object):
                     if response is not success
 
         """
+
+        parameters_orig = parameters
+        if isinstance(parameters, str):
+            parameters = [parameters]
+
+        if not isinstance(parameters, list):
+            raise SDKException('Commcell', '107')
+
         flag, response = self._cvpysdk_object.make_request(
-            'GET', self._services['GET_GLOBAL_PARAM']
+            'POST', self._services['GET_GLOBAL_PARAM'], {
+                'globalParamsRequestList': parameters
+            }
         )
 
         if flag:
-            if response.ok:
-                try:
-                    return response.json()
-                except ValueError:
-                    return {'output': response}
+            if response.json():
+                param_results = response.json().get('globalParamsResultList')
+
+                # If requested parameter is a string, then return the single value directly instead of the list response
+                if isinstance(parameters_orig, str):
+                    for param_result in param_results:
+                        if param_result.get('name').lower() == parameters_orig.lower():
+                            return param_result.get('value')
+
+                    # Return None if the requested parameter is not found in the response
+                    return None
+
+                return param_results
             else:
                 raise SDKException('Response', '102')
         else:
@@ -945,7 +980,7 @@ class Commcell(object):
                     if response is not success
 
         """
-        if  isinstance(request_json, list):
+        if isinstance(request_json, list):
             global_params_list = request_json
             payload = {
                 "App_SetGlobalParamsReq": {
@@ -959,7 +994,7 @@ class Commcell(object):
             raise SDKException('Commcell', 107, message)
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['GLOBAL_PARAM'], request_json
+            'POST', self._services['SET_GLOBAL_PARAM'], request_json
         )
 
         if flag:
@@ -1530,6 +1565,17 @@ class Commcell(object):
             return USER_LOGGED_OUT_MESSAGE
 
     @property
+    def failover_groups(self):
+        """Returns the instance of FailoverGroups class"""
+        try:
+            if self._failover_groups is None:
+                self._failover_groups = FailoverGroups(self)
+            return self._failover_groups
+
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
     def recovery_targets(self):
         """Returns the instance of RecoverTargets class"""
         try:
@@ -1602,6 +1648,17 @@ class Commcell(object):
         if self._commserv_metadata is None:
             self._commserv_metadata = self._get_commserv_metadata()
         return self._commserv_metadata
+
+    @property
+    def commserv_oem_id(self):
+        """Returns the OEM ID of the commserve"""
+        try:
+            if self._commserv_oem_id is None:
+                self._commserv_oem_id = self._get_commserv_oem_id()
+
+            return self._commserv_oem_id
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
 
     @property
     def metallic(self):
@@ -2057,7 +2114,7 @@ class Commcell(object):
                           options=None,
                           os_list=None,
                           service_pack=None,
-                          cu_number=0,
+                          cu_number=1,
                           sync_cache=True,
                           sync_cache_list=None,
                           schedule_pattern=None):
@@ -2139,6 +2196,64 @@ class Commcell(object):
             cu_number=cu_number,
             sync_cache=sync_cache,
             sync_cache_list=sync_cache_list,
+            schedule_pattern=schedule_pattern
+        )
+
+    def copy_software(self,
+                      media_loc,
+                      username=None,
+                      password=None,
+                      sync_cache=True,
+                      schedule_pattern=None):
+        """copies media from the specified location on the commcell
+
+                    Args:
+
+                        media_loc      (str)           --  Media Location to be used for copy software
+
+                        username       (str)           --  username to authenticate to external location
+
+                        password       (str)           --  password to authenticate to external location
+
+                        sync_cache (bool)              --  True if download and sync
+                                                           False only download
+
+                        schedule_pattern(dict)         --  pattern for schedule task
+
+
+                    Returns:
+                        object - instance of the Job class for this copy software job
+
+                    Raises:
+                        SDKException:
+                            if Download job failed
+
+                            if response is empty
+
+                            if response is not success
+
+                            if another download job is running
+                    Usage:
+
+                        -   if media_location directory is local to the machine - username and password is not needed
+
+                            >>> commcell_obj.copy_software(media_loc = "C:\\Downloads\\Media")
+
+                        -   if Media_location directory is remote- username and passsword(base 64 encoded) are needed
+                            to authenticate the cache
+
+                            >>> commcell_obj.copy_software(
+                            media_loc = "\\subdomain.company.com\Media",
+                            username = "domainone\\userone",
+                            password = "base64encoded password"
+                            )
+                """
+        download = Download(self)
+        return download.copy_software(
+            media_loc=media_loc,
+            username=username,
+            password=password,
+            sync_cache=sync_cache,
             schedule_pattern=schedule_pattern
         )
 
@@ -2899,7 +3014,7 @@ class Commcell(object):
                 SDKException:
                     if type of the commcell_name is not string
         """
-        if not isinstance(commcell_name, basestring):
+        if not isinstance(commcell_name, str):
             raise SDKException('CommcellRegistration', '104')
 
         return self.registered_routing_commcells and commcell_name.lower() in self.registered_routing_commcells
@@ -3046,7 +3161,7 @@ class Commcell(object):
             if there is no response
 
         """
-        if not isinstance(commcell_name, basestring):
+        if not isinstance(commcell_name, str):
             raise SDKException('CommcellRegistration', '104')
         else:
             commcell_name = commcell_name.lower()
@@ -3214,7 +3329,7 @@ class Commcell(object):
                 if response is not success
         """
 
-        if not isinstance(service_commcell, basestring):
+        if not isinstance(service_commcell, str):
             raise SDKException('User', '101')
 
         request_json = {
@@ -3401,6 +3516,28 @@ class Commcell(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def _get_commserv_oem_id(self):
+        """Loads the commserve OEM ID and returns it
+
+            Returns:
+                commserv_oem_id (int) : returns a int representing the commserv OEM ID
+
+            Raises:
+                SDKException:
+                    if failed to get commserv details
+                    if response is not success
+        """
+
+        flag, response = self._cvpysdk_object.make_request('GET', self._services['GET_OEM_ID'])
+
+        if flag:
+            if response.json():
+                    return response.json()['id']
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
     def switch_to_company(self, company_name):
         """Switching to Company as Operator"""
         if self.organizations.has_organization(company_name):
@@ -3444,3 +3581,71 @@ class Commcell(object):
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def get_sla_configuration(self):
+        """Makes a rest api call to get SLA configuration at commcell level
+
+            Returns:
+                dict   -   sla details
+                example:
+                    {
+                        'slaDays': 7, 
+                        'excludedReason': '', 
+                        'useSystemDefaultSLA': False, 
+                        'excludeFromSLA': False, 
+                        'delayInterval': 0, 
+                        'inheritedSLA': {
+                            'slaDays': 0, 
+                            'entityType': 0, 
+                            'excludeFromSLA': False
+                        }
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        request_json = {"entities": [{"entity": {"commCellId": self.commcell_id, "_type_": 1}}]}
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['GET_SLA'], payload=request_json
+        )
+
+        if flag:
+            if response.ok and response.json():
+                return response.json().get('entities', [{}])[0]
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def get_workload_region(self):
+        """Makes a rest api call to get commserve workload region
+
+            Returns:
+                dict    -   with region id,name
+                example:
+                    {
+                        'regionId': 2, 
+                        'displayName': 'Asia', 
+                        'regionName': 'Asia'
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._services['WORKLOAD_REGION'] % self.commcell_id)
+
+        if flag:
+            if response.ok and response.json():
+                return response.json()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))

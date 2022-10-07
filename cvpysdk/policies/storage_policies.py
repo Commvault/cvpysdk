@@ -167,6 +167,8 @@ StoragePolicyCopy:
 
     set_inline_copy()                       --  Sets the inline copy setting on storage policy copy
 
+    get_jobs_on_copy()                      --  Fetches the Details of jobs on Storage Policy Copy
+
     delete_job()                            --  delete a job from storage policy copy node
 
     _mark_jobs_on_copy()                    --  marks job(s) for given operation on a secondary copy
@@ -212,17 +214,12 @@ from __future__ import unicode_literals
 
 from base64 import b64encode
 
-from past.builtins import basestring
-from future.standard_library import install_aliases
-
 from ..exception import SDKException
 from ..job import Job
 from ..schedules import Schedules, SchedulePattern
 
 from ..storage import DiskLibrary
 from ..storage import MediaAgent
-
-install_aliases()
 
 
 class StoragePolicies(object):
@@ -239,7 +236,7 @@ class StoragePolicies(object):
         """
         self._commcell_object = commcell_object
         self._POLICY = self._commcell_object._services['STORAGE_POLICY']
-
+        self._DELETE_POLICY =  self._commcell_object._services['DELETE_STORAGE_POLICY']
         self._policies = None
         self.refresh()
 
@@ -328,7 +325,7 @@ class StoragePolicies(object):
                 SDKException:
                     if type of the storage policy name argument is not string
         """
-        if not isinstance(policy_name, basestring):
+        if not isinstance(policy_name, str):
             raise SDKException('Storage', '101')
 
         return self._policies and policy_name.lower() in self._policies
@@ -348,7 +345,7 @@ class StoragePolicies(object):
 
                     if no storage policy exists with the given name
         """
-        if not isinstance(storage_policy_name, basestring):
+        if not isinstance(storage_policy_name, str):
             raise SDKException('Storage', '101')
 
         storage_policy_name = storage_policy_name.lower()
@@ -404,13 +401,13 @@ class StoragePolicies(object):
 
         """
 
-        if not (isinstance(global_storage_policy_name, basestring) and
-                isinstance(library, basestring) and
-                isinstance(media_agent, basestring)):
+        if not (isinstance(global_storage_policy_name, str) and
+                isinstance(library, str) and
+                isinstance(media_agent, str)):
             raise SDKException("Storage", "101")
 
-        if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
-                dedup_path_media_agent is not None and not isinstance(dedup_path_media_agent, basestring)):
+        if ((dedup_path is not None and not isinstance(dedup_path, str)) or
+                dedup_path_media_agent is not None and not isinstance(dedup_path_media_agent, str)):
             raise SDKException("Storage", "101")
 
         request_json = {
@@ -585,15 +582,15 @@ class StoragePolicies(object):
         # global_policy_name decides if user wants to create sp using existing global dedup policy or not
         extra_arguments.update(kwargs)
 
-        if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
-                (not (isinstance(storage_policy_name, basestring) and
+        if ((dedup_path is not None and not isinstance(dedup_path, str)) or
+                (not (isinstance(storage_policy_name, str) and
                       isinstance(retention_period, int))) or
-                (incremental_sp is not None and not isinstance(incremental_sp, basestring))):
+                (incremental_sp is not None and not isinstance(incremental_sp, str))):
             raise SDKException('Storage', '101')
 
         if isinstance(library, DiskLibrary):
             disk_library = library
-        elif isinstance(library, basestring):
+        elif isinstance(library, str):
             disk_library = DiskLibrary(self._commcell_object, library)
         elif extra_arguments["global_policy_name"] is not None:
             pass
@@ -603,7 +600,7 @@ class StoragePolicies(object):
 
         if isinstance(media_agent, MediaAgent):
             media_agent = media_agent
-        elif isinstance(media_agent, basestring):
+        elif isinstance(media_agent, str):
             media_agent = MediaAgent(self._commcell_object, media_agent)
         elif extra_arguments["global_policy_name"] is not None:
             pass
@@ -805,11 +802,11 @@ class StoragePolicies(object):
                     if response is not success
         """
         tape_library = library
-        if not (isinstance(drive_pool, basestring) and
-                isinstance(scratch_pool, basestring) and
-                isinstance(tape_library, basestring) and
-                isinstance(media_agent, basestring) and
-                isinstance(storage_policy_name, basestring) and
+        if not (isinstance(drive_pool, str) and
+                isinstance(scratch_pool, str) and
+                isinstance(tape_library, str) and
+                isinstance(media_agent, str) and
+                isinstance(storage_policy_name, str) and
                 (retention_period_days is None or isinstance(retention_period_days, int))):
             raise SDKException('Storage', '101')
 
@@ -892,11 +889,12 @@ class StoragePolicies(object):
 
                     if response is not success
         """
-        if not isinstance(storage_policy_name, basestring):
+        if not isinstance(storage_policy_name, str):
             raise SDKException('Storage', '101')
 
         if self.has_policy(storage_policy_name):
-            policy_delete_service = self._POLICY + '/{0}'.format(storage_policy_name)
+            storagepolicy_id = self.all_storage_policies[storage_policy_name.lower()]
+            policy_delete_service = self._DELETE_POLICY + '/{0}'.format(storagepolicy_id)
 
             flag, response = self._commcell_object._cvpysdk_object.make_request(
                 'DELETE', policy_delete_service
@@ -905,11 +903,12 @@ class StoragePolicies(object):
             if flag:
                 try:
                     if response.json():
-                        if 'errorCode' in response.json() and 'errorMessage' in response.json():
-                            error_message = response.json()['errorMessage']
-                            o_str = 'Failed to delete storage policy\nError: "{0}"'
+                        if 'error' in response.json():
+                            if 'errorCode' in response.json()['error'] and 'errorMessage' in response.json()['error']:
+                                error_message = response.json()['error']['errorMessage']
+                                o_str = 'Failed to delete storage policy\nError: "{0}"'
 
-                            raise SDKException('Storage', '102', o_str.format(error_message))
+                                raise SDKException('Storage', '102', o_str.format(error_message))
                 except ValueError:
                     if response.text:
                         if 'errorCode' in response.text and 'errorMessage' in response.text:
@@ -1059,7 +1058,7 @@ class StoragePolicy(object):
                 SDKException:
                     if type of the storage policy copy name argument is not string
         """
-        if not isinstance(copy_name, basestring):
+        if not isinstance(copy_name, str):
             raise SDKException('Storage', '101')
 
         return self._copies and copy_name.lower() in self._copies
@@ -1102,7 +1101,7 @@ class StoragePolicy(object):
                     if response is not success
         """
         if global_policy is not None:
-            if not (isinstance(copy_name, basestring) and isinstance(global_policy, basestring)):
+            if not (isinstance(copy_name, str) and isinstance(global_policy, str)):
                 raise SDKException('Storage', '101')
 
             if self.has_copy(copy_name):
@@ -1147,9 +1146,9 @@ class StoragePolicy(object):
                     }
 
         else:
-            if not (isinstance(copy_name, basestring) and
-                    isinstance(library_name, basestring) and
-                    isinstance(media_agent_name, basestring)):
+            if not (isinstance(copy_name, str) and
+                    isinstance(library_name, str) and
+                    isinstance(media_agent_name, str)):
                 raise SDKException('Storage', '101')
 
             if self.has_copy(copy_name):
@@ -1311,7 +1310,7 @@ class StoragePolicy(object):
 
                             if response is not success
         """
-        if not isinstance(cloud_id, basestring):
+        if not isinstance(cloud_id, str):
             raise SDKException('Storage', '101')
 
         if include_doc_type is None:
@@ -1379,7 +1378,7 @@ class StoragePolicy(object):
         """
         if not (isinstance(entity_details, list) and isinstance(entity_names, list)):
             raise SDKException('Storage', '101')
-        if not isinstance(ca_client_name, basestring):
+        if not isinstance(ca_client_name, str):
             raise SDKException('Storage', '101')
         request_xml = """<EVGui_SetEntityExtractionListReq archGroupId="{0}">
         <entityExtraction isConfigured="1">""".format(self._storage_policy_id)
@@ -1444,7 +1443,8 @@ class StoragePolicy(object):
                          source_copy,
                          provisioning_policy=None,
                          resource_pool=None,
-                         is_replica_copy=None):
+                         is_replica_copy=None,
+                         **kwargs):
         """Creates Snap copy for this storage policy
 
             Args:
@@ -1469,6 +1469,9 @@ class StoragePolicy(object):
                 is_replica_copy     (bool)   --  if true then Replica Copy will be created
                 default : None
 
+                job_retention       (bool)  -- if true job based retention will be set
+                default : False
+
             Raises:
                 SDKException:
                     if type of inputs in not string
@@ -1481,9 +1484,9 @@ class StoragePolicy(object):
 
                     if response is not success
         """
-        if not (isinstance(copy_name, basestring) and
-                isinstance(library_name, basestring) and
-                isinstance(media_agent_name, basestring)):
+        if not (isinstance(copy_name, str) and
+                isinstance(library_name, str) and
+                isinstance(media_agent_name, str)):
             raise SDKException('Storage', '101')
 
         if self.has_copy(copy_name):
@@ -1508,6 +1511,8 @@ class StoragePolicy(object):
             provisioning_policy = ""
             resource_pool = ""
 
+        job_based_retention = kwargs.get('job_based_retention', False)
+        job_retention = 1 if job_based_retention else 0
         request_xml = """
                     <App_CreateStoragePolicyCopyReq copyName="{0}">
                         <storagePolicyCopyInfo active="1" isMirrorCopy="{1}" isSnapCopy="{2}" provisioningPolicyName="{3}">
@@ -1516,14 +1521,16 @@ class StoragePolicy(object):
                             <library _type_="9" libraryName="{7}" />
                             <mediaAgent _type_="11" mediaAgentName="{8}" />
                             <spareMediaGroup _type_="67" libraryName="{7}" />
-                            <retentionRules retainArchiverDataForDays="-1" retainBackupDataForCycles="5" retainBackupDataForDays="1" />
+                            <retentionRules jobs="8" retainArchiverDataForDays="-1" retainBackupDataForCycles="5" retainBackupDataForDays="1">
+                            <retentionFlags jobBasedRetention="{11}" />
+                            </retentionRules>
                             <sourceCopy _type_="18" copyName="{9}" storagePolicyName="{4}" />
                             <resourcePoolsList operation="1" resourcePoolName="{10}" />
                         </storagePolicyCopyInfo>
                     </App_CreateStoragePolicyCopyReq>
                     """.format(copy_name, is_mirror_copy, is_snap_copy, provisioning_policy,
                                self.storage_policy_name, arrayReplicaCopy, useOfflineReplication,
-                               library_name, media_agent_name, source_copy, resource_pool)
+                               library_name, media_agent_name, source_copy, resource_pool, job_retention)
 
         create_copy_service = self._commcell_object._services['CREATE_STORAGE_POLICY_COPY']
 
@@ -1573,7 +1580,7 @@ class StoragePolicy(object):
 
                     if response is not success
         """
-        if not isinstance(copy_name, basestring):
+        if not isinstance(copy_name, str):
             raise SDKException('Storage', '101')
         else:
             copy_name = copy_name.lower()
@@ -1646,9 +1653,9 @@ class StoragePolicy(object):
 
                     if response is not success
         """
-        if not (isinstance(copy_name, basestring) and
-                isinstance(library_name, basestring) and
-                isinstance(media_agent_name, basestring)):
+        if not (isinstance(copy_name, str) and
+                isinstance(library_name, str) and
+                isinstance(media_agent_name, str)):
             raise SDKException('Storage', '101')
 
         if self.has_copy(copy_name):
@@ -2149,8 +2156,8 @@ class StoragePolicy(object):
             all_copies = False
             if not media_agent:
                 media_agent = "&lt;ANY MEDIAAGENT&gt;"
-            if not (isinstance(storage_policy_copy_name, basestring) and
-                    isinstance(media_agent, basestring)):
+            if not (isinstance(storage_policy_copy_name, str) and
+                    isinstance(media_agent, str)):
                 raise SDKException('Storage', '101')
         else:
             if all_copies is False:
@@ -2249,7 +2256,7 @@ class StoragePolicy(object):
                 SDKException:
                     if type of input parameters is not string
         """
-        if not isinstance(copy_name, basestring):
+        if not isinstance(copy_name, str):
             raise SDKException('Storage', '101')
 
         request_xml = """
@@ -2278,7 +2285,7 @@ class StoragePolicy(object):
                 SDKException:
                     if type of input parameters is not string
         """
-        if not (isinstance(copy_name, basestring) and isinstance(media_agent_name, basestring)):
+        if not (isinstance(copy_name, str) and isinstance(media_agent_name, str)):
             raise SDKException('Storage', '101')
 
         request_xml = """
@@ -2346,11 +2353,11 @@ class StoragePolicy(object):
 
                     if response is not success
         """
-        if not (isinstance(copy_name, basestring) and
-                isinstance(library_name, basestring) and
-                isinstance(path, basestring) and
-                isinstance(ddb_media_agent, basestring) and
-                isinstance(media_agent_name, basestring)):
+        if not (isinstance(copy_name, str) and
+                isinstance(library_name, str) and
+                isinstance(path, str) and
+                isinstance(ddb_media_agent, str) and
+                isinstance(media_agent_name, str)):
             raise SDKException('Storage', '101')
 
         if dash_full is None:
@@ -2433,7 +2440,9 @@ class StoragePolicy(object):
     def run_ddb_verification(self,
                              copy_name,
                              ver_type,
-                             ddb_ver_level):
+                             ddb_ver_level,
+                             use_scalable=True,
+                             orphan_chunk_listing=False):
         """
         Runs DDB verification job
 
@@ -2445,6 +2454,11 @@ class StoragePolicy(object):
                 ddb_ver_level   (str)   --  DDB verification type
                                             (DDB_VERIFICATION/ DDB_AND_DATA_VERIFICATION /
                                             QUICK_DDB_VERIFICATION/ DDB_DEFRAGMENTATION)
+
+                use_scalable    (bool)  --  True/False to use Scalable Resource Allocation
+                                            Default: True
+
+                orphan_chunk_listing (bool) --  True/False to run orphan chunk listing phase during DDB Defragmentation
 
             Returns:
                 object - instance of the Job class for this DDB verification job
@@ -2459,11 +2473,13 @@ class StoragePolicy(object):
 
                     if response is not success
         """
-        if not (isinstance(copy_name, basestring) and
-                isinstance(ver_type, basestring) and
-                isinstance(ddb_ver_level, basestring)):
+        if not (isinstance(copy_name, str) and
+                isinstance(ver_type, str) and
+                isinstance(ddb_ver_level, str)):
             raise SDKException('Storage', '101')
-
+        run_defrag = False
+        if ddb_ver_level == 'DDB_DEFRAGMENTATION':
+            run_defrag = True
         request = {
             "taskInfo": {
                 "associations": [
@@ -2490,7 +2506,7 @@ class StoragePolicy(object):
                                         "maxNumberOfStreams": 0,
                                         "allCopies": True,
                                         "useMaximumStreams": True,
-                                        "useScallableResourceManagement": False,
+                                        "useScallableResourceManagement": use_scalable,
                                         "mediaAgent": {
                                             "mediaAgentName": ""
                                         }
@@ -2501,7 +2517,9 @@ class StoragePolicy(object):
                                     "ddbVerificationLevel": ddb_ver_level,
                                     "jobsToVerify": 0,
                                     "allCopies": True,
-                                    "backupLevel": ver_type
+                                    "backupLevel": ver_type,
+                                    "ocl": orphan_chunk_listing,
+                                    "runDefrag": run_defrag
                                 }
                             }
                         }
@@ -2532,7 +2550,7 @@ class StoragePolicy(object):
             raise SDKException('Response', '101', response_string)
 
     def run_data_verification(self, media_agent_name='', copy_name='', streams=0,
-                              jobs_to_verify='NEW', use_scalable=False, schedule_pattern=None, **kwargs):
+                              jobs_to_verify='NEW', use_scalable=True, schedule_pattern=None, **kwargs):
         """Runs Data verification job
 
         Args:
@@ -2548,6 +2566,7 @@ class StoragePolicy(object):
                                          (NEW/ VERF_EXPIRED/ ALL)
 
             use_scalable       (bool) : True/False to use Scalable Resource Allocation
+                                         (default - True)
 
             kwargs              (dict) : optional arguments
                 Available kwargs Options:
@@ -2558,8 +2577,8 @@ class StoragePolicy(object):
 
             errorMessage - If Data Verification Job fails to Start
         """
-        if not (isinstance(copy_name, basestring) and isinstance(jobs_to_verify, basestring)
-                and isinstance(media_agent_name, basestring) and isinstance(streams, int)):
+        if not (isinstance(copy_name, str) and isinstance(jobs_to_verify, str)
+                and isinstance(media_agent_name, str) and isinstance(streams, int)):
             raise SDKException('Storage', '101')
 
         if jobs_to_verify.upper() == 'NEW':
@@ -2675,11 +2694,11 @@ class StoragePolicy(object):
 
                     if response is not success
         """
-        if not (isinstance(copy_name, basestring) and
-                isinstance(dest_path, basestring) and
-                isinstance(src_path, basestring) and
-                isinstance(dest_media_agent, basestring) and
-                isinstance(src_media_agent, basestring)):
+        if not (isinstance(copy_name, str) and
+                isinstance(dest_path, str) and
+                isinstance(src_path, str) and
+                isinstance(dest_media_agent, str) and
+                isinstance(src_media_agent, str)):
             raise SDKException('Storage', '101')
 
         request = {
@@ -2766,15 +2785,15 @@ class StoragePolicy(object):
                 SDKException:
                     if type of input parameters is not string
         """
-        if not (isinstance(copy_id, basestring) and
-                isinstance(sidb_store_id, basestring) and
-                isinstance(sidb_new_path, basestring) and
-                isinstance(media_agent, basestring)):
+        if not (isinstance(copy_id, str) and
+                isinstance(sidb_store_id, str) and
+                isinstance(sidb_new_path, str) and
+                isinstance(media_agent, str)):
             raise SDKException('Storage', '101')
 
         if isinstance(media_agent, MediaAgent):
             media_agent = media_agent
-        elif isinstance(media_agent, basestring):
+        elif isinstance(media_agent, str):
             media_agent = MediaAgent(self._commcell_object, media_agent)
 
         request_xml = """
@@ -2805,7 +2824,7 @@ class StoragePolicy(object):
 
                    if no copy exists with the given name
         """
-        if not isinstance(copy_name, basestring):
+        if not isinstance(copy_name, str):
             raise SDKException('Storage', '101')
 
         if self.has_copy(copy_name):
@@ -3324,6 +3343,7 @@ class StoragePolicyCopy(object):
         retention_values["days"] = self._retention_rules['retainBackupDataForDays']
         retention_values["cycles"] = self._retention_rules['retainBackupDataForCycles']
         retention_values["archiveDays"] = self._retention_rules['retainArchiverDataForDays']
+        retention_values["jobs"] = self._retention_rules['jobs']
         return retention_values
 
     @copy_retention.setter
@@ -3340,21 +3360,28 @@ class StoragePolicyCopy(object):
 
                         **int** -   value to specify retainArchiverDataForDays
 
+                        **int** -   value to specify jobs
+
                     e.g. :
-                         storage_policy_copy.copy_retention = (30, 15, 1)
+                         storage_policy_copy.copy_retention = (30, 15, 1, 8)
 
             Raises:
                 SDKException:
                     if failed to update retention values on the copy
 
         """
-
         if retention_values[0] >= 0:
             self._retention_rules['retainBackupDataForDays'] = retention_values[0]
         if retention_values[1] >= 0:
             self._retention_rules['retainBackupDataForCycles'] = retention_values[1]
         if retention_values[2] >= 0:
             self._retention_rules['retainArchiverDataForDays'] = retention_values[2]
+        if len(retention_values) > 3:
+            self._retention_rules['jobs'] = retention_values[3]
+            if retention_values[3] > 0:
+                self._retention_rules['retentionFlags']['jobBasedRetention'] = 1
+            else:
+                self._retention_rules['retentionFlags']['jobBasedRetention'] = 0
 
         self._set_copy_properties()
 
@@ -3689,7 +3716,7 @@ class StoragePolicyCopy(object):
             self._copy_flags['preserveEncryptionModeAsInSource'] = 1
 
         if int(encryption_values[0]) == 1:
-            if (isinstance(encryption_values[1], basestring)
+            if (isinstance(encryption_values[1], str)
                     and isinstance(encryption_values[2], int)):
                 self._copy_properties['extendedFlags']['encryptOnDependentPrimary'] = 1
                 self._copy_flags['auxCopyReencryptData'] = 1
@@ -3712,6 +3739,68 @@ class StoragePolicyCopy(object):
         """Gets the media agent name of the copy"""
         return self._media_agent.get('mediaAgentName')
 
+    def get_jobs_on_copy(self, from_date=None, to_date=None, backup_type=None, retained_by=0,
+                         include_to_be_copied_jobs=False, list_partial_jobs_only=False):
+        """Fetches the Details of jobs on Storage Policy Copy
+
+        Args:
+            from_date      (str): Start Date Range for the Jobs
+                                    [format-'yyyy/mm/dd'] [default: from start]
+
+            to_date        (str): End Date Range for the Jobs
+                                    [format-'yyyy/mm/dd'] [default: till date]
+
+            backup_type    (str): Filter by backup type [default: None(all backup types)]
+                                    Valid values: 'full'/'incr'
+
+            retained_by    (int): Filter by retention type of jobs [default: 0]
+                                    Valid values:
+                                    1: basic retention
+                                    2: extended retention
+                                    4: manual retention
+
+            include_to_be_copied_jobs   (bool): Include details on jobs that are in to be copied state [default: False]
+
+            list_partial_jobs_only      (bool): Get details of jobs that are in partially copied state only
+                                                  [default: False]
+
+        Returns:
+            (list)  :   List of dict's with each dict containing details of a job
+        Raises:
+            SDKException:   if the response/fetch operation failed
+        """
+        command = f"qoperation execscript -sn QS_JobsinSPCopy -si @i_policyName='{self._storage_policy_name}'" \
+                  f" -si @i_copyName='{self.copy_name}'"
+        if from_date:
+            command = f"{command} -si @i_fromTime='{from_date}'"
+        if to_date:
+            command = f"{command} -si @i_toTime='{to_date}'"
+        if backup_type:
+            command = f"{command} -si @i_backupType='{backup_type.lower()}'"
+        if retained_by:
+            command = f"{command} -si @i_retention='{retained_by}'"
+        if include_to_be_copied_jobs:
+            command = f"{command} -si @i_includeToBeCopiedJobs='1'"
+        if list_partial_jobs_only:
+            command = f"{command} -si @i_includePartialJobsOnly='1'"
+
+        response = self._commcell_object.execute_qcommand(command)
+        if response.json():
+            json_response = response.json()
+            if json_response.get("ExecScriptOutput"):
+                if isinstance(json_response.get("ExecScriptOutput").get("FieldValue"), list):
+                    return json_response.get("ExecScriptOutput").get("FieldValue")
+                if isinstance(json_response.get("ExecScriptOutput").get("FieldValue"), dict):
+                    if json_response.get("ExecScriptOutput").get("FieldValue").get("@JobID"):
+                        return [json_response.get("ExecScriptOutput").get("FieldValue")]
+                return []
+            else:
+                response_string = self._commcell_object._update_response_(response.text)
+                raise SDKException('Response', '102', response_string)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     def delete_job(self, job_id):
         """
         Deletes a job on Storage Policy
@@ -3722,7 +3811,7 @@ class StoragePolicyCopy(object):
             SDKException:
                 if type of input parameters is not string
         """
-        if not isinstance(job_id, basestring):
+        if not isinstance(job_id, str):
             raise SDKException('Storage', '101')
 
         request_xml = """
@@ -3745,9 +3834,9 @@ class StoragePolicyCopy(object):
             SDKException:
                 if type of input parameters is not string or List of strings
         """
-        if not isinstance(job_id, basestring) and not isinstance(job_id, int):
+        if not isinstance(job_id, str) and not isinstance(job_id, int):
             if not isinstance(job_id, list) or\
-                    (not all(isinstance(id, int) for id in job_id) and not all(isinstance(id, basestring) for id in job_id)):
+                    (not all(isinstance(id, int) for id in job_id) and not all(isinstance(id, str) for id in job_id)):
                 raise SDKException('Storage', '101')
 
         # send multiple requests to counter limit of URL length in IIS

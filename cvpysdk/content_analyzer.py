@@ -70,7 +70,6 @@ ContentAnalyzer Attributes
     **cloud_url**   --  returns the url of the content analyzer
 
 """
-from past.builtins import basestring
 from .exception import SDKException
 from .datacube.constants import ContentAnalyzerConstants
 
@@ -211,7 +210,7 @@ class ContentAnalyzers(object):
 
                         Response was empty.
         """
-        if not isinstance(client_name, basestring) or not isinstance(content_analyzer_name, basestring):
+        if not isinstance(client_name, str) or not isinstance(content_analyzer_name, str):
             raise SDKException('ContentAnalyzer', '101')
         client = self._commcell_object.clients.get(client_name)
         req_json = ContentAnalyzerConstants.REQUEST_JSON
@@ -271,7 +270,7 @@ class ContentAnalyzers(object):
 
                         Response was empty.
         """
-        if cloud_name is None or not isinstance(cloud_name, basestring):
+        if cloud_name is None or not isinstance(cloud_name, str):
             raise SDKException('ContentAnalyzer', '101')
 
         cloud_id = self.get(cloud_name).cloud_id
@@ -314,7 +313,7 @@ class ContentAnalyzers(object):
 
 
         """
-        if not isinstance(cloud_name, basestring):
+        if not isinstance(cloud_name, str):
             raise SDKException('ContentAnalyzer', '101')
 
         if self.has_cloud(cloud_name):
@@ -336,7 +335,7 @@ class ContentAnalyzers(object):
                     if type of the CA cloud name argument is not string
 
         """
-        if not isinstance(cloud_name, basestring):
+        if not isinstance(cloud_name, str):
             raise SDKException('ContentAnalyzer', '101')
 
         return self._content_analyzers and cloud_name.lower() in map(str.lower, self._content_analyzers)

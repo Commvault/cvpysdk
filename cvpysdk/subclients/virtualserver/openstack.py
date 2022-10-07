@@ -43,7 +43,6 @@ OpenStackVirtualServerSubclient:
 
 from ..vssubclient import VirtualServerSubclient
 from ...exception import SDKException
-from past.builtins import basestring
 
 
 class OpenStackVirtualServerSubclient(VirtualServerSubclient):
@@ -107,7 +106,7 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence       (int)         --  copy precedence value
                                                         default: 0
 
-                proxy_client          (basestring)  --  proxy client to be used for restore
+                proxy_client          (str)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
                 **kwargs                         : Arbitrary keyword arguments Properties as of
@@ -133,7 +132,7 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
 
         restore_option = {"v2_details": kwargs.get("v2_details", None)}
         # check input parameters are correct
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException('Subclient', '101')
 
         if copy_precedence:
@@ -196,13 +195,13 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
                 restored_vm_name         (str)    --  new name of vm. If nothing is passed,
                                                       'delete' is appended to the original vm name
 
-                vcenter_client    (basestring)    --  name of the vcenter client where the VM
+                vcenter_client    (str)    --  name of the vcenter client where the VM
                                                       should be restored.
 
-                esx_host          (basestring)    --  destination esx host. Restores to the source
+                esx_host          (str)    --  destination esx host. Restores to the source
                                                       VM esx if this value is not specified
 
-                datastore         (basestring)    --  datastore where the restored VM should be
+                datastore         (str)    --  datastore where the restored VM should be
                                                       located. Restores to the source VM datastore
                                                       if this value is not specified
 
@@ -215,11 +214,11 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence          (int)    --  copy precedence value
                                                       default: 0
 
-                proxy_client      (basestring)    --  destination proxy client
+                proxy_client      (str)    --  destination proxy client
 
-                source_ip           (basestring)    --  IP of the source VM
+                source_ip           (str)    --  IP of the source VM
 
-                destination_ip      (basestring)    --  IP of the destination VM
+                destination_ip      (str)    --  IP of the destination VM
 
                 **kwargs                         : Arbitrary keyword arguments Properties as of
                                                      full_vm_restore_out_of_place
@@ -246,7 +245,7 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
 
         # check mandatory input parameters are correct
         for vm in vm_to_restore:
-            if vm and not isinstance(vm, basestring):
+            if vm and not isinstance(vm, str):
                 raise SDKException('Subclient', '101')
 
         if copy_precedence:
@@ -258,8 +257,8 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
             restore_option['client'] = proxy_client
 
         if restored_vm_name:
-            if not(isinstance(vm_to_restore, basestring) or
-                   isinstance(restored_vm_name, basestring)):
+            if not(isinstance(vm_to_restore, str) or
+                   isinstance(restored_vm_name, str)):
                 raise SDKException('Subclient', '101')
             restore_option['restore_new_name'] = restored_vm_name
 
@@ -299,10 +298,10 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
         """Restores the disk specified in the input paths list to the same location
 
             Args:
-                vm_name             (basestring)    --  Name of the VM added in subclient content
+                vm_name             (str)    --  Name of the VM added in subclient content
                                                         whose  disk is selected for restore
 
-                destination_path        (basestring)    --  Staging (destination) path to restore the
+                destination_path        (str)    --  Staging (destination) path to restore the
                                                         disk.
 
                 disk_name                 (list)    --  name of the disk which has to be restored
@@ -310,13 +309,13 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
                                                         name of the disk)
                                                         default: None
 
-                proxy_client        (basestring)    --  Destination proxy client to be used
+                proxy_client        (str)    --  Destination proxy client to be used
                                                         default: None
 
                 copy_precedence            (int)    --  SP copy precedence from which browse has to
                                                          be performed
 
-                convert_to          (basestring)    --  disk format for the restored disk
+                convert_to          (str)    --  disk format for the restored disk
                                                         (applicable only when the vmdk disk is
                                                         selected for restore). Allowed values are
                                                         "VHDX" or "VHD"
@@ -349,8 +348,8 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
             disk_extn = self._get_disk_extension(disk_name)
 
         # check if inputs are correct
-        if not (isinstance(vm_name, basestring) and
-                isinstance(destination_path, basestring) and
+        if not (isinstance(vm_name, str) and
+                isinstance(destination_path, str) and
                 isinstance(disk_name, list) and
                 disk_extn == '.vmdk'):
             raise SDKException('Subclient', '101')
@@ -432,17 +431,17 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
         """Attaches the Disks to the provided vm
 
             Args:
-                vm_name             (basestring)    --  Name of the VM added in subclient content
+                vm_name             (str)    --  Name of the VM added in subclient content
                                                         whose  disk is selected for restore
 
                 vcenter             (dict)          --  Dictinoary of vcenter, username and creds
 
-                esx                 (basestring)    --  Esx host where the vm resides
+                esx                 (str)    --  Esx host where the vm resides
 
                 datastore               (string)    --  Datastore where disks will be restoed to
                                                         default: None
 
-                proxy_client        (basestring)    --  Destination proxy client to be used
+                proxy_client        (str)    --  Destination proxy client to be used
                                                         default: None
 
                 copy_precedence            (int)    --  SP copy precedence from which browse has to
@@ -474,7 +473,7 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
         disk_name = []
 
         # check if inputs are correct
-        if not (isinstance(vm_name, basestring) and
+        if not (isinstance(vm_name, str) and
                 isinstance(disk_name, list)):
             raise SDKException('Subclient', '101')
 

@@ -77,7 +77,6 @@ Role
 
 """
 
-from past.builtins import basestring
 from ..exception import SDKException
 
 class Roles(object):
@@ -153,7 +152,7 @@ class Roles(object):
                 SDKException:
                     if data type of input is invalid
         """
-        if not isinstance(role_name, basestring):
+        if not isinstance(role_name, str):
             raise SDKException('Role', '101')
 
         return self._roles and role_name.lower() in self._roles
@@ -186,7 +185,7 @@ class Roles(object):
             raise SDKException('Role', '102', "empty role can not be created!!  "
                                               "either permission_list or categoryname_list "
                                               "should have some value! ")
-        if not isinstance(rolename, basestring):
+        if not isinstance(rolename, str):
             raise SDKException('Role', '101')
         if self.has_role(rolename):
             raise SDKException('Role', '102',
@@ -502,7 +501,7 @@ class Role(object):
 
                     if response is not success
         """
-        if not isinstance(username, basestring):
+        if not isinstance(username, str):
             raise SDKException('Role', '101')
         if not self._commcell_object.roles.has_role(rolename):
             raise SDKException(
@@ -568,7 +567,7 @@ class Role(object):
 
                     if response is not success
         """
-        if not isinstance(usergroupname, basestring):
+        if not isinstance(usergroupname, str):
             raise SDKException('Role', '101')
         if not self._commcell_object.roles.has_role(rolename):
             raise SDKException(

@@ -56,6 +56,13 @@ class DRJobPhases(Enum):
     POST_VM_FAILOVER_SNAP = 41
     CLONE_VM = 42
     REFRESH_VM = 43
+    LIVE_MOUNT = 48
+    INIT_UNDO_FAILOVER = 49
+    POST_UNDO_FAILOVER = 50
+    RESTORE_VM = 51
+    PRE_SCRIPT_EXECUTION = 52
+    POST_SCRIPT_EXECUTION = 53
+    VM_LEVEL = 54
 
 
 class DRJobPhaseToText(Enum):
@@ -103,99 +110,10 @@ class DRJobPhaseToText(Enum):
     POST_VM_FAILOVER_SNAP = "Post VM Failover"
     CLONE_VM = "Clone VM"
     REFRESH_VM = "Refresh VM"
-
-# TODO: Remove after discussing with teams
-DR_ORCHESTRATION_JOB_PHASE_CODE_TO_TEXT = {
-    "0": "Script Execution",
-    "1": "Power On",
-    "2": "Power Off",
-    "3": "Reboot",
-    "4": "Guest Tools Status Check",
-    "5": "Create Network Switch",
-    "6": "Delete Network Switch",
-    "7": "Replication",
-    "8": "Backup",
-    "9": "Configure Network Switch",
-    "10": "Port Configuration",
-    "11": "IP Masquerading",
-    "12": "Static IP Mapping",
-    "13": "Initialization",
-    "14": "Waiting on IP Assignment",
-    "15": "Disable Sync",
-    "16": "Enable Sync",
-    "17": "Create Snapshot",
-    "18": "Delete Snapshot",
-    "19": "Revert Snapshot",
-    "20": "Disable Network Adapter",
-    "21": "Auxiliary Copy",
-    "22": "Post Operation",
-    "23": "Backup Copy",
-    "24": "Shutdown",
-    "25": "Storage Operation",
-    "26": "Finalize",
-    "27": "DR Approval",
-    "28": "Delete VM",
-    "29": "Create VM",
-    "30": "Get VM Information",
-    "31": "Create DR VM",
-    "32": "Post VM Failover",
-    "33": "Mount Snap Primary",
-    "34": "DR VM Snap Mount",
-    "35": "Break Volume Relationship",
-    "36": "Resync Volume Relationship",
-    "37": "DR VM Snap Unmount",
-    "38": "DR Test VM Snap Mount",
-    "39": "DR Test VM Snap Unmount",
-    "40": "Delete DR VM",
-    "41": "Post VM Failover",
-    "42": "Clone VM",
-    "43": "Refresh VM"
-}
-
-# TODO: Remove after discussing with teams
-DR_ORCHESTRATION_JOB_PHASE_ENUM_TO_CODE = {
-    "SCRIPT_EXECUTION": 0,
-    "POWER_ON": 1,
-    "POWER_OFF": 2,
-    "REBOOT": 3,
-    "GUEST_TOOLS_STATUS_CHECK": 4,
-    "CREATE_NETWORK_SWITCH": 5,
-    "DELETE_NETWORK_SWITCH": 6,
-    "REPLICATION": 7,
-    "BACKUP": 8,
-    "CONFIGURE_NETWORK_SWITCH": 9,
-    "EXTERNAL_PORT_CONFIG": 10,
-    "IP_MASQUERADE": 11,
-    "STATIC_IP_MAPPING": 12,
-    "INTIALIZATION": 13,
-    "WAIT_ON_IP_ASSIGNMENT": 14,
-    "DISABLE_SYNC": 15,
-    "ENABLE_SYNC": 16,
-    "CREATE_SNAPSHOT": 17,
-    "DELETE_SNAPSHOT": 18,
-    "REVERT_SNAPSHOT": 19,
-    "DISABLE_NETWORK_ADAPTER": 20,
-    "AUX_COPY": 21,
-    "POST_OPERATION": 22,
-    "SNAP_TO_TAPE": 23,
-    "SHUTDOWN": 24,
-    "STORAGE_OPERATION": 25,
-    "FINALIZE": 26,
-    "DR_APPROVAL": 27,
-    "DELETE_VM": 28,
-    "CREATE_VM": 29,
-    "GET_VM_INFO": 30,
-    "CREATE_DR_VM": 31,
-    "POST_VM_FAILOVER": 32,
-    "MOUNT_SNAP_PRIMARY": 33,
-    "DR_VM_SNAP_MOUNT": 34,
-    "BREAK_VOLUME_RELATIONSHIP": 35,
-    "RESYNC_VOLUME_RELATIONSHIP": 36,
-    "DR_VM_SNAP_UNMOUNT": 37,
-    "DR_TEST_VM_SNAP_MOUNT": 38,
-    "DR_TEST_VM_SNAP_UNMOUNT": 39,
-    "DELETE_DR_VM": 40,
-    "POST_VM_FAILOVER_SNAP": 41,
-    "CLONE_VM": 42,
-    "REFRESH_VM": 43
-}
+    LIVE_MOUNT = "Live Mount"
+    INIT_UNDO_FAILOVER = "Initialize Undo Failover"
+    POST_UNDO_FAILOVER = "Post Undo Failover"
+    RESTORE_VM = "Restore VM"
+    PRE_SCRIPT_EXECUTION = "Pre Script Execution"
+    POST_SCRIPT_EXECUTION = "Post Script Execution"
+    VM_LEVEL = "VM Level"

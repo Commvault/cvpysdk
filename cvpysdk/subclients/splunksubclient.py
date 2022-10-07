@@ -42,13 +42,15 @@ class SplunkSubclient(BigDataAppsSubclient):
     and to perform operations on that subclient
     """
 
-    def restore_in_place(self, index_list):
+    def restore_in_place(self, index_list, copy_precedence=None):
         """
         Performs a restore job on the splunk subclient
 
         Args:
             index_list  (list)       --  list containing the indexes to be restored
             Example: ["index1",index2"]
+
+            copy_precedence (int)    --  the copy precedence value
 
         Returns:
             job_obj     (obj)       --  job object associated with the restore job
@@ -65,8 +67,7 @@ class SplunkSubclient(BigDataAppsSubclient):
         instance_obj = self._instance_object
 
         instance_obj._restore_association = self._subClientEntity
-
-        parameter_dict = self._restore_json(paths=index_list)
+        parameter_dict = self._restore_json(paths=index_list, copy_precedence = copy_precedence)
         parameter_dict["taskInfo"]["associations"] \
             [0]["subclientId"] = subclient_id
         parameter_dict["taskInfo"]["associations"] \

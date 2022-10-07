@@ -915,7 +915,7 @@ class SharepointSubclient(SharepointSuperSubclient):
                     if "resp" in response.json():
                         error_code = response.json()['resp']['errorCode']
                         if error_code != 0:
-                            error_string = response.json()['response']['errorString']
+                            error_string = response.json().get('response', {}).get('errorString', str())
                             o_str = 'Failed to associate content\nError: "{0}"'.format(error_string)
                             raise SDKException('Subclient', '102', o_str)
                     elif 'errorMessage' in response.json():

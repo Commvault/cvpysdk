@@ -111,6 +111,10 @@ FileSystemSubclient Instance Attributes:
 
     **system_state_option**               --  Enable/Disable System state option for the subclient
 
+    **_dc_options_dict**                  --   Data Classification plan  Options
+
+    **enable_dc_content_indexing**        -- Enable Dataclassification Indexing option.
+
     **onetouch_option**                   --  Enable/Disable One-Touch option for the subclient
 
     **onetouch_server**                   --  Provides the 1-touch server name
@@ -163,7 +167,6 @@ FileSystemSubclient Instance Attributes:
 
 from __future__ import unicode_literals
 from base64 import b64encode
-from past.builtins import basestring
 
 from ..client import Client
 from ..subclient import Subclient
@@ -236,7 +239,8 @@ class FileSystemSubclient(Subclient):
                     "content": self._content,
                     "commonProperties": self._commonProperties,
                     "fsContentOperationType": "OVERWRITE",
-                    "fsExcludeFilterOperationType": "OVERWRITE" if not hasattr(self, '_fsExcludeFilterOperationType') else self._fsExcludeFilterOperationType
+                    "fsExcludeFilterOperationType": "OVERWRITE" if not hasattr(self, '_fsExcludeFilterOperationType') else self._fsExcludeFilterOperationType,
+                    "fsIncludeFilterOperationType": "OVERWRITE" if not hasattr(self, '_fsIncludeFilterOperationType') else self._fsIncludeFilterOperationType
                 }
         }
 
@@ -317,6 +321,7 @@ class FileSystemSubclient(Subclient):
 
         self._set_subclient_properties("_content", update_content)
         self._fsExcludeFilterOperationType = "OVERWRITE"  # RESET THE OPERATION TYPE TO ITS DEFAULT
+        self._fsIncludeFilterOperationType = "OVERWRITE"  # RESET THE OPERATION TYPE TO ITS DEFAULT
 
 
     def _common_backup_options(self, options):
@@ -537,7 +542,10 @@ class FileSystemSubclient(Subclient):
 
                     if value list is empty
         """
-        if isinstance(value, list) and value != []:
+        if isinstance(value, list):
+            if value == []:
+                value = self.exception_content
+                self._fsIncludeFilterOperationType = "DELETE"
             self._set_content(exception_content=value)
         else:
             raise SDKException(
@@ -750,6 +758,25 @@ class FileSystemSubclient(Subclient):
         self._set_subclient_properties(
             "_fsSubClientProp['blockLevelBackup']",
             block_level_backup_value)
+
+
+    @property
+    def _dc_options_dict(self):
+        """ Constructs Data classification Property"""
+        dc_options = {'dcPlanEntity': {'planType': 7, 'planSubtype': 117506053, 'planName': ''}}
+        return dc_options
+
+    def enable_dc_content_indexing(self, dcplan_name):
+        """Creates the JSON with the specified dataclassification plan to pass to API to
+            update  file system Subclient
+
+            Args:
+                dcplan_name (String)  --  DC plan name
+
+        """
+        temp_dc = self._dc_options_dict
+        temp_dc['dcPlanEntity']['planName'] = dcplan_name
+        self.update_properties(temp_dc)
 
     @property
     def create_file_level_index_option(self):
@@ -1392,7 +1419,7 @@ class FileSystemSubclient(Subclient):
 
                 3. `USE CELL LEVEL POLICY`
         """
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise SDKException('Subclient', '101')
 
         return self._set_subclient_properties(
@@ -1690,7 +1717,7 @@ class FileSystemSubclient(Subclient):
 
         """
         if on_demand_input is not None:
-            if not isinstance(on_demand_input, basestring):
+            if not isinstance(on_demand_input, str):
                 raise SDKException('Subclient', '101')
 
             if not self.is_on_demand_subclient:
@@ -1954,10 +1981,10 @@ class FileSystemSubclient(Subclient):
         """
         self._backupset_object._instance_object._restore_association = self._subClientEntity
 
-        if not isinstance(client, (basestring, Client)):
+        if not isinstance(client, (str, Client)):
             raise SDKException('Subclient', '101')
 
-        if isinstance(client, basestring):
+        if isinstance(client, str):
             client = Client(self._commcell_object, client)
 
         if fs_options is not None and fs_options.get('no_of_streams', 1) > 1 and not fs_options.get('destination_appTypeId', False):

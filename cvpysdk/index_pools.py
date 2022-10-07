@@ -88,7 +88,6 @@ IndexPool Attributes
 """
 
 from copy import deepcopy
-from past.builtins import basestring
 from .exception import SDKException
 from .datacube.constants import IndexServerConstants
 
@@ -225,7 +224,7 @@ class IndexPools(object):
             for index_pool_name in self.all_index_pools:
                 if self.all_index_pools[index_pool_name] == pool_name:
                     return IndexPool(self._commcell_object, index_pool_name)
-        elif isinstance(pool_name, basestring):
+        elif isinstance(pool_name, str):
             if pool_name.lower() in self.all_index_pools:
                 return IndexPool(self._commcell_object, pool_name.lower())
         else:
@@ -263,8 +262,8 @@ class IndexPools(object):
             object  -   Returns a object of class IndexPool
 
         """
-        if not (isinstance(pool_name, basestring) and isinstance(node_names, list)
-                and isinstance(hac_name, basestring)):
+        if not (isinstance(pool_name, str) and isinstance(node_names, list)
+                and isinstance(hac_name, str)):
             raise SDKException('IndexPools', '101')
         req_json = deepcopy(IndexServerConstants.REQUEST_JSON)
         del req_json['solrCloudInfo']
@@ -350,7 +349,7 @@ class IndexPools(object):
 
                   Response was empty.
         """
-        if not isinstance(pool_name, basestring):
+        if not isinstance(pool_name, str):
             raise SDKException('IndexPools', '101')
         client = self.get(pool_name)
         cloud_id = client.cloud_id

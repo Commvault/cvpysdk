@@ -57,8 +57,6 @@ GlobalFilter:
 
 """
 
-from past.builtins import basestring
-
 from .exception import SDKException
 
 
@@ -105,7 +103,7 @@ class GlobalFilters(object):
 
                     if specified global filter doesn't exist
         """
-        if not isinstance(filter_name, basestring):
+        if not isinstance(filter_name, str):
             raise SDKException('GlobalFilter', '101')
 
         if filter_name.upper() not in self._global_filter_dict:

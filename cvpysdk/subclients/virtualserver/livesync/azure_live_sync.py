@@ -28,8 +28,6 @@ AzureLiveSync:
 
 """
 
-from past.builtins import basestring
-
 from .vsa_live_sync import VsaLiveSync
 from ....exception import SDKException
 
@@ -160,10 +158,10 @@ class AzureLiveSync(VsaLiveSync):
         if restore_option is None:
             restore_option = {}
 
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException('Subclient', '101')
 
-        if not restored_vm_name and isinstance(vm_to_restore, basestring):
+        if not restored_vm_name and isinstance(vm_to_restore, str):
             restored_vm_name = "LiveSync_"
         restore_option['restore_new_name'] = restored_vm_name
 

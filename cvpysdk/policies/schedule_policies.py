@@ -99,14 +99,9 @@ SchedulePolicy:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from past.builtins import basestring
-from future.standard_library import install_aliases
-
 from ..exception import SDKException
 from .schedule_options import ScheduleOptions
 from ..schedules import SchedulePattern
-
-install_aliases()
 
 class OperationType:
     """Operation Type for schedule policy associations and appGroups"""
@@ -233,7 +228,7 @@ class SchedulePolicies:
                 SDKException:
                     if type of the schedule policy name argument is not string
         """
-        if not isinstance(policy_name, basestring):
+        if not isinstance(policy_name, str):
             raise SDKException('Storage', '101')
 
         return self._policies and policy_name.lower() in self._policies
@@ -440,7 +435,7 @@ class SchedulePolicies:
                     if no schedule policy exists with the given name
         """
 
-        if schedule_policy_name and not isinstance(schedule_policy_name, basestring):
+        if schedule_policy_name and not isinstance(schedule_policy_name, str):
             raise SDKException('Schedules', '102')
 
         if schedule_policy_id and not isinstance(schedule_policy_id, int):
@@ -472,7 +467,7 @@ class SchedulePolicies:
                             if no schedule policy exists with the given name
         """
 
-        if schedule_policy_name and not isinstance(schedule_policy_name, basestring):
+        if schedule_policy_name and not isinstance(schedule_policy_name, str):
             raise SDKException('Schedules', '102')
 
         schedule_policy_name = schedule_policy_name.lower()
@@ -843,7 +838,7 @@ class SchedulePolicy:
                 '102',
                 'Either Schedule Name or Schedule Id is needed')
 
-        if schedule_name and not isinstance(schedule_name, basestring):
+        if schedule_name and not isinstance(schedule_name, str):
             raise SDKException('Schedules', '102')
 
         if schedule_id and not isinstance(schedule_id, int):

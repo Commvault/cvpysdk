@@ -45,7 +45,7 @@ from ..vsinstance import VirtualServerInstance
 
 
 class FusionComputeInstance(VirtualServerInstance):
-    """Class for representing an Hyper-V of the Virtual Server agent."""
+    """Class for representing a Fusion Compute of the Virtual Server agent."""
 
     def __init__(self, agent, instance_name, instance_id=None):
         """Initialize the Instance object for the given Virtual Server instance.
@@ -57,9 +57,12 @@ class FusionComputeInstance(VirtualServerInstance):
                                                                                 instance id
 
         """
-        super(FusionComputeInstance, self).__init__(agent, instance_name, instance_id)
+
         self._vendor_id = 14
-        self._server_name = None
+        self._server_name = []
+        self._vmwarvendor = None
+        self._server_host_name = []
+        super(FusionComputeInstance, self).__init__(agent, instance_name, instance_id)
 
     def _get_instance_properties(self):
         """
@@ -72,7 +75,12 @@ class FusionComputeInstance(VirtualServerInstance):
         """
 
         super(FusionComputeInstance, self)._get_instance_properties()
-        # waiting for praveen form
+        if "vmwareVendor" in self._virtualserverinstance:
+            self._vmwarvendor = self._virtualserverinstance['vmwareVendor']['virtualCenter']
+
+            self._server_name.append(self._instance['clientName'])
+
+            self._server_host_name.append(self._vmwarvendor["domainName"])
 
     def _get_instance_properties_json(self):
         """get the all instance related properties of this subclient.
@@ -89,7 +97,7 @@ class FusionComputeInstance(VirtualServerInstance):
                 "virtualServerInstance": {
                     "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
                     "associatedClients": self._virtualserverinstance['associatedClients'],
-                    "vmwareVendor": {}
+                    "vmwareVendor": self._virtualserverinstance['vmwareVendor']
                 }
             }
         }
@@ -98,4 +106,14 @@ class FusionComputeInstance(VirtualServerInstance):
     @property
     def server_host_name(self):
         """return the Fusion compute VRM  associated with the PseudoClient"""
+        return self._server_host_name
+
+    @property
+    def server_name(self):
+        """getter for the domain name in the vmware vendor json"""
         return self._server_name
+
+    @property
+    def _user_name(self):
+        """getter for the username from the vmware vendor json"""
+        return self._vmwarvendor.get("userName", "")

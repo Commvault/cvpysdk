@@ -59,6 +59,8 @@ IndexServers
 
     refresh()                           --  refresh the index servers associated with commcell
 
+    prune_orphan_datasources()          --  Deletes all the orphan datasources
+
 IndexServers Attributes
 -----------------------
 
@@ -100,6 +102,8 @@ IndexServer
     get_index_node()                    --  returns an Index server node object for given node name
 
     get_os_info()                       --  returns the OS type for the Index server
+
+    __form_field_query()                --  returns the query with the key and value passed
 
 IndexServer Attributes
 ----------------------
@@ -192,7 +196,6 @@ _Roles Attributes
 
 from copy import deepcopy
 import enum
-from past.builtins import basestring
 from .exception import SDKException
 from .datacube.constants import IndexServerConstants
 
@@ -372,7 +375,7 @@ class IndexServers(object):
                     SDKExecption:
                         Data type of the input(s) is not valid
         """
-        if isinstance(cloud_name, basestring):
+        if isinstance(cloud_name, str):
             for index_server in self._all_index_servers:
                 if self._all_index_servers[index_server]["engineName"].lower() == cloud_name.lower():
                     return True
@@ -403,7 +406,7 @@ class IndexServers(object):
                     self._all_index_servers[cloud_data]['engineName'],
                     cloud_data)
             SDKException('IndexServers', '102')
-        elif isinstance(cloud_data, basestring):
+        elif isinstance(cloud_data, str):
             name = cloud_data.lower()
             for itter in self._all_index_servers:
                 if self._all_index_servers[itter]['engineName'].lower(
@@ -456,9 +459,9 @@ class IndexServers(object):
                         Response was empty.
         """
         if not (isinstance(index_server_roles, list) and isinstance(index_server_node_names, list)
-                and isinstance(index_server_name, basestring)):
+                and isinstance(index_server_name, str)):
             raise SDKException('IndexServers', '101')
-        if isinstance(index_directory, basestring):
+        if isinstance(index_directory, str):
             index_directory = index_directory.split(",")
         node_count = len(index_server_node_names)
         index_directories_count = len(index_directory)
@@ -567,7 +570,7 @@ class IndexServers(object):
 
                         Response was empty.
         """
-        if not isinstance(cloud_name, basestring):
+        if not isinstance(cloud_name, str):
             raise SDKException('IndexServers', '101')
         cloud_id = self.get(cloud_name).cloud_id
         req_json = deepcopy(IndexServerConstants.REQUEST_JSON)
@@ -589,6 +592,29 @@ class IndexServers(object):
                         'errorMessage', ''))
             raise SDKException('Response', '102')
         self._response_not_success(response)
+
+    def prune_orphan_datasources(self):
+        """Deletes all the orphan datasources
+            Raises:
+                SDKException:
+                    if failed to prune the orphan datasources
+
+                    If response is empty
+
+                    if response is not success
+        """
+        prune_datasource = self._services['PRUNE_DATASOURCE']
+        request_json = IndexServerConstants.PRUNE_REQUEST_JSON
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', prune_datasource, request_json)
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', 0)
+                if error_code != 0:
+                    raise SDKException('IndexServers', '104', 'Failed to prune orphan datasources')
+                return
+            raise SDKException('Response', '102')
+        raise SDKException('Response', '101', self._update_response_(response.text))
 
 
 class IndexServerOSType(enum.Enum):
@@ -765,7 +791,7 @@ class IndexServer(object):
 
                             if response is not success
         """
-        if not isinstance(core_name, basestring):
+        if not isinstance(core_name, str):
             raise SDKException('IndexServers', '101')
         if self.is_cloud:
             raise SDKException('IndexServers', '104', "Not implemented for solr cloud")
@@ -894,11 +920,12 @@ class IndexServer(object):
                 op_params = {'wt': "json"}
             else:
                 op_params['wt'] = "json"
-            for key, value in op_params.items():
-                if value is None:
-                    ex_query += f'&{key}'
+            for key, values in op_params.items():
+                if isinstance(values, list):
+                    for value in values:
+                        ex_query += self.__form_field_query(key, value)
                 else:
-                    ex_query += f'&{key}={str(value)}'
+                    ex_query += self.__form_field_query(key, values)
             final_url = f'{search_query}{field_query}{ex_query}'
             return final_url
         except Exception as excp:
@@ -1003,6 +1030,22 @@ class IndexServer(object):
                 if IndexServerOSType.WINDOWS.value.lower() in node.lower():
                     return IndexServerOSType.MIXED.value
             return IndexServerOSType.UNIX.value
+
+    def __form_field_query(self, key, value):
+        """
+        Returns the query with the key and value passed
+        Args:
+                key(str)    -- key for forming the query
+                value(str)  -- value for forming the query
+            Returns:
+                query to be executed against solr
+        """
+        query = None
+        if value is None:
+            query = f'&{key}'
+        else:
+            query = f'&{key}={str(value)}'
+        return query
 
     @property
     def os_info(self):

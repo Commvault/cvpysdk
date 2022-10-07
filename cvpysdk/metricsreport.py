@@ -247,7 +247,7 @@ class _Metrics(object):
     def enable_all_services(self):
         """enables All Service"""
         for index, service in enumerate(self._service_list):
-            if service['service']['name'] != 'Post Upgrade Check':
+            if service['service']['name'] not in ['Post Upgrade Check', 'Upgrade Readiness']:
                 self._service_list[index]['enabled'] = self._enable_service
                 service_name = service['service']['name']
                 self.services[service_name] = self._enable_service
@@ -255,7 +255,7 @@ class _Metrics(object):
     def disable_all_services(self):
         """disables All Service"""
         for index, service in enumerate(self._service_list):
-            if service['service']['name'] != 'Post Upgrade Check':
+            if service['service']['name'] not in ['Post Upgrade Check', 'Upgrade Readiness']:
                 self._service_list[index]['enabled'] = self._disable_service
                 service_name = service['service']['name']
                 self.services[service_name] = self._disable_service
@@ -653,3 +653,38 @@ class CloudMetrics(_Metrics):
         )
         if not flag:
             raise SDKException('Response', '101', response.text)
+
+
+class LocalMetrics:
+    """class for operation in localmetrics"""
+
+    def __init__(self, commcell_object, islocalmetrics= True):
+        self._commcell_object = commcell_object
+        self._islocalmetrics = islocalmetrics
+        self._LOCAL_METRICS = self._commcell_object._services['LOCAL_METRICS'] % self._islocalmetrics
+        self._get_metrics_config()
+
+    def _get_metrics_config(self):
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._LOCAL_METRICS
+        )
+        if flag:
+            self._metrics_config = response.json()
+            config_value = self._metrics_config['config']
+            return config_value
+        else:
+            raise SDKException('Response', '101', response.text)
+
+    def refresh(self):
+        """updates metrics object with the latest configuration"""
+        self._get_metrics_config()
+
+    @property
+    def last_upload_time(self):
+        """ get last upload time"""
+        return self._metrics_config['config']['lastCollectionTime']
+
+    @property
+    def nextup_load_time(self):
+        """get the next upload time"""
+        return self._metrics_config['config']['nextUploadTime']

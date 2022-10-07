@@ -99,7 +99,6 @@ DisasterRecoveryManagement Attributes:
 
 """
 from base64 import b64encode
-from past.builtins import basestring
 from cvpysdk.policies.storage_policies import StoragePolicy
 from cvpysdk.storage import DiskLibrary
 from .job import Job
@@ -275,8 +274,8 @@ class DisasterRecovery(object):
 
                     if response is not success
         """
-        if not ((isinstance(client, (basestring, Client))
-                 and isinstance(destination_path, basestring)
+        if not ((isinstance(client, (str, Client))
+                 and isinstance(destination_path, str)
                  and isinstance(overwrite, bool) and isinstance(restore_data_and_acl, bool))):
             raise SDKException('Response', '101')
 
@@ -285,7 +284,7 @@ class DisasterRecovery(object):
 
         if isinstance(client, Client):
             client = client
-        elif isinstance(client, basestring):
+        elif isinstance(client, str):
             client = Client(self.commcell, client)
         else:
             raise SDKException('Response', '105')
@@ -541,7 +540,7 @@ class DisasterRecovery(object):
     @backup_type.setter
     def backup_type(self, value):
         """Treats the backup_type as a read-only attribute."""
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             self._backup_type = value
         else:
             raise SDKException('DisasterRecovery', '101')
@@ -739,7 +738,7 @@ class DisasterRecoveryManagement(object):
             Returns:
                 None
         """
-        if isinstance(path, basestring):
+        if isinstance(path, str):
             self._export_settings['backupMetadataFolder'] = path
             self._set_dr_properties()
         else:
@@ -759,7 +758,7 @@ class DisasterRecoveryManagement(object):
             Returns:
                 None
         """
-        if isinstance(path, basestring) and isinstance(username, basestring) and isinstance(password, basestring):
+        if isinstance(path, str) and isinstance(username, str) and isinstance(password, str):
             self._export_settings['backupMetadataFolder'] = path
             self._export_settings['networkUserAccount']['userName'] = username
             self._export_settings['networkUserAccount']['password'] = b64encode(password.encode()).decode()
@@ -784,7 +783,7 @@ class DisasterRecoveryManagement(object):
         if isinstance(flag, bool):
             self._export_settings['uploadBackupMetadataToCloud'] = flag
             if flag:
-                if isinstance(username, basestring) and isinstance(password, basestring):
+                if isinstance(username, str) and isinstance(password, str):
                     self._export_settings['cloudCredentials']['userName'] = username
                     self._export_settings['cloudCredentials']['password'] = b64encode(password.encode()).decode()
                 else:
@@ -808,7 +807,7 @@ class DisasterRecoveryManagement(object):
         if isinstance(flag, bool):
             self._export_settings['uploadBackupMetadataToCloudLib'] = flag
             if flag:
-                if isinstance(libraryname, basestring):
+                if isinstance(libraryname, str):
                     cloud_lib_obj = DiskLibrary(self._commcell, library_name=libraryname)
                 elif isinstance(libraryname, DiskLibrary):
                     cloud_lib_obj = libraryname
@@ -837,7 +836,7 @@ class DisasterRecoveryManagement(object):
         if isinstance(flag, bool):
             self._prepost_settings['useImpersonateUser'] = flag
             if flag:
-                if isinstance(username, basestring) and isinstance(password, basestring):
+                if isinstance(username, str) and isinstance(password, str):
                     self._prepost_settings['impersonateUser']['userName'] = username
                     self._prepost_settings['impersonateUser']['password'] = b64encode(password.encode()).decode()
                 else:
@@ -1020,7 +1019,7 @@ class DisasterRecoveryManagement(object):
             Returns:
                 None
         """
-        if isinstance(path, basestring):
+        if isinstance(path, str):
             self._prepost_settings['preScanProcess'] = path
             self._set_dr_properties()
         else:
@@ -1047,7 +1046,7 @@ class DisasterRecoveryManagement(object):
             Returns:
                 None
         """
-        if isinstance(path, basestring):
+        if isinstance(path, str):
             self._prepost_settings['postScanProcess'] = path
             self._set_dr_properties()
         else:
@@ -1074,7 +1073,7 @@ class DisasterRecoveryManagement(object):
             Returns:
                 None
         """
-        if isinstance(path, basestring):
+        if isinstance(path, str):
             self._prepost_settings['preBackupProcess'] = path
             self._set_dr_properties()
         else:
@@ -1101,7 +1100,7 @@ class DisasterRecoveryManagement(object):
             Returns:
                 None
         """
-        if isinstance(path, basestring):
+        if isinstance(path, str):
             self._prepost_settings['postBackupProcess'] = path
             self._set_dr_properties()
         else:

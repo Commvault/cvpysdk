@@ -289,9 +289,6 @@ import os
 import time
 from enum import Enum
 
-from past.builtins import basestring
-
-
 from ..exception import SDKException
 from .constants import ActivateEntityConstants, ClassifierConstants, TrainingStatus
 from .constants import TagConstants
@@ -364,8 +361,8 @@ class ActivateEntities(object):
 
                                 if input data type is not valid
                 """
-        if not isinstance(entity_name, basestring) or not isinstance(entity_regex, basestring) \
-                or not isinstance(entity_keywords, basestring):
+        if not isinstance(entity_name, str) or not isinstance(entity_regex, str) \
+                or not isinstance(entity_keywords, str):
             raise SDKException('ActivateEntity', '101')
         if entity_flag not in [1, 3, 5]:
             raise SDKException('ActivateEntity', '102', 'Unsupported entity flag value')
@@ -380,7 +377,7 @@ class ActivateEntities(object):
             request_json['entityType'] = 3
             if isinstance(parent_entity, int):
                 request_json['parentEntityId'] = parent_entity
-            elif isinstance(parent_entity, basestring):
+            elif isinstance(parent_entity, str):
                 request_json['parentEntityId'] = self._regex_entities[parent_entity]['entityId']
             else:
                 raise SDKException('ActivateEntity', '102', 'Unsupported parent entity id type provided')
@@ -420,7 +417,7 @@ class ActivateEntities(object):
 
 
                 """
-        if not isinstance(entity_name, basestring):
+        if not isinstance(entity_name, str):
             raise SDKException('ActivateEntity', '101')
         if entity_name not in self._regex_entities:
             raise SDKException('ActivateEntity', '102', 'Unable to find given regex entity name in the commcell')
@@ -552,7 +549,7 @@ class ActivateEntities(object):
         for dept in self._entities_containers:
             items_list = dept['tagSetsAndItems']
             for country in items_list:
-                tags_list = country['tags']
+                tags_list = country.get('tags',{})
                 for tag in tags_list:
                     if entity_name.lower() == tag['entityDetail']['entityName'].lower() and \
                             container_name.lower() == country['container']['containerName'].lower():
@@ -614,7 +611,7 @@ class ActivateEntities(object):
 
 
         """
-        if not isinstance(entity_name, basestring):
+        if not isinstance(entity_name, str):
             raise SDKException('ActivateEntity', '101')
 
         if self.has_entity(entity_name):
@@ -682,7 +679,7 @@ class ActivateEntities(object):
                     if type of the regex entity name argument is not string
 
         """
-        if not isinstance(entity_name, basestring):
+        if not isinstance(entity_name, str):
             raise SDKException('ActivateEntity', '101')
 
         return self._regex_entities and entity_name.lower() in map(str.lower, self._regex_entities)
@@ -772,8 +769,8 @@ class ActivateEntity(object):
 
 
                 """
-        if not isinstance(entity_regex, basestring) \
-                or not isinstance(entity_keywords, basestring):
+        if not isinstance(entity_regex, str) \
+                or not isinstance(entity_keywords, str):
             raise SDKException('ActivateEntity', '101')
         if entity_flag not in [1, 3, 5]:
             raise SDKException('ActivateEntity', '102', 'Unsupported entity flag value')
@@ -788,7 +785,7 @@ class ActivateEntity(object):
             request_json['entityType'] = 3
             if isinstance(parent_entity, int):
                 request_json['parentEntityId'] = parent_entity
-            elif isinstance(parent_entity, basestring):
+            elif isinstance(parent_entity, str):
                 request_json['parentEntityId'] = ActivateEntities.get(
                     self._commcell_object, entity_name=parent_entity).entity_id
             else:
@@ -1007,7 +1004,7 @@ class Tags(object):
 
 
         """
-        if not isinstance(tag_set_name, basestring):
+        if not isinstance(tag_set_name, str):
             raise SDKException('Tags', '101')
 
         if self.has_tag_set(tag_set_name):
@@ -1029,7 +1026,7 @@ class Tags(object):
                     if type of the TagSet name argument is not string
 
         """
-        if not isinstance(tag_set_name, basestring):
+        if not isinstance(tag_set_name, str):
             raise SDKException('Tags', '101')
         return self._tag_set_entities and tag_set_name.lower() in map(str.lower, self._tag_set_entities)
 
@@ -1101,7 +1098,7 @@ class Tags(object):
 
                                 if unable to find TagSet entity in commcell
         """
-        if not isinstance(tag_set_name, basestring):
+        if not isinstance(tag_set_name, str):
             raise SDKException('Tags', '101')
         if not self.has_tag_set(tag_set_name=tag_set_name):
             raise SDKException('Tags', '102', "Tagset not found")
@@ -1143,7 +1140,7 @@ class Tags(object):
 
                                 if input data type is not valid
                 """
-        if not isinstance(tag_set_name, basestring) or not isinstance(comment, basestring):
+        if not isinstance(tag_set_name, str) or not isinstance(comment, str):
             raise SDKException('Tags', '101')
         request_json = copy.deepcopy(TagConstants.TAG_SET_ADD_REQUEST_JSON)
         request_json['container']['containerName'] = tag_set_name
@@ -1234,7 +1231,7 @@ class TagSet(object):
 
 
         """
-        if not isinstance(tag_name, basestring):
+        if not isinstance(tag_name, str):
             raise SDKException('Tags', '101')
         if tag_name.lower() in self.tags:
             return True
@@ -1259,7 +1256,7 @@ class TagSet(object):
 
 
         """
-        if not isinstance(tag_name, basestring):
+        if not isinstance(tag_name, str):
             raise SDKException('Tags', '101')
         if self.has_tag(tag_name):
             return Tag(self._commcell_object, tag_set_name=self._tag_set_name, tag_name=tag_name)
@@ -1309,7 +1306,7 @@ class TagSet(object):
 
                                        if input data type is not valid
                        """
-        if not isinstance(tag_name, basestring):
+        if not isinstance(tag_name, str):
             raise SDKException('Tags', '101')
         request_json = copy.deepcopy(TagConstants.TAG_ADD_REQUEST_JSON)
         request_json['container']['containerId'] = self._tag_set_id
@@ -1360,7 +1357,7 @@ class TagSet(object):
 
                             if response is empty or not success
         """
-        if not isinstance(user_or_group_name, basestring):
+        if not isinstance(user_or_group_name, str):
             raise SDKException('Tags', '101')
         request_json = copy.deepcopy(TagConstants.TAG_SET_SHARE_REQUEST_JSON)
         external_user = False
@@ -1435,7 +1432,7 @@ class TagSet(object):
                                 if input is not a valid data type of string
 
         """
-        if not isinstance(new_name, basestring) or not isinstance(comment, basestring):
+        if not isinstance(new_name, str) or not isinstance(comment, str):
             raise SDKException('Tags', '101')
         request_json = copy.deepcopy(TagConstants.TAG_SET_MODIFY_REQUEST_JSON)
         request_json['container']['containerName'] = new_name
@@ -1656,7 +1653,7 @@ class Tag(object):
                                 if input data type is not valid
 
         """
-        if not isinstance(new_name, basestring):
+        if not isinstance(new_name, str):
             raise SDKException('Tags', '101')
         tags = self._commcell_object.activate.entity_manager(
             entity_type=EntityManagerTypes.TAGS)
@@ -1827,7 +1824,7 @@ class Classifiers(object):
 
 
                 """
-        if not isinstance(classifier_name, basestring):
+        if not isinstance(classifier_name, str):
             raise SDKException('Classifier', '101')
         if classifier_name.lower() not in self._classifiers:
             raise SDKException('Classifier', '102', 'Unable to find given classifier name in the commcell')
@@ -1874,7 +1871,7 @@ class Classifiers(object):
 
         """
 
-        if not isinstance(classifier_name, basestring) or not isinstance(content_analyzer, basestring):
+        if not isinstance(classifier_name, str) or not isinstance(content_analyzer, str):
             raise SDKException('Classifier', '101')
         if not self._commcell_object.content_analyzers.has_cloud(content_analyzer):
             raise SDKException('Classifier', '102', "Given CA cloud doesn't exists on this commcell")
@@ -1930,7 +1927,7 @@ class Classifiers(object):
 
 
         """
-        if not isinstance(classifier_name, basestring):
+        if not isinstance(classifier_name, str):
             raise SDKException('Classifier', '101')
 
         if self.has_classifier(classifier_name.lower()):
@@ -2016,7 +2013,7 @@ class Classifiers(object):
                     if type of the classifier name argument is not string
 
         """
-        if not isinstance(classifier_name, basestring):
+        if not isinstance(classifier_name, str):
             raise SDKException('Classifier', '101')
 
         return self._classifiers and classifier_name.lower() in map(str.lower, self._classifiers)

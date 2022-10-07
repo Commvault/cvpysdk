@@ -32,8 +32,6 @@ ExchangeSubclient:
 
 from __future__ import unicode_literals
 
-from past.builtins import basestring
-
 from ..client import Client
 from ..subclient import Subclient
 from ..exception import SDKException
@@ -106,7 +104,7 @@ class ExchangeSubclient(Subclient):
         member_servers = []
 
         for client in clients_list:
-            if isinstance(client, basestring):
+            if isinstance(client, str):
                 client = client.strip().lower()
 
                 if self._commcell_object.clients.has_client(client):

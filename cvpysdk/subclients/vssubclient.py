@@ -152,12 +152,11 @@ from importlib import import_module
 from inspect import getmembers, isclass, isabstract
 
 import xmltodict
-from past.builtins import basestring
 
 from cvpysdk.plan import Plans
 from ..exception import SDKException
 from ..subclient import Subclient
-from ..constants import VSAObjects
+from ..constants import VSAObjects, HypervisorType
 
 
 class VirtualServerSubclient(Subclient):
@@ -279,7 +278,7 @@ class VirtualServerSubclient(Subclient):
         Returns:
                 string          (string) :      Proxy at instane
         """
-        return self._proxyClient['clientName']
+        return self._proxyClient.get('clientName', None)
 
     @property
     def vm_filter(self):
@@ -727,7 +726,7 @@ class VirtualServerSubclient(Subclient):
                                                 and corresponding
         """
 
-        if not new_name and not self._instance_object.instance_name == 'google cloud platform':
+        if not new_name and not self._instance_object.instance_name == HypervisorType.GOOGLE_CLOUD.value.lower():
             new_name = name
         temp_disk_dict = {}
         temp_disk_dict[self.disk_pattern.name.value] = name
@@ -807,14 +806,13 @@ class VirtualServerSubclient(Subclient):
         nics_dict_from_browse = self.get_nics_from_browse(copy_precedence=value.get('copy_precedence', 0))
         nics_list = []
         vm_nics_list = nics_dict_from_browse[vm_to_restore]
-
         for network_card_dict in vm_nics_list:
-            if self._instance_object.instance_name == 'google cloud platform':
+            if self._instance_object.instance_name == HypervisorType.GOOGLE_CLOUD.value.lower():
                 current_project = network_card_dict.get('subnetId').split('/')[6]
-                network_card_dict['subnetId'] = network_card_dict.get('subnetId').replace(
-                    current_project, value.get('project_id'))
-                network_card_dict['label'] = network_card_dict.get('sourceNetwork').replace(
-                    current_project, value.get('project_id'))
+                if value.get('project_id') is not None:
+                    network_card_dict['subnetId'] = value.get('subnetwork_nic')
+                    network_card_dict['sourceNetwork'] = value.get('networks_nic')
+
             _destnetwork = value.get("destination_network",
                                      value.get('network',
                                                network_card_dict['name']))
@@ -823,8 +821,10 @@ class VirtualServerSubclient(Subclient):
                 "subnetId": network_card_dict.get('subnetId', ""),
                 "sourceNetwork": network_card_dict['name'],
                 "sourceNetworkId": network_card_dict.get('sourceNetwork', ""),
-                "name": network_card_dict[
-                    'label'] if self._instance_object.instance_name == 'google cloud platform' else '',
+                "name": (network_card_dict.get('sourceNetwork',
+                                               "") + _destnetwork) if self._instance_object.instance_name ==
+                                                                      HypervisorType.GOOGLE_CLOUD.value.lower() and _destnetwork else
+                network_card_dict['label'],
                 "networkName": _destnetwork if _destnetwork else '',
                 "destinationNetwork": _destnetwork if _destnetwork else network_card_dict['name']
             }
@@ -834,8 +834,7 @@ class VirtualServerSubclient(Subclient):
                 if "networkDisplayName" in value and 'networkrsg' in value and 'destsubid' in value:
                     nics["networkDisplayName"] = value["networkDisplayName"]
                     nics["networkName"] = value["networkDisplayName"].split('\\')[0]
-                    temp = nics['subnetId'].split('/')
-                    modify_nics = nics['subnetId'].split('/')
+                    modify_nics = value.get('subnetId', nics['subnetId']).split('/')
                     modify_nics[8] = nics["networkName"]
                     modify_nics[4] = value['networkrsg']
                     modify_nics[2] = value['destsubid']
@@ -964,7 +963,8 @@ class VirtualServerSubclient(Subclient):
             self._advanced_option_restore_json["vmSize"] = value.get(val1, val2)
         if "ami" in value and value["ami"] is not None:
             self._advanced_option_restore_json["templateId"] = value["ami"]["templateId"]
-            self._advanced_option_restore_json["templateName"] = value["ami"]["templateName"]
+            if value.get('ami', {}).get('templateName'):
+                self._advanced_option_restore_json["templateName"] = value["ami"]["templateName"]
         if "iamRole" in value and value["iamRole"] is not None:
             self._advanced_option_restore_json["roleInfo"] = {
                 "name": value["iamRole"]
@@ -1250,7 +1250,7 @@ class VirtualServerSubclient(Subclient):
 
 
         """
-        if not isinstance(input_xml, basestring):
+        if not isinstance(input_xml, str):
             raise SDKException("Subclient", "101")
 
         root = ET.fromstring(input_xml)
@@ -1645,10 +1645,11 @@ class VirtualServerSubclient(Subclient):
 
         _vm_names, _vm_ids = self._get_vm_ids_and_names_dict_from_browse()
         _file_restore_option = {}
+        _verify_path = options.get('verify_path', True)
 
         # check if inputs are correct
-        if not(isinstance(destination_path, basestring) and
-               (isinstance(vm_name, basestring))):
+        if not(isinstance(destination_path, str) and
+               (isinstance(vm_name, str))):
             raise SDKException('Subclient', '105')
 
         if vm_name not in _vm_names:
@@ -1668,7 +1669,7 @@ class VirtualServerSubclient(Subclient):
         if isinstance(folder_to_restore, list):
             _folder_to_restore_list = folder_to_restore
 
-        elif isinstance(folder_to_restore, basestring):
+        elif isinstance(folder_to_restore, str):
             _folder_to_restore_list = []
             _folder_to_restore_list.append(folder_to_restore)
         else:
@@ -1676,17 +1677,35 @@ class VirtualServerSubclient(Subclient):
 
         _file_restore_option["paths"] = []
         for _each_folder in _folder_to_restore_list:
-            _file_restore_option["paths"].append(
-                self._check_folder_in_browse(_vm_ids[vm_name],
-                                             "%s" % _each_folder,
-                                             from_date,
-                                             to_date,
-                                             copy_precedence,
-                                             media_agent=browse_ma))
+            # check_folder_in_browse modifies path (removes colon) and verifies in browse results.
+            # The modified path does not work for windows VM when file indexing is enabled
+            # Set `verify_path` to False to skip this verification and use the restore path as is
+
+            if _verify_path:
+                _restore_item_path = self._check_folder_in_browse(
+                    _vm_ids[vm_name],
+                    "%s" % _each_folder,
+                    from_date,
+                    to_date,
+                    copy_precedence,
+                    media_agent=browse_ma
+                )
+            else:
+                # Converting native path to VM path
+                # C:\folder1 => \<vm_guid>\C:\folder1
+                # /folder1/folder2 => \<vm_guid>\folder1\folder2
+
+                _item_path = _each_folder.replace('/', '\\')
+                _item_path = _item_path[1:] if _item_path[0] == '\\' else _item_path
+                _restore_item_path = '\\'.join(['', _vm_ids[vm_name], _item_path])
+
+            _file_restore_option["paths"].append(_restore_item_path)
 
         # set the browse options
         _file_restore_option["disk_browse"] = False
         _file_restore_option["file_browse"] = True
+        _file_restore_option["from_time"] = from_date
+        _file_restore_option["to_time"] = to_date
 
         # set the common file level restore options
         _file_restore_option["striplevel_type"] = "PRESERVE_LEVEL"
@@ -1758,7 +1777,7 @@ class VirtualServerSubclient(Subclient):
            specified.
 
             Args:
-                vm_path             (basestring)   --  folder path to get the contents
+                vm_path             (str)   --  folder path to get the contents
                                                 default: '\\';
                                                 returns the root of the Backup
                                                 content
@@ -1836,13 +1855,13 @@ class VirtualServerSubclient(Subclient):
         return volume restore type and destination disk Type
 
         Args:
-            src_disk_extn   (basestring)   --  source disk extension of the disk
-            dest_disk_extn  (basestring)   --  Extension to which disk is converted
+            src_disk_extn   (str)   --  source disk extension of the disk
+            dest_disk_extn  (str)   --  Extension to which disk is converted
 
         return
-            _vol_restore_type   (basestring)   -- value of Volume restore type
+            _vol_restore_type   (str)   -- value of Volume restore type
                                            parameter of the XML
-            _dest_disk_type     (basestring)   -- value of destination Disk Type
+            _dest_disk_type     (str)   -- value of destination Disk Type
                                            parameter of the XML
         """
 
@@ -2105,7 +2124,7 @@ class VirtualServerSubclient(Subclient):
             new_name_prefix = restore_option.get("disk_name_prefix")
             new_name = data["name"] if new_name_prefix is None \
                 else new_name_prefix + "_" + data["name"]
-            if self._instance_object.instance_name == 'google cloud platform':
+            if self._instance_object.instance_name == HypervisorType.GOOGLE_CLOUD.value.lower():
                 new_name = ""
             if restore_option['destination_instance'].lower() == 'vmware':
                 _disk_dict = self._disk_dict_pattern(data['snap_display_name'], ds, new_name)
@@ -2119,7 +2138,7 @@ class VirtualServerSubclient(Subclient):
         restore_option["disks"] = vm_disks
 
         # prepare nics info json
-        if "nics" not in restore_option or self._instance_object.instance_name == 'google cloud platform':
+        if "nics" not in restore_option or self._instance_object.instance_name == HypervisorType.GOOGLE_CLOUD.value.lower():
             nics_list = self._json_nics_advancedRestoreOptions(vm_to_restore, restore_option)
             restore_option["nics"] = nics_list
             if restore_option.get('source_ip') and restore_option.get('destination_ip'):
@@ -2140,7 +2159,7 @@ class VirtualServerSubclient(Subclient):
             disks=vm_disks,
             esx_host=restore_option.get('esx_host') or vs_metadata['esxHost'],
             instanceSize=restore_option.get('instanceSize', instanceSize),
-            new_name=restore_option.get('new_name', "Delete" + vm_to_restore)
+            new_name=restore_option.get('new_name', "del" + vm_to_restore)
         )
 
         temp_dict = self._json_restore_advancedRestoreOptions(restore_option)
@@ -2194,7 +2213,7 @@ class VirtualServerSubclient(Subclient):
                 ds = restore_option["datastore"]
             new_name_prefix = restore_option.get("disk_name_prefix")
             if self._instance_object.instance_name != 'openstack':
-                new_name = data["name"].replace("/", "_").replace(" ", "_")
+                new_name = data["snap_display_name"].replace("/", "_").replace(" ", "_")
                 new_name = "del_" + new_name if new_name_prefix is None \
                     else new_name_prefix + "_" + new_name
             else:
@@ -2416,8 +2435,38 @@ class VirtualServerSubclient(Subclient):
             "virtualServerRstOption"] = self._virtualserver_option_restore_json
         request_json["taskInfo"]["subTasks"][0]["options"][
             "restoreOptions"]["volumeRstOption"] = self._json_restore_volumeRstOption(_disk_restore_option)
-
+        if _disk_restore_option.get('new_instance'):
+            request_json = self._update_attach_disk_restore_new_instance(request_json, _disk_restore_option)
         return request_json
+
+    @staticmethod
+    def _update_attach_disk_restore_new_instance(json_to_be_edited, _disk_restore_option):
+        """
+        Updates teh Json for attach disk restore as a new instance
+
+        Args:
+            json_to_be_edited               (dict): Request json to be edited
+
+            _disk_restore_option:           (dict): Attach dsik restore options
+
+        Returns:
+            json_to_be_edited               (dict): Dictionary after its edited
+
+        """
+        json_to_be_edited['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'virtualServerRstOption']['diskLevelVMRestoreOption']['powerOnVmAfterRestore'] = True
+        adv_options = json_to_be_edited['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'virtualServerRstOption']['diskLevelVMRestoreOption']['advancedRestoreOptions'][0]
+        del adv_options['newGuid']
+        del adv_options['nics'][0]['destinationNetwork']
+        _nic2 = adv_options['nics'][0].copy()
+        adv_options['nics'].append(_nic2)
+        adv_options['nics'][1]['networkName'] = 'New Network Interface'
+        _region = adv_options['esxHost']
+        for disks in adv_options['disks']:
+            disks['availabilityZone'] = _region
+        adv_options['guestOperatingSystemId'] = _disk_restore_option.get('os_id', 0)
+        return json_to_be_edited
 
     def _prepare_fullvm_restore_json(self, restore_option=None):
         """

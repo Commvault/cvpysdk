@@ -97,8 +97,6 @@ ContentIndexingPolicy Attributes:
 
 from __future__ import unicode_literals
 
-from past.builtins import basestring
-
 from ..exception import SDKException
 from ..job import Job
 
@@ -196,7 +194,7 @@ class ConfigurationPolicies(object):
                     if type of the configuration policy name argument is not string
 
         """
-        if not isinstance(policy_name, basestring):
+        if not isinstance(policy_name, str):
             raise SDKException('ConfigurationPolicies', '101')
 
         return (self._policies and policy_name.lower() in self._policies) or \
@@ -239,7 +237,7 @@ class ConfigurationPolicies(object):
 
     def _get_policy_id(self, policy_name):
 
-        if not isinstance(policy_name, basestring):
+        if not isinstance(policy_name, str):
             raise SDKException('ConfigurationPolicies', '101')
         if policy_name.lower() in self._policies:
             return self._policies[policy_name.lower()][0]
@@ -262,7 +260,7 @@ class ConfigurationPolicies(object):
 
                     if no Configuration policy exists with the given name
         """
-        if not isinstance(configuration_policy_name, basestring):
+        if not isinstance(configuration_policy_name, str):
             raise SDKException('ConfigurationPolicies', '101')
 
         if self.has_policy(configuration_policy_name):
@@ -407,7 +405,7 @@ class ConfigurationPolicies(object):
 
                     if response is not success
         """
-        if not isinstance(configuration_policy_name, basestring):
+        if not isinstance(configuration_policy_name, str):
             raise SDKException('ConfigurationPolicies', '101')
 
         if self.has_policy(configuration_policy_name):
@@ -1843,9 +1841,9 @@ class ContentIndexingPolicy():
         """
             sets values for creating the add policy json
         """
-        if not isinstance(self._index_server_name, basestring) or not isinstance(self._data_access_node, basestring) \
-            or not isinstance(self._exclude_paths, list) or not isinstance(self._includeDocTypes, basestring) \
-                or not isinstance(self._name, basestring) or not isinstance(self._min_doc_size, int) \
+        if not isinstance(self._index_server_name, str) or not isinstance(self._data_access_node, str) \
+            or not isinstance(self._exclude_paths, list) or not isinstance(self._includeDocTypes, str) \
+                or not isinstance(self._name, str) or not isinstance(self._min_doc_size, int) \
                 or not isinstance(self._max_doc_size, int):
             raise SDKException('ConfigurationPolicies', '101')
         policy_json = {

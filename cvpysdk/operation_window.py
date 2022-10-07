@@ -672,7 +672,10 @@ class OperationWindowDetails:
         else:
             operations_list = [OPERATION_MAPPING[operation.upper()] for operation in operations]
 
-        week_of_the_month_list = [WEEK_OF_THE_MONTH_MAPPING[week.lower()] for week in week_of_the_month]
+        week_of_the_month_list = []
+        if week_of_the_month:
+            week_of_the_month_list = [WEEK_OF_THE_MONTH_MAPPING[week.lower()] for week in week_of_the_month]
+
         day_of_week_list = [DAY_OF_WEEK_MAPPING.index(day.lower()) for day in day_of_week]
 
         payload = {

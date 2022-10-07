@@ -50,6 +50,7 @@ ArrayManagement:
 from __future__ import unicode_literals
 from .job import Job
 from .exception import SDKException
+import base64
 
 
 class ArrayManagement(object):
@@ -351,6 +352,9 @@ class ArrayManagement(object):
                     ]
                 }
                 selectedMAs.append(node_dict)
+
+        if password is not None:
+            password = base64.encodebytes(password.encode()).decode()
 
         request_json = {
             "clientId": 0,
