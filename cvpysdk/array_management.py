@@ -646,6 +646,7 @@ class ArrayManagement(object):
                                 break
 
         request_json['configs'] = request_json.pop('configList')
+        del request_json['info']['region']
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'PUT', self.storage_arrays, request_json

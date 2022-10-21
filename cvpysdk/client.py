@@ -5446,7 +5446,7 @@ class Client(object):
                 Change the Job Result Directory of a O365 Client
 
                 Arguments:
-                    new_directory   (str)   -- The new JR directory
+                    new_directory_path   (str)   -- The new JR directory
                         Example:
                             C:\ JR
                             or
