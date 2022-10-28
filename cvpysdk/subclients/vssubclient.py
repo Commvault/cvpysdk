@@ -2910,3 +2910,27 @@ class VirtualServerSubclient(Subclient):
                 '102',
                 self._update_response_(
                     response.text))
+
+    @property
+    def quiesce_file_system(self):
+        """
+            Gets the quiesce value set for the vsa subclient
+
+        Returns:
+            (Boolean)    True/False
+        """
+        quiesce_file_system = r'quiesceGuestFileSystemAndApplications'
+        return self._vsaSubclientProp.get(quiesce_file_system)
+
+    @quiesce_file_system.setter
+    def quiesce_file_system(self, value):
+        """
+        Sets the quiesce value for the vsa subclient
+
+        Args:
+            value   (Boolean)   True/False
+
+        """
+        update_properties = self.properties
+        update_properties['vsaSubclientProp']['quiesceGuestFileSystemAndApplications'] = value
+        self.update_properties(update_properties)

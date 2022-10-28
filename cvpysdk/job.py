@@ -2048,7 +2048,7 @@ class Job(object):
             if flag:
                 if response.json():
                     if response.json().get('totalRecordsWithoutPaging', 0) == 0:
-                        time.sleep(3)
+                        time.sleep(2**attempts)
                         continue
 
                     if 'jobs' in response.json():

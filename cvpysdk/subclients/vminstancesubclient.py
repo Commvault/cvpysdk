@@ -66,6 +66,16 @@ class VMInstanceSubclient(Subclient):
         self._parent_backupset = None
         self._parent_subclient = None
         self._vm_guid = None
+        self.filter_types = {
+            '1': 'Datastore',
+            '2': 'Virtual Disk Name/Pattern',
+            '3': 'Virtual Device Node',
+            '4': 'Container',
+            '5': 'Disk Label',
+            '6': 'Disk Type',
+            '9': 'Disk Tag Name/Value',
+            '10': 'Repository'
+        }
 
     @property
     def parent_client(self):
@@ -197,3 +207,67 @@ class VMInstanceSubclient(Subclient):
                 'POST', vm_backup_service
             )
         return self._process_backup_response(flag, response)
+
+    def _get_subclient_properties(self):
+        """Gets the subclient related properties of Virtual server subclient"""
+
+        self._vmDiskFilter = None
+        super(VMInstanceSubclient, self)._get_subclient_properties()
+
+        if 'vmDiskFilter' in self._subclient_properties:
+            self._vmDiskFilter = self._subclient_properties['vmDiskFilter']
+        if 'vmBackupInfo' in self._subclient_properties:
+            self._vmBackupInfo = self._subclient_properties['vmBackupInfo']
+        if 'vsaSubclientProp' in self._subclient_properties:
+            self._vsaSubclientProp = self._subclient_properties['vsaSubclientProp']
+
+    @property
+    def quiesce_file_system(self):
+        """
+            Gets the quiesce value set for the vsa subclient
+
+        Returns:
+            (Boolean)    True/False
+        """
+        quiesce_file_system = r'quiesceGuestFileSystemAndApplications'
+        return self._vsaSubclientProp.get(quiesce_file_system)
+
+    @property
+    def vm_diskfilter(self):
+        """Gets the appropriate Diskfilter from the VM instance subclient relevant to the user.
+
+            Returns:
+                list - list of Diskfilter associated with the subclient
+
+        """
+        vm_diskfilter = []
+        if self._vmDiskFilter is not None:
+            subclient_diskfilter = self._vmDiskFilter
+
+            if 'filters' in subclient_diskfilter:
+                filters = subclient_diskfilter['filters']
+
+                for child in filters:
+                    filter_type_id = str(child['filterType'])
+                    filter_type = self.filter_types[str(child['filterType'])]
+                    vm_id = child['vmGuid'] if 'vmGuid' in child else None
+                    filter_name = child['filter']
+                    value = child['value']
+                    vm_name = child['vmName']
+
+                    temp_dict = {
+                        'filter': filter_name,
+                        'filterType': filter_type,
+                        'vmGuid': vm_id,
+                        'filterTypeId': filter_type_id,
+                        'value': value,
+                        'vmName': vm_name
+                    }
+
+                    vm_diskfilter.append(temp_dict)
+        else:
+            vm_diskfilter = self._vmDiskFilter
+
+        if len(vm_diskfilter) == 0:
+            vm_diskfilter = None
+        return vm_diskfilter
