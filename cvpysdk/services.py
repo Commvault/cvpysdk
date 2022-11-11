@@ -111,7 +111,10 @@ SERVICES_DICT_TEMPLATE = {
     'GET_LIBRARY_PROPERTIES': '{0}Library/%s',
     'DETECT_TAPE_LIBRARY': '{0}Library?Action=detect',
     'CONFIGURE_TAPE_LIBRARY': '{0}Library?Action=configureTape',
-    
+
+    'GET_MOVE_MOUNTPATH_DETAILS': '{0}MountPath/%s/Move',
+    'MOVE_MOUNTPATH': '{0}MountPath/Move',
+
     'LOCK_MM_CONFIGURATION': '{0}LockMMConfiguration',
 
     'STORAGE_POLICY': '{0}StoragePolicy',
@@ -373,6 +376,7 @@ SERVICES_DICT_TEMPLATE = {
     'COMPANY_AUTH_RESTORE' : '{0}Company/%s/AuthRestore',
     'EDIT_COMPANY_DETAILS': '{0}v4/company/%s',
     'CHECK_ELIGIBILITY_MIGRATION' : '{0}Company/%s/migration-entities',
+    'COMPANY_ENTITIES': '{0}Company/%s/AssociatedEntities',
     'MIGRATE_CLIENTS' : '{0}Company/%s/company-association',
 
     'STORAGE_POOL': '{0}StoragePool',

@@ -417,6 +417,18 @@ EXCEPTION_DICT = {
         '113': 'Failed to deactivate organization',
         '114': 'Input is not provided in expected manner'
     },
+    'RemoteOrganization': {
+        '101': 'Failed to update organization operators remotely',
+        '102': 'Failed to activate organization remotely',
+        '103': 'Failed to deactivate organization remotely',
+        '104': 'Failed to update organization tags remotely',
+        '105': 'Data type of the input(s) is not valid',
+        '106': '',
+        '107': 'Email address is not valid',
+        '108': 'Organization already exists',
+        '109': 'Failed to add organization remotely',
+        '110': 'No organization exists with the given name in workloads or idp'
+    },
     'StoragePool': {
         '101': 'Data type of the input(s) is not valid',
         '102': '',

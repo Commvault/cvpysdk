@@ -40,6 +40,16 @@ This module has classes defined for doing operations for organizations:
 
     #. Disabling Operator role for a user
 
+This module now also supports remote operations added as part of Ring Routing project
+
+    #. Enable fanout to view all organizations from associated service commcells
+
+    #. Add new organization remotely to a service commcell
+
+    #. Delete an organization in service commcell remotely
+
+    #. Manage operators, tags of the organization remotely
+
 Organizations
 =============
 
@@ -57,17 +67,23 @@ Organizations
 
     _get_organizations()        --  returns all organizations added to the commcell
 
+    _get_headers()              --  returns headers required for remote operations
+
     has_organization()          --  checks whether the organization with given name exists or not
 
     add()                       --  adds a new organization to the commcell
 
+    add_remote_org()            --  adds a new organization to given service commcell
+
     get()                       --  returns Organization class object for the specified input name
 
-    delete()                    --  deletes an organization from the commcell
+    get_remote_org()            --  returns RemoteOrganization class object for given input
+
+    delete()                    --  deletes an organization from the commcell or service commcell
 
     dissociate_plans()          -- disassociates plans from the organization
 
-    refresh()                   --  refresh the list of organizations associated with the commcell
+    refresh()                   --  refresh the list of organizations in given commcell and/or service commcells
 
 Organizations Attributes
 ------------------------
@@ -75,6 +91,8 @@ Organizations Attributes
     **all_organizations**   --  returns the dict consisting of organizations and their details
 
     **all_organizations_props** -- returns the dict consisting of organizations and their guid's
+
+    **fanout**              --  determines if remote operations will be performed, returns current fanout set
 
 
 Organization
@@ -240,6 +258,55 @@ Organization Attributes
         **is_owner_data_privacy_enabled**      -- Returns True if the privacy is enabled for owner of client in
         organization
 
+
+RemoteOrganization
+============
+
+    __init__()                  --  initializes instance of the RemoteOrganization class for doing
+    remote operations on the selected Organization
+
+    __repr__()                  --  returns the string representation of an instance of this class
+
+    _get_organization_id()      --  gets the local ID of the RemoteOrganization
+
+    _get_properties()           --  get the properties of the organization by fanout
+
+    refresh()                   --  refresh the properties of the organization
+
+    activate()                  --  To activate the organization
+
+    deactivate()                --  To deactivate the organization
+    
+    get_entity_counts()         --  To get the counts of associated entities for company
+
+
+Organization Attributes
+-----------------------
+
+    Following attributes are available for an instance of the RemoteOrganization class:
+
+        **organization_id**         --  returns the local id of the organization
+
+        **organization_name**       --  returns the name of the organization
+
+        **homecell**                --  returns the commserve name of the service commcell of this org
+
+        **organization_name**       --  returns the name of the organization
+
+        **domain_name**             --  returns the primary domain associated with the organization (alias)
+
+         **reseller_enabled**       -- returns if reseller is enabled or not
+
+        **is_backup_disabled**       -- returns the backup activity status for the Organization
+
+        **is_restore_disabled**      -- returns the restore activity status for the Organization
+
+        **is_login_disabled**        -- returns the Login activity status for the Organization
+
+        **tags**                    -- Returns Tags associated with Organisation
+
+        **operators**               -- Returns Operators associated with this Organization
+
 """
 
 import re
@@ -247,7 +314,7 @@ import re
 from datetime import datetime
 
 from .exception import SDKException
-
+from .constants import ENTITY_TYPE_MAP
 from .security.user import User
 from .security.usergroup import UserGroup
 from .security.two_factor_authentication import TwoFactorAuthentication
@@ -276,6 +343,7 @@ class Organizations:
 
         self._organizations_api = self._services['ORGANIZATIONS']
         self._organizations = None
+        self._fanout = False
 
         self.refresh()
 
@@ -351,13 +419,14 @@ class Organizations:
                     if response is not success
 
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._organizations_api)
-
+        flag, response = self._cvpysdk_object.make_request('GET', self._organizations_api, headers=self._get_headers())
         if flag:
             organizations = {}
             self._adv_config = {}
             if response.json() and 'providers' in response.json():
                 for provider in response.json()['providers']:
+                    if self._fanout and "idpCompanyDetails" in provider:
+                        continue # to avoid dummy companies
                     name = provider['connectName'].lower()
                     organization_id = provider['shortName']['id']
                     organization_guid = provider['providerGUID']
@@ -366,7 +435,8 @@ class Organizations:
                     organizations[name] = organization_id
                     self._adv_config[name] = {
                         'GUID': organization_guid,
-                        'redirect_url': cloud_service_organizations
+                        'redirect_url': cloud_service_organizations,
+                        'home_commcell':provider.get('commcell',{}).get('commCellName'),
                     }
 
             self._get_associated_entities_count()
@@ -395,7 +465,10 @@ class Organizations:
 
         """
         flag, response = self._cvpysdk_object.make_request(
-            'GET', self._organizations_api+"?Fl=providers.associatedEntitiesCount,providers.shortName,providers.connectName")
+            'GET',
+            f"{self._organizations_api}?Fl=providers.associatedEntitiesCount,providers.shortName,providers.connectName",
+            headers = self._get_headers()
+        )
 
         if flag:
             if response.json() and 'providers' in response.json():
@@ -412,6 +485,22 @@ class Organizations:
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def _get_headers(self, target:str=None):
+        """
+        Returns fanout headers if fanout is set
+
+        Args:
+            target (str) -- target service commserve name (if applicable)
+        """
+        if not self._fanout:
+            return None
+        headers = self._commcell_object._headers.copy()
+        headers['CVContext']='Comet'
+        if target:
+            headers['_cn'] = target
+            headers['Comet-Commcells'] = target
+        return headers
 
     @property
     def all_organizations(self):
@@ -432,24 +521,47 @@ class Organizations:
     def all_organizations_props(self):
         """Returns the dictionary consisting of all the organizations guid info and redirect URL if present.
 
-            dict - consists of all the organizations configured on the commcell
+            dict - consists of all the organizations configured on the commcell and/or service commcells
 
                 {
                     "organization1_name":
                      {
                      GUID : "49DADF71-247E-4D59-8BD8-CF7BFDF7DB28",
-                     redirect_url: "https://url_to_redirect.com:80/webconsole"
+                     redirect_url: "<Webconsole url>",
+                     home_commcell: "<commserve name>",
+                     count: 11
                      },
 
                     "organization2_name":
                     {
                     GUID : "49DADF71-247E-4D59-8BD8-CF7BFDF7DB27",
-                    redirect_url: None
+                    redirect_url: None,
+                    home_commcell: "<commserve name>",
+                    count: 8
                     }
                 }
 
         """
         return self._adv_config
+
+    @property
+    def fanout(self)->bool:
+        """Returns status of fanout headers are enabled or not
+        Returns:
+            bool    -   True/False
+        """
+        return self._fanout
+
+    @fanout.setter
+    def fanout(self, value:bool=True):
+        """
+        Sets if fanout is required or not
+        
+        Args:
+            value (bool) -- False if fanout not required
+        """
+        self._fanout = value
+        self.refresh()
 
     def has_organization(self, name):
         """Checks if an organization exists in the Commcell with the input organization name.
@@ -470,17 +582,175 @@ class Organizations:
 
         return self._organizations and name.lower() in self._organizations
 
+    def add_remote_org(self,
+            name,
+            email,
+            contact_name,
+            company_alias,
+            **options):
+        """Adds a new organization with the given name to the Commcell.
+
+            Args:
+                name            (str)   --  name of the organization to create
+
+                email           (str)   --  email of the primary contact
+
+                contact_name    (str)   --  name of the primary contact
+
+                company_alias   (str)   --  alias of the company
+
+                email_domain    (list)  --  list of email domains supported for the organization
+
+                    if no value is given, domain of the user creating the organization will be used
+
+                    default: None
+
+                primary_domain  (str)   --  custom primary domain for organization
+
+                    default: None
+
+                default_plans   (list)  --  list of default plans to be associated with the
+                organization
+
+                    default: None
+
+                send_email      (bool) --  If set to true, a welcome email is sent to the
+                primary contact user.
+
+                    default: False
+
+                target          (str)   --  service commcell name where to add organization
+                    
+                    default: current commcell
+
+            Returns:
+                object  -   instance of the RemoteOrganization class
+
+            Raises:
+                SDKException:
+                    if organization with the given name already exists
+
+                    if inputs are not valid
+
+                    if failed to create the organization remotely
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+        if not self._fanout:
+            raise Exception('Enable fanout property to perform remote operations')
+        if self.has_organization(name):
+            raise SDKException('RemoteOrganization', '108')
+
+        if not (isinstance(name, str) and
+                isinstance(email, str) and
+                isinstance(contact_name, str) and
+                isinstance(company_alias, str)):
+            raise SDKException('RemoteOrganization', '105')
+
+        if not re.match(r'[^@]+@[^@]+\.[^@]+', email):
+            raise SDKException('RemoteOrganization', '107')
+
+        email_domain=options.get('email_domain')
+        primary_domain=options.get('primary_domain')
+        default_plans=options.get('default_plans')
+        enable_auto_discover=options.get('enable_auto_discover',False)
+        send_email=options.get('send_email',False)
+        target=options.get('target')
+
+        if email_domain is None:
+            email_domain = [email.split('@')[1]]
+
+        if primary_domain is None:
+            primary_domain = ''
+
+        plans_list = []
+
+        if default_plans:
+            if not isinstance(default_plans, list):
+                raise SDKException('RemoteOrganization', '105')
+            else:
+                for plan in default_plans:
+                    if not self._commcell_object.plans.has_plan(plan):
+                        raise SDKException(
+                            'RemoteOrganization',
+                            '106',
+                            'Plan: "{0}" does not exist on Commcell'.format(plan)
+                        )
+                    else:
+                        temp_plan = self._commcell_object.plans.get(plan)
+                        temp = {
+                            'plan': {
+                                'planId': int(temp_plan.plan_id)
+                            }
+                        }
+                        plans_list.append(temp)
+
+                        del temp
+                        del temp_plan
+
+        request_json = {
+            'organizationInfo': {
+                'organization': {
+                    'connectName': name,
+                    'emailDomainNames': email_domain,
+                    'shortName': {
+                        'domainName': company_alias
+                    }
+                },
+                'organizationProperties': {
+                    'enableAutoDiscovery': enable_auto_discover,
+                    'primaryDomain': primary_domain,
+                    'primaryContacts': [
+                        {
+                            'fullName': contact_name,
+                            'email': email
+                        }
+                    ],
+                },
+                'planDetails': plans_list
+            }
+        }
+
+        send_email and request_json.update({'sendEmail': send_email})
+
+        if target is None:
+            target = self._commcell_object.commserv_name
+        __, response = self._cvpysdk_object.make_request(
+            'POST', self._organizations_api, request_json, headers=self._get_headers(target)
+        )
+
+        self.refresh()
+
+        if response.json():
+            if 'response' in response.json():
+                error_code = response.json()['response']['errorCode']
+
+                if error_code == 0:
+                    return self.get_remote_org(name)
+
+                raise SDKException(
+                    'RemoteOrganization', '109', 'Response: {0}'.format(response.json())
+                )
+
+            elif 'errorMessage' in response.json():
+                raise SDKException(
+                    'RemoteOrganization', '109', 'Error: "{0}"'.format(response.json()['errorMessage'])
+                )
+
+            else:
+                raise SDKException('RemoteOrganization', '109', 'Response: {0}'.format(response.json()))
+        else:
+            raise SDKException('Response', '102')
+
     def add(self,
             name,
             email,
             contact_name,
             company_alias,
-            email_domain=None,
-            primary_domain=None,
-            default_plans=None,
-            enable_auto_discover=False,
-            service_commcells=None,
-            send_email=False):
+            **options):
         """Adds a new organization with the given name to the Commcell.
 
             Args:
@@ -544,6 +814,13 @@ class Organizations:
 
         if not re.match(r'[^@]+@[^@]+\.[^@]+', email):
             raise SDKException('Organization', '105')
+
+        email_domain=options.get('email_domain')
+        primary_domain=options.get('primary_domain')
+        default_plans=options.get('default_plans')
+        enable_auto_discover=options.get('enable_auto_discover',False)
+        service_commcells=options.get('service_commcells')
+        send_email=options.get('send_email',False)
 
         if email_domain is None:
             email_domain = [email.split('@')[1]]
@@ -661,6 +938,38 @@ class Organizations:
             return Organization(self._commcell_object, name, self._organizations[name])
         raise SDKException('Organization', '103')
 
+    def get_remote_org(self, name):
+        """Returns an instance of the RemoteOrganization class for the given organization name.
+
+            Args:
+                name    (str)   --  name of the remote organization to get the instance of
+
+            Returns:
+                object  -   instance of the RemoteOrganization class for the given organization name
+
+            Raises:
+                SDKException:
+                    if type of the organization name argument is not string
+
+                    if no organization exists with the given name
+
+        """
+        if not self._fanout:
+            raise Exception('Enable fanout property to perform remote operations')
+        if not isinstance(name, str):
+            raise SDKException('RemoteOrganization', '105')
+
+        name = name.lower()
+
+        if self.has_organization(name):
+            return RemoteOrganization(
+                self._commcell_object,
+                name,
+                self._organizations[name],
+                self._adv_config[name]['home_commcell']
+            )
+        raise SDKException('RemoteOrganization', '110')
+
     def delete(self, name):
         """Deletes the organization with the given name from the Commcell.
 
@@ -684,12 +993,19 @@ class Organizations:
         if not self.has_organization(name):
             raise SDKException('Organization', '103')
 
-        self.get(name).deactivate()
+        if self._fanout:
+            org = self.get_remote_org(name)
+            target = org.homecell
+        else:
+            org = self.get(name)
+            target = None
+            
+        org.deactivate()
 
         organization_id = self._organizations[name.lower()]
 
         flag, response = self._cvpysdk_object.make_request(
-            'DELETE', self._services['ORGANIZATION'] % organization_id
+            'DELETE', self._services['ORGANIZATION'] % organization_id, headers=self._get_headers(target)
         )
 
         self.refresh()
@@ -758,6 +1074,7 @@ class Organization:
         self._plans = {}
         self._organization_info = None
         self._operator_role = None
+        self._operators = None
         self._plan_details = None
         self._server_count = None
         self._user_groups = None
@@ -998,6 +1315,7 @@ class Organization:
                     self._plans[plan['plan']['planName'].lower()] = plan['plan']['planId']
 
                 self._operator_role = organization_properties['operatorRole']['roleName']
+                self._operators = organization_properties.get("operators", [])
 
                 if self._organization_info.get('planDetails', []):
                     self._plan_details = self._organization_info['planDetails']
@@ -1413,6 +1731,101 @@ class Organization:
 
         self._update_properties_json(req_json)
         self._update_properties()
+
+    @property
+    def operators(self) -> list:
+        """
+        Returns the list of operators and roles associated to this organization
+
+        Returns:
+            list    -   list of dicts containing operator details
+
+        Example:
+            [
+                {
+                    'role': {name:'<name of role>', id:<role id>},
+                    'userGroup': {userGroupName:'<usergroupname>', userGroupId:<id>}
+                },
+                {
+                    'role':{name:'<name of role>', id:<role id>},
+                    'user':{userName:'<user name>', userId:<id>}
+                }
+            ]
+        """
+        return self._operators
+
+    @operators.setter
+    def operators(self, operator_list: list) -> None:
+        """
+        Overwrites the operator:role associations of the organization
+
+        Args:
+            operators (list): list of dicts with role and user/userGroup keys
+
+            [
+                {'role':'<name of role>','userGroup':'<usergroupname>'},
+                {'role':'<name of role>','user':'<username>'}
+            ]
+
+        Returns:
+            None
+
+        Raises:
+            SDKException:
+                if failed to update the properties of the organization
+
+                if response is empty
+
+        """
+        operators_list = []
+        for operator in operator_list:
+            operator_dict = {"role":
+                {
+                    "roleName": operator["role"],
+                    "roleId": int(self._commcell_object.roles.get(operator["role"]).role_id)
+                }
+            }
+            if 'user' in operator:
+                operator_dict['user'] = {
+                    'userName': operator['user'],
+                    'userId': int(self._commcell_object.users.get(operator['user']).user_id)
+                }
+            if 'userGroup' in operator:
+                operator_dict['userGroup'] = {
+                    'userGroupName': operator['userGroup'],
+                    'userGroupId': int(self._commcell_object.user_groups.get(operator['userGroup']).user_group_id)
+                }
+            operators_list.append(operator_dict)
+
+        request_json = {
+            "organizationInfo": {
+                "organization": {
+                    "shortName": {"domainName": self.name, "id": int(self._organization_id)}
+                },
+                "organizationProperties": {
+                    "operatorsOperationType": 1,
+                    "operators": operators_list
+                },
+            }
+        }
+        __, response = self._cvpysdk_object.make_request(
+            'PUT', self._services['UPDATE_ORGANIZATION'] % self.organization_id, request_json
+        )
+        self.refresh()
+        if response.json():
+            if 'error' in response.json():
+                error_code = response.json()['error']['errorCode']
+                error_message = response.json()['error'].get('errorMessage', '')
+            else:
+                error_code = response.json()['errorCode']
+                error_message = response.json().get('errorMessage', '')
+
+            if error_code != 0:
+                raise SDKException(
+                    'Organization', '110', 'Error: {0}'.format(error_message)
+                )
+        else:
+            raise SDKException('Response', '102')
 
     @property
     def contacts_fullname(self):
@@ -2774,6 +3187,564 @@ class Organization:
                     raise SDKException('Organization', '102', error_message)
 
                 self.refresh()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+class RemoteOrganization:
+    """Class for performing remote operations on an Organization."""
+
+    def __init__(self, commcell_object, organization_name:str, organization_id:str=None, homecell:str=None):
+        """Initialise the RemoteOrganization instance.
+
+            Args:
+                commcell_object     (object)    --  instance of the Commcell class
+
+                organization_name   (str)       --  name of the organization
+
+                organization_id     (str)       --  id of the organization
+                    default: None
+
+                homecell            (str)       --  the belonging service commcell of this organization
+
+                    default: None
+
+            Returns:
+                object  -   instance of the RemoteOrganization class
+
+        """
+        self._commcell_object = commcell_object
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._update_response_ = commcell_object._update_response_
+        self._homecell = homecell
+        if not homecell:
+            self._homecell = self._get_homecell()
+
+        self._headers = self._commcell_object._headers.copy()
+        self._headers['CVContext']='Comet'
+        self._headers['_cn'] = self._homecell
+        self._headers['Comet-Commcells'] = self._homecell
+
+        self._organization_name = organization_name
+
+        if organization_id:
+            self._organization_id = str(organization_id)
+        else:
+            self._organization_id = self._get_organization_id()
+
+        self._properties = {}
+        self._reseller_enabled = None
+        self._backup_disabled = None
+        self._login_disabled = None
+        self._restore_disabled = None
+        self._domain_name = None
+        self._operators = None
+        self._parent_company = None
+
+        self.refresh()
+
+    @property
+    def reseller_enabled(self)->bool:
+        """ 
+        Returns if reseller is enabled 
+        
+        Returns:
+            bool - True if reseller mode is enabled for the company
+        """
+        return self._reseller_enabled
+
+    def __repr__(self)->str:
+        """Returns the string representation of an instance of this class."""
+        return 'Remote Organization class instance for Organization: "{0}" of "{1}"'.format(
+            self.organization_name, self._homecell
+        )
+
+    def _get_organization_id(self)->str:
+        """Gets the remote id associated with this remote organization within given commcell.
+
+            Returns:
+                str     -   remote id associated with this remote organization
+
+        """
+        organizations = Organizations(self._commcell_object)
+        organizations.fanout = True
+        return organizations.get_remote_org(self.organization_name).organization_id
+
+    def _get_homecell(self)->str:
+        """Gets the service commcell this company belongs to.
+
+            Returns:
+                str     -   service commcell where company resides
+
+        """
+        organizations = Organizations(self._commcell_object)
+        organizations.fanout = True
+        return organizations.get_remote_org(self.organization_name).homecell
+
+    def _get_properties(self)->dict:
+        """Gets the properties of this Organization.
+
+            Returns:
+                dict    -   dictionary consisting of the properties of this organization
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['ORGANIZATION'] % self.organization_id, headers=self._headers.copy()
+        )
+
+        if flag:
+            if response.json() and 'organizationInfo' in response.json():
+                self._organization_info = response.json().get('organizationInfo', {})
+
+                organization = self._organization_info.get('organization', {})
+                organization_properties = self._organization_info.get('organizationProperties', {})
+
+                self._description = organization.get('description')
+                self._email_domain_names = organization.get('emailDomainNames')
+                self._domain_name = organization.get('shortName', {}).get('domainName')
+                self._backup_disabled = organization.get('deactivateOptions', {}).get('disableBackup')
+                self._restore_disabled = organization.get('deactivateOptions', {}).get('disableRestore')
+                self._login_disabled = organization.get('deactivateOptions', {}).get('disableLogin')
+                self._reseller_enabled = organization_properties.get('canCreateCompanies')
+
+                self._operators = organization_properties.get("operators")
+                self._parent_company = organization_properties.get("resellerCompany")
+
+                return self._organization_info
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    @property
+    def name(self)->str:
+        """
+        Returns the Organization display name 
+        
+        Returns:
+            str     -   name of this organization
+        """
+        return self._organization_info.get('organization', {}).get('connectName')
+
+    @property
+    def organization_id(self)->str:
+        """
+        Returns the value of the id for this Organization.
+        
+        Returns:
+            str     -   id of this organization (in given commcell)
+        
+        """
+        return self._organization_id
+
+    @property
+    def homecell(self)->str:
+        """
+        Returns the service commcell name of this Organization.
+        
+        Returns:
+            str     -   commserve name where this organization exists
+        """
+        return self._homecell
+
+    @property
+    def organization_name(self)->str:
+        """
+        Returns the value of the name for this Organization.
+        
+        Returns:
+            str     -   organization name
+        """
+        return self._organization_name.lower()
+
+    @property
+    def domain_name(self)->str:
+        """
+        Returns the value of the domain name for this Organization.
+        
+        Returns:
+            str     -   alias name/domain name of this organization
+
+        """
+        return self._domain_name
+
+    @property
+    def parent_company(self)->dict:
+        """
+        Returns the parent company details dict of this organization (if it is child company).
+
+        Returns:
+            dict    -   parent company details
+        
+        Example: {
+            '_type_': <entity type id>, 
+            'providerId': <company id>, 
+            'providerDomainName': '<company name>'
+            }
+        
+        """
+        return self._parent_company
+
+    @property
+    def is_backup_disabled(self)->bool:
+        """
+        Returns boolean whether backup is disabled for this organisation
+        
+        Returns:
+            bool    -   True if backup is disabled
+        
+        """
+        return self._backup_disabled
+
+    @property
+    def is_restore_disabled(self)->bool:
+        """
+        Returns boolean whether restore is disabled for this organisation
+        
+        Returns:
+            bool    -   True if restore is disabled
+        
+        """
+        return self._restore_disabled
+
+    @property
+    def is_login_disabled(self)->bool:
+        """
+        Returns boolean whether login is disabled for this organisation
+        
+        Returns:
+            bool    -   True if login is disabled
+        
+        """
+        return self._login_disabled
+
+    def refresh(self)->None:
+        """Refresh the properties of the Organization."""
+        self._properties = self._get_properties()
+
+    @property
+    def operators(self)->list:
+        """
+        Returns the list of operators and roles associated to this organization
+
+        Returns:
+            list    -   list of dicts containing operator details
+        
+        Example:
+            [
+                {
+                    'role': {name:'<name of role>', id:<role id>},
+                    'userGroup': {userGroupName:'<usergroupname>', userGroupId:<id>}
+                },
+                {
+                    'role':{name:'<name of role>', id:<role id>},
+                    'user':{userName:'<user name>', userId:<id>}
+                }
+            ]
+        """
+        return self._operators
+
+    @operators.setter
+    def operators(self, operator_list:list)->None:
+        """
+        Overwrites the operator:role associations of the organization remotely
+        
+        Args:
+            operators (list): list of dicts with role and user/userGroup keys
+            
+            [
+                {'role':'<name of role>','userGroup':'<usergroupname>'},
+                {'role':'<name of role>','user':'<username>'}
+            ]
+        
+        Returns:
+            None
+
+        Raises:
+            SDKException:
+                if failed to update the properties of the organization
+
+                if response is empty
+
+        """
+        operators_list = []
+        for operator in operator_list:
+            operator_dict = {"role":
+                {
+                    "roleName": operator["role"],
+                    "roleId": int(self._commcell_object.roles.get(operator["role"]).role_id)
+                }
+            }
+            if 'user' in operator:
+                operator_dict['user'] = {
+                    'userName': operator['user'],
+                    'userId': int(self._commcell_object.users.get(operator['user']).user_id)
+                }
+            if 'userGroup' in operator:
+                operator_dict['userGroup'] = {
+                    'userGroupName': operator['userGroup'],
+                    'userGroupId': int(self._commcell_object.user_groups.get(operator['userGroup']).user_group_id)
+                }
+            operators_list.append(operator_dict)
+
+        request_json = {
+            "organizationInfo": {
+                "organization": {
+                    "shortName": {"domainName": self.name, "id": int(self._organization_id)}
+                },
+                "organizationProperties": {
+                    "operatorsOperationType": 1,
+                    "operators": operators_list
+                },
+            }
+        }
+        __, response = self._cvpysdk_object.make_request(
+            'PUT', self._services['UPDATE_ORGANIZATION'] % self.organization_id, request_json, headers=self._headers.copy()
+        )
+        self.refresh()
+        if response.json():
+            if 'error' in response.json():
+                error_code = response.json()['error']['errorCode']
+                error_message = response.json()['error'].get('errorMessage', '')
+            else:
+                error_code = response.json()['errorCode']
+                error_message = response.json().get('errorMessage', '')
+
+            if error_code != 0:
+                raise SDKException(
+                    'RemoteOrganization', '101', 'Error: {0}'.format(error_message)
+                )
+        else:
+            raise SDKException('Response', '102')
+
+    def activate(self)->None:
+        """
+        To activate the organization remotely
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        Raises:
+            SDKException:
+                if failed to activate the organization
+
+                if response is empty
+
+                if response is not success
+
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['ACTIVATE_ORGANIZATION'] % self.organization_id, headers=self._headers.copy()
+        )
+        self.refresh()
+        if flag:
+            if response.json():
+                error_code = response.json()['response']['errorCode']
+
+                if error_code != 0:
+                    raise SDKException(
+                        'RemoteOrganization', '102', 'Error: "{0}"'.format(
+                            response.json()['error']['errorMessage']
+                        )
+                    )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def deactivate(self,
+                   disable_backup=True,
+                   disable_restore=True,
+                   disable_login=True)->None:
+        """
+        To deactivate the organization remotely
+
+        Args:
+            disable_backup  (bool)      -- To disable backup
+                                            default: True
+
+            disable_restore (bool)      -- To disable restore
+                                            default: True
+
+            disable_login   (bool)      -- To disable login
+                                            default: True
+
+        Returns:
+            None
+
+        Raises:
+            SDKException:
+                if failed to deactivate the organization
+
+                if response is empty
+
+                if response is not success
+
+        """
+        request_json = {
+            "deactivateOptions": {
+                "disableBackup": disable_backup,
+                "disableRestore": disable_restore,
+                "disableLogin": disable_login
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['DEACTIVATE_ORGANIZATION'] % self.organization_id, request_json,
+            headers=self._headers.copy()
+        )
+
+        if flag:
+            if response.json():
+                error_code = response.json()['response']['errorCode']
+
+                if error_code != 0:
+                    raise SDKException(
+                        'RemoteOrganization', '103', 'Error: "{0}"'.format(
+                            response.json()['error']['errorMessage']
+                        )
+                    )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
+
+    @property
+    def tags(self)->list:
+        """
+        Returns:
+            tags (list)  -- List of dictionaries containing TAG values
+
+        Example:
+                [
+                    {
+                    "name": "key1",
+                    "value": "value1"
+                    },
+                    {
+                    "name": "key2",
+                    "value": "value2"
+                    }
+                ]
+
+        Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        req_url = self._services['GET_ORGANIZATION_TAGS'] % (self.organization_id)
+        flag, response = self._cvpysdk_object.make_request('GET', req_url, headers=self._headers.copy())
+
+        if flag:
+            if response.json():
+                if 'tags' in response.json():
+                    return response.json()['tags'][0]['tag']
+                else:
+                    return []
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    @tags.setter
+    def tags(self, tag_list:list)->None:
+        """
+        Updates Tags for an Organisation
+
+        Args:
+            tag_list (list) --  List of Tag details
+
+            example:
+                tag_list = [
+                    {
+                    "name": "key1",
+                    "value": "value1"
+                    },
+                    {
+                    "name": "key2",
+                    "value": "value2"
+                    }
+                ]
+
+        Raises:
+            SDKException:
+                If it fails to Update Tags for an Organisation
+        """
+
+        req_json = {
+            "entityTag": [
+                {
+                    "entityId": int(self.organization_id),
+                    "entityType": 61,
+                    "tag": tag_list
+                }
+            ]
+        }
+
+        req_url = self._services['ORGANIZATION_TAGS']
+        flag, response = self._cvpysdk_object.make_request('PUT', req_url, req_json, headers=self._headers.copy())
+
+        if flag:
+            if response.json():
+                if 'error' in response.json():
+                    error_code = response.json()['error']['errorCode']
+                    if error_code != 0:
+                        error_message = response.json()['error']['errorMessage']
+                        raise SDKException('RemoteOrganization', '104', 'Error: {0}'.format(error_message))
+            else:
+                raise SDKException('RemoteOrganization', '104')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        self.refresh()
+
+    def get_entity_counts(self)->dict:
+        """Gets the entity type and counts for company's associated entities
+
+            Returns:
+                dict    -   entity as key and count as value
+
+                    {'total': 8, 'Alert definitions': 4, 'User': 1, 'User group': 2, 'Server group': 1}
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'GET',
+            self._services['COMPANY_ENTITIES'] % self._organization_id,
+            headers=self._headers.copy()
+        )
+        entity_counts = {}
+        entity_types = ENTITY_TYPE_MAP
+        if flag:
+            if response.json():
+                entity_counts['total'] = response.json().get('totalCount', None)
+                for entity in response.json().get('entities',[]):
+                    entity_counts[entity_types.get(entity['name'], f'type_{entity["name"]}')] = entity['count']
+                return entity_counts
             else:
                 raise SDKException('Response', '102')
         else:

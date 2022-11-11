@@ -20,6 +20,8 @@
 
 TIMEZONES               --  Dict which maintains the list of all timezones
 
+ENTITY_TYPE_MAP         --  Dict containing mapping of entity type codes (returned by company API) to Entity Name
+
 HypervisorType          --  Enum which maintains the list of all the hypervisors supported by SDK
 
 AppIDAType              --  Enum which maintains the list of all the IDA type values
@@ -450,6 +452,58 @@ TIMEZONES = {
     "Pacific/Enderbury": "Tonga Standard Time",
     "Pacific/Tongatapu": "Tonga Standard Time",
     "Pacific/Kiritimati": "Tonga Standard Time"
+}
+
+ENTITY_TYPE_MAP = {
+    1: "file server",
+    2: "laptop",
+    3: "hypervisor",
+    4: "virtual machine",
+    5: "windows cluster",
+    6: "unix cluster",
+    7: "archiver file server",
+    8: "distributed database",
+    9: "ibm iseries client",
+    10: "edge drive",
+    11: "distributed fs",
+    12: "distributed ida",
+    13: "client",
+    14: "instance",
+    15: "backupset",
+    16: "subclient",
+    17: "library",
+    18: "array",
+    19: "media agent",
+    20: "storage pool disk",
+    21: "storage policy",
+    22: "schedule policy",
+    23: "subclient policy",
+    24: "storage pool cloud",
+    25: "storage pool hyperscale",
+    26: "storage pool tape",
+    27: "database instance",
+    30: "user",
+    31: "user group",
+    32: "client group",
+    33: "plan",
+    34: "region",
+    35: "alert",
+    36: "key management server",
+    37: "report plus",
+    38: "vm groups",
+    39: "role",
+    40: "epicclient",
+    41: "k8 app",
+    42: "k8 appgroup",
+    43: "k8 cluster",
+    44: "object storage",
+    46: "exchange app",
+    47: "o365 exchange mailboxes app",
+    48: "g suite app",
+    49: "active directory app",
+    50: "salesforce cloud app",
+    51: "o365 onedrive users app",
+    52: "o365 sharepoint sites app",
 }
 
 
