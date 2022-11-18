@@ -191,6 +191,8 @@ StoragePolicyCopy:
 
     set_key_management_server()             --  sets the Key Management Server to this copy
 
+    set_multiplexing_factor()               --  sets/unset the multiplexing factor for the storage policy copy 
+
 Attributes
 ----------
 
@@ -4257,5 +4259,24 @@ class StoragePolicyCopy(object):
         self._copy_properties["dataEncryption"] = {
             "keyProviderName": kms_name,
             "rotateMasterKey": True
+        }
+        self._set_copy_properties()
+    
+    def set_multiplexing_factor(self, mux_factor):
+        """Sets/Unset the multiplexing factor for the storage policy copy
+
+            Args:
+                mux_factor  (int) -- The value for multiplexing factor
+
+            Raises SDKException:
+                If input is not valid
+
+                If API response is not successful
+        """
+        if not isinstance(mux_factor, int):
+            raise SDKException('Storage', '101')
+
+        self._copy_properties['mediaProperties'] = {
+            "multiplexingFactor" : mux_factor
         }
         self._set_copy_properties()

@@ -539,6 +539,7 @@ SERVICES_DICT_TEMPLATE = {
     'ADD_OR_GET_SAML': '{0}/v4/SAML',
     'EDIT_SAML': '{0}/v4/SAML/%s',
 
+    'REGIONS': '{0}/v4/Regions',
     'EDIT_REGION': '{0}/entity/%s/%s/region',
     'GET_REGION': '{0}/entity/%s/%s/region?entityRegionType=%s',
     'CALCULATE_REGION': '{0}/entity/%s/%s/region?calculate=True&entityRegionType=%s',

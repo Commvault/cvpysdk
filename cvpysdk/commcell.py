@@ -385,6 +385,7 @@ from .index_pools import IndexPools
 from .deduplication_engines import DeduplicationEngines
 from .metallic import Metallic
 from .key_management_server import KeyManagementServers
+from .regions import Regions
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
 USER_DOES_NOT_HAVE_PERMISSION = "User does not have permission on commcell properties"
@@ -626,6 +627,7 @@ class Commcell(object):
         self._kms = None
         self._privacy = None
         self._commcell_properties = None
+        self._regions = None
         self.refresh()
 
         del self._password
@@ -1689,6 +1691,17 @@ class Commcell(object):
                 self._kms = KeyManagementServers(self)
 
             return self._kms
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def regions(self):
+        """Returns the instance of the Regions class."""
+        try:
+            if self._regions is None:
+                self._regions = Regions(self)
+
+            return self._regions
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
 

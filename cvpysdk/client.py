@@ -353,6 +353,18 @@ Client Attributes
     **company_name**                 -- returns company name for the client
 
     **is_privacy_enabled**          -- returns if client privacy is enabled
+
+    **latitude**                    -- Returns the latitude from geo location of the client
+
+    **longitude**                   -- Returns the longitude from geo location of the client
+
+    **is_vm**                       -- Returns True if its a VM client
+
+    **hyperv_id_of_vm**             -- Returns the Id of hyperV that the given VM is associated with
+
+    **associated_client_group**     -- Returns the list of clientgroups that the client is associated to
+
+    **company_id**                  -- Returns the company Id of the client
 """
 
 from __future__ import absolute_import
@@ -3638,7 +3650,12 @@ class Client(object):
         self._readiness = None
         self._vm_guid = None
         self._company_name = None
-
+        self._is_vm = None
+        self._vm_hyperv_id = None
+        self._client_latitude = None
+        self._client_longitude = None
+        self._associated_client_groups = None
+        self._company_id = None
         self.refresh()
 
     def __repr__(self):
@@ -3743,6 +3760,26 @@ class Client(object):
 
                 if 'BlockLevelCacheDir' in client_props:
                     self._block_level_cache_dir = client_props['BlockLevelCacheDir']
+
+                if 'clientRegionInfo' in client_props:
+                    self._client_latitude = client_props.get('clientRegionInfo', {}).get('geoLocation', {}). \
+                        get('latitude')
+                    self._client_longitude = client_props.get('clientRegionInfo', {}).get('geoLocation', {}). \
+                        get('longitude')
+
+                if 'vmStatusInfo' in self._properties:
+                    self._is_vm = True
+                    self._vm_hyperv_id = self._properties.get('vmStatusInfo', {}).get('pseudoClient', {}).get(
+                        'clientId')
+                else:
+                    self._is_vm = False
+
+                if 'clientGroups' in self._properties:
+                    self._associated_client_groups = self._properties.get('clientGroups', {})
+
+                if 'company' in client_props:
+                    self._company_id = client_props.get('company', {}).get('shortName', {}).get('id')
+
 
             else:
                 raise SDKException('Response', '102')
@@ -4212,6 +4249,36 @@ class Client(object):
     def properties(self):
         """Returns the client properties"""
         return copy.deepcopy(self._properties)
+
+    @property
+    def latitude(self):
+        """Returns the client latitude from clientRegionInfo GeoLocation"""
+        return self._client_latitude
+
+    @property
+    def longitude(self):
+        """Returns the client Longitude from clientRegionInfo GeoLocation"""
+        return self._client_longitude
+
+    @property
+    def is_vm(self):
+        """Returns True if the given client is a VM else False"""
+        return self._is_vm
+
+    @property
+    def hyperv_id_of_vm(self):
+        """Returns the Hypervisor ID associated to a VM client"""
+        return self._vm_hyperv_id
+
+    @property
+    def associated_client_groups(self):
+        """Returns the list of client groups to which the given client is assocaited with"""
+        return self._associated_client_groups
+
+    @property
+    def company_id(self):
+        """Returns the client's Company ID"""
+        return self._company_id
 
     @property
     def name(self):

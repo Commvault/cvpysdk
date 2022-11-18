@@ -578,7 +578,8 @@ EXCEPTION_DICT = {
     },
     'Region': {
         '101': 'Entity type not found.',
-        '102': ''
+        '102': '',
+        '103': ''
     }
 }
 

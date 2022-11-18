@@ -99,6 +99,8 @@ MediaAgent:
 
     set_ransomware_protection()  -- set / unset ransomware protection on Windows MA
 
+    set_concurrent_lan()        --  set / unset concurrent LAN backup in Media agent properties.
+
     is_power_management_enabled() -- returns of power management is enabled or not
 
 Libraries:
@@ -937,6 +939,53 @@ class MediaAgent(object):
                 },
                 "mediaAgentProps": {
                     "isRansomwareProtected": status
+                }
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'PUT', self._MEDIA_AGENTS, request_json
+        )
+
+        if flag:
+            if response and response.json():
+                response = response.json()
+                if response.get('error', {}).get('errorCode', -1) != 0:
+                    error_message = response.get('error', {}).get('errorString', '')
+                    raise SDKException('Storage', '102', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
+    
+    def set_concurrent_lan(self, enable=True):
+        """
+        disable / enable concurrent LAN backup in Media agent properties.
+            Args:
+            enable      -   (bool)
+                            True        - Enable concurent LAN Backup
+                            False       - Disable concurent LAN Backup
+
+        Returns:
+            None                   --   if operation performed successfully.
+
+        Raises:
+            SDKException:
+                - if there is failure in executing the operation
+
+        """
+
+        if type(enable) != bool:
+            raise SDKException('Storage', '101')
+
+        media_id = int(self.media_agent_id)
+        request_json = {
+            "mediaAgentInfo": {
+                "mediaAgent": {
+                    "mediaAgentId": media_id
+                },
+                "mediaAgentProps": {
+                    "optimizeForConcurrentLANBackups": enable
                 }
             }
         }
@@ -2544,10 +2593,10 @@ class TapeLibrary(object):
         """
 
         self.refresh()
-
+        
         drive_list=[]
-
-        if self.library_properties["DriveList"]:
+        
+        if 'DriveList' in self.library_properties:
             for drive in self.library_properties["DriveList"]:
                 drive_list.append(drive["driveName"])
 

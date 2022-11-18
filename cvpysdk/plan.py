@@ -999,6 +999,7 @@ class Plan(object):
         self._associated_entities = {}
         self._dc_plan_props = {}
         self._plan_entity_type = 158
+        self._region_id = None
         self.refresh()
 
     def __repr__(self):
@@ -1187,6 +1188,9 @@ class Plan(object):
                                 )
                             else:
                                 self._security_associations[temp_key] = [association['properties']['role']['roleName']]
+
+                if "storageRules" in self._plan_properties:
+                    self._region_id = self._plan_properties["storageRules"]["rules"][0]["regions"]["region"][0]["regionId"]
 
                 self._get_associated_entities()
 
@@ -1937,6 +1941,11 @@ class Plan(object):
     def properties(self):
         """Returns the configured properties for the Plan"""
         return self._plan_properties
+
+    @property
+    def region_id(self):
+        """Returns the Backup destination region id"""
+        return self._region_id
 
     def refresh(self):
         """Refresh the properties of the Plan."""

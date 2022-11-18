@@ -587,6 +587,56 @@ class KeyManagementServers(KeyManagementServerConstants):
         return self.get(kms_details['KMS_NAME'])
 
 
+    def _add_azure_key_vault_iam_auth(self, kms_details):
+        """Configure Azure Key Management Server with IAM based authentication
+
+            :arg
+                kms_details ( dictionary ) - Dictionary with AWS KMS details
+            :return:
+                Object of KeyManagementServer class for the newly created KMS.
+        """
+
+        if "AZURE_KEY_VAULT_KEY_LENGTH" not in kms_details:
+            kms_details['AZURE_KEY_VAULT_KEY_LENGTH'] = 3072
+
+        if "ACCESS_NODE_NAME" in kms_details:
+            payload = {
+                        "keyProvider": {
+                            "provider": {
+                                "keyProviderName": kms_details['KMS_NAME']
+                            },
+                            "encryptionKeyLength": kms_details['AZURE_KEY_VAULT_KEY_LENGTH'],
+                            "encryptionType": 1001,
+                            "keyProviderType": 4,
+                            "properties": {
+                                "accessNodes": [
+                                {
+                                    "keyVaultCredential": {
+                                    "environment": "AzureCloud",
+                                    "authType": self._KMS_AUTHENTICATION_TYPE[kms_details['KEY_PROVIDER_AUTH_TYPE']],
+                                    "resourceName": kms_details['AZURE_KEY_VAULT_NAME'],
+                                    "endpoints": {
+                                        "activeDirectoryEndpoint": "https://login.microsoftonline.com/",
+                                        "keyVaultEndpoint": "vault.azure.net"
+                                        }
+                                    },
+                                    "accessNode": {
+                                    "clientName": kms_details['ACCESS_NODE_NAME']
+                                }
+                                }
+                                ],
+                                "keyVaultCredential": {
+                                    "resourceName": kms_details['AZURE_KEY_VAULT_NAME']
+                                },
+                                "bringYourOwnKey": 0
+                                }
+                            }
+                        }
+
+            self._kms_api_call(payload)
+            self.refresh()
+
+
     def add_aws_kms(self, kms_name, aws_access_key, aws_secret_key, aws_region_name=None, kms_details = None):
         """Configure AWS Key Management Server
 
@@ -680,6 +730,7 @@ class KeyManagementServers(KeyManagementServerConstants):
                 }
 
         self._kms_api_call(payload)
+        self.refresh()
 
     def _kms_api_call(self, payload):
         """ Calling KMS API
