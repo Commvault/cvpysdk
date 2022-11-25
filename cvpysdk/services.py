@@ -53,6 +53,7 @@ SERVICES_DICT_TEMPLATE = {
     'TFA_DISABLE': '{0}Commcell/Properties/TwoFactorAuth/Action/Disable',
     'PRIVACY_ENABLE': '{0}Commcell/Properties/Privacy/Action/Enable',
     'PRIVACY_DISABLE': '{0}Commcell/Properties/Privacy/Action/Disable',
+    'ACCOUNT_lOCK_SETTINGS': '{0}Commcell/Properties/AccountLockSettings',
     'ORG_TFA': '{0}Organization/%s/TwoFactorAuth',
     'ORG_TFA_ENABLE': '{0}Organization/%s/TwoFactorAuth/Action/Enable',
     'ORG_TFA_DISABLE': '{0}Organization/%s/TwoFactorAuth/Action/Disable',
@@ -338,6 +339,8 @@ SERVICES_DICT_TEMPLATE = {
     'USER': '{0}User/%s?Level=50',
     'DELETE_USER': '{0}User/%s?newUserId=%s&newUserGroupId=%s',
     'OTP': '{0}User/%s/preferences/OTP',
+
+    'UNLOCK': '{0}User/Unlock',
 
     'ROLES': '{0}Role',
     'ROLE': '{0}Role/%s',

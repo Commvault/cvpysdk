@@ -79,6 +79,14 @@ PostgreSQLInstance instance Attributes
 
     **archive_delete**                   --  Returns True if archive delete is enabled for instance
 
+    **postgres_ssl_status**              --  Returns True/False based on if ssl is enabled or not
+
+    **postgres_ssl_ca_file**             --  Returns SSL CA file path
+
+    **postgres_ssl_key_file**            --  Returns SSL key file path
+
+    **postgres_ssl_cert_file**           --  Returns SSL cert file path
+
 """
 
 from __future__ import absolute_import
@@ -106,16 +114,15 @@ class PostgreSQLInstance(Instance):
         super(
             PostgreSQLInstance,
             self).__init__(
-                agent_object,
-                instance_name,
-                instance_id)
+            agent_object,
+            instance_name,
+            instance_id)
         self.backup_object = None
         self.backupset_object = None
         self.sub_client_object = None
         self.postgres_restore_json = None
         self._postgres_restore_options = None
         self._destination_restore_json = None
-
 
     @property
     def postgres_bin_directory(self):
@@ -272,7 +279,9 @@ class PostgreSQLInstance(Instance):
 
         """
         if self.is_standby_enabled:
-            return self._properties.get('postGreSQLInstance', {}).get('standbyOptions', {}).get('standbyInstance', {}).get('instanceName', {})
+            return self._properties.get('postGreSQLInstance', {}).get('standbyOptions', {}).get('standbyInstance',
+                                                                                                {}).get('instanceName',
+                                                                                                        "")
         return None
 
     @property
@@ -283,7 +292,9 @@ class PostgreSQLInstance(Instance):
 
         """
         if self.is_standby_enabled:
-            return self._properties.get('postGreSQLInstance', {}).get('standbyOptions', {}).get('standbyInstance', {}).get('instanceId', {})
+            return self._properties.get('postGreSQLInstance', {}).get('standbyOptions', {}).get('standbyInstance',
+                                                                                                {}).get('instanceId',
+                                                                                                        "")
         return None
 
     @property
@@ -326,7 +337,8 @@ class PostgreSQLInstance(Instance):
             Return Type: bool
 
         """
-        return self._properties.get('postGreSQLInstance', {}).get('standbyOptions', {}).get('useMasterForDataBkp', False)
+        return self._properties.get('postGreSQLInstance', {}).get('standbyOptions', {}).get('useMasterForDataBkp',
+                                                                                            False)
 
     @use_master_for_data_backup.setter
     def use_master_for_data_backup(self, value):
@@ -342,6 +354,26 @@ class PostgreSQLInstance(Instance):
         properties = self._properties
         properties['postGreSQLInstance']['standbyOptions']['useMasterForDataBkp'] = value
         self.update_properties(properties)
+
+    @property
+    def postgres_ssl_status(self):
+        """Returns True/False based on if ssl is enabled or not"""
+        return self._properties.get("postGreSQLInstance", {}).get("sslOpt", {}).get("sslEnabled", False)
+
+    @property
+    def postgres_ssl_ca_file(self):
+        """Returns: str - ssl ca file path"""
+        return self._properties.get("postGreSQLInstance", {}).get("sslOpt", {}).get("sslCa", "")
+
+    @property
+    def postgres_ssl_key_file(self):
+        """Returns: str - ssl key file path"""
+        return self._properties.get("postGreSQLInstance", {}).get("sslOpt", {}).get("sslKey", "")
+
+    @property
+    def postgres_ssl_cert_file(self):
+        """Returns:str - ssl cert file path"""
+        return self._properties.get("postGreSQLInstance", {}).get("sslOpt", {}).get("sslCert", "")
 
     def change_sa_password(self, value):
         """ Changes postgresql user password

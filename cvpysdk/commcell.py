@@ -141,6 +141,10 @@ Commcell:
 
     get_workload_region()           --  gets the current workload region
 
+    enable_limit_user_logon_attempts()  --  Enables limit user logon attempts feature.
+
+    disable_limit_user_logon_attempts()   -- Disables limit user logon attempts feature.
+
 Commcell instance Attributes
 ============================
 
@@ -3662,3 +3666,64 @@ class Commcell(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def enable_limit_user_logon_attempts(self, failed_login_attempt_limit=5, failed_login_attempts_within=3600,
+                                         account_lock_duration=86400, lock_duration_increment_by=3600):
+        """
+         Enable Limit user logon attempts feature
+         Args:
+             failed_login_attempt_limit             (int)   --  number of logon attempts a user is allowed
+                default : 5
+             failed_login_attempts_within           (int)   --  logon attempts a user is allowed within specified
+                default : 3600 secs                                        numbers of secs
+             account_lock_duration                  (int)   --  number of secs a locked account remains locked
+                default :  86400 secs
+             lock_duration_increment_by             (int)   --  increment the lock duration by specified secs
+                                                                after each consecutive user account lock
+                default : 3600 secs
+         Raises:
+            SDKException:
+                if response is empty
+                if response is not success
+                if failed to enable limit user logon feature
+        """
+        req_json = {
+            'failedLoginAttemptLimit': failed_login_attempt_limit,
+            'failedLoginAttemptsWithin': failed_login_attempts_within,
+            'accountLockDuration': account_lock_duration,
+            'accountLockDurationIncrements': lock_duration_increment_by
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', self._services['ACCOUNT_lOCK_SETTINGS'], req_json
+        )
+        if flag:
+            if response and response.json():
+                error_code = response.json().get('errorCode', -1)
+                if error_code != 0:
+                    error_string = response.json().get('errorMessage', '')
+                    raise SDKException(
+                        'Security',
+                        '102',
+                        'Failed to set account lock settings: "{0}"'.format(
+                            error_string
+                        )
+                    )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def disable_limit_user_logon_attempts(self):
+        """
+        Disable limit user logon attempts feature.
+        Raises:
+            SDKException:
+                if response is empty
+                if response is not success
+                if failed to disable limit user logon feature
+        """
+        self.enable_limit_user_logon_attempts(failed_login_attempt_limit=-1,
+                                              failed_login_attempts_within=-1,
+                                              account_lock_duration=-1,
+                                              lock_duration_increment_by=-1)
