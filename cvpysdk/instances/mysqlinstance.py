@@ -82,6 +82,8 @@ MYSQLInstance instance Attributes:
 
     **no_lock_status**                  --  Returns the No Lock check box status for MySQL Instance
 
+    **ssl_enabled**                     --  Returns(boolean) True/False based on SSL status
+
 """
 
 from __future__ import unicode_literals
@@ -336,6 +338,11 @@ class MYSQLInstance(Instance):
         properties = self._properties
         properties['mySqlInstance']['EnableNoLocking'] = value
         self.update_properties(properties)
+
+    @property
+    def ssl_enabled(self):
+        """ Returns(boolean) True/False based on SSL status """
+        return self._properties.get('mySqlInstance', {}).get('sslEnabled', False)
 
     def _get_instance_properties(self):
         """Gets the properties of this instance.

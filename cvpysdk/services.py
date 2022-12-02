@@ -307,6 +307,9 @@ SERVICES_DICT_TEMPLATE = {
     'ELIGIBLE_PLANS': '{0}V2/Plan/Eligible?%s',
     'ASSOCIATED_ENTITIES': '{0}V2/Plan/%s/AssociatedEntities',
     'GET_PLANS': '{0}V2/Plan?type=%s&subType=%s',
+    'APPLICABLE_SOLNS_ENABLE': '{0}V4/ServerPlan/%s/ApplicableSolutions/Restrict/Enable',
+    'APPLICABLE_SOLNS_DISABLE': '{0}V4/ServerPlan/%s/ApplicableSolutions/Restrict/Disable',
+    'PLAN_SUPPORTED_SOLUTIONS': '{0}V4/Solutions?filter=PLAN_SUPPORTED_SOLUTIONS',
 
     'DOMAIN_CONTROLER': '{0}CommCell/DomainController',
     'DELETE_DOMAIN_CONTROLER': '{0}CommCell/DomainController/%s',

@@ -195,12 +195,15 @@ StoragePolicyCopy:
 
 Attributes
 ----------
+    **override_pool_retention**                 --  Returns if Override Pool Retention flag is set or not
+
+    **override_pool_retention.setter**          --  Sets/Unsets the override Pool Retention Flag
 
     **space_optimized_auxillary_copy**          --  Returns the value of space optimized auxillary copy setting
 
     **space_optimized_auxillary_copy.setter**   --  Sets the value of space optimized auxillary copy setting
 
-	**source_copy**                             --  Returns the source copy associated with the copy
+    **source_copy**                             --  Returns the source copy associated with the copy
 
     **source_copy.setter**                      --  Sets the source copy for the copy
 
@@ -911,6 +914,9 @@ class StoragePolicies(object):
                                 o_str = 'Failed to delete storage policy\nError: "{0}"'
 
                                 raise SDKException('Storage', '102', o_str.format(error_message))
+                            elif 'errorCode' in response.json()['error'] and response.json()['error']['errorCode'] == 0:
+                                self.refresh()
+                                return response.text.strip()
                 except ValueError:
                     if response.text:
                         if 'errorCode' in response.text and 'errorMessage' in response.text:
@@ -3337,6 +3343,21 @@ class StoragePolicyCopy(object):
     def copy_name(self):
         """Returns the name of the copy"""
         return self._copy_name
+
+    @property
+    def override_pool_retention(self):
+        """Returns if Override Pool Retention flag is set or not"""
+        return bool(self._extended_flags.get('overRideGACPRetention', 0))
+
+    @override_pool_retention.setter
+    def override_pool_retention(self, override):
+        """Sets/Unsets the override Pool Retention Flag. Not Applicable for Storage Pool Copies
+
+        Args:
+            override(bool)  :   Override the pool Retention (True/False)
+        """
+        self._extended_flags['overRideGACPRetention'] = int(override)
+        self._set_copy_properties()
 
     @property
     def copy_retention(self):

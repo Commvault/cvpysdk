@@ -525,7 +525,10 @@ class TeamsSubclient(CloudAppsSubclient):
         """
         discovered_teams = self.discover()
         teams = [discovered_teams[team] for team in teams]
-        destination_team = None if len(teams) > 1 else destination_team
+        if len(teams) == 1 and destination_team:
+            destination_team = discovered_teams[destination_team]
+        else:
+            destination_team = None
         request_json = {
             "taskInfo": {
                 "task": const.RESTORE_TASK_JSON,

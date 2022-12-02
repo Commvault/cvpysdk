@@ -63,7 +63,7 @@ class Regions:
                 for region in response.json()['regions']:
                     name = region['name']
                     id = region['id']
-                    self._regions[name.lower()] = id
+                    self._regions[name] = id
 
                 return self._regions
 
@@ -93,7 +93,7 @@ class Regions:
         if not isinstance(name, str):
             raise SDKException('Region', '103')
 
-        return self._regions and (name.lower() in self._regions)
+        return self._regions and (name in self._regions)
 
     def get(self, name):
         """
@@ -112,8 +112,6 @@ class Regions:
         """
         if not isinstance(name, str):
             raise SDKException('Region', '102',"Invalid input received")
-
-        name = name.lower()
 
         if self.has_region(name):
             return Region(self._commcell_object, name, self._regions[name])
