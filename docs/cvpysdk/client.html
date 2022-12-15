@@ -50,6 +50,8 @@ _get_office_365_clients()             --  get all office365 clients in the commc
 
 _get_dynamics_365_clients()           --  get all the Dynamics 365 clients in the commcell
 
+_get_salesforce_clients()             --  get all salesforce clients in the commcell
+
 _get_hidden_clients()                 --  gets all the hidden clients associated with the
 commcell
 
@@ -68,6 +70,8 @@ hostname if exists
 _get_hidden_client_from_hostname()    --  returns the client name if associated with specified
 hostname if exists
 
+ _get_client_from_displayname()        --  get the client name for given display name
+
 has_client(client_name)               --  checks if a client exists with the given name or not
 
 has_hidden_client(client_name)        --  checks if a hidden client exists with the given name
@@ -83,6 +87,8 @@ add_kubernetes_client()               --  adds a new Kubernetes Virtualization C
 add_nas_client()                      --  adds a new NAS Client
 
 add_share_point_client()              -- adds a new sharepoint pseudo client to the Commcell
+
+add_onedrive_v2_client()              -- adds a new OneDrive for Business client to Commcell
 
 add_exchange_client()                 --  adds a new Exchange Virtual Client to the Commcell
 
@@ -115,19 +121,25 @@ filter_clients_return_displaynames()  --  filter clients based on criteria
 refresh()                             --  refresh the clients associated with the commcell
 </code></pre>
 <h2 id="clients-attributes">Clients Attributes</h2>
-<pre><code>**all_clients**             --  returns the dictioanry consisting of all the clients that are
+<pre><code>**all_clients**             --  returns the dictionary consisting of all the clients that are
 associated with the commcell and their information such as id and hostname
 
-**hidden_clients**          --  returns the dictioanry consisting of only the hidden clients
+**hidden_clients**          --  returns the dictionary consisting of only the hidden clients
 that are associated with the commcell and their information such as id and hostname
 
-**virtualization_clients**  --  returns the dictioanry consisting of only the virtualization
+**virtualization_clients**  --  returns the dictionary consisting of only the virtualization
 clients that are associated with the commcell and their information such as id and hostname
 
 **office365_clients**       --  Returns the dictionary consisting of all the office 365 clients that are
                                 associated with the commcell
 
 **dynamics365_clients**     --  Returns the dictionary consisting of all the Dynamics 365 clients
+                                that are associated with the commcell
+
+**salesforce_clients**      --  Returns the dictionary consisting of all the salesforce clients that are
+                                associated with the commcell
+
+**file_server_clients**     --  Returns the dictionary consisting of all the File Server clients
                                 that are associated with the commcell
 </code></pre>
 <h1 id="client">Client</h1>
@@ -333,7 +345,7 @@ which is consumed by the client
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L1-L6286" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L1-L6695" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # pylint: disable=R1705, R0205
@@ -386,6 +398,8 @@ Clients
 
     _get_dynamics_365_clients()           --  get all the Dynamics 365 clients in the commcell
 
+    _get_salesforce_clients()             --  get all salesforce clients in the commcell
+
     _get_hidden_clients()                 --  gets all the hidden clients associated with the
     commcell
 
@@ -404,6 +418,8 @@ Clients
     _get_hidden_client_from_hostname()    --  returns the client name if associated with specified
     hostname if exists
 
+     _get_client_from_displayname()        --  get the client name for given display name
+
     has_client(client_name)               --  checks if a client exists with the given name or not
 
     has_hidden_client(client_name)        --  checks if a hidden client exists with the given name
@@ -419,6 +435,8 @@ Clients
     add_nas_client()                      --  adds a new NAS Client
 
     add_share_point_client()              -- adds a new sharepoint pseudo client to the Commcell
+
+    add_onedrive_v2_client()              -- adds a new OneDrive for Business client to Commcell
 
     add_exchange_client()                 --  adds a new Exchange Virtual Client to the Commcell
 
@@ -454,13 +472,13 @@ Clients
 Clients Attributes
 ------------------
 
-    **all_clients**             --  returns the dictioanry consisting of all the clients that are
+    **all_clients**             --  returns the dictionary consisting of all the clients that are
     associated with the commcell and their information such as id and hostname
 
-    **hidden_clients**          --  returns the dictioanry consisting of only the hidden clients
+    **hidden_clients**          --  returns the dictionary consisting of only the hidden clients
     that are associated with the commcell and their information such as id and hostname
 
-    **virtualization_clients**  --  returns the dictioanry consisting of only the virtualization
+    **virtualization_clients**  --  returns the dictionary consisting of only the virtualization
     clients that are associated with the commcell and their information such as id and hostname
 
     **office365_clients**       --  Returns the dictionary consisting of all the office 365 clients that are
@@ -469,6 +487,11 @@ Clients Attributes
     **dynamics365_clients**     --  Returns the dictionary consisting of all the Dynamics 365 clients
                                     that are associated with the commcell
 
+    **salesforce_clients**      --  Returns the dictionary consisting of all the salesforce clients that are
+                                    associated with the commcell
+                                    
+    **file_server_clients**     --  Returns the dictionary consisting of all the File Server clients
+                                    that are associated with the commcell
 
 Client
 ======
@@ -684,7 +707,6 @@ import time
 import copy
 
 from base64 import b64encode
-from past.builtins import basestring
 
 import requests
 
@@ -702,6 +724,7 @@ from .security.user import Users
 
 from .name_change import NameChange
 from .organization import Organizations
+from .constants import AppIDAType
 
 
 class Clients(object):
@@ -728,8 +751,10 @@ class Clients(object):
         self._CLIENTS = self._ADD_CLIENT = self._services[&#39;GET_ALL_CLIENTS&#39;]
         self._OFFICE_365_CLIENTS = self._services[&#39;GET_OFFICE_365_ENTITIES&#39;]
         self._DYNAMICS365_CLIENTS = self._services[&#39;GET_DYNAMICS_365_CLIENTS&#39;]
+        self._SALESFORCE_CLIENTS = self._services[&#39;GET_SALESFORCE_CLIENTS&#39;]
         self._ALL_CLIENTS = self._services[&#39;GET_ALL_CLIENTS_PLUS_HIDDEN&#39;]
         self._VIRTUALIZATION_CLIENTS = self._services[&#39;GET_VIRTUAL_CLIENTS&#39;]
+        self._FS_CLIENTS = self._services[&#39;GET_FILE_SERVER_CLIENTS&#39;]
         self._ADD_EXCHANGE_CLIENT = self._ADD_SHAREPOINT_CLIENT = self._ADD_SALESFORCE_CLIENT = \
             self._services[&#39;CREATE_PSEUDO_CLIENT&#39;]
         self._ADD_SPLUNK_CLIENT = self._services[&#39;CREATE_PSEUDO_CLIENT&#39;]
@@ -741,6 +766,8 @@ class Clients(object):
         self._virtualization_clients = None
         self._office_365_clients = None
         self._dynamics365_clients = None
+        self._salesforce_clients = None
+        self._file_server_clients = None
         self.refresh()
 
     def __str__(self):
@@ -816,7 +843,7 @@ class Clients(object):
 
                             &#34;hostname&#34;: client2_hostname.
 
-                            &#34;displayName&#34;: client1_displayname
+                            &#34;displayName&#34;: client2_displayname
                         }
                     }
 
@@ -959,6 +986,48 @@ class Clients(object):
             self._dynamics365_clients = self._get_dynamics_365_clients()
         return self._dynamics365_clients
 
+    def _get_salesforce_clients(self):
+        &#34;&#34;&#34;
+        REST API call to get all Salesforce clients in the commcell
+
+        Returns:
+            dict[str, dict]: Containing Salesforce clients and ids in the Commcell like
+
+                {
+                    &#34;client1_displayName&#34;: {
+                        &#34;id&#34;: client1_id,
+                        &#34;clientName&#34;: &#34;client1_name&#34;
+                    },
+                    &#34;client2_displayName&#34;: {
+                        &#34;id&#34;: client2_id,
+                        &#34;clientName&#34;: &#34;client2_name&#34;
+                    }
+                }
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._SALESFORCE_CLIENTS)
+
+        if flag:
+            if response.json() and &#39;orgs&#39; in response.json():
+
+                return {
+                    self.all_clients[sf_subclient[&#39;clientName&#39;].lower()][&#39;displayName&#39;]: {
+                        &#39;id&#39;: sf_subclient[&#39;clientId&#39;],
+                        &#39;clientName&#39;: sf_subclient[&#39;clientName&#39;]
+                    }
+                    for sf_subclient in map(lambda org: org[&#39;sfSubclient&#39;], response.json()[&#39;orgs&#39;])
+                }
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    @property
+    def salesforce_clients(self):
+        &#34;&#34;&#34;Returns the dict of all salesforce clients in the commcell&#34;&#34;&#34;
+        if self._salesforce_clients is None:
+            self._salesforce_clients = self._get_salesforce_clients()
+        return self._salesforce_clients
+
     def _get_hidden_clients(self):
         &#34;&#34;&#34;Gets all the clients associated with the commcell, including all VM&#39;s and hidden clients
 
@@ -1059,8 +1128,9 @@ class Clients(object):
                 virtualization_clients = {}
 
                 for pseudo_client in pseudo_clients:
-                    virtualization_clients[pseudo_client[&#39;client&#39;][&#39;clientName&#39;].lower()] = {
+                    virtualization_clients[pseudo_client[&#39;client&#39;][&#39;displayName&#39;].lower()] = {
                         &#39;clientId&#39;: pseudo_client[&#39;client&#39;][&#39;clientId&#39;],
+                        &#39;clientName&#39;: pseudo_client[&#39;client&#39;][&#39;clientName&#39;],
                         &#39;hostName&#39;: pseudo_client[&#39;client&#39;][&#39;hostName&#39;]
                     }
 
@@ -1070,6 +1140,48 @@ class Clients(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
+    def _get_fileserver_clients(self):
+        &#34;&#34;&#34;REST API call to get all file server clients in the commcell
+
+            Returns:
+                dict    -   consists of all file server clients in the commcell
+
+                    {
+                        &#34;client1_name&#34;: {
+
+                            &#34;id&#34;: client1_id,
+
+                            &#34;displayName&#34;: client1_displayname
+                        },
+
+                        &#34;client2_name&#34;: {
+
+                            &#34;id&#34;: client2_id,
+
+                            &#34;displayName&#34;: client2_displayname
+                        }
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._FS_CLIENTS)
+
+        fs_clients = {}
+        if flag and response:
+            if response.json() and &#39;fileServers&#39; in response.json():
+                for file_server in response.json()[&#39;fileServers&#39;]:
+                    fs_clients[file_server[&#39;name&#39;]] = {
+                        &#39;id&#39;: file_server[&#39;id&#39;],
+                        &#39;displayName&#39;: file_server[&#39;displayName&#39;]
+                    }
+            return fs_clients
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+    
     @staticmethod
     def _get_client_dict(client_object):
         &#34;&#34;&#34;Returns the client dict for the client object to be appended to member server.
@@ -1111,7 +1223,7 @@ class Clients(object):
         member_servers = []
 
         for client in clients_list:
-            if isinstance(client, basestring):
+            if isinstance(client, str):
                 client = client.strip().lower()
 
                 if self.has_client(client):
@@ -1167,6 +1279,31 @@ class Clients(object):
             for hidden_client in self.hidden_clients:
                 if hostname.lower() == self.hidden_clients[hidden_client][&#39;hostname&#39;]:
                     return hidden_client
+
+    def _get_client_from_displayname(self, displayname):
+        &#34;&#34;&#34;get the client name for given displayname
+            name
+
+            Args:
+                displayname    (str)   --  displayname of the  client on this commcell
+
+            Returns:
+                str     -   name of the client associated with this displayname
+            
+                None    -   if no client has the displayname as the given input
+            Raises:
+                Exception:
+                    if multiple clients has same display name
+        &#34;&#34;&#34;
+        displayname_occurence = 0
+        for client  in self._get_clients():
+            if self._get_clients()[client][&#39;displayName&#39;] == displayname:
+                displayname_occurence += 1
+                client_name = client
+        if displayname_occurence &gt; 1:
+            raise Exception(&#39;multiple clients have same display name&#39;)
+        else:
+            return client_name
 
     @property
     def all_clients(self):
@@ -1359,6 +1496,31 @@ class Clients(object):
         &#34;&#34;&#34;
         return self._virtualization_clients
 
+    @property
+    def file_server_clients(self):
+        &#34;&#34;&#34;Returns the dictionary consisting of the file server clients and their info.
+
+            dict - consists of all file server clients in the commcell
+                    {
+                        &#34;client1_name&#34;: {
+
+                            &#34;id&#34;: client1_id,
+
+                            &#34;displayName&#34;: client1_displayname
+                        },
+
+                        &#34;client2_name&#34;: {
+
+                            &#34;id&#34;: client2_id,
+
+                            &#34;displayName&#34;: client2_displayname
+                        }
+                    }
+        &#34;&#34;&#34;
+        if self._file_server_clients is None:
+            self._file_server_clients = self._get_fileserver_clients()
+        return self._file_server_clients
+
     def has_client(self, client_name):
         &#34;&#34;&#34;Checks if a client exists in the commcell with the given client name / hostname.
 
@@ -1373,7 +1535,7 @@ class Clients(object):
                     if type of the client name argument is not string
 
         &#34;&#34;&#34;
-        if not isinstance(client_name, basestring):
+        if not isinstance(client_name, str):
             raise SDKException(&#39;Client&#39;, &#39;101&#39;)
         if self.all_clients and client_name.lower() in self.all_clients:
             return True
@@ -1399,7 +1561,7 @@ class Clients(object):
                 SDKException:
                     if type of the client name argument is not string
         &#34;&#34;&#34;
-        if not isinstance(client_name, basestring):
+        if not isinstance(client_name, str):
             raise SDKException(&#39;Client&#39;, &#39;101&#39;)
 
         return ((self.hidden_clients and client_name.lower() in self.hidden_clients) or
@@ -1414,7 +1576,7 @@ class Clients(object):
                 endpoint        (str)   --  Endpoint for making request to (default is &#39;/Client&#39;)
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -1461,26 +1623,24 @@ class Clients(object):
     def add_kubernetes_client(
             self,
             client_name,
-            master_node,
-            secret_name,
-            secret_key,
-            vsaclient,
-            vsaclient_id
+            api_server_endpoint,
+            service_account,
+            service_token,
+            access_nodes=None
     ):
-        &#34;&#34;&#34;Adds a new Kubernetes Virtualization Client to the Commcell.
+        &#34;&#34;&#34;Adds a new Kubernetes Cluster client to the Commcell.
 
             Args:
-                client_name         (str)   --  name of the new Kubernetes Virtual Client
+                client_name         (str)   --  name of the new Kubernetes Cluster client
 
-                master_node         (str)   --  Kubernetes kubectl node
+                api_server_endpoint (str)   --  Kubernetes API Server endpoint of the cluster
 
-                secret_name         (str)   --  Kubernetes Secret name
+                service_account     (str)   --  Name of the Service Account for authentication
 
-                secret_key          (str)   --  Kubernetes Secret Key
+                service_token       (str)   --  Token fetched from the Service Account
 
-                vsaclient           (str)   --  Virtual Server proxy client
+                access_nodes        (list/str)  --  Virtual Server proxy clients as access nodes
 
-                vsaclient_id        (int)   --  Virtual Server Client id
 
 
             Returns:
@@ -1497,9 +1657,27 @@ class Clients(object):
                     if response is not success
 
         &#34;&#34;&#34;
-        host_name = master_node
         if self.has_client(client_name):
             raise SDKException(&#39;Client&#39;, &#39;102&#39;, &#39;Client &#34;{0}&#34; already exists.&#39;.format(client_name))
+
+        if type(access_nodes) is str:
+            access_nodes = [access_nodes]
+
+        if not access_nodes:
+            access_nodes = []
+
+        member_servers_list = []
+        for server in access_nodes:
+            if not self.has_client(server):
+                raise SDKException(&#39;Client&#39;, &#39;102&#39;, f&#39;Access node {server} does not exist in CommCell&#39;)
+            member_servers_list.append(
+                {
+                    &#34;client&#34;: {
+                        &#34;clientName&#34;: server,
+                        &#34;_type_&#34;: 3
+                    }
+                }
+            )
 
         request_json = {
             &#34;clientInfo&#34;: {
@@ -1508,24 +1686,14 @@ class Clients(object):
                     &#34;virtualServerInstanceInfo&#34;: {
                         &#34;vsInstanceType&#34;: 20,
                         &#34;k8s&#34;: {
-                            &#34;secretName&#34;: secret_name,
-                            &#34;secretKey&#34;: secret_key,
+                            &#34;secretName&#34;: service_account,
+                            &#34;secretKey&#34;: service_token,
                             &#34;secretType&#34;: &#34;ServiceAccount&#34;,
-                            &#34;endpointurl&#34;: host_name
+                            &#34;endpointurl&#34;: api_server_endpoint
                         },
-                        &#34;associatedClients&#34;: {
-                            &#34;memberServers&#34;: [
-                                {
-                                    &#34;client&#34;: {
-                                        &#34;clientName&#34;: vsaclient,
-                                        &#34;clientId&#34;: vsaclient_id,
-                                        &#34;_type_&#34;: 3
-                                    }
-                                }
-                            ]
-                        },
+                        &#34;associatedClients&#34;: {},
                         &#34;vmwareVendor&#34;: {
-                            &#34;vcenterHostName&#34;: host_name
+                            &#34;vcenterHostName&#34;: api_server_endpoint
                         }
                     }
                 }
@@ -1534,6 +1702,14 @@ class Clients(object):
                 &#34;clientName&#34;: client_name
             }
         }
+
+        if member_servers_list:
+            associated_clients = {
+                &#39;associatedClients&#39;: {
+                    &#39;memberServers&#39;: member_servers_list
+                }
+            }
+            request_json[&#39;clientInfo&#39;][&#39;virtualServerClientProperties&#39;][&#39;virtualServerInstanceInfo&#39;].update(associated_clients)
 
         flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._ADD_CLIENT, request_json)
 
@@ -1934,7 +2110,7 @@ class Clients(object):
         member_servers = []
 
         for client in access_nodes_list:
-            if isinstance(client, basestring):
+            if isinstance(client, str):
                 client = client.strip().lower()
 
                 if self.has_client(client):
@@ -1984,55 +2160,31 @@ class Clients(object):
         }
         tenant_url = kwargs.get(&#39;tenant_url&#39;)
         global_administrator = kwargs.get(&#39;global_administrator&#39;)
-        if tenant_url:
-            user_password = b64encode(kwargs.get(&#39;user_password&#39;).encode()).decode()
-            request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
-                &#34;spOffice365BackupSetProp&#34;] = {
-                &#34;tenantUrlItem&#34;: tenant_url,
-                &#34;cloudRegion&#34;: 1,
-                &#34;isModernAuthEnabled&#34;: kwargs.get(&#39;is_modern_auth_enabled&#39;, False),
-                &#34;infraStructurePoolEnabled&#34;: False,
-                &#34;serviceAccounts&#34;: {
-                    &#34;accounts&#34;: [
-                        {
-                            &#34;serviceType&#34;: service_type[&#34;Sharepoint Online&#34;],
-                            &#34;userAccount&#34;: {
-                                &#34;password&#34;: user_password,
-                                &#34;userName&#34;: kwargs.get(&#39;user_username&#39;)
-                            }
-                        }
-                    ]
-                },
-                &#34;office365Credentials&#34;: {
+        request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
+            &#34;spOffice365BackupSetProp&#34;] = {
+            &#34;tenantUrlItem&#34;: tenant_url,
+            &#34;cloudRegion&#34;: 1,
+            &#34;isModernAuthEnabled&#34;: kwargs.get(&#39;is_modern_auth_enabled&#39;, False),
+            &#34;infraStructurePoolEnabled&#34;: False,
+             &#34;office365Credentials&#34;: {
                     &#34;userName&#34;: &#34;&#34;
-                },
-                &#34;azureAppList&#34;: {
+                }
+        }
+        if global_administrator:
+            azure_app_key_id = b64encode(kwargs.get(&#39;azure_app_key_id&#39;).encode()).decode()
+            global_administrator_password = b64encode(kwargs.get(&#39;global_administrator_password&#39;).encode()).decode()
+            request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
+                &#34;spOffice365BackupSetProp&#34;][&#34;azureAppList&#34;] = {
                     &#34;azureApps&#34;: [
                         {
-                            &#34;azureDirectoryId&#34;: &#34;&#34;,
-                            &#34;azureAppId&#34;: &#34;&#34;
-                        }
-                    ]
-                }
-            }
-            if kwargs.get(&#39;is_modern_auth_enabled&#39;):
-                azure_app_key_id = b64encode(kwargs.get(&#39;azure_app_key_id&#39;).encode()).decode()
-                request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
-                    &#34;spOffice365BackupSetProp&#34;][&#34;azureAppList&#34;][&#34;azureApps&#34;][0] = {
                             &#34;azureAppId&#34;: kwargs.get(&#39;azure_app_id&#39;),
                             &#34;azureAppKeyValue&#34;: azure_app_key_id,
                             &#34;azureDirectoryId&#34;: kwargs.get(&#39;azure_directory_id&#39;)
                         }
-        elif global_administrator:
-            azure_app_key_id = b64encode(kwargs.get(&#39;azure_app_key_id&#39;).encode()).decode()
-            global_administrator_password = b64encode(kwargs.get(&#39;global_administrator_password&#39;).encode()).decode()
-
+                    ]
+                }
             request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
-                &#34;spOffice365BackupSetProp&#34;] = {
-                &#34;cloudRegion&#34;: 1,
-                &#34;isModernAuthEnabled&#34;: kwargs.get(&#39;is_modern_auth_enabled&#39;, False),
-                &#34;infraStructurePoolEnabled&#34;: False,
-                &#34;serviceAccounts&#34;: {
+                &#34;spOffice365BackupSetProp&#34;][&#34;serviceAccounts&#34;] = {
                     &#34;accounts&#34;: [
                         {
                             &#34;serviceType&#34;: service_type[&#34;Sharepoint Global Administrator&#34;],
@@ -2042,9 +2194,25 @@ class Clients(object):
                             }
                         }
                     ]
-                },
-                &#34;office365Credentials&#34;: {},
-                &#34;azureAppList&#34;: {
+                }
+        else:
+            user_password = b64encode(kwargs.get(&#39;user_password&#39;).encode()).decode()
+            request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
+                &#34;spOffice365BackupSetProp&#34;][&#34;serviceAccounts&#34;] = {
+                    &#34;accounts&#34;: [
+                        {
+                            &#34;serviceType&#34;: service_type[&#34;Sharepoint Online&#34;],
+                            &#34;userAccount&#34;: {
+                                &#34;password&#34;: user_password,
+                                &#34;userName&#34;: kwargs.get(&#39;user_username&#39;)
+                            }
+                        }
+                    ]
+                }
+            if kwargs.get(&#39;is_modern_auth_enabled&#39;):
+                azure_app_key_id = b64encode(kwargs.get(&#39;azure_app_key_id&#39;).encode()).decode()
+                request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
+                    &#34;spOffice365BackupSetProp&#34;][&#34;azureAppList&#34;] = {
                     &#34;azureApps&#34;: [
                         {
                             &#34;azureAppId&#34;: kwargs.get(&#39;azure_app_id&#39;),
@@ -2053,7 +2221,6 @@ class Clients(object):
                         }
                     ]
                 }
-            }
         if kwargs.get(&#39;azure_username&#39;):
             azure_secret = b64encode(kwargs.get(&#39;azure_secret&#39;).encode()).decode()
             request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
@@ -2344,7 +2511,7 @@ class Clients(object):
         member_servers = []
 
         for client in clients_list:
-            if isinstance(client, basestring):
+            if isinstance(client, str):
                 client = client.strip().lower()
 
                 if self.has_client(client):
@@ -3040,6 +3207,210 @@ class Clients(object):
 
         self._process_add_response(request_json)
 
+    def add_onedrive_v2_client(
+            self,
+            client_name,
+            server_plan,
+            azure_app_id,
+            azure_directory_id,
+            azure_app_key_id,
+            **kwargs):
+
+        &#34;&#34;&#34;
+            Adds OneDrive for Business (v2) client
+
+            Args:
+                client_name (str) : Client Name
+                server_plan (str) : Server Plan&#39;s Name
+                azure_app_id (str) : Azure app ID
+                azure_directory_id (str) : Azure directory ID
+                azure_app_key_id (str) : Azure App key ID
+
+                **kwargs (dict) : Additional parameters
+                    index_server (str) : Index Server&#39;s Name
+                    access_nodes_list (list[str/object]) : List of names/objects of access node clients
+                    number_of_backup_streams (int) : Number of backup streams to be associated (default: 10)
+                    user_name (str) : User name for shared job results
+                    user_password (str) : User password for shared job results
+                    shared_jr_directory (str) : Shared Job results directory path
+
+            Returns:
+                object  -   instance of the Client class for this new client
+
+            Raises:
+                SDKException:
+                    if client with given name already exists
+
+                    if server plan  donot exists with the given name
+
+                    if data type of the input(s) is not valid
+
+                    if access node do not exists with the given name
+
+                    if failed to add the client
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+
+        # If client with given name already exists, raise Exception
+        if self.has_client(client_name):
+            raise SDKException(&#39;Client&#39;, &#39;102&#39;, f&#39;Client &#34;{client_name}&#34; already exists.&#39;)
+
+        # Get server plan details
+        server_plan_object = self._commcell_object.plans.get(server_plan)
+        server_plan_id = int(server_plan_object.plan_id)
+        server_plan_resources = server_plan_object._properties.get(&#39;storageResourcePoolMap&#39;)[0].get(&#39;resources&#39;)
+
+        access_nodes_list = kwargs.get(&#39;access_nodes_list&#39;)
+        index_server = kwargs.get(&#39;index_server&#39;)
+        is_resource_pool_enabled = False if server_plan_resources is None else True
+        number_of_backup_streams = kwargs.get(&#39;number_of_backup_streams&#39;, 10)
+        user_name = kwargs.get(&#39;user_name&#39;)
+        user_password = kwargs.get(&#39;user_password&#39;)
+        shared_jr_directory = kwargs.get(&#39;shared_jr_directory&#39;)
+
+        # If server plan is not resource pool enabled and infrastructure details are not provided, raise Exception
+        if not is_resource_pool_enabled and (access_nodes_list is None or index_server is None):
+            error_string = &#39;For a non resource-pool server plan, access nodes and index server details are necessary&#39;
+            raise SDKException(&#39;Client&#39;, &#39;102&#39;, error_string)
+
+        # If data type of the input(s) is not valid, raise Exception
+        if ((access_nodes_list and not isinstance(access_nodes_list, list)) or
+                (index_server and not isinstance(index_server, str)) or
+                (number_of_backup_streams and not isinstance(number_of_backup_streams, int)) or
+                (user_name and not isinstance(user_name, str)) or
+                (user_password and not isinstance(user_password, str)) or
+                (shared_jr_directory and not isinstance(shared_jr_directory, str))):
+            raise SDKException(&#39;Client&#39;, &#39;101&#39;)
+
+        # For multiple access nodes, make sure service account details are provided
+        if (access_nodes_list and len(access_nodes_list) &gt; 1 and
+                (user_name is None or user_password is None or shared_jr_directory is None)):
+            error_string = &#39;For creating a multi-access node client service account details are necessary&#39;
+            raise SDKException(&#39;Client&#39;, &#39;102&#39;, error_string)
+
+        # Get index server details
+        index_server_id = None
+        if index_server:
+            index_server_object = self.get(index_server)
+            index_server_id = int(index_server_object.client_id)
+
+        # For each access node create client object
+        member_servers = []
+
+        if access_nodes_list:
+            for client in access_nodes_list:
+                if isinstance(client, str):
+                    client = client.strip().lower()
+
+                    if self.has_client(client):
+                        client_dict = {
+                            &#34;client&#34;: {
+                                &#34;clientName&#34;: client,
+                                &#34;clientId&#34;: int(self.all_clients.get(client).get(&#39;id&#39;)),
+                                &#34;_type_&#34;: 3
+                            }
+                        }
+                        member_servers.append(client_dict)
+                    else:
+                        raise SDKException(&#39;Client&#39;, &#39;102&#39;, f&#39;Client {client} does not exitst&#39;)
+
+                elif isinstance(client, Client):
+                    if self.has_client(client):
+                        client_dict = {
+                            &#34;client&#34;: {
+                                &#34;clientName&#34;: client.client_name,
+                                &#34;clientId&#34;: int(client.client_id),
+                                &#34;_type_&#34;: 3
+                            }
+                        }
+                        member_servers.append(client_dict)
+                    else:
+                        raise SDKException(&#39;Client&#39;, &#39;102&#39;, f&#39;Client {client} does not exitst&#39;)
+
+                else:
+                    raise SDKException(&#39;Client&#39;, &#39;101&#39;)
+
+        azure_app_key_value = b64encode(azure_app_key_id.encode()).decode()
+
+        request_json = {
+            &#34;clientInfo&#34;: {
+                &#34;clientType&#34;: 37,
+                &#34;useResourcePoolInfo&#34;: is_resource_pool_enabled,
+                &#34;plan&#34;: {
+                    &#34;planId&#34;: server_plan_id
+                },
+                &#34;cloudClonnectorProperties&#34;: {
+                    &#34;instanceType&#34;: 7,
+                    &#34;instance&#34;: {
+                        &#34;instance&#34;: {
+                            &#34;clientName&#34;: client_name
+                        },
+                        &#34;cloudAppsInstance&#34;: {
+                            &#34;instanceType&#34;: 7,
+                            &#34;serviceAccounts&#34;: {},
+                            &#34;oneDriveInstance&#34;: {
+                                &#34;manageContentAutomatically&#34;: False,
+                                &#34;isAutoDiscoveryEnabled&#34;: False,
+                                &#34;cloudRegion&#34;: 1,
+                                &#34;azureAppList&#34;: {
+                                    &#34;azureApps&#34;: [
+                                        {
+                                            &#34;azureDirectoryId&#34;: azure_directory_id,
+                                            &#34;azureAppDisplayName&#34;: azure_app_id,
+                                            &#34;azureAppKeyValue&#34;: azure_app_key_value,
+                                            &#34;azureAppId&#34;: azure_app_id
+                                        }
+                                    ]
+                                }
+                            },
+                            &#34;generalCloudProperties&#34;: {
+                                &#34;numberOfBackupStreams&#34;: number_of_backup_streams,
+                                &#34;jobResultsDir&#34;: {
+                                    &#34;path&#34;: &#34;&#34;
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            &#34;entity&#34;: {
+                &#34;clientName&#34;: client_name
+            }
+        }
+
+        if not is_resource_pool_enabled:
+            request_json[&#34;clientInfo&#34;][&#34;cloudClonnectorProperties&#34;][&#34;instance&#34;][&#34;cloudAppsInstance&#34;][
+                &#34;generalCloudProperties&#34;][&#34;indexServer&#34;] = {
+                &#34;clientId&#34;: index_server_id
+            }
+            request_json[&#34;clientInfo&#34;][&#34;cloudClonnectorProperties&#34;][&#34;instance&#34;][&#34;cloudAppsInstance&#34;][
+                &#34;generalCloudProperties&#34;][&#34;memberServers&#34;] = member_servers
+
+        if access_nodes_list and len(access_nodes_list) &gt; 1:
+            request_json[&#34;clientInfo&#34;][&#34;cloudClonnectorProperties&#34;][&#34;instance&#34;][&#34;cloudAppsInstance&#34;][
+                &#34;generalCloudProperties&#34;][&#34;jobResultsDir&#34;][&#34;path&#34;] = shared_jr_directory
+
+        if user_name:
+            user_password = b64encode(user_password.encode()).decode()
+            request_json[&#34;clientInfo&#34;][&#34;cloudClonnectorProperties&#34;][&#34;instance&#34;][&#34;cloudAppsInstance&#34;][
+                &#34;oneDriveInstance&#34;][
+                &#34;serviceAccounts&#34;] = {
+                &#34;accounts&#34;: [
+                    {
+                        &#34;serviceType&#34;: 3,
+                        &#34;userAccount&#34;: {
+                            &#34;userName&#34;: user_name,
+                            &#34;password&#34;: user_password
+                        }
+                    }
+                ]
+            }
+
+        self._process_add_response(request_json, self._ADD_ONEDRIVE_CLIENT)
+
     def add_onedrive_client(self,
                             client_name,
                             instance_name,
@@ -3158,7 +3529,7 @@ class Clients(object):
                         onedrive_prop[&#39;infraStructurePoolEnabled&#39;] = True
                     else:
                         onedrive_prop[&#39;infraStructurePoolEnabled&#39;] = False
-                        if isinstance(access_node, basestring):
+                        if isinstance(access_node, str):
                             proxy_servers = []
                             access_node = access_node.strip().lower()
                             if self.has_client(access_node):
@@ -3312,7 +3683,7 @@ class Clients(object):
 
                     if no client exists with the given name
         &#34;&#34;&#34;
-        if isinstance(name, basestring):
+        if isinstance(name, str):
             name = name.lower()
             client_name = None
             client_id = None
@@ -3321,6 +3692,8 @@ class Clients(object):
                 client_from_hostname = self._get_client_from_hostname(name)
                 if self.has_hidden_client(name) and not client_from_hostname and name not in self.all_clients:
                     client_from_hostname = self._get_hidden_client_from_hostname(name)
+            elif not self.has_client(name):
+                client_from_hostname = self._get_client_from_displayname(name)
             else:
                 raise SDKException(
                     &#39;Client&#39;, &#39;102&#39;, &#39;No client exists with given name/hostname: {0}&#39;.format(name)
@@ -3369,7 +3742,7 @@ class Clients(object):
                     if no client exists with the given name
 
         &#34;&#34;&#34;
-        if not isinstance(client_name, basestring):
+        if not isinstance(client_name, str):
             raise SDKException(&#39;Client&#39;, &#39;101&#39;)
         else:
             client_name = client_name.lower()
@@ -3431,6 +3804,8 @@ class Clients(object):
         self._hidden_clients = self._get_hidden_clients()
         self._virtualization_clients = self._get_virtualization_clients()
         self._office_365_clients = None
+        self._file_server_clients = None
+        self._salesforce_clients = None
 
 
 class Client(object):
@@ -3450,6 +3825,7 @@ class Client(object):
                 object - instance of the Client class
                 &#34;&#34;&#34;
         from .clients.vmclient import VMClient
+        from .clients.onedrive_client import OneDriveClient
         _client = commcell_object._services[&#39;CLIENT&#39;] % (client_id)
         flag, response = commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, _client)
         if flag:
@@ -3458,6 +3834,12 @@ class Client(object):
                                                                                               {}).get(
                         &#39;applicationId&#39;) == 106:
                     return object.__new__(VMClient)
+
+                elif (len(response.json().get(&#39;clientProperties&#39;, {})[0].get(&#39;client&#39;, {}).get(&#39;idaList&#39;, [])) &gt; 0 and
+                        response.json().get(&#39;clientProperties&#39;, {})[0].get(&#39;client&#39;, {}).get(&#39;idaList&#39;, [])[0]
+                        .get(&#39;idaEntity&#39;, {}).get(&#39;applicationId&#39;) == AppIDAType.CLOUD_APP.value):
+                    return object.__new__(OneDriveClient)
+
         return object.__new__(cls)
 
     def __init__(self, commcell_object, client_name, client_id=None):
@@ -3522,6 +3904,7 @@ class Client(object):
         self._is_restore_enabled = None
         self._client_hostname = None
         self._job_results_directory = None
+        self._block_level_cache_dir = None
         self._log_directory = None
         self._license_info = None
         self._cvd_port = None
@@ -3634,6 +4017,9 @@ class Client(object):
 
                 if &#39;jobStartTime&#39; in client_props:
                     self._job_start_time = client_props[&#39;jobStartTime&#39;]
+
+                if &#39;BlockLevelCacheDir&#39; in client_props:
+                    self._block_level_cache_dir = client_props[&#39;BlockLevelCacheDir&#39;]
 
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -3982,11 +4368,16 @@ class Client(object):
             service_name = &#39;ALL&#39;
 
         if &#39;windows&#39; in self.os_info.lower():
+            
+            windows_command = operations_dict[operation][&#39;windows_command&#39;]
+            if service_name == &#39;ALL&#39; and &#39;grp&#39; not in windows_command:
+                windows_command = windows_command + &#39;grp&#39;
+                
             command = &#39;&#34;{0}&#34; -consoleMode -{1} {2}&#39;.format(
                 &#39;\\&#39;.join([self.install_directory, &#39;Base&#39;, &#39;GxAdmin.exe&#39;]),
-                operations_dict[operation][&#39;windows_command&#39;],
+                windows_command,
                 service_name
-            )
+            ) 
 
             __, output, __ = self.execute_command(command, wait_for_completion=False)
 
@@ -4036,6 +4427,10 @@ class Client(object):
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._CLIENT, request_json
         )
+        success_alerts = [f&#34;cluster group [{request_json[&#39;association&#39;][&#39;entity&#39;][0][&#39;clientName&#39;].lower()}] &#34;
+                          f&#34;configuration was saved on commserve successfully.&#34;]
+        success = False
+
         if flag:
             if response.json():
                 if &#39;response&#39; in response.json():
@@ -4043,9 +4438,12 @@ class Client(object):
                         error_message = response.json()[&#39;response&#39;][0].get(&#39;errorMessage&#39;)
                         if not error_message:
                             error_message = response.json()[&#39;response&#39;][0].get(&#39;errorString&#39;, &#39;&#39;)
-
-                        o_str = &#39;Failed to set property\nError: &#34;{0}&#34;&#39;.format(error_message)
-                        raise SDKException(&#39;Client&#39;, &#39;102&#39;, o_str)
+                        for success_alert in success_alerts:
+                            if success_alert in error_message.lower():
+                                success = True
+                        if not success:
+                            o_str = &#39;Failed to set property\nError: &#34;{0}&#34;&#39;.format(error_message)
+                            raise SDKException(&#39;Client&#39;, &#39;102&#39;, o_str)
                     self.refresh()
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -4259,6 +4657,11 @@ class Client(object):
     def job_results_directory(self):
         &#34;&#34;&#34;Treats the job_results_directory pack as a read-only attribute.&#34;&#34;&#34;
         return self._job_results_directory
+
+    @property
+    def block_level_cache_dir(self):
+        &#34;&#34;&#34;Returns the Block level cache directory&#34;&#34;&#34;
+        return self._block_level_cache_dir
 
     @property
     def instance(self):
@@ -4748,7 +5151,7 @@ class Client(object):
 
                     if response is not success
         &#34;&#34;&#34;
-        if not (isinstance(script_type, basestring) and (isinstance(script, basestring))):
+        if not (isinstance(script_type, str) and (isinstance(script, str))):
             raise SDKException(&#39;Client&#39;, &#39;101&#39;)
 
         script_types = {
@@ -4857,7 +5260,7 @@ class Client(object):
                     if response is not success
 
         &#34;&#34;&#34;
-        if not isinstance(command, basestring):
+        if not isinstance(command, str):
             raise SDKException(&#39;Client&#39;, &#39;101&#39;)
 
         import html
@@ -5554,7 +5957,7 @@ class Client(object):
         if enc_setting is not None:
             client_props[&#39;encryptionSettings&#39;] = enc_setting
             if enc_setting == &#34;ON_CLIENT&#34;:
-                if not (isinstance(key, basestring) and isinstance(key_len, basestring)):
+                if not (isinstance(key, str) and isinstance(key_len, str)):
                     raise SDKException(&#39;Client&#39;, &#39;101&#39;)
                 client_props[&#39;CipherType&#39;] = key
                 client_props[&#39;EncryptKeyLength&#39;] = int(key_len)
@@ -5632,7 +6035,7 @@ class Client(object):
                                 Values - None(Default) - DoNotModify the property value
                                          True/False - Enable/Disable optimization respectively
         &#34;&#34;&#34;
-        if not (isinstance(prop_name, basestring) and isinstance(prop_value, basestring)):
+        if not (isinstance(prop_name, str) and isinstance(prop_value, str)):
             raise SDKException(&#39;Client&#39;, &#39;101&#39;)
 
         if prop_name == &#34;clientSideDeduplication&#34; and prop_value == &#34;ON_CLIENT&#34;:
@@ -6516,7 +6919,9 @@ class _Readiness:
             network=True,
             resource=False,
             disabled_clients=False,
-            cs_cc_network_check=False
+            cs_cc_network_check=False,
+            application_check=False,
+            additional_resources=False,
     ):
         &#34;&#34;&#34;
         Performs readiness check on the client
@@ -6533,7 +6938,13 @@ class _Readiness:
 
                 cs_cc_network_check (bool)  - Performs network readiness check between CS and client alone.
                                                 Default: False
-
+                
+                application_check (bool) - Performs Application Readiness check.
+                                             Default: False
+                
+                additional_resources (bool) - Include Additional Resources.
+                                               Default: False
+                                                       
             Raises:
                 SDKException:
                     if response is empty
@@ -6547,7 +6958,9 @@ class _Readiness:
                 network,
                 resource,
                 disabled_clients,
-                cs_cc_network_check)
+                cs_cc_network_check,
+                application_check,
+                additional_resources)
         )
 
         if flag:
@@ -6561,7 +6974,8 @@ class _Readiness:
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self.__commcell._update_response_(response.text))
 
-    def is_ready(self, network=True, resource=False, disabled_clients=False, cs_cc_network_check=False):
+    def is_ready(self, network=True, resource=False, disabled_clients=False, cs_cc_network_check=False,
+                 application_check=False, additional_resources=False):
         &#34;&#34;&#34;Performs readiness check on the client
 
         Args:
@@ -6577,12 +6991,19 @@ class _Readiness:
                 cs_cc_network_check (bool)  - Performs network readiness check between CS and client alone.
                                                 Default: False
 
+                application_check (bool) - Performs Application Readiness check.
+                                             Default: False
+                
+                additional_resources (bool) - Include Additional Resources.
+                                         Default: False
+
         Returns:
 
             (bool)  - True if ready else False
 
         &#34;&#34;&#34;
-        self.__fetch_readiness_details(network, resource, disabled_clients, cs_cc_network_check)
+        self.__fetch_readiness_details(network, resource, disabled_clients, cs_cc_network_check,
+                                        application_check, additional_resources)
         return self._status == &#34;Ready.&#34;
 
     def __check_reason(self):
@@ -6657,7 +7078,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3099-L6163" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L3462-L6554" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Client(object):
     &#34;&#34;&#34;Class for performing client operations for a specific client.&#34;&#34;&#34;
@@ -6676,6 +7097,7 @@ default: None</p>
                 object - instance of the Client class
                 &#34;&#34;&#34;
         from .clients.vmclient import VMClient
+        from .clients.onedrive_client import OneDriveClient
         _client = commcell_object._services[&#39;CLIENT&#39;] % (client_id)
         flag, response = commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, _client)
         if flag:
@@ -6684,6 +7106,12 @@ default: None</p>
                                                                                               {}).get(
                         &#39;applicationId&#39;) == 106:
                     return object.__new__(VMClient)
+
+                elif (len(response.json().get(&#39;clientProperties&#39;, {})[0].get(&#39;client&#39;, {}).get(&#39;idaList&#39;, [])) &gt; 0 and
+                        response.json().get(&#39;clientProperties&#39;, {})[0].get(&#39;client&#39;, {}).get(&#39;idaList&#39;, [])[0]
+                        .get(&#39;idaEntity&#39;, {}).get(&#39;applicationId&#39;) == AppIDAType.CLOUD_APP.value):
+                    return object.__new__(OneDriveClient)
+
         return object.__new__(cls)
 
     def __init__(self, commcell_object, client_name, client_id=None):
@@ -6748,6 +7176,7 @@ default: None</p>
         self._is_restore_enabled = None
         self._client_hostname = None
         self._job_results_directory = None
+        self._block_level_cache_dir = None
         self._log_directory = None
         self._license_info = None
         self._cvd_port = None
@@ -6860,6 +7289,9 @@ default: None</p>
 
                 if &#39;jobStartTime&#39; in client_props:
                     self._job_start_time = client_props[&#39;jobStartTime&#39;]
+
+                if &#39;BlockLevelCacheDir&#39; in client_props:
+                    self._block_level_cache_dir = client_props[&#39;BlockLevelCacheDir&#39;]
 
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -7208,11 +7640,16 @@ default: None</p>
             service_name = &#39;ALL&#39;
 
         if &#39;windows&#39; in self.os_info.lower():
+            
+            windows_command = operations_dict[operation][&#39;windows_command&#39;]
+            if service_name == &#39;ALL&#39; and &#39;grp&#39; not in windows_command:
+                windows_command = windows_command + &#39;grp&#39;
+                
             command = &#39;&#34;{0}&#34; -consoleMode -{1} {2}&#39;.format(
                 &#39;\\&#39;.join([self.install_directory, &#39;Base&#39;, &#39;GxAdmin.exe&#39;]),
-                operations_dict[operation][&#39;windows_command&#39;],
+                windows_command,
                 service_name
-            )
+            ) 
 
             __, output, __ = self.execute_command(command, wait_for_completion=False)
 
@@ -7262,6 +7699,10 @@ default: None</p>
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._CLIENT, request_json
         )
+        success_alerts = [f&#34;cluster group [{request_json[&#39;association&#39;][&#39;entity&#39;][0][&#39;clientName&#39;].lower()}] &#34;
+                          f&#34;configuration was saved on commserve successfully.&#34;]
+        success = False
+
         if flag:
             if response.json():
                 if &#39;response&#39; in response.json():
@@ -7269,9 +7710,12 @@ default: None</p>
                         error_message = response.json()[&#39;response&#39;][0].get(&#39;errorMessage&#39;)
                         if not error_message:
                             error_message = response.json()[&#39;response&#39;][0].get(&#39;errorString&#39;, &#39;&#39;)
-
-                        o_str = &#39;Failed to set property\nError: &#34;{0}&#34;&#39;.format(error_message)
-                        raise SDKException(&#39;Client&#39;, &#39;102&#39;, o_str)
+                        for success_alert in success_alerts:
+                            if success_alert in error_message.lower():
+                                success = True
+                        if not success:
+                            o_str = &#39;Failed to set property\nError: &#34;{0}&#34;&#39;.format(error_message)
+                            raise SDKException(&#39;Client&#39;, &#39;102&#39;, o_str)
                     self.refresh()
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -7485,6 +7929,11 @@ default: None</p>
     def job_results_directory(self):
         &#34;&#34;&#34;Treats the job_results_directory pack as a read-only attribute.&#34;&#34;&#34;
         return self._job_results_directory
+
+    @property
+    def block_level_cache_dir(self):
+        &#34;&#34;&#34;Returns the Block level cache directory&#34;&#34;&#34;
+        return self._block_level_cache_dir
 
     @property
     def instance(self):
@@ -7974,7 +8423,7 @@ default: None</p>
 
                     if response is not success
         &#34;&#34;&#34;
-        if not (isinstance(script_type, basestring) and (isinstance(script, basestring))):
+        if not (isinstance(script_type, str) and (isinstance(script, str))):
             raise SDKException(&#39;Client&#39;, &#39;101&#39;)
 
         script_types = {
@@ -8083,7 +8532,7 @@ default: None</p>
                     if response is not success
 
         &#34;&#34;&#34;
-        if not isinstance(command, basestring):
+        if not isinstance(command, str):
             raise SDKException(&#39;Client&#39;, &#39;101&#39;)
 
         import html
@@ -8780,7 +9229,7 @@ default: None</p>
         if enc_setting is not None:
             client_props[&#39;encryptionSettings&#39;] = enc_setting
             if enc_setting == &#34;ON_CLIENT&#34;:
-                if not (isinstance(key, basestring) and isinstance(key_len, basestring)):
+                if not (isinstance(key, str) and isinstance(key_len, str)):
                     raise SDKException(&#39;Client&#39;, &#39;101&#39;)
                 client_props[&#39;CipherType&#39;] = key
                 client_props[&#39;EncryptKeyLength&#39;] = int(key_len)
@@ -8858,7 +9307,7 @@ default: None</p>
                                 Values - None(Default) - DoNotModify the property value
                                          True/False - Enable/Disable optimization respectively
         &#34;&#34;&#34;
-        if not (isinstance(prop_name, basestring) and isinstance(prop_value, basestring)):
+        if not (isinstance(prop_name, str) and isinstance(prop_value, str)):
             raise SDKException(&#39;Client&#39;, &#39;101&#39;)
 
         if prop_name == &#34;clientSideDeduplication&#34; and prop_value == &#34;ON_CLIENT&#34;:
@@ -9727,6 +10176,7 @@ default: None</p>
 </details>
 <h3>Subclasses</h3>
 <ul class="hlist">
+<li><a title="cvpysdk.clients.onedrive_client.OneDriveClient" href="clients/onedrive_client.html#cvpysdk.clients.onedrive_client.OneDriveClient">OneDriveClient</a></li>
 <li><a title="cvpysdk.clients.vmclient.VMClient" href="clients/vmclient.html#cvpysdk.clients.vmclient.VMClient">VMClient</a></li>
 </ul>
 <h3>Instance variables</h3>
@@ -9738,7 +10188,7 @@ installed / configured on the Client.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3950-L3958" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4341-L4349" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def agents(self):
@@ -9757,12 +10207,26 @@ def agents(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3836-L3839" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4222-L4225" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def available_security_roles(self):
     &#34;&#34;&#34;Returns the list of available security roles&#34;&#34;&#34;
     return self._security_association.__str__()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.client.Client.block_level_cache_dir"><code class="name">var <span class="ident">block_level_cache_dir</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the Block level cache directory</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4312-L4315" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def block_level_cache_dir(self):
+    &#34;&#34;&#34;Returns the Block level cache directory&#34;&#34;&#34;
+    return self._block_level_cache_dir</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.client.Client.client_guid"><code class="name">var <span class="ident">client_guid</span></code></dt>
@@ -9771,7 +10235,7 @@ def available_security_roles(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5782-L5786" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L6173-L6177" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_guid(self):
@@ -9786,7 +10250,7 @@ def client_guid(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3851-L3854" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4237-L4240" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_hostname(self):
@@ -9800,7 +10264,7 @@ def client_hostname(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3841-L3844" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4227-L4230" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_id(self):
@@ -9814,7 +10278,7 @@ def client_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3846-L3849" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4232-L4235" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_name(self):
@@ -9828,7 +10292,7 @@ def client_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5788-L5792" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L6179-L6183" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_type(self):
@@ -9843,7 +10307,7 @@ def client_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3817-L3820" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4203-L4206" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def commcell_name(self):
@@ -9857,7 +10321,7 @@ def commcell_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L6031-L6034" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L6422-L6425" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def company_name(self):
@@ -9905,7 +10369,7 @@ if response code is not as expected
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5709-L5774" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L6100-L6165" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def consumed_licenses(self):
@@ -9981,7 +10445,7 @@ def consumed_licenses(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5776-L5780" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L6167-L6171" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def cvd_port(self):
@@ -9996,7 +10460,7 @@ def cvd_port(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3780-L3783" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4166-L4169" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -10010,7 +10474,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3763-L3766" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4149-L4152" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def display_name(self):
@@ -10024,7 +10488,7 @@ def display_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3901-L3904" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4287-L4290" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def install_directory(self):
@@ -10038,7 +10502,7 @@ def install_directory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3926-L3936" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4317-L4327" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance(self):
@@ -10059,7 +10523,7 @@ def instance(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3876-L3879" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4262-L4265" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_backup_enabled(self):
@@ -10073,7 +10537,7 @@ def is_backup_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3871-L3874" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4257-L4260" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_ci_enabled(self):
@@ -10087,7 +10551,7 @@ def is_ci_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3996-L3999" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4387-L4390" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_cluster(self):
@@ -10101,7 +10565,7 @@ def is_cluster(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3886-L3889" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4272-L4275" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_data_aging_enabled(self):
@@ -10115,7 +10579,7 @@ def is_data_aging_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3866-L3869" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4252-L4255" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_data_management_enabled(self):
@@ -10129,7 +10593,7 @@ def is_data_management_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3861-L3864" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4247-L4250" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_data_recovery_enabled(self):
@@ -10143,7 +10607,7 @@ def is_data_recovery_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3891-L3894" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4277-L4280" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_intelli_snap_enabled(self):
@@ -10157,7 +10621,7 @@ def is_intelli_snap_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3896-L3899" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4282-L4285" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_privacy_enabled(self):
@@ -10183,7 +10647,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L4646-L4661" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5037-L5052" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_ready(self):
@@ -10209,7 +10673,7 @@ def is_ready(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3881-L3884" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4267-L4270" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_restore_enabled(self):
@@ -10223,7 +10687,7 @@ def is_restore_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3921-L3924" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4307-L4310" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def job_results_directory(self):
@@ -10237,7 +10701,7 @@ def job_results_directory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5892-L5896" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L6283-L6287" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def job_start_time(self):
@@ -10252,7 +10716,7 @@ def job_start_time(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3938-L3948" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4329-L4339" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def log_directory(self):
@@ -10273,7 +10737,7 @@ def log_directory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3758-L3761" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4144-L4147" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -10287,7 +10751,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3822-L3825" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4208-L4211" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name_change(self):
@@ -10301,7 +10765,7 @@ def name_change(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3980-L3986" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4371-L4377" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def network(self):
@@ -10318,7 +10782,7 @@ def network(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3988-L3994" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4379-L4385" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def network_throttle(self):
@@ -10335,7 +10799,7 @@ def network_throttle(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3856-L3859" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4242-L4245" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def os_info(self):
@@ -10349,7 +10813,7 @@ def os_info(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3916-L3919" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4302-L4305" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def owners(self):
@@ -10363,7 +10827,7 @@ def owners(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3753-L3756" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4139-L4142" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -10377,7 +10841,7 @@ def properties(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5898-L5903" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L6289-L6294" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def readiness_details(self):
@@ -10394,7 +10858,7 @@ configured on the Client.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3960-L3968" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4351-L4359" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def schedules(self):
@@ -10413,7 +10877,7 @@ def schedules(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3911-L3914" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4297-L4300" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def service_pack(self):
@@ -10427,7 +10891,7 @@ def service_pack(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3797-L3800" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4183-L4186" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def timezone(self):
@@ -10442,7 +10906,7 @@ with permissions set on the Client.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3970-L3978" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4361-L4369" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def users(self):
@@ -10461,7 +10925,7 @@ def users(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3906-L3909" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4292-L4295" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def version(self):
@@ -10475,7 +10939,7 @@ def version(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5794-L5798" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L6185-L6189" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_guid(self):
@@ -10521,7 +10985,7 @@ if response code is not as expected
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5362-L5408" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5753-L5799" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_additional_setting(self, category, key_name, data_type, value):
     &#34;&#34;&#34;Adds registry key to the client property
@@ -10588,7 +11052,7 @@ if input data is invalid</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5077-L5111" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5468-L5502" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_client_owner(self, owner_list):
     &#34;&#34;&#34;Adds the users to the owners list of this client
@@ -10655,7 +11119,7 @@ associations_list = [
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5052-L5075" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5443-L5466" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_user_associations(self, associations_list):
     &#34;&#34;&#34;Adds the users to the owners list of this client
@@ -10702,7 +11166,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L6122-L6163" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L6513-L6554" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def change_company_for_client(self, destination_company_name):
     &#34;&#34;&#34;
@@ -10776,7 +11240,7 @@ Error in moving the job results directory</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L4901-L4978" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5292-L5369" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def change_exchange_job_results_directory(
         self, new_directory_path, username=None, password=None):
@@ -10886,7 +11350,7 @@ Error in moving the job results directory</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L4980-L5003" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5371-L5394" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def change_o365_client_job_results_directory(
         self, new_directory_path, username=None, password=None):
@@ -10935,7 +11399,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L6036-L6074" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L6427-L6465" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def check_eligibility_for_migration(self, destination_company_name):
     &#34;&#34;&#34;Checks whether Client is Eligible for migration
@@ -11002,7 +11466,7 @@ if response code is not as expected
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5410-L5447" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5801-L5838" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_additional_setting(self, category, key_name):
     &#34;&#34;&#34;Deletes registry key from the client property
@@ -11059,7 +11523,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L4082-L4113" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4473-L4504" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_backup(self):
     &#34;&#34;&#34;Disables Backup for this Client.
@@ -11103,7 +11567,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L6017-L6021" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L6408-L6412" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_content_indexing(self):
     &#34;&#34;&#34;Disables the v1 content indexing on the client&#34;&#34;&#34;
@@ -11127,7 +11591,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L4322-L4353" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4713-L4744" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_data_aging(self):
     &#34;&#34;&#34;Disables Data Aging for this Client.
@@ -11178,7 +11642,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L4609-L4644" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5000-L5035" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_intelli_snap(self):
     &#34;&#34;&#34;Disables Intelli Snap for this Client.
@@ -11226,7 +11690,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L6076-L6081" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L6467-L6472" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_owner_privacy(self):
     &#34;&#34;&#34;Enables the privacy option for client&#34;&#34;&#34;
@@ -11251,7 +11715,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L4202-L4233" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4593-L4624" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_restore(self):
     &#34;&#34;&#34;Disables Restore for this Client.
@@ -11302,7 +11766,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L4001-L4032" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4392-L4423" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_backup(self):
     &#34;&#34;&#34;Enable Backup for this Client.
@@ -11362,7 +11826,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L4034-L4080" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4425-L4471" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_backup_at_time(self, enable_time, **kwargs):
     &#34;&#34;&#34;Disables Backup if not already disabled, and enables at the time specified.
@@ -11421,7 +11885,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L6011-L6015" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L6402-L6406" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_content_indexing(self):
     &#34;&#34;&#34;Enables the v1 content indexing on the client&#34;&#34;&#34;
@@ -11445,7 +11909,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L4235-L4266" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4626-L4657" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_data_aging(self):
     &#34;&#34;&#34;Enable Data Aging for this Client.
@@ -11511,7 +11975,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L4268-L4320" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4659-L4711" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_data_aging_at_time(self, enable_time, **kwargs):
     &#34;&#34;&#34;Disables Data Aging if not already disabled, and enables at the time specified.
@@ -11583,7 +12047,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L4572-L4607" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4963-L4998" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_intelli_snap(self):
     &#34;&#34;&#34;Enables Intelli Snap for this Client.
@@ -11631,7 +12095,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L6023-L6029" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L6414-L6420" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_owner_privacy(self):
     &#34;&#34;&#34;Enables the privacy option for client&#34;&#34;&#34;
@@ -11657,7 +12121,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L4115-L4146" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4506-L4537" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_restore(self):
     &#34;&#34;&#34;Enable Restore for this Client.
@@ -11723,7 +12187,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L4148-L4200" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4539-L4591" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_restore_at_time(self, enable_time, **kwargs):
     &#34;&#34;&#34;Disables Restore if not already disabled, and enables at the time specified.
@@ -11843,7 +12307,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L4484-L4570" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4875-L4961" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def execute_command(self, command, script_arguments=None, wait_for_completion=True):
     &#34;&#34;&#34;Executes a command on this client.
@@ -11884,7 +12348,7 @@ if response is not success
                 if response is not success
 
     &#34;&#34;&#34;
-    if not isinstance(command, basestring):
+    if not isinstance(command, str):
         raise SDKException(&#39;Client&#39;, &#39;101&#39;)
 
     import html
@@ -12019,7 +12483,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L4355-L4482" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4746-L4873" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def execute_script(self, script_type, script, script_arguments=None, wait_for_completion=True):
     &#34;&#34;&#34;Executes the given script of the script type on this client.
@@ -12080,7 +12544,7 @@ if response is not success
 
                 if response is not success
     &#34;&#34;&#34;
-    if not (isinstance(script_type, basestring) and (isinstance(script, basestring))):
+    if not (isinstance(script_type, str) and (isinstance(script, str))):
         raise SDKException(&#39;Client&#39;, &#39;101&#39;)
 
     script_types = {
@@ -12190,7 +12654,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5113-L5184" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5504-L5575" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def filter_clients_return_displaynames(self, filter_by=&#34;OS&#34;, **kwargs):
     &#34;&#34;&#34;Gets all the clients associated with the commcell with properties
@@ -12281,7 +12745,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5675-L5707" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L6066-L6098" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_dag_member_servers(self):
     &#34;&#34;&#34;Gets the member servers for an Exchange DAG client.
@@ -12332,7 +12796,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5905-L5937" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L6296-L6328" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_environment_details(self):
     &#34;&#34;&#34;
@@ -12391,7 +12855,7 @@ eg: [{
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5975-L6009" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L6366-L6400" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_mount_volumes(self, volume_names=None):
     &#34;&#34;&#34;&#34;Gets mount volumes information for client
@@ -12445,7 +12909,7 @@ for all the service commcells</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5939-L5973" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L6330-L6364" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_needs_attention_details(self):
     &#34;&#34;&#34;
@@ -12499,7 +12963,7 @@ if response is not successful</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L4881-L4899" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5272-L5290" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_network_summary(self):
     &#34;&#34;&#34;Gets the network summary for the client
@@ -12535,7 +12999,7 @@ if response is not successful</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5005-L5050" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5396-L5441" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def push_network_config(self):
     &#34;&#34;&#34;Performs a push network configuration on the client
@@ -12616,7 +13080,7 @@ if another download job is already running
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5594-L5632" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5985-L6023" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def push_servicepack_and_hotfix(
         self,
@@ -12674,7 +13138,7 @@ if response code is not as expected
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5558-L5592" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5949-L5983" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def reconfigure_client(self):
     &#34;&#34;&#34;Reapplies license to the client
@@ -12721,7 +13185,7 @@ if response code is not as expected
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5186-L5194" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5577-L5585" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refreshes the properties of the Client.&#34;&#34;&#34;
@@ -12762,7 +13226,7 @@ if response code is not as expected
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5449-L5514" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5840-L5905" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def release_license(self, license_name=None):
     &#34;&#34;&#34;Releases a license from a client
@@ -12863,7 +13327,7 @@ if install job failed</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5634-L5673" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L6025-L6064" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def repair_software(
         self,
@@ -12934,7 +13398,7 @@ if failed to restart the service</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L4806-L4827" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5197-L5218" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restart_service(self, service_name=None):
     &#34;&#34;&#34;Executes the command on the client machine to restart the Commvault service(s).
@@ -13002,7 +13466,7 @@ if failed to restart the services before the timeout value</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L4829-L4879" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5220-L5270" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restart_services(self, wait_for_service_restart=True, timeout=10, implicit_wait=5):
     &#34;&#34;&#34;Executes the command on the client machine to restart **ALL** services.
@@ -13075,7 +13539,7 @@ if response code is not as expected
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5516-L5556" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5907-L5947" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def retire(self):
     &#34;&#34;&#34;Uninstalls the CommVault Software on the client, releases the license and deletes the client.
@@ -13155,7 +13619,7 @@ OFF, to disable client side deduplication</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5262-L5360" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5653-L5751" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_dedup_property(self,
                        prop_name,
@@ -13193,7 +13657,7 @@ OFF, to disable client side deduplication</p>
                             Values - None(Default) - DoNotModify the property value
                                      True/False - Enable/Disable optimization respectively
     &#34;&#34;&#34;
-    if not (isinstance(prop_name, basestring) and isinstance(prop_value, basestring)):
+    if not (isinstance(prop_name, str) and isinstance(prop_value, str)):
         raise SDKException(&#39;Client&#39;, &#39;101&#39;)
 
     if prop_name == &#34;clientSideDeduplication&#34; and prop_value == &#34;ON_CLIENT&#34;:
@@ -13284,7 +13748,7 @@ to disable encryption
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5196-L5260" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5587-L5651" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_encryption_property(self,
                             enc_setting=&#34;USE_SPSETTINGS&#34;,
@@ -13310,7 +13774,7 @@ to disable encryption
     if enc_setting is not None:
         client_props[&#39;encryptionSettings&#39;] = enc_setting
         if enc_setting == &#34;ON_CLIENT&#34;:
-            if not (isinstance(key, basestring) and isinstance(key_len, basestring)):
+            if not (isinstance(key, str) and isinstance(key_len, str)):
                 raise SDKException(&#39;Client&#39;, &#39;101&#39;)
             client_props[&#39;CipherType&#39;] = key
             client_props[&#39;EncryptKeyLength&#39;] = int(key_len)
@@ -13368,7 +13832,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5800-L5831" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L6191-L6222" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_job_start_time(self, job_start_time_value):
     &#34;&#34;&#34;Sets the jobstarttime for this Client.
@@ -13422,7 +13886,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L6083-L6120" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L6474-L6511" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_privacy(self, value):
     &#34;&#34;&#34;
@@ -13491,7 +13955,7 @@ if failed to start the service</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L4760-L4781" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5151-L5172" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def start_service(self, service_name=None):
     &#34;&#34;&#34;Executes the command on the client machine to start the Commvault service(s).
@@ -13544,7 +14008,7 @@ if failed to stop the service</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L4783-L4804" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5174-L5195" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def stop_service(self, service_name=None):
     &#34;&#34;&#34;Executes the command on the client machine to stop the Commvault service(s).
@@ -13594,7 +14058,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L5833-L5864" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L6224-L6255" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def uninstall_software(self, force_uninstall=True,software_list=[]):
     &#34;&#34;&#34;
@@ -13654,7 +14118,7 @@ need to change and use the update_properties method to set the properties</p></d
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3718-L3751" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L4104-L4137" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;Updates the client properties
@@ -13717,7 +14181,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L4663-L4713" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5054-L5104" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def upload_file(self, source_file_path, destination_folder):
     &#34;&#34;&#34;Upload the specified source file to destination path on the client machine
@@ -13797,7 +14261,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L4715-L4758" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L5106-L5149" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def upload_folder(self, source_dir, destination_dir):
     &#34;&#34;&#34;Uploads the specified source dir to destination path on the client machine
@@ -13863,7 +14327,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L370-L3096" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L381-L3459" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Clients(object):
     &#34;&#34;&#34;Class for representing all the clients associated with the commcell.&#34;&#34;&#34;
@@ -13889,8 +14353,10 @@ instance of the Commcell class</p>
         self._CLIENTS = self._ADD_CLIENT = self._services[&#39;GET_ALL_CLIENTS&#39;]
         self._OFFICE_365_CLIENTS = self._services[&#39;GET_OFFICE_365_ENTITIES&#39;]
         self._DYNAMICS365_CLIENTS = self._services[&#39;GET_DYNAMICS_365_CLIENTS&#39;]
+        self._SALESFORCE_CLIENTS = self._services[&#39;GET_SALESFORCE_CLIENTS&#39;]
         self._ALL_CLIENTS = self._services[&#39;GET_ALL_CLIENTS_PLUS_HIDDEN&#39;]
         self._VIRTUALIZATION_CLIENTS = self._services[&#39;GET_VIRTUAL_CLIENTS&#39;]
+        self._FS_CLIENTS = self._services[&#39;GET_FILE_SERVER_CLIENTS&#39;]
         self._ADD_EXCHANGE_CLIENT = self._ADD_SHAREPOINT_CLIENT = self._ADD_SALESFORCE_CLIENT = \
             self._services[&#39;CREATE_PSEUDO_CLIENT&#39;]
         self._ADD_SPLUNK_CLIENT = self._services[&#39;CREATE_PSEUDO_CLIENT&#39;]
@@ -13902,6 +14368,8 @@ instance of the Commcell class</p>
         self._virtualization_clients = None
         self._office_365_clients = None
         self._dynamics365_clients = None
+        self._salesforce_clients = None
+        self._file_server_clients = None
         self.refresh()
 
     def __str__(self):
@@ -13977,7 +14445,7 @@ instance of the Commcell class</p>
 
                             &#34;hostname&#34;: client2_hostname.
 
-                            &#34;displayName&#34;: client1_displayname
+                            &#34;displayName&#34;: client2_displayname
                         }
                     }
 
@@ -14120,6 +14588,48 @@ instance of the Commcell class</p>
             self._dynamics365_clients = self._get_dynamics_365_clients()
         return self._dynamics365_clients
 
+    def _get_salesforce_clients(self):
+        &#34;&#34;&#34;
+        REST API call to get all Salesforce clients in the commcell
+
+        Returns:
+            dict[str, dict]: Containing Salesforce clients and ids in the Commcell like
+
+                {
+                    &#34;client1_displayName&#34;: {
+                        &#34;id&#34;: client1_id,
+                        &#34;clientName&#34;: &#34;client1_name&#34;
+                    },
+                    &#34;client2_displayName&#34;: {
+                        &#34;id&#34;: client2_id,
+                        &#34;clientName&#34;: &#34;client2_name&#34;
+                    }
+                }
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._SALESFORCE_CLIENTS)
+
+        if flag:
+            if response.json() and &#39;orgs&#39; in response.json():
+
+                return {
+                    self.all_clients[sf_subclient[&#39;clientName&#39;].lower()][&#39;displayName&#39;]: {
+                        &#39;id&#39;: sf_subclient[&#39;clientId&#39;],
+                        &#39;clientName&#39;: sf_subclient[&#39;clientName&#39;]
+                    }
+                    for sf_subclient in map(lambda org: org[&#39;sfSubclient&#39;], response.json()[&#39;orgs&#39;])
+                }
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    @property
+    def salesforce_clients(self):
+        &#34;&#34;&#34;Returns the dict of all salesforce clients in the commcell&#34;&#34;&#34;
+        if self._salesforce_clients is None:
+            self._salesforce_clients = self._get_salesforce_clients()
+        return self._salesforce_clients
+
     def _get_hidden_clients(self):
         &#34;&#34;&#34;Gets all the clients associated with the commcell, including all VM&#39;s and hidden clients
 
@@ -14220,8 +14730,9 @@ instance of the Commcell class</p>
                 virtualization_clients = {}
 
                 for pseudo_client in pseudo_clients:
-                    virtualization_clients[pseudo_client[&#39;client&#39;][&#39;clientName&#39;].lower()] = {
+                    virtualization_clients[pseudo_client[&#39;client&#39;][&#39;displayName&#39;].lower()] = {
                         &#39;clientId&#39;: pseudo_client[&#39;client&#39;][&#39;clientId&#39;],
+                        &#39;clientName&#39;: pseudo_client[&#39;client&#39;][&#39;clientName&#39;],
                         &#39;hostName&#39;: pseudo_client[&#39;client&#39;][&#39;hostName&#39;]
                     }
 
@@ -14231,6 +14742,48 @@ instance of the Commcell class</p>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
+    def _get_fileserver_clients(self):
+        &#34;&#34;&#34;REST API call to get all file server clients in the commcell
+
+            Returns:
+                dict    -   consists of all file server clients in the commcell
+
+                    {
+                        &#34;client1_name&#34;: {
+
+                            &#34;id&#34;: client1_id,
+
+                            &#34;displayName&#34;: client1_displayname
+                        },
+
+                        &#34;client2_name&#34;: {
+
+                            &#34;id&#34;: client2_id,
+
+                            &#34;displayName&#34;: client2_displayname
+                        }
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._FS_CLIENTS)
+
+        fs_clients = {}
+        if flag and response:
+            if response.json() and &#39;fileServers&#39; in response.json():
+                for file_server in response.json()[&#39;fileServers&#39;]:
+                    fs_clients[file_server[&#39;name&#39;]] = {
+                        &#39;id&#39;: file_server[&#39;id&#39;],
+                        &#39;displayName&#39;: file_server[&#39;displayName&#39;]
+                    }
+            return fs_clients
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+    
     @staticmethod
     def _get_client_dict(client_object):
         &#34;&#34;&#34;Returns the client dict for the client object to be appended to member server.
@@ -14272,7 +14825,7 @@ instance of the Commcell class</p>
         member_servers = []
 
         for client in clients_list:
-            if isinstance(client, basestring):
+            if isinstance(client, str):
                 client = client.strip().lower()
 
                 if self.has_client(client):
@@ -14328,6 +14881,31 @@ instance of the Commcell class</p>
             for hidden_client in self.hidden_clients:
                 if hostname.lower() == self.hidden_clients[hidden_client][&#39;hostname&#39;]:
                     return hidden_client
+
+    def _get_client_from_displayname(self, displayname):
+        &#34;&#34;&#34;get the client name for given displayname
+            name
+
+            Args:
+                displayname    (str)   --  displayname of the  client on this commcell
+
+            Returns:
+                str     -   name of the client associated with this displayname
+            
+                None    -   if no client has the displayname as the given input
+            Raises:
+                Exception:
+                    if multiple clients has same display name
+        &#34;&#34;&#34;
+        displayname_occurence = 0
+        for client  in self._get_clients():
+            if self._get_clients()[client][&#39;displayName&#39;] == displayname:
+                displayname_occurence += 1
+                client_name = client
+        if displayname_occurence &gt; 1:
+            raise Exception(&#39;multiple clients have same display name&#39;)
+        else:
+            return client_name
 
     @property
     def all_clients(self):
@@ -14520,6 +15098,31 @@ instance of the Commcell class</p>
         &#34;&#34;&#34;
         return self._virtualization_clients
 
+    @property
+    def file_server_clients(self):
+        &#34;&#34;&#34;Returns the dictionary consisting of the file server clients and their info.
+
+            dict - consists of all file server clients in the commcell
+                    {
+                        &#34;client1_name&#34;: {
+
+                            &#34;id&#34;: client1_id,
+
+                            &#34;displayName&#34;: client1_displayname
+                        },
+
+                        &#34;client2_name&#34;: {
+
+                            &#34;id&#34;: client2_id,
+
+                            &#34;displayName&#34;: client2_displayname
+                        }
+                    }
+        &#34;&#34;&#34;
+        if self._file_server_clients is None:
+            self._file_server_clients = self._get_fileserver_clients()
+        return self._file_server_clients
+
     def has_client(self, client_name):
         &#34;&#34;&#34;Checks if a client exists in the commcell with the given client name / hostname.
 
@@ -14534,7 +15137,7 @@ instance of the Commcell class</p>
                     if type of the client name argument is not string
 
         &#34;&#34;&#34;
-        if not isinstance(client_name, basestring):
+        if not isinstance(client_name, str):
             raise SDKException(&#39;Client&#39;, &#39;101&#39;)
         if self.all_clients and client_name.lower() in self.all_clients:
             return True
@@ -14560,7 +15163,7 @@ instance of the Commcell class</p>
                 SDKException:
                     if type of the client name argument is not string
         &#34;&#34;&#34;
-        if not isinstance(client_name, basestring):
+        if not isinstance(client_name, str):
             raise SDKException(&#39;Client&#39;, &#39;101&#39;)
 
         return ((self.hidden_clients and client_name.lower() in self.hidden_clients) or
@@ -14575,7 +15178,7 @@ instance of the Commcell class</p>
                 endpoint        (str)   --  Endpoint for making request to (default is &#39;/Client&#39;)
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -14622,26 +15225,24 @@ instance of the Commcell class</p>
     def add_kubernetes_client(
             self,
             client_name,
-            master_node,
-            secret_name,
-            secret_key,
-            vsaclient,
-            vsaclient_id
+            api_server_endpoint,
+            service_account,
+            service_token,
+            access_nodes=None
     ):
-        &#34;&#34;&#34;Adds a new Kubernetes Virtualization Client to the Commcell.
+        &#34;&#34;&#34;Adds a new Kubernetes Cluster client to the Commcell.
 
             Args:
-                client_name         (str)   --  name of the new Kubernetes Virtual Client
+                client_name         (str)   --  name of the new Kubernetes Cluster client
 
-                master_node         (str)   --  Kubernetes kubectl node
+                api_server_endpoint (str)   --  Kubernetes API Server endpoint of the cluster
 
-                secret_name         (str)   --  Kubernetes Secret name
+                service_account     (str)   --  Name of the Service Account for authentication
 
-                secret_key          (str)   --  Kubernetes Secret Key
+                service_token       (str)   --  Token fetched from the Service Account
 
-                vsaclient           (str)   --  Virtual Server proxy client
+                access_nodes        (list/str)  --  Virtual Server proxy clients as access nodes
 
-                vsaclient_id        (int)   --  Virtual Server Client id
 
 
             Returns:
@@ -14658,9 +15259,27 @@ instance of the Commcell class</p>
                     if response is not success
 
         &#34;&#34;&#34;
-        host_name = master_node
         if self.has_client(client_name):
             raise SDKException(&#39;Client&#39;, &#39;102&#39;, &#39;Client &#34;{0}&#34; already exists.&#39;.format(client_name))
+
+        if type(access_nodes) is str:
+            access_nodes = [access_nodes]
+
+        if not access_nodes:
+            access_nodes = []
+
+        member_servers_list = []
+        for server in access_nodes:
+            if not self.has_client(server):
+                raise SDKException(&#39;Client&#39;, &#39;102&#39;, f&#39;Access node {server} does not exist in CommCell&#39;)
+            member_servers_list.append(
+                {
+                    &#34;client&#34;: {
+                        &#34;clientName&#34;: server,
+                        &#34;_type_&#34;: 3
+                    }
+                }
+            )
 
         request_json = {
             &#34;clientInfo&#34;: {
@@ -14669,24 +15288,14 @@ instance of the Commcell class</p>
                     &#34;virtualServerInstanceInfo&#34;: {
                         &#34;vsInstanceType&#34;: 20,
                         &#34;k8s&#34;: {
-                            &#34;secretName&#34;: secret_name,
-                            &#34;secretKey&#34;: secret_key,
+                            &#34;secretName&#34;: service_account,
+                            &#34;secretKey&#34;: service_token,
                             &#34;secretType&#34;: &#34;ServiceAccount&#34;,
-                            &#34;endpointurl&#34;: host_name
+                            &#34;endpointurl&#34;: api_server_endpoint
                         },
-                        &#34;associatedClients&#34;: {
-                            &#34;memberServers&#34;: [
-                                {
-                                    &#34;client&#34;: {
-                                        &#34;clientName&#34;: vsaclient,
-                                        &#34;clientId&#34;: vsaclient_id,
-                                        &#34;_type_&#34;: 3
-                                    }
-                                }
-                            ]
-                        },
+                        &#34;associatedClients&#34;: {},
                         &#34;vmwareVendor&#34;: {
-                            &#34;vcenterHostName&#34;: host_name
+                            &#34;vcenterHostName&#34;: api_server_endpoint
                         }
                     }
                 }
@@ -14695,6 +15304,14 @@ instance of the Commcell class</p>
                 &#34;clientName&#34;: client_name
             }
         }
+
+        if member_servers_list:
+            associated_clients = {
+                &#39;associatedClients&#39;: {
+                    &#39;memberServers&#39;: member_servers_list
+                }
+            }
+            request_json[&#39;clientInfo&#39;][&#39;virtualServerClientProperties&#39;][&#39;virtualServerInstanceInfo&#39;].update(associated_clients)
 
         flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._ADD_CLIENT, request_json)
 
@@ -15095,7 +15712,7 @@ instance of the Commcell class</p>
         member_servers = []
 
         for client in access_nodes_list:
-            if isinstance(client, basestring):
+            if isinstance(client, str):
                 client = client.strip().lower()
 
                 if self.has_client(client):
@@ -15145,55 +15762,31 @@ instance of the Commcell class</p>
         }
         tenant_url = kwargs.get(&#39;tenant_url&#39;)
         global_administrator = kwargs.get(&#39;global_administrator&#39;)
-        if tenant_url:
-            user_password = b64encode(kwargs.get(&#39;user_password&#39;).encode()).decode()
-            request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
-                &#34;spOffice365BackupSetProp&#34;] = {
-                &#34;tenantUrlItem&#34;: tenant_url,
-                &#34;cloudRegion&#34;: 1,
-                &#34;isModernAuthEnabled&#34;: kwargs.get(&#39;is_modern_auth_enabled&#39;, False),
-                &#34;infraStructurePoolEnabled&#34;: False,
-                &#34;serviceAccounts&#34;: {
-                    &#34;accounts&#34;: [
-                        {
-                            &#34;serviceType&#34;: service_type[&#34;Sharepoint Online&#34;],
-                            &#34;userAccount&#34;: {
-                                &#34;password&#34;: user_password,
-                                &#34;userName&#34;: kwargs.get(&#39;user_username&#39;)
-                            }
-                        }
-                    ]
-                },
-                &#34;office365Credentials&#34;: {
+        request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
+            &#34;spOffice365BackupSetProp&#34;] = {
+            &#34;tenantUrlItem&#34;: tenant_url,
+            &#34;cloudRegion&#34;: 1,
+            &#34;isModernAuthEnabled&#34;: kwargs.get(&#39;is_modern_auth_enabled&#39;, False),
+            &#34;infraStructurePoolEnabled&#34;: False,
+             &#34;office365Credentials&#34;: {
                     &#34;userName&#34;: &#34;&#34;
-                },
-                &#34;azureAppList&#34;: {
+                }
+        }
+        if global_administrator:
+            azure_app_key_id = b64encode(kwargs.get(&#39;azure_app_key_id&#39;).encode()).decode()
+            global_administrator_password = b64encode(kwargs.get(&#39;global_administrator_password&#39;).encode()).decode()
+            request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
+                &#34;spOffice365BackupSetProp&#34;][&#34;azureAppList&#34;] = {
                     &#34;azureApps&#34;: [
                         {
-                            &#34;azureDirectoryId&#34;: &#34;&#34;,
-                            &#34;azureAppId&#34;: &#34;&#34;
-                        }
-                    ]
-                }
-            }
-            if kwargs.get(&#39;is_modern_auth_enabled&#39;):
-                azure_app_key_id = b64encode(kwargs.get(&#39;azure_app_key_id&#39;).encode()).decode()
-                request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
-                    &#34;spOffice365BackupSetProp&#34;][&#34;azureAppList&#34;][&#34;azureApps&#34;][0] = {
                             &#34;azureAppId&#34;: kwargs.get(&#39;azure_app_id&#39;),
                             &#34;azureAppKeyValue&#34;: azure_app_key_id,
                             &#34;azureDirectoryId&#34;: kwargs.get(&#39;azure_directory_id&#39;)
                         }
-        elif global_administrator:
-            azure_app_key_id = b64encode(kwargs.get(&#39;azure_app_key_id&#39;).encode()).decode()
-            global_administrator_password = b64encode(kwargs.get(&#39;global_administrator_password&#39;).encode()).decode()
-
+                    ]
+                }
             request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
-                &#34;spOffice365BackupSetProp&#34;] = {
-                &#34;cloudRegion&#34;: 1,
-                &#34;isModernAuthEnabled&#34;: kwargs.get(&#39;is_modern_auth_enabled&#39;, False),
-                &#34;infraStructurePoolEnabled&#34;: False,
-                &#34;serviceAccounts&#34;: {
+                &#34;spOffice365BackupSetProp&#34;][&#34;serviceAccounts&#34;] = {
                     &#34;accounts&#34;: [
                         {
                             &#34;serviceType&#34;: service_type[&#34;Sharepoint Global Administrator&#34;],
@@ -15203,9 +15796,25 @@ instance of the Commcell class</p>
                             }
                         }
                     ]
-                },
-                &#34;office365Credentials&#34;: {},
-                &#34;azureAppList&#34;: {
+                }
+        else:
+            user_password = b64encode(kwargs.get(&#39;user_password&#39;).encode()).decode()
+            request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
+                &#34;spOffice365BackupSetProp&#34;][&#34;serviceAccounts&#34;] = {
+                    &#34;accounts&#34;: [
+                        {
+                            &#34;serviceType&#34;: service_type[&#34;Sharepoint Online&#34;],
+                            &#34;userAccount&#34;: {
+                                &#34;password&#34;: user_password,
+                                &#34;userName&#34;: kwargs.get(&#39;user_username&#39;)
+                            }
+                        }
+                    ]
+                }
+            if kwargs.get(&#39;is_modern_auth_enabled&#39;):
+                azure_app_key_id = b64encode(kwargs.get(&#39;azure_app_key_id&#39;).encode()).decode()
+                request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
+                    &#34;spOffice365BackupSetProp&#34;][&#34;azureAppList&#34;] = {
                     &#34;azureApps&#34;: [
                         {
                             &#34;azureAppId&#34;: kwargs.get(&#39;azure_app_id&#39;),
@@ -15214,7 +15823,6 @@ instance of the Commcell class</p>
                         }
                     ]
                 }
-            }
         if kwargs.get(&#39;azure_username&#39;):
             azure_secret = b64encode(kwargs.get(&#39;azure_secret&#39;).encode()).decode()
             request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
@@ -15505,7 +16113,7 @@ instance of the Commcell class</p>
         member_servers = []
 
         for client in clients_list:
-            if isinstance(client, basestring):
+            if isinstance(client, str):
                 client = client.strip().lower()
 
                 if self.has_client(client):
@@ -16201,6 +16809,210 @@ instance of the Commcell class</p>
 
         self._process_add_response(request_json)
 
+    def add_onedrive_v2_client(
+            self,
+            client_name,
+            server_plan,
+            azure_app_id,
+            azure_directory_id,
+            azure_app_key_id,
+            **kwargs):
+
+        &#34;&#34;&#34;
+            Adds OneDrive for Business (v2) client
+
+            Args:
+                client_name (str) : Client Name
+                server_plan (str) : Server Plan&#39;s Name
+                azure_app_id (str) : Azure app ID
+                azure_directory_id (str) : Azure directory ID
+                azure_app_key_id (str) : Azure App key ID
+
+                **kwargs (dict) : Additional parameters
+                    index_server (str) : Index Server&#39;s Name
+                    access_nodes_list (list[str/object]) : List of names/objects of access node clients
+                    number_of_backup_streams (int) : Number of backup streams to be associated (default: 10)
+                    user_name (str) : User name for shared job results
+                    user_password (str) : User password for shared job results
+                    shared_jr_directory (str) : Shared Job results directory path
+
+            Returns:
+                object  -   instance of the Client class for this new client
+
+            Raises:
+                SDKException:
+                    if client with given name already exists
+
+                    if server plan  donot exists with the given name
+
+                    if data type of the input(s) is not valid
+
+                    if access node do not exists with the given name
+
+                    if failed to add the client
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+
+        # If client with given name already exists, raise Exception
+        if self.has_client(client_name):
+            raise SDKException(&#39;Client&#39;, &#39;102&#39;, f&#39;Client &#34;{client_name}&#34; already exists.&#39;)
+
+        # Get server plan details
+        server_plan_object = self._commcell_object.plans.get(server_plan)
+        server_plan_id = int(server_plan_object.plan_id)
+        server_plan_resources = server_plan_object._properties.get(&#39;storageResourcePoolMap&#39;)[0].get(&#39;resources&#39;)
+
+        access_nodes_list = kwargs.get(&#39;access_nodes_list&#39;)
+        index_server = kwargs.get(&#39;index_server&#39;)
+        is_resource_pool_enabled = False if server_plan_resources is None else True
+        number_of_backup_streams = kwargs.get(&#39;number_of_backup_streams&#39;, 10)
+        user_name = kwargs.get(&#39;user_name&#39;)
+        user_password = kwargs.get(&#39;user_password&#39;)
+        shared_jr_directory = kwargs.get(&#39;shared_jr_directory&#39;)
+
+        # If server plan is not resource pool enabled and infrastructure details are not provided, raise Exception
+        if not is_resource_pool_enabled and (access_nodes_list is None or index_server is None):
+            error_string = &#39;For a non resource-pool server plan, access nodes and index server details are necessary&#39;
+            raise SDKException(&#39;Client&#39;, &#39;102&#39;, error_string)
+
+        # If data type of the input(s) is not valid, raise Exception
+        if ((access_nodes_list and not isinstance(access_nodes_list, list)) or
+                (index_server and not isinstance(index_server, str)) or
+                (number_of_backup_streams and not isinstance(number_of_backup_streams, int)) or
+                (user_name and not isinstance(user_name, str)) or
+                (user_password and not isinstance(user_password, str)) or
+                (shared_jr_directory and not isinstance(shared_jr_directory, str))):
+            raise SDKException(&#39;Client&#39;, &#39;101&#39;)
+
+        # For multiple access nodes, make sure service account details are provided
+        if (access_nodes_list and len(access_nodes_list) &gt; 1 and
+                (user_name is None or user_password is None or shared_jr_directory is None)):
+            error_string = &#39;For creating a multi-access node client service account details are necessary&#39;
+            raise SDKException(&#39;Client&#39;, &#39;102&#39;, error_string)
+
+        # Get index server details
+        index_server_id = None
+        if index_server:
+            index_server_object = self.get(index_server)
+            index_server_id = int(index_server_object.client_id)
+
+        # For each access node create client object
+        member_servers = []
+
+        if access_nodes_list:
+            for client in access_nodes_list:
+                if isinstance(client, str):
+                    client = client.strip().lower()
+
+                    if self.has_client(client):
+                        client_dict = {
+                            &#34;client&#34;: {
+                                &#34;clientName&#34;: client,
+                                &#34;clientId&#34;: int(self.all_clients.get(client).get(&#39;id&#39;)),
+                                &#34;_type_&#34;: 3
+                            }
+                        }
+                        member_servers.append(client_dict)
+                    else:
+                        raise SDKException(&#39;Client&#39;, &#39;102&#39;, f&#39;Client {client} does not exitst&#39;)
+
+                elif isinstance(client, Client):
+                    if self.has_client(client):
+                        client_dict = {
+                            &#34;client&#34;: {
+                                &#34;clientName&#34;: client.client_name,
+                                &#34;clientId&#34;: int(client.client_id),
+                                &#34;_type_&#34;: 3
+                            }
+                        }
+                        member_servers.append(client_dict)
+                    else:
+                        raise SDKException(&#39;Client&#39;, &#39;102&#39;, f&#39;Client {client} does not exitst&#39;)
+
+                else:
+                    raise SDKException(&#39;Client&#39;, &#39;101&#39;)
+
+        azure_app_key_value = b64encode(azure_app_key_id.encode()).decode()
+
+        request_json = {
+            &#34;clientInfo&#34;: {
+                &#34;clientType&#34;: 37,
+                &#34;useResourcePoolInfo&#34;: is_resource_pool_enabled,
+                &#34;plan&#34;: {
+                    &#34;planId&#34;: server_plan_id
+                },
+                &#34;cloudClonnectorProperties&#34;: {
+                    &#34;instanceType&#34;: 7,
+                    &#34;instance&#34;: {
+                        &#34;instance&#34;: {
+                            &#34;clientName&#34;: client_name
+                        },
+                        &#34;cloudAppsInstance&#34;: {
+                            &#34;instanceType&#34;: 7,
+                            &#34;serviceAccounts&#34;: {},
+                            &#34;oneDriveInstance&#34;: {
+                                &#34;manageContentAutomatically&#34;: False,
+                                &#34;isAutoDiscoveryEnabled&#34;: False,
+                                &#34;cloudRegion&#34;: 1,
+                                &#34;azureAppList&#34;: {
+                                    &#34;azureApps&#34;: [
+                                        {
+                                            &#34;azureDirectoryId&#34;: azure_directory_id,
+                                            &#34;azureAppDisplayName&#34;: azure_app_id,
+                                            &#34;azureAppKeyValue&#34;: azure_app_key_value,
+                                            &#34;azureAppId&#34;: azure_app_id
+                                        }
+                                    ]
+                                }
+                            },
+                            &#34;generalCloudProperties&#34;: {
+                                &#34;numberOfBackupStreams&#34;: number_of_backup_streams,
+                                &#34;jobResultsDir&#34;: {
+                                    &#34;path&#34;: &#34;&#34;
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            &#34;entity&#34;: {
+                &#34;clientName&#34;: client_name
+            }
+        }
+
+        if not is_resource_pool_enabled:
+            request_json[&#34;clientInfo&#34;][&#34;cloudClonnectorProperties&#34;][&#34;instance&#34;][&#34;cloudAppsInstance&#34;][
+                &#34;generalCloudProperties&#34;][&#34;indexServer&#34;] = {
+                &#34;clientId&#34;: index_server_id
+            }
+            request_json[&#34;clientInfo&#34;][&#34;cloudClonnectorProperties&#34;][&#34;instance&#34;][&#34;cloudAppsInstance&#34;][
+                &#34;generalCloudProperties&#34;][&#34;memberServers&#34;] = member_servers
+
+        if access_nodes_list and len(access_nodes_list) &gt; 1:
+            request_json[&#34;clientInfo&#34;][&#34;cloudClonnectorProperties&#34;][&#34;instance&#34;][&#34;cloudAppsInstance&#34;][
+                &#34;generalCloudProperties&#34;][&#34;jobResultsDir&#34;][&#34;path&#34;] = shared_jr_directory
+
+        if user_name:
+            user_password = b64encode(user_password.encode()).decode()
+            request_json[&#34;clientInfo&#34;][&#34;cloudClonnectorProperties&#34;][&#34;instance&#34;][&#34;cloudAppsInstance&#34;][
+                &#34;oneDriveInstance&#34;][
+                &#34;serviceAccounts&#34;] = {
+                &#34;accounts&#34;: [
+                    {
+                        &#34;serviceType&#34;: 3,
+                        &#34;userAccount&#34;: {
+                            &#34;userName&#34;: user_name,
+                            &#34;password&#34;: user_password
+                        }
+                    }
+                ]
+            }
+
+        self._process_add_response(request_json, self._ADD_ONEDRIVE_CLIENT)
+
     def add_onedrive_client(self,
                             client_name,
                             instance_name,
@@ -16319,7 +17131,7 @@ instance of the Commcell class</p>
                         onedrive_prop[&#39;infraStructurePoolEnabled&#39;] = True
                     else:
                         onedrive_prop[&#39;infraStructurePoolEnabled&#39;] = False
-                        if isinstance(access_node, basestring):
+                        if isinstance(access_node, str):
                             proxy_servers = []
                             access_node = access_node.strip().lower()
                             if self.has_client(access_node):
@@ -16473,7 +17285,7 @@ instance of the Commcell class</p>
 
                     if no client exists with the given name
         &#34;&#34;&#34;
-        if isinstance(name, basestring):
+        if isinstance(name, str):
             name = name.lower()
             client_name = None
             client_id = None
@@ -16482,6 +17294,8 @@ instance of the Commcell class</p>
                 client_from_hostname = self._get_client_from_hostname(name)
                 if self.has_hidden_client(name) and not client_from_hostname and name not in self.all_clients:
                     client_from_hostname = self._get_hidden_client_from_hostname(name)
+            elif not self.has_client(name):
+                client_from_hostname = self._get_client_from_displayname(name)
             else:
                 raise SDKException(
                     &#39;Client&#39;, &#39;102&#39;, &#39;No client exists with given name/hostname: {0}&#39;.format(name)
@@ -16530,7 +17344,7 @@ instance of the Commcell class</p>
                     if no client exists with the given name
 
         &#34;&#34;&#34;
-        if not isinstance(client_name, basestring):
+        if not isinstance(client_name, str):
             raise SDKException(&#39;Client&#39;, &#39;101&#39;)
         else:
             client_name = client_name.lower()
@@ -16591,7 +17405,9 @@ instance of the Commcell class</p>
         self._clients = self._get_clients()
         self._hidden_clients = self._get_hidden_clients()
         self._virtualization_clients = self._get_virtualization_clients()
-        self._office_365_clients = None</code></pre>
+        self._office_365_clients = None
+        self._file_server_clients = None
+        self._salesforce_clients = None</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
@@ -16612,7 +17428,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L834-L851" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L959-L976" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_clients(self):
@@ -16640,7 +17456,7 @@ def all_clients(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L618-L623" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L633-L638" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def dynamics365_clients(self):
@@ -16648,6 +17464,56 @@ def dynamics365_clients(self):
     if self._dynamics365_clients is None:
         self._dynamics365_clients = self._get_dynamics_365_clients()
     return self._dynamics365_clients</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.client.Clients.file_server_clients"><code class="name">var <span class="ident">file_server_clients</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the dictionary consisting of the file server clients and their info.</p>
+<p>dict - consists of all file server clients in the commcell
+{
+"client1_name": {</p>
+<pre><code>            "id": client1_id,
+
+            "displayName": client1_displayname
+        },
+
+        "client2_name": {
+
+            "id": client2_id,
+
+            "displayName": client2_displayname
+        }
+    }
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L1150-L1173" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def file_server_clients(self):
+    &#34;&#34;&#34;Returns the dictionary consisting of the file server clients and their info.
+
+        dict - consists of all file server clients in the commcell
+                {
+                    &#34;client1_name&#34;: {
+
+                        &#34;id&#34;: client1_id,
+
+                        &#34;displayName&#34;: client1_displayname
+                    },
+
+                    &#34;client2_name&#34;: {
+
+                        &#34;id&#34;: client2_id,
+
+                        &#34;displayName&#34;: client2_displayname
+                    }
+                }
+    &#34;&#34;&#34;
+    if self._file_server_clients is None:
+        self._file_server_clients = self._get_fileserver_clients()
+    return self._file_server_clients</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.client.Clients.hidden_clients"><code class="name">var <span class="ident">hidden_clients</span></code></dt>
@@ -16667,7 +17533,7 @@ def dynamics365_clients(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L987-L1004" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L1112-L1129" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def hidden_clients(self):
@@ -16695,7 +17561,7 @@ def hidden_clients(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L565-L570" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L580-L585" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def office_365_clients(self):
@@ -16703,6 +17569,22 @@ def office_365_clients(self):
     if self._office_365_clients is None:
         self._office_365_clients = self._get_office_365_clients()
     return self._office_365_clients</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.client.Clients.salesforce_clients"><code class="name">var <span class="ident">salesforce_clients</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the dict of all salesforce clients in the commcell</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L675-L680" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def salesforce_clients(self):
+    &#34;&#34;&#34;Returns the dict of all salesforce clients in the commcell&#34;&#34;&#34;
+    if self._salesforce_clients is None:
+        self._salesforce_clients = self._get_salesforce_clients()
+    return self._salesforce_clients</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.client.Clients.virtualization_clients"><code class="name">var <span class="ident">virtualization_clients</span></code></dt>
@@ -16722,7 +17604,7 @@ def office_365_clients(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L1006-L1023" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L1131-L1148" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def virtualization_clients(self):
@@ -16779,7 +17661,7 @@ if None value in alicloud options</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L2633-L2704" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L2788-L2859" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_alicloud_client(self, client_name, access_node, alicloud_options):
     &#34;&#34;&#34;
@@ -16898,7 +17780,7 @@ if None value in amazon options</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L2458-L2557" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L2613-L2712" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_amazon_client(self, client_name, access_node, amazon_options):
     &#34;&#34;&#34;
@@ -17036,7 +17918,7 @@ if None value in azure options</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L2378-L2456" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L2533-L2611" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_azure_client(self, client_name, access_node, azure_options):
     &#34;&#34;&#34;
@@ -17157,7 +18039,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L2128-L2233" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L2283-L2388" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_case_client(
         self,
@@ -17376,7 +18258,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L1900-L2126" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L2055-L2281" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_exchange_client(
         self,
@@ -17488,7 +18370,7 @@ if response is not success
     member_servers = []
 
     for client in clients_list:
-        if isinstance(client, basestring):
+        if isinstance(client, str):
             client = client.strip().lower()
 
             if self.has_client(client):
@@ -17640,7 +18522,7 @@ if None value in google options</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L2559-L2631" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L2714-L2786" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_google_client(self, client_name, access_node, google_options):
     &#34;&#34;&#34;
@@ -17757,7 +18639,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L1424-L1504" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L1588-L1668" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_hyperv_client(
         self,
@@ -17843,35 +18725,30 @@ if response is not success</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.client.Clients.add_kubernetes_client"><code class="name flex">
-<span>def <span class="ident">add_kubernetes_client</span></span>(<span>self, client_name, master_node, secret_name, secret_key, vsaclient, vsaclient_id)</span>
+<span>def <span class="ident">add_kubernetes_client</span></span>(<span>self, client_name, api_server_endpoint, service_account, service_token, access_nodes=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Adds a new Kubernetes Virtualization Client to the Commcell.</p>
+<div class="desc"><p>Adds a new Kubernetes Cluster client to the Commcell.</p>
 <h2 id="args">Args</h2>
 <p>client_name
 (str)
 &ndash;
-name of the new Kubernetes Virtual Client</p>
-<p>master_node
+name of the new Kubernetes Cluster client</p>
+<p>api_server_endpoint (str)
+&ndash;
+Kubernetes API Server endpoint of the cluster</p>
+<p>service_account
 (str)
 &ndash;
-Kubernetes kubectl node</p>
-<p>secret_name
+Name of the Service Account for authentication</p>
+<p>service_token
 (str)
 &ndash;
-Kubernetes Secret name</p>
-<p>secret_key
-(str)
+Token fetched from the Service Account</p>
+<p>access_nodes
+(list/str)
 &ndash;
-Kubernetes Secret Key</p>
-<p>vsaclient
-(str)
-&ndash;
-Virtual Server proxy client</p>
-<p>vsaclient_id
-(int)
-&ndash;
-Virtual Server Client id</p>
+Virtual Server proxy clients as access nodes</p>
 <h2 id="returns">Returns</h2>
 <p>object
 -
@@ -17888,31 +18765,29 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L1124-L1223" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L1274-L1387" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_kubernetes_client(
         self,
         client_name,
-        master_node,
-        secret_name,
-        secret_key,
-        vsaclient,
-        vsaclient_id
+        api_server_endpoint,
+        service_account,
+        service_token,
+        access_nodes=None
 ):
-    &#34;&#34;&#34;Adds a new Kubernetes Virtualization Client to the Commcell.
+    &#34;&#34;&#34;Adds a new Kubernetes Cluster client to the Commcell.
 
         Args:
-            client_name         (str)   --  name of the new Kubernetes Virtual Client
+            client_name         (str)   --  name of the new Kubernetes Cluster client
 
-            master_node         (str)   --  Kubernetes kubectl node
+            api_server_endpoint (str)   --  Kubernetes API Server endpoint of the cluster
 
-            secret_name         (str)   --  Kubernetes Secret name
+            service_account     (str)   --  Name of the Service Account for authentication
 
-            secret_key          (str)   --  Kubernetes Secret Key
+            service_token       (str)   --  Token fetched from the Service Account
 
-            vsaclient           (str)   --  Virtual Server proxy client
+            access_nodes        (list/str)  --  Virtual Server proxy clients as access nodes
 
-            vsaclient_id        (int)   --  Virtual Server Client id
 
 
         Returns:
@@ -17929,9 +18804,27 @@ if response is not success
                 if response is not success
 
     &#34;&#34;&#34;
-    host_name = master_node
     if self.has_client(client_name):
         raise SDKException(&#39;Client&#39;, &#39;102&#39;, &#39;Client &#34;{0}&#34; already exists.&#39;.format(client_name))
+
+    if type(access_nodes) is str:
+        access_nodes = [access_nodes]
+
+    if not access_nodes:
+        access_nodes = []
+
+    member_servers_list = []
+    for server in access_nodes:
+        if not self.has_client(server):
+            raise SDKException(&#39;Client&#39;, &#39;102&#39;, f&#39;Access node {server} does not exist in CommCell&#39;)
+        member_servers_list.append(
+            {
+                &#34;client&#34;: {
+                    &#34;clientName&#34;: server,
+                    &#34;_type_&#34;: 3
+                }
+            }
+        )
 
     request_json = {
         &#34;clientInfo&#34;: {
@@ -17940,24 +18833,14 @@ if response is not success
                 &#34;virtualServerInstanceInfo&#34;: {
                     &#34;vsInstanceType&#34;: 20,
                     &#34;k8s&#34;: {
-                        &#34;secretName&#34;: secret_name,
-                        &#34;secretKey&#34;: secret_key,
+                        &#34;secretName&#34;: service_account,
+                        &#34;secretKey&#34;: service_token,
                         &#34;secretType&#34;: &#34;ServiceAccount&#34;,
-                        &#34;endpointurl&#34;: host_name
+                        &#34;endpointurl&#34;: api_server_endpoint
                     },
-                    &#34;associatedClients&#34;: {
-                        &#34;memberServers&#34;: [
-                            {
-                                &#34;client&#34;: {
-                                    &#34;clientName&#34;: vsaclient,
-                                    &#34;clientId&#34;: vsaclient_id,
-                                    &#34;_type_&#34;: 3
-                                }
-                            }
-                        ]
-                    },
+                    &#34;associatedClients&#34;: {},
                     &#34;vmwareVendor&#34;: {
-                        &#34;vcenterHostName&#34;: host_name
+                        &#34;vcenterHostName&#34;: api_server_endpoint
                     }
                 }
             }
@@ -17966,6 +18849,14 @@ if response is not success
             &#34;clientName&#34;: client_name
         }
     }
+
+    if member_servers_list:
+        associated_clients = {
+            &#39;associatedClients&#39;: {
+                &#39;memberServers&#39;: member_servers_list
+            }
+        }
+        request_json[&#39;clientInfo&#39;][&#39;virtualServerClientProperties&#39;][&#39;virtualServerInstanceInfo&#39;].update(associated_clients)
 
     flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._ADD_CLIENT, request_json)
 
@@ -18029,7 +18920,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L1225-L1335" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L1389-L1499" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_nas_client(self,
                 ndmp_server_clientname,
@@ -18182,7 +19073,7 @@ if nfs_option and cifs_option both are false</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L2872-L2959" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L3231-L3318" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_nutanix_files_client(self, client_name, array_name, cifs_option=True, nfs_option=True):
     &#34;&#34;&#34;
@@ -18326,7 +19217,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L2706-L2870" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L3065-L3229" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_onedrive_client(self,
                         client_name,
@@ -18446,7 +19337,7 @@ if response is not success
                     onedrive_prop[&#39;infraStructurePoolEnabled&#39;] = True
                 else:
                     onedrive_prop[&#39;infraStructurePoolEnabled&#39;] = False
-                    if isinstance(access_node, basestring):
+                    if isinstance(access_node, str):
                         proxy_servers = []
                         access_node = access_node.strip().lower()
                         if self.has_client(access_node):
@@ -18493,6 +19384,253 @@ if response is not success
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
     else:
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.client.Clients.add_onedrive_v2_client"><code class="name flex">
+<span>def <span class="ident">add_onedrive_v2_client</span></span>(<span>self, client_name, server_plan, azure_app_id, azure_directory_id, azure_app_key_id, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Adds OneDrive for Business (v2) client</p>
+<h2 id="args">Args</h2>
+<p>client_name (str) : Client Name
+server_plan (str) : Server Plan's Name
+azure_app_id (str) : Azure app ID
+azure_directory_id (str) : Azure directory ID
+azure_app_key_id (str) : Azure App key ID</p>
+<p>**kwargs (dict) : Additional parameters
+index_server (str) : Index Server's Name
+access_nodes_list (list[str/object]) : List of names/objects of access node clients
+number_of_backup_streams (int) : Number of backup streams to be associated (default: 10)
+user_name (str) : User name for shared job results
+user_password (str) : User password for shared job results
+shared_jr_directory (str) : Shared Job results directory path</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+instance of the Client class for this new client</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if client with given name already exists</p>
+<pre><code>if server plan  donot exists with the given name
+
+if data type of the input(s) is not valid
+
+if access node do not exists with the given name
+
+if failed to add the client
+
+if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L2861-L3063" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def add_onedrive_v2_client(
+        self,
+        client_name,
+        server_plan,
+        azure_app_id,
+        azure_directory_id,
+        azure_app_key_id,
+        **kwargs):
+
+    &#34;&#34;&#34;
+        Adds OneDrive for Business (v2) client
+
+        Args:
+            client_name (str) : Client Name
+            server_plan (str) : Server Plan&#39;s Name
+            azure_app_id (str) : Azure app ID
+            azure_directory_id (str) : Azure directory ID
+            azure_app_key_id (str) : Azure App key ID
+
+            **kwargs (dict) : Additional parameters
+                index_server (str) : Index Server&#39;s Name
+                access_nodes_list (list[str/object]) : List of names/objects of access node clients
+                number_of_backup_streams (int) : Number of backup streams to be associated (default: 10)
+                user_name (str) : User name for shared job results
+                user_password (str) : User password for shared job results
+                shared_jr_directory (str) : Shared Job results directory path
+
+        Returns:
+            object  -   instance of the Client class for this new client
+
+        Raises:
+            SDKException:
+                if client with given name already exists
+
+                if server plan  donot exists with the given name
+
+                if data type of the input(s) is not valid
+
+                if access node do not exists with the given name
+
+                if failed to add the client
+
+                if response is empty
+
+                if response is not success
+    &#34;&#34;&#34;
+
+    # If client with given name already exists, raise Exception
+    if self.has_client(client_name):
+        raise SDKException(&#39;Client&#39;, &#39;102&#39;, f&#39;Client &#34;{client_name}&#34; already exists.&#39;)
+
+    # Get server plan details
+    server_plan_object = self._commcell_object.plans.get(server_plan)
+    server_plan_id = int(server_plan_object.plan_id)
+    server_plan_resources = server_plan_object._properties.get(&#39;storageResourcePoolMap&#39;)[0].get(&#39;resources&#39;)
+
+    access_nodes_list = kwargs.get(&#39;access_nodes_list&#39;)
+    index_server = kwargs.get(&#39;index_server&#39;)
+    is_resource_pool_enabled = False if server_plan_resources is None else True
+    number_of_backup_streams = kwargs.get(&#39;number_of_backup_streams&#39;, 10)
+    user_name = kwargs.get(&#39;user_name&#39;)
+    user_password = kwargs.get(&#39;user_password&#39;)
+    shared_jr_directory = kwargs.get(&#39;shared_jr_directory&#39;)
+
+    # If server plan is not resource pool enabled and infrastructure details are not provided, raise Exception
+    if not is_resource_pool_enabled and (access_nodes_list is None or index_server is None):
+        error_string = &#39;For a non resource-pool server plan, access nodes and index server details are necessary&#39;
+        raise SDKException(&#39;Client&#39;, &#39;102&#39;, error_string)
+
+    # If data type of the input(s) is not valid, raise Exception
+    if ((access_nodes_list and not isinstance(access_nodes_list, list)) or
+            (index_server and not isinstance(index_server, str)) or
+            (number_of_backup_streams and not isinstance(number_of_backup_streams, int)) or
+            (user_name and not isinstance(user_name, str)) or
+            (user_password and not isinstance(user_password, str)) or
+            (shared_jr_directory and not isinstance(shared_jr_directory, str))):
+        raise SDKException(&#39;Client&#39;, &#39;101&#39;)
+
+    # For multiple access nodes, make sure service account details are provided
+    if (access_nodes_list and len(access_nodes_list) &gt; 1 and
+            (user_name is None or user_password is None or shared_jr_directory is None)):
+        error_string = &#39;For creating a multi-access node client service account details are necessary&#39;
+        raise SDKException(&#39;Client&#39;, &#39;102&#39;, error_string)
+
+    # Get index server details
+    index_server_id = None
+    if index_server:
+        index_server_object = self.get(index_server)
+        index_server_id = int(index_server_object.client_id)
+
+    # For each access node create client object
+    member_servers = []
+
+    if access_nodes_list:
+        for client in access_nodes_list:
+            if isinstance(client, str):
+                client = client.strip().lower()
+
+                if self.has_client(client):
+                    client_dict = {
+                        &#34;client&#34;: {
+                            &#34;clientName&#34;: client,
+                            &#34;clientId&#34;: int(self.all_clients.get(client).get(&#39;id&#39;)),
+                            &#34;_type_&#34;: 3
+                        }
+                    }
+                    member_servers.append(client_dict)
+                else:
+                    raise SDKException(&#39;Client&#39;, &#39;102&#39;, f&#39;Client {client} does not exitst&#39;)
+
+            elif isinstance(client, Client):
+                if self.has_client(client):
+                    client_dict = {
+                        &#34;client&#34;: {
+                            &#34;clientName&#34;: client.client_name,
+                            &#34;clientId&#34;: int(client.client_id),
+                            &#34;_type_&#34;: 3
+                        }
+                    }
+                    member_servers.append(client_dict)
+                else:
+                    raise SDKException(&#39;Client&#39;, &#39;102&#39;, f&#39;Client {client} does not exitst&#39;)
+
+            else:
+                raise SDKException(&#39;Client&#39;, &#39;101&#39;)
+
+    azure_app_key_value = b64encode(azure_app_key_id.encode()).decode()
+
+    request_json = {
+        &#34;clientInfo&#34;: {
+            &#34;clientType&#34;: 37,
+            &#34;useResourcePoolInfo&#34;: is_resource_pool_enabled,
+            &#34;plan&#34;: {
+                &#34;planId&#34;: server_plan_id
+            },
+            &#34;cloudClonnectorProperties&#34;: {
+                &#34;instanceType&#34;: 7,
+                &#34;instance&#34;: {
+                    &#34;instance&#34;: {
+                        &#34;clientName&#34;: client_name
+                    },
+                    &#34;cloudAppsInstance&#34;: {
+                        &#34;instanceType&#34;: 7,
+                        &#34;serviceAccounts&#34;: {},
+                        &#34;oneDriveInstance&#34;: {
+                            &#34;manageContentAutomatically&#34;: False,
+                            &#34;isAutoDiscoveryEnabled&#34;: False,
+                            &#34;cloudRegion&#34;: 1,
+                            &#34;azureAppList&#34;: {
+                                &#34;azureApps&#34;: [
+                                    {
+                                        &#34;azureDirectoryId&#34;: azure_directory_id,
+                                        &#34;azureAppDisplayName&#34;: azure_app_id,
+                                        &#34;azureAppKeyValue&#34;: azure_app_key_value,
+                                        &#34;azureAppId&#34;: azure_app_id
+                                    }
+                                ]
+                            }
+                        },
+                        &#34;generalCloudProperties&#34;: {
+                            &#34;numberOfBackupStreams&#34;: number_of_backup_streams,
+                            &#34;jobResultsDir&#34;: {
+                                &#34;path&#34;: &#34;&#34;
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        &#34;entity&#34;: {
+            &#34;clientName&#34;: client_name
+        }
+    }
+
+    if not is_resource_pool_enabled:
+        request_json[&#34;clientInfo&#34;][&#34;cloudClonnectorProperties&#34;][&#34;instance&#34;][&#34;cloudAppsInstance&#34;][
+            &#34;generalCloudProperties&#34;][&#34;indexServer&#34;] = {
+            &#34;clientId&#34;: index_server_id
+        }
+        request_json[&#34;clientInfo&#34;][&#34;cloudClonnectorProperties&#34;][&#34;instance&#34;][&#34;cloudAppsInstance&#34;][
+            &#34;generalCloudProperties&#34;][&#34;memberServers&#34;] = member_servers
+
+    if access_nodes_list and len(access_nodes_list) &gt; 1:
+        request_json[&#34;clientInfo&#34;][&#34;cloudClonnectorProperties&#34;][&#34;instance&#34;][&#34;cloudAppsInstance&#34;][
+            &#34;generalCloudProperties&#34;][&#34;jobResultsDir&#34;][&#34;path&#34;] = shared_jr_directory
+
+    if user_name:
+        user_password = b64encode(user_password.encode()).decode()
+        request_json[&#34;clientInfo&#34;][&#34;cloudClonnectorProperties&#34;][&#34;instance&#34;][&#34;cloudAppsInstance&#34;][
+            &#34;oneDriveInstance&#34;][
+            &#34;serviceAccounts&#34;] = {
+            &#34;accounts&#34;: [
+                {
+                    &#34;serviceType&#34;: 3,
+                    &#34;userAccount&#34;: {
+                        &#34;userName&#34;: user_name,
+                        &#34;password&#34;: user_password
+                    }
+                }
+            ]
+        }
+
+    self._process_add_response(request_json, self._ADD_ONEDRIVE_CLIENT)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.client.Clients.add_salesforce_client"><code class="name flex">
@@ -18562,7 +19700,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L2235-L2376" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L2390-L2531" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_salesforce_client(
         self,
@@ -18778,7 +19916,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L1506-L1776" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L1670-L1931" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_share_point_client(
         self,
@@ -18874,7 +20012,7 @@ if response is not success
     member_servers = []
 
     for client in access_nodes_list:
-        if isinstance(client, basestring):
+        if isinstance(client, str):
             client = client.strip().lower()
 
             if self.has_client(client):
@@ -18924,55 +20062,31 @@ if response is not success
     }
     tenant_url = kwargs.get(&#39;tenant_url&#39;)
     global_administrator = kwargs.get(&#39;global_administrator&#39;)
-    if tenant_url:
-        user_password = b64encode(kwargs.get(&#39;user_password&#39;).encode()).decode()
-        request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
-            &#34;spOffice365BackupSetProp&#34;] = {
-            &#34;tenantUrlItem&#34;: tenant_url,
-            &#34;cloudRegion&#34;: 1,
-            &#34;isModernAuthEnabled&#34;: kwargs.get(&#39;is_modern_auth_enabled&#39;, False),
-            &#34;infraStructurePoolEnabled&#34;: False,
-            &#34;serviceAccounts&#34;: {
-                &#34;accounts&#34;: [
-                    {
-                        &#34;serviceType&#34;: service_type[&#34;Sharepoint Online&#34;],
-                        &#34;userAccount&#34;: {
-                            &#34;password&#34;: user_password,
-                            &#34;userName&#34;: kwargs.get(&#39;user_username&#39;)
-                        }
-                    }
-                ]
-            },
-            &#34;office365Credentials&#34;: {
+    request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
+        &#34;spOffice365BackupSetProp&#34;] = {
+        &#34;tenantUrlItem&#34;: tenant_url,
+        &#34;cloudRegion&#34;: 1,
+        &#34;isModernAuthEnabled&#34;: kwargs.get(&#39;is_modern_auth_enabled&#39;, False),
+        &#34;infraStructurePoolEnabled&#34;: False,
+         &#34;office365Credentials&#34;: {
                 &#34;userName&#34;: &#34;&#34;
-            },
-            &#34;azureAppList&#34;: {
+            }
+    }
+    if global_administrator:
+        azure_app_key_id = b64encode(kwargs.get(&#39;azure_app_key_id&#39;).encode()).decode()
+        global_administrator_password = b64encode(kwargs.get(&#39;global_administrator_password&#39;).encode()).decode()
+        request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
+            &#34;spOffice365BackupSetProp&#34;][&#34;azureAppList&#34;] = {
                 &#34;azureApps&#34;: [
                     {
-                        &#34;azureDirectoryId&#34;: &#34;&#34;,
-                        &#34;azureAppId&#34;: &#34;&#34;
-                    }
-                ]
-            }
-        }
-        if kwargs.get(&#39;is_modern_auth_enabled&#39;):
-            azure_app_key_id = b64encode(kwargs.get(&#39;azure_app_key_id&#39;).encode()).decode()
-            request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
-                &#34;spOffice365BackupSetProp&#34;][&#34;azureAppList&#34;][&#34;azureApps&#34;][0] = {
                         &#34;azureAppId&#34;: kwargs.get(&#39;azure_app_id&#39;),
                         &#34;azureAppKeyValue&#34;: azure_app_key_id,
                         &#34;azureDirectoryId&#34;: kwargs.get(&#39;azure_directory_id&#39;)
                     }
-    elif global_administrator:
-        azure_app_key_id = b64encode(kwargs.get(&#39;azure_app_key_id&#39;).encode()).decode()
-        global_administrator_password = b64encode(kwargs.get(&#39;global_administrator_password&#39;).encode()).decode()
-
+                ]
+            }
         request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
-            &#34;spOffice365BackupSetProp&#34;] = {
-            &#34;cloudRegion&#34;: 1,
-            &#34;isModernAuthEnabled&#34;: kwargs.get(&#39;is_modern_auth_enabled&#39;, False),
-            &#34;infraStructurePoolEnabled&#34;: False,
-            &#34;serviceAccounts&#34;: {
+            &#34;spOffice365BackupSetProp&#34;][&#34;serviceAccounts&#34;] = {
                 &#34;accounts&#34;: [
                     {
                         &#34;serviceType&#34;: service_type[&#34;Sharepoint Global Administrator&#34;],
@@ -18982,9 +20096,25 @@ if response is not success
                         }
                     }
                 ]
-            },
-            &#34;office365Credentials&#34;: {},
-            &#34;azureAppList&#34;: {
+            }
+    else:
+        user_password = b64encode(kwargs.get(&#39;user_password&#39;).encode()).decode()
+        request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
+            &#34;spOffice365BackupSetProp&#34;][&#34;serviceAccounts&#34;] = {
+                &#34;accounts&#34;: [
+                    {
+                        &#34;serviceType&#34;: service_type[&#34;Sharepoint Online&#34;],
+                        &#34;userAccount&#34;: {
+                            &#34;password&#34;: user_password,
+                            &#34;userName&#34;: kwargs.get(&#39;user_username&#39;)
+                        }
+                    }
+                ]
+            }
+        if kwargs.get(&#39;is_modern_auth_enabled&#39;):
+            azure_app_key_id = b64encode(kwargs.get(&#39;azure_app_key_id&#39;).encode()).decode()
+            request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
+                &#34;spOffice365BackupSetProp&#34;][&#34;azureAppList&#34;] = {
                 &#34;azureApps&#34;: [
                     {
                         &#34;azureAppId&#34;: kwargs.get(&#39;azure_app_id&#39;),
@@ -18993,7 +20123,6 @@ if response is not success
                     }
                 ]
             }
-        }
     if kwargs.get(&#39;azure_username&#39;):
         azure_secret = b64encode(kwargs.get(&#39;azure_secret&#39;).encode()).decode()
         request_json[&#34;clientInfo&#34;][&#34;sharepointPseudoClientProperties&#34;][&#34;sharepointBackupSet&#34;][
@@ -19098,7 +20227,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L1778-L1898" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L1933-L2053" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_splunk_client(self,
                       new_client_name,
@@ -19266,7 +20395,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L1337-L1422" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L1501-L1586" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_vmware_client(
         self,
@@ -19390,7 +20519,7 @@ if failed to get client id from response
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L853-L930" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L978-L1055" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_pseudo_client(self, client_name, client_hostname=None, client_type=&#34;windows&#34;):
     &#34;&#34;&#34; Creates a pseudo client
@@ -19498,7 +20627,7 @@ if no client exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3015-L3089" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L3376-L3450" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, client_name, forceDelete= True):
     &#34;&#34;&#34;Deletes the client from the commcell.
@@ -19520,7 +20649,7 @@ if no client exists with the given name
                 if no client exists with the given name
 
     &#34;&#34;&#34;
-    if not isinstance(client_name, basestring):
+    if not isinstance(client_name, str):
         raise SDKException(&#39;Client&#39;, &#39;101&#39;)
     else:
         client_name = client_name.lower()
@@ -19598,7 +20727,7 @@ if type of the client name argument is not string or Int</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L2961-L3013" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L3320-L3374" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, name):
     &#34;&#34;&#34;Returns a client object if client name or host name or ID matches the client attribute
@@ -19617,7 +20746,7 @@ if type of the client name argument is not string or Int</p>
 
                 if no client exists with the given name
     &#34;&#34;&#34;
-    if isinstance(name, basestring):
+    if isinstance(name, str):
         name = name.lower()
         client_name = None
         client_id = None
@@ -19626,6 +20755,8 @@ if type of the client name argument is not string or Int</p>
             client_from_hostname = self._get_client_from_hostname(name)
             if self.has_hidden_client(name) and not client_from_hostname and name not in self.all_clients:
                 client_from_hostname = self._get_hidden_client_from_hostname(name)
+        elif not self.has_client(name):
+            client_from_hostname = self._get_client_from_displayname(name)
         else:
             raise SDKException(
                 &#39;Client&#39;, &#39;102&#39;, &#39;No client exists with given name/hostname: {0}&#39;.format(name)
@@ -19675,7 +20806,7 @@ if type of the client name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L1025-L1049" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L1175-L1199" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_client(self, client_name):
     &#34;&#34;&#34;Checks if a client exists in the commcell with the given client name / hostname.
@@ -19691,7 +20822,7 @@ if type of the client name argument is not string</p></div>
                 if type of the client name argument is not string
 
     &#34;&#34;&#34;
-    if not isinstance(client_name, basestring):
+    if not isinstance(client_name, str):
         raise SDKException(&#39;Client&#39;, &#39;101&#39;)
     if self.all_clients and client_name.lower() in self.all_clients:
         return True
@@ -19722,7 +20853,7 @@ if type of the client name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L1051-L1069" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L1201-L1219" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_hidden_client(self, client_name):
     &#34;&#34;&#34;Checks if a client exists in the commcell with the input client name as a hidden client.
@@ -19738,7 +20869,7 @@ if type of the client name argument is not string</p></div>
             SDKException:
                 if type of the client name argument is not string
     &#34;&#34;&#34;
-    if not isinstance(client_name, basestring):
+    if not isinstance(client_name, str):
         raise SDKException(&#39;Client&#39;, &#39;101&#39;)
 
     return ((self.hidden_clients and client_name.lower() in self.hidden_clients) or
@@ -19753,14 +20884,16 @@ if type of the client name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L3091-L3096" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L3452-L3459" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the clients associated with the Commcell.&#34;&#34;&#34;
     self._clients = self._get_clients()
     self._hidden_clients = self._get_hidden_clients()
     self._virtualization_clients = self._get_virtualization_clients()
-    self._office_365_clients = None</code></pre>
+    self._office_365_clients = None
+    self._file_server_clients = None
+    self._salesforce_clients = None</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.client.Clients.register_decoupled_client"><code class="name flex">
@@ -19788,7 +20921,7 @@ if failed to get client id from response
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/client.py#L932-L985" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/client.py#L1057-L1110" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def register_decoupled_client(self, client_name, client_host_name, port_number=8400):
     &#34;&#34;&#34; registers decoupled client
@@ -19933,6 +21066,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.client.Client.add_user_associations" href="#cvpysdk.client.Client.add_user_associations">add_user_associations</a></code></li>
 <li><code><a title="cvpysdk.client.Client.agents" href="#cvpysdk.client.Client.agents">agents</a></code></li>
 <li><code><a title="cvpysdk.client.Client.available_security_roles" href="#cvpysdk.client.Client.available_security_roles">available_security_roles</a></code></li>
+<li><code><a title="cvpysdk.client.Client.block_level_cache_dir" href="#cvpysdk.client.Client.block_level_cache_dir">block_level_cache_dir</a></code></li>
 <li><code><a title="cvpysdk.client.Client.change_company_for_client" href="#cvpysdk.client.Client.change_company_for_client">change_company_for_client</a></code></li>
 <li><code><a title="cvpysdk.client.Client.change_exchange_job_results_directory" href="#cvpysdk.client.Client.change_exchange_job_results_directory">change_exchange_job_results_directory</a></code></li>
 <li><code><a title="cvpysdk.client.Client.change_o365_client_job_results_directory" href="#cvpysdk.client.Client.change_o365_client_job_results_directory">change_o365_client_job_results_directory</a></code></li>
@@ -20036,6 +21170,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.client.Clients.add_nas_client" href="#cvpysdk.client.Clients.add_nas_client">add_nas_client</a></code></li>
 <li><code><a title="cvpysdk.client.Clients.add_nutanix_files_client" href="#cvpysdk.client.Clients.add_nutanix_files_client">add_nutanix_files_client</a></code></li>
 <li><code><a title="cvpysdk.client.Clients.add_onedrive_client" href="#cvpysdk.client.Clients.add_onedrive_client">add_onedrive_client</a></code></li>
+<li><code><a title="cvpysdk.client.Clients.add_onedrive_v2_client" href="#cvpysdk.client.Clients.add_onedrive_v2_client">add_onedrive_v2_client</a></code></li>
 <li><code><a title="cvpysdk.client.Clients.add_salesforce_client" href="#cvpysdk.client.Clients.add_salesforce_client">add_salesforce_client</a></code></li>
 <li><code><a title="cvpysdk.client.Clients.add_share_point_client" href="#cvpysdk.client.Clients.add_share_point_client">add_share_point_client</a></code></li>
 <li><code><a title="cvpysdk.client.Clients.add_splunk_client" href="#cvpysdk.client.Clients.add_splunk_client">add_splunk_client</a></code></li>
@@ -20044,6 +21179,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.client.Clients.create_pseudo_client" href="#cvpysdk.client.Clients.create_pseudo_client">create_pseudo_client</a></code></li>
 <li><code><a title="cvpysdk.client.Clients.delete" href="#cvpysdk.client.Clients.delete">delete</a></code></li>
 <li><code><a title="cvpysdk.client.Clients.dynamics365_clients" href="#cvpysdk.client.Clients.dynamics365_clients">dynamics365_clients</a></code></li>
+<li><code><a title="cvpysdk.client.Clients.file_server_clients" href="#cvpysdk.client.Clients.file_server_clients">file_server_clients</a></code></li>
 <li><code><a title="cvpysdk.client.Clients.get" href="#cvpysdk.client.Clients.get">get</a></code></li>
 <li><code><a title="cvpysdk.client.Clients.has_client" href="#cvpysdk.client.Clients.has_client">has_client</a></code></li>
 <li><code><a title="cvpysdk.client.Clients.has_hidden_client" href="#cvpysdk.client.Clients.has_hidden_client">has_hidden_client</a></code></li>
@@ -20051,6 +21187,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.client.Clients.office_365_clients" href="#cvpysdk.client.Clients.office_365_clients">office_365_clients</a></code></li>
 <li><code><a title="cvpysdk.client.Clients.refresh" href="#cvpysdk.client.Clients.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.client.Clients.register_decoupled_client" href="#cvpysdk.client.Clients.register_decoupled_client">register_decoupled_client</a></code></li>
+<li><code><a title="cvpysdk.client.Clients.salesforce_clients" href="#cvpysdk.client.Clients.salesforce_clients">salesforce_clients</a></code></li>
 <li><code><a title="cvpysdk.client.Clients.virtualization_clients" href="#cvpysdk.client.Clients.virtualization_clients">virtualization_clients</a></code></li>
 </ul>
 </li>

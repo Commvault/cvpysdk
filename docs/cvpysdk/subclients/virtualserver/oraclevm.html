@@ -48,7 +48,7 @@ user to the same location</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/oraclevm.py#L1-L273" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/oraclevm.py#L1-L269" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -91,7 +91,6 @@ OracleVMVirtualServerSubclient:
                                                     user to the same location
 &#34;&#34;&#34;
 
-from past.builtins import basestring
 from ..vssubclient import VirtualServerSubclient
 from ...exception import SDKException
 
@@ -132,7 +131,7 @@ class OracleVMVirtualServerSubclient(VirtualServerSubclient):
                                                    restore
                                                    default: None
 
-                destination_client (basestring)  -- proxy client to be used for
+                destination_client (str)  -- proxy client to be used for
                                                     restore
                                                     default: proxy added in
                                                     subclient
@@ -143,12 +142,12 @@ class OracleVMVirtualServerSubclient(VirtualServerSubclient):
                 power_on            (bool)     --  power on the  restored VM
                                                    default: True
 
-                disk_option       (basestring) -- disk provisioning for the
+                disk_option       (str) -- disk provisioning for the
                                                   restored vm
                                                   default: 0 which is equivalent
                                                   to Original
 
-                transport_mode    (basestring) -- transport mode that need to be
+                transport_mode    (str) -- transport mode that need to be
                                                   used
 
                 copy_precedence     (int)      --  copy precedence value
@@ -228,16 +227,16 @@ class OracleVMVirtualServerSubclient(VirtualServerSubclient):
                 disk_name_prefix    (string) -- new name for the disks while restoring
                                                 the VM
 
-                virtualization_client   (basestring) -- name of the Oracle
+                virtualization_client   (str) -- name of the Oracle
                                                     virtualization
                                                     client that needs to be
                                                     restored
 
-                destination_client    (basestring) -- name of the proxy that
+                destination_client    (str) -- name of the proxy that
                                                     should be used during
                                                     restore
 
-                repository         (basestring) -- datastore where the
+                repository         (str) -- datastore where the
                                                   restored VM should be located
                                                   restores to the source VM
                                                   datastore if this value is
@@ -249,7 +248,7 @@ class OracleVMVirtualServerSubclient(VirtualServerSubclient):
                 power_on          (bool)       -- power on the  restored VM
                                                   default: True
 
-                server          (basestring) -- destination cluster or  host
+                server          (str) -- destination cluster or  host
                                                     restores to the source VM
                                                     esx if this value is not
                                                     specified
@@ -257,7 +256,7 @@ class OracleVMVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence   (int)        -- copy precedence value
                                                   default: 0
 
-                disk_provisioning       (basestring) -- disk provisioning for the
+                disk_provisioning       (str) -- disk provisioning for the
                                                   restored vm default: 0
                                                   which is equivalent
                                                   to Original
@@ -286,18 +285,15 @@ class OracleVMVirtualServerSubclient(VirtualServerSubclient):
         &#34;&#34;&#34;
         restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
-
-        if not restored_vm_name and isinstance(vm_to_restore, basestring):
-            restored_vm_name = &#34;Delete&#34; + vm_to_restore
 
         if copy_precedence:
             restore_option[&#34;copy_precedence_applicable&#34;] = True
 
         if restored_vm_name:
-            if not (isinstance(vm_to_restore, basestring) or
-                    isinstance(restored_vm_name, basestring)):
+            if not (isinstance(vm_to_restore, str) or
+                    isinstance(restored_vm_name, str)):
                 raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
             restore_option[&#39;restore_new_name&#39;] = restored_vm_name
 
@@ -351,7 +347,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/oraclevm.py#L47-L273" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/oraclevm.py#L46-L269" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class OracleVMVirtualServerSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient Base class.
@@ -389,7 +385,7 @@ backupset class, subclient name, subclient id</p></div>
                                                    restore
                                                    default: None
 
-                destination_client (basestring)  -- proxy client to be used for
+                destination_client (str)  -- proxy client to be used for
                                                     restore
                                                     default: proxy added in
                                                     subclient
@@ -400,12 +396,12 @@ backupset class, subclient name, subclient id</p></div>
                 power_on            (bool)     --  power on the  restored VM
                                                    default: True
 
-                disk_option       (basestring) -- disk provisioning for the
+                disk_option       (str) -- disk provisioning for the
                                                   restored vm
                                                   default: 0 which is equivalent
                                                   to Original
 
-                transport_mode    (basestring) -- transport mode that need to be
+                transport_mode    (str) -- transport mode that need to be
                                                   used
 
                 copy_precedence     (int)      --  copy precedence value
@@ -485,16 +481,16 @@ backupset class, subclient name, subclient id</p></div>
                 disk_name_prefix    (string) -- new name for the disks while restoring
                                                 the VM
 
-                virtualization_client   (basestring) -- name of the Oracle
+                virtualization_client   (str) -- name of the Oracle
                                                     virtualization
                                                     client that needs to be
                                                     restored
 
-                destination_client    (basestring) -- name of the proxy that
+                destination_client    (str) -- name of the proxy that
                                                     should be used during
                                                     restore
 
-                repository         (basestring) -- datastore where the
+                repository         (str) -- datastore where the
                                                   restored VM should be located
                                                   restores to the source VM
                                                   datastore if this value is
@@ -506,7 +502,7 @@ backupset class, subclient name, subclient id</p></div>
                 power_on          (bool)       -- power on the  restored VM
                                                   default: True
 
-                server          (basestring) -- destination cluster or  host
+                server          (str) -- destination cluster or  host
                                                     restores to the source VM
                                                     esx if this value is not
                                                     specified
@@ -514,7 +510,7 @@ backupset class, subclient name, subclient id</p></div>
                 copy_precedence   (int)        -- copy precedence value
                                                   default: 0
 
-                disk_provisioning       (basestring) -- disk provisioning for the
+                disk_provisioning       (str) -- disk provisioning for the
                                                   restored vm default: 0
                                                   which is equivalent
                                                   to Original
@@ -543,18 +539,15 @@ backupset class, subclient name, subclient id</p></div>
         &#34;&#34;&#34;
         restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
-
-        if not restored_vm_name and isinstance(vm_to_restore, basestring):
-            restored_vm_name = &#34;Delete&#34; + vm_to_restore
 
         if copy_precedence:
             restore_option[&#34;copy_precedence_applicable&#34;] = True
 
         if restored_vm_name:
-            if not (isinstance(vm_to_restore, basestring) or
-                    isinstance(restored_vm_name, basestring)):
+            if not (isinstance(vm_to_restore, str) or
+                    isinstance(restored_vm_name, str)):
                 raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
             restore_option[&#39;restore_new_name&#39;] = restored_vm_name
 
@@ -601,7 +594,7 @@ to the location same as the actual location of the VM in VCenter.</p>
 provide the VM name to
 restore
 default: None</p>
-<p>destination_client (basestring)
+<p>destination_client (str)
 &ndash; proxy client to be used for
 restore
 default: proxy added in
@@ -618,12 +611,12 @@ power on the
 restored VM
 default: True</p>
 <p>disk_option
-(basestring) &ndash; disk provisioning for the
+(str) &ndash; disk provisioning for the
 restored vm
 default: 0 which is equivalent
 to Original</p>
 <p>transport_mode
-(basestring) &ndash; transport mode that need to be
+(str) &ndash; transport mode that need to be
 used</p>
 <p>copy_precedence
 (int)
@@ -652,7 +645,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/oraclevm.py#L65-L147" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/oraclevm.py#L64-L146" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(
         self,
@@ -672,7 +665,7 @@ if response is not success
                                                restore
                                                default: None
 
-            destination_client (basestring)  -- proxy client to be used for
+            destination_client (str)  -- proxy client to be used for
                                                 restore
                                                 default: proxy added in
                                                 subclient
@@ -683,12 +676,12 @@ if response is not success
             power_on            (bool)     --  power on the  restored VM
                                                default: True
 
-            disk_option       (basestring) -- disk provisioning for the
+            disk_option       (str) -- disk provisioning for the
                                               restored vm
                                               default: 0 which is equivalent
                                               to Original
 
-            transport_mode    (basestring) -- transport mode that need to be
+            transport_mode    (str) -- transport mode that need to be
                                               used
 
             copy_precedence     (int)      --  copy precedence value
@@ -763,16 +756,16 @@ restored.</p>
 (string) &ndash; new name for the disks while restoring
 the VM</p>
 <p>virtualization_client
-(basestring) &ndash; name of the Oracle
+(str) &ndash; name of the Oracle
 virtualization
 client that needs to be
 restored</p>
 <p>destination_client
-(basestring) &ndash; name of the proxy that
+(str) &ndash; name of the proxy that
 should be used during
 restore</p>
 <p>repository
-(basestring) &ndash; datastore where the
+(str) &ndash; datastore where the
 restored VM should be located
 restores to the source VM
 datastore if this value is
@@ -787,7 +780,7 @@ default: True</p>
 restored VM
 default: True</p>
 <p>server
-(basestring) &ndash; destination cluster or
+(str) &ndash; destination cluster or
 host
 restores to the source VM
 esx if this value is not
@@ -797,7 +790,7 @@ specified</p>
 &ndash; copy precedence value
 default: 0</p>
 <p>disk_provisioning
-(basestring) &ndash; disk provisioning for the
+(str) &ndash; disk provisioning for the
 restored vm default: 0
 which is equivalent
 to Original</p>
@@ -823,7 +816,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/oraclevm.py#L149-L273" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/oraclevm.py#L148-L269" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(
         self,
@@ -855,16 +848,16 @@ if response is not success
             disk_name_prefix    (string) -- new name for the disks while restoring
                                             the VM
 
-            virtualization_client   (basestring) -- name of the Oracle
+            virtualization_client   (str) -- name of the Oracle
                                                 virtualization
                                                 client that needs to be
                                                 restored
 
-            destination_client    (basestring) -- name of the proxy that
+            destination_client    (str) -- name of the proxy that
                                                 should be used during
                                                 restore
 
-            repository         (basestring) -- datastore where the
+            repository         (str) -- datastore where the
                                               restored VM should be located
                                               restores to the source VM
                                               datastore if this value is
@@ -876,7 +869,7 @@ if response is not success
             power_on          (bool)       -- power on the  restored VM
                                               default: True
 
-            server          (basestring) -- destination cluster or  host
+            server          (str) -- destination cluster or  host
                                                 restores to the source VM
                                                 esx if this value is not
                                                 specified
@@ -884,7 +877,7 @@ if response is not success
             copy_precedence   (int)        -- copy precedence value
                                               default: 0
 
-            disk_provisioning       (basestring) -- disk provisioning for the
+            disk_provisioning       (str) -- disk provisioning for the
                                               restored vm default: 0
                                               which is equivalent
                                               to Original
@@ -913,18 +906,15 @@ if response is not success
     &#34;&#34;&#34;
     restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
 
-    if vm_to_restore and not isinstance(vm_to_restore, basestring):
+    if vm_to_restore and not isinstance(vm_to_restore, str):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
-
-    if not restored_vm_name and isinstance(vm_to_restore, basestring):
-        restored_vm_name = &#34;Delete&#34; + vm_to_restore
 
     if copy_precedence:
         restore_option[&#34;copy_precedence_applicable&#34;] = True
 
     if restored_vm_name:
-        if not (isinstance(vm_to_restore, basestring) or
-                isinstance(restored_vm_name, basestring)):
+        if not (isinstance(vm_to_restore, str) or
+                isinstance(restored_vm_name, str)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
         restore_option[&#39;restore_new_name&#39;] = restored_vm_name
 

@@ -85,7 +85,7 @@ Gets all the details of associated content analyzer cloud</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/content_analyzer.py#L1-L421" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/content_analyzer.py#L1-L420" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -159,7 +159,6 @@ ContentAnalyzer Attributes
     **cloud_url**   --  returns the url of the content analyzer
 
 &#34;&#34;&#34;
-from past.builtins import basestring
 from .exception import SDKException
 from .datacube.constants import ContentAnalyzerConstants
 
@@ -300,7 +299,7 @@ class ContentAnalyzers(object):
 
                         Response was empty.
         &#34;&#34;&#34;
-        if not isinstance(client_name, basestring) or not isinstance(content_analyzer_name, basestring):
+        if not isinstance(client_name, str) or not isinstance(content_analyzer_name, str):
             raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
         client = self._commcell_object.clients.get(client_name)
         req_json = ContentAnalyzerConstants.REQUEST_JSON
@@ -360,7 +359,7 @@ class ContentAnalyzers(object):
 
                         Response was empty.
         &#34;&#34;&#34;
-        if cloud_name is None or not isinstance(cloud_name, basestring):
+        if cloud_name is None or not isinstance(cloud_name, str):
             raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
 
         cloud_id = self.get(cloud_name).cloud_id
@@ -403,7 +402,7 @@ class ContentAnalyzers(object):
 
 
         &#34;&#34;&#34;
-        if not isinstance(cloud_name, basestring):
+        if not isinstance(cloud_name, str):
             raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
 
         if self.has_cloud(cloud_name):
@@ -425,7 +424,7 @@ class ContentAnalyzers(object):
                     if type of the CA cloud name argument is not string
 
         &#34;&#34;&#34;
-        if not isinstance(cloud_name, basestring):
+        if not isinstance(cloud_name, str):
             raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
 
         return self._content_analyzers and cloud_name.lower() in map(str.lower, self._content_analyzers)
@@ -547,7 +546,7 @@ instance of the ContentAnalyzer class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/content_analyzer.py#L345-L421" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/content_analyzer.py#L344-L420" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ContentAnalyzer(object):
     &#34;&#34;&#34;Class for performing operations on a single content analyzer cloud&#34;&#34;&#34;
@@ -635,7 +634,7 @@ instance of the ContentAnalyzer class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/content_analyzer.py#L404-L407" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/content_analyzer.py#L403-L406" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_id(self):
@@ -649,7 +648,7 @@ def client_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/content_analyzer.py#L409-L412" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/content_analyzer.py#L408-L411" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def cloud_id(self):
@@ -663,7 +662,7 @@ def cloud_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/content_analyzer.py#L414-L417" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/content_analyzer.py#L413-L416" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def cloud_url(self):
@@ -682,7 +681,7 @@ def cloud_url(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/content_analyzer.py#L419-L421" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/content_analyzer.py#L418-L420" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the content analyzer details associated with this commcell&#34;&#34;&#34;
@@ -710,7 +709,7 @@ instance of the ContentAnalyzers class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/content_analyzer.py#L78-L342" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/content_analyzer.py#L77-L341" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ContentAnalyzers(object):
     &#34;&#34;&#34;Class for representing all the ContentAnalyzers in the commcell.&#34;&#34;&#34;
@@ -848,7 +847,7 @@ instance of the ContentAnalyzers class</p></div>
 
                         Response was empty.
         &#34;&#34;&#34;
-        if not isinstance(client_name, basestring) or not isinstance(content_analyzer_name, basestring):
+        if not isinstance(client_name, str) or not isinstance(content_analyzer_name, str):
             raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
         client = self._commcell_object.clients.get(client_name)
         req_json = ContentAnalyzerConstants.REQUEST_JSON
@@ -908,7 +907,7 @@ instance of the ContentAnalyzers class</p></div>
 
                         Response was empty.
         &#34;&#34;&#34;
-        if cloud_name is None or not isinstance(cloud_name, basestring):
+        if cloud_name is None or not isinstance(cloud_name, str):
             raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
 
         cloud_id = self.get(cloud_name).cloud_id
@@ -951,7 +950,7 @@ instance of the ContentAnalyzers class</p></div>
 
 
         &#34;&#34;&#34;
-        if not isinstance(cloud_name, basestring):
+        if not isinstance(cloud_name, str):
             raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
 
         if self.has_cloud(cloud_name):
@@ -973,7 +972,7 @@ instance of the ContentAnalyzers class</p></div>
                     if type of the CA cloud name argument is not string
 
         &#34;&#34;&#34;
-        if not isinstance(cloud_name, basestring):
+        if not isinstance(cloud_name, str):
             raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
 
         return self._content_analyzers and cloud_name.lower() in map(str.lower, self._content_analyzers)</code></pre>
@@ -1021,7 +1020,7 @@ Response was empty.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/content_analyzer.py#L188-L258" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/content_analyzer.py#L187-L257" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create(self, client_name, content_analyzer_name, temp_directory):
     &#34;&#34;&#34;Creates an content analyzer cloud within the commcell
@@ -1049,7 +1048,7 @@ Response was empty.
 
                     Response was empty.
     &#34;&#34;&#34;
-    if not isinstance(client_name, basestring) or not isinstance(content_analyzer_name, basestring):
+    if not isinstance(client_name, str) or not isinstance(content_analyzer_name, str):
         raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
     client = self._commcell_object.clients.get(client_name)
     req_json = ContentAnalyzerConstants.REQUEST_JSON
@@ -1116,7 +1115,7 @@ Response was empty.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/content_analyzer.py#L260-L295" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/content_analyzer.py#L259-L294" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, cloud_name):
     &#34;&#34;&#34;Deletes / removes an content analyzer from the commcell
@@ -1132,7 +1131,7 @@ Response was empty.
 
                     Response was empty.
     &#34;&#34;&#34;
-    if cloud_name is None or not isinstance(cloud_name, basestring):
+    if cloud_name is None or not isinstance(cloud_name, str):
         raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
 
     cloud_id = self.get(cloud_name).cloud_id
@@ -1178,7 +1177,7 @@ if cacloud_name is not of type string
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/content_analyzer.py#L297-L323" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/content_analyzer.py#L296-L322" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, cloud_name):
     &#34;&#34;&#34;Returns a ContentAnalyzer object for the given CA cloud name.
@@ -1200,7 +1199,7 @@ if cacloud_name is not of type string
 
 
     &#34;&#34;&#34;
-    if not isinstance(cloud_name, basestring):
+    if not isinstance(cloud_name, str):
         raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
 
     if self.has_cloud(cloud_name):
@@ -1224,7 +1223,7 @@ properties for the given content analyzer cloud name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/content_analyzer.py#L110-L121" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/content_analyzer.py#L109-L120" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_properties(self, cacloud_name):
     &#34;&#34;&#34;Returns a properties of the specified content analyzer cloud name.
@@ -1257,7 +1256,7 @@ if type of the CA cloud name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/content_analyzer.py#L325-L342" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/content_analyzer.py#L324-L341" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_cloud(self, cloud_name):
     &#34;&#34;&#34;Checks if a content analyzer cloud exists in the commcell with the input name.
@@ -1273,7 +1272,7 @@ if type of the CA cloud name argument is not string</p></div>
                 if type of the CA cloud name argument is not string
 
     &#34;&#34;&#34;
-    if not isinstance(cloud_name, basestring):
+    if not isinstance(cloud_name, str):
         raise SDKException(&#39;ContentAnalyzer&#39;, &#39;101&#39;)
 
     return self._content_analyzers and cloud_name.lower() in map(str.lower, self._content_analyzers)</code></pre>
@@ -1287,7 +1286,7 @@ if type of the CA cloud name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/content_analyzer.py#L184-L186" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/content_analyzer.py#L183-L185" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the content analyzers associated with the commcell.&#34;&#34;&#34;

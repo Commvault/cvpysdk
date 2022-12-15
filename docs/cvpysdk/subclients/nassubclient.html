@@ -48,10 +48,12 @@ update the content of the subclient</p>
 <p>backup()
 &ndash;
 run a backup job for the subclient</p>
+<p>restore_in_place()
+&ndash; run a restore in place for the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/nassubclient.py#L1-L121" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/nassubclient.py#L1-L240" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">#!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -91,12 +93,12 @@ NASSubclient:
     content()                           --  update the content of the subclient
 
     backup()                            --  run a backup job for the subclient
+    
+    restore_in_place()                  -- run a restore in place for the subclient
 
 &#34;&#34;&#34;
 
 from __future__ import unicode_literals
-
-from past.builtins import basestring
 
 from .fssubclient import FileSystemSubclient
 from ..exception import SDKException
@@ -143,6 +145,7 @@ class NASSubclient(FileSystemSubclient):
 
                     if response is not success
         &#34;&#34;&#34;
+        
         if snap_name is None:
             return super(NASSubclient, self).backup(
                 backup_level, incremental_backup, incremental_level, on_demand_input=on_demand_input
@@ -150,7 +153,7 @@ class NASSubclient(FileSystemSubclient):
         else:
             request_json = self._backup_json(backup_level, incremental_backup, incremental_level)
 
-            if not isinstance(snap_name, basestring):
+            if not isinstance(snap_name, str):
                 raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
             if snap_name:
@@ -173,7 +176,125 @@ class NASSubclient(FileSystemSubclient):
                 &#39;POST&#39;, bakup_service, request_json
             )
 
-            return self._process_backup_response(flag, response)</code></pre>
+            return self._process_backup_response(flag, response)
+
+    def restore_in_place(
+            self,
+            paths,
+            overwrite=True,
+            restore_data_and_acl=True,
+            copy_precedence=None,
+            from_time=None,
+            to_time=None,
+            fs_options=None,
+            schedule_pattern=None,
+            proxy_client=None,
+            advanced_options=None,
+            synthRestore=False):
+        &#34;&#34;&#34;Runs a restore job for the subclient .
+
+            Args:
+                            paths                   (list)  --  list of full paths of files/folders to restore
+
+                overwrite               (bool)  --  unconditional overwrite files during restore
+                    default: True
+
+                restore_data_and_acl    (bool)  --  restore data and ACL files
+                    default: True
+
+                copy_precedence         (int)   --  copy precedence value of storage policy copy
+                    default: None
+
+                from_time           (str)       --  time to retore the contents after
+                        format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                to_time           (str)         --  time to retore the contents before
+                        format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                fs_options      (dict)          -- dictionary that includes all advanced options
+                    options:
+                        all_versions        : if set to True restores all the versions of the
+                                                specified file
+                        versions            : list of version numbers to be backed up
+                        validate_only       : To validate data backed up for restore
+
+
+                schedule_pattern (dict) -- scheduling options to be included for the task
+
+                        Please refer schedules.schedulePattern.createSchedule()
+                                                                    doc for the types of Jsons
+
+                proxy_client    (str)          -- Proxy client used during FS under NAS operations
+
+                advanced_options    (dict)  -- Advanced restore options
+                
+                synthRestore (bool)     -- Advance NAS restore option SynthRestore
+
+                    Options:
+
+                        job_description (str)   --  Restore job description
+
+                        timezone        (str)   --  Timezone to be used for restore
+
+                            **Note** make use of TIMEZONES dict in constants.py to pass timezone
+
+            Returns:
+                object - instance of the Job class for this restore job if its an immediate Job
+                         instance of the Schedule class for this restore job if its a scheduled Job
+
+            Raises:
+                SDKException:
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+                
+        &#34;&#34;&#34;
+        self._backupset_object._instance_object._restore_association = self._subClientEntity
+        if synthRestore == False:
+            return super(NASSubclient, self).restore_in_place(
+                paths,
+                overwrite,
+                restore_data_and_acl,
+                copy_precedence,
+                from_time,
+                to_time,
+                fs_options,
+                schedule_pattern,
+                proxy_client,
+                advanced_options
+            )
+        else:
+            request_json = self._restore_json(
+                paths=paths,
+                overwrite=overwrite,
+                restore_data_and_acl=restore_data_and_acl,
+                copy_precedence=copy_precedence,
+                from_time=from_time,
+                to_time=to_time,
+                fs_options=None,
+                schedule_pattern=None,
+                proxy_client=None,
+                advanced_options=None
+            )
+            
+            nas_option = {
+                &#34;nasOption&#34;: {
+                     &#34;synthRestore&#34;: 1
+                }
+            }
+
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;].update(nas_option)
+
+            
+            return self._process_restore_response(request_json)</code></pre>
 </details>
 </section>
 <section>
@@ -211,7 +332,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/nassubclient.py#L50-L121" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/nassubclient.py#L50-L240" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class NASSubclient(FileSystemSubclient):
     &#34;&#34;&#34;Derived class from Subclient Base class, representing a nas subclient,
@@ -254,6 +375,7 @@ default: None</p>
 
                     if response is not success
         &#34;&#34;&#34;
+        
         if snap_name is None:
             return super(NASSubclient, self).backup(
                 backup_level, incremental_backup, incremental_level, on_demand_input=on_demand_input
@@ -261,7 +383,7 @@ default: None</p>
         else:
             request_json = self._backup_json(backup_level, incremental_backup, incremental_level)
 
-            if not isinstance(snap_name, basestring):
+            if not isinstance(snap_name, str):
                 raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
             if snap_name:
@@ -284,7 +406,125 @@ default: None</p>
                 &#39;POST&#39;, bakup_service, request_json
             )
 
-            return self._process_backup_response(flag, response)</code></pre>
+            return self._process_backup_response(flag, response)
+
+    def restore_in_place(
+            self,
+            paths,
+            overwrite=True,
+            restore_data_and_acl=True,
+            copy_precedence=None,
+            from_time=None,
+            to_time=None,
+            fs_options=None,
+            schedule_pattern=None,
+            proxy_client=None,
+            advanced_options=None,
+            synthRestore=False):
+        &#34;&#34;&#34;Runs a restore job for the subclient .
+
+            Args:
+                            paths                   (list)  --  list of full paths of files/folders to restore
+
+                overwrite               (bool)  --  unconditional overwrite files during restore
+                    default: True
+
+                restore_data_and_acl    (bool)  --  restore data and ACL files
+                    default: True
+
+                copy_precedence         (int)   --  copy precedence value of storage policy copy
+                    default: None
+
+                from_time           (str)       --  time to retore the contents after
+                        format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                to_time           (str)         --  time to retore the contents before
+                        format: YYYY-MM-DD HH:MM:SS
+
+                    default: None
+
+                fs_options      (dict)          -- dictionary that includes all advanced options
+                    options:
+                        all_versions        : if set to True restores all the versions of the
+                                                specified file
+                        versions            : list of version numbers to be backed up
+                        validate_only       : To validate data backed up for restore
+
+
+                schedule_pattern (dict) -- scheduling options to be included for the task
+
+                        Please refer schedules.schedulePattern.createSchedule()
+                                                                    doc for the types of Jsons
+
+                proxy_client    (str)          -- Proxy client used during FS under NAS operations
+
+                advanced_options    (dict)  -- Advanced restore options
+                
+                synthRestore (bool)     -- Advance NAS restore option SynthRestore
+
+                    Options:
+
+                        job_description (str)   --  Restore job description
+
+                        timezone        (str)   --  Timezone to be used for restore
+
+                            **Note** make use of TIMEZONES dict in constants.py to pass timezone
+
+            Returns:
+                object - instance of the Job class for this restore job if its an immediate Job
+                         instance of the Schedule class for this restore job if its a scheduled Job
+
+            Raises:
+                SDKException:
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+                
+        &#34;&#34;&#34;
+        self._backupset_object._instance_object._restore_association = self._subClientEntity
+        if synthRestore == False:
+            return super(NASSubclient, self).restore_in_place(
+                paths,
+                overwrite,
+                restore_data_and_acl,
+                copy_precedence,
+                from_time,
+                to_time,
+                fs_options,
+                schedule_pattern,
+                proxy_client,
+                advanced_options
+            )
+        else:
+            request_json = self._restore_json(
+                paths=paths,
+                overwrite=overwrite,
+                restore_data_and_acl=restore_data_and_acl,
+                copy_precedence=copy_precedence,
+                from_time=from_time,
+                to_time=to_time,
+                fs_options=None,
+                schedule_pattern=None,
+                proxy_client=None,
+                advanced_options=None
+            )
+            
+            nas_option = {
+                &#34;nasOption&#34;: {
+                     &#34;synthRestore&#34;: 1
+                }
+            }
+
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;].update(nas_option)
+
+            
+            return self._process_restore_response(request_json)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -336,7 +576,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/nassubclient.py#L55-L121" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/nassubclient.py#L55-L122" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(
         self,
@@ -374,6 +614,7 @@ if response is not success
 
                 if response is not success
     &#34;&#34;&#34;
+    
     if snap_name is None:
         return super(NASSubclient, self).backup(
             backup_level, incremental_backup, incremental_level, on_demand_input=on_demand_input
@@ -381,7 +622,7 @@ if response is not success
     else:
         request_json = self._backup_json(backup_level, incremental_backup, incremental_level)
 
-        if not isinstance(snap_name, basestring):
+        if not isinstance(snap_name, str):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         if snap_name:
@@ -405,6 +646,210 @@ if response is not success
         )
 
         return self._process_backup_response(flag, response)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.nassubclient.NASSubclient.restore_in_place"><code class="name flex">
+<span>def <span class="ident">restore_in_place</span></span>(<span>self, paths, overwrite=True, restore_data_and_acl=True, copy_precedence=None, from_time=None, to_time=None, fs_options=None, schedule_pattern=None, proxy_client=None, advanced_options=None, synthRestore=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Runs a restore job for the subclient .</p>
+<h2 id="args">Args</h2>
+<pre><code>        paths                   (list)  --  list of full paths of files/folders to restore
+</code></pre>
+<p>overwrite
+(bool)
+&ndash;
+unconditional overwrite files during restore
+default: True</p>
+<p>restore_data_and_acl
+(bool)
+&ndash;
+restore data and ACL files
+default: True</p>
+<p>copy_precedence
+(int)
+&ndash;
+copy precedence value of storage policy copy
+default: None</p>
+<p>from_time
+(str)
+&ndash;
+time to retore the contents after
+format: YYYY-MM-DD HH:MM:SS</p>
+<pre><code>default: None
+</code></pre>
+<p>to_time
+(str)
+&ndash;
+time to retore the contents before
+format: YYYY-MM-DD HH:MM:SS</p>
+<pre><code>default: None
+</code></pre>
+<p>fs_options
+(dict)
+&ndash; dictionary that includes all advanced options
+options:
+all_versions
+: if set to True restores all the versions of the
+specified file
+versions
+: list of version numbers to be backed up
+validate_only
+: To validate data backed up for restore</p>
+<p>schedule_pattern (dict) &ndash; scheduling options to be included for the task</p>
+<pre><code>    Please refer schedules.schedulePattern.createSchedule()
+                                                doc for the types of Jsons
+</code></pre>
+<p>proxy_client
+(str)
+&ndash; Proxy client used during FS under NAS operations</p>
+<p>advanced_options
+(dict)
+&ndash; Advanced restore options</p>
+<p>synthRestore (bool)
+&ndash; Advance NAS restore option SynthRestore</p>
+<pre><code>Options:
+
+    job_description (str)   --  Restore job description
+
+    timezone        (str)   --  Timezone to be used for restore
+
+        **Note** make use of TIMEZONES dict in constants.py to pass timezone
+</code></pre>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Job class for this restore job if its an immediate Job
+instance of the Schedule class for this restore job if its a scheduled Job</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if paths is not a list</p>
+<pre><code>if failed to initialize job
+
+if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/nassubclient.py#L124-L240" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def restore_in_place(
+        self,
+        paths,
+        overwrite=True,
+        restore_data_and_acl=True,
+        copy_precedence=None,
+        from_time=None,
+        to_time=None,
+        fs_options=None,
+        schedule_pattern=None,
+        proxy_client=None,
+        advanced_options=None,
+        synthRestore=False):
+    &#34;&#34;&#34;Runs a restore job for the subclient .
+
+        Args:
+                        paths                   (list)  --  list of full paths of files/folders to restore
+
+            overwrite               (bool)  --  unconditional overwrite files during restore
+                default: True
+
+            restore_data_and_acl    (bool)  --  restore data and ACL files
+                default: True
+
+            copy_precedence         (int)   --  copy precedence value of storage policy copy
+                default: None
+
+            from_time           (str)       --  time to retore the contents after
+                    format: YYYY-MM-DD HH:MM:SS
+
+                default: None
+
+            to_time           (str)         --  time to retore the contents before
+                    format: YYYY-MM-DD HH:MM:SS
+
+                default: None
+
+            fs_options      (dict)          -- dictionary that includes all advanced options
+                options:
+                    all_versions        : if set to True restores all the versions of the
+                                            specified file
+                    versions            : list of version numbers to be backed up
+                    validate_only       : To validate data backed up for restore
+
+
+            schedule_pattern (dict) -- scheduling options to be included for the task
+
+                    Please refer schedules.schedulePattern.createSchedule()
+                                                                doc for the types of Jsons
+
+            proxy_client    (str)          -- Proxy client used during FS under NAS operations
+
+            advanced_options    (dict)  -- Advanced restore options
+            
+            synthRestore (bool)     -- Advance NAS restore option SynthRestore
+
+                Options:
+
+                    job_description (str)   --  Restore job description
+
+                    timezone        (str)   --  Timezone to be used for restore
+
+                        **Note** make use of TIMEZONES dict in constants.py to pass timezone
+
+        Returns:
+            object - instance of the Job class for this restore job if its an immediate Job
+                     instance of the Schedule class for this restore job if its a scheduled Job
+
+        Raises:
+            SDKException:
+                if paths is not a list
+
+                if failed to initialize job
+
+                if response is empty
+
+                if response is not success
+            
+    &#34;&#34;&#34;
+    self._backupset_object._instance_object._restore_association = self._subClientEntity
+    if synthRestore == False:
+        return super(NASSubclient, self).restore_in_place(
+            paths,
+            overwrite,
+            restore_data_and_acl,
+            copy_precedence,
+            from_time,
+            to_time,
+            fs_options,
+            schedule_pattern,
+            proxy_client,
+            advanced_options
+        )
+    else:
+        request_json = self._restore_json(
+            paths=paths,
+            overwrite=overwrite,
+            restore_data_and_acl=restore_data_and_acl,
+            copy_precedence=copy_precedence,
+            from_time=from_time,
+            to_time=to_time,
+            fs_options=None,
+            schedule_pattern=None,
+            proxy_client=None,
+            advanced_options=None
+        )
+        
+        nas_option = {
+            &#34;nasOption&#34;: {
+                 &#34;synthRestore&#34;: 1
+            }
+        }
+
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;].update(nas_option)
+
+        
+        return self._process_restore_response(request_json)</code></pre>
 </details>
 </dd>
 </dl>
@@ -486,7 +931,6 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.properties" href="../subclient.html#cvpysdk.subclient.Subclient.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.read_buffer_size" href="../subclient.html#cvpysdk.subclient.Subclient.read_buffer_size">read_buffer_size</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.refresh" href="../subclient.html#cvpysdk.subclient.Subclient.refresh">refresh</a></code></li>
-<li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.restore_in_place" href="../subclient.html#cvpysdk.subclient.Subclient.restore_in_place">restore_in_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.restore_out_of_place" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.restore_out_of_place">restore_out_of_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.run_backup_copy" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.run_backup_copy">run_backup_copy</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.save_access_path" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.save_access_path">save_access_path</a></code></li>
@@ -586,6 +1030,7 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="cvpysdk.subclients.nassubclient.NASSubclient" href="#cvpysdk.subclients.nassubclient.NASSubclient">NASSubclient</a></code></h4>
 <ul class="">
 <li><code><a title="cvpysdk.subclients.nassubclient.NASSubclient.backup" href="#cvpysdk.subclients.nassubclient.NASSubclient.backup">backup</a></code></li>
+<li><code><a title="cvpysdk.subclients.nassubclient.NASSubclient.restore_in_place" href="#cvpysdk.subclients.nassubclient.NASSubclient.restore_in_place">restore_in_place</a></code></li>
 </ul>
 </li>
 </ul>

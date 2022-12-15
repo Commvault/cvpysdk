@@ -89,7 +89,7 @@ returns the storage pool id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L1-L845" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/storage_pool.py#L1-L843" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -181,8 +181,6 @@ StoragePool instance attributes
 import xmltodict
 
 from .exception import SDKException
-from past.builtins import basestring
-# from future.standard_library import install_aliases
 
 # from .job import Job
 
@@ -299,7 +297,7 @@ class StoragePools:
 
             response = xmltodict.parse(response.text)[&#39;Api_GetStoragePoolListResp&#39;]
 
-            if response is None:
+            if response is None or response.get(&#39;storagePoolList&#39;) is None:
                 storage_pool_list = []
             else:
                 storage_pool_list = response[&#39;storagePoolList&#39;]
@@ -385,14 +383,14 @@ class StoragePools:
         
         if not isinstance(media_agents, list):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
-        if not isinstance(storage_pool_name, basestring):
+        if not isinstance(storage_pool_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
         
         mediagent_obj = []
         for media_agent in media_agents:
             if isinstance(media_agent, MediaAgent):
                 mediagent_obj.append(media_agent)
-            elif isinstance(media_agent, basestring):
+            elif isinstance(media_agent, str):
                 mediagent_obj.append(self._commcell_object.media_agents.get(media_agent))
             else:
                 raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
@@ -464,27 +462,27 @@ class StoragePools:
         &#34;&#34;&#34;
         # from urllib.parse import urlencode
 
-        if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
-                not (isinstance(storage_pool_name, basestring) or not isinstance(mountpath, basestring))):
+        if ((dedup_path is not None and not isinstance(dedup_path, str)) or
+                not (isinstance(storage_pool_name, str) or not isinstance(mountpath, str))):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         # if isinstance(library, DiskLibrary):
         #     disk_library = library
-        # elif isinstance(library, basestring):
+        # elif isinstance(library, str):
         #     disk_library = DiskLibrary(self._commcell_object, library)
         # else:
         #     raise SDKException(&#39;Storage&#39;, &#39;104&#39;)
 
         if isinstance(media_agent, MediaAgent):
             media_agent = media_agent
-        elif isinstance(media_agent, basestring):
+        elif isinstance(media_agent, str):
             media_agent = MediaAgent(self._commcell_object, media_agent)
         else:
             raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
 
         if isinstance(ddb_ma, MediaAgent):
             ddb_ma = ddb_ma
-        elif isinstance(ddb_ma, basestring):
+        elif isinstance(ddb_ma, str):
             ddb_ma = MediaAgent(self._commcell_object, ddb_ma)
         else:
             raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
@@ -586,7 +584,7 @@ class StoragePools:
 
         &#34;&#34;&#34;
 
-        if not isinstance(storage_pool_name, basestring):
+        if not isinstance(storage_pool_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
         else:
             storage_pool_name = storage_pool_name.lower()
@@ -722,7 +720,7 @@ class StoragePool(object):
         for media_agent in media_agents:        
             if isinstance(media_agent, MediaAgent):
                 mediagent_obj.append(media_agent)
-            elif isinstance(media_agent, basestring):
+            elif isinstance(media_agent, str):
                 mediagent_obj.append(self._commcell_object.media_agents.get(media_agent))
             else:
                 raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
@@ -795,7 +793,7 @@ class StoragePool(object):
                 SDKException:
                     if reconfigure fails
         &#34;&#34;&#34;
-        if not isinstance(storage_pool_name, basestring):
+        if not isinstance(storage_pool_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
 
@@ -845,20 +843,20 @@ class StoragePool(object):
                        SDKException:
                            if replace fails
                &#34;&#34;&#34;
-        if isinstance(disk_id, basestring):
+        if isinstance(disk_id, str):
             disk_id = int(disk_id)
         elif not isinstance(disk_id, int):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         media_agent_obj = None
-        if isinstance(media_agent, basestring):
+        if isinstance(media_agent, str):
             media_agent_obj = self._commcell_object.media_agents.get(media_agent)
         elif isinstance(media_agent, MediaAgent):
             media_agent_obj = media_agent
         else:
             raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
 
-        if not isinstance(storage_pool_name, basestring):
+        if not isinstance(storage_pool_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         request_json = {
@@ -969,7 +967,7 @@ class StoragePool(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L535-L845" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/storage_pool.py#L533-L843" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class StoragePool(object):
     &#34;&#34;&#34;Class for individual storage pools&#34;&#34;&#34;
@@ -1068,7 +1066,7 @@ class StoragePool(object):
         for media_agent in media_agents:        
             if isinstance(media_agent, MediaAgent):
                 mediagent_obj.append(media_agent)
-            elif isinstance(media_agent, basestring):
+            elif isinstance(media_agent, str):
                 mediagent_obj.append(self._commcell_object.media_agents.get(media_agent))
             else:
                 raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
@@ -1141,7 +1139,7 @@ class StoragePool(object):
                 SDKException:
                     if reconfigure fails
         &#34;&#34;&#34;
-        if not isinstance(storage_pool_name, basestring):
+        if not isinstance(storage_pool_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
 
@@ -1191,20 +1189,20 @@ class StoragePool(object):
                        SDKException:
                            if replace fails
                &#34;&#34;&#34;
-        if isinstance(disk_id, basestring):
+        if isinstance(disk_id, str):
             disk_id = int(disk_id)
         elif not isinstance(disk_id, int):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         media_agent_obj = None
-        if isinstance(media_agent, basestring):
+        if isinstance(media_agent, str):
             media_agent_obj = self._commcell_object.media_agents.get(media_agent)
         elif isinstance(media_agent, MediaAgent):
             media_agent_obj = media_agent
         else:
             raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
 
-        if not isinstance(storage_pool_name, basestring):
+        if not isinstance(storage_pool_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         request_json = {
@@ -1291,7 +1289,7 @@ class StoragePool(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L606-L609" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/storage_pool.py#L604-L607" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def global_policy_name(self):
@@ -1305,7 +1303,7 @@ def global_policy_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L596-L599" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/storage_pool.py#L594-L597" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_pool_id(self):
@@ -1319,7 +1317,7 @@ def storage_pool_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L591-L594" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/storage_pool.py#L589-L592" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_pool_name(self):
@@ -1333,7 +1331,7 @@ def storage_pool_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L601-L604" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/storage_pool.py#L599-L602" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_pool_properties(self):
@@ -1362,7 +1360,7 @@ if add nodes to an existing storage pool fails</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L611-L693" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/storage_pool.py#L609-L691" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def hyperscale_add_nodes(self, media_agents):
     &#34;&#34;&#34;
@@ -1385,7 +1383,7 @@ if add nodes to an existing storage pool fails</p></div>
     for media_agent in media_agents:        
         if isinstance(media_agent, MediaAgent):
             mediagent_obj.append(media_agent)
-        elif isinstance(media_agent, basestring):
+        elif isinstance(media_agent, str):
             mediagent_obj.append(self._commcell_object.media_agents.get(media_agent))
         else:
             raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
@@ -1462,7 +1460,7 @@ if reconfigure fails</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L695-L742" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/storage_pool.py#L693-L740" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def hyperscale_reconfigure_storage_pool(self, storage_pool_name):
     &#34;&#34;&#34;
@@ -1474,7 +1472,7 @@ if reconfigure fails</p></div>
             SDKException:
                 if reconfigure fails
     &#34;&#34;&#34;
-    if not isinstance(storage_pool_name, basestring):
+    if not isinstance(storage_pool_name, str):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
 
@@ -1529,7 +1527,7 @@ if replace fails</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L744-L809" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/storage_pool.py#L742-L807" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def hyperscale_replace_disk(self, disk_id, media_agent, storage_pool_name):
     &#34;&#34;&#34;
@@ -1542,20 +1540,20 @@ if replace fails</p></div>
                    SDKException:
                        if replace fails
            &#34;&#34;&#34;
-    if isinstance(disk_id, basestring):
+    if isinstance(disk_id, str):
         disk_id = int(disk_id)
     elif not isinstance(disk_id, int):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     media_agent_obj = None
-    if isinstance(media_agent, basestring):
+    if isinstance(media_agent, str):
         media_agent_obj = self._commcell_object.media_agents.get(media_agent)
     elif isinstance(media_agent, MediaAgent):
         media_agent_obj = media_agent
     else:
         raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
 
-    if not isinstance(storage_pool_name, basestring):
+    if not isinstance(storage_pool_name, str):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     request_json = {
@@ -1607,7 +1605,7 @@ if replace fails</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L811-L813" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/storage_pool.py#L809-L811" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refreshes propery of the class object&#34;&#34;&#34;
@@ -1650,7 +1648,7 @@ if association is not of List type</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L815-L845" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/storage_pool.py#L813-L843" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_security_associations(self, associations_list, isUser = True, request_type = None, externalGroup = False):
     &#34;&#34;&#34;
@@ -1706,7 +1704,7 @@ instance of the StoragePools class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L101-L533" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/storage_pool.py#L99-L531" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class StoragePools:
     &#34;&#34;&#34;Class for doing operations on Storage Pools, like get storage poo ID.&#34;&#34;&#34;
@@ -1816,7 +1814,7 @@ instance of the StoragePools class</p></div>
 
             response = xmltodict.parse(response.text)[&#39;Api_GetStoragePoolListResp&#39;]
 
-            if response is None:
+            if response is None or response.get(&#39;storagePoolList&#39;) is None:
                 storage_pool_list = []
             else:
                 storage_pool_list = response[&#39;storagePoolList&#39;]
@@ -1902,14 +1900,14 @@ instance of the StoragePools class</p></div>
         
         if not isinstance(media_agents, list):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
-        if not isinstance(storage_pool_name, basestring):
+        if not isinstance(storage_pool_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
         
         mediagent_obj = []
         for media_agent in media_agents:
             if isinstance(media_agent, MediaAgent):
                 mediagent_obj.append(media_agent)
-            elif isinstance(media_agent, basestring):
+            elif isinstance(media_agent, str):
                 mediagent_obj.append(self._commcell_object.media_agents.get(media_agent))
             else:
                 raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
@@ -1981,27 +1979,27 @@ instance of the StoragePools class</p></div>
         &#34;&#34;&#34;
         # from urllib.parse import urlencode
 
-        if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
-                not (isinstance(storage_pool_name, basestring) or not isinstance(mountpath, basestring))):
+        if ((dedup_path is not None and not isinstance(dedup_path, str)) or
+                not (isinstance(storage_pool_name, str) or not isinstance(mountpath, str))):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         # if isinstance(library, DiskLibrary):
         #     disk_library = library
-        # elif isinstance(library, basestring):
+        # elif isinstance(library, str):
         #     disk_library = DiskLibrary(self._commcell_object, library)
         # else:
         #     raise SDKException(&#39;Storage&#39;, &#39;104&#39;)
 
         if isinstance(media_agent, MediaAgent):
             media_agent = media_agent
-        elif isinstance(media_agent, basestring):
+        elif isinstance(media_agent, str):
             media_agent = MediaAgent(self._commcell_object, media_agent)
         else:
             raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
 
         if isinstance(ddb_ma, MediaAgent):
             ddb_ma = ddb_ma
-        elif isinstance(ddb_ma, basestring):
+        elif isinstance(ddb_ma, str):
             ddb_ma = MediaAgent(self._commcell_object, ddb_ma)
         else:
             raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
@@ -2103,7 +2101,7 @@ instance of the StoragePools class</p></div>
 
         &#34;&#34;&#34;
 
-        if not isinstance(storage_pool_name, basestring):
+        if not isinstance(storage_pool_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
         else:
             storage_pool_name = storage_pool_name.lower()
@@ -2160,7 +2158,7 @@ consists of all storage pools added to the commcell</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L229-L243" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/storage_pool.py#L227-L241" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_storage_pools(self):
@@ -2213,7 +2211,7 @@ path where the DDB should be stored</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L351-L474" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/storage_pool.py#L349-L472" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, storage_pool_name, mountpath, media_agent, ddb_ma, dedup_path):
     &#34;&#34;&#34;
@@ -2238,27 +2236,27 @@ path where the DDB should be stored</p>
     &#34;&#34;&#34;
     # from urllib.parse import urlencode
 
-    if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
-            not (isinstance(storage_pool_name, basestring) or not isinstance(mountpath, basestring))):
+    if ((dedup_path is not None and not isinstance(dedup_path, str)) or
+            not (isinstance(storage_pool_name, str) or not isinstance(mountpath, str))):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     # if isinstance(library, DiskLibrary):
     #     disk_library = library
-    # elif isinstance(library, basestring):
+    # elif isinstance(library, str):
     #     disk_library = DiskLibrary(self._commcell_object, library)
     # else:
     #     raise SDKException(&#39;Storage&#39;, &#39;104&#39;)
 
     if isinstance(media_agent, MediaAgent):
         media_agent = media_agent
-    elif isinstance(media_agent, basestring):
+    elif isinstance(media_agent, str):
         media_agent = MediaAgent(self._commcell_object, media_agent)
     else:
         raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
 
     if isinstance(ddb_ma, MediaAgent):
         ddb_ma = ddb_ma
-    elif isinstance(ddb_ma, basestring):
+    elif isinstance(ddb_ma, str):
         ddb_ma = MediaAgent(self._commcell_object, ddb_ma)
     else:
         raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
@@ -2364,7 +2362,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L476-L529" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/storage_pool.py#L474-L527" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, storage_pool_name):
     &#34;&#34;&#34;deletes the specified storage pool.
@@ -2386,7 +2384,7 @@ if response is not success
 
     &#34;&#34;&#34;
 
-    if not isinstance(storage_pool_name, basestring):
+    if not isinstance(storage_pool_name, str):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
     else:
         storage_pool_name = storage_pool_name.lower()
@@ -2442,7 +2440,7 @@ if no storage pool exists with the given name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L257-L276" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/storage_pool.py#L255-L274" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, name):
     &#34;&#34;&#34;Returns the id of the storage pool for the given storage pool name.
@@ -2483,7 +2481,7 @@ boolean output whether the storage pool exists in the commcell or not</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L245-L255" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/storage_pool.py#L243-L253" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_storage_pool(self, name):
     &#34;&#34;&#34;Checks if a storage pool exists in the Commcell with the input storage pool name.
@@ -2518,7 +2516,7 @@ or instance of media agent's(object)</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L278-L349" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/storage_pool.py#L276-L347" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def hyperscale_create_storage_pool(self, storage_pool_name, media_agents):
     &#34;&#34;&#34;
@@ -2537,14 +2535,14 @@ or instance of media agent's(object)</p>
     
     if not isinstance(media_agents, list):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
-    if not isinstance(storage_pool_name, basestring):
+    if not isinstance(storage_pool_name, str):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
     
     mediagent_obj = []
     for media_agent in media_agents:
         if isinstance(media_agent, MediaAgent):
             mediagent_obj.append(media_agent)
-        elif isinstance(media_agent, basestring):
+        elif isinstance(media_agent, str):
             mediagent_obj.append(self._commcell_object.media_agents.get(media_agent))
         else:
             raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
@@ -2602,7 +2600,7 @@ or instance of media agent's(object)</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/storage_pool.py#L531-L533" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/storage_pool.py#L529-L531" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the list of storage pools associated to the Commcell.&#34;&#34;&#34;

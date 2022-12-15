@@ -48,7 +48,7 @@ user to the same location</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/fusioncompute.py#L1-L241" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/fusioncompute.py#L1-L240" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -90,7 +90,6 @@ FusionComputeVirtualServerSubclient:
     full_vm_restore_in_place()              --  restores the VM specified by the
                                                     user to the same location
 &#34;&#34;&#34;
-from past.builtins import basestring
 from cvpysdk.exception import SDKException
 from ..vssubclient import VirtualServerSubclient
 
@@ -144,7 +143,7 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence     (int)      --  copy precedence value
                                                    default: 0
 
-                proxy_client          (basestring)  --  proxy client to be used for restore
+                proxy_client          (str)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
                 **kwargs                         : Arbitrary keyword arguments Properties as of
@@ -206,19 +205,19 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
                 vm_to_restore     (list)  --  provide the VM name to restore
                                               default: None
 
-                destination_client    (basestring) -- name of the Pseudo client
+                destination_client    (str) -- name of the Pseudo client
                                                   where the VM should be
                                                     restored.
 
-                new_name          (basestring) -- new name to be given to the
+                new_name          (str) -- new name to be given to the
                                                     restored VM
 
-                host          (basestring) -- destination cluster or  host
+                host          (str) -- destination cluster or  host
                                                     restores to the source VM
                                                     esx if this value is not
                                                     specified
 
-                datastore         (basestring) -- datastore where the
+                datastore         (str) -- datastore where the
                                                   restored VM should be located
                                                   restores to the source VM
                                                   datastore if this value is
@@ -233,11 +232,11 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence   (int)        -- copy precedence value
                                                   default: 0
 
-                disk_provisioning       (basestring) -- disk provisioning for the
+                disk_provisioning       (str) -- disk provisioning for the
                                                   restored vm
                                                   default: 0 which is equivalent
                                                   to Original
-                proxy_client     (basestring)  --  proxy client to be used for restore
+                proxy_client     (str)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
                 **kwargs                         : Arbitrary keyword arguments Properties as of
@@ -267,8 +266,8 @@ class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
             vm_to_restore = [vm_to_restore]
 
         if new_name:
-            if not(isinstance(vm_to_restore, basestring) or
-                   isinstance(new_name, basestring)):
+            if not(isinstance(vm_to_restore, str) or
+                   isinstance(new_name, str)):
                 raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
             restore_option[&#39;restore_new_name&#39;] = new_name
 
@@ -319,7 +318,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/fusioncompute.py#L46-L241" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/fusioncompute.py#L45-L240" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class FusionComputeVirtualServerSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient Base class.
@@ -370,7 +369,7 @@ backupset class, subclient name, subclient id</p></div>
                 copy_precedence     (int)      --  copy precedence value
                                                    default: 0
 
-                proxy_client          (basestring)  --  proxy client to be used for restore
+                proxy_client          (str)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
                 **kwargs                         : Arbitrary keyword arguments Properties as of
@@ -432,19 +431,19 @@ backupset class, subclient name, subclient id</p></div>
                 vm_to_restore     (list)  --  provide the VM name to restore
                                               default: None
 
-                destination_client    (basestring) -- name of the Pseudo client
+                destination_client    (str) -- name of the Pseudo client
                                                   where the VM should be
                                                     restored.
 
-                new_name          (basestring) -- new name to be given to the
+                new_name          (str) -- new name to be given to the
                                                     restored VM
 
-                host          (basestring) -- destination cluster or  host
+                host          (str) -- destination cluster or  host
                                                     restores to the source VM
                                                     esx if this value is not
                                                     specified
 
-                datastore         (basestring) -- datastore where the
+                datastore         (str) -- datastore where the
                                                   restored VM should be located
                                                   restores to the source VM
                                                   datastore if this value is
@@ -459,11 +458,11 @@ backupset class, subclient name, subclient id</p></div>
                 copy_precedence   (int)        -- copy precedence value
                                                   default: 0
 
-                disk_provisioning       (basestring) -- disk provisioning for the
+                disk_provisioning       (str) -- disk provisioning for the
                                                   restored vm
                                                   default: 0 which is equivalent
                                                   to Original
-                proxy_client     (basestring)  --  proxy client to be used for restore
+                proxy_client     (str)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
                 **kwargs                         : Arbitrary keyword arguments Properties as of
@@ -493,8 +492,8 @@ backupset class, subclient name, subclient id</p></div>
             vm_to_restore = [vm_to_restore]
 
         if new_name:
-            if not(isinstance(vm_to_restore, basestring) or
-                   isinstance(new_name, basestring)):
+            if not(isinstance(vm_to_restore, str) or
+                   isinstance(new_name, str)):
                 raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
             restore_option[&#39;restore_new_name&#39;] = new_name
 
@@ -555,7 +554,7 @@ default: True</p>
 copy precedence value
 default: 0</p>
 <p>proxy_client
-(basestring)
+(str)
 &ndash;
 proxy client to be used for restore
 default: proxy added in subclient</p>
@@ -581,7 +580,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/fusioncompute.py#L70-L133" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/fusioncompute.py#L69-L132" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(
         self,
@@ -608,7 +607,7 @@ if response is not success
             copy_precedence     (int)      --  copy precedence value
                                                default: 0
 
-            proxy_client          (basestring)  --  proxy client to be used for restore
+            proxy_client          (str)  --  proxy client to be used for restore
                                                     default: proxy added in subclient
 
             **kwargs                         : Arbitrary keyword arguments Properties as of
@@ -664,20 +663,20 @@ Machine to the source client and corresponding ESX and datastore.</p>
 provide the VM name to restore
 default: None</p>
 <p>destination_client
-(basestring) &ndash; name of the Pseudo client
+(str) &ndash; name of the Pseudo client
 where the VM should be
 restored.</p>
 <p>new_name
-(basestring) &ndash; new name to be given to the
+(str) &ndash; new name to be given to the
 restored VM</p>
 <p>host
-(basestring) &ndash; destination cluster or
+(str) &ndash; destination cluster or
 host
 restores to the source VM
 esx if this value is not
 specified</p>
 <p>datastore
-(basestring) &ndash; datastore where the
+(str) &ndash; datastore where the
 restored VM should be located
 restores to the source VM
 datastore if this value is
@@ -696,12 +695,12 @@ default: True</p>
 &ndash; copy precedence value
 default: 0</p>
 <p>disk_provisioning
-(basestring) &ndash; disk provisioning for the
+(str) &ndash; disk provisioning for the
 restored vm
 default: 0 which is equivalent
 to Original
 proxy_client
-(basestring)
+(str)
 &ndash;
 proxy client to be used for restore
 default: proxy added in subclient</p>
@@ -727,7 +726,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/fusioncompute.py#L135-L241" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/fusioncompute.py#L134-L240" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(
         self,
@@ -751,19 +750,19 @@ if response is not success
             vm_to_restore     (list)  --  provide the VM name to restore
                                           default: None
 
-            destination_client    (basestring) -- name of the Pseudo client
+            destination_client    (str) -- name of the Pseudo client
                                               where the VM should be
                                                 restored.
 
-            new_name          (basestring) -- new name to be given to the
+            new_name          (str) -- new name to be given to the
                                                 restored VM
 
-            host          (basestring) -- destination cluster or  host
+            host          (str) -- destination cluster or  host
                                                 restores to the source VM
                                                 esx if this value is not
                                                 specified
 
-            datastore         (basestring) -- datastore where the
+            datastore         (str) -- datastore where the
                                               restored VM should be located
                                               restores to the source VM
                                               datastore if this value is
@@ -778,11 +777,11 @@ if response is not success
             copy_precedence   (int)        -- copy precedence value
                                               default: 0
 
-            disk_provisioning       (basestring) -- disk provisioning for the
+            disk_provisioning       (str) -- disk provisioning for the
                                               restored vm
                                               default: 0 which is equivalent
                                               to Original
-            proxy_client     (basestring)  --  proxy client to be used for restore
+            proxy_client     (str)  --  proxy client to be used for restore
                                                     default: proxy added in subclient
 
             **kwargs                         : Arbitrary keyword arguments Properties as of
@@ -812,8 +811,8 @@ if response is not success
         vm_to_restore = [vm_to_restore]
 
     if new_name:
-        if not(isinstance(vm_to_restore, basestring) or
-               isinstance(new_name, basestring)):
+        if not(isinstance(vm_to_restore, str) or
+               isinstance(new_name, str)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
         restore_option[&#39;restore_new_name&#39;] = new_name
 

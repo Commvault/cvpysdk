@@ -39,7 +39,7 @@ sets backup content at subclient level</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/splunksubclient.py#L1-L130" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/splunksubclient.py#L1-L131" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # pylint: disable=R1705, R0205
@@ -85,13 +85,15 @@ class SplunkSubclient(BigDataAppsSubclient):
     and to perform operations on that subclient
     &#34;&#34;&#34;
 
-    def restore_in_place(self, index_list):
+    def restore_in_place(self, index_list, copy_precedence=None):
         &#34;&#34;&#34;
         Performs a restore job on the splunk subclient
 
         Args:
             index_list  (list)       --  list containing the indexes to be restored
             Example: [&#34;index1&#34;,index2&#34;]
+
+            copy_precedence (int)    --  the copy precedence value
 
         Returns:
             job_obj     (obj)       --  job object associated with the restore job
@@ -108,8 +110,7 @@ class SplunkSubclient(BigDataAppsSubclient):
         instance_obj = self._instance_object
 
         instance_obj._restore_association = self._subClientEntity
-
-        parameter_dict = self._restore_json(paths=index_list)
+        parameter_dict = self._restore_json(paths=index_list, copy_precedence = copy_precedence)
         parameter_dict[&#34;taskInfo&#34;][&#34;associations&#34;] \
             [0][&#34;subclientId&#34;] = subclient_id
         parameter_dict[&#34;taskInfo&#34;][&#34;associations&#34;] \
@@ -208,7 +209,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/splunksubclient.py#L39-L130" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/splunksubclient.py#L39-L131" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SplunkSubclient(BigDataAppsSubclient):
     &#34;&#34;&#34;
@@ -216,13 +217,15 @@ default: None</p>
     and to perform operations on that subclient
     &#34;&#34;&#34;
 
-    def restore_in_place(self, index_list):
+    def restore_in_place(self, index_list, copy_precedence=None):
         &#34;&#34;&#34;
         Performs a restore job on the splunk subclient
 
         Args:
             index_list  (list)       --  list containing the indexes to be restored
             Example: [&#34;index1&#34;,index2&#34;]
+
+            copy_precedence (int)    --  the copy precedence value
 
         Returns:
             job_obj     (obj)       --  job object associated with the restore job
@@ -239,8 +242,7 @@ default: None</p>
         instance_obj = self._instance_object
 
         instance_obj._restore_association = self._subClientEntity
-
-        parameter_dict = self._restore_json(paths=index_list)
+        parameter_dict = self._restore_json(paths=index_list, copy_precedence = copy_precedence)
         parameter_dict[&#34;taskInfo&#34;][&#34;associations&#34;] \
             [0][&#34;subclientId&#34;] = subclient_id
         parameter_dict[&#34;taskInfo&#34;][&#34;associations&#34;] \
@@ -321,7 +323,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/splunksubclient.py#L79-L95" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/splunksubclient.py#L80-L96" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_content(self):
@@ -346,7 +348,7 @@ def subclient_content(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.subclients.splunksubclient.SplunkSubclient.restore_in_place"><code class="name flex">
-<span>def <span class="ident">restore_in_place</span></span>(<span>self, index_list)</span>
+<span>def <span class="ident">restore_in_place</span></span>(<span>self, index_list, copy_precedence=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Performs a restore job on the splunk subclient</p>
@@ -359,6 +361,9 @@ list containing the indexes to be restored</dt>
 <dt><strong><code>Example</code></strong></dt>
 <dd>["index1",index2"]</dd>
 </dl>
+<p>copy_precedence (int)
+&ndash;
+the copy precedence value</p>
 <h2 id="returns">Returns</h2>
 <p>job_obj
 (obj)
@@ -367,15 +372,17 @@ job object associated with the restore job</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/splunksubclient.py#L45-L77" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/splunksubclient.py#L45-L78" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def restore_in_place(self, index_list):
+<pre><code class="python">def restore_in_place(self, index_list, copy_precedence=None):
     &#34;&#34;&#34;
     Performs a restore job on the splunk subclient
 
     Args:
         index_list  (list)       --  list containing the indexes to be restored
         Example: [&#34;index1&#34;,index2&#34;]
+
+        copy_precedence (int)    --  the copy precedence value
 
     Returns:
         job_obj     (obj)       --  job object associated with the restore job
@@ -392,8 +399,7 @@ job object associated with the restore job</p></div>
     instance_obj = self._instance_object
 
     instance_obj._restore_association = self._subClientEntity
-
-    parameter_dict = self._restore_json(paths=index_list)
+    parameter_dict = self._restore_json(paths=index_list, copy_precedence = copy_precedence)
     parameter_dict[&#34;taskInfo&#34;][&#34;associations&#34;] \
         [0][&#34;subclientId&#34;] = subclient_id
     parameter_dict[&#34;taskInfo&#34;][&#34;associations&#34;] \

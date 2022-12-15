@@ -38,7 +38,7 @@ restore_postgres_server()            --  method to restore the Postgres server
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/postgresbackupset.py#L1-L300" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/postgresbackupset.py#L1-L306" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -209,7 +209,8 @@ class PostgresBackupset(Backupset):
             redirect_path=None,
             restore_to_disk=False,
             restore_to_disk_job=None,
-            destination_path=None):
+            destination_path=None,
+            revert=False):
         &#34;&#34;&#34;
         Method to restore the Postgres server
 
@@ -298,6 +299,10 @@ class PostgresBackupset(Backupset):
 
                     default: None
 
+                revert                 (bool)  --  boolean to specify whether to do a
+                                                   hardware revert in restore
+                    default: False
+
             Returns:
                 object -- Job containing restore details
 
@@ -339,7 +344,8 @@ class PostgresBackupset(Backupset):
             redirect_path=redirect_path,
             restore_to_disk=restore_to_disk,
             restore_to_disk_job=restore_to_disk_job,
-            destination_path=destination_path)</code></pre>
+            destination_path=destination_path,
+            revert=revert)</code></pre>
 </details>
 </section>
 <section>
@@ -372,7 +378,7 @@ and to perform operations on that backupset.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/postgresbackupset.py#L43-L300" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/postgresbackupset.py#L43-L306" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class PostgresBackupset(Backupset):
     &#34;&#34;&#34;Derived class from Backupset Base class, representing a postgres backupset,
@@ -501,7 +507,8 @@ and to perform operations on that backupset.</p>
             redirect_path=None,
             restore_to_disk=False,
             restore_to_disk_job=None,
-            destination_path=None):
+            destination_path=None,
+            revert=False):
         &#34;&#34;&#34;
         Method to restore the Postgres server
 
@@ -590,6 +597,10 @@ and to perform operations on that backupset.</p>
 
                     default: None
 
+                revert                 (bool)  --  boolean to specify whether to do a
+                                                   hardware revert in restore
+                    default: False
+
             Returns:
                 object -- Job containing restore details
 
@@ -631,7 +642,8 @@ and to perform operations on that backupset.</p>
             redirect_path=redirect_path,
             restore_to_disk=restore_to_disk,
             restore_to_disk_job=restore_to_disk_job,
-            destination_path=destination_path)</code></pre>
+            destination_path=destination_path,
+            revert=revert)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -662,7 +674,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/postgresbackupset.py#L63-L99" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/postgresbackupset.py#L63-L99" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def configure_live_sync(self, request_json):
     &#34;&#34;&#34;Runs the Task API with the request JSON provided to create live sync configuration,
@@ -704,7 +716,7 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.backupsets.postgresbackupset.PostgresBackupset.restore_postgres_server"><code class="name flex">
-<span>def <span class="ident">restore_postgres_server</span></span>(<span>self, database_list=None, dest_client_name=None, dest_instance_name=None, copy_precedence=None, from_time=None, to_time=None, clone_env=False, clone_options=None, media_agent=None, table_level_restore=False, staging_path=None, no_of_streams=None, volume_level_restore=False, redirect_enabled=False, redirect_path=None, restore_to_disk=False, restore_to_disk_job=None, destination_path=None)</span>
+<span>def <span class="ident">restore_postgres_server</span></span>(<span>self, database_list=None, dest_client_name=None, dest_instance_name=None, copy_precedence=None, from_time=None, to_time=None, clone_env=False, clone_options=None, media_agent=None, table_level_restore=False, staging_path=None, no_of_streams=None, volume_level_restore=False, redirect_enabled=False, redirect_path=None, restore_to_disk=False, restore_to_disk_job=None, destination_path=None, revert=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Method to restore the Postgres server</p>
@@ -793,13 +805,17 @@ if response is not success
 
         default: None
 
+    revert                 (bool)  --  boolean to specify whether to do a
+                                       hardware revert in restore
+        default: False
+
 Returns:
     object -- Job containing restore details
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/postgresbackupset.py#L151-L300" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/postgresbackupset.py#L151-L306" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_postgres_server(
         self,
@@ -820,7 +836,8 @@ Returns:
         redirect_path=None,
         restore_to_disk=False,
         restore_to_disk_job=None,
-        destination_path=None):
+        destination_path=None,
+        revert=False):
     &#34;&#34;&#34;
     Method to restore the Postgres server
 
@@ -909,6 +926,10 @@ Returns:
 
                 default: None
 
+            revert                 (bool)  --  boolean to specify whether to do a
+                                               hardware revert in restore
+                default: False
+
         Returns:
             object -- Job containing restore details
 
@@ -950,7 +971,8 @@ Returns:
         redirect_path=redirect_path,
         restore_to_disk=restore_to_disk,
         restore_to_disk_job=restore_to_disk_job,
-        destination_path=destination_path)</code></pre>
+        destination_path=destination_path,
+        revert=revert)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.backupsets.postgresbackupset.PostgresBackupset.run_live_sync"><code class="name flex">
@@ -978,7 +1000,7 @@ baseline backup job object</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/postgresbackupset.py#L101-L149" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/postgresbackupset.py#L101-L149" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_live_sync(
         self,
@@ -1041,7 +1063,6 @@ baseline backup job object</p>
 <li><code><a title="cvpysdk.backupset.Backupset.backupset_id" href="../backupset.html#cvpysdk.backupset.Backupset.backupset_id">backupset_id</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.backupset_name" href="../backupset.html#cvpysdk.backupset.Backupset.backupset_name">backupset_name</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.browse" href="../backupset.html#cvpysdk.backupset.Backupset.browse">browse</a></code></li>
-<li><code><a title="cvpysdk.backupset.Backupset.create_subclient" href="../backupset.html#cvpysdk.backupset.Backupset.create_subclient">create_subclient</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.delete_data" href="../backupset.html#cvpysdk.backupset.Backupset.delete_data">delete_data</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.description" href="../backupset.html#cvpysdk.backupset.Backupset.description">description</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.find" href="../backupset.html#cvpysdk.backupset.Backupset.find">find</a></code></li>

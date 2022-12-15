@@ -77,6 +77,9 @@ Refresh all BLR pairs created on the commcell</p>
 <p>get_rpstore_id(rpstore_name)
 &ndash;
 Get the RPStore ID for the given name</p>
+<p>get_rpstore_mountpath(rpstore_name)
+&ndash;
+Get the RPstore mounth path for the given name</p>
 <h4 id="internal-methods">internal methods</h4>
 <p>_update_data()
 &ndash; REST API call to get all BLR pairs in the commcell</p>
@@ -148,7 +151,7 @@ Returns the BLR pair properties</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L1-L1121" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L1-L1152" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -215,6 +218,8 @@ BLRPairs:
     refresh()                                   --  Refresh all BLR pairs created on the commcell
 
     get_rpstore_id(rpstore_name)                --  Get the RPStore ID for the given name
+
+    get_rpstore_mountpath(rpstore_name)         --  Get the RPstore mounth path for the given name
 
     #### internal methods ###
     _update_data()                              -- REST API call to get all BLR pairs in the commcell
@@ -349,18 +354,18 @@ class BLRPairs:
         self._commcell_object = commcell_object
         self._services = commcell_object._services
         self._replication_group_name = replication_group_name.lower()
+        self._replication_group_id = None
+        if self._replication_group_name:
+            self._replication_group_id = self._get_replication_group_id()
 
-        if replication_group_name:
-            self._LIST_BLR_PAIRS = (f&#34;{self._services[&#39;GET_BLR_PAIRS&#39;]}&#34;
-                                    f&#34;?replicationGroupId={self._get_replication_group_id()}&#34;)
-        else:
-            self._LIST_BLR_PAIRS = self._services[&#39;GET_BLR_PAIRS&#39;]
+        self._LIST_BLR_PAIRS = self._services[&#39;GET_BLR_PAIRS&#39;]
 
         self._DELETE_BLR = self._services[&#39;DELETE_BLR_PAIR&#39;]
         self._QEXEC = self._services[&#39;EXEC_QCOMMAND&#39;]
 
         self._site_info = None
         self._summary = None
+        self._rpstore_list = None
 
         self.refresh()
 
@@ -397,12 +402,33 @@ class BLRPairs:
         if flag:
             if response.json():
                 self._summary = response.json().get(&#39;summary&#39;, {})
-                self._site_info = response.json().get(&#39;siteInfo&#39;, [])
+                if self._replication_group_id:
+                    self._site_info = [site_info for site_info in response.json().get(&#39;siteInfo&#39;, [])
+                                       if str(site_info.get(&#39;replicationGroup&#39;, {}).get(&#39;replicationGroupId&#39;, 0))
+                                       == self._replication_group_id]
+                else:
+                    self._site_info = response.json().get(&#39;siteInfo&#39;, [])
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _update_rpstorelist(self):
+        &#34;&#34;&#34;REST API call for getting all the rp store in the commcell.
+            Args:
+            Returns:
+            Raises:
+                SDKException:
+                    if response is empty
+                    if response is not success
+        &#34;&#34;&#34;
+        response = self._commcell_object.qoperation_execute(&#39;&lt;EVGui_GetLibraryListWCReq libraryType=&#34;RPSTORE&#34; /&gt;&#39;)
+
+        if response and &#39;libraryList&#39; in response:
+            self._rpstore_list = response.get(&#39;libraryList&#39;, [])
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
 
     @property
     def blr_pairs(self):
@@ -634,6 +660,7 @@ class BLRPairs:
 
         &#34;&#34;&#34;
         self._update_data()
+        self._update_rpstorelist()
 
     def get_rpstore_id(self, rpstore_name):
         &#34;&#34;&#34;Gets the RPStore ID for the given name
@@ -641,18 +668,25 @@ class BLRPairs:
                 rpstore_name (str)  : The name of the RP store
         &#34;&#34;&#34;
 
-        response = self._commcell_object.qoperation_execute(&#39;&lt;EVGui_GetLibraryListWCReq libraryType=&#34;RPSTORE&#34; /&gt;&#39;)
-
-        if response and &#39;libraryList&#39; in response:
-            rpstore_list = response.get(&#39;libraryList&#39;, [])
-            for rpstore in rpstore_list:
-                if rpstore.get(&#39;library&#39;, {}).get(&#39;libraryName&#39;) == rpstore_name and rpstore.get(&#39;MountPathList&#39;, &#39;&#39;):
-                    return str(rpstore.get(&#39;MountPathList&#39;)[0]
-                               .get(&#39;rpStoreLibraryInfo&#39;, {}).get(&#39;rpStoreId&#39;, &#39;&#39;))
-            else:
-                raise SDKException(&#39;BLRPairs&#39;, &#39;103&#39;, f&#39;No RP Store found with name {rpstore_name}&#39;)
+        for rpstore in self._rpstore_list:
+            if rpstore.get(&#39;library&#39;, {}).get(&#39;libraryName&#39;) == rpstore_name and rpstore.get(&#39;MountPathList&#39;, &#39;&#39;):
+                return str(rpstore.get(&#39;MountPathList&#39;)[0]
+                           .get(&#39;rpStoreLibraryInfo&#39;, {}).get(&#39;rpStoreId&#39;, &#39;&#39;))
         else:
-            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            raise SDKException(&#39;BLRPairs&#39;, &#39;103&#39;, f&#39;No RP Store found with name {rpstore_name}&#39;)
+
+    def get_rpstore_mountpath(self, rpstore_name):
+        &#34;&#34;&#34;Gets the RPStore mount path for the given name
+            Args:
+                rpstore_name (str)  : The name of the RP store
+        &#34;&#34;&#34;
+
+        for rpstore in self._rpstore_list:
+            if rpstore.get(&#39;library&#39;, {}).get(&#39;libraryName&#39;) == rpstore_name:
+                mount_path = str(rpstore.get(&#39;MountPathList&#39;, {})[0][&#39;mountPathName&#39;])
+                return mount_path.split()[1].strip()
+        else:
+            raise SDKException(&#39;BLRPairs&#39;, &#39;103&#39;, f&#39;No RP Store found with name {rpstore_name}&#39;)
 
 
 class BLRPair:
@@ -1301,7 +1335,7 @@ Name of the destination of BLR pair</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L506-L1020" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L537-L1051" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class BLRPair:
     class PairOperationsStatus(Enum):
@@ -1840,7 +1874,7 @@ endpoint: 'endpoint enum'
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L643-L659" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L674-L690" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination(self):
@@ -1867,7 +1901,7 @@ def destination(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L661-L664" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L692-L695" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination_vm(self):
@@ -1881,7 +1915,7 @@ def destination_vm(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L666-L669" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L697-L700" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def lag_time(self):
@@ -1895,7 +1929,7 @@ def lag_time(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L681-L684" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L712-L715" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pair_flag(self):
@@ -1920,7 +1954,7 @@ eg: [{
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L733-L748" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L764-L779" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pair_latest_stats(self):
@@ -1946,7 +1980,7 @@ def pair_latest_stats(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L608-L611" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L639-L642" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pair_properties(self):
@@ -1960,7 +1994,7 @@ def pair_properties(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L699-L702" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L730-L733" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pair_recovery_type(self):
@@ -1985,7 +2019,7 @@ eg: {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L704-L719" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L735-L750" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pair_rpstore_intervals(self):
@@ -2011,7 +2045,7 @@ def pair_rpstore_intervals(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L613-L617" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L644-L648" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pair_status(self):
@@ -2032,7 +2066,7 @@ eg: [{
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L721-L731" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L752-L762" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pair_volume_map(self):
@@ -2053,7 +2087,7 @@ def pair_volume_map(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L676-L679" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L707-L710" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pending_status(self):
@@ -2067,7 +2101,7 @@ def pending_status(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L671-L674" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L702-L705" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def replication_group_name(self):
@@ -2088,7 +2122,7 @@ endpoint: 'endpoint enum'
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L619-L636" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L650-L667" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def source(self):
@@ -2116,7 +2150,7 @@ def source(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L638-L641" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L669-L672" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def source_vm(self):
@@ -2137,7 +2171,7 @@ eg: {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L686-L697" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L717-L728" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_props(self):
@@ -2176,7 +2210,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L901-L1016" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L932-L1047" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_replica_copy(self, destination_volumes, copy_volumes, timestamp=None):
     &#34;&#34;&#34;Perform the DR operation for the BLR pair
@@ -2315,7 +2349,7 @@ eg: [{
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L750-L774" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L781-L805" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_pair_stats(self):
     &#34;&#34;&#34;Returns: (list) A list of dictionary of statistics for BLR pair
@@ -2358,7 +2392,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L776-L801" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L807-L832" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_recovery_point_stores(self):
     &#34;&#34;&#34;Returns a list of all recovery point stores for the BLR pair
@@ -2403,7 +2437,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L803-L811" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L834-L842" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_test_failover_vms(self, boot_type: int = 1):
     &#34;&#34;&#34;Returns the BLRTestFailovers object for all test failover VMs of the BLR pair
@@ -2424,7 +2458,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L1018-L1020" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L1049-L1051" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34; Refresh the BLR pair properties &#34;&#34;&#34;
@@ -2445,7 +2479,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L839-L850" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L870-L881" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def resume(self):
     &#34;&#34;&#34;Resumes the BLR Pair
@@ -2475,7 +2509,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L852-L863" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L883-L894" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def resync(self):
     &#34;&#34;&#34;Resyncs the BLR pair
@@ -2505,7 +2539,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L826-L837" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L857-L868" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def start(self):
     &#34;&#34;&#34;Starts the BLR Pair
@@ -2535,7 +2569,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L813-L824" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L844-L855" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def stop(self):
     &#34;&#34;&#34;Stops the BLR Pair
@@ -2565,7 +2599,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L865-L876" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L896-L907" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def suspend(self):
     &#34;&#34;&#34;Suspends the BLR Pair
@@ -2597,7 +2631,7 @@ False, if the expected status was not met in given time</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L878-L899" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L909-L930" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def wait_for_pair_status(self, expected_status, timeout=30):
     &#34;&#34;&#34;
@@ -2641,7 +2675,7 @@ Name of the replication group (only for VSA BLR)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L125-L503" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L127-L534" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class BLRPairs:
     &#34;&#34;&#34;Class for getting all BLR pairs in commcell.&#34;&#34;&#34;
@@ -2718,18 +2752,18 @@ Name of the replication group (only for VSA BLR)</p></div>
         self._commcell_object = commcell_object
         self._services = commcell_object._services
         self._replication_group_name = replication_group_name.lower()
+        self._replication_group_id = None
+        if self._replication_group_name:
+            self._replication_group_id = self._get_replication_group_id()
 
-        if replication_group_name:
-            self._LIST_BLR_PAIRS = (f&#34;{self._services[&#39;GET_BLR_PAIRS&#39;]}&#34;
-                                    f&#34;?replicationGroupId={self._get_replication_group_id()}&#34;)
-        else:
-            self._LIST_BLR_PAIRS = self._services[&#39;GET_BLR_PAIRS&#39;]
+        self._LIST_BLR_PAIRS = self._services[&#39;GET_BLR_PAIRS&#39;]
 
         self._DELETE_BLR = self._services[&#39;DELETE_BLR_PAIR&#39;]
         self._QEXEC = self._services[&#39;EXEC_QCOMMAND&#39;]
 
         self._site_info = None
         self._summary = None
+        self._rpstore_list = None
 
         self.refresh()
 
@@ -2766,12 +2800,33 @@ Name of the replication group (only for VSA BLR)</p></div>
         if flag:
             if response.json():
                 self._summary = response.json().get(&#39;summary&#39;, {})
-                self._site_info = response.json().get(&#39;siteInfo&#39;, [])
+                if self._replication_group_id:
+                    self._site_info = [site_info for site_info in response.json().get(&#39;siteInfo&#39;, [])
+                                       if str(site_info.get(&#39;replicationGroup&#39;, {}).get(&#39;replicationGroupId&#39;, 0))
+                                       == self._replication_group_id]
+                else:
+                    self._site_info = response.json().get(&#39;siteInfo&#39;, [])
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _update_rpstorelist(self):
+        &#34;&#34;&#34;REST API call for getting all the rp store in the commcell.
+            Args:
+            Returns:
+            Raises:
+                SDKException:
+                    if response is empty
+                    if response is not success
+        &#34;&#34;&#34;
+        response = self._commcell_object.qoperation_execute(&#39;&lt;EVGui_GetLibraryListWCReq libraryType=&#34;RPSTORE&#34; /&gt;&#39;)
+
+        if response and &#39;libraryList&#39; in response:
+            self._rpstore_list = response.get(&#39;libraryList&#39;, [])
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
 
     @property
     def blr_pairs(self):
@@ -3003,6 +3058,7 @@ Name of the replication group (only for VSA BLR)</p></div>
 
         &#34;&#34;&#34;
         self._update_data()
+        self._update_rpstorelist()
 
     def get_rpstore_id(self, rpstore_name):
         &#34;&#34;&#34;Gets the RPStore ID for the given name
@@ -3010,18 +3066,25 @@ Name of the replication group (only for VSA BLR)</p></div>
                 rpstore_name (str)  : The name of the RP store
         &#34;&#34;&#34;
 
-        response = self._commcell_object.qoperation_execute(&#39;&lt;EVGui_GetLibraryListWCReq libraryType=&#34;RPSTORE&#34; /&gt;&#39;)
-
-        if response and &#39;libraryList&#39; in response:
-            rpstore_list = response.get(&#39;libraryList&#39;, [])
-            for rpstore in rpstore_list:
-                if rpstore.get(&#39;library&#39;, {}).get(&#39;libraryName&#39;) == rpstore_name and rpstore.get(&#39;MountPathList&#39;, &#39;&#39;):
-                    return str(rpstore.get(&#39;MountPathList&#39;)[0]
-                               .get(&#39;rpStoreLibraryInfo&#39;, {}).get(&#39;rpStoreId&#39;, &#39;&#39;))
-            else:
-                raise SDKException(&#39;BLRPairs&#39;, &#39;103&#39;, f&#39;No RP Store found with name {rpstore_name}&#39;)
+        for rpstore in self._rpstore_list:
+            if rpstore.get(&#39;library&#39;, {}).get(&#39;libraryName&#39;) == rpstore_name and rpstore.get(&#39;MountPathList&#39;, &#39;&#39;):
+                return str(rpstore.get(&#39;MountPathList&#39;)[0]
+                           .get(&#39;rpStoreLibraryInfo&#39;, {}).get(&#39;rpStoreId&#39;, &#39;&#39;))
         else:
-            raise SDKException(&#39;Response&#39;, &#39;102&#39;)</code></pre>
+            raise SDKException(&#39;BLRPairs&#39;, &#39;103&#39;, f&#39;No RP Store found with name {rpstore_name}&#39;)
+
+    def get_rpstore_mountpath(self, rpstore_name):
+        &#34;&#34;&#34;Gets the RPStore mount path for the given name
+            Args:
+                rpstore_name (str)  : The name of the RP store
+        &#34;&#34;&#34;
+
+        for rpstore in self._rpstore_list:
+            if rpstore.get(&#39;library&#39;, {}).get(&#39;libraryName&#39;) == rpstore_name:
+                mount_path = str(rpstore.get(&#39;MountPathList&#39;, {})[0][&#39;mountPathName&#39;])
+                return mount_path.split()[1].strip()
+        else:
+            raise SDKException(&#39;BLRPairs&#39;, &#39;103&#39;, f&#39;No RP Store found with name {rpstore_name}&#39;)</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
@@ -3073,7 +3136,7 @@ Args:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L255-L284" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L278-L307" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def blr_pairs(self):
@@ -3149,7 +3212,7 @@ merge_only_off_peak(bool):Whether to merge RPstore only during off-peak time</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L309-L406" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L332-L429" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_fsblr_pair(self,
                       source_client_id,
@@ -3272,7 +3335,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L432-L473" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L455-L496" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, source_name, destination_name):
     &#34;&#34;&#34; Deletes the blr pair with source and destination names
@@ -3337,7 +3400,7 @@ if proper inputs are not provided</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L408-L430" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L431-L453" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, source_name, destination_name):
     &#34;&#34;&#34;Get pair name on the basis of source and destination name and return pair object
@@ -3375,7 +3438,7 @@ if proper inputs are not provided</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L486-L503" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L510-L521" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_rpstore_id(self, rpstore_name):
     &#34;&#34;&#34;Gets the RPStore ID for the given name
@@ -3383,18 +3446,39 @@ if proper inputs are not provided</p></div>
             rpstore_name (str)  : The name of the RP store
     &#34;&#34;&#34;
 
-    response = self._commcell_object.qoperation_execute(&#39;&lt;EVGui_GetLibraryListWCReq libraryType=&#34;RPSTORE&#34; /&gt;&#39;)
-
-    if response and &#39;libraryList&#39; in response:
-        rpstore_list = response.get(&#39;libraryList&#39;, [])
-        for rpstore in rpstore_list:
-            if rpstore.get(&#39;library&#39;, {}).get(&#39;libraryName&#39;) == rpstore_name and rpstore.get(&#39;MountPathList&#39;, &#39;&#39;):
-                return str(rpstore.get(&#39;MountPathList&#39;)[0]
-                           .get(&#39;rpStoreLibraryInfo&#39;, {}).get(&#39;rpStoreId&#39;, &#39;&#39;))
-        else:
-            raise SDKException(&#39;BLRPairs&#39;, &#39;103&#39;, f&#39;No RP Store found with name {rpstore_name}&#39;)
+    for rpstore in self._rpstore_list:
+        if rpstore.get(&#39;library&#39;, {}).get(&#39;libraryName&#39;) == rpstore_name and rpstore.get(&#39;MountPathList&#39;, &#39;&#39;):
+            return str(rpstore.get(&#39;MountPathList&#39;)[0]
+                       .get(&#39;rpStoreLibraryInfo&#39;, {}).get(&#39;rpStoreId&#39;, &#39;&#39;))
     else:
-        raise SDKException(&#39;Response&#39;, &#39;102&#39;)</code></pre>
+        raise SDKException(&#39;BLRPairs&#39;, &#39;103&#39;, f&#39;No RP Store found with name {rpstore_name}&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.drorchestration.blr_pairs.BLRPairs.get_rpstore_mountpath"><code class="name flex">
+<span>def <span class="ident">get_rpstore_mountpath</span></span>(<span>self, rpstore_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gets the RPStore mount path for the given name</p>
+<h2 id="args">Args</h2>
+<p>rpstore_name (str)
+: The name of the RP store</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L523-L534" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_rpstore_mountpath(self, rpstore_name):
+    &#34;&#34;&#34;Gets the RPStore mount path for the given name
+        Args:
+            rpstore_name (str)  : The name of the RP store
+    &#34;&#34;&#34;
+
+    for rpstore in self._rpstore_list:
+        if rpstore.get(&#39;library&#39;, {}).get(&#39;libraryName&#39;) == rpstore_name:
+            mount_path = str(rpstore.get(&#39;MountPathList&#39;, {})[0][&#39;mountPathName&#39;])
+            return mount_path.split()[1].strip()
+    else:
+        raise SDKException(&#39;BLRPairs&#39;, &#39;103&#39;, f&#39;No RP Store found with name {rpstore_name}&#39;)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.drorchestration.blr_pairs.BLRPairs.has_blr_pair"><code class="name flex">
@@ -3417,7 +3501,7 @@ if proper inputs are not provided</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L286-L307" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L309-L330" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_blr_pair(self, source_name, destination_name):
     &#34;&#34;&#34;Checks if BLR pair exists or not
@@ -3454,7 +3538,7 @@ Args:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L475-L484" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L498-L508" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34; Refresh the BLR pairs created in the commcell.
@@ -3465,7 +3549,8 @@ Args:</p>
     Raises:
 
     &#34;&#34;&#34;
-    self._update_data()</code></pre>
+    self._update_data()
+    self._update_rpstorelist()</code></pre>
 </details>
 </dd>
 </dl>
@@ -3490,7 +3575,7 @@ The type of the boot for VMs</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L1023-L1121" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L1054-L1152" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class BLRTestFailovers:
     &#34;&#34;&#34;Class for getting all test failover VMs for BLR pair&#34;&#34;&#34;
@@ -3611,7 +3696,7 @@ The type of the boot for VMs</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L1089-L1092" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L1120-L1123" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_boot_vms(self):
@@ -3658,7 +3743,7 @@ status_message (str)
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L1094-L1121" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L1125-L1152" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_boot_vm_details(self, vm_name):
     &#34;&#34;&#34;Get the boot VM details for a given vm name
@@ -3698,7 +3783,7 @@ status_message (str)
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/blr_pairs.py#L1084-L1087" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/blr_pairs.py#L1115-L1118" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the VMs list for BLR pair&#34;&#34;&#34;
@@ -3810,7 +3895,7 @@ setTimeout(() => input.focus(), 100);
 </li>
 <li>
 <h4><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPairs" href="#cvpysdk.drorchestration.blr_pairs.BLRPairs">BLRPairs</a></code></h4>
-<ul class="two-column">
+<ul class="">
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPairs.AgentTypes" href="#cvpysdk.drorchestration.blr_pairs.BLRPairs.AgentTypes">AgentTypes</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPairs.DROperations" href="#cvpysdk.drorchestration.blr_pairs.BLRPairs.DROperations">DROperations</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPairs.EndPointTypes" href="#cvpysdk.drorchestration.blr_pairs.BLRPairs.EndPointTypes">EndPointTypes</a></code></li>
@@ -3822,6 +3907,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPairs.delete" href="#cvpysdk.drorchestration.blr_pairs.BLRPairs.delete">delete</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPairs.get" href="#cvpysdk.drorchestration.blr_pairs.BLRPairs.get">get</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPairs.get_rpstore_id" href="#cvpysdk.drorchestration.blr_pairs.BLRPairs.get_rpstore_id">get_rpstore_id</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPairs.get_rpstore_mountpath" href="#cvpysdk.drorchestration.blr_pairs.BLRPairs.get_rpstore_mountpath">get_rpstore_mountpath</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPairs.has_blr_pair" href="#cvpysdk.drorchestration.blr_pairs.BLRPairs.has_blr_pair">has_blr_pair</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.blr_pairs.BLRPairs.refresh" href="#cvpysdk.drorchestration.blr_pairs.BLRPairs.refresh">refresh</a></code></li>
 </ul>

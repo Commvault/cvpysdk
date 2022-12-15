@@ -134,7 +134,7 @@ of the Backupset class
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1-L2332" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1-L2324" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -281,7 +281,6 @@ import time
 import copy
 
 from base64 import b64encode
-from past.builtins import basestring
 
 from .subclient import Subclients
 from .schedules import Schedules
@@ -499,7 +498,7 @@ class Backupsets(object):
                 SDKException:
                     if type of the backupset name argument is not string
         &#34;&#34;&#34;
-        if not isinstance(backupset_name, basestring):
+        if not isinstance(backupset_name, str):
             raise SDKException(&#39;Backupset&#39;, &#39;101&#39;)
 
         return self._backupsets and backupset_name.lower() in self._backupsets
@@ -513,7 +512,7 @@ class Backupsets(object):
                 request_json    (dict)  --  JSON request to run for the API
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -589,7 +588,7 @@ class Backupsets(object):
 
                     if backupset with same name already exists
         &#34;&#34;&#34;
-        if not (isinstance(backupset_name, basestring) and isinstance(on_demand_backupset, bool)):
+        if not (isinstance(backupset_name, str) and isinstance(on_demand_backupset, bool)):
             raise SDKException(&#39;Backupset&#39;, &#39;101&#39;)
         else:
             backupset_name = backupset_name.lower()
@@ -719,7 +718,7 @@ request_json[&#39;backupSetInfo&#39;].update({
                 
 
         &#34;&#34;&#34;        
-        if not (isinstance(archiveset_name, basestring)):
+        if not (isinstance(archiveset_name, str)):
             raise SDKException(&#39;Backupset&#39;, &#39;101&#39;)
         else:
             archiveset_name = archiveset_name.lower()
@@ -1045,7 +1044,7 @@ request_json[&#39;backupSetInfo&#39;].update({
 
                     if no backupset exists with the given name
         &#34;&#34;&#34;
-        if not isinstance(backupset_name, basestring):
+        if not isinstance(backupset_name, str):
             raise SDKException(&#39;Backupset&#39;, &#39;101&#39;)
         else:
             backupset_name = backupset_name.lower()
@@ -1083,7 +1082,7 @@ request_json[&#39;backupSetInfo&#39;].update({
 
                     if no backupset exists with the given name
         &#34;&#34;&#34;
-        if not isinstance(backupset_name, basestring):
+        if not isinstance(backupset_name, str):
             raise SDKException(&#39;Backupset&#39;, &#39;101&#39;)
         else:
             backupset_name = backupset_name.lower()
@@ -1387,7 +1386,7 @@ class Backupset(object):
                 request_json    (dict)  --  JSON request to run for the API
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -1436,7 +1435,7 @@ class Backupset(object):
                 default_backupset     (bool)  --  default backupset property
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -1568,7 +1567,7 @@ class Backupset(object):
         mode = 2
         paths = []
 
-        if isinstance(options[&#39;path&#39;], basestring):
+        if isinstance(options[&#39;path&#39;], str):
             paths.append(options[&#39;path&#39;])
         elif isinstance(options[&#39;path&#39;], list):
             paths = options[&#39;path&#39;]
@@ -1603,7 +1602,7 @@ class Backupset(object):
                 &#34;toTime&#34;: self._get_epoch_time(options[&#39;to_time&#39;])
             },
             &#34;advOptions&#34;: {
-                &#34;copyPrecedence&#34;: options[&#39;copy_precedence&#39;]
+                &#34;copyPrecedence&#34;: int(options[&#39;copy_precedence&#39;])
             },
             &#34;ma&#34;: {
                 &#34;clientName&#34;: options[&#39;media_agent&#39;]
@@ -1710,6 +1709,12 @@ class Backupset(object):
                 mod_time = time.strftime(&#39;%d/%m/%Y %H:%M:%S&#39;, mod_time)
             else:
                 mod_time = None
+            
+            if &#39;backupTime&#39; in result[&#39;advancedData&#39;] and int(result[&#39;advancedData&#39;][&#39;backupTime&#39;]) &gt; 0:
+                bkp_time = time.localtime(int(result[&#39;advancedData&#39;][&#39;backupTime&#39;]))
+                bkp_time = time.strftime(&#39;%d/%m/%Y %H:%M:%S&#39;, bkp_time)
+            else:
+                bkp_time = None
 
             if &#39;file&#39; in result[&#39;flags&#39;]:
                 if result[&#39;flags&#39;][&#39;file&#39;] in (True, &#39;1&#39;):
@@ -1735,6 +1740,7 @@ class Backupset(object):
                 &#39;size&#39;: size,
                 &#39;modified_time&#39;: mod_time,
                 &#39;type&#39;: file_or_folder,
+                &#39;backup_time&#39;: bkp_time,
                 &#39;advanced_data&#39;: result[&#39;advancedData&#39;]
             }
 
@@ -1840,6 +1846,12 @@ class Backupset(object):
                         mod_time = time.strftime(&#39;%d/%m/%Y %H:%M:%S&#39;, mod_time)
                     else:
                         mod_time = None
+                    
+                    if &#39;backupTime&#39; in result[&#39;advancedData&#39;] and int(result[&#39;advancedData&#39;][&#39;backupTime&#39;]) &gt; 0:
+                        bkp_time = time.localtime(int(result[&#39;advancedData&#39;][&#39;backupTime&#39;]))
+                        bkp_time = time.strftime(&#39;%d/%m/%Y %H:%M:%S&#39;, bkp_time)
+                    else:
+                        bkp_time = None
 
                     if &#39;file&#39; in result[&#39;flags&#39;]:
                         if result[&#39;flags&#39;][&#39;file&#39;] in (True, &#39;1&#39;):
@@ -1860,6 +1872,7 @@ class Backupset(object):
                         &#39;size&#39;: size,
                         &#39;modified_time&#39;: mod_time,
                         &#39;type&#39;: file_or_folder,
+                        &#39;backup_time&#39;: bkp_time,
                         &#39;advanced_data&#39;: result[&#39;advancedData&#39;]
                     }
 
@@ -2011,7 +2024,7 @@ class Backupset(object):
 
                     if type of value input is not string
         &#34;&#34;&#34;
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             output = self._update(
                 backupset_name=value,
                 backupset_description=self.description,
@@ -2038,7 +2051,7 @@ class Backupset(object):
                     if description cannot be modified for this backupset
         &#34;&#34;&#34;
         if self.description is not None:
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 output = self._update(
                     backupset_name=self.backupset_name,
                     backupset_description=value,
@@ -2082,7 +2095,7 @@ class Backupset(object):
         from .plan import Plan
         if isinstance(value, Plan):
             self._plan_obj = value
-        elif isinstance(value, basestring):
+        elif isinstance(value, str):
             self._plan_obj = self._commcell_object.plans.get(value)
         elif value is None:
             self._plan_obj = None
@@ -2332,27 +2345,6 @@ class Backupset(object):
             options[&#39;filters&#39;].append((&#39;FileSize&#39;, options[&#39;file_size_et&#39;], &#39;EQUALSBLAH&#39;))
 
         return self._do_browse(options)
-    
-    def create_subclient(self, subclient, storagepolicyname, description):
-
-            &#34;&#34;&#34;&#34;
-            This is to create new subclient
-            
-            Args: 
-                subclientname (str) - subclient name to be created
-                storagepolicyname  (str) - name of the storage policy associate to subclient
-                description (str) - Description for subclient which is to be created
-            Raise:
-                  Exception:
-                    If fail to create subclient
-    
-            &#34;&#34;&#34;
-            try:
-                self.subclients.add(subclient, storagepolicyname,description)
-            except Exception as err:
-                self.log.exception(
-                    &#34;Exception while adding contents to subclient&#34; + str(err))
-                raise err
 
     def delete_data(self, paths):
         &#34;&#34;&#34;Deletes items for the backupset in the Index and makes them unavailable for
@@ -2505,7 +2497,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1007-L2332" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1006-L2324" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Backupset(object):
     &#34;&#34;&#34;Class for performing backupset operations for a specific backupset.&#34;&#34;&#34;
@@ -2752,7 +2744,7 @@ default: None</p>
                 request_json    (dict)  --  JSON request to run for the API
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -2801,7 +2793,7 @@ default: None</p>
                 default_backupset     (bool)  --  default backupset property
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -2933,7 +2925,7 @@ default: None</p>
         mode = 2
         paths = []
 
-        if isinstance(options[&#39;path&#39;], basestring):
+        if isinstance(options[&#39;path&#39;], str):
             paths.append(options[&#39;path&#39;])
         elif isinstance(options[&#39;path&#39;], list):
             paths = options[&#39;path&#39;]
@@ -2968,7 +2960,7 @@ default: None</p>
                 &#34;toTime&#34;: self._get_epoch_time(options[&#39;to_time&#39;])
             },
             &#34;advOptions&#34;: {
-                &#34;copyPrecedence&#34;: options[&#39;copy_precedence&#39;]
+                &#34;copyPrecedence&#34;: int(options[&#39;copy_precedence&#39;])
             },
             &#34;ma&#34;: {
                 &#34;clientName&#34;: options[&#39;media_agent&#39;]
@@ -3075,6 +3067,12 @@ default: None</p>
                 mod_time = time.strftime(&#39;%d/%m/%Y %H:%M:%S&#39;, mod_time)
             else:
                 mod_time = None
+            
+            if &#39;backupTime&#39; in result[&#39;advancedData&#39;] and int(result[&#39;advancedData&#39;][&#39;backupTime&#39;]) &gt; 0:
+                bkp_time = time.localtime(int(result[&#39;advancedData&#39;][&#39;backupTime&#39;]))
+                bkp_time = time.strftime(&#39;%d/%m/%Y %H:%M:%S&#39;, bkp_time)
+            else:
+                bkp_time = None
 
             if &#39;file&#39; in result[&#39;flags&#39;]:
                 if result[&#39;flags&#39;][&#39;file&#39;] in (True, &#39;1&#39;):
@@ -3100,6 +3098,7 @@ default: None</p>
                 &#39;size&#39;: size,
                 &#39;modified_time&#39;: mod_time,
                 &#39;type&#39;: file_or_folder,
+                &#39;backup_time&#39;: bkp_time,
                 &#39;advanced_data&#39;: result[&#39;advancedData&#39;]
             }
 
@@ -3205,6 +3204,12 @@ default: None</p>
                         mod_time = time.strftime(&#39;%d/%m/%Y %H:%M:%S&#39;, mod_time)
                     else:
                         mod_time = None
+                    
+                    if &#39;backupTime&#39; in result[&#39;advancedData&#39;] and int(result[&#39;advancedData&#39;][&#39;backupTime&#39;]) &gt; 0:
+                        bkp_time = time.localtime(int(result[&#39;advancedData&#39;][&#39;backupTime&#39;]))
+                        bkp_time = time.strftime(&#39;%d/%m/%Y %H:%M:%S&#39;, bkp_time)
+                    else:
+                        bkp_time = None
 
                     if &#39;file&#39; in result[&#39;flags&#39;]:
                         if result[&#39;flags&#39;][&#39;file&#39;] in (True, &#39;1&#39;):
@@ -3225,6 +3230,7 @@ default: None</p>
                         &#39;size&#39;: size,
                         &#39;modified_time&#39;: mod_time,
                         &#39;type&#39;: file_or_folder,
+                        &#39;backup_time&#39;: bkp_time,
                         &#39;advanced_data&#39;: result[&#39;advancedData&#39;]
                     }
 
@@ -3376,7 +3382,7 @@ default: None</p>
 
                     if type of value input is not string
         &#34;&#34;&#34;
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             output = self._update(
                 backupset_name=value,
                 backupset_description=self.description,
@@ -3403,7 +3409,7 @@ default: None</p>
                     if description cannot be modified for this backupset
         &#34;&#34;&#34;
         if self.description is not None:
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 output = self._update(
                     backupset_name=self.backupset_name,
                     backupset_description=value,
@@ -3447,7 +3453,7 @@ default: None</p>
         from .plan import Plan
         if isinstance(value, Plan):
             self._plan_obj = value
-        elif isinstance(value, basestring):
+        elif isinstance(value, str):
             self._plan_obj = self._commcell_object.plans.get(value)
         elif value is None:
             self._plan_obj = None
@@ -3697,27 +3703,6 @@ default: None</p>
             options[&#39;filters&#39;].append((&#39;FileSize&#39;, options[&#39;file_size_et&#39;], &#39;EQUALSBLAH&#39;))
 
         return self._do_browse(options)
-    
-    def create_subclient(self, subclient, storagepolicyname, description):
-
-            &#34;&#34;&#34;&#34;
-            This is to create new subclient
-            
-            Args: 
-                subclientname (str) - subclient name to be created
-                storagepolicyname  (str) - name of the storage policy associate to subclient
-                description (str) - Description for subclient which is to be created
-            Raise:
-                  Exception:
-                    If fail to create subclient
-    
-            &#34;&#34;&#34;
-            try:
-                self.subclients.add(subclient, storagepolicyname,description)
-            except Exception as err:
-                self.log.exception(
-                    &#34;Exception while adding contents to subclient&#34; + str(err))
-                raise err
 
     def delete_data(self, paths):
         &#34;&#34;&#34;Deletes items for the backupset in the Index and makes them unavailable for
@@ -3854,7 +3839,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1821-L1824" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1834-L1837" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backupset_id(self):
@@ -3868,7 +3853,7 @@ def backupset_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1826-L1829" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1839-L1842" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backupset_name(self):
@@ -3882,7 +3867,7 @@ def backupset_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1831-L1834" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1844-L1847" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -3896,7 +3881,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1857-L1864" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1870-L1877" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def guid(self):
@@ -3914,7 +3899,7 @@ def guid(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1836-L1839" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1849-L1852" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_default_backupset(self):
@@ -3928,7 +3913,7 @@ def is_default_backupset(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1841-L1844" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1854-L1857" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_on_demand_backupset(self):
@@ -3942,7 +3927,7 @@ def is_on_demand_backupset(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1816-L1819" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1829-L1832" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -3956,7 +3941,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1846-L1855" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1859-L1868" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan(self):
@@ -3976,7 +3961,7 @@ def plan(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1811-L1814" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1824-L1827" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -3996,7 +3981,7 @@ of all the subclients of the given backupset.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L2317-L2332" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L2309-L2324" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backed_up_files_count(self):
     &#34;&#34;&#34;Returns the count of the total number of files present in the backed up data
@@ -4041,7 +4026,7 @@ the subclients in the backupset</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L2026-L2061" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L2039-L2074" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(self, **kwargs):
     &#34;&#34;&#34;Runs backup job for all subclients in this backupset.
@@ -4125,7 +4110,7 @@ from browse operation
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L2063-L2114" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L2076-L2127" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, *args, **kwargs):
     &#34;&#34;&#34;Browses the content of the Backupset.
@@ -4181,47 +4166,6 @@ from browse operation
     return self._do_browse(options)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.backupset.Backupset.create_subclient"><code class="name flex">
-<span>def <span class="ident">create_subclient</span></span>(<span>self, subclient, storagepolicyname, description)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>"
-This is to create new subclient</p>
-<p>Args:
-subclientname (str) - subclient name to be created
-storagepolicyname
-(str) - name of the storage policy associate to subclient
-description (str) - Description for subclient which is to be created</p>
-<h2 id="raise">Raise</h2>
-<p>Exception:
-If fail to create subclient</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L2198-L2217" class="git-link">Browse git</a>
-</summary>
-<pre><code class="python">def create_subclient(self, subclient, storagepolicyname, description):
-
-        &#34;&#34;&#34;&#34;
-        This is to create new subclient
-        
-        Args: 
-            subclientname (str) - subclient name to be created
-            storagepolicyname  (str) - name of the storage policy associate to subclient
-            description (str) - Description for subclient which is to be created
-        Raise:
-              Exception:
-                If fail to create subclient
-
-        &#34;&#34;&#34;
-        try:
-            self.subclients.add(subclient, storagepolicyname,description)
-        except Exception as err:
-            self.log.exception(
-                &#34;Exception while adding contents to subclient&#34; + str(err))
-            raise err</code></pre>
-</details>
-</dd>
 <dt id="cvpysdk.backupset.Backupset.delete_data"><code class="name flex">
 <span>def <span class="ident">delete_data</span></span>(<span>self, paths)</span>
 </code></dt>
@@ -4242,7 +4186,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L2219-L2245" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L2211-L2237" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_data(self, paths):
     &#34;&#34;&#34;Deletes items for the backupset in the Index and makes them unavailable for
@@ -4329,7 +4273,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L2116-L2196" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L2129-L2209" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find(self, *args, **kwargs):
     &#34;&#34;&#34;Searches a file/folder in the backed up content of the backupset,
@@ -4454,7 +4398,7 @@ if failed to list media for content</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L2247-L2308" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L2239-L2300" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def list_media(self, *args, **kwargs):
     &#34;&#34;&#34;List media required to browse and restore backed up data from the backupset
@@ -4528,7 +4472,7 @@ if failed to list media for content</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L2310-L2315" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L2302-L2307" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Backupset.&#34;&#34;&#34;
@@ -4550,7 +4494,7 @@ if failed to set this as the default backupset</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L2005-L2024" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L2018-L2037" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_default_backupset(self):
     &#34;&#34;&#34;Sets the backupset represented by this Backupset class instance as the default backupset
@@ -4598,7 +4542,7 @@ need to change and use the update_properties method to set the properties</p></d
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1767-L1809" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1780-L1822" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;Updates the backupset properties
@@ -4669,7 +4613,7 @@ if class object is not an instance of the Agent / Instance class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L153-L1004" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L152-L1003" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Backupsets(object):
     &#34;&#34;&#34;Class for getting all the backupsets associated with a client.&#34;&#34;&#34;
@@ -4882,7 +4826,7 @@ if class object is not an instance of the Agent / Instance class</p></div>
                 SDKException:
                     if type of the backupset name argument is not string
         &#34;&#34;&#34;
-        if not isinstance(backupset_name, basestring):
+        if not isinstance(backupset_name, str):
             raise SDKException(&#39;Backupset&#39;, &#39;101&#39;)
 
         return self._backupsets and backupset_name.lower() in self._backupsets
@@ -4896,7 +4840,7 @@ if class object is not an instance of the Agent / Instance class</p></div>
                 request_json    (dict)  --  JSON request to run for the API
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -4972,7 +4916,7 @@ if class object is not an instance of the Agent / Instance class</p></div>
 
                     if backupset with same name already exists
         &#34;&#34;&#34;
-        if not (isinstance(backupset_name, basestring) and isinstance(on_demand_backupset, bool)):
+        if not (isinstance(backupset_name, str) and isinstance(on_demand_backupset, bool)):
             raise SDKException(&#39;Backupset&#39;, &#39;101&#39;)
         else:
             backupset_name = backupset_name.lower()
@@ -5102,7 +5046,7 @@ request_json[&#39;backupSetInfo&#39;].update({
                 
 
         &#34;&#34;&#34;        
-        if not (isinstance(archiveset_name, basestring)):
+        if not (isinstance(archiveset_name, str)):
             raise SDKException(&#39;Backupset&#39;, &#39;101&#39;)
         else:
             archiveset_name = archiveset_name.lower()
@@ -5428,7 +5372,7 @@ request_json[&#39;backupSetInfo&#39;].update({
 
                     if no backupset exists with the given name
         &#34;&#34;&#34;
-        if not isinstance(backupset_name, basestring):
+        if not isinstance(backupset_name, str):
             raise SDKException(&#39;Backupset&#39;, &#39;101&#39;)
         else:
             backupset_name = backupset_name.lower()
@@ -5466,7 +5410,7 @@ request_json[&#39;backupSetInfo&#39;].update({
 
                     if no backupset exists with the given name
         &#34;&#34;&#34;
-        if not isinstance(backupset_name, basestring):
+        if not isinstance(backupset_name, str):
             raise SDKException(&#39;Backupset&#39;, &#39;101&#39;)
         else:
             backupset_name = backupset_name.lower()
@@ -5543,7 +5487,7 @@ request_json[&#39;backupSetInfo&#39;].update({
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L333-L349" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L332-L348" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_backupsets(self):
@@ -5570,7 +5514,7 @@ def all_backupsets(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L1001-L1004" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1000-L1003" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def default_backup_set(self):
@@ -5623,7 +5567,7 @@ if backupset with same name already exists
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L418-L555" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L417-L554" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">    def add(self, backupset_name, on_demand_backupset=False, **kwargs):
         &#34;&#34;&#34;Adds a new backup set to the agent.
@@ -5661,7 +5605,7 @@ if backupset with same name already exists
 
                     if backupset with same name already exists
         &#34;&#34;&#34;
-        if not (isinstance(backupset_name, basestring) and isinstance(on_demand_backupset, bool)):
+        if not (isinstance(backupset_name, str) and isinstance(on_demand_backupset, bool)):
             raise SDKException(&#39;Backupset&#39;, &#39;101&#39;)
         else:
             backupset_name = backupset_name.lower()
@@ -5793,7 +5737,7 @@ if archiveset with same name already exists
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L557-L675" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L556-L674" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_archiveset(self, archiveset_name, is_nas_turbo_backupset=False):
     &#34;&#34;&#34; 
@@ -5822,7 +5766,7 @@ if archiveset with same name already exists
             
 
     &#34;&#34;&#34;        
-    if not (isinstance(archiveset_name, basestring)):
+    if not (isinstance(archiveset_name, str)):
         raise SDKException(&#39;Backupset&#39;, &#39;101&#39;)
     else:
         archiveset_name = archiveset_name.lower()
@@ -5970,7 +5914,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L788-L893" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L787-L892" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_salesforce_backupset(
         self,
@@ -6133,7 +6077,7 @@ Adds a new Office 365 V1 Share Point Pseudo Client to the Commcell.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L677-L786" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L676-L785" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_v1_sharepoint_client(
         self,
@@ -6270,7 +6214,7 @@ if no backupset exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L930-L995" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L929-L994" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, backupset_name):
     &#34;&#34;&#34;Deletes the backup set from the agent.
@@ -6290,7 +6234,7 @@ if no backupset exists with the given name
 
                 if no backupset exists with the given name
     &#34;&#34;&#34;
-    if not isinstance(backupset_name, basestring):
+    if not isinstance(backupset_name, str):
         raise SDKException(&#39;Backupset&#39;, &#39;101&#39;)
     else:
         backupset_name = backupset_name.lower()
@@ -6359,7 +6303,7 @@ if type of the backupset name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L895-L928" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L894-L927" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, backupset_name):
     &#34;&#34;&#34;Returns a backupset object of the specified backupset name.
@@ -6376,7 +6320,7 @@ if type of the backupset name argument is not string</p>
 
                 if no backupset exists with the given name
     &#34;&#34;&#34;
-    if not isinstance(backupset_name, basestring):
+    if not isinstance(backupset_name, str):
         raise SDKException(&#39;Backupset&#39;, &#39;101&#39;)
     else:
         backupset_name = backupset_name.lower()
@@ -6414,7 +6358,7 @@ if type of the backupset name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L351-L367" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L350-L366" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_backupset(self, backupset_name):
     &#34;&#34;&#34;Checks if a backupset exists for the agent with the input backupset name.
@@ -6429,7 +6373,7 @@ if type of the backupset name argument is not string</p></div>
             SDKException:
                 if type of the backupset name argument is not string
     &#34;&#34;&#34;
-    if not isinstance(backupset_name, basestring):
+    if not isinstance(backupset_name, str):
         raise SDKException(&#39;Backupset&#39;, &#39;101&#39;)
 
     return self._backupsets and backupset_name.lower() in self._backupsets</code></pre>
@@ -6443,7 +6387,7 @@ if type of the backupset name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupset.py#L997-L999" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L996-L998" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the backupsets associated with the Agent / Instance.&#34;&#34;&#34;
@@ -6534,7 +6478,6 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.backupset.Backupset.backupset_id" href="#cvpysdk.backupset.Backupset.backupset_id">backupset_id</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.backupset_name" href="#cvpysdk.backupset.Backupset.backupset_name">backupset_name</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.browse" href="#cvpysdk.backupset.Backupset.browse">browse</a></code></li>
-<li><code><a title="cvpysdk.backupset.Backupset.create_subclient" href="#cvpysdk.backupset.Backupset.create_subclient">create_subclient</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.delete_data" href="#cvpysdk.backupset.Backupset.delete_data">delete_data</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.description" href="#cvpysdk.backupset.Backupset.description">description</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.find" href="#cvpysdk.backupset.Backupset.find">find</a></code></li>

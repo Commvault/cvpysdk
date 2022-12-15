@@ -152,7 +152,7 @@ The Virtual Server 'Hyper-V' is named as 'hyperv.py'
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L1-L2863" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L1-L2879" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -308,7 +308,6 @@ from importlib import import_module
 from inspect import getmembers, isclass, isabstract
 
 import xmltodict
-from past.builtins import basestring
 
 from cvpysdk.plan import Plans
 from ..exception import SDKException
@@ -435,7 +434,7 @@ class VirtualServerSubclient(Subclient):
         Returns:
                 string          (string) :      Proxy at instane
         &#34;&#34;&#34;
-        return self._proxyClient[&#39;clientName&#39;]
+        return self._proxyClient.get(&#39;clientName&#39;, None)
 
     @property
     def vm_filter(self):
@@ -963,14 +962,13 @@ class VirtualServerSubclient(Subclient):
         nics_dict_from_browse = self.get_nics_from_browse(copy_precedence=value.get(&#39;copy_precedence&#39;, 0))
         nics_list = []
         vm_nics_list = nics_dict_from_browse[vm_to_restore]
-
         for network_card_dict in vm_nics_list:
             if self._instance_object.instance_name == &#39;google cloud platform&#39;:
                 current_project = network_card_dict.get(&#39;subnetId&#39;).split(&#39;/&#39;)[6]
-                network_card_dict[&#39;subnetId&#39;] = network_card_dict.get(&#39;subnetId&#39;).replace(
-                    current_project, value.get(&#39;project_id&#39;))
-                network_card_dict[&#39;label&#39;] = network_card_dict.get(&#39;sourceNetwork&#39;).replace(
-                    current_project, value.get(&#39;project_id&#39;))
+                if value.get(&#39;project_id&#39;) is not None:
+                    network_card_dict[&#39;subnetId&#39;] = value.get(&#39;subnetwork_nic&#39;)
+                    network_card_dict[&#39;sourceNetwork&#39;] = value.get(&#39;networks_nic&#39;)
+
             _destnetwork = value.get(&#34;destination_network&#34;,
                                      value.get(&#39;network&#39;,
                                                network_card_dict[&#39;name&#39;]))
@@ -979,8 +977,8 @@ class VirtualServerSubclient(Subclient):
                 &#34;subnetId&#34;: network_card_dict.get(&#39;subnetId&#39;, &#34;&#34;),
                 &#34;sourceNetwork&#34;: network_card_dict[&#39;name&#39;],
                 &#34;sourceNetworkId&#34;: network_card_dict.get(&#39;sourceNetwork&#39;, &#34;&#34;),
-                &#34;name&#34;: network_card_dict[
-                    &#39;label&#39;] if self._instance_object.instance_name == &#39;google cloud platform&#39; else &#39;&#39;,
+                &#34;name&#34;: network_card_dict.get(&#39;sourceNetwork&#39;, &#34;&#34;)+_destnetwork if self._instance_object.instance_name
+                == &#39;google cloud platform&#39; else &#39;&#39; ,
                 &#34;networkName&#34;: _destnetwork if _destnetwork else &#39;&#39;,
                 &#34;destinationNetwork&#34;: _destnetwork if _destnetwork else network_card_dict[&#39;name&#39;]
             }
@@ -990,8 +988,7 @@ class VirtualServerSubclient(Subclient):
                 if &#34;networkDisplayName&#34; in value and &#39;networkrsg&#39; in value and &#39;destsubid&#39; in value:
                     nics[&#34;networkDisplayName&#34;] = value[&#34;networkDisplayName&#34;]
                     nics[&#34;networkName&#34;] = value[&#34;networkDisplayName&#34;].split(&#39;\\&#39;)[0]
-                    temp = nics[&#39;subnetId&#39;].split(&#39;/&#39;)
-                    modify_nics = nics[&#39;subnetId&#39;].split(&#39;/&#39;)
+                    modify_nics = value.get(&#39;subnetId&#39;, nics[&#39;subnetId&#39;]).split(&#39;/&#39;)
                     modify_nics[8] = nics[&#34;networkName&#34;]
                     modify_nics[4] = value[&#39;networkrsg&#39;]
                     modify_nics[2] = value[&#39;destsubid&#39;]
@@ -1406,7 +1403,7 @@ class VirtualServerSubclient(Subclient):
 
 
         &#34;&#34;&#34;
-        if not isinstance(input_xml, basestring):
+        if not isinstance(input_xml, str):
             raise SDKException(&#34;Subclient&#34;, &#34;101&#34;)
 
         root = ET.fromstring(input_xml)
@@ -1801,10 +1798,11 @@ class VirtualServerSubclient(Subclient):
 
         _vm_names, _vm_ids = self._get_vm_ids_and_names_dict_from_browse()
         _file_restore_option = {}
+        _verify_path = options.get(&#39;verify_path&#39;, True)
 
         # check if inputs are correct
-        if not(isinstance(destination_path, basestring) and
-               (isinstance(vm_name, basestring))):
+        if not(isinstance(destination_path, str) and
+               (isinstance(vm_name, str))):
             raise SDKException(&#39;Subclient&#39;, &#39;105&#39;)
 
         if vm_name not in _vm_names:
@@ -1824,7 +1822,7 @@ class VirtualServerSubclient(Subclient):
         if isinstance(folder_to_restore, list):
             _folder_to_restore_list = folder_to_restore
 
-        elif isinstance(folder_to_restore, basestring):
+        elif isinstance(folder_to_restore, str):
             _folder_to_restore_list = []
             _folder_to_restore_list.append(folder_to_restore)
         else:
@@ -1832,17 +1830,35 @@ class VirtualServerSubclient(Subclient):
 
         _file_restore_option[&#34;paths&#34;] = []
         for _each_folder in _folder_to_restore_list:
-            _file_restore_option[&#34;paths&#34;].append(
-                self._check_folder_in_browse(_vm_ids[vm_name],
-                                             &#34;%s&#34; % _each_folder,
-                                             from_date,
-                                             to_date,
-                                             copy_precedence,
-                                             media_agent=browse_ma))
+            # check_folder_in_browse modifies path (removes colon) and verifies in browse results.
+            # The modified path does not work for windows VM when file indexing is enabled
+            # Set `verify_path` to False to skip this verification and use the restore path as is
+
+            if _verify_path:
+                _restore_item_path = self._check_folder_in_browse(
+                    _vm_ids[vm_name],
+                    &#34;%s&#34; % _each_folder,
+                    from_date,
+                    to_date,
+                    copy_precedence,
+                    media_agent=browse_ma
+                )
+            else:
+                # Converting native path to VM path
+                # C:\folder1 =&gt; \&lt;vm_guid&gt;\C:\folder1
+                # /folder1/folder2 =&gt; \&lt;vm_guid&gt;\folder1\folder2
+
+                _item_path = _each_folder.replace(&#39;/&#39;, &#39;\\&#39;)
+                _item_path = _item_path[1:] if _item_path[0] == &#39;\\&#39; else _item_path
+                _restore_item_path = &#39;\\&#39;.join([&#39;&#39;, _vm_ids[vm_name], _item_path])
+
+            _file_restore_option[&#34;paths&#34;].append(_restore_item_path)
 
         # set the browse options
         _file_restore_option[&#34;disk_browse&#34;] = False
         _file_restore_option[&#34;file_browse&#34;] = True
+        _file_restore_option[&#34;from_time&#34;] = from_date
+        _file_restore_option[&#34;to_time&#34;] = to_date
 
         # set the common file level restore options
         _file_restore_option[&#34;striplevel_type&#34;] = &#34;PRESERVE_LEVEL&#34;
@@ -1914,7 +1930,7 @@ class VirtualServerSubclient(Subclient):
            specified.
 
             Args:
-                vm_path             (basestring)   --  folder path to get the contents
+                vm_path             (str)   --  folder path to get the contents
                                                 default: &#39;\\&#39;;
                                                 returns the root of the Backup
                                                 content
@@ -1992,13 +2008,13 @@ class VirtualServerSubclient(Subclient):
         return volume restore type and destination disk Type
 
         Args:
-            src_disk_extn   (basestring)   --  source disk extension of the disk
-            dest_disk_extn  (basestring)   --  Extension to which disk is converted
+            src_disk_extn   (str)   --  source disk extension of the disk
+            dest_disk_extn  (str)   --  Extension to which disk is converted
 
         return
-            _vol_restore_type   (basestring)   -- value of Volume restore type
+            _vol_restore_type   (str)   -- value of Volume restore type
                                            parameter of the XML
-            _dest_disk_type     (basestring)   -- value of destination Disk Type
+            _dest_disk_type     (str)   -- value of destination Disk Type
                                            parameter of the XML
         &#34;&#34;&#34;
 
@@ -2296,7 +2312,7 @@ class VirtualServerSubclient(Subclient):
             disks=vm_disks,
             esx_host=restore_option.get(&#39;esx_host&#39;) or vs_metadata[&#39;esxHost&#39;],
             instanceSize=restore_option.get(&#39;instanceSize&#39;, instanceSize),
-            new_name=restore_option.get(&#39;new_name&#39;, &#34;Delete&#34; + vm_to_restore)
+            new_name=restore_option.get(&#39;new_name&#39;, &#34;del&#34; + vm_to_restore)
         )
 
         temp_dict = self._json_restore_advancedRestoreOptions(restore_option)
@@ -3052,7 +3068,7 @@ subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L163-L2863" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L162-L2879" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VirtualServerSubclient(Subclient):
     &#34;&#34;&#34;Derived class from Subclient Base class, representing a virtual server subclient,
@@ -3173,7 +3189,7 @@ subclient id</p></div>
         Returns:
                 string          (string) :      Proxy at instane
         &#34;&#34;&#34;
-        return self._proxyClient[&#39;clientName&#39;]
+        return self._proxyClient.get(&#39;clientName&#39;, None)
 
     @property
     def vm_filter(self):
@@ -3701,14 +3717,13 @@ subclient id</p></div>
         nics_dict_from_browse = self.get_nics_from_browse(copy_precedence=value.get(&#39;copy_precedence&#39;, 0))
         nics_list = []
         vm_nics_list = nics_dict_from_browse[vm_to_restore]
-
         for network_card_dict in vm_nics_list:
             if self._instance_object.instance_name == &#39;google cloud platform&#39;:
                 current_project = network_card_dict.get(&#39;subnetId&#39;).split(&#39;/&#39;)[6]
-                network_card_dict[&#39;subnetId&#39;] = network_card_dict.get(&#39;subnetId&#39;).replace(
-                    current_project, value.get(&#39;project_id&#39;))
-                network_card_dict[&#39;label&#39;] = network_card_dict.get(&#39;sourceNetwork&#39;).replace(
-                    current_project, value.get(&#39;project_id&#39;))
+                if value.get(&#39;project_id&#39;) is not None:
+                    network_card_dict[&#39;subnetId&#39;] = value.get(&#39;subnetwork_nic&#39;)
+                    network_card_dict[&#39;sourceNetwork&#39;] = value.get(&#39;networks_nic&#39;)
+
             _destnetwork = value.get(&#34;destination_network&#34;,
                                      value.get(&#39;network&#39;,
                                                network_card_dict[&#39;name&#39;]))
@@ -3717,8 +3732,8 @@ subclient id</p></div>
                 &#34;subnetId&#34;: network_card_dict.get(&#39;subnetId&#39;, &#34;&#34;),
                 &#34;sourceNetwork&#34;: network_card_dict[&#39;name&#39;],
                 &#34;sourceNetworkId&#34;: network_card_dict.get(&#39;sourceNetwork&#39;, &#34;&#34;),
-                &#34;name&#34;: network_card_dict[
-                    &#39;label&#39;] if self._instance_object.instance_name == &#39;google cloud platform&#39; else &#39;&#39;,
+                &#34;name&#34;: network_card_dict.get(&#39;sourceNetwork&#39;, &#34;&#34;)+_destnetwork if self._instance_object.instance_name
+                == &#39;google cloud platform&#39; else &#39;&#39; ,
                 &#34;networkName&#34;: _destnetwork if _destnetwork else &#39;&#39;,
                 &#34;destinationNetwork&#34;: _destnetwork if _destnetwork else network_card_dict[&#39;name&#39;]
             }
@@ -3728,8 +3743,7 @@ subclient id</p></div>
                 if &#34;networkDisplayName&#34; in value and &#39;networkrsg&#39; in value and &#39;destsubid&#39; in value:
                     nics[&#34;networkDisplayName&#34;] = value[&#34;networkDisplayName&#34;]
                     nics[&#34;networkName&#34;] = value[&#34;networkDisplayName&#34;].split(&#39;\\&#39;)[0]
-                    temp = nics[&#39;subnetId&#39;].split(&#39;/&#39;)
-                    modify_nics = nics[&#39;subnetId&#39;].split(&#39;/&#39;)
+                    modify_nics = value.get(&#39;subnetId&#39;, nics[&#39;subnetId&#39;]).split(&#39;/&#39;)
                     modify_nics[8] = nics[&#34;networkName&#34;]
                     modify_nics[4] = value[&#39;networkrsg&#39;]
                     modify_nics[2] = value[&#39;destsubid&#39;]
@@ -4144,7 +4158,7 @@ subclient id</p></div>
 
 
         &#34;&#34;&#34;
-        if not isinstance(input_xml, basestring):
+        if not isinstance(input_xml, str):
             raise SDKException(&#34;Subclient&#34;, &#34;101&#34;)
 
         root = ET.fromstring(input_xml)
@@ -4539,10 +4553,11 @@ subclient id</p></div>
 
         _vm_names, _vm_ids = self._get_vm_ids_and_names_dict_from_browse()
         _file_restore_option = {}
+        _verify_path = options.get(&#39;verify_path&#39;, True)
 
         # check if inputs are correct
-        if not(isinstance(destination_path, basestring) and
-               (isinstance(vm_name, basestring))):
+        if not(isinstance(destination_path, str) and
+               (isinstance(vm_name, str))):
             raise SDKException(&#39;Subclient&#39;, &#39;105&#39;)
 
         if vm_name not in _vm_names:
@@ -4562,7 +4577,7 @@ subclient id</p></div>
         if isinstance(folder_to_restore, list):
             _folder_to_restore_list = folder_to_restore
 
-        elif isinstance(folder_to_restore, basestring):
+        elif isinstance(folder_to_restore, str):
             _folder_to_restore_list = []
             _folder_to_restore_list.append(folder_to_restore)
         else:
@@ -4570,17 +4585,35 @@ subclient id</p></div>
 
         _file_restore_option[&#34;paths&#34;] = []
         for _each_folder in _folder_to_restore_list:
-            _file_restore_option[&#34;paths&#34;].append(
-                self._check_folder_in_browse(_vm_ids[vm_name],
-                                             &#34;%s&#34; % _each_folder,
-                                             from_date,
-                                             to_date,
-                                             copy_precedence,
-                                             media_agent=browse_ma))
+            # check_folder_in_browse modifies path (removes colon) and verifies in browse results.
+            # The modified path does not work for windows VM when file indexing is enabled
+            # Set `verify_path` to False to skip this verification and use the restore path as is
+
+            if _verify_path:
+                _restore_item_path = self._check_folder_in_browse(
+                    _vm_ids[vm_name],
+                    &#34;%s&#34; % _each_folder,
+                    from_date,
+                    to_date,
+                    copy_precedence,
+                    media_agent=browse_ma
+                )
+            else:
+                # Converting native path to VM path
+                # C:\folder1 =&gt; \&lt;vm_guid&gt;\C:\folder1
+                # /folder1/folder2 =&gt; \&lt;vm_guid&gt;\folder1\folder2
+
+                _item_path = _each_folder.replace(&#39;/&#39;, &#39;\\&#39;)
+                _item_path = _item_path[1:] if _item_path[0] == &#39;\\&#39; else _item_path
+                _restore_item_path = &#39;\\&#39;.join([&#39;&#39;, _vm_ids[vm_name], _item_path])
+
+            _file_restore_option[&#34;paths&#34;].append(_restore_item_path)
 
         # set the browse options
         _file_restore_option[&#34;disk_browse&#34;] = False
         _file_restore_option[&#34;file_browse&#34;] = True
+        _file_restore_option[&#34;from_time&#34;] = from_date
+        _file_restore_option[&#34;to_time&#34;] = to_date
 
         # set the common file level restore options
         _file_restore_option[&#34;striplevel_type&#34;] = &#34;PRESERVE_LEVEL&#34;
@@ -4652,7 +4685,7 @@ subclient id</p></div>
            specified.
 
             Args:
-                vm_path             (basestring)   --  folder path to get the contents
+                vm_path             (str)   --  folder path to get the contents
                                                 default: &#39;\\&#39;;
                                                 returns the root of the Backup
                                                 content
@@ -4730,13 +4763,13 @@ subclient id</p></div>
         return volume restore type and destination disk Type
 
         Args:
-            src_disk_extn   (basestring)   --  source disk extension of the disk
-            dest_disk_extn  (basestring)   --  Extension to which disk is converted
+            src_disk_extn   (str)   --  source disk extension of the disk
+            dest_disk_extn  (str)   --  Extension to which disk is converted
 
         return
-            _vol_restore_type   (basestring)   -- value of Volume restore type
+            _vol_restore_type   (str)   -- value of Volume restore type
                                            parameter of the XML
-            _dest_disk_type     (basestring)   -- value of destination Disk Type
+            _dest_disk_type     (str)   -- value of destination Disk Type
                                            parameter of the XML
         &#34;&#34;&#34;
 
@@ -5034,7 +5067,7 @@ subclient id</p></div>
             disks=vm_disks,
             esx_host=restore_option.get(&#39;esx_host&#39;) or vs_metadata[&#39;esxHost&#39;],
             instanceSize=restore_option.get(&#39;instanceSize&#39;, instanceSize),
-            new_name=restore_option.get(&#39;new_name&#39;, &#34;Delete&#34; + vm_to_restore)
+            new_name=restore_option.get(&#39;new_name&#39;, &#34;del&#34; + vm_to_restore)
         )
 
         temp_dict = self._json_restore_advancedRestoreOptions(restore_option)
@@ -5801,7 +5834,7 @@ True/False</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L569-L578" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L568-L577" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def cbtvalue(self):
@@ -5823,7 +5856,7 @@ def cbtvalue(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L248-L262" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L247-L261" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def content(self):
@@ -5852,7 +5885,7 @@ Proxy at instane</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L274-L282" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L273-L281" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_proxy(self):
@@ -5862,7 +5895,7 @@ def instance_proxy(self):
     Returns:
             string          (string) :      Proxy at instane
     &#34;&#34;&#34;
-    return self._proxyClient[&#39;clientName&#39;]</code></pre>
+    return self._proxyClient.get(&#39;clientName&#39;, None)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.vssubclient.VirtualServerSubclient.live_sync"><code class="name">var <span class="ident">live_sync</span></code></dt>
@@ -5871,7 +5904,7 @@ def instance_proxy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L530-L537" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L529-L536" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def live_sync(self):
@@ -5891,7 +5924,7 @@ Default: False for subclient which doesnt have the property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L337-L349" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L336-L348" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def metadata(self):
@@ -5918,7 +5951,7 @@ Proxies at the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L264-L272" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L263-L271" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_proxy(self):
@@ -5939,7 +5972,7 @@ def subclient_proxy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L299-L335" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L298-L334" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_diskfilter(self):
@@ -5988,7 +6021,7 @@ def vm_diskfilter(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L284-L297" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L283-L296" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_filter(self):
@@ -6025,7 +6058,7 @@ dictionary with all VM restore options</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L2258-L2293" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L2274-L2309" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def amazon_defaults(self, vm_to_restore, restore_option):
     &#34;&#34;&#34;
@@ -6123,7 +6156,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L2580-L2655" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L2596-L2671" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(self,
            backup_level=&#34;Incremental&#34;,
@@ -6250,7 +6283,7 @@ if failed to browse content</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L1155-L1233" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L1152-L1230" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, vm_path=&#39;\\&#39;,
            show_deleted_files=False,
@@ -6414,7 +6447,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L1325-L1408" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L1322-L1405" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse_in_time(
         self,
@@ -6559,7 +6592,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L1410-L1482" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L1407-L1479" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_level_browse(self, vm_path=&#39;\\&#39;,
                       show_deleted_files=False,
@@ -6657,7 +6690,7 @@ nics info for that vm</dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L1278-L1323" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L1275-L1320" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_nics_from_browse(self, copy_precedence=0):
     &#34;&#34;&#34;
@@ -6720,7 +6753,7 @@ dictionary of guest file restores options</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L1619-L1714" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L1616-L1730" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def guest_file_restore(self, *args, **kwargs):
     &#34;&#34;&#34;perform Guest file restore of the provided path
@@ -6751,10 +6784,11 @@ dictionary of guest file restores options</p></div>
 
     _vm_names, _vm_ids = self._get_vm_ids_and_names_dict_from_browse()
     _file_restore_option = {}
+    _verify_path = options.get(&#39;verify_path&#39;, True)
 
     # check if inputs are correct
-    if not(isinstance(destination_path, basestring) and
-           (isinstance(vm_name, basestring))):
+    if not(isinstance(destination_path, str) and
+           (isinstance(vm_name, str))):
         raise SDKException(&#39;Subclient&#39;, &#39;105&#39;)
 
     if vm_name not in _vm_names:
@@ -6774,7 +6808,7 @@ dictionary of guest file restores options</p></div>
     if isinstance(folder_to_restore, list):
         _folder_to_restore_list = folder_to_restore
 
-    elif isinstance(folder_to_restore, basestring):
+    elif isinstance(folder_to_restore, str):
         _folder_to_restore_list = []
         _folder_to_restore_list.append(folder_to_restore)
     else:
@@ -6782,17 +6816,35 @@ dictionary of guest file restores options</p></div>
 
     _file_restore_option[&#34;paths&#34;] = []
     for _each_folder in _folder_to_restore_list:
-        _file_restore_option[&#34;paths&#34;].append(
-            self._check_folder_in_browse(_vm_ids[vm_name],
-                                         &#34;%s&#34; % _each_folder,
-                                         from_date,
-                                         to_date,
-                                         copy_precedence,
-                                         media_agent=browse_ma))
+        # check_folder_in_browse modifies path (removes colon) and verifies in browse results.
+        # The modified path does not work for windows VM when file indexing is enabled
+        # Set `verify_path` to False to skip this verification and use the restore path as is
+
+        if _verify_path:
+            _restore_item_path = self._check_folder_in_browse(
+                _vm_ids[vm_name],
+                &#34;%s&#34; % _each_folder,
+                from_date,
+                to_date,
+                copy_precedence,
+                media_agent=browse_ma
+            )
+        else:
+            # Converting native path to VM path
+            # C:\folder1 =&gt; \&lt;vm_guid&gt;\C:\folder1
+            # /folder1/folder2 =&gt; \&lt;vm_guid&gt;\folder1\folder2
+
+            _item_path = _each_folder.replace(&#39;/&#39;, &#39;\\&#39;)
+            _item_path = _item_path[1:] if _item_path[0] == &#39;\\&#39; else _item_path
+            _restore_item_path = &#39;\\&#39;.join([&#39;&#39;, _vm_ids[vm_name], _item_path])
+
+        _file_restore_option[&#34;paths&#34;].append(_restore_item_path)
 
     # set the browse options
     _file_restore_option[&#34;disk_browse&#34;] = False
     _file_restore_option[&#34;file_browse&#34;] = True
+    _file_restore_option[&#34;from_time&#34;] = from_date
+    _file_restore_option[&#34;to_time&#34;] = to_date
 
     # set the common file level restore options
     _file_restore_option[&#34;striplevel_type&#34;] = &#34;PRESERVE_LEVEL&#34;
@@ -6883,7 +6935,7 @@ if from date value is incorrect</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L1484-L1552" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L1481-L1549" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def guest_files_browse(
         self,
@@ -6978,7 +7030,7 @@ if input parameter is not proper</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L1235-L1276" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L1232-L1273" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def parse_nics_xml(self, input_xml):
     &#34;&#34;&#34;
@@ -6998,7 +7050,7 @@ if input parameter is not proper</p></div>
 
 
     &#34;&#34;&#34;
-    if not isinstance(input_xml, basestring):
+    if not isinstance(input_xml, str):
         raise SDKException(&#34;Subclient&#34;, &#34;101&#34;)
 
     root = ET.fromstring(input_xml)
@@ -7035,7 +7087,7 @@ if input parameter is not proper</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L2842-L2863" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L2858-L2879" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def preview_content(self):
     &#34;&#34;&#34;
@@ -7089,7 +7141,7 @@ name                        - name of the VM to be restored
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L2149-L2218" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L2165-L2234" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_advanced_attach_disk_restore_options(self, vm_to_restore, restore_option):
     &#34;&#34;&#34;
@@ -7193,7 +7245,7 @@ name                        - name of the VM to be restored
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L2009-L2147" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L2025-L2163" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_advanced_vm_restore_options(self, vm_to_restore, restore_option):
     &#34;&#34;&#34;
@@ -7329,7 +7381,7 @@ name                        - name of the VM to be restored
         disks=vm_disks,
         esx_host=restore_option.get(&#39;esx_host&#39;) or vs_metadata[&#39;esxHost&#39;],
         instanceSize=restore_option.get(&#39;instanceSize&#39;, instanceSize),
-        new_name=restore_option.get(&#39;new_name&#39;, &#34;Delete&#34; + vm_to_restore)
+        new_name=restore_option.get(&#39;new_name&#39;, &#34;del&#34; + vm_to_restore)
     )
 
     temp_dict = self._json_restore_advancedRestoreOptions(restore_option)
@@ -7348,7 +7400,7 @@ dict of all propterties of subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L594-L605" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L593-L604" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;
@@ -7406,7 +7458,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L1716-L1748" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L1732-L1764" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def vm_files_browse(self, vm_path=&#39;\\&#39;, show_deleted_files=False, operation=&#39;browse&#39;, copy_precedence=0):
     &#34;&#34;&#34;Browses the Files and Folders of a Virtual Machine.
@@ -7451,7 +7503,7 @@ if response is not success
 specified.</p>
 <p>Args:
 vm_path
-(basestring)
+(str)
 &ndash;
 folder path to get the contents
 default: '';
@@ -7499,7 +7551,7 @@ if from date value is incorrect</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/vssubclient.py#L1750-L1809" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L1766-L1825" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def vm_files_browse_in_time(
         self,
@@ -7512,7 +7564,7 @@ if from date value is incorrect</p>
        specified.
 
         Args:
-            vm_path             (basestring)   --  folder path to get the contents
+            vm_path             (str)   --  folder path to get the contents
                                             default: &#39;\\&#39;;
                                             returns the root of the Backup
                                             content

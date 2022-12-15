@@ -42,7 +42,7 @@ The Virtual Server 'Hyper-V' is named as 'hyperv.py'
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/vsbackupset.py#L1-L255" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/vsbackupset.py#L1-L316" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -223,6 +223,8 @@ class VSBackupset(Backupset):
                                 result_set = [result_set]
                             break
                 if not browse_result:
+                    if not isinstance(response_json[&#39;browseResponses&#39;], list):
+                        response_json[&#39;browseResponses&#39;] = [response_json[&#39;browseResponses&#39;]]
                     if &#39;messages&#39; in response_json[&#39;browseResponses&#39;][0]:
                         if not isinstance(response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;],list):
                             response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;] = [response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;]]
@@ -255,6 +257,12 @@ class VSBackupset(Backupset):
                         mod_time = time.strftime(&#39;%d/%m/%Y %H:%M:%S&#39;, mod_time)
                     else:
                         mod_time = None
+                    
+                    if &#39;backupTime&#39; in result[&#39;advancedData&#39;] and int(result[&#39;advancedData&#39;][&#39;backupTime&#39;]) &gt; 0:
+                        bkp_time = time.localtime(int(result[&#39;advancedData&#39;][&#39;backupTime&#39;]))
+                        bkp_time = time.strftime(&#39;%d/%m/%Y %H:%M:%S&#39;, bkp_time)
+                    else:
+                        bkp_time = None
 
                     if &#39;file&#39; in result[&#39;flags&#39;]:
                         if result[&#39;flags&#39;][&#39;file&#39;] is True or result[&#39;flags&#39;][&#39;file&#39;] == &#34;1&#34;:
@@ -275,6 +283,7 @@ class VSBackupset(Backupset):
                         &#39;size&#39;: size,
                         &#39;modified_time&#39;: mod_time,
                         &#39;type&#39;: file_or_folder,
+                        &#39;backup_time&#39;: bkp_time,
                         &#39;advanced_data&#39;: result[&#39;advancedData&#39;]
                     }
 
@@ -298,7 +307,59 @@ class VSBackupset(Backupset):
         if client_name is not None:
             return Client(self._commcell_object, client_name=client_name)
 
-        return None</code></pre>
+        return None
+
+    @index_server.setter
+    def index_server(self, value):
+        &#34;&#34;&#34;Sets index server client for the backupset. Property value should be a client object
+
+            Args:
+
+                value     (obj)    --  The cvpysdk client object of the index server client
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+
+        if not isinstance(value, Client):
+            raise SDKException(&#39;Backupset&#39;, &#39;106&#39;)
+
+        properties = self._properties
+        index_server_id = int(value.client_id)
+        index_server_name = value.client_name
+
+        if &#39;indexSettings&#39; in properties:
+            qualified_index_servers = []
+            if &#39;qualifyingIndexServers&#39; in properties[&#39;indexSettings&#39;]:
+                for index_server in properties[&#39;indexSettings&#39;][&#39;qualifyingIndexServers&#39;]:
+                    qualified_index_servers.append(index_server[&#39;clientId&#39;])
+
+            if index_server_id in qualified_index_servers:
+                properties[&#39;indexSettings&#39;][&#39;currentIndexServer&#39;] = {
+                    &#39;clientId&#39;: index_server_id,
+                    &#39;clientName&#39;: index_server_name
+                }
+            else:
+                raise SDKException(
+                    &#39;Backupset&#39;, &#39;102&#39;, &#39;{0} is not a qualified IndexServer client&#39;.format(
+                        index_server_name))
+        else:
+            properties[&#39;indexSettings&#39;] = {
+                &#39;currentIndexServer&#39;: {
+                    &#39;clientId&#39;: index_server_id,
+                    &#39;clientName&#39;: index_server_name
+                }
+            }
+
+        request_json = {
+            &#39;backupsetProperties&#39;: properties
+        }
+
+        self._process_update_reponse(request_json)</code></pre>
 </details>
 </section>
 <section>
@@ -337,7 +398,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/vsbackupset.py#L54-L255" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/vsbackupset.py#L54-L316" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VSBackupset(Backupset):
     &#34;&#34;&#34;Derived class from Backupset Base class, representing a vs backupset,
@@ -465,6 +526,8 @@ default: None</p>
                                 result_set = [result_set]
                             break
                 if not browse_result:
+                    if not isinstance(response_json[&#39;browseResponses&#39;], list):
+                        response_json[&#39;browseResponses&#39;] = [response_json[&#39;browseResponses&#39;]]
                     if &#39;messages&#39; in response_json[&#39;browseResponses&#39;][0]:
                         if not isinstance(response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;],list):
                             response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;] = [response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;]]
@@ -497,6 +560,12 @@ default: None</p>
                         mod_time = time.strftime(&#39;%d/%m/%Y %H:%M:%S&#39;, mod_time)
                     else:
                         mod_time = None
+                    
+                    if &#39;backupTime&#39; in result[&#39;advancedData&#39;] and int(result[&#39;advancedData&#39;][&#39;backupTime&#39;]) &gt; 0:
+                        bkp_time = time.localtime(int(result[&#39;advancedData&#39;][&#39;backupTime&#39;]))
+                        bkp_time = time.strftime(&#39;%d/%m/%Y %H:%M:%S&#39;, bkp_time)
+                    else:
+                        bkp_time = None
 
                     if &#39;file&#39; in result[&#39;flags&#39;]:
                         if result[&#39;flags&#39;][&#39;file&#39;] is True or result[&#39;flags&#39;][&#39;file&#39;] == &#34;1&#34;:
@@ -517,6 +586,7 @@ default: None</p>
                         &#39;size&#39;: size,
                         &#39;modified_time&#39;: mod_time,
                         &#39;type&#39;: file_or_folder,
+                        &#39;backup_time&#39;: bkp_time,
                         &#39;advanced_data&#39;: result[&#39;advancedData&#39;]
                     }
 
@@ -540,7 +610,59 @@ default: None</p>
         if client_name is not None:
             return Client(self._commcell_object, client_name=client_name)
 
-        return None</code></pre>
+        return None
+
+    @index_server.setter
+    def index_server(self, value):
+        &#34;&#34;&#34;Sets index server client for the backupset. Property value should be a client object
+
+            Args:
+
+                value     (obj)    --  The cvpysdk client object of the index server client
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+
+        if not isinstance(value, Client):
+            raise SDKException(&#39;Backupset&#39;, &#39;106&#39;)
+
+        properties = self._properties
+        index_server_id = int(value.client_id)
+        index_server_name = value.client_name
+
+        if &#39;indexSettings&#39; in properties:
+            qualified_index_servers = []
+            if &#39;qualifyingIndexServers&#39; in properties[&#39;indexSettings&#39;]:
+                for index_server in properties[&#39;indexSettings&#39;][&#39;qualifyingIndexServers&#39;]:
+                    qualified_index_servers.append(index_server[&#39;clientId&#39;])
+
+            if index_server_id in qualified_index_servers:
+                properties[&#39;indexSettings&#39;][&#39;currentIndexServer&#39;] = {
+                    &#39;clientId&#39;: index_server_id,
+                    &#39;clientName&#39;: index_server_name
+                }
+            else:
+                raise SDKException(
+                    &#39;Backupset&#39;, &#39;102&#39;, &#39;{0} is not a qualified IndexServer client&#39;.format(
+                        index_server_name))
+        else:
+            properties[&#39;indexSettings&#39;] = {
+                &#39;currentIndexServer&#39;: {
+                    &#39;clientId&#39;: index_server_id,
+                    &#39;clientName&#39;: index_server_name
+                }
+            }
+
+        request_json = {
+            &#39;backupsetProperties&#39;: properties
+        }
+
+        self._process_update_reponse(request_json)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -554,7 +676,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/vsbackupset.py#L242-L255" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/vsbackupset.py#L251-L264" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_server(self):
@@ -617,7 +739,7 @@ from browse operation
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/backupsets/vsbackupset.py#L74-L118" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/vsbackupset.py#L74-L118" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, *args, **kwargs):
     &#34;&#34;&#34;Browses the content of the Backupset.
@@ -675,7 +797,6 @@ from browse operation
 <li><code><a title="cvpysdk.backupset.Backupset.backup" href="../backupset.html#cvpysdk.backupset.Backupset.backup">backup</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.backupset_id" href="../backupset.html#cvpysdk.backupset.Backupset.backupset_id">backupset_id</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.backupset_name" href="../backupset.html#cvpysdk.backupset.Backupset.backupset_name">backupset_name</a></code></li>
-<li><code><a title="cvpysdk.backupset.Backupset.create_subclient" href="../backupset.html#cvpysdk.backupset.Backupset.create_subclient">create_subclient</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.delete_data" href="../backupset.html#cvpysdk.backupset.Backupset.delete_data">delete_data</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.description" href="../backupset.html#cvpysdk.backupset.Backupset.description">description</a></code></li>
 <li><code><a title="cvpysdk.backupset.Backupset.find" href="../backupset.html#cvpysdk.backupset.Backupset.find">find</a></code></li>

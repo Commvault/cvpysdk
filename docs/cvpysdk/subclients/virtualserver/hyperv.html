@@ -51,7 +51,7 @@ user to the same location</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/hyperv.py#L1-L692" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/hyperv.py#L1-L691" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -97,7 +97,6 @@ HypervSubclient:
 &#34;&#34;&#34;
 
 from enum import Enum
-from past.builtins import basestring
 from ..vssubclient import VirtualServerSubclient
 from ...exception import SDKException
 
@@ -198,8 +197,8 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
         _disk_restore_option = {}
 
         # check if inputs are correct
-        if not (isinstance(destination_path, basestring) and
-                isinstance(vm_name, (basestring, list))):
+        if not (isinstance(destination_path, str) and
+                isinstance(vm_name, (str, list))):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         if proxy_client is None:
@@ -362,15 +361,15 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             restore_option = {}
         restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
 
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         if copy_precedence:
             restore_option[&#34;copy_precedence_applicable&#34;] = True
 
         if restored_vm_name:
-            if not (isinstance(vm_to_restore, basestring) or
-                    isinstance(restored_vm_name, basestring)):
+            if not (isinstance(vm_to_restore, str) or
+                    isinstance(restored_vm_name, str)):
                 raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
             restore_option[&#39;restore_new_name&#39;] = restored_vm_name
 
@@ -379,7 +378,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
 
         # check mandatory input parameters are correct
         if bool(restore_option):
-            if not (isinstance(destination_path, basestring) and
+            if not (isinstance(destination_path, str) and
                     isinstance(overwrite, bool) and
                     isinstance(power_on, bool) and
                     isinstance(add_to_failover, bool)):
@@ -464,7 +463,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
         if copy_precedence:
             restore_option[&#34;copy_precedence_applicable&#34;] = True
 
-        if vm_to_restore and isinstance(vm_to_restore, basestring):
+        if vm_to_restore and isinstance(vm_to_restore, str):
             vm_to_restore = [vm_to_restore]
 
         # set attr for all the option in restore xml from user inputs
@@ -510,16 +509,16 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                                                    restored VM.
                                                     default: {}
 
-                vcenter_client    (basestring) -- name of the vcenter client
+                vcenter_client    (str) -- name of the vcenter client
                                                   where the VM should be
                                                     restored.
 
-                esx_host          (basestring) -- destination esx host
+                esx_host          (str) -- destination esx host
                                                     restores to the source VM
                                                     esx if this value is not
                                                     specified
 
-                datastore         (basestring) -- datastore where the
+                datastore         (str) -- datastore where the
                                                   restored VM should be located
                                                   restores to the source VM
                                                   datastore if this value is
@@ -534,21 +533,21 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence   (int)        -- copy precedence value
                                                   default: 0
 
-                disk_option       (basestring) -- disk provisioning for the
+                disk_option       (str) -- disk provisioning for the
                                                   restored vm
                                                   Options for input are: &#39;Original&#39;,
                                                   &#39;Thick Lazy Zero&#39;, &#39;Thin&#39;, &#39;Thick Eager Zero&#39;
                                                   default: Original
 
-                transport_mode    (basestring) -- transport mode to be used for
+                transport_mode    (str) -- transport mode to be used for
                                                   the restore.
                                                   Options for input are: &#39;Auto&#39;, &#39;SAN&#39;, &#39;Hot Add&#39;,
                                                   &#39;NBD&#39;, &#39;NBD SSL&#39;
                                                   default: Auto
 
-                proxy_client      (basestring) -- destination proxy client
+                proxy_client      (str) -- destination proxy client
 
-                destination_network (basestring)-- destiantion network to which VM has to be connected
+                destination_network (str)-- destiantion network to which VM has to be connected
 
                 destiantion_os      (base string)- os of source VM
 
@@ -574,8 +573,8 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
         restore_option = {}
 
         # check mandatory input parameters are correct
-        if not (isinstance(vcenter_client, basestring) and
-                isinstance(destination_network, basestring)):
+        if not (isinstance(vcenter_client, str) and
+                isinstance(destination_network, str)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         #getting all dummy objects for new client
@@ -649,14 +648,14 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                                                            restored VM.
                                                            default: {}
 
-                        azure_client    (basestring):      name of the AzureRM client
+                        azure_client    (str):      name of the AzureRM client
                                                            where the VM should be
                                                            restored.
 
-                        resource_group   (basestring):      destination Resource group
+                        resource_group   (str):      destination Resource group
                                                             in the AzureRM
 
-                        storage_account  (basestring):    storage account where the
+                        storage_account  (str):    storage account where the
                                                           restored VM should be located
                                                           in AzureRM
 
@@ -666,7 +665,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                         power_on               (bool):    power on the  restored VM
                                                           default: True
 
-                        instance_size    (basestring):    Instance Size of restored VM
+                        instance_size    (str):    Instance Size of restored VM
 
                         public_ip              (bool):    If True, creates the Public IP of
                                                           restored VM
@@ -676,15 +675,15 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                         copy_precedence         (int):    copy precedence value
                                                           default: 0
 
-                        proxy_client      (basestring):   destination proxy client
+                        proxy_client      (str):   destination proxy client
 
-                        networkDisplayName(basestring):   destination network display name
+                        networkDisplayName(str):   destination network display name
 
-                        networkrsg        (basestring):   destination network display name&#39;s security group
+                        networkrsg        (str):   destination network display name&#39;s security group
 
-                        destsubid         (basestring):   destination subscription id
+                        destsubid         (str):   destination subscription id
 
-                        subnetId          (basestring):   destination subet id
+                        subnetId          (str):   destination subet id
 
 
 
@@ -705,13 +704,13 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
         if restore_option is None:
             restore_option = {}
 
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         if not isinstance(vm_to_restore, list):
             vm_to_restore = [vm_to_restore]
         # check mandatory input parameters are correct
-        if not isinstance(azure_client, basestring):
+        if not isinstance(azure_client, str):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         subclient = self._set_vm_conversion_defaults(azure_client, restore_option)
@@ -774,7 +773,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/hyperv.py#L50-L692" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/hyperv.py#L49-L691" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class HyperVVirtualServerSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient  Base class, representing a
@@ -872,8 +871,8 @@ backupset class, subclient name, subclient id</p></div>
         _disk_restore_option = {}
 
         # check if inputs are correct
-        if not (isinstance(destination_path, basestring) and
-                isinstance(vm_name, (basestring, list))):
+        if not (isinstance(destination_path, str) and
+                isinstance(vm_name, (str, list))):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         if proxy_client is None:
@@ -1036,15 +1035,15 @@ backupset class, subclient name, subclient id</p></div>
             restore_option = {}
         restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
 
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         if copy_precedence:
             restore_option[&#34;copy_precedence_applicable&#34;] = True
 
         if restored_vm_name:
-            if not (isinstance(vm_to_restore, basestring) or
-                    isinstance(restored_vm_name, basestring)):
+            if not (isinstance(vm_to_restore, str) or
+                    isinstance(restored_vm_name, str)):
                 raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
             restore_option[&#39;restore_new_name&#39;] = restored_vm_name
 
@@ -1053,7 +1052,7 @@ backupset class, subclient name, subclient id</p></div>
 
         # check mandatory input parameters are correct
         if bool(restore_option):
-            if not (isinstance(destination_path, basestring) and
+            if not (isinstance(destination_path, str) and
                     isinstance(overwrite, bool) and
                     isinstance(power_on, bool) and
                     isinstance(add_to_failover, bool)):
@@ -1138,7 +1137,7 @@ backupset class, subclient name, subclient id</p></div>
         if copy_precedence:
             restore_option[&#34;copy_precedence_applicable&#34;] = True
 
-        if vm_to_restore and isinstance(vm_to_restore, basestring):
+        if vm_to_restore and isinstance(vm_to_restore, str):
             vm_to_restore = [vm_to_restore]
 
         # set attr for all the option in restore xml from user inputs
@@ -1184,16 +1183,16 @@ backupset class, subclient name, subclient id</p></div>
                                                    restored VM.
                                                     default: {}
 
-                vcenter_client    (basestring) -- name of the vcenter client
+                vcenter_client    (str) -- name of the vcenter client
                                                   where the VM should be
                                                     restored.
 
-                esx_host          (basestring) -- destination esx host
+                esx_host          (str) -- destination esx host
                                                     restores to the source VM
                                                     esx if this value is not
                                                     specified
 
-                datastore         (basestring) -- datastore where the
+                datastore         (str) -- datastore where the
                                                   restored VM should be located
                                                   restores to the source VM
                                                   datastore if this value is
@@ -1208,21 +1207,21 @@ backupset class, subclient name, subclient id</p></div>
                 copy_precedence   (int)        -- copy precedence value
                                                   default: 0
 
-                disk_option       (basestring) -- disk provisioning for the
+                disk_option       (str) -- disk provisioning for the
                                                   restored vm
                                                   Options for input are: &#39;Original&#39;,
                                                   &#39;Thick Lazy Zero&#39;, &#39;Thin&#39;, &#39;Thick Eager Zero&#39;
                                                   default: Original
 
-                transport_mode    (basestring) -- transport mode to be used for
+                transport_mode    (str) -- transport mode to be used for
                                                   the restore.
                                                   Options for input are: &#39;Auto&#39;, &#39;SAN&#39;, &#39;Hot Add&#39;,
                                                   &#39;NBD&#39;, &#39;NBD SSL&#39;
                                                   default: Auto
 
-                proxy_client      (basestring) -- destination proxy client
+                proxy_client      (str) -- destination proxy client
 
-                destination_network (basestring)-- destiantion network to which VM has to be connected
+                destination_network (str)-- destiantion network to which VM has to be connected
 
                 destiantion_os      (base string)- os of source VM
 
@@ -1248,8 +1247,8 @@ backupset class, subclient name, subclient id</p></div>
         restore_option = {}
 
         # check mandatory input parameters are correct
-        if not (isinstance(vcenter_client, basestring) and
-                isinstance(destination_network, basestring)):
+        if not (isinstance(vcenter_client, str) and
+                isinstance(destination_network, str)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         #getting all dummy objects for new client
@@ -1323,14 +1322,14 @@ backupset class, subclient name, subclient id</p></div>
                                                            restored VM.
                                                            default: {}
 
-                        azure_client    (basestring):      name of the AzureRM client
+                        azure_client    (str):      name of the AzureRM client
                                                            where the VM should be
                                                            restored.
 
-                        resource_group   (basestring):      destination Resource group
+                        resource_group   (str):      destination Resource group
                                                             in the AzureRM
 
-                        storage_account  (basestring):    storage account where the
+                        storage_account  (str):    storage account where the
                                                           restored VM should be located
                                                           in AzureRM
 
@@ -1340,7 +1339,7 @@ backupset class, subclient name, subclient id</p></div>
                         power_on               (bool):    power on the  restored VM
                                                           default: True
 
-                        instance_size    (basestring):    Instance Size of restored VM
+                        instance_size    (str):    Instance Size of restored VM
 
                         public_ip              (bool):    If True, creates the Public IP of
                                                           restored VM
@@ -1350,15 +1349,15 @@ backupset class, subclient name, subclient id</p></div>
                         copy_precedence         (int):    copy precedence value
                                                           default: 0
 
-                        proxy_client      (basestring):   destination proxy client
+                        proxy_client      (str):   destination proxy client
 
-                        networkDisplayName(basestring):   destination network display name
+                        networkDisplayName(str):   destination network display name
 
-                        networkrsg        (basestring):   destination network display name&#39;s security group
+                        networkrsg        (str):   destination network display name&#39;s security group
 
-                        destsubid         (basestring):   destination subscription id
+                        destsubid         (str):   destination subscription id
 
-                        subnetId          (basestring):   destination subet id
+                        subnetId          (str):   destination subet id
 
 
 
@@ -1379,13 +1378,13 @@ backupset class, subclient name, subclient id</p></div>
         if restore_option is None:
             restore_option = {}
 
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         if not isinstance(vm_to_restore, list):
             vm_to_restore = [vm_to_restore]
         # check mandatory input parameters are correct
-        if not isinstance(azure_client, basestring):
+        if not isinstance(azure_client, str):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         subclient = self._set_vm_conversion_defaults(azure_client, restore_option)
@@ -1483,7 +1482,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/hyperv.py#L89-L201" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/hyperv.py#L88-L200" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_restore(self,
                  vm_name,
@@ -1542,8 +1541,8 @@ if response is not success
     _disk_restore_option = {}
 
     # check if inputs are correct
-    if not (isinstance(destination_path, basestring) and
-            isinstance(vm_name, (basestring, list))):
+    if not (isinstance(destination_path, str) and
+            isinstance(vm_name, (str, list))):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
     if proxy_client is None:
@@ -1612,14 +1611,14 @@ if response is not success
                                    restored VM.
                                    default: {}
 
-azure_client    (basestring):      name of the AzureRM client
+azure_client    (str):      name of the AzureRM client
                                    where the VM should be
                                    restored.
 
-resource_group   (basestring):      destination Resource group
+resource_group   (str):      destination Resource group
                                     in the AzureRM
 
-storage_account  (basestring):    storage account where the
+storage_account  (str):    storage account where the
                                   restored VM should be located
                                   in AzureRM
 
@@ -1629,7 +1628,7 @@ overwrite              (bool):    overwrite the existing VM
 power_on               (bool):    power on the  restored VM
                                   default: True
 
-instance_size    (basestring):    Instance Size of restored VM
+instance_size    (str):    Instance Size of restored VM
 
 public_ip              (bool):    If True, creates the Public IP of
                                   restored VM
@@ -1639,15 +1638,15 @@ restore_as_managed     (bool):    If True, restore as Managed VM in Azure
 copy_precedence         (int):    copy precedence value
                                   default: 0
 
-proxy_client      (basestring):   destination proxy client
+proxy_client      (str):   destination proxy client
 
-networkDisplayName(basestring):   destination network display name
+networkDisplayName(str):   destination network display name
 
-networkrsg        (basestring):   destination network display name's security group
+networkrsg        (str):   destination network display name's security group
 
-destsubid         (basestring):   destination subscription id
+destsubid         (str):   destination subscription id
 
-subnetId          (basestring):   destination subet id
+subnetId          (str):   destination subet id
 </code></pre>
 <p>Returns:
 object - instance of the Job class for this restore job</p>
@@ -1663,7 +1662,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/hyperv.py#L568-L692" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/hyperv.py#L567-L691" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_azurerm(
         self,
@@ -1694,14 +1693,14 @@ if inputs are not of correct type as per definition</p>
                                                        restored VM.
                                                        default: {}
 
-                    azure_client    (basestring):      name of the AzureRM client
+                    azure_client    (str):      name of the AzureRM client
                                                        where the VM should be
                                                        restored.
 
-                    resource_group   (basestring):      destination Resource group
+                    resource_group   (str):      destination Resource group
                                                         in the AzureRM
 
-                    storage_account  (basestring):    storage account where the
+                    storage_account  (str):    storage account where the
                                                       restored VM should be located
                                                       in AzureRM
 
@@ -1711,7 +1710,7 @@ if inputs are not of correct type as per definition</p>
                     power_on               (bool):    power on the  restored VM
                                                       default: True
 
-                    instance_size    (basestring):    Instance Size of restored VM
+                    instance_size    (str):    Instance Size of restored VM
 
                     public_ip              (bool):    If True, creates the Public IP of
                                                       restored VM
@@ -1721,15 +1720,15 @@ if inputs are not of correct type as per definition</p>
                     copy_precedence         (int):    copy precedence value
                                                       default: 0
 
-                    proxy_client      (basestring):   destination proxy client
+                    proxy_client      (str):   destination proxy client
 
-                    networkDisplayName(basestring):   destination network display name
+                    networkDisplayName(str):   destination network display name
 
-                    networkrsg        (basestring):   destination network display name&#39;s security group
+                    networkrsg        (str):   destination network display name&#39;s security group
 
-                    destsubid         (basestring):   destination subscription id
+                    destsubid         (str):   destination subscription id
 
-                    subnetId          (basestring):   destination subet id
+                    subnetId          (str):   destination subet id
 
 
 
@@ -1750,13 +1749,13 @@ if inputs are not of correct type as per definition</p>
     if restore_option is None:
         restore_option = {}
 
-    if vm_to_restore and not isinstance(vm_to_restore, basestring):
+    if vm_to_restore and not isinstance(vm_to_restore, str):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
     if not isinstance(vm_to_restore, list):
         vm_to_restore = [vm_to_restore]
     # check mandatory input parameters are correct
-    if not isinstance(azure_client, basestring):
+    if not isinstance(azure_client, str):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
     subclient = self._set_vm_conversion_defaults(azure_client, restore_option)
@@ -1804,16 +1803,16 @@ if inputs are not of correct type as per definition</p>
                                    restored VM.
                                     default: {}
 
-vcenter_client    (basestring) -- name of the vcenter client
+vcenter_client    (str) -- name of the vcenter client
                                   where the VM should be
                                     restored.
 
-esx_host          (basestring) -- destination esx host
+esx_host          (str) -- destination esx host
                                     restores to the source VM
                                     esx if this value is not
                                     specified
 
-datastore         (basestring) -- datastore where the
+datastore         (str) -- datastore where the
                                   restored VM should be located
                                   restores to the source VM
                                   datastore if this value is
@@ -1828,21 +1827,21 @@ power_on          (bool)       -- power on the  restored VM
 copy_precedence   (int)        -- copy precedence value
                                   default: 0
 
-disk_option       (basestring) -- disk provisioning for the
+disk_option       (str) -- disk provisioning for the
                                   restored vm
                                   Options for input are: 'Original',
                                   'Thick Lazy Zero', 'Thin', 'Thick Eager Zero'
                                   default: Original
 
-transport_mode    (basestring) -- transport mode to be used for
+transport_mode    (str) -- transport mode to be used for
                                   the restore.
                                   Options for input are: 'Auto', 'SAN', 'Hot Add',
                                   'NBD', 'NBD SSL'
                                   default: Auto
 
-proxy_client      (basestring) -- destination proxy client
+proxy_client      (str) -- destination proxy client
 
-destination_network (basestring)-- destiantion network to which VM has to be connected
+destination_network (str)-- destiantion network to which VM has to be connected
 
 destiantion_os      (base string)- os of source VM
 </code></pre>
@@ -1860,7 +1859,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/hyperv.py#L434-L566" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/hyperv.py#L433-L565" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_vmware(
         self,
@@ -1886,16 +1885,16 @@ if inputs are not of correct type as per definition</p>
                                                restored VM.
                                                 default: {}
 
-            vcenter_client    (basestring) -- name of the vcenter client
+            vcenter_client    (str) -- name of the vcenter client
                                               where the VM should be
                                                 restored.
 
-            esx_host          (basestring) -- destination esx host
+            esx_host          (str) -- destination esx host
                                                 restores to the source VM
                                                 esx if this value is not
                                                 specified
 
-            datastore         (basestring) -- datastore where the
+            datastore         (str) -- datastore where the
                                               restored VM should be located
                                               restores to the source VM
                                               datastore if this value is
@@ -1910,21 +1909,21 @@ if inputs are not of correct type as per definition</p>
             copy_precedence   (int)        -- copy precedence value
                                               default: 0
 
-            disk_option       (basestring) -- disk provisioning for the
+            disk_option       (str) -- disk provisioning for the
                                               restored vm
                                               Options for input are: &#39;Original&#39;,
                                               &#39;Thick Lazy Zero&#39;, &#39;Thin&#39;, &#39;Thick Eager Zero&#39;
                                               default: Original
 
-            transport_mode    (basestring) -- transport mode to be used for
+            transport_mode    (str) -- transport mode to be used for
                                               the restore.
                                               Options for input are: &#39;Auto&#39;, &#39;SAN&#39;, &#39;Hot Add&#39;,
                                               &#39;NBD&#39;, &#39;NBD SSL&#39;
                                               default: Auto
 
-            proxy_client      (basestring) -- destination proxy client
+            proxy_client      (str) -- destination proxy client
 
-            destination_network (basestring)-- destiantion network to which VM has to be connected
+            destination_network (str)-- destiantion network to which VM has to be connected
 
             destiantion_os      (base string)- os of source VM
 
@@ -1950,8 +1949,8 @@ if inputs are not of correct type as per definition</p>
     restore_option = {}
 
     # check mandatory input parameters are correct
-    if not (isinstance(vcenter_client, basestring) and
-            isinstance(destination_network, basestring)):
+    if not (isinstance(vcenter_client, str) and
+            isinstance(destination_network, str)):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
     #getting all dummy objects for new client
@@ -2052,7 +2051,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/hyperv.py#L356-L432" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/hyperv.py#L355-L431" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(self,
                              vm_to_restore=None,
@@ -2110,7 +2109,7 @@ if response is not success
     if copy_precedence:
         restore_option[&#34;copy_precedence_applicable&#34;] = True
 
-    if vm_to_restore and isinstance(vm_to_restore, basestring):
+    if vm_to_restore and isinstance(vm_to_restore, str):
         vm_to_restore = [vm_to_restore]
 
     # set attr for all the option in restore xml from user inputs
@@ -2231,7 +2230,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/hyperv.py#L203-L354" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/hyperv.py#L202-L353" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(self,
                                  destination_client=None,
@@ -2340,15 +2339,15 @@ Raises:
         restore_option = {}
     restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
 
-    if vm_to_restore and not isinstance(vm_to_restore, basestring):
+    if vm_to_restore and not isinstance(vm_to_restore, str):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
     if copy_precedence:
         restore_option[&#34;copy_precedence_applicable&#34;] = True
 
     if restored_vm_name:
-        if not (isinstance(vm_to_restore, basestring) or
-                isinstance(restored_vm_name, basestring)):
+        if not (isinstance(vm_to_restore, str) or
+                isinstance(restored_vm_name, str)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
         restore_option[&#39;restore_new_name&#39;] = restored_vm_name
 
@@ -2357,7 +2356,7 @@ Raises:
 
     # check mandatory input parameters are correct
     if bool(restore_option):
-        if not (isinstance(destination_path, basestring) and
+        if not (isinstance(destination_path, str) and
                 isinstance(overwrite, bool) and
                 isinstance(power_on, bool) and
                 isinstance(add_to_failover, bool)):

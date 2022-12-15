@@ -48,7 +48,7 @@ user to the same location</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L1-L220" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L1-L227" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -137,7 +137,7 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence     (int)      --  copy precedence value
                                                    default: 0
 
-                proxy_client          (basestring)  --  proxy client to be used for restore
+                proxy_client          (str)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
                 **kwargs                         : Arbitrary keyword arguments Properties as of
@@ -220,6 +220,9 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
                     eg:
                     v2_details          (dict)       -- details for v2 subclient
                                                     eg: check clients.vmclient.VMClient._child_job_subclient_details
+                    destination_network (string)     -- Name of the destination network
+                    networks_nic        (string)     -- Link for the destination network
+                    subnetwork_nic      (string)    -- Link for the destination subnetwork
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -235,9 +238,13 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
                     if response is not success
 
         &#34;&#34;&#34;
-        if not restore_option:
-            restore_option = {}
-        restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
+        restore_option = {}
+        extra_options = [&#39;destination_network&#39;, &#39;networks_nic&#39;, &#39;subnetwork_nic&#39;]
+        for key in extra_options:
+            if key in kwargs:
+                restore_option[key] = kwargs[key]
+            else:
+                restore_option[key] = None
 
         if vm_to_restore:
             vm_to_restore = [vm_to_restore]
@@ -298,7 +305,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L46-L220" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L46-L227" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient Base class.
@@ -342,7 +349,7 @@ backupset class, subclient name, subclient id</p></div>
                 copy_precedence     (int)      --  copy precedence value
                                                    default: 0
 
-                proxy_client          (basestring)  --  proxy client to be used for restore
+                proxy_client          (str)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
                 **kwargs                         : Arbitrary keyword arguments Properties as of
@@ -425,6 +432,9 @@ backupset class, subclient name, subclient id</p></div>
                     eg:
                     v2_details          (dict)       -- details for v2 subclient
                                                     eg: check clients.vmclient.VMClient._child_job_subclient_details
+                    destination_network (string)     -- Name of the destination network
+                    networks_nic        (string)     -- Link for the destination network
+                    subnetwork_nic      (string)    -- Link for the destination subnetwork
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -440,9 +450,13 @@ backupset class, subclient name, subclient id</p></div>
                     if response is not success
 
         &#34;&#34;&#34;
-        if not restore_option:
-            restore_option = {}
-        restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
+        restore_option = {}
+        extra_options = [&#39;destination_network&#39;, &#39;networks_nic&#39;, &#39;subnetwork_nic&#39;]
+        for key in extra_options:
+            if key in kwargs:
+                restore_option[key] = kwargs[key]
+            else:
+                restore_option[key] = None
 
         if vm_to_restore:
             vm_to_restore = [vm_to_restore]
@@ -513,7 +527,7 @@ default: True</p>
 copy precedence value
 default: 0</p>
 <p>proxy_client
-(basestring)
+(str)
 &ndash;
 proxy client to be used for restore
 default: proxy added in subclient</p>
@@ -539,7 +553,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L63-L126" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L63-L126" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(
         self,
@@ -566,7 +580,7 @@ if response is not success
             copy_precedence     (int)      --  copy precedence value
                                                default: 0
 
-            proxy_client          (basestring)  --  proxy client to be used for restore
+            proxy_client          (str)  --  proxy client to be used for restore
                                                     default: proxy added in subclient
 
             **kwargs                         : Arbitrary keyword arguments Properties as of
@@ -648,7 +662,15 @@ eg:
 v2_details
 (dict)
 &ndash; details for v2 subclient
-eg: check clients.vmclient.VMClient._child_job_subclient_details</p>
+eg: check clients.vmclient.VMClient._child_job_subclient_details
+destination_network (string)
+&ndash; Name of the destination network
+networks_nic
+(string)
+&ndash; Link for the destination network
+subnetwork_nic
+(string)
+&ndash; Link for the destination subnetwork</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
 <h2 id="raises">Raises</h2>
@@ -663,7 +685,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L128-L220" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L128-L227" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(
         self,
@@ -708,6 +730,9 @@ if response is not success
                 eg:
                 v2_details          (dict)       -- details for v2 subclient
                                                 eg: check clients.vmclient.VMClient._child_job_subclient_details
+                destination_network (string)     -- Name of the destination network
+                networks_nic        (string)     -- Link for the destination network
+                subnetwork_nic      (string)    -- Link for the destination subnetwork
 
         Returns:
             object - instance of the Job class for this restore job
@@ -723,9 +748,13 @@ if response is not success
                 if response is not success
 
     &#34;&#34;&#34;
-    if not restore_option:
-        restore_option = {}
-    restore_option[&#34;v2_details&#34;] = kwargs.get(&#34;v2_details&#34;, None)
+    restore_option = {}
+    extra_options = [&#39;destination_network&#39;, &#39;networks_nic&#39;, &#39;subnetwork_nic&#39;]
+    for key in extra_options:
+        if key in kwargs:
+            restore_option[key] = kwargs[key]
+        else:
+            restore_option[key] = None
 
     if vm_to_restore:
         vm_to_restore = [vm_to_restore]

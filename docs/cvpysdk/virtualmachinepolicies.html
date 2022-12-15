@@ -262,7 +262,7 @@ instance</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/virtualmachinepolicies.py#L1-L1641" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/virtualmachinepolicies.py#L1-L1639" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -472,8 +472,6 @@ LiveMountPolicy:
 &#34;&#34;&#34;
 
 from __future__ import unicode_literals
-
-from past.builtins import basestring
 
 from .exception import SDKException
 from .job import Job
@@ -950,7 +948,7 @@ class VirtualMachinePolicies(object):
                 SDKException:
                     if type of the vm policy name argument is not string
         &#34;&#34;&#34;
-        if not isinstance(vm_policy_name, basestring):
+        if not isinstance(vm_policy_name, str):
             raise SDKException(&#39;Virtual Machine&#39;, &#39;101&#39;)
 
         return (self._vm_policies and
@@ -970,7 +968,7 @@ class VirtualMachinePolicies(object):
                     if type of the virtual machine policy name argument is not string
                     if no virtual machine policy exists with the given name
         &#34;&#34;&#34;
-        if not isinstance(vm_policy_name, basestring):
+        if not isinstance(vm_policy_name, str):
             raise SDKException(&#39;Virtual Machine&#39;, &#39;101&#39;)
 
         vm_policy_name = vm_policy_name.lower()
@@ -1076,8 +1074,8 @@ class VirtualMachinePolicies(object):
                             &#39;restore from backup&#39;: 13}
         self.refresh()
         if (
-                not isinstance(vm_policy_name, basestring)
-                or not isinstance(vclient_name, basestring)
+                not isinstance(vm_policy_name, str)
+                or not isinstance(vclient_name, str)
                 or not isinstance(vm_policy_options, (dict, type(None)))
         ):
             raise SDKException(&#39;Virtual Machine&#39;, &#39;101&#39;)
@@ -1142,7 +1140,7 @@ class VirtualMachinePolicies(object):
 
                     if response is not success
         &#34;&#34;&#34;
-        if not isinstance(vm_policy_name, basestring):
+        if not isinstance(vm_policy_name, str):
             raise SDKException(&#39;Virtual Machine&#39;, &#39;101&#39;)
 
         if self.has_policy(vm_policy_name):
@@ -1366,7 +1364,7 @@ class VirtualMachinePolicy(object):
                     if a vm policy already exists by the desired vm policy name
         &#34;&#34;&#34;
         vm_policies_object = VirtualMachinePolicies(self._commcell_object)
-        if not isinstance(desired_vm_policy_name, basestring):
+        if not isinstance(desired_vm_policy_name, str):
             raise SDKException(&#39;Virtual Machine&#39;, &#39;101&#39;)
         elif vm_policies_object.has_policy(desired_vm_policy_name):
             err_msg = &#39;Policy &#34;{0}&#34; already exists&#39;.format(desired_vm_policy_name)
@@ -1859,7 +1857,7 @@ class LiveMountPolicy(VirtualMachinePolicy):
                                                             mount job
         &#34;&#34;&#34;
         # check if client name is string
-        if not isinstance(client_vm_name, basestring):
+        if not isinstance(client_vm_name, str):
             raise SDKException(&#39;Virtual Machine&#39;, &#39;101&#39;)
         # check if client is a valid hidden client
         elif not self._is_hidden_client(client_vm_name):
@@ -1947,7 +1945,7 @@ id of the Live Mount policy, if available</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/virtualmachinepolicies.py#L1132-L1641" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/virtualmachinepolicies.py#L1130-L1639" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class LiveMountPolicy(VirtualMachinePolicy):
     &#34;&#34;&#34;Derived class from VirtualMachinePolicy base class for representing a single Live Mount
@@ -2413,7 +2411,7 @@ id of the Live Mount policy, if available</p>
                                                             mount job
         &#34;&#34;&#34;
         # check if client name is string
-        if not isinstance(client_vm_name, basestring):
+        if not isinstance(client_vm_name, str):
             raise SDKException(&#39;Virtual Machine&#39;, &#39;101&#39;)
         # check if client is a valid hidden client
         elif not self._is_hidden_client(client_vm_name):
@@ -2472,7 +2470,7 @@ id of the Live Mount policy, if available</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/virtualmachinepolicies.py#L1638-L1641" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/virtualmachinepolicies.py#L1636-L1639" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def live_mounted_vm_name(self):
@@ -2552,7 +2550,7 @@ mount job</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/virtualmachinepolicies.py#L1549-L1636" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/virtualmachinepolicies.py#L1547-L1634" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def live_mount(
         self,
@@ -2601,7 +2599,7 @@ mount job</p></div>
                                                         mount job
     &#34;&#34;&#34;
     # check if client name is string
-    if not isinstance(client_vm_name, basestring):
+    if not isinstance(client_vm_name, str):
         raise SDKException(&#39;Virtual Machine&#39;, &#39;101&#39;)
     # check if client is a valid hidden client
     elif not self._is_hidden_client(client_vm_name):
@@ -2664,7 +2662,7 @@ if no response is found</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/virtualmachinepolicies.py#L1524-L1547" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/virtualmachinepolicies.py#L1522-L1545" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def view_active_mounts(self):
     &#34;&#34;&#34;View active mounts for this Live Mount policy instance
@@ -2725,7 +2723,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/virtualmachinepolicies.py#L216-L916" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/virtualmachinepolicies.py#L214-L914" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VirtualMachinePolicies(object):
     &#34;&#34;&#34;Class for representing all the Virtual Machine Policies associated with the Commcell.&#34;&#34;&#34;
@@ -3198,7 +3196,7 @@ instance of the Commcell class</p>
                 SDKException:
                     if type of the vm policy name argument is not string
         &#34;&#34;&#34;
-        if not isinstance(vm_policy_name, basestring):
+        if not isinstance(vm_policy_name, str):
             raise SDKException(&#39;Virtual Machine&#39;, &#39;101&#39;)
 
         return (self._vm_policies and
@@ -3218,7 +3216,7 @@ instance of the Commcell class</p>
                     if type of the virtual machine policy name argument is not string
                     if no virtual machine policy exists with the given name
         &#34;&#34;&#34;
-        if not isinstance(vm_policy_name, basestring):
+        if not isinstance(vm_policy_name, str):
             raise SDKException(&#39;Virtual Machine&#39;, &#39;101&#39;)
 
         vm_policy_name = vm_policy_name.lower()
@@ -3324,8 +3322,8 @@ instance of the Commcell class</p>
                             &#39;restore from backup&#39;: 13}
         self.refresh()
         if (
-                not isinstance(vm_policy_name, basestring)
-                or not isinstance(vclient_name, basestring)
+                not isinstance(vm_policy_name, str)
+                or not isinstance(vclient_name, str)
                 or not isinstance(vm_policy_options, (dict, type(None)))
         ):
             raise SDKException(&#39;Virtual Machine&#39;, &#39;101&#39;)
@@ -3390,7 +3388,7 @@ instance of the Commcell class</p>
 
                     if response is not success
         &#34;&#34;&#34;
-        if not isinstance(vm_policy_name, basestring):
+        if not isinstance(vm_policy_name, str):
             raise SDKException(&#39;Virtual Machine&#39;, &#39;101&#39;)
 
         if self.has_policy(vm_policy_name):
@@ -3518,7 +3516,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/virtualmachinepolicies.py#L725-L861" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/virtualmachinepolicies.py#L723-L859" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(
         self,
@@ -3608,8 +3606,8 @@ if response is not success
                         &#39;restore from backup&#39;: 13}
     self.refresh()
     if (
-            not isinstance(vm_policy_name, basestring)
-            or not isinstance(vclient_name, basestring)
+            not isinstance(vm_policy_name, str)
+            or not isinstance(vclient_name, str)
             or not isinstance(vm_policy_options, (dict, type(None)))
     ):
         raise SDKException(&#39;Virtual Machine&#39;, &#39;101&#39;)
@@ -3680,7 +3678,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/virtualmachinepolicies.py#L863-L912" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/virtualmachinepolicies.py#L861-L910" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, vm_policy_name):
     &#34;&#34;&#34;Deletes the specified virtual machine policy from the commcell.
@@ -3698,7 +3696,7 @@ if response is not success
 
                 if response is not success
     &#34;&#34;&#34;
-    if not isinstance(vm_policy_name, basestring):
+    if not isinstance(vm_policy_name, str):
         raise SDKException(&#39;Virtual Machine&#39;, &#39;101&#39;)
 
     if self.has_policy(vm_policy_name):
@@ -3753,7 +3751,7 @@ if no virtual machine policy exists with the given name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/virtualmachinepolicies.py#L693-L723" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/virtualmachinepolicies.py#L691-L721" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, vm_policy_name):
     &#34;&#34;&#34;Returns a VirtualMachinePolicy object of the specified virtual machine policy name.
@@ -3769,7 +3767,7 @@ if no virtual machine policy exists with the given name</p></div>
                 if type of the virtual machine policy name argument is not string
                 if no virtual machine policy exists with the given name
     &#34;&#34;&#34;
-    if not isinstance(vm_policy_name, basestring):
+    if not isinstance(vm_policy_name, str):
         raise SDKException(&#39;Virtual Machine&#39;, &#39;101&#39;)
 
     vm_policy_name = vm_policy_name.lower()
@@ -3805,7 +3803,7 @@ if type of the vm policy name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/virtualmachinepolicies.py#L674-L691" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/virtualmachinepolicies.py#L672-L689" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_policy(self, vm_policy_name):
     &#34;&#34;&#34;Checks if a Virtual Machine policy exists with the given name
@@ -3820,7 +3818,7 @@ if type of the vm policy name argument is not string</p></div>
             SDKException:
                 if type of the vm policy name argument is not string
     &#34;&#34;&#34;
-    if not isinstance(vm_policy_name, basestring):
+    if not isinstance(vm_policy_name, str):
         raise SDKException(&#39;Virtual Machine&#39;, &#39;101&#39;)
 
     return (self._vm_policies and
@@ -3835,7 +3833,7 @@ if type of the vm policy name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/virtualmachinepolicies.py#L914-L916" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/virtualmachinepolicies.py#L912-L914" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the Virtual Machine policies.&#34;&#34;&#34;
@@ -3875,7 +3873,7 @@ vm policy id if available (optional)</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/virtualmachinepolicies.py#L919-L1129" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/virtualmachinepolicies.py#L917-L1127" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VirtualMachinePolicy(object):
     &#34;&#34;&#34;Class for representing a single Virtual Machine Policy. Contains method definitions for
@@ -4061,7 +4059,7 @@ vm policy id if available (optional)</p>
                     if a vm policy already exists by the desired vm policy name
         &#34;&#34;&#34;
         vm_policies_object = VirtualMachinePolicies(self._commcell_object)
-        if not isinstance(desired_vm_policy_name, basestring):
+        if not isinstance(desired_vm_policy_name, str):
             raise SDKException(&#39;Virtual Machine&#39;, &#39;101&#39;)
         elif vm_policies_object.has_policy(desired_vm_policy_name):
             err_msg = &#39;Policy &#34;{0}&#34; already exists&#39;.format(desired_vm_policy_name)
@@ -4101,7 +4099,7 @@ vm policy id if available (optional)</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/virtualmachinepolicies.py#L1047-L1050" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/virtualmachinepolicies.py#L1045-L1048" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_policy_id(self):
@@ -4115,7 +4113,7 @@ def vm_policy_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/virtualmachinepolicies.py#L1042-L1045" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/virtualmachinepolicies.py#L1040-L1043" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_policy_name(self):
@@ -4129,7 +4127,7 @@ def vm_policy_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/virtualmachinepolicies.py#L1052-L1055" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/virtualmachinepolicies.py#L1050-L1053" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_policy_type_id(self):
@@ -4163,7 +4161,7 @@ if type of the desired vm policy name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/virtualmachinepolicies.py#L1085-L1119" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/virtualmachinepolicies.py#L1083-L1117" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def clone(self, desired_vm_policy_name):
     &#34;&#34;&#34;
@@ -4183,7 +4181,7 @@ if type of the desired vm policy name argument is not string</p>
                 if a vm policy already exists by the desired vm policy name
     &#34;&#34;&#34;
     vm_policies_object = VirtualMachinePolicies(self._commcell_object)
-    if not isinstance(desired_vm_policy_name, basestring):
+    if not isinstance(desired_vm_policy_name, str):
         raise SDKException(&#39;Virtual Machine&#39;, &#39;101&#39;)
     elif vm_policies_object.has_policy(desired_vm_policy_name):
         err_msg = &#39;Policy &#34;{0}&#34; already exists&#39;.format(desired_vm_policy_name)
@@ -4213,7 +4211,7 @@ if vm policy is already disabled</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/virtualmachinepolicies.py#L1057-L1069" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/virtualmachinepolicies.py#L1055-L1067" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable(self):
     &#34;&#34;&#34;Disables a virtual machine policy if it is enabled.
@@ -4241,7 +4239,7 @@ if vm policy is already enabled</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/virtualmachinepolicies.py#L1071-L1083" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/virtualmachinepolicies.py#L1069-L1081" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable(self):
     &#34;&#34;&#34;Enables a virtual machine policy if it is disabled.
@@ -4266,7 +4264,7 @@ if vm policy is already enabled</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/virtualmachinepolicies.py#L1123-L1125" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/virtualmachinepolicies.py#L1121-L1123" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def properties(self):
     &#34;&#34;&#34;Returns the virtual machine properties&#34;&#34;&#34;
@@ -4281,7 +4279,7 @@ if vm policy is already enabled</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/virtualmachinepolicies.py#L1127-L1129" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/virtualmachinepolicies.py#L1125-L1127" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the Virtual Machine policy properties.&#34;&#34;&#34;

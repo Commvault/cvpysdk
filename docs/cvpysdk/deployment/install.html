@@ -38,7 +38,7 @@ install_software                 --  Installs the features selected on the machi
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deployment/install.py#L1-L618" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/install.py#L1-L637" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -212,9 +212,9 @@ class Install(object):
         if username:
             request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][&#34;clientAuthForJob&#34;] \
                 = {
-                    &#34;password&#34;: password,
-                    &#34;userName&#34;: username
-                }
+                &#34;password&#34;: password,
+                &#34;userName&#34;: username
+            }
 
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
@@ -451,6 +451,9 @@ class Install(object):
                                     &#34;db2RetrievePath&#34;: &#34;/opt/Retrieve/&#34;,
                                     &#34;db2AuditErrorPath&#34;: &#34;/opt/Audit/&#34;
                             }
+            
+            index_cache_location (str) - Set index cache location for MA package
+            Ex: index_cache_location = &#34;/opt/IndexCache/&#34;
 
         Returns:
                 object - instance of the Job class for this install_software job
@@ -490,10 +493,13 @@ class Install(object):
 
         &#34;&#34;&#34;
         db2_install = False
+        ma_install = False
         if windows_features:
             os_type = 0
             if WindowsDownloadFeatures.DB2_AGENT.value in windows_features:
                 db2_install = True
+            if WindowsDownloadFeatures.MEDIA_AGENT.value in windows_features:
+                ma_install = True
             install_options = [{&#39;osType&#39;: &#39;Windows&#39;, &#39;ComponentId&#39;: feature_id}
                                for feature_id in windows_features]
 
@@ -501,7 +507,8 @@ class Install(object):
             os_type = 1
             if UnixDownloadFeatures.DB2_AGENT.value in unix_features:
                 db2_install = True
-
+            if UnixDownloadFeatures.MEDIA_AGENT.value in unix_features:
+                ma_install = True
             install_options = [{&#39;osType&#39;: &#39;Unix&#39;, &#39;ComponentId&#39;: feature_id}
                                for feature_id in unix_features]
 
@@ -533,6 +540,7 @@ class Install(object):
 
         install_flags = kwargs.get(&#39;install_flags&#39;)
         db2_logs = kwargs.get(&#39;db2_logs_location&#39;, {})
+        index_cache_location = kwargs.get(&#39;index_cache_location&#39;, None)
 
         request_json = {
             &#34;taskInfo&#34;: {
@@ -570,7 +578,8 @@ class Install(object):
                                             &#34;allowMultipleInstances&#34;: True,
                                             &#34;restoreOnlyAgents&#34;: False,
                                             &#34;killBrowserProcesses&#34;: True,
-                                            &#34;install32Base&#34;: install_flags.get(&#39;install32Base&#39;, False) if install_flags else False,
+                                            &#34;install32Base&#34;: install_flags.get(&#39;install32Base&#39;,
+                                                                               False) if install_flags else False,
                                             &#34;disableOSFirewall&#34;: False,
                                             &#34;stopOracleServices&#34;: False,
                                             &#34;skipClientsOfCS&#34;: False,
@@ -578,7 +587,8 @@ class Install(object):
                                             &#34;ignoreJobsRunning&#34;: False,
                                             &#34;forceReboot&#34;: False,
                                             &#34;overrideClientInfo&#34;: True,
-                                            &#34;preferredIPFamily&#34;: install_flags.get(&#39;preferredIPFamily&#39;, 1) if install_flags else 1,
+                                            &#34;preferredIPFamily&#34;: install_flags.get(&#39;preferredIPFamily&#39;,
+                                                                                   1) if install_flags else 1,
                                             &#34;firewallInstall&#34;: {
                                                 &#34;enableFirewallConfig&#34;: False,
                                                 &#34;firewallConnectionType&#34;: 0,
@@ -642,6 +652,15 @@ class Install(object):
             request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][&#34;installerOption&#34;][
                 &#34;clientComposition&#34;][0][&#34;components&#34;][&#34;db2&#34;] = db2_logs
 
+        if ma_install and index_cache_location:
+            index_cache_dict = {
+                &#34;indexCacheDirectory&#34;: {
+                    &#34;path&#34;: index_cache_location
+                }
+            }
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][&#34;installerOption&#34;][
+                &#34;clientComposition&#34;][0][&#34;components&#34;][&#34;mediaAgent&#34;] = index_cache_dict
+
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
         )
@@ -685,7 +704,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deployment/install.py#L41-L618" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/install.py#L41-L637" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Install(object):
     &#34;&#34;&#34;&#34;class for installing software packages&#34;&#34;&#34;
@@ -819,9 +838,9 @@ instance of the Commcell class</p>
         if username:
             request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][&#34;clientAuthForJob&#34;] \
                 = {
-                    &#34;password&#34;: password,
-                    &#34;userName&#34;: username
-                }
+                &#34;password&#34;: password,
+                &#34;userName&#34;: username
+            }
 
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
@@ -1058,6 +1077,9 @@ instance of the Commcell class</p>
                                     &#34;db2RetrievePath&#34;: &#34;/opt/Retrieve/&#34;,
                                     &#34;db2AuditErrorPath&#34;: &#34;/opt/Audit/&#34;
                             }
+            
+            index_cache_location (str) - Set index cache location for MA package
+            Ex: index_cache_location = &#34;/opt/IndexCache/&#34;
 
         Returns:
                 object - instance of the Job class for this install_software job
@@ -1097,10 +1119,13 @@ instance of the Commcell class</p>
 
         &#34;&#34;&#34;
         db2_install = False
+        ma_install = False
         if windows_features:
             os_type = 0
             if WindowsDownloadFeatures.DB2_AGENT.value in windows_features:
                 db2_install = True
+            if WindowsDownloadFeatures.MEDIA_AGENT.value in windows_features:
+                ma_install = True
             install_options = [{&#39;osType&#39;: &#39;Windows&#39;, &#39;ComponentId&#39;: feature_id}
                                for feature_id in windows_features]
 
@@ -1108,7 +1133,8 @@ instance of the Commcell class</p>
             os_type = 1
             if UnixDownloadFeatures.DB2_AGENT.value in unix_features:
                 db2_install = True
-
+            if UnixDownloadFeatures.MEDIA_AGENT.value in unix_features:
+                ma_install = True
             install_options = [{&#39;osType&#39;: &#39;Unix&#39;, &#39;ComponentId&#39;: feature_id}
                                for feature_id in unix_features]
 
@@ -1140,6 +1166,7 @@ instance of the Commcell class</p>
 
         install_flags = kwargs.get(&#39;install_flags&#39;)
         db2_logs = kwargs.get(&#39;db2_logs_location&#39;, {})
+        index_cache_location = kwargs.get(&#39;index_cache_location&#39;, None)
 
         request_json = {
             &#34;taskInfo&#34;: {
@@ -1177,7 +1204,8 @@ instance of the Commcell class</p>
                                             &#34;allowMultipleInstances&#34;: True,
                                             &#34;restoreOnlyAgents&#34;: False,
                                             &#34;killBrowserProcesses&#34;: True,
-                                            &#34;install32Base&#34;: install_flags.get(&#39;install32Base&#39;, False) if install_flags else False,
+                                            &#34;install32Base&#34;: install_flags.get(&#39;install32Base&#39;,
+                                                                               False) if install_flags else False,
                                             &#34;disableOSFirewall&#34;: False,
                                             &#34;stopOracleServices&#34;: False,
                                             &#34;skipClientsOfCS&#34;: False,
@@ -1185,7 +1213,8 @@ instance of the Commcell class</p>
                                             &#34;ignoreJobsRunning&#34;: False,
                                             &#34;forceReboot&#34;: False,
                                             &#34;overrideClientInfo&#34;: True,
-                                            &#34;preferredIPFamily&#34;: install_flags.get(&#39;preferredIPFamily&#39;, 1) if install_flags else 1,
+                                            &#34;preferredIPFamily&#34;: install_flags.get(&#39;preferredIPFamily&#39;,
+                                                                                   1) if install_flags else 1,
                                             &#34;firewallInstall&#34;: {
                                                 &#34;enableFirewallConfig&#34;: False,
                                                 &#34;firewallConnectionType&#34;: 0,
@@ -1248,6 +1277,15 @@ instance of the Commcell class</p>
         if db2_install and db2_logs:
             request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][&#34;installerOption&#34;][
                 &#34;clientComposition&#34;][0][&#34;components&#34;][&#34;db2&#34;] = db2_logs
+
+        if ma_install and index_cache_location:
+            index_cache_dict = {
+                &#34;indexCacheDirectory&#34;: {
+                    &#34;path&#34;: index_cache_location
+                }
+            }
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][&#34;installerOption&#34;][
+                &#34;clientComposition&#34;][0][&#34;components&#34;][&#34;mediaAgent&#34;] = index_cache_dict
 
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
@@ -1332,6 +1370,9 @@ Ex : install_flags = {"preferredIPFamily":2, "install32Base":True}</p>
 "db2RetrievePath": "/opt/Retrieve/",
 "db2AuditErrorPath": "/opt/Audit/"
 }</dd>
+<dt>index_cache_location (str) - Set index cache location for MA package</dt>
+<dt><strong><code>Ex</code></strong></dt>
+<dd>index_cache_location = "/opt/IndexCache/"</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this install_software job</p>
@@ -1383,7 +1424,7 @@ not both
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deployment/install.py#L343-L618" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/install.py#L343-L637" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def install_software(
         self,
@@ -1454,6 +1495,9 @@ not both
                                 &#34;db2RetrievePath&#34;: &#34;/opt/Retrieve/&#34;,
                                 &#34;db2AuditErrorPath&#34;: &#34;/opt/Audit/&#34;
                         }
+        
+        index_cache_location (str) - Set index cache location for MA package
+        Ex: index_cache_location = &#34;/opt/IndexCache/&#34;
 
     Returns:
             object - instance of the Job class for this install_software job
@@ -1493,10 +1537,13 @@ not both
 
     &#34;&#34;&#34;
     db2_install = False
+    ma_install = False
     if windows_features:
         os_type = 0
         if WindowsDownloadFeatures.DB2_AGENT.value in windows_features:
             db2_install = True
+        if WindowsDownloadFeatures.MEDIA_AGENT.value in windows_features:
+            ma_install = True
         install_options = [{&#39;osType&#39;: &#39;Windows&#39;, &#39;ComponentId&#39;: feature_id}
                            for feature_id in windows_features]
 
@@ -1504,7 +1551,8 @@ not both
         os_type = 1
         if UnixDownloadFeatures.DB2_AGENT.value in unix_features:
             db2_install = True
-
+        if UnixDownloadFeatures.MEDIA_AGENT.value in unix_features:
+            ma_install = True
         install_options = [{&#39;osType&#39;: &#39;Unix&#39;, &#39;ComponentId&#39;: feature_id}
                            for feature_id in unix_features]
 
@@ -1536,6 +1584,7 @@ not both
 
     install_flags = kwargs.get(&#39;install_flags&#39;)
     db2_logs = kwargs.get(&#39;db2_logs_location&#39;, {})
+    index_cache_location = kwargs.get(&#39;index_cache_location&#39;, None)
 
     request_json = {
         &#34;taskInfo&#34;: {
@@ -1573,7 +1622,8 @@ not both
                                         &#34;allowMultipleInstances&#34;: True,
                                         &#34;restoreOnlyAgents&#34;: False,
                                         &#34;killBrowserProcesses&#34;: True,
-                                        &#34;install32Base&#34;: install_flags.get(&#39;install32Base&#39;, False) if install_flags else False,
+                                        &#34;install32Base&#34;: install_flags.get(&#39;install32Base&#39;,
+                                                                           False) if install_flags else False,
                                         &#34;disableOSFirewall&#34;: False,
                                         &#34;stopOracleServices&#34;: False,
                                         &#34;skipClientsOfCS&#34;: False,
@@ -1581,7 +1631,8 @@ not both
                                         &#34;ignoreJobsRunning&#34;: False,
                                         &#34;forceReboot&#34;: False,
                                         &#34;overrideClientInfo&#34;: True,
-                                        &#34;preferredIPFamily&#34;: install_flags.get(&#39;preferredIPFamily&#39;, 1) if install_flags else 1,
+                                        &#34;preferredIPFamily&#34;: install_flags.get(&#39;preferredIPFamily&#39;,
+                                                                               1) if install_flags else 1,
                                         &#34;firewallInstall&#34;: {
                                             &#34;enableFirewallConfig&#34;: False,
                                             &#34;firewallConnectionType&#34;: 0,
@@ -1644,6 +1695,15 @@ not both
     if db2_install and db2_logs:
         request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][&#34;installerOption&#34;][
             &#34;clientComposition&#34;][0][&#34;components&#34;][&#34;db2&#34;] = db2_logs
+
+    if ma_install and index_cache_location:
+        index_cache_dict = {
+            &#34;indexCacheDirectory&#34;: {
+                &#34;path&#34;: index_cache_location
+            }
+        }
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][&#34;installerOption&#34;][
+            &#34;clientComposition&#34;][0][&#34;components&#34;][&#34;mediaAgent&#34;] = index_cache_dict
 
     flag, response = self._cvpysdk_object.make_request(
         &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
@@ -1711,7 +1771,7 @@ if another download job is already running
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deployment/install.py#L194-L341" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/install.py#L194-L341" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def push_servicepack_and_hotfix(
         self,
@@ -1905,7 +1965,7 @@ client computer will be repaired</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deployment/install.py#L59-L192" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/install.py#L59-L192" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def repair_software(self,
                     client=None,
@@ -2021,9 +2081,9 @@ client computer will be repaired</p>
     if username:
         request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][&#34;clientAuthForJob&#34;] \
             = {
-                &#34;password&#34;: password,
-                &#34;userName&#34;: username
-            }
+            &#34;password&#34;: password,
+            &#34;userName&#34;: username
+        }
 
     flag, response = self._cvpysdk_object.make_request(
         &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json

@@ -61,7 +61,7 @@ proxy passing explicit credentials of destination cloud</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/cloudapps/cloud_storage_subclient.py#L1-L362" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/cloudapps/cloud_storage_subclient.py#L1-L378" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -248,7 +248,9 @@ class CloudStorageSubclient(CloudAppsSubclient):
             destination_path,
             overwrite=True,
             copy_precedence=None,
-            no_of_streams=2):
+            no_of_streams=2,
+            **kwargs):
+
         &#34;&#34;&#34; Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
 
@@ -275,6 +277,19 @@ class CloudStorageSubclient(CloudAppsSubclient):
                 no_of_streams           (int)   --  number of streams for restore
                                                     default : 2
 
+                kwargs                  (dict)  -- dict of keyword arguments as follows
+
+                    from_time           (str)   --  time to retore the contents after
+                        format: YYYY-MM-DD HH:MM:SS
+                        default: None
+
+                    to_time             (str)   --  time to retore the contents before
+                        format: YYYY-MM-DD HH:MM:SS
+                        default: None
+
+                    no_image            (bool)  --  restore deleted items
+                        default: False
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -289,7 +304,8 @@ class CloudStorageSubclient(CloudAppsSubclient):
             destination_path=destination_path,
             overwrite=overwrite,
             copy_precedence=copy_precedence,
-            no_of_streams=no_of_streams)
+            no_of_streams=no_of_streams,
+            **kwargs)
 
     def restore_to_fs(
             self,
@@ -462,7 +478,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/cloudapps/cloud_storage_subclient.py#L54-L362" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/cloudapps/cloud_storage_subclient.py#L54-L378" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CloudStorageSubclient(CloudAppsSubclient):
     &#34;&#34;&#34; Derived class from Subclient Base class, representing a Cloud Storage subclient,
@@ -596,7 +612,9 @@ default: None</p>
             destination_path,
             overwrite=True,
             copy_precedence=None,
-            no_of_streams=2):
+            no_of_streams=2,
+            **kwargs):
+
         &#34;&#34;&#34; Restores the files/folders specified in the input paths list to the input client,
             at the specified destionation location.
 
@@ -623,6 +641,19 @@ default: None</p>
                 no_of_streams           (int)   --  number of streams for restore
                                                     default : 2
 
+                kwargs                  (dict)  -- dict of keyword arguments as follows
+
+                    from_time           (str)   --  time to retore the contents after
+                        format: YYYY-MM-DD HH:MM:SS
+                        default: None
+
+                    to_time             (str)   --  time to retore the contents before
+                        format: YYYY-MM-DD HH:MM:SS
+                        default: None
+
+                    no_image            (bool)  --  restore deleted items
+                        default: False
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -637,7 +668,8 @@ default: None</p>
             destination_path=destination_path,
             overwrite=overwrite,
             copy_precedence=copy_precedence,
-            no_of_streams=no_of_streams)
+            no_of_streams=no_of_streams,
+            **kwargs)
 
     def restore_to_fs(
             self,
@@ -789,7 +821,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/cloudapps/cloud_storage_subclient.py#L106-L120" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/cloudapps/cloud_storage_subclient.py#L106-L120" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def content(self):
@@ -842,7 +874,7 @@ default : 2</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/cloudapps/cloud_storage_subclient.py#L144-L176" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/cloudapps/cloud_storage_subclient.py#L144-L176" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -880,7 +912,7 @@ default : 2</p>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.cloudapps.cloud_storage_subclient.CloudStorageSubclient.restore_out_of_place"><code class="name flex">
-<span>def <span class="ident">restore_out_of_place</span></span>(<span>self, paths, destination_client, destination_instance_name, destination_path, overwrite=True, copy_precedence=None, no_of_streams=2)</span>
+<span>def <span class="ident">restore_out_of_place</span></span>(<span>self, paths, destination_client, destination_instance_name, destination_path, overwrite=True, copy_precedence=None, no_of_streams=2, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the files/folders specified in the input paths list to the input client,
@@ -921,12 +953,26 @@ default: None</p>
 &ndash;
 number of streams for restore
 default : 2</p>
+<p>kwargs
+(dict)
+&ndash; dict of keyword arguments as follows</p>
+<pre><code>from_time           (str)   --  time to retore the contents after
+    format: YYYY-MM-DD HH:MM:SS
+    default: None
+
+to_time             (str)   --  time to retore the contents before
+    format: YYYY-MM-DD HH:MM:SS
+    default: None
+
+no_image            (bool)  --  restore deleted items
+    default: False
+</code></pre>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/cloudapps/cloud_storage_subclient.py#L178-L227" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/cloudapps/cloud_storage_subclient.py#L178-L243" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -936,7 +982,9 @@ default : 2</p>
         destination_path,
         overwrite=True,
         copy_precedence=None,
-        no_of_streams=2):
+        no_of_streams=2,
+        **kwargs):
+
     &#34;&#34;&#34; Restores the files/folders specified in the input paths list to the input client,
         at the specified destionation location.
 
@@ -963,6 +1011,19 @@ default : 2</p>
             no_of_streams           (int)   --  number of streams for restore
                                                 default : 2
 
+            kwargs                  (dict)  -- dict of keyword arguments as follows
+
+                from_time           (str)   --  time to retore the contents after
+                    format: YYYY-MM-DD HH:MM:SS
+                    default: None
+
+                to_time             (str)   --  time to retore the contents before
+                    format: YYYY-MM-DD HH:MM:SS
+                    default: None
+
+                no_image            (bool)  --  restore deleted items
+                    default: False
+
         Returns:
             object - instance of the Job class for this restore job
 
@@ -977,7 +1038,8 @@ default : 2</p>
         destination_path=destination_path,
         overwrite=overwrite,
         copy_precedence=copy_precedence,
-        no_of_streams=no_of_streams)</code></pre>
+        no_of_streams=no_of_streams,
+        **kwargs)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.cloudapps.cloud_storage_subclient.CloudStorageSubclient.restore_to_fs"><code class="name flex">
@@ -1021,7 +1083,7 @@ default : 2</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/cloudapps/cloud_storage_subclient.py#L229-L274" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/cloudapps/cloud_storage_subclient.py#L245-L290" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_to_fs(
         self,
@@ -1153,7 +1215,7 @@ destination_cloud = {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/cloudapps/cloud_storage_subclient.py#L276-L362" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/cloudapps/cloud_storage_subclient.py#L292-L378" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_using_proxy(self,
                         paths,

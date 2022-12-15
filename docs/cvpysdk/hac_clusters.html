@@ -83,7 +83,7 @@ refresh()                           --  refresh the index pool details associate
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/hac_clusters.py#L1-L520" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/hac_clusters.py#L1-L519" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
@@ -172,7 +172,6 @@ HACCluster Attributes
 &#34;&#34;&#34;
 
 from copy import deepcopy
-from past.builtins import basestring
 from .exception import SDKException
 from .datacube.constants import IndexServerConstants
 
@@ -276,7 +275,7 @@ class HACClusters(object):
                 SDKException:
                     Data type of the input(s) is not valid
         &#34;&#34;&#34;
-        if not isinstance(hac_name, basestring):
+        if not isinstance(hac_name, str):
             raise SDKException(&#39;HACClusters&#39;, &#39;101&#39;)
         return hac_name.lower() in self._all_hac_clusters
 
@@ -295,7 +294,7 @@ class HACClusters(object):
 
                     HAC Cluster not found
         &#34;&#34;&#34;
-        if isinstance(hac_name, basestring):
+        if isinstance(hac_name, str):
             if hac_name.lower() in self.all_hac_clusters:
                 return HACCluster(self._commcell_object, hac_name.lower())
         elif isinstance(hac_name, int):
@@ -332,7 +331,7 @@ class HACClusters(object):
             Returns:
                 Object  -   Instance of class HACCluster
         &#34;&#34;&#34;
-        if not (isinstance(cloud_name, basestring) and isinstance(cloud_node_names, list)):
+        if not (isinstance(cloud_name, str) and isinstance(cloud_node_names, list)):
             raise SDKException(&#39;HACClusters&#39;, &#39;101&#39;)
         cloud_node_names = sorted(cloud_node_names)
         node_meta_infos = {
@@ -406,7 +405,7 @@ class HACClusters(object):
 
                 Response was empty.
         &#34;&#34;&#34;
-        if not isinstance(cloud_name, basestring):
+        if not isinstance(cloud_name, str):
             raise SDKException(&#39;HACCluster&#39;, &#39;101&#39;)
         cloud_id = self.all_hac_clusters[cloud_name.lower()]
         req_json = IndexServerConstants.REQUEST_JSON.copy()
@@ -644,7 +643,7 @@ instance of the HACCluster class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/hac_clusters.py#L349-L520" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/hac_clusters.py#L348-L519" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class HACCluster(object):
     &#34;&#34;&#34;Class to perform HAC cluster operations on a specific HAC cluster&#34;&#34;&#34;
@@ -827,7 +826,7 @@ instance of the HACCluster class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/hac_clusters.py#L499-L502" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/hac_clusters.py#L498-L501" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def cloud_id(self):
@@ -841,7 +840,7 @@ def cloud_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/hac_clusters.py#L512-L515" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/hac_clusters.py#L511-L514" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def cluster_id(self):
@@ -855,7 +854,7 @@ def cluster_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/hac_clusters.py#L517-L520" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/hac_clusters.py#L516-L519" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def cluster_name(self):
@@ -869,7 +868,7 @@ def cluster_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/hac_clusters.py#L504-L510" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/hac_clusters.py#L503-L509" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def node_names(self):
@@ -926,7 +925,7 @@ HAC zKeeper node not found</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/hac_clusters.py#L402-L478" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/hac_clusters.py#L401-L477" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def modify_node(self, node_name, listener_port=None, data_port=None,
                 election_port=None, data_dir=None):
@@ -1027,7 +1026,7 @@ HAC zKeeper node not found</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/hac_clusters.py#L480-L497" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/hac_clusters.py#L479-L496" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def node_info(self, node_name):
     &#34;&#34;&#34;Returns the hac cluster node information
@@ -1057,7 +1056,7 @@ HAC zKeeper node not found</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/hac_clusters.py#L391-L400" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/hac_clusters.py#L390-L399" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refreshes properties of the HAC cluster&#34;&#34;&#34;
@@ -1091,7 +1090,7 @@ instance of class HACClusters</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/hac_clusters.py#L93-L346" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/hac_clusters.py#L92-L345" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class HACClusters(object):
     &#34;&#34;&#34;Class for representing all the HAC clusters associated with the commcell.&#34;&#34;&#34;
@@ -1192,7 +1191,7 @@ instance of class HACClusters</p></div>
                 SDKException:
                     Data type of the input(s) is not valid
         &#34;&#34;&#34;
-        if not isinstance(hac_name, basestring):
+        if not isinstance(hac_name, str):
             raise SDKException(&#39;HACClusters&#39;, &#39;101&#39;)
         return hac_name.lower() in self._all_hac_clusters
 
@@ -1211,7 +1210,7 @@ instance of class HACClusters</p></div>
 
                     HAC Cluster not found
         &#34;&#34;&#34;
-        if isinstance(hac_name, basestring):
+        if isinstance(hac_name, str):
             if hac_name.lower() in self.all_hac_clusters:
                 return HACCluster(self._commcell_object, hac_name.lower())
         elif isinstance(hac_name, int):
@@ -1248,7 +1247,7 @@ instance of class HACClusters</p></div>
             Returns:
                 Object  -   Instance of class HACCluster
         &#34;&#34;&#34;
-        if not (isinstance(cloud_name, basestring) and isinstance(cloud_node_names, list)):
+        if not (isinstance(cloud_name, str) and isinstance(cloud_node_names, list)):
             raise SDKException(&#39;HACClusters&#39;, &#39;101&#39;)
         cloud_node_names = sorted(cloud_node_names)
         node_meta_infos = {
@@ -1322,7 +1321,7 @@ instance of class HACClusters</p></div>
 
                 Response was empty.
         &#34;&#34;&#34;
-        if not isinstance(cloud_name, basestring):
+        if not isinstance(cloud_name, str):
             raise SDKException(&#39;HACCluster&#39;, &#39;101&#39;)
         cloud_id = self.all_hac_clusters[cloud_name.lower()]
         req_json = IndexServerConstants.REQUEST_JSON.copy()
@@ -1356,7 +1355,7 @@ instance of class HACClusters</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/hac_clusters.py#L343-L346" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/hac_clusters.py#L342-L345" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_hac_clusters(self):
@@ -1395,7 +1394,7 @@ Instance of class HACCluster</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/hac_clusters.py#L230-L306" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/hac_clusters.py#L229-L305" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, cloud_name, cloud_node_names):
     &#34;&#34;&#34;Creates a new HAC cluster
@@ -1415,7 +1414,7 @@ Instance of class HACCluster</p></div>
         Returns:
             Object  -   Instance of class HACCluster
     &#34;&#34;&#34;
-    if not (isinstance(cloud_name, basestring) and isinstance(cloud_node_names, list)):
+    if not (isinstance(cloud_name, str) and isinstance(cloud_node_names, list)):
         raise SDKException(&#39;HACClusters&#39;, &#39;101&#39;)
     cloud_node_names = sorted(cloud_node_names)
     node_meta_infos = {
@@ -1496,7 +1495,7 @@ Response was empty.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/hac_clusters.py#L308-L341" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/hac_clusters.py#L307-L340" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, cloud_name):
     &#34;&#34;&#34;Deletes an existing HAC cluster
@@ -1512,7 +1511,7 @@ Response was empty.
 
             Response was empty.
     &#34;&#34;&#34;
-    if not isinstance(cloud_name, basestring):
+    if not isinstance(cloud_name, str):
         raise SDKException(&#39;HACCluster&#39;, &#39;101&#39;)
     cloud_id = self.all_hac_clusters[cloud_name.lower()]
     req_json = IndexServerConstants.REQUEST_JSON.copy()
@@ -1557,7 +1556,7 @@ Data type of the input(s) is not valid</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/hac_clusters.py#L196-L220" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/hac_clusters.py#L195-L219" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, hac_name):
     &#34;&#34;&#34;Returns instance of HACCluster class is cluster is found
@@ -1574,7 +1573,7 @@ Data type of the input(s) is not valid</p>
 
                 HAC Cluster not found
     &#34;&#34;&#34;
-    if isinstance(hac_name, basestring):
+    if isinstance(hac_name, str):
         if hac_name.lower() in self.all_hac_clusters:
             return HACCluster(self._commcell_object, hac_name.lower())
     elif isinstance(hac_name, int):
@@ -1607,7 +1606,7 @@ Data type of the input(s) is not valid</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/hac_clusters.py#L178-L194" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/hac_clusters.py#L177-L193" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_cluster(self, hac_name):
     &#34;&#34;&#34;Returns whether the HAC cluster with given name is present or not
@@ -1623,7 +1622,7 @@ Data type of the input(s) is not valid</p></div>
             SDKException:
                 Data type of the input(s) is not valid
     &#34;&#34;&#34;
-    if not isinstance(hac_name, basestring):
+    if not isinstance(hac_name, str):
         raise SDKException(&#39;HACClusters&#39;, &#39;101&#39;)
     return hac_name.lower() in self._all_hac_clusters</code></pre>
 </details>
@@ -1636,7 +1635,7 @@ Data type of the input(s) is not valid</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/hac_clusters.py#L222-L228" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/hac_clusters.py#L221-L227" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refreshes properties for HACClusters class&#34;&#34;&#34;

@@ -42,7 +42,7 @@ function to run tape import operation.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell_migration.py#L1-L490" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/commcell_migration.py#L1-L527" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # --------------------------------------------------------------------------
@@ -79,7 +79,6 @@ CommCellMigration:
 
 &#34;&#34;&#34;
 from base64 import b64encode
-from past.builtins import basestring
 from .job import Job
 
 from .exception import SDKException
@@ -137,6 +136,14 @@ class CommCellMigration(object):
                         &#34;Database&#34;:&#34;commserv&#34;,
 
                         &#34;captureMediaAgents&#34;:True,
+                        
+                        &#34;captureSchedules&#34;:True,
+
+                        &#34;captureActivityControl&#34;:True,
+
+                        &#34;captureOperationWindow&#34;:True,
+
+                        &#34;captureHolidays&#34;:True,
 
                         &#34;csName&#34;: &#34;CommservName&#34;,  # host cs for using sql instance export
 
@@ -180,6 +187,10 @@ class CommCellMigration(object):
         sql_password = options_dictionary.get(&#34;sqlPassword&#34;, &#34;&#34;)
         database = options_dictionary.get(&#34;Database&#34;, &#34;Commserv&#34;)
         capture_ma = options_dictionary.get(&#34;captureMediaAgents&#34;, True)
+        capture_schedules = options_dictionary.get(&#34;captureSchedules&#34;, True)
+        capture_activity_control = options_dictionary.get(&#34;captureActivityControl&#34;, True)
+        capture_opw = options_dictionary.get(&#34;captureOperationWindow&#34;, True)
+        capture_holidays = options_dictionary.get(&#34;captureHolidays&#34;, True)
         auto_pick_cluster = options_dictionary.get(&#34;autopickCluster&#34;, False)
         cs_name = options_dictionary.get(&#34;csName&#34;, self._commcell_name)
         client_ids = options_dictionary.get(&#34;clientIds&#34;, [])
@@ -194,6 +205,10 @@ class CommCellMigration(object):
                 and isinstance(sql_password, str)
                 and isinstance(database, str)
                 and isinstance(capture_ma, bool)
+                and isinstance(capture_schedules, bool)
+                and isinstance(capture_activity_control, bool)
+                and isinstance(capture_opw, bool)
+                and isinstance(capture_holidays, bool)
                 and isinstance(auto_pick_cluster, bool)
                 and isinstance(cs_name, str)
                 and isinstance(client_ids, list)):
@@ -260,6 +275,10 @@ class CommCellMigration(object):
                                         &#34;lastHours&#34;: 60,
                                         &#34;remoteDumpDir&#34;: &#34;&#34;,
                                         &#34;remoteCSName&#34;: &#34;&#34;,
+                                        &#34;captureSchedules&#34;: capture_schedules,
+                                        &#34;captureActivityControl&#34;: capture_activity_control,
+                                        &#34;captureOperationWindow&#34;: capture_opw,
+                                        &#34;captureHolidays&#34;:capture_holidays,
                                         &#34;pruneExportedDump&#34;: False,
                                         &#34;autopickCluster&#34;: auto_pick_cluster,
                                         &#34;copyDumpToRemoteCS&#34;: False,
@@ -281,6 +300,10 @@ class CommCellMigration(object):
                 ]
             }
         }
+
+        if not other_sql_instance:
+            del export_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;ccmOption&#39;] \
+                [&#39;captureOptions&#39;][&#39;captureFromDB&#39;]
 
         sub_dict = export_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;ccmOption&#39;] \
             [&#39;captureOptions&#39;][&#39;entities&#39;]
@@ -333,13 +356,20 @@ class CommCellMigration(object):
             Args:
                 import_location     ( str )         --  Location to import the generated dumps.
 
-                options_dictionary  ( dict )        --  Contains list of options used for CCMImport.
+                options_dictionary  ( dict )        --  Contains list of options used for CCMImport and default values.
                     {
                         &#34;pathType&#34;: &#34;Network&#34;,
                         &#34;userName&#34; : &#34;username&#34;,
                         &#34;password&#34;: &#34;password&#34;,
                         &#34;forceOverwrite&#34;: False,
-                        &#34;failIfEntityAlreadyExists&#34;: False
+                        &#34;failIfEntityAlreadyExists&#34;: False,
+                        &#34;deleteEntitiesNotPresent&#34;: False,
+                        &#34;forceOverwriteHolidays&#34;: False,
+                        &#34;mergeHolidays&#34;: True,
+                        &#34;forceOverwriteOperationWindow&#34;: False,
+                        &#34;mergeOperationWindow&#34;: False,
+                        &#34;forceOverwriteSchedule&#34;: False,
+                        &#34;mergeSchedules&#34;: True
                     }
 
             Returns:
@@ -358,8 +388,15 @@ class CommCellMigration(object):
         network_user_password = options_dictionary.get(&#34;password&#34;, &#34;&#34;)
         force_overwrite = options_dictionary.get(&#39;forceOverwrite&#39;, False)
         fail_if_entry_already_exists = options_dictionary.get(&#39;failIfEntityAlreadyExists&#39;, False)
+        delete_entities_not_present = options_dictionary.get(&#39;deleteEntitiesNotPresent&#39;, False)
+        fo_holidays = options_dictionary.get(&#34;forceOverwriteHolidays&#34;, False)
+        merge_holidays = options_dictionary.get(&#34;mergeHolidays&#34;, True)
+        fo_operation_window = options_dictionary.get(&#34;forceOverwriteOperationWindow&#34;, False)
+        merge_operation_window = options_dictionary.get(&#34;mergeOperationWindow&#34;, False)
+        fo_schedules = options_dictionary.get(&#34;forceOverwriteSchedule&#34;, False)
+        merge_schedules = options_dictionary.get(&#34;mergeSchedules&#34;, True)
 
-        if not (isinstance(path_type, basestring) and isinstance(import_location, basestring)):
+        if not (isinstance(path_type, str) and isinstance(import_location, str)):
             raise SDKException(&#39;CommCellMigration&#39;, &#39;101&#39;)
 
         if path_type.lower() == &#39;local&#39;:
@@ -400,22 +437,22 @@ class CommCellMigration(object):
                                 &#34;ccmOption&#34;: {
                                     &#34;mergeOptions&#34;: {
                                         &#34;deleteEntitiesIfOnlyfromSource&#34;: False,
-                                        &#34;forceOverwriteHolidays&#34;: False,
+                                        &#34;forceOverwriteHolidays&#34;: fo_holidays,
                                         &#34;reuseTapes&#34;: False,
                                         &#34;specifyStagingPath&#34;: False,
-                                        &#34;forceOverwriteOperationWindow&#34;: False,
+                                        &#34;forceOverwriteOperationWindow&#34;: fo_operation_window,
                                         &#34;fallbackSpareGroup&#34;: &#34;&#34;,
-                                        &#34;mergeOperationWindow&#34;: False,
+                                        &#34;mergeOperationWindow&#34;: merge_operation_window,
                                         &#34;pruneImportedDump&#34;: False,
                                         &#34;alwaysUseFallbackDataPath&#34;: True,
-                                        &#34;deleteEntitiesNotPresent&#34;: False,
+                                        &#34;deleteEntitiesNotPresent&#34;: delete_entities_not_present,
                                         &#34;forceOverwrite&#34;: force_overwrite,
-                                        &#34;mergeHolidays&#34;: True,
-                                        &#34;forceOverwriteSchedule&#34;: False,
+                                        &#34;mergeHolidays&#34;: merge_holidays,
+                                        &#34;forceOverwriteSchedule&#34;: fo_schedules,
                                         &#34;fallbackDrivePool&#34;: &#34;&#34;,
                                         &#34;mergeActivityControl&#34;: True,
                                         &#34;fallbackMediaAgent&#34;: &#34;&#34;,
-                                        &#34;mergeSchedules&#34;: True,
+                                        &#34;mergeSchedules&#34;: merge_schedules,
                                         &#34;failIfEntityAlreadyExists&#34;: fail_if_entry_already_exists,
                                         &#34;fallbackLibrary&#34;: &#34;&#34;,
                                         &#34;skipConflictMedia&#34;: False,
@@ -559,7 +596,7 @@ class CommCellMigration(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell_migration.py#L42-L490" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/commcell_migration.py#L41-L527" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CommCellMigration(object):
     &#34;&#34;&#34;Class for representing the commcell export &amp; import operations from commcell. &#34;&#34;&#34;
@@ -613,6 +650,14 @@ class CommCellMigration(object):
                         &#34;Database&#34;:&#34;commserv&#34;,
 
                         &#34;captureMediaAgents&#34;:True,
+                        
+                        &#34;captureSchedules&#34;:True,
+
+                        &#34;captureActivityControl&#34;:True,
+
+                        &#34;captureOperationWindow&#34;:True,
+
+                        &#34;captureHolidays&#34;:True,
 
                         &#34;csName&#34;: &#34;CommservName&#34;,  # host cs for using sql instance export
 
@@ -656,6 +701,10 @@ class CommCellMigration(object):
         sql_password = options_dictionary.get(&#34;sqlPassword&#34;, &#34;&#34;)
         database = options_dictionary.get(&#34;Database&#34;, &#34;Commserv&#34;)
         capture_ma = options_dictionary.get(&#34;captureMediaAgents&#34;, True)
+        capture_schedules = options_dictionary.get(&#34;captureSchedules&#34;, True)
+        capture_activity_control = options_dictionary.get(&#34;captureActivityControl&#34;, True)
+        capture_opw = options_dictionary.get(&#34;captureOperationWindow&#34;, True)
+        capture_holidays = options_dictionary.get(&#34;captureHolidays&#34;, True)
         auto_pick_cluster = options_dictionary.get(&#34;autopickCluster&#34;, False)
         cs_name = options_dictionary.get(&#34;csName&#34;, self._commcell_name)
         client_ids = options_dictionary.get(&#34;clientIds&#34;, [])
@@ -670,6 +719,10 @@ class CommCellMigration(object):
                 and isinstance(sql_password, str)
                 and isinstance(database, str)
                 and isinstance(capture_ma, bool)
+                and isinstance(capture_schedules, bool)
+                and isinstance(capture_activity_control, bool)
+                and isinstance(capture_opw, bool)
+                and isinstance(capture_holidays, bool)
                 and isinstance(auto_pick_cluster, bool)
                 and isinstance(cs_name, str)
                 and isinstance(client_ids, list)):
@@ -736,6 +789,10 @@ class CommCellMigration(object):
                                         &#34;lastHours&#34;: 60,
                                         &#34;remoteDumpDir&#34;: &#34;&#34;,
                                         &#34;remoteCSName&#34;: &#34;&#34;,
+                                        &#34;captureSchedules&#34;: capture_schedules,
+                                        &#34;captureActivityControl&#34;: capture_activity_control,
+                                        &#34;captureOperationWindow&#34;: capture_opw,
+                                        &#34;captureHolidays&#34;:capture_holidays,
                                         &#34;pruneExportedDump&#34;: False,
                                         &#34;autopickCluster&#34;: auto_pick_cluster,
                                         &#34;copyDumpToRemoteCS&#34;: False,
@@ -757,6 +814,10 @@ class CommCellMigration(object):
                 ]
             }
         }
+
+        if not other_sql_instance:
+            del export_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;ccmOption&#39;] \
+                [&#39;captureOptions&#39;][&#39;captureFromDB&#39;]
 
         sub_dict = export_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;ccmOption&#39;] \
             [&#39;captureOptions&#39;][&#39;entities&#39;]
@@ -809,13 +870,20 @@ class CommCellMigration(object):
             Args:
                 import_location     ( str )         --  Location to import the generated dumps.
 
-                options_dictionary  ( dict )        --  Contains list of options used for CCMImport.
+                options_dictionary  ( dict )        --  Contains list of options used for CCMImport and default values.
                     {
                         &#34;pathType&#34;: &#34;Network&#34;,
                         &#34;userName&#34; : &#34;username&#34;,
                         &#34;password&#34;: &#34;password&#34;,
                         &#34;forceOverwrite&#34;: False,
-                        &#34;failIfEntityAlreadyExists&#34;: False
+                        &#34;failIfEntityAlreadyExists&#34;: False,
+                        &#34;deleteEntitiesNotPresent&#34;: False,
+                        &#34;forceOverwriteHolidays&#34;: False,
+                        &#34;mergeHolidays&#34;: True,
+                        &#34;forceOverwriteOperationWindow&#34;: False,
+                        &#34;mergeOperationWindow&#34;: False,
+                        &#34;forceOverwriteSchedule&#34;: False,
+                        &#34;mergeSchedules&#34;: True
                     }
 
             Returns:
@@ -834,8 +902,15 @@ class CommCellMigration(object):
         network_user_password = options_dictionary.get(&#34;password&#34;, &#34;&#34;)
         force_overwrite = options_dictionary.get(&#39;forceOverwrite&#39;, False)
         fail_if_entry_already_exists = options_dictionary.get(&#39;failIfEntityAlreadyExists&#39;, False)
+        delete_entities_not_present = options_dictionary.get(&#39;deleteEntitiesNotPresent&#39;, False)
+        fo_holidays = options_dictionary.get(&#34;forceOverwriteHolidays&#34;, False)
+        merge_holidays = options_dictionary.get(&#34;mergeHolidays&#34;, True)
+        fo_operation_window = options_dictionary.get(&#34;forceOverwriteOperationWindow&#34;, False)
+        merge_operation_window = options_dictionary.get(&#34;mergeOperationWindow&#34;, False)
+        fo_schedules = options_dictionary.get(&#34;forceOverwriteSchedule&#34;, False)
+        merge_schedules = options_dictionary.get(&#34;mergeSchedules&#34;, True)
 
-        if not (isinstance(path_type, basestring) and isinstance(import_location, basestring)):
+        if not (isinstance(path_type, str) and isinstance(import_location, str)):
             raise SDKException(&#39;CommCellMigration&#39;, &#39;101&#39;)
 
         if path_type.lower() == &#39;local&#39;:
@@ -876,22 +951,22 @@ class CommCellMigration(object):
                                 &#34;ccmOption&#34;: {
                                     &#34;mergeOptions&#34;: {
                                         &#34;deleteEntitiesIfOnlyfromSource&#34;: False,
-                                        &#34;forceOverwriteHolidays&#34;: False,
+                                        &#34;forceOverwriteHolidays&#34;: fo_holidays,
                                         &#34;reuseTapes&#34;: False,
                                         &#34;specifyStagingPath&#34;: False,
-                                        &#34;forceOverwriteOperationWindow&#34;: False,
+                                        &#34;forceOverwriteOperationWindow&#34;: fo_operation_window,
                                         &#34;fallbackSpareGroup&#34;: &#34;&#34;,
-                                        &#34;mergeOperationWindow&#34;: False,
+                                        &#34;mergeOperationWindow&#34;: merge_operation_window,
                                         &#34;pruneImportedDump&#34;: False,
                                         &#34;alwaysUseFallbackDataPath&#34;: True,
-                                        &#34;deleteEntitiesNotPresent&#34;: False,
+                                        &#34;deleteEntitiesNotPresent&#34;: delete_entities_not_present,
                                         &#34;forceOverwrite&#34;: force_overwrite,
-                                        &#34;mergeHolidays&#34;: True,
-                                        &#34;forceOverwriteSchedule&#34;: False,
+                                        &#34;mergeHolidays&#34;: merge_holidays,
+                                        &#34;forceOverwriteSchedule&#34;: fo_schedules,
                                         &#34;fallbackDrivePool&#34;: &#34;&#34;,
                                         &#34;mergeActivityControl&#34;: True,
                                         &#34;fallbackMediaAgent&#34;: &#34;&#34;,
-                                        &#34;mergeSchedules&#34;: True,
+                                        &#34;mergeSchedules&#34;: merge_schedules,
                                         &#34;failIfEntityAlreadyExists&#34;: fail_if_entry_already_exists,
                                         &#34;fallbackLibrary&#34;: &#34;&#34;,
                                         &#34;skipConflictMedia&#34;: False,
@@ -1054,6 +1129,14 @@ Contains options used to perform CCM Export.
 
     "captureMediaAgents":True,
 
+    "captureSchedules":True,
+
+    "captureActivityControl":True,
+
+    "captureOperationWindow":True,
+
+    "captureHolidays":True,
+
     "csName": "CommservName",  # host cs for using sql instance export
 
     "clientIds": [client_id1, client_id2],  # required only when exporting clients using sql instance
@@ -1086,7 +1169,7 @@ if invalid inputs are passed.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell_migration.py#L62-L282" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/commcell_migration.py#L61-L305" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def commcell_export(self, export_location, client_list=None, options_dictionary=None, other_entities=None):
     &#34;&#34;&#34; Starts the Commcell Export job.
@@ -1120,6 +1203,14 @@ if invalid inputs are passed.
                     &#34;Database&#34;:&#34;commserv&#34;,
 
                     &#34;captureMediaAgents&#34;:True,
+                    
+                    &#34;captureSchedules&#34;:True,
+
+                    &#34;captureActivityControl&#34;:True,
+
+                    &#34;captureOperationWindow&#34;:True,
+
+                    &#34;captureHolidays&#34;:True,
 
                     &#34;csName&#34;: &#34;CommservName&#34;,  # host cs for using sql instance export
 
@@ -1163,6 +1254,10 @@ if invalid inputs are passed.
     sql_password = options_dictionary.get(&#34;sqlPassword&#34;, &#34;&#34;)
     database = options_dictionary.get(&#34;Database&#34;, &#34;Commserv&#34;)
     capture_ma = options_dictionary.get(&#34;captureMediaAgents&#34;, True)
+    capture_schedules = options_dictionary.get(&#34;captureSchedules&#34;, True)
+    capture_activity_control = options_dictionary.get(&#34;captureActivityControl&#34;, True)
+    capture_opw = options_dictionary.get(&#34;captureOperationWindow&#34;, True)
+    capture_holidays = options_dictionary.get(&#34;captureHolidays&#34;, True)
     auto_pick_cluster = options_dictionary.get(&#34;autopickCluster&#34;, False)
     cs_name = options_dictionary.get(&#34;csName&#34;, self._commcell_name)
     client_ids = options_dictionary.get(&#34;clientIds&#34;, [])
@@ -1177,6 +1272,10 @@ if invalid inputs are passed.
             and isinstance(sql_password, str)
             and isinstance(database, str)
             and isinstance(capture_ma, bool)
+            and isinstance(capture_schedules, bool)
+            and isinstance(capture_activity_control, bool)
+            and isinstance(capture_opw, bool)
+            and isinstance(capture_holidays, bool)
             and isinstance(auto_pick_cluster, bool)
             and isinstance(cs_name, str)
             and isinstance(client_ids, list)):
@@ -1243,6 +1342,10 @@ if invalid inputs are passed.
                                     &#34;lastHours&#34;: 60,
                                     &#34;remoteDumpDir&#34;: &#34;&#34;,
                                     &#34;remoteCSName&#34;: &#34;&#34;,
+                                    &#34;captureSchedules&#34;: capture_schedules,
+                                    &#34;captureActivityControl&#34;: capture_activity_control,
+                                    &#34;captureOperationWindow&#34;: capture_opw,
+                                    &#34;captureHolidays&#34;:capture_holidays,
                                     &#34;pruneExportedDump&#34;: False,
                                     &#34;autopickCluster&#34;: auto_pick_cluster,
                                     &#34;copyDumpToRemoteCS&#34;: False,
@@ -1264,6 +1367,10 @@ if invalid inputs are passed.
             ]
         }
     }
+
+    if not other_sql_instance:
+        del export_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;ccmOption&#39;] \
+            [&#39;captureOptions&#39;][&#39;captureFromDB&#39;]
 
     sub_dict = export_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;ccmOption&#39;] \
         [&#39;captureOptions&#39;][&#39;entities&#39;]
@@ -1324,13 +1431,20 @@ Location to import the generated dumps.</p>
 <p>options_dictionary
 ( dict )
 &ndash;
-Contains list of options used for CCMImport.
+Contains list of options used for CCMImport and default values.
 {
 "pathType": "Network",
 "userName" : "username",
 "password": "password",
 "forceOverwrite": False,
-"failIfEntityAlreadyExists": False
+"failIfEntityAlreadyExists": False,
+"deleteEntitiesNotPresent": False,
+"forceOverwriteHolidays": False,
+"mergeHolidays": True,
+"forceOverwriteOperationWindow": False,
+"mergeOperationWindow": False,
+"forceOverwriteSchedule": False,
+"mergeSchedules": True
 }</p>
 <h2 id="returns">Returns</h2>
 <p>CCM Import Job instance
@@ -1346,7 +1460,7 @@ if invalid inputs are passed.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell_migration.py#L284-L408" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/commcell_migration.py#L307-L445" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def commcell_import(self, import_location, options_dictionary):
     &#34;&#34;&#34; Starts the Commcell Import job.
@@ -1354,13 +1468,20 @@ if invalid inputs are passed.
         Args:
             import_location     ( str )         --  Location to import the generated dumps.
 
-            options_dictionary  ( dict )        --  Contains list of options used for CCMImport.
+            options_dictionary  ( dict )        --  Contains list of options used for CCMImport and default values.
                 {
                     &#34;pathType&#34;: &#34;Network&#34;,
                     &#34;userName&#34; : &#34;username&#34;,
                     &#34;password&#34;: &#34;password&#34;,
                     &#34;forceOverwrite&#34;: False,
-                    &#34;failIfEntityAlreadyExists&#34;: False
+                    &#34;failIfEntityAlreadyExists&#34;: False,
+                    &#34;deleteEntitiesNotPresent&#34;: False,
+                    &#34;forceOverwriteHolidays&#34;: False,
+                    &#34;mergeHolidays&#34;: True,
+                    &#34;forceOverwriteOperationWindow&#34;: False,
+                    &#34;mergeOperationWindow&#34;: False,
+                    &#34;forceOverwriteSchedule&#34;: False,
+                    &#34;mergeSchedules&#34;: True
                 }
 
         Returns:
@@ -1379,8 +1500,15 @@ if invalid inputs are passed.
     network_user_password = options_dictionary.get(&#34;password&#34;, &#34;&#34;)
     force_overwrite = options_dictionary.get(&#39;forceOverwrite&#39;, False)
     fail_if_entry_already_exists = options_dictionary.get(&#39;failIfEntityAlreadyExists&#39;, False)
+    delete_entities_not_present = options_dictionary.get(&#39;deleteEntitiesNotPresent&#39;, False)
+    fo_holidays = options_dictionary.get(&#34;forceOverwriteHolidays&#34;, False)
+    merge_holidays = options_dictionary.get(&#34;mergeHolidays&#34;, True)
+    fo_operation_window = options_dictionary.get(&#34;forceOverwriteOperationWindow&#34;, False)
+    merge_operation_window = options_dictionary.get(&#34;mergeOperationWindow&#34;, False)
+    fo_schedules = options_dictionary.get(&#34;forceOverwriteSchedule&#34;, False)
+    merge_schedules = options_dictionary.get(&#34;mergeSchedules&#34;, True)
 
-    if not (isinstance(path_type, basestring) and isinstance(import_location, basestring)):
+    if not (isinstance(path_type, str) and isinstance(import_location, str)):
         raise SDKException(&#39;CommCellMigration&#39;, &#39;101&#39;)
 
     if path_type.lower() == &#39;local&#39;:
@@ -1421,22 +1549,22 @@ if invalid inputs are passed.
                             &#34;ccmOption&#34;: {
                                 &#34;mergeOptions&#34;: {
                                     &#34;deleteEntitiesIfOnlyfromSource&#34;: False,
-                                    &#34;forceOverwriteHolidays&#34;: False,
+                                    &#34;forceOverwriteHolidays&#34;: fo_holidays,
                                     &#34;reuseTapes&#34;: False,
                                     &#34;specifyStagingPath&#34;: False,
-                                    &#34;forceOverwriteOperationWindow&#34;: False,
+                                    &#34;forceOverwriteOperationWindow&#34;: fo_operation_window,
                                     &#34;fallbackSpareGroup&#34;: &#34;&#34;,
-                                    &#34;mergeOperationWindow&#34;: False,
+                                    &#34;mergeOperationWindow&#34;: merge_operation_window,
                                     &#34;pruneImportedDump&#34;: False,
                                     &#34;alwaysUseFallbackDataPath&#34;: True,
-                                    &#34;deleteEntitiesNotPresent&#34;: False,
+                                    &#34;deleteEntitiesNotPresent&#34;: delete_entities_not_present,
                                     &#34;forceOverwrite&#34;: force_overwrite,
-                                    &#34;mergeHolidays&#34;: True,
-                                    &#34;forceOverwriteSchedule&#34;: False,
+                                    &#34;mergeHolidays&#34;: merge_holidays,
+                                    &#34;forceOverwriteSchedule&#34;: fo_schedules,
                                     &#34;fallbackDrivePool&#34;: &#34;&#34;,
                                     &#34;mergeActivityControl&#34;: True,
                                     &#34;fallbackMediaAgent&#34;: &#34;&#34;,
-                                    &#34;mergeSchedules&#34;: True,
+                                    &#34;mergeSchedules&#34;: merge_schedules,
                                     &#34;failIfEntityAlreadyExists&#34;: fail_if_entry_already_exists,
                                     &#34;fallbackLibrary&#34;: &#34;&#34;,
                                     &#34;skipConflictMedia&#34;: False,
@@ -1498,7 +1626,7 @@ drive pool id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/commcell_migration.py#L410-L490" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/commcell_migration.py#L447-L527" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def tape_import(self, library_id, medias_id, drive_pool_id):
 

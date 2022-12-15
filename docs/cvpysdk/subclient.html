@@ -161,7 +161,7 @@ subclient else returns False
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1-L3193" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1-L3189" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -336,15 +336,11 @@ import math
 import time
 import copy
 from base64 import b64encode
-from past.builtins import basestring
-from future.standard_library import install_aliases
 from .job import Job
 from .job import JobController
 from .schedules import Schedules
 from .exception import SDKException
 from .schedules import SchedulePattern
-
-install_aliases()
 
 
 class Subclients(object):
@@ -667,7 +663,7 @@ class Subclients(object):
                 SDKException:
                     if type of the subclient name argument is not string
         &#34;&#34;&#34;
-        if not isinstance(subclient_name, basestring):
+        if not isinstance(subclient_name, str):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         return self._subclients and subclient_name.lower() in self._subclients
@@ -767,9 +763,9 @@ class Subclients(object):
                     if subclient already exists with the given name
 
         &#34;&#34;&#34;
-        if not (isinstance(subclient_name, basestring) and
-                isinstance(storage_policy, basestring) and
-                isinstance(description, basestring)):
+        if not (isinstance(subclient_name, str) and
+                isinstance(storage_policy, str) and
+                isinstance(description, str)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         if self.has_subclient(subclient_name):
@@ -890,12 +886,12 @@ class Subclients(object):
                     if storage policy does not exist
 
         &#34;&#34;&#34;
-        if not (isinstance(subclient_name, basestring) and
-                isinstance(storage_policy, basestring) and
-                isinstance(dump_dir, basestring) and
-                isinstance(user_name,basestring) and
-                isinstance(domain_name, basestring) and
-                isinstance(password, basestring) and
+        if not (isinstance(subclient_name, str) and
+                isinstance(storage_policy, str) and
+                isinstance(dump_dir, str) and
+                isinstance(user_name,str) and
+                isinstance(domain_name, str) and
+                isinstance(password, str) and
                 isinstance(full_mode, bool)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
         if (full_mode == False and not
@@ -1036,8 +1032,8 @@ class Subclients(object):
                     if subclient already exists with the given name
 
         &#34;&#34;&#34;
-        if not (isinstance(subclient_name, basestring) and
-                isinstance(storage_policy, basestring) and
+        if not (isinstance(subclient_name, str) and
+                isinstance(storage_policy, str) and
                 isinstance(contents, list)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
@@ -1180,7 +1176,7 @@ class Subclients(object):
                     if subclient already exists with the given name
 
         &#34;&#34;&#34;
-        if not (isinstance(subclient_name, basestring) and
+        if not (isinstance(subclient_name, str) and
                 isinstance(subclient_content, list)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
@@ -1326,8 +1322,8 @@ class Subclients(object):
 
                 &#34;&#34;&#34;
 
-        if not (isinstance(subclient_name, basestring) and
-                isinstance(server_plan, basestring)):
+        if not (isinstance(subclient_name, str) and
+                isinstance(server_plan, str)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         if self.has_subclient(subclient_name):
@@ -1400,7 +1396,7 @@ class Subclients(object):
 
                     if no subclient exists with the given name
         &#34;&#34;&#34;
-        if not isinstance(subclient_name, basestring):
+        if not isinstance(subclient_name, str):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
         else:
             subclient_name = subclient_name.lower()
@@ -1438,7 +1434,7 @@ class Subclients(object):
 
                     if no subclient exists with the given name
         &#34;&#34;&#34;
-        if not isinstance(subclient_name, basestring):
+        if not isinstance(subclient_name, str):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
         else:
             subclient_name = subclient_name.lower()
@@ -1781,7 +1777,7 @@ class Subclient(object):
                 update_request  (str)  --  update request specifying the details to update
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -2319,7 +2315,7 @@ c
 
                     if the type of value input is not string
         &#34;&#34;&#34;
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             self._set_subclient_properties(
                 &#34;_commonProperties[&#39;description&#39;]&#34;, value)
         else:
@@ -2341,7 +2337,7 @@ c
                     if failed to update storage policy name
 
         &#34;&#34;&#34;
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             value = value.lower()
 
             if not self._commcell_object.storage_policies.has_policy(value):
@@ -2449,7 +2445,7 @@ c
                 SDKException:
                     if failed to enable intelli snap for subclient
         &#34;&#34;&#34;
-        if not isinstance(snap_engine_name, basestring):
+        if not isinstance(snap_engine_name, str):
             raise SDKException(&#34;Subclient&#34;, &#34;101&#34;)
 
         properties_dict = {
@@ -2495,7 +2491,7 @@ c
             proxy_name(str) -- Name of the proxy to be used
 
         &#34;&#34;&#34;
-        if not isinstance(proxy_name, basestring):
+        if not isinstance(proxy_name, str):
             raise SDKException(&#34;Subclient&#34;, &#34;101&#34;)
 
         properties_dict = {
@@ -3146,7 +3142,7 @@ c
                     if the type of value input is not string
 
         &#34;&#34;&#34;
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             self._set_subclient_properties(
                 &#34;_commonProperties[&#39;storageDevice&#39;][&#39;softwareCompression&#39;]&#34;, value
             )
@@ -3215,7 +3211,7 @@ c
 
         &#34;&#34;&#34;
 
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             self._set_subclient_properties(&#34;_commonProperties[&#39;encryptionFlag&#39;]&#34;, value)
         else:
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -3341,7 +3337,7 @@ c
                 })
             else:
                 raise SDKException(&#39;Subclient&#39;,&#39;102&#39;, &#39;Plan does not exist&#39;)
-        elif isinstance(value, basestring):
+        elif isinstance(value, str):
             if self._commcell_object.plans.has_plan(value):
                 self.update_properties({
                     &#39;planEntity&#39;: {
@@ -3392,7 +3388,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1337-L3193" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1333-L3189" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Subclient(object):
     &#34;&#34;&#34;Base class consisting of all the common properties and operations for a Subclient&#34;&#34;&#34;
@@ -3676,7 +3672,7 @@ default: None</p>
                 update_request  (str)  --  update request specifying the details to update
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -4214,7 +4210,7 @@ c
 
                     if the type of value input is not string
         &#34;&#34;&#34;
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             self._set_subclient_properties(
                 &#34;_commonProperties[&#39;description&#39;]&#34;, value)
         else:
@@ -4236,7 +4232,7 @@ c
                     if failed to update storage policy name
 
         &#34;&#34;&#34;
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             value = value.lower()
 
             if not self._commcell_object.storage_policies.has_policy(value):
@@ -4344,7 +4340,7 @@ c
                 SDKException:
                     if failed to enable intelli snap for subclient
         &#34;&#34;&#34;
-        if not isinstance(snap_engine_name, basestring):
+        if not isinstance(snap_engine_name, str):
             raise SDKException(&#34;Subclient&#34;, &#34;101&#34;)
 
         properties_dict = {
@@ -4390,7 +4386,7 @@ c
             proxy_name(str) -- Name of the proxy to be used
 
         &#34;&#34;&#34;
-        if not isinstance(proxy_name, basestring):
+        if not isinstance(proxy_name, str):
             raise SDKException(&#34;Subclient&#34;, &#34;101&#34;)
 
         properties_dict = {
@@ -5041,7 +5037,7 @@ c
                     if the type of value input is not string
 
         &#34;&#34;&#34;
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             self._set_subclient_properties(
                 &#34;_commonProperties[&#39;storageDevice&#39;][&#39;softwareCompression&#39;]&#34;, value
             )
@@ -5110,7 +5106,7 @@ c
 
         &#34;&#34;&#34;
 
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             self._set_subclient_properties(&#34;_commonProperties[&#39;encryptionFlag&#39;]&#34;, value)
         else:
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -5236,7 +5232,7 @@ c
                 })
             else:
                 raise SDKException(&#39;Subclient&#39;,&#39;102&#39;, &#39;Plan does not exist&#39;)
-        elif isinstance(value, basestring):
+        elif isinstance(value, str):
             if self._commcell_object.plans.has_plan(value):
                 self.update_properties({
                     &#39;planEntity&#39;: {
@@ -5281,7 +5277,7 @@ c
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2072-L2078" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2068-L2074" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def allow_multiple_readers(self):
@@ -5298,7 +5294,7 @@ def allow_multiple_readers(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2046-L2052" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2042-L2048" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def data_readers(self):
@@ -5315,7 +5311,7 @@ def data_readers(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L3058-L3080" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L3054-L3076" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def deduplication_options(self):
@@ -5348,7 +5344,7 @@ def deduplication_options(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2011-L2015" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2007-L2011" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -5363,7 +5359,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1880-L1883" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1876-L1879" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def display_name(self):
@@ -5377,7 +5373,7 @@ def display_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L3016-L3029" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L3012-L3025" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def encryption_flag(self):
@@ -5401,7 +5397,7 @@ def encryption_flag(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1966-L1970" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1962-L1966" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_backup_enabled(self):
@@ -5416,7 +5412,7 @@ def is_backup_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1979-L1983" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1975-L1979" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_blocklevel_backup_enabled(self):
@@ -5432,7 +5428,7 @@ subclient else returns False</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2114-L2118" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2110-L2114" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_default_subclient(self):
@@ -5447,7 +5443,7 @@ def is_default_subclient(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1972-L1977" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1968-L1973" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_intelli_snap_enabled(self):
@@ -5463,7 +5459,7 @@ def is_intelli_snap_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2006-L2009" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2002-L2005" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_on_demand_subclient(self):
@@ -5477,7 +5473,7 @@ def is_on_demand_subclient(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2000-L2004" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1996-L2000" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_trueup_enabled(self):
@@ -5492,7 +5488,7 @@ def is_trueup_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1945-L1954" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1941-L1950" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def last_backup_time(self):
@@ -5512,7 +5508,7 @@ def last_backup_time(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1875-L1878" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1871-L1874" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -5526,7 +5522,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2991-L2994" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2987-L2990" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def network_agent(self):
@@ -5540,7 +5536,7 @@ def network_agent(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1956-L1964" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1952-L1960" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def next_backup_time(self):
@@ -5560,7 +5556,7 @@ Returns None if no plan is associated</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L3135-L3149" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L3131-L3145" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan(self):
@@ -5585,7 +5581,7 @@ def plan(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1870-L1873" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1866-L1869" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -5599,7 +5595,7 @@ def properties(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2106-L2112" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2102-L2108" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def read_buffer_size(self):
@@ -5616,7 +5612,7 @@ def read_buffer_size(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1985-L1998" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1981-L1994" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def snapshot_engine_name(self):
@@ -5640,7 +5636,7 @@ def snapshot_engine_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2948-L2961" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2944-L2957" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def software_compression(self):
@@ -5664,7 +5660,7 @@ def software_compression(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2026-L2034" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2022-L2030" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_ma(self):
@@ -5683,7 +5679,7 @@ def storage_ma(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2036-L2044" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2032-L2040" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_ma_id(self):
@@ -5702,7 +5698,7 @@ def storage_ma_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2017-L2024" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2013-L2020" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy(self):
@@ -5720,7 +5716,7 @@ def storage_policy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1885-L1888" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1881-L1884" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_guid(self):
@@ -5734,7 +5730,7 @@ def subclient_guid(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1935-L1938" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1931-L1934" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_id(self):
@@ -5748,7 +5744,7 @@ def subclient_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1940-L1943" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1936-L1939" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_name(self):
@@ -5797,7 +5793,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2354-L2411" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2350-L2407" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(self,
            backup_level=&#34;Incremental&#34;,
@@ -5903,7 +5899,7 @@ from browse operation
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2428-L2479" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2424-L2475" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, *args, **kwargs):
     &#34;&#34;&#34;Browses the content of the Subclient.
@@ -5970,7 +5966,7 @@ if failed to disable backup of subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2257-L2265" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2253-L2261" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_backup(self):
     &#34;&#34;&#34;Disables Backup for the subclient.
@@ -5994,7 +5990,7 @@ if failed to disable intelli snap for subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2315-L2324" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2311-L2320" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_intelli_snap(self):
     &#34;&#34;&#34;Disables Intelli Snap for the subclient.
@@ -6019,7 +6015,7 @@ if failed to enable backup of subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2201-L2208" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2197-L2204" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_backup(self):
     &#34;&#34;&#34;Enables Backup for the subclient.
@@ -6056,7 +6052,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2220-L2255" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2216-L2251" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_backup_at_time(self, enable_time):
     &#34;&#34;&#34;Disables Backup if not already disabled, and enables at the time specified.
@@ -6112,7 +6108,7 @@ if failed to enable intelli snap for subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2277-L2313" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2273-L2309" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_intelli_snap(self, snap_engine_name, proxy_options=None):
     &#34;&#34;&#34;Enables Intelli Snap for the subclient.
@@ -6124,7 +6120,7 @@ if failed to enable intelli snap for subclient</p></div>
             SDKException:
                 if failed to enable intelli snap for subclient
     &#34;&#34;&#34;
-    if not isinstance(snap_engine_name, basestring):
+    if not isinstance(snap_engine_name, str):
         raise SDKException(&#34;Subclient&#34;, &#34;101&#34;)
 
     properties_dict = {
@@ -6161,7 +6157,7 @@ if failed to enable intelli snap for subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2210-L2213" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2206-L2209" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_trueup(self):
     &#34;&#34;&#34;Setter for the TrueUp Option for a Subclient&#34;&#34;&#34;
@@ -6177,7 +6173,7 @@ if failed to enable intelli snap for subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2215-L2218" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2211-L2214" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_trueup_days(self, days=30):
     &#34;&#34;&#34;Setter for the TrueUp Option with reconcile after x days&#34;&#34;&#34;
@@ -6196,7 +6192,7 @@ if failed to exclude the subclient from SLA</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2267-L2275" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2263-L2271" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def exclude_from_sla(self):
     &#34;&#34;&#34;Exclude subclient from SLA.
@@ -6265,7 +6261,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2481-L2542" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2477-L2538" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find(self, *args, **kwargs):
     &#34;&#34;&#34;Searches a file/folder in the backed up content of the subclient,
@@ -6385,7 +6381,7 @@ if any error occurred while finding the latest job.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2849-L2941" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2845-L2937" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find_latest_job(
         self,
@@ -6492,7 +6488,7 @@ if unable to get MA names</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2413-L2426" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2409-L2422" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_ma_associated_storagepolicy(self):
     &#34;&#34;&#34;
@@ -6550,7 +6546,7 @@ if failed to list media for content</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2544-L2593" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2540-L2589" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def list_media(self, *args, **kwargs):
     &#34;&#34;&#34;List media required to browse and restore backed up data from the subclient
@@ -6612,7 +6608,7 @@ if failed to list media for content</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2943-L2946" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2939-L2942" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Subclient.&#34;&#34;&#34;
@@ -6707,7 +6703,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2595-L2689" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2591-L2685" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -6917,7 +6913,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2691-L2808" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2687-L2804" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -7060,7 +7056,7 @@ if unable to update the backup nodes for the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2810-L2847" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2806-L2843" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_backup_nodes(self, data_access_nodes):
     &#34;&#34;&#34;Sets the the backup nodes for NFS share subclient.
@@ -7112,7 +7108,7 @@ if unable to update the backup nodes for the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2326-L2342" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2322-L2338" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_proxy_for_snap(self, proxy_name):
     &#34;&#34;&#34; method to set Use proxy option for intellisnap subclient 
@@ -7121,7 +7117,7 @@ if unable to update the backup nodes for the subclient</p></div>
         proxy_name(str) -- Name of the proxy to be used
 
     &#34;&#34;&#34;
-    if not isinstance(proxy_name, basestring):
+    if not isinstance(proxy_name, str):
         raise SDKException(&#34;Subclient&#34;, &#34;101&#34;)
 
     properties_dict = {
@@ -7141,7 +7137,7 @@ if unable to update the backup nodes for the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L2344-L2352" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2340-L2348" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def unset_proxy_for_snap(self):
     &#34;&#34;&#34; method to unset Use proxy option for intellisnap subclient &#34;&#34;&#34;
@@ -7178,7 +7174,7 @@ need to change and use the update_properties method to set the properties</p></d
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1830-L1868" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1826-L1864" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;Updates the subclient properties
@@ -7245,7 +7241,7 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L185-L1334" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L181-L1330" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Subclients(object):
     &#34;&#34;&#34;Class for getting all the subclients associated with a client.&#34;&#34;&#34;
@@ -7567,7 +7563,7 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
                 SDKException:
                     if type of the subclient name argument is not string
         &#34;&#34;&#34;
-        if not isinstance(subclient_name, basestring):
+        if not isinstance(subclient_name, str):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         return self._subclients and subclient_name.lower() in self._subclients
@@ -7667,9 +7663,9 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
                     if subclient already exists with the given name
 
         &#34;&#34;&#34;
-        if not (isinstance(subclient_name, basestring) and
-                isinstance(storage_policy, basestring) and
-                isinstance(description, basestring)):
+        if not (isinstance(subclient_name, str) and
+                isinstance(storage_policy, str) and
+                isinstance(description, str)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         if self.has_subclient(subclient_name):
@@ -7790,12 +7786,12 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
                     if storage policy does not exist
 
         &#34;&#34;&#34;
-        if not (isinstance(subclient_name, basestring) and
-                isinstance(storage_policy, basestring) and
-                isinstance(dump_dir, basestring) and
-                isinstance(user_name,basestring) and
-                isinstance(domain_name, basestring) and
-                isinstance(password, basestring) and
+        if not (isinstance(subclient_name, str) and
+                isinstance(storage_policy, str) and
+                isinstance(dump_dir, str) and
+                isinstance(user_name,str) and
+                isinstance(domain_name, str) and
+                isinstance(password, str) and
                 isinstance(full_mode, bool)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
         if (full_mode == False and not
@@ -7936,8 +7932,8 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
                     if subclient already exists with the given name
 
         &#34;&#34;&#34;
-        if not (isinstance(subclient_name, basestring) and
-                isinstance(storage_policy, basestring) and
+        if not (isinstance(subclient_name, str) and
+                isinstance(storage_policy, str) and
                 isinstance(contents, list)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
@@ -8080,7 +8076,7 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
                     if subclient already exists with the given name
 
         &#34;&#34;&#34;
-        if not (isinstance(subclient_name, basestring) and
+        if not (isinstance(subclient_name, str) and
                 isinstance(subclient_content, list)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
@@ -8226,8 +8222,8 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
 
                 &#34;&#34;&#34;
 
-        if not (isinstance(subclient_name, basestring) and
-                isinstance(server_plan, basestring)):
+        if not (isinstance(subclient_name, str) and
+                isinstance(server_plan, str)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         if self.has_subclient(subclient_name):
@@ -8300,7 +8296,7 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
 
                     if no subclient exists with the given name
         &#34;&#34;&#34;
-        if not isinstance(subclient_name, basestring):
+        if not isinstance(subclient_name, str):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
         else:
             subclient_name = subclient_name.lower()
@@ -8338,7 +8334,7 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
 
                     if no subclient exists with the given name
         &#34;&#34;&#34;
-        if not isinstance(subclient_name, basestring):
+        if not isinstance(subclient_name, str):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
         else:
             subclient_name = subclient_name.lower()
@@ -8427,7 +8423,7 @@ consists of all subclients in the backupset</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L469-L490" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L465-L486" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_subclients(self):
@@ -8459,7 +8455,7 @@ def all_subclients(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1331-L1334" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1327-L1330" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def default_subclient(self):
@@ -8540,7 +8536,7 @@ if subclient already exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L548-L676" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L544-L672" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, subclient_name, storage_policy,
         subclient_type=None, description=&#39;&#39;, advanced_options=None,
@@ -8599,9 +8595,9 @@ if subclient already exists with the given name
                 if subclient already exists with the given name
 
     &#34;&#34;&#34;
-    if not (isinstance(subclient_name, basestring) and
-            isinstance(storage_policy, basestring) and
-            isinstance(description, basestring)):
+    if not (isinstance(subclient_name, str) and
+            isinstance(storage_policy, str) and
+            isinstance(description, str)):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
     if self.has_subclient(subclient_name):
@@ -8712,7 +8708,7 @@ if server plan  donot exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1129-L1221" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1125-L1217" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_onedrive_subclient(self,
                            subclient_name,
@@ -8749,8 +8745,8 @@ if server plan  donot exists with the given name
 
             &#34;&#34;&#34;
 
-    if not (isinstance(subclient_name, basestring) and
-            isinstance(server_plan, basestring)):
+    if not (isinstance(subclient_name, str) and
+            isinstance(server_plan, str)):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
     if self.has_subclient(subclient_name):
@@ -8868,7 +8864,7 @@ if subclient name argument is not of type string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L678-L827" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L674-L823" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_oracle_logical_dump_subclient(
                              self,
@@ -8920,12 +8916,12 @@ if subclient name argument is not of type string</p>
                 if storage policy does not exist
 
     &#34;&#34;&#34;
-    if not (isinstance(subclient_name, basestring) and
-            isinstance(storage_policy, basestring) and
-            isinstance(dump_dir, basestring) and
-            isinstance(user_name,basestring) and
-            isinstance(domain_name, basestring) and
-            isinstance(password, basestring) and
+    if not (isinstance(subclient_name, str) and
+            isinstance(storage_policy, str) and
+            isinstance(dump_dir, str) and
+            isinstance(user_name,str) and
+            isinstance(domain_name, str) and
+            isinstance(password, str) and
             isinstance(full_mode, bool)):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
     if (full_mode == False and not
@@ -9078,7 +9074,7 @@ if subclient already exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L829-L930" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L825-L926" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_postgresql_subclient(
         self, subclient_name, storage_policy,
@@ -9125,8 +9121,8 @@ if subclient already exists with the given name
                 if subclient already exists with the given name
 
     &#34;&#34;&#34;
-    if not (isinstance(subclient_name, basestring) and
-            isinstance(storage_policy, basestring) and
+    if not (isinstance(subclient_name, str) and
+            isinstance(storage_policy, str) and
             isinstance(contents, list)):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
@@ -9274,7 +9270,7 @@ if subclient already exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L932-L1127" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L928-L1123" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_virtual_server_subclient(
         self,
@@ -9362,7 +9358,7 @@ if subclient already exists with the given name
                 if subclient already exists with the given name
 
     &#34;&#34;&#34;
-    if not (isinstance(subclient_name, basestring) and
+    if not (isinstance(subclient_name, str) and
             isinstance(subclient_content, list)):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
@@ -9497,7 +9493,7 @@ if no subclient exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1258-L1325" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1254-L1321" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, subclient_name):
     &#34;&#34;&#34;Deletes the subclient specified by the subclient_name from the backupset.
@@ -9517,7 +9513,7 @@ if no subclient exists with the given name
 
                 if no subclient exists with the given name
     &#34;&#34;&#34;
-    if not isinstance(subclient_name, basestring):
+    if not isinstance(subclient_name, str):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
     else:
         subclient_name = subclient_name.lower()
@@ -9588,7 +9584,7 @@ if type of the subclient name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1223-L1256" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1219-L1252" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, subclient_name):
     &#34;&#34;&#34;Returns a subclient object of the specified backupset name.
@@ -9605,7 +9601,7 @@ if type of the subclient name argument is not string</p>
 
                 if no subclient exists with the given name
     &#34;&#34;&#34;
-    if not isinstance(subclient_name, basestring):
+    if not isinstance(subclient_name, str):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
     else:
         subclient_name = subclient_name.lower()
@@ -9643,7 +9639,7 @@ if type of the subclient name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L492-L508" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L488-L504" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_subclient(self, subclient_name):
     &#34;&#34;&#34;Checks if a subclient exists in the commcell with the input subclient name.
@@ -9658,7 +9654,7 @@ if type of the subclient name argument is not string</p></div>
             SDKException:
                 if type of the subclient name argument is not string
     &#34;&#34;&#34;
-    if not isinstance(subclient_name, basestring):
+    if not isinstance(subclient_name, str):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
     return self._subclients and subclient_name.lower() in self._subclients</code></pre>
@@ -9672,7 +9668,7 @@ if type of the subclient name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclient.py#L1327-L1329" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1323-L1325" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the subclients associated with the Backupset / Instance.&#34;&#34;&#34;

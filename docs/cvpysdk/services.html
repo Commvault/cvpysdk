@@ -37,7 +37,7 @@ dictionary, for their usage, and the value will be in the format:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/services.py#L1-L520" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/services.py#L1-L545" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -101,13 +101,15 @@ SERVICES_DICT_TEMPLATE = {
 
     &#39;GET_ALL_CLIENTS&#39;: &#39;{0}Client&#39;,
     &#39;GET_VIRTUAL_CLIENTS&#39;: &#39;{0}Client?PseudoClientType=VSPseudo&#39;,
+    &#39;GET_FILE_SERVER_CLIENTS&#39;: &#39;{0}/v4/FileServers&#39;,
     &#39;CLIENTFORCEDELETE&#39;:&#39;{0}Client/%s?forceDelete=1&#39;,
     &#39;CLIENT&#39;: &#39;{0}Client/%s&#39;,
     &#39;FILTER_CLIENTS&#39;:&#39;{0}Client?%s&#39;,
     &#39;GET_ALL_CLIENTS_PLUS_HIDDEN&#39;: &#39;{0}Client?hiddenclients=true&#39;,
     &#39;GET_ALL_PSEUDO_CLIENTS&#39;: &#39;{0}Client?PseudoClientType&#39;,
     &#39;CHECK_READINESS&#39;: &#39;{0}Client/%s/CheckReadiness?network=%s&amp;resourceCapacity=%s&#39;
-                       &#39;&amp;NeedXmlResp=true&amp;includeDisabledClients=%s&amp;CSCCNetworkCheck=%s&#39;,
+                       &#39;&amp;NeedXmlResp=true&amp;includeDisabledClients=%s&amp;CSCCNetworkCheck=%s&#39;
+                       &#39;&amp;applicationCheck=%s&amp;additionalResources=%s&#39;,
 
     &#39;GET_ALL_AGENTS&#39;: &#39;{0}Agent?clientId=%s&#39;,
     &#39;AGENT&#39;: &#39;{0}Agent&#39;,
@@ -178,9 +180,11 @@ SERVICES_DICT_TEMPLATE = {
     &#39;BROWSE_MOUNT_POINTS&#39;: &#39;{0}/Client/%s/Action/BrowseMountPoints&#39;,
 
     &#39;GET_VM_BROWSE&#39;: &#39;{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AApplications%%3AApplications&amp;PseudoClientId=%s&#39;,
-    &#39;GET_VOLUME_BROWSE&#39;: &#39;{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AVolumes%%3AVolumes%%5CFOLDER%%3A%s%%3A%s&amp;PseudoClientId=%s&#39;,
-    &#39;GET_APP_BROWSE&#39;: &#39;{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AApplications%%3AApplications%%5CFOLDER%%3A%s%%3A%s&amp;PseudoClientId=%s&#39;,
-    &#39;GET_LABEL_BROWSE&#39;: &#39;{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3ALabels%%3ALabels%%5CFOLDER%%3A%s%%3A%s&amp;PseudoClientId=%s&#39;,
+
+    &#39;GET_K8S_NS_BROWSE&#39;: &#39;{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AApplications%%3AApplications&amp;PseudoClientId=%s&amp;vendor=KUBERNETES&#39;,
+    &#39;GET_K8S_VOLUME_BROWSE&#39;: &#39;{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AVolumes%%3AVolumes%%5CFOLDER%%3A%s%%3A%s&amp;PseudoClientId=%s&amp;vendor=KUBERNETES&#39;,
+    &#39;GET_K8S_APP_BROWSE&#39;: &#39;{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AApplications%%3AApplications%%5CFOLDER%%3A%s%%3A%s&amp;PseudoClientId=%s&amp;vendor=KUBERNETES&#39;,
+    &#39;GET_K8S_LABEL_BROWSE&#39;: &#39;{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3ALabels%%3ALabels%%5CFOLDER%%3A%s%%3A%s&amp;PseudoClientId=%s&amp;vendor=KUBERNETES&#39;,
 
     &#39;MODIFY_ALERT&#39;: &#39;{0}AlertRule/%s/Action/Modify&#39;,
     &#39;GET_ALL_CONSOLE_ALERTS&#39;: &#39;{0}Alert?pageNo=%s&amp;pageCount=%s&#39;,
@@ -222,6 +226,8 @@ SERVICES_DICT_TEMPLATE = {
     &#39;SQL_CLONES&#39;: &#39;{0}sql/clones&#39;,
     &#39;SQL_DATABASES&#39;: &#39;{0}sql/databases?databaseName=%s&#39;,
     &#39;SQL_DATABASE_DETAILS&#39;: &#39;{0}sql/instance/%s/database/%s&#39;,
+    &#39;SQL_AG_GROUPS&#39;: &#39;{0}v2/sql/availabilityGroups/client/%s/instance/%s&#39;,
+    &#39;SQL_AG_GROUP_REPLICAS&#39;: &#39;{0}v2/sql/availabilityGroupReplicas/client/%s/instance/%s/availabilityGroup/%s&#39;,
 
     &#39;GET_WORKFLOWS&#39;: &#39;{0}Workflow&#39;,
     &#39;DEPLOY_WORKFLOW&#39;: &#39;{0}Workflow/%s/action/deploy&#39;,
@@ -264,6 +270,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;GET_JDBC_DRIVERS&#39;: &#39;{0}dcube/GetJDBCDrivers/%s&#39;,
     &#39;DELETE_DATASOURCE_CONTENTS&#39;: &#39;{0}dcube/deletedata/%s?softdelete=true&#39;,
     &#39;DELETE_DATASOURCE&#39;: &#39;{0}dcube/deleteDataSource/%s&#39;,
+    &#39;PRUNE_DATASOURCE&#39;: &#39;{0}indexing/uns/deletecollection&#39;,
     &#39;CREATE_DATASOURCE&#39;: &#39;{0}dcube/createDataSource&#39;,
     &#39;DATACUBE_IMPORT_DATA&#39;: &#39;{0}dcube/post/%s/%s&#39;,
     &#39;START_JOB_DATASOURCE&#39;: &#39;{0}dcube/startjob/%s&#39;,
@@ -438,6 +445,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;CREATE_NAS_CLIENT&#39;: &#39;{0}NASClient&#39;,
     &#39;GET_OFFICE_365_ENTITIES&#39;: &#39;{0}Office365/entities&#39;,
     &#39;GET_DYNAMICS_365_CLIENTS&#39;: &#39;{0}Office365/entities?agentType=5&#39;,
+    &#39;GET_SALESFORCE_CLIENTS&#39;: &#39;{0}Salesforce/Organization&#39;,
     &#39;CLOUD_DISCOVERY&#39;: &#39;{0}Instance/%s/CloudDiscovery?clientId=%s&amp;appType=%s&#39;,
     &#39;SET_USER_POLICY_ASSOCIATION&#39;: &#39;{0}Office365/CloudApps/SetUserPolicyAssociation&#39;,
     &#39;USER_POLICY_ASSOCIATION&#39;: &#39;{0}Office365/CloudApps/UserPolicyAssociation&#39;,
@@ -470,6 +478,14 @@ SERVICES_DICT_TEMPLATE = {
     &#39;RELEASE_LICENSE&#39;: &#39;{0}Client/License/Release&#39;,
     &#39;RECONFIGURE_LICENSE&#39;: &#39;{0}Client/License/Reconfigure&#39;,
     &#39;LIST_LICENSES&#39;: &#39;{0}Client/%s/License&#39;,
+    &#39;APPLY_LICENSE&#39;: &#39;{0}License&#39;,
+    &#39;CAPACITY_LICENSE&#39;:&#39;{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:feabb5ca-b6b7-4572-b0cb-39352c7e1b67/data&#39;,
+    &#39;OI_LICENSE&#39;:&#39;{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:cd38c52a-e099-4252-d36f-3e2c54540f6f/data&#39;,
+    &#39;VIRTUALIZATION_LICENSE&#39;:&#39;{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:0aac5b36-10a4-4970-838a-c41fa2365583/data&#39;,
+    &#39;USER_LICENSE&#39;:&#39;{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:44cd7de8-ecb2-4ec8-8b2b-162491172eef/data&#39;,
+    &#39;ACTIVATE_LICENSE&#39;:&#39;{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:f7c6b473-f99d-44b4-ff5e-466b55656500/data&#39;,
+    &#39;METALLIC_LICENSE&#39;:&#39;{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:cc2e77ec-9315-4446-cd7e-44ef80a8860e/data&#39;,
+    &#39;OTHER_LICENSE&#39;:&#39;{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:2654b01f-9bb0-481e-b273-4b4fddc585b1/data&#39;,
     &#39;GET_CLOUDAPPS_USERS&#39;: &#39;{0}Instance/%s/CloudDiscovery?clientId=%s&amp;eDiscoverType=%s&#39;,
     &#39;GET_CLOUDAPPS_ONEDRIVE_USERS&#39;: &#39;{0}Instance/%s/CloudDiscovery?clientId=%s&amp;eDiscoverType=%s&amp;subclientId=%s&#39;,
     &#39;ENABLE_CLIENT_PRIVACY&#39;: &#39;{0}/V3/Client/%s/Lock&#39;,
@@ -514,6 +530,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;GET_ALL_LIVE_SYNC_PAIRS&#39;: &#39;{0}Replications/Monitors/streaming?subclientId=%s&#39;,
     &#39;GET_ALL_LIVE_SYNC_VM_PAIRS&#39;: &#39;{0}Replications/Monitors/streaming?subclientId=%s&amp;taskId=%s&#39;,
     &#39;GET_LIVE_SYNC_VM_PAIR&#39;: &#39;{0}Replications/Monitors/streaming?subclientId=%s&amp;replicationPairId=%s&#39;,
+    &#39;GET_REPLICATION_PAIR&#39;: &#39;{0}Replications/Monitors/streaming?replicationPairId=%s&#39;,
 
     &#39;BACKUP_NETWORK_PAIRS&#39;: &#39;{0}CommServ/DataInterfacePairs?ClientId=%s&#39;,
     &#39;BACKUP_NETWORK_PAIR&#39;: &#39;{0}CommServ/DataInterfacePairs&#39;,
@@ -540,7 +557,15 @@ SERVICES_DICT_TEMPLATE = {
     &#39;METALLIC_COMPLETED_SETUPS&#39;: &#39;{0}CloudService/CompletedSetups&#39;,
     &#39;USER_MAPPINGS&#39;: &#39;{0}GetUserMappings&#39;,
     &#39;METALLIC_REGISTERED&#39;: &#39;{0}CloudServices/Registered&#39;,
-    &#39;METALLIC_UNLINK&#39;: &#39;{0}CloudService/Unsubscribe&#39;
+    &#39;METALLIC_UNLINK&#39;: &#39;{0}CloudService/Unsubscribe&#39;,
+    &#39;ADD_OR_GET_SAML&#39;: &#39;{0}/v4/SAML&#39;,
+    &#39;EDIT_SAML&#39;: &#39;{0}/v4/SAML/%s&#39;,
+
+    &#39;EDIT_REGION&#39;: &#39;{0}/entity/%s/%s/region&#39;,
+    &#39;GET_REGION&#39;: &#39;{0}/entity/%s/%s/region?entityRegionType=%s&#39;,
+    &#39;CALCULATE_REGION&#39;: &#39;{0}/entity/%s/%s/region?calculate=True&amp;entityRegionType=%s&#39;,
+    
+    &#39;GET_OEM_ID&#39;: &#39;{0}/GetOemId&#39;
 }
 
 
@@ -585,7 +610,7 @@ services dict consisting of all APIs</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/services.py#L506-L520" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/services.py#L531-L545" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_services(web_service):
     &#34;&#34;&#34;Initializes the SERVICES DICT with the web service for APIs.

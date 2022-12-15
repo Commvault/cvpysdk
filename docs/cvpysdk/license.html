@@ -26,16 +26,76 @@
 <p>File for License operations.</p>
 <p>LicenseDetails
 : Class for representing license details information</p>
-<p>LicenseDetails:
-<strong>init</strong>(Commcell_object)&ndash;
+<h2 id="licensedetails">Licensedetails</h2>
+<p><strong>init</strong>(Commcell_object)
+&ndash;
 initialise with object of CommCell</p>
+<p>_get_detailed_licenses()
+&ndash;
+Gets all types of license details associated to the commcell object</p>
+<p>_get_capacity_details()
+&ndash; GET request to get capacity licenses property</p>
+<p>_get_complete_oi_licenses()
+&ndash;
+GET request to get OI licenses property</p>
+<p>_get_virtualization_licenses()
+&ndash;
+GET request to get virtualization licenses property</p>
+<p>_get_user_licenses()
+&ndash;
+GET request to get user licenses property</p>
+<p>_get_activate_licenses()
+&ndash;
+GET request to get activate licenses property</p>
+<p>_get_metallic_licenses()
+&ndash;
+GET request to get metallic licenses property</p>
+<p>_get_other_licenses()
+&ndash;
+GET request to get other licenses property</p>
+<p>_get_license_details
+&ndash;
+GET request to get detailed license information</p>
 <p>refresh()
 &ndash;
-refeshes the license details data</p>
+Updates License object with the latest configuration</p>
+<h2 id="licensedetails-attributes">Licensedetails Attributes</h2>
+<pre><code>commcell_id   --    Returns the CommCell Id in decimal value
+
+commcell_id_hex   --    Returns the hexadecimal value of commcell id
+
+cs_hostname   --    Returns the csHostName Or Address of CommCell
+
+license_ipaddress   --    Returns the license Ip Address
+
+oem_name   --    Returns the oem_name
+
+license_mode   --    Returns the license mode of license
+
+registration_code   --    Returns the registration code of CommCell
+
+serial_number   --    Returns the serial number of CommCell
+
+expiry_date   --    Returns the expiry date of License
+
+capacity_licenses   --    Returns dictionary with the capacity licenses
+
+complete_oi_licenses   --    Returns dictionary with the complete oi licenses
+
+virtualization_licenses   --    Returns dictionary with the virtualization licenses
+
+user_licenses   --    Returns dictionary with the user licenses
+
+activate_licenses   --    Returns dictionary with the activate licenses
+
+metallic_licenses   --    Returns dictionary with the metallic licenses
+
+other_licenses   --    Returns dictionary with the other licenses
+</code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/license.py#L1-L110" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/license.py#L1-L412" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -60,9 +120,64 @@ refeshes the license details data</p>
 LicenseDetails        : Class for representing license details information
 
 LicenseDetails:
-__init__(Commcell_object)--  initialise with object of CommCell
+    __init__(Commcell_object)    --  initialise with object of CommCell
+    
+    _get_detailed_licenses()      --  Gets all types of license details associated to the commcell object
+    
+    _get_capacity_details()       -- GET request to get capacity licenses property
+    
+    _get_complete_oi_licenses()    --   GET request to get OI licenses property
+    
+    _get_virtualization_licenses()    --   GET request to get virtualization licenses property
+    
+    _get_user_licenses()    --   GET request to get user licenses property
+    
+    _get_activate_licenses()    --   GET request to get activate licenses property
+    
+    _get_metallic_licenses()    --   GET request to get metallic licenses property
+    
+    _get_other_licenses()    --   GET request to get other licenses property
+    
+    _get_license_details    --   GET request to get detailed license information
+    
+    
+    refresh()    --    Updates License object with the latest configuration
+    
+    
 
-refresh()                --  refeshes the license details data
+LicenseDetails Attributes
+-------------------------
+    commcell_id   --    Returns the CommCell Id in decimal value
+    
+    commcell_id_hex   --    Returns the hexadecimal value of commcell id
+    
+    cs_hostname   --    Returns the csHostName Or Address of CommCell
+    
+    license_ipaddress   --    Returns the license Ip Address 
+    
+    oem_name   --    Returns the oem_name
+    
+    license_mode   --    Returns the license mode of license
+    
+    registration_code   --    Returns the registration code of CommCell
+    
+    serial_number   --    Returns the serial number of CommCell
+    
+    expiry_date   --    Returns the expiry date of License
+    
+    capacity_licenses   --    Returns dictionary with the capacity licenses
+    
+    complete_oi_licenses   --    Returns dictionary with the complete oi licenses
+    
+    virtualization_licenses   --    Returns dictionary with the virtualization licenses
+    
+    user_licenses   --    Returns dictionary with the user licenses
+    
+    activate_licenses   --    Returns dictionary with the activate licenses
+    
+    metallic_licenses   --    Returns dictionary with the metallic licenses
+    
+    other_licenses   --    Returns dictionary with the other licenses
 
 &#34;&#34;&#34;
 from __future__ import absolute_import
@@ -71,13 +186,224 @@ from .exception import SDKException
 
 
 class LicenseDetails(object):
-    &#34;&#34;&#34;Class for accessing license details information&#34;&#34;&#34;
+    &#34;&#34;&#34;Class for accessing license details information&#34;&#34;&#34;    
+
     def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initialize object of the LicenseDetails class.
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+
+            Returns:
+                object - instance of the LicenseDetails class
+        &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._LICENSE = self._commcell_object._services[&#39;LICENSE&#39;]
+        self._APPLY_LICENSE = self._commcell_object._services[&#39;APPLY_LICENSE&#39;]
+        self._capacity_licenses = None
+        self._complete_oi_licenses = None
+        self._virtualization_licenses = None
+        self._user_licenses = None
+        self._activate_licenses = None
+        self._metallic_licenses = None
+        self._other_licenses = None
         self._get_license_details()
 
+    def _get_detailed_licenses(self):
+        &#34;&#34;&#34;
+        Gets all types of license details associated to the commcell object
+        &#34;&#34;&#34;
+        self._get_capacity_details()
+        self._get_complete_oi_licenses()
+        self._get_virtualization_licenses()
+        self._get_user_licenses()
+        self._get_activate_licenses()
+        self._get_metallic_licenses()
+        self._get_other_licenses()
+
+    def _get_capacity_details(self):
+        &#34;&#34;&#34;
+        Request to get capacity licenses property
+
+        Raises:
+            SDKException:
+
+                if response is not success
+
+                if response is empty
+
+        &#34;&#34;&#34;
+
+        self._CAPACITY_LICENSE = self._commcell_object._services[&#39;CAPACITY_LICENSE&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._CAPACITY_LICENSE)
+
+        if flag:
+            if response.json():
+                self._capacity_licenses = response.json().get(&#39;records&#39;,None)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def _get_complete_oi_licenses(self):
+        &#34;&#34;&#34;
+       GET request to get OI licenses property
+
+        Raises:
+            SDKException:
+
+                if response is not success
+
+                if response is empty
+
+        &#34;&#34;&#34;
+
+        self._OI_LICENSE = self._commcell_object._services[&#39;OI_LICENSE&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._OI_LICENSE)
+
+        if flag:
+            if response.json():
+                self._complete_oi_licenses = response.json().get(&#39;records&#39;,None)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def _get_virtualization_licenses(self):
+        &#34;&#34;&#34;
+       GET request to get virtualization licenses property
+
+        Raises:
+            SDKException:
+
+                if response is not success
+
+                if response is empty
+
+        &#34;&#34;&#34;
+        self._VIRTUALIZATION_LICENSE = self._commcell_object._services[&#39;VIRTUALIZATION_LICENSE&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._VIRTUALIZATION_LICENSE)
+
+        if flag:
+            if response.json():
+                self._virtualization_licenses = response.json().get(&#39;records&#39;,None)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def _get_user_licenses(self):
+        &#34;&#34;&#34;
+       GET request to get user licenses property
+
+        Raises:
+            SDKException:
+
+                if response is not success
+
+                if response is empty
+
+        &#34;&#34;&#34;
+        self._USER_LICENSE = self._commcell_object._services[&#39;USER_LICENSE&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._USER_LICENSE)
+
+        if flag:
+            if response.json():
+                self._user_licenses = response.json().get(&#39;records&#39;,None)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def _get_activate_licenses(self):
+        &#34;&#34;&#34;
+       GET request to get activate licenses property
+
+        Raises:
+            SDKException:
+
+                if response is not success
+
+                if response is empty
+
+        &#34;&#34;&#34;
+        self._ACTIVATE_LICENSE = self._commcell_object._services[&#39;ACTIVATE_LICENSE&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._ACTIVATE_LICENSE)
+
+        if flag:
+            if response.json():
+                self._activate_licenses = response.json().get(&#39;records&#39;,None)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def _get_metallic_licenses(self):
+        &#34;&#34;&#34;
+       GET request to get metallic licenses property
+
+        Raises:
+            SDKException:
+
+                if response is not success
+
+                if response is empty
+
+        &#34;&#34;&#34;
+        self._METALLIC_LICENSE = self._commcell_object._services[&#39;METALLIC_LICENSE&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._METALLIC_LICENSE)
+
+        if flag:
+            if response.json():
+                self._metallic_licenses = response.json().get(&#39;records&#39;,None)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def _get_other_licenses(self):
+        &#34;&#34;&#34;
+       GET request to get other licenses property
+
+        Raises:
+            SDKException:
+
+                if response is not success
+
+                if response is empty
+
+        &#34;&#34;&#34;
+        self._OTHER_LICENSE = self._commcell_object._services[&#39;OTHER_LICENSE&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._OTHER_LICENSE)
+
+        if flag:
+            if response.json():
+                self._other_licenses = response.json().get(&#39;records&#39;,None)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
     def _get_license_details(self):
+        &#34;&#34;&#34;
+       GET request to get detailed license information
+
+        Raises:
+            SDKException:
+
+                if response is not success
+
+                if response is empty
+
+        &#34;&#34;&#34;
+
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;GET&#39;, self._LICENSE
         )
@@ -95,19 +421,20 @@ class LicenseDetails(object):
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
-
+        
     def refresh(self):
-        &#34;&#34;&#34;updates metrics object with the latest configuration&#34;&#34;&#34;
+        &#34;&#34;&#34;Updates metrics object with the latest configuration&#34;&#34;&#34;
         self._get_license_details()
+        self._get_detailed_licenses()
 
     @property
     def commcell_id(self):
-        &#34;&#34;&#34;returns the CommCell Id in decimal value&#34;&#34;&#34;
+        &#34;&#34;&#34;Returns the CommCell Id in decimal value&#34;&#34;&#34;
         return self._commcell_id
 
     @property
     def commcell_id_hex(self):
-        &#34;&#34;&#34;returns the hexadecimal value of commcell id&#34;&#34;&#34;
+        &#34;&#34;&#34;Returns the hexadecimal value of commcell id&#34;&#34;&#34;
         ccid = self._commcell_id
         if ccid == -1:
             return &#39;FFFFF&#39;
@@ -125,7 +452,7 @@ class LicenseDetails(object):
 
     @property
     def oem_name(self):
-        &#34;&#34;&#34;returns the oem_name&#34;&#34;&#34;
+        &#34;&#34;&#34;Returns the oem_name&#34;&#34;&#34;
         return self._oemname
 
     @property
@@ -135,18 +462,53 @@ class LicenseDetails(object):
 
     @property
     def registration_code(self):
-        &#34;&#34;&#34;returns the registration code of CommCell&#34;&#34;&#34;
+        &#34;&#34;&#34;Returns the registration code of CommCell&#34;&#34;&#34;
         return self._regcode
 
     @property
     def serial_number(self):
-        &#34;&#34;&#34;returns the serial number of CommCell&#34;&#34;&#34;
+        &#34;&#34;&#34;Returns the serial number of CommCell&#34;&#34;&#34;
         return self._serialno
 
     @property
     def expiry_date(self):
         &#34;&#34;&#34; Returns the expiry date of License&#34;&#34;&#34;
-        return self._expiry_date</code></pre>
+        return self._expiry_date
+
+    @property
+    def capacity_licenses(self):
+        &#34;&#34;&#34;Returns dictionary with the capacity licenses&#34;&#34;&#34;
+        return self._capacity_licenses
+
+    @property
+    def complete_oi_licenses(self):
+        &#34;&#34;&#34;Returns dictionary with the complete oi licenses&#34;&#34;&#34;
+        return self._complete_oi_licenses
+
+    @property
+    def virtualization_licenses(self):
+        &#34;&#34;&#34;Returns dictionary with the virtualization licenses&#34;&#34;&#34;
+        return self._virtualization_licenses
+
+    @property
+    def user_licenses(self):
+        &#34;&#34;&#34;Returns dictionary with the user licenses&#34;&#34;&#34;
+        return self._user_licenses
+
+    @property
+    def activate_licenses(self):
+        &#34;&#34;&#34;Returns dictionary with the activate licenses&#34;&#34;&#34;
+        return self._activate_licenses
+
+    @property
+    def metallic_licenses(self):
+        &#34;&#34;&#34;Returns dictionary with the metallic licenses&#34;&#34;&#34;
+        return self._metallic_licenses
+
+    @property
+    def other_licenses(self):
+        &#34;&#34;&#34;Returns dictionary with the other licenses&#34;&#34;&#34;
+        return self._other_licenses</code></pre>
 </details>
 </section>
 <section>
@@ -163,20 +525,238 @@ class LicenseDetails(object):
 <span>(</span><span>commcell_object)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for accessing license details information</p></div>
+<div class="desc"><p>Class for accessing license details information</p>
+<p>Initialize object of the LicenseDetails class.</p>
+<h2 id="args">Args</h2>
+<p>commcell_object (object)
+&ndash;
+instance of the Commcell class</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the LicenseDetails class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/license.py#L34-L110" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/license.py#L89-L412" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class LicenseDetails(object):
-    &#34;&#34;&#34;Class for accessing license details information&#34;&#34;&#34;
+    &#34;&#34;&#34;Class for accessing license details information&#34;&#34;&#34;    
+
     def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initialize object of the LicenseDetails class.
+
+            Args:
+                commcell_object (object)  --  instance of the Commcell class
+
+            Returns:
+                object - instance of the LicenseDetails class
+        &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._LICENSE = self._commcell_object._services[&#39;LICENSE&#39;]
+        self._APPLY_LICENSE = self._commcell_object._services[&#39;APPLY_LICENSE&#39;]
+        self._capacity_licenses = None
+        self._complete_oi_licenses = None
+        self._virtualization_licenses = None
+        self._user_licenses = None
+        self._activate_licenses = None
+        self._metallic_licenses = None
+        self._other_licenses = None
         self._get_license_details()
 
+    def _get_detailed_licenses(self):
+        &#34;&#34;&#34;
+        Gets all types of license details associated to the commcell object
+        &#34;&#34;&#34;
+        self._get_capacity_details()
+        self._get_complete_oi_licenses()
+        self._get_virtualization_licenses()
+        self._get_user_licenses()
+        self._get_activate_licenses()
+        self._get_metallic_licenses()
+        self._get_other_licenses()
+
+    def _get_capacity_details(self):
+        &#34;&#34;&#34;
+        Request to get capacity licenses property
+
+        Raises:
+            SDKException:
+
+                if response is not success
+
+                if response is empty
+
+        &#34;&#34;&#34;
+
+        self._CAPACITY_LICENSE = self._commcell_object._services[&#39;CAPACITY_LICENSE&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._CAPACITY_LICENSE)
+
+        if flag:
+            if response.json():
+                self._capacity_licenses = response.json().get(&#39;records&#39;,None)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def _get_complete_oi_licenses(self):
+        &#34;&#34;&#34;
+       GET request to get OI licenses property
+
+        Raises:
+            SDKException:
+
+                if response is not success
+
+                if response is empty
+
+        &#34;&#34;&#34;
+
+        self._OI_LICENSE = self._commcell_object._services[&#39;OI_LICENSE&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._OI_LICENSE)
+
+        if flag:
+            if response.json():
+                self._complete_oi_licenses = response.json().get(&#39;records&#39;,None)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def _get_virtualization_licenses(self):
+        &#34;&#34;&#34;
+       GET request to get virtualization licenses property
+
+        Raises:
+            SDKException:
+
+                if response is not success
+
+                if response is empty
+
+        &#34;&#34;&#34;
+        self._VIRTUALIZATION_LICENSE = self._commcell_object._services[&#39;VIRTUALIZATION_LICENSE&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._VIRTUALIZATION_LICENSE)
+
+        if flag:
+            if response.json():
+                self._virtualization_licenses = response.json().get(&#39;records&#39;,None)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def _get_user_licenses(self):
+        &#34;&#34;&#34;
+       GET request to get user licenses property
+
+        Raises:
+            SDKException:
+
+                if response is not success
+
+                if response is empty
+
+        &#34;&#34;&#34;
+        self._USER_LICENSE = self._commcell_object._services[&#39;USER_LICENSE&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._USER_LICENSE)
+
+        if flag:
+            if response.json():
+                self._user_licenses = response.json().get(&#39;records&#39;,None)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def _get_activate_licenses(self):
+        &#34;&#34;&#34;
+       GET request to get activate licenses property
+
+        Raises:
+            SDKException:
+
+                if response is not success
+
+                if response is empty
+
+        &#34;&#34;&#34;
+        self._ACTIVATE_LICENSE = self._commcell_object._services[&#39;ACTIVATE_LICENSE&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._ACTIVATE_LICENSE)
+
+        if flag:
+            if response.json():
+                self._activate_licenses = response.json().get(&#39;records&#39;,None)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def _get_metallic_licenses(self):
+        &#34;&#34;&#34;
+       GET request to get metallic licenses property
+
+        Raises:
+            SDKException:
+
+                if response is not success
+
+                if response is empty
+
+        &#34;&#34;&#34;
+        self._METALLIC_LICENSE = self._commcell_object._services[&#39;METALLIC_LICENSE&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._METALLIC_LICENSE)
+
+        if flag:
+            if response.json():
+                self._metallic_licenses = response.json().get(&#39;records&#39;,None)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def _get_other_licenses(self):
+        &#34;&#34;&#34;
+       GET request to get other licenses property
+
+        Raises:
+            SDKException:
+
+                if response is not success
+
+                if response is empty
+
+        &#34;&#34;&#34;
+        self._OTHER_LICENSE = self._commcell_object._services[&#39;OTHER_LICENSE&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._OTHER_LICENSE)
+
+        if flag:
+            if response.json():
+                self._other_licenses = response.json().get(&#39;records&#39;,None)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
     def _get_license_details(self):
+        &#34;&#34;&#34;
+       GET request to get detailed license information
+
+        Raises:
+            SDKException:
+
+                if response is not success
+
+                if response is empty
+
+        &#34;&#34;&#34;
+
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;GET&#39;, self._LICENSE
         )
@@ -194,19 +774,20 @@ class LicenseDetails(object):
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
-
+        
     def refresh(self):
-        &#34;&#34;&#34;updates metrics object with the latest configuration&#34;&#34;&#34;
+        &#34;&#34;&#34;Updates metrics object with the latest configuration&#34;&#34;&#34;
         self._get_license_details()
+        self._get_detailed_licenses()
 
     @property
     def commcell_id(self):
-        &#34;&#34;&#34;returns the CommCell Id in decimal value&#34;&#34;&#34;
+        &#34;&#34;&#34;Returns the CommCell Id in decimal value&#34;&#34;&#34;
         return self._commcell_id
 
     @property
     def commcell_id_hex(self):
-        &#34;&#34;&#34;returns the hexadecimal value of commcell id&#34;&#34;&#34;
+        &#34;&#34;&#34;Returns the hexadecimal value of commcell id&#34;&#34;&#34;
         ccid = self._commcell_id
         if ccid == -1:
             return &#39;FFFFF&#39;
@@ -224,7 +805,7 @@ class LicenseDetails(object):
 
     @property
     def oem_name(self):
-        &#34;&#34;&#34;returns the oem_name&#34;&#34;&#34;
+        &#34;&#34;&#34;Returns the oem_name&#34;&#34;&#34;
         return self._oemname
 
     @property
@@ -234,50 +815,127 @@ class LicenseDetails(object):
 
     @property
     def registration_code(self):
-        &#34;&#34;&#34;returns the registration code of CommCell&#34;&#34;&#34;
+        &#34;&#34;&#34;Returns the registration code of CommCell&#34;&#34;&#34;
         return self._regcode
 
     @property
     def serial_number(self):
-        &#34;&#34;&#34;returns the serial number of CommCell&#34;&#34;&#34;
+        &#34;&#34;&#34;Returns the serial number of CommCell&#34;&#34;&#34;
         return self._serialno
 
     @property
     def expiry_date(self):
         &#34;&#34;&#34; Returns the expiry date of License&#34;&#34;&#34;
-        return self._expiry_date</code></pre>
+        return self._expiry_date
+
+    @property
+    def capacity_licenses(self):
+        &#34;&#34;&#34;Returns dictionary with the capacity licenses&#34;&#34;&#34;
+        return self._capacity_licenses
+
+    @property
+    def complete_oi_licenses(self):
+        &#34;&#34;&#34;Returns dictionary with the complete oi licenses&#34;&#34;&#34;
+        return self._complete_oi_licenses
+
+    @property
+    def virtualization_licenses(self):
+        &#34;&#34;&#34;Returns dictionary with the virtualization licenses&#34;&#34;&#34;
+        return self._virtualization_licenses
+
+    @property
+    def user_licenses(self):
+        &#34;&#34;&#34;Returns dictionary with the user licenses&#34;&#34;&#34;
+        return self._user_licenses
+
+    @property
+    def activate_licenses(self):
+        &#34;&#34;&#34;Returns dictionary with the activate licenses&#34;&#34;&#34;
+        return self._activate_licenses
+
+    @property
+    def metallic_licenses(self):
+        &#34;&#34;&#34;Returns dictionary with the metallic licenses&#34;&#34;&#34;
+        return self._metallic_licenses
+
+    @property
+    def other_licenses(self):
+        &#34;&#34;&#34;Returns dictionary with the other licenses&#34;&#34;&#34;
+        return self._other_licenses</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.license.LicenseDetails.commcell_id"><code class="name">var <span class="ident">commcell_id</span></code></dt>
+<dt id="cvpysdk.license.LicenseDetails.activate_licenses"><code class="name">var <span class="ident">activate_licenses</span></code></dt>
 <dd>
-<div class="desc"><p>returns the CommCell Id in decimal value</p></div>
+<div class="desc"><p>Returns dictionary with the activate licenses</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/license.py#L64-L67" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/license.py#L399-L402" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def activate_licenses(self):
+    &#34;&#34;&#34;Returns dictionary with the activate licenses&#34;&#34;&#34;
+    return self._activate_licenses</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.license.LicenseDetails.capacity_licenses"><code class="name">var <span class="ident">capacity_licenses</span></code></dt>
+<dd>
+<div class="desc"><p>Returns dictionary with the capacity licenses</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/license.py#L379-L382" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def capacity_licenses(self):
+    &#34;&#34;&#34;Returns dictionary with the capacity licenses&#34;&#34;&#34;
+    return self._capacity_licenses</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.license.LicenseDetails.commcell_id"><code class="name">var <span class="ident">commcell_id</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the CommCell Id in decimal value</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/license.py#L331-L334" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def commcell_id(self):
-    &#34;&#34;&#34;returns the CommCell Id in decimal value&#34;&#34;&#34;
+    &#34;&#34;&#34;Returns the CommCell Id in decimal value&#34;&#34;&#34;
     return self._commcell_id</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.license.LicenseDetails.commcell_id_hex"><code class="name">var <span class="ident">commcell_id_hex</span></code></dt>
 <dd>
-<div class="desc"><p>returns the hexadecimal value of commcell id</p></div>
+<div class="desc"><p>Returns the hexadecimal value of commcell id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/license.py#L69-L75" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/license.py#L336-L342" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def commcell_id_hex(self):
-    &#34;&#34;&#34;returns the hexadecimal value of commcell id&#34;&#34;&#34;
+    &#34;&#34;&#34;Returns the hexadecimal value of commcell id&#34;&#34;&#34;
     ccid = self._commcell_id
     if ccid == -1:
         return &#39;FFFFF&#39;
     return hex(ccid).split(&#39;x&#39;)[1].upper()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.license.LicenseDetails.complete_oi_licenses"><code class="name">var <span class="ident">complete_oi_licenses</span></code></dt>
+<dd>
+<div class="desc"><p>Returns dictionary with the complete oi licenses</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/license.py#L384-L387" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def complete_oi_licenses(self):
+    &#34;&#34;&#34;Returns dictionary with the complete oi licenses&#34;&#34;&#34;
+    return self._complete_oi_licenses</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.license.LicenseDetails.cs_hostname"><code class="name">var <span class="ident">cs_hostname</span></code></dt>
@@ -286,7 +944,7 @@ def commcell_id_hex(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/license.py#L77-L80" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/license.py#L344-L347" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def cs_hostname(self):
@@ -300,7 +958,7 @@ def cs_hostname(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/license.py#L107-L110" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/license.py#L374-L377" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def expiry_date(self):
@@ -314,7 +972,7 @@ def expiry_date(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/license.py#L82-L85" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/license.py#L349-L352" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def license_ipaddress(self):
@@ -328,7 +986,7 @@ def license_ipaddress(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/license.py#L92-L95" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/license.py#L359-L362" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def license_mode(self):
@@ -336,46 +994,102 @@ def license_mode(self):
     return self._license_mode</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.license.LicenseDetails.oem_name"><code class="name">var <span class="ident">oem_name</span></code></dt>
+<dt id="cvpysdk.license.LicenseDetails.metallic_licenses"><code class="name">var <span class="ident">metallic_licenses</span></code></dt>
 <dd>
-<div class="desc"><p>returns the oem_name</p></div>
+<div class="desc"><p>Returns dictionary with the metallic licenses</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/license.py#L87-L90" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/license.py#L404-L407" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def metallic_licenses(self):
+    &#34;&#34;&#34;Returns dictionary with the metallic licenses&#34;&#34;&#34;
+    return self._metallic_licenses</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.license.LicenseDetails.oem_name"><code class="name">var <span class="ident">oem_name</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the oem_name</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/license.py#L354-L357" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def oem_name(self):
-    &#34;&#34;&#34;returns the oem_name&#34;&#34;&#34;
+    &#34;&#34;&#34;Returns the oem_name&#34;&#34;&#34;
     return self._oemname</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.license.LicenseDetails.other_licenses"><code class="name">var <span class="ident">other_licenses</span></code></dt>
+<dd>
+<div class="desc"><p>Returns dictionary with the other licenses</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/license.py#L409-L412" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def other_licenses(self):
+    &#34;&#34;&#34;Returns dictionary with the other licenses&#34;&#34;&#34;
+    return self._other_licenses</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.license.LicenseDetails.registration_code"><code class="name">var <span class="ident">registration_code</span></code></dt>
 <dd>
-<div class="desc"><p>returns the registration code of CommCell</p></div>
+<div class="desc"><p>Returns the registration code of CommCell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/license.py#L97-L100" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/license.py#L364-L367" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def registration_code(self):
-    &#34;&#34;&#34;returns the registration code of CommCell&#34;&#34;&#34;
+    &#34;&#34;&#34;Returns the registration code of CommCell&#34;&#34;&#34;
     return self._regcode</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.license.LicenseDetails.serial_number"><code class="name">var <span class="ident">serial_number</span></code></dt>
 <dd>
-<div class="desc"><p>returns the serial number of CommCell</p></div>
+<div class="desc"><p>Returns the serial number of CommCell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/license.py#L102-L105" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/license.py#L369-L372" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def serial_number(self):
-    &#34;&#34;&#34;returns the serial number of CommCell&#34;&#34;&#34;
+    &#34;&#34;&#34;Returns the serial number of CommCell&#34;&#34;&#34;
     return self._serialno</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.license.LicenseDetails.user_licenses"><code class="name">var <span class="ident">user_licenses</span></code></dt>
+<dd>
+<div class="desc"><p>Returns dictionary with the user licenses</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/license.py#L394-L397" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def user_licenses(self):
+    &#34;&#34;&#34;Returns dictionary with the user licenses&#34;&#34;&#34;
+    return self._user_licenses</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.license.LicenseDetails.virtualization_licenses"><code class="name">var <span class="ident">virtualization_licenses</span></code></dt>
+<dd>
+<div class="desc"><p>Returns dictionary with the virtualization licenses</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/license.py#L389-L392" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def virtualization_licenses(self):
+    &#34;&#34;&#34;Returns dictionary with the virtualization licenses&#34;&#34;&#34;
+    return self._virtualization_licenses</code></pre>
 </details>
 </dd>
 </dl>
@@ -385,15 +1099,16 @@ def serial_number(self):
 <span>def <span class="ident">refresh</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>updates metrics object with the latest configuration</p></div>
+<div class="desc"><p>Updates metrics object with the latest configuration</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/license.py#L60-L62" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/license.py#L326-L329" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;updates metrics object with the latest configuration&#34;&#34;&#34;
-    self._get_license_details()</code></pre>
+    &#34;&#34;&#34;Updates metrics object with the latest configuration&#34;&#34;&#34;
+    self._get_license_details()
+    self._get_detailed_licenses()</code></pre>
 </details>
 </dd>
 </dl>
@@ -456,7 +1171,9 @@ setTimeout(() => input.focus(), 100);
 </script>
 <h1>Index</h1>
 <div class="toc">
-<ul></ul>
+<ul>
+<li><a href="#licensedetails-attributes">LicenseDetails Attributes</a></li>
+</ul>
 </div>
 <ul id="index">
 <li><h3>Super-module</h3>
@@ -468,17 +1185,24 @@ setTimeout(() => input.focus(), 100);
 <ul>
 <li>
 <h4><code><a title="cvpysdk.license.LicenseDetails" href="#cvpysdk.license.LicenseDetails">LicenseDetails</a></code></h4>
-<ul class="two-column">
+<ul class="">
+<li><code><a title="cvpysdk.license.LicenseDetails.activate_licenses" href="#cvpysdk.license.LicenseDetails.activate_licenses">activate_licenses</a></code></li>
+<li><code><a title="cvpysdk.license.LicenseDetails.capacity_licenses" href="#cvpysdk.license.LicenseDetails.capacity_licenses">capacity_licenses</a></code></li>
 <li><code><a title="cvpysdk.license.LicenseDetails.commcell_id" href="#cvpysdk.license.LicenseDetails.commcell_id">commcell_id</a></code></li>
 <li><code><a title="cvpysdk.license.LicenseDetails.commcell_id_hex" href="#cvpysdk.license.LicenseDetails.commcell_id_hex">commcell_id_hex</a></code></li>
+<li><code><a title="cvpysdk.license.LicenseDetails.complete_oi_licenses" href="#cvpysdk.license.LicenseDetails.complete_oi_licenses">complete_oi_licenses</a></code></li>
 <li><code><a title="cvpysdk.license.LicenseDetails.cs_hostname" href="#cvpysdk.license.LicenseDetails.cs_hostname">cs_hostname</a></code></li>
 <li><code><a title="cvpysdk.license.LicenseDetails.expiry_date" href="#cvpysdk.license.LicenseDetails.expiry_date">expiry_date</a></code></li>
 <li><code><a title="cvpysdk.license.LicenseDetails.license_ipaddress" href="#cvpysdk.license.LicenseDetails.license_ipaddress">license_ipaddress</a></code></li>
 <li><code><a title="cvpysdk.license.LicenseDetails.license_mode" href="#cvpysdk.license.LicenseDetails.license_mode">license_mode</a></code></li>
+<li><code><a title="cvpysdk.license.LicenseDetails.metallic_licenses" href="#cvpysdk.license.LicenseDetails.metallic_licenses">metallic_licenses</a></code></li>
 <li><code><a title="cvpysdk.license.LicenseDetails.oem_name" href="#cvpysdk.license.LicenseDetails.oem_name">oem_name</a></code></li>
+<li><code><a title="cvpysdk.license.LicenseDetails.other_licenses" href="#cvpysdk.license.LicenseDetails.other_licenses">other_licenses</a></code></li>
 <li><code><a title="cvpysdk.license.LicenseDetails.refresh" href="#cvpysdk.license.LicenseDetails.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.license.LicenseDetails.registration_code" href="#cvpysdk.license.LicenseDetails.registration_code">registration_code</a></code></li>
 <li><code><a title="cvpysdk.license.LicenseDetails.serial_number" href="#cvpysdk.license.LicenseDetails.serial_number">serial_number</a></code></li>
+<li><code><a title="cvpysdk.license.LicenseDetails.user_licenses" href="#cvpysdk.license.LicenseDetails.user_licenses">user_licenses</a></code></li>
+<li><code><a title="cvpysdk.license.LicenseDetails.virtualization_licenses" href="#cvpysdk.license.LicenseDetails.virtualization_licenses">virtualization_licenses</a></code></li>
 </ul>
 </li>
 </ul>

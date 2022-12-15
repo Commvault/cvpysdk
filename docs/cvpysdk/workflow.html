@@ -155,7 +155,7 @@ workflow_name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L1-L1553" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L1-L1550" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -286,9 +286,6 @@ from xml.parsers.expat import ExpatError
 
 import os
 import xmltodict
-
-from past.builtins import basestring
-from past.builtins import raw_input
 
 from .job import Job
 from .exception import SDKException
@@ -558,7 +555,7 @@ class WorkFlows(object):
                     if type of the workflow name argument is not string
 
         &#34;&#34;&#34;
-        if not isinstance(workflow_name, basestring):
+        if not isinstance(workflow_name, str):
             raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
         return self._workflows and workflow_name.lower() in self._workflows
@@ -579,7 +576,7 @@ class WorkFlows(object):
                     if type of the workflow activity name argument is not string
 
         &#34;&#34;&#34;
-        if not isinstance(activity_name, basestring):
+        if not isinstance(activity_name, str):
             raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
         return self._activities and activity_name.lower() in self._activities
@@ -606,7 +603,7 @@ class WorkFlows(object):
                     if HTTP Status Code is not SUCCESS / importing workflow failed
 
         &#34;&#34;&#34;
-        if not isinstance(workflow_xml, basestring):
+        if not isinstance(workflow_xml, str):
             raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
         if os.path.isfile(workflow_xml):
@@ -657,7 +654,7 @@ class WorkFlows(object):
                     if HTTP Status Code is not SUCCESS / importing workflow failed
 
         &#34;&#34;&#34;
-        if not isinstance(activity_xml, basestring):
+        if not isinstance(activity_xml, str):
             raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
         if os.path.isfile(activity_xml):
@@ -710,7 +707,7 @@ class WorkFlows(object):
                     if HTTP Status Code is not SUCCESS / download workflow failed
 
         &#34;&#34;&#34;
-        if not isinstance(workflow_name, basestring):
+        if not isinstance(workflow_name, str):
             raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
         from .commcell import Commcell
@@ -792,7 +789,7 @@ class WorkFlows(object):
 
                     if no workflow exists with the given name
         &#34;&#34;&#34;
-        if not isinstance(workflow_name, basestring):
+        if not isinstance(workflow_name, str):
             raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
         else:
             workflow_name = workflow_name.lower()
@@ -821,7 +818,7 @@ class WorkFlows(object):
                     if HTTP Status Code is not SUCCESS / importing workflow failed
 
         &#34;&#34;&#34;
-        if not isinstance(workflow_name, basestring):
+        if not isinstance(workflow_name, str):
             raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
         workflow_xml = &#34;&#34;&#34;
@@ -934,7 +931,7 @@ class WorkFlows(object):
                 Exception:
                     Failed to submit workflow interaction request
         &#34;&#34;&#34;
-        if not isinstance(input_xml, basestring) or not isinstance(interaction, dict) or not isinstance(action, str):
+        if not isinstance(input_xml, str) or not isinstance(interaction, dict) or not isinstance(action, str):
             raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
         from xml.sax.saxutils import escape
@@ -1072,9 +1069,9 @@ class WorkFlow(object):
             prompt = input_dict[&#39;display_name&#39;]
 
         if input_dict[&#39;is_required&#39;]:
-            value = raw_input(prompt + &#39;*&#39; + &#39;::  &#39;)
+            value = input(prompt + &#39;*&#39; + &#39;::  &#39;)
         else:
-            value = raw_input(prompt + &#39;::  &#39;)
+            value = input(prompt + &#39;::  &#39;)
 
         if value:
             return value
@@ -1270,8 +1267,8 @@ class WorkFlow(object):
 
         workflow_name = self._workflow_name.lower()
 
-        if not ((workflow_engine is not None and isinstance(workflow_engine, basestring)) or
-                (workflow_xml is not None and isinstance(workflow_xml, basestring))):
+        if not ((workflow_engine is not None and isinstance(workflow_engine, str)) or
+                (workflow_xml is not None and isinstance(workflow_xml, str))):
             raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
         if not self._commcell_object.workflows.has_workflow(workflow_name):
@@ -1464,7 +1461,7 @@ class WorkFlow(object):
         if export_location is None:
             export_location = os.getcwd()
         else:
-            if not isinstance(export_location, basestring):
+            if not isinstance(export_location, str):
                 raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
             if not os.path.exists(export_location):
@@ -1704,7 +1701,7 @@ class WorkFlow(object):
 
                     if the type of value input is not string
         &#34;&#34;&#34;
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             self._set_workflow_properties(&#34;description&#34;, value)
         else:
             raise SDKException(
@@ -1749,7 +1746,7 @@ instance of the WorkFlow class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L834-L1553" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L831-L1550" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class WorkFlow(object):
     &#34;&#34;&#34;Class for representing a workflow on a commcell.&#34;&#34;&#34;
@@ -1833,9 +1830,9 @@ instance of the WorkFlow class</p></div>
             prompt = input_dict[&#39;display_name&#39;]
 
         if input_dict[&#39;is_required&#39;]:
-            value = raw_input(prompt + &#39;*&#39; + &#39;::  &#39;)
+            value = input(prompt + &#39;*&#39; + &#39;::  &#39;)
         else:
-            value = raw_input(prompt + &#39;::  &#39;)
+            value = input(prompt + &#39;::  &#39;)
 
         if value:
             return value
@@ -2031,8 +2028,8 @@ instance of the WorkFlow class</p></div>
 
         workflow_name = self._workflow_name.lower()
 
-        if not ((workflow_engine is not None and isinstance(workflow_engine, basestring)) or
-                (workflow_xml is not None and isinstance(workflow_xml, basestring))):
+        if not ((workflow_engine is not None and isinstance(workflow_engine, str)) or
+                (workflow_xml is not None and isinstance(workflow_xml, str))):
             raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
         if not self._commcell_object.workflows.has_workflow(workflow_name):
@@ -2225,7 +2222,7 @@ instance of the WorkFlow class</p></div>
         if export_location is None:
             export_location = os.getcwd()
         else:
-            if not isinstance(export_location, basestring):
+            if not isinstance(export_location, str):
                 raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
             if not os.path.exists(export_location):
@@ -2465,7 +2462,7 @@ instance of the WorkFlow class</p></div>
 
                     if the type of value input is not string
         &#34;&#34;&#34;
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             self._set_workflow_properties(&#34;description&#34;, value)
         else:
             raise SDKException(
@@ -2480,7 +2477,7 @@ instance of the WorkFlow class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L1533-L1536" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L1530-L1533" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -2494,7 +2491,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L1528-L1531" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L1525-L1528" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def flags(self):
@@ -2508,7 +2505,7 @@ def flags(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L1523-L1526" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L1520-L1523" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def revision(self):
@@ -2522,7 +2519,7 @@ def revision(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L1518-L1521" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L1515-L1518" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def version(self):
@@ -2536,7 +2533,7 @@ def version(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L1513-L1516" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L1510-L1513" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def workflow_id(self):
@@ -2550,7 +2547,7 @@ def workflow_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L1508-L1511" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L1505-L1508" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def workflow_name(self):
@@ -2577,7 +2574,7 @@ if response is not status</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L1349-L1375" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L1346-L1372" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def clone_workflow(self, clone_workflow_name):
     &#34;&#34;&#34;Clones the workflow
@@ -2650,7 +2647,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L1075-L1162" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L1072-L1159" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def deploy_workflow(self, workflow_engine=None, workflow_xml=None):
     &#34;&#34;&#34;Deploys a workflow on the Commcell.
@@ -2691,8 +2688,8 @@ if response is not success
 
     workflow_name = self._workflow_name.lower()
 
-    if not ((workflow_engine is not None and isinstance(workflow_engine, basestring)) or
-            (workflow_xml is not None and isinstance(workflow_xml, basestring))):
+    if not ((workflow_engine is not None and isinstance(workflow_engine, str)) or
+            (workflow_xml is not None and isinstance(workflow_xml, str))):
         raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
     if not self._commcell_object.workflows.has_workflow(workflow_name):
@@ -2754,7 +2751,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L1065-L1073" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L1062-L1070" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable(self):
     &#34;&#34;&#34; Disable Worklfow
@@ -2779,7 +2776,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L1055-L1063" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L1052-L1060" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable(self):
     &#34;&#34;&#34; Enable Worklfow
@@ -2859,7 +2856,7 @@ if no workflow exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L1164-L1274" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L1161-L1271" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def execute_workflow(self, workflow_inputs=None, hidden=False):
     &#34;&#34;&#34;Executes the workflow with the workflow name given as input, and returns its job id.
@@ -3004,7 +3001,7 @@ if failed to write to export file
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L1276-L1347" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L1273-L1344" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def export_workflow(self, export_location=None):
     &#34;&#34;&#34;Exports the workflow to the directory location specified by the user.
@@ -3038,7 +3035,7 @@ if failed to write to export file
     if export_location is None:
         export_location = os.getcwd()
     else:
-        if not isinstance(export_location, basestring):
+        if not isinstance(export_location, str):
             raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
         if not os.path.exists(export_location):
@@ -3088,7 +3085,7 @@ if failed to write to export file
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L1504-L1506" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L1501-L1503" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refreshes the properties of the workflow.&#34;&#34;&#34;
@@ -3134,7 +3131,7 @@ dictionary consisting of inputs for the workflow</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L1377-L1462" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L1374-L1459" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def schedule_workflow(self, schedule_pattern, workflow_inputs=None):
     &#34;&#34;&#34; Creates a schedule for a workflow
@@ -3240,7 +3237,7 @@ dictionary consisting of inputs for the workflow</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L1021-L1053" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L1018-L1050" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_workflow_configuration(self, config_xml):
     &#34;&#34;&#34;Set Workflow configuration
@@ -3299,7 +3296,7 @@ instance of the WorkFlow class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L138-L831" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L135-L828" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class WorkFlows(object):
     &#34;&#34;&#34;Class for representing all workflows associated with the commcell.&#34;&#34;&#34;
@@ -3565,7 +3562,7 @@ instance of the WorkFlow class</p></div>
                     if type of the workflow name argument is not string
 
         &#34;&#34;&#34;
-        if not isinstance(workflow_name, basestring):
+        if not isinstance(workflow_name, str):
             raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
         return self._workflows and workflow_name.lower() in self._workflows
@@ -3586,7 +3583,7 @@ instance of the WorkFlow class</p></div>
                     if type of the workflow activity name argument is not string
 
         &#34;&#34;&#34;
-        if not isinstance(activity_name, basestring):
+        if not isinstance(activity_name, str):
             raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
         return self._activities and activity_name.lower() in self._activities
@@ -3613,7 +3610,7 @@ instance of the WorkFlow class</p></div>
                     if HTTP Status Code is not SUCCESS / importing workflow failed
 
         &#34;&#34;&#34;
-        if not isinstance(workflow_xml, basestring):
+        if not isinstance(workflow_xml, str):
             raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
         if os.path.isfile(workflow_xml):
@@ -3664,7 +3661,7 @@ instance of the WorkFlow class</p></div>
                     if HTTP Status Code is not SUCCESS / importing workflow failed
 
         &#34;&#34;&#34;
-        if not isinstance(activity_xml, basestring):
+        if not isinstance(activity_xml, str):
             raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
         if os.path.isfile(activity_xml):
@@ -3717,7 +3714,7 @@ instance of the WorkFlow class</p></div>
                     if HTTP Status Code is not SUCCESS / download workflow failed
 
         &#34;&#34;&#34;
-        if not isinstance(workflow_name, basestring):
+        if not isinstance(workflow_name, str):
             raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
         from .commcell import Commcell
@@ -3799,7 +3796,7 @@ instance of the WorkFlow class</p></div>
 
                     if no workflow exists with the given name
         &#34;&#34;&#34;
-        if not isinstance(workflow_name, basestring):
+        if not isinstance(workflow_name, str):
             raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
         else:
             workflow_name = workflow_name.lower()
@@ -3828,7 +3825,7 @@ instance of the WorkFlow class</p></div>
                     if HTTP Status Code is not SUCCESS / importing workflow failed
 
         &#34;&#34;&#34;
-        if not isinstance(workflow_name, basestring):
+        if not isinstance(workflow_name, str):
             raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
         workflow_xml = &#34;&#34;&#34;
@@ -3941,7 +3938,7 @@ instance of the WorkFlow class</p></div>
                 Exception:
                     Failed to submit workflow interaction request
         &#34;&#34;&#34;
-        if not isinstance(input_xml, basestring) or not isinstance(interaction, dict) or not isinstance(action, str):
+        if not isinstance(input_xml, str) or not isinstance(interaction, dict) or not isinstance(action, str):
             raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
         from xml.sax.saxutils import escape
@@ -4004,7 +4001,7 @@ instance of the WorkFlow class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L828-L831" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L825-L828" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_activities(self):
@@ -4018,7 +4015,7 @@ def all_activities(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L823-L826" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L820-L823" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_workflows(self):
@@ -4045,7 +4042,7 @@ if there are no interactions
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L800-L821" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L797-L818" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def all_interactions(self):
     &#34;&#34;&#34; Returns all interactive interactions for workflows on commcell
@@ -4089,7 +4086,7 @@ if type of the workflow name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L652-L684" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L649-L681" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_workflow(self, workflow_name):
     &#34;&#34;&#34;Deletes a workflow from the Commcell.
@@ -4104,7 +4101,7 @@ if type of the workflow name argument is not string</p>
                 if HTTP Status Code is not SUCCESS / importing workflow failed
 
     &#34;&#34;&#34;
-    if not isinstance(workflow_name, basestring):
+    if not isinstance(workflow_name, str):
         raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
     workflow_xml = &#34;&#34;&#34;
@@ -4160,7 +4157,7 @@ if type of the workflow name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L527-L618" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L524-L615" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def download_workflow_from_store(
         self,
@@ -4189,7 +4186,7 @@ if type of the workflow name argument is not string</p>
                 if HTTP Status Code is not SUCCESS / download workflow failed
 
     &#34;&#34;&#34;
-    if not isinstance(workflow_name, basestring):
+    if not isinstance(workflow_name, str):
         raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
     from .commcell import Commcell
@@ -4276,7 +4273,7 @@ if type of the workflow name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L620-L650" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L617-L647" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, workflow_name):
     &#34;&#34;&#34;Returns a workflow object if workflow name matches specified name
@@ -4294,7 +4291,7 @@ if type of the workflow name argument is not string</p>
 
                 if no workflow exists with the given name
     &#34;&#34;&#34;
-    if not isinstance(workflow_name, basestring):
+    if not isinstance(workflow_name, str):
         raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
     else:
         workflow_name = workflow_name.lower()
@@ -4330,7 +4327,7 @@ Workflow job id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L694-L728" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L691-L725" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_interaction_properties(self, interaction_id, workflow_job_id=None):
     &#34;&#34;&#34;Returns a workflow interaction properties to the user
@@ -4391,7 +4388,7 @@ if type of the workflow activity name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L407-L426" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L404-L423" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_activity(self, activity_name):
     &#34;&#34;&#34;Checks if a workflow activity exists in the commcell with the input
@@ -4409,7 +4406,7 @@ if type of the workflow activity name argument is not string</p></div>
                 if type of the workflow activity name argument is not string
 
     &#34;&#34;&#34;
-    if not isinstance(activity_name, basestring):
+    if not isinstance(activity_name, str):
         raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
     return self._activities and activity_name.lower() in self._activities</code></pre>
@@ -4436,7 +4433,7 @@ if type of the workflow name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L387-L405" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L384-L402" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_workflow(self, workflow_name):
     &#34;&#34;&#34;Checks if a workflow exists in the commcell with the input workflow name.
@@ -4453,7 +4450,7 @@ if type of the workflow name argument is not string</p></div>
                 if type of the workflow name argument is not string
 
     &#34;&#34;&#34;
-    if not isinstance(workflow_name, basestring):
+    if not isinstance(workflow_name, str):
         raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
     return self._workflows and workflow_name.lower() in self._workflows</code></pre>
@@ -4488,7 +4485,7 @@ if HTTP Status Code is not SUCCESS / importing workflow failed
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L476-L525" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L473-L522" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def import_activity(self, activity_xml):
     &#34;&#34;&#34;Imports a workflow activity to the Commcell.
@@ -4515,7 +4512,7 @@ if HTTP Status Code is not SUCCESS / importing workflow failed
                 if HTTP Status Code is not SUCCESS / importing workflow failed
 
     &#34;&#34;&#34;
-    if not isinstance(activity_xml, basestring):
+    if not isinstance(activity_xml, str):
         raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
     if os.path.isfile(activity_xml):
@@ -4568,7 +4565,7 @@ if HTTP Status Code is not SUCCESS / importing workflow failed
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L428-L474" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L425-L471" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def import_workflow(self, workflow_xml):
     &#34;&#34;&#34;Imports a workflow to the Commcell.
@@ -4592,7 +4589,7 @@ if HTTP Status Code is not SUCCESS / importing workflow failed
                 if HTTP Status Code is not SUCCESS / importing workflow failed
 
     &#34;&#34;&#34;
-    if not isinstance(workflow_xml, basestring):
+    if not isinstance(workflow_xml, str):
         raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
     if os.path.isfile(workflow_xml):
@@ -4627,7 +4624,7 @@ if HTTP Status Code is not SUCCESS / importing workflow failed
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L686-L688" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L683-L685" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the list of workflows deployed on the Commcell.&#34;&#34;&#34;
@@ -4642,7 +4639,7 @@ if HTTP Status Code is not SUCCESS / importing workflow failed
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L690-L692" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L687-L689" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh_activities(self):
     &#34;&#34;&#34;Refresh the list of workflow activities deployed on the Commcell.&#34;&#34;&#34;
@@ -4708,7 +4705,7 @@ Failed to submit workflow interaction request</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/workflow.py#L730-L798" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/workflow.py#L727-L795" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def submit_interaction(self, interaction, input_xml, action):
     &#34;&#34;&#34; Submits a given interaction with specified action
@@ -4758,7 +4755,7 @@ Failed to submit workflow interaction request</p></div>
             Exception:
                 Failed to submit workflow interaction request
     &#34;&#34;&#34;
-    if not isinstance(input_xml, basestring) or not isinstance(interaction, dict) or not isinstance(action, str):
+    if not isinstance(input_xml, str) or not isinstance(interaction, dict) or not isinstance(action, str):
         raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
     from xml.sax.saxutils import escape

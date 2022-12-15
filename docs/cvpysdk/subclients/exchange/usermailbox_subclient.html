@@ -94,7 +94,7 @@ delete O365 group association for UsermailboxSubclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1-L1696" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1-L1694" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -168,10 +168,7 @@ UsermailboxSubclient:
 
 &#34;&#34;&#34;
 
-
 from __future__ import unicode_literals
-
-from past.builtins import basestring
 
 from ...exception import SDKException
 
@@ -228,10 +225,10 @@ class UsermailboxSubclient(ExchangeSubclient):
         &#34;&#34;&#34;
 
         from ...policies.configuration_policies import ConfigurationPolicy
-        if not (isinstance(configuration_policy, (basestring, ConfigurationPolicy))):
+        if not (isinstance(configuration_policy, (str, ConfigurationPolicy))):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
-        if isinstance(configuration_policy, basestring):
+        if isinstance(configuration_policy, str):
             configuration_policy = ConfigurationPolicy(
                 self._commcell_object, configuration_policy)
 
@@ -401,7 +398,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         }
         task_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;backupOpts&#39;] = backup_options
         task_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;dataOpt&#39;] = data_options
-        return task_json  
+        return task_json
 
     def _set_association_request(self, associations_json):
         &#34;&#34;&#34;Runs the emailAssociation ass API to set association
@@ -508,14 +505,15 @@ class UsermailboxSubclient(ExchangeSubclient):
             if response and response.json():
                 discover_content = response.json()
 
-                if discover_content.get(&#39;resp&#39;, {}).get(&#39;errorCode&#39;, 0) == 469762468:
-                    time.sleep(10) # the results might take some time depending on domains
+                _error_code = discover_content.get(&#39;resp&#39;, {}).get(&#39;errorCode&#39;, 0)
+                if _error_code == 469762468 or _error_code == 469762470:
+                    # if discover_content.get(&#39;resp&#39;, {}).get(&#39;errorCode&#39;, 0) == 469762468:
+                    time.sleep(10)  # the results might take some time depending on domains
                     if retry_attempts &gt; 10:
                         raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Failed to perform discovery.&#39;)
 
-                    return self._get_discover_users(use_without_refresh_url=True ,
+                    return self._get_discover_users(use_without_refresh_url=True,
                                                     retry_attempts=retry_attempts + 1)
-
 
                 if &#39;discoverInfo&#39; in discover_content.keys():
                     if &#39;mailBoxes&#39; in discover_content[&#39;discoverInfo&#39;]:
@@ -589,7 +587,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         groups = []
 
         self._EMAIL_POLICY_ASSOCIATIONS = self._commcell_object._services[
-            &#39;GET_EMAIL_POLICY_ASSOCIATIONS&#39;] % (self.subclient_id, &#39;User&#39;)
+                                              &#39;GET_EMAIL_POLICY_ASSOCIATIONS&#39;] % (self.subclient_id, &#39;User&#39;)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;GET&#39;, self._EMAIL_POLICY_ASSOCIATIONS
@@ -663,7 +661,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         databases = []
 
         self._EMAIL_POLICY_ASSOCIATIONS = self._commcell_object._services[
-            &#39;GET_EMAIL_POLICY_ASSOCIATIONS&#39;] % (self.subclient_id, &#39;Database&#39;)
+                                              &#39;GET_EMAIL_POLICY_ASSOCIATIONS&#39;] % (self.subclient_id, &#39;Database&#39;)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;GET&#39;, self._EMAIL_POLICY_ASSOCIATIONS
@@ -714,7 +712,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         adgroups = []
 
         self._EMAIL_POLICY_ASSOCIATIONS = self._commcell_object._services[
-            &#39;GET_EMAIL_POLICY_ASSOCIATIONS&#39;] % (self.subclient_id, &#39;AD Group&#39;)
+                                              &#39;GET_EMAIL_POLICY_ASSOCIATIONS&#39;] % (self.subclient_id, &#39;AD Group&#39;)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;GET&#39;, self._EMAIL_POLICY_ASSOCIATIONS
@@ -909,7 +907,7 @@ class UsermailboxSubclient(ExchangeSubclient):
                 &#39;pstOwnerManagement&#39;: {
                     &#39;adProperty&#39;: &#34;&#34;,
                     &#39;startingFolderPath&#39;: &#34;&#34;,
-                    &#39;pstStubsAction&#39;:1,
+                    &#39;pstStubsAction&#39;: 1,
                     &#39;managePSTStubs&#39;: False,
                     &#39;mergeintoMailBox&#39;: True,
                     &#39;pstOwnerBasedOnACL&#39;: True,
@@ -992,8 +990,8 @@ class UsermailboxSubclient(ExchangeSubclient):
                                                (str(subclient_name), str(backupset_name)))
                         subclient_name = subclient_name.lower()
                         sub_dict = {&#34;subclientId&#34;: int(backupset_obj.subclients.all_subclients[
-                            subclient_name][&#39;id&#39;]),
-                            &#34;subclientName&#34;: subclient_name}
+                                                           subclient_name][&#39;id&#39;]),
+                                    &#34;subclientName&#34;: subclient_name}
                         sub_dict.update(backupset_dict)
                         sub_dict[&#34;_type_&#34;] = _type_id[&#34;subclient&#34;]
                         assoc_list.append(sub_dict)
@@ -1163,7 +1161,7 @@ class UsermailboxSubclient(ExchangeSubclient):
             }
         }
         task_dict[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;backupOpts&#34;][&#34;exchOnePassOptions&#34;][
-                &#34;genericAssociations&#34;]= subclient_content
+            &#34;genericAssociations&#34;] = subclient_content
         return task_dict
 
     def enable_ews_support(self, service_url):
@@ -1177,8 +1175,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         self.agentproperties[&#34;onePassProperties&#34;][&#34;onePassProp&#34;][&#34;ewsDetails&#34;][&#34;ewsConnectionUrl&#34;] = service_url
         self._agent_object.update_properties(self.agentproperties)
 
-
-    def browse_mailboxes(self,retry_attempts=0):
+    def browse_mailboxes(self, retry_attempts=0):
         &#34;&#34;&#34;
         This function returns the mailboxes available for OOP restore
         return: dictionary containing mailbox info
@@ -1186,7 +1183,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         BROWSE_MAILBOXES = self._commcell_object._services[&#39;EMAIL_DISCOVERY_WITHOUT_REFRESH&#39;] % (
             int(self._backupset_object.backupset_id), &#39;User&#39;
         )
-        flag,response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;,BROWSE_MAILBOXES)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, BROWSE_MAILBOXES)
         if flag:
             if response and response.json():
                 discover_content = response.json()
@@ -1194,16 +1191,16 @@ class UsermailboxSubclient(ExchangeSubclient):
                     time.sleep(10)
                     if retry_attempts &gt; 10:
                         raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Failed to perform browse operation.&#39;)
-                    return self.browse_mailboxes(retry_attempts+1)
+                    return self.browse_mailboxes(retry_attempts + 1)
                 if &#39;discoverInfo&#39; in discover_content.keys():
                     if &#39;mailBoxes&#39; in discover_content[&#39;discoverInfo&#39;]:
-                        mailboxes=discover_content[&#34;discoverInfo&#34;][&#34;mailBoxes&#34;]
+                        mailboxes = discover_content[&#34;discoverInfo&#34;][&#34;mailBoxes&#34;]
                         return mailboxes
             else:
                 raise SDKException(&#34;Response&#34;, &#34;102&#34;)
         else:
-            response_string=self.commcell._update_response_(response.text)
-            raise SDKException(&#39;Response&#39;,&#39;101&#39;,response_string)
+            response_string = self.commcell._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     def backup_generic_items(self, subclient_content):
         &#34;&#34;&#34;
@@ -1487,7 +1484,8 @@ class UsermailboxSubclient(ExchangeSubclient):
         }
         _assocaition_json_ = self._association_json(subclient_content)
         _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailStatus&#34;] = 1
-        _assocaition_json_[&#34;emailAssociation&#34;][&#34;advanceOptions&#34;][&#34;enableAutoDiscovery&#34;]=subclient_content[&#34;is_auto_discover_user&#34;]
+        _assocaition_json_[&#34;emailAssociation&#34;][&#34;advanceOptions&#34;][&#34;enableAutoDiscovery&#34;] = subclient_content[
+            &#34;is_auto_discover_user&#34;]
         _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
         self._set_association_request(_assocaition_json_)
 
@@ -1590,7 +1588,6 @@ class UsermailboxSubclient(ExchangeSubclient):
         }
         self._set_association_request(_association_json)
 
-
     def delete_auto_discover_association(self, association_name, subclient_content, use_policies=True):
         &#34;&#34;&#34;
             Delete all users association for UserMailboxSubclient.
@@ -1631,7 +1628,7 @@ class UsermailboxSubclient(ExchangeSubclient):
                             }
 
         if association_name.lower() not in association_dict:
-            raise SDKException(&#34;Subclient&#34;, &#34;102&#34;,&#34;Invalid Association Name supplied&#34;)
+            raise SDKException(&#34;Subclient&#34;, &#34;102&#34;, &#34;Invalid Association Name supplied&#34;)
 
         if use_policies == True:
             _association_json_ = self._association_json(subclient_content)
@@ -1639,7 +1636,6 @@ class UsermailboxSubclient(ExchangeSubclient):
             planobject = self._commcell_object.plans.get(subclient_content[&#34;plan_name&#34;])
             _association_json_ = self._association_json_with_plan(plan_details=planobject)
 
-        
         discover_info = {
             &#34;discoverByType&#34;: association_dict[association_name.lower()],
             &#34;genericAssociations&#34;: [
@@ -1671,7 +1667,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         )
         return self._process_backup_response(flag, response)
 
-    def create_recovery_point(self, mailbox_prop, job = None, job_id = None):
+    def create_recovery_point(self, mailbox_prop, job=None, job_id=None):
         &#34;&#34;&#34;
             Method to create a recovery point
 
@@ -1697,10 +1693,10 @@ class UsermailboxSubclient(ExchangeSubclient):
                 }
         &#34;&#34;&#34;
 
-        if(job==None and job_id ==None):
+        if (job == None and job_id == None):
             raise Exception(&#34;At least one value out of job or job_id should be passed&#34;)
 
-        if(job == None and type(job_id)==int):
+        if (job == None and type(job_id) == int):
             job = self._commcell_object.job_controller.get(job_id)
 
         index_server = self._commcell_object.clients.get(mailbox_prop[&#39;index_server&#39;])
@@ -1764,21 +1760,23 @@ class UsermailboxSubclient(ExchangeSubclient):
                 browse_response = response.json()
 
                 if &#39;browseResponses&#39; in browse_response.keys():
-                    recovery_point_job_id = browse_response.get(&#39;browseResponses&#39;, [{}])[0].get(&#39;browseResult&#39;, {}).get(&#39;advConfig&#39;, {}).get(
+                    recovery_point_job_id = browse_response.get(&#39;browseResponses&#39;, [{}])[0].get(&#39;browseResult&#39;, {}).get(
+                        &#39;advConfig&#39;, {}).get(
                         &#39;applicationMining&#39;, {}).get(&#39;browseInitResp&#39;, {}).get(&#39;recoveryPointJobID&#39;)
 
-                    recovery_point_id = browse_response.get(&#39;browseResponses&#39;, [{}])[0].get(&#39;browseResult&#39;, {}).get(&#39;advConfig&#39;, {}).get(
-                        &#39;applicationMining&#39;, {}).get(&#39;browseInitResp&#39;, {}).get(&#39;recoveryPointID&#39;,{})
+                    recovery_point_id = browse_response.get(&#39;browseResponses&#39;, [{}])[0].get(&#39;browseResult&#39;, {}).get(
+                        &#39;advConfig&#39;, {}).get(
+                        &#39;applicationMining&#39;, {}).get(&#39;browseInitResp&#39;, {}).get(&#39;recoveryPointID&#39;, {})
 
                     res_dict = {
-                        &#39;recovery_point_job_id&#39; : recovery_point_job_id,
+                        &#39;recovery_point_job_id&#39;: recovery_point_job_id,
                         &#39;recovery_point_id&#39;: recovery_point_id
                     }
                     return res_dict
                 else:
                     raise SDKException(&#39;Response&#39;, &#39;102&#39;, response.json)
             else:
-                raise SDKException(&#39;Response&#39;, &#39;102&#39;, response.json )
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, response.json)
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
@@ -1828,7 +1826,7 @@ subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L89-L1696" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L86-L1694" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class UsermailboxSubclient(ExchangeSubclient):
     &#34;&#34;&#34;Derived class from ExchangeSubclient Base class.
@@ -1874,10 +1872,10 @@ subclient id</p></div>
         &#34;&#34;&#34;
 
         from ...policies.configuration_policies import ConfigurationPolicy
-        if not (isinstance(configuration_policy, (basestring, ConfigurationPolicy))):
+        if not (isinstance(configuration_policy, (str, ConfigurationPolicy))):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
-        if isinstance(configuration_policy, basestring):
+        if isinstance(configuration_policy, str):
             configuration_policy = ConfigurationPolicy(
                 self._commcell_object, configuration_policy)
 
@@ -2047,7 +2045,7 @@ subclient id</p></div>
         }
         task_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;backupOpts&#39;] = backup_options
         task_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;dataOpt&#39;] = data_options
-        return task_json  
+        return task_json
 
     def _set_association_request(self, associations_json):
         &#34;&#34;&#34;Runs the emailAssociation ass API to set association
@@ -2154,14 +2152,15 @@ subclient id</p></div>
             if response and response.json():
                 discover_content = response.json()
 
-                if discover_content.get(&#39;resp&#39;, {}).get(&#39;errorCode&#39;, 0) == 469762468:
-                    time.sleep(10) # the results might take some time depending on domains
+                _error_code = discover_content.get(&#39;resp&#39;, {}).get(&#39;errorCode&#39;, 0)
+                if _error_code == 469762468 or _error_code == 469762470:
+                    # if discover_content.get(&#39;resp&#39;, {}).get(&#39;errorCode&#39;, 0) == 469762468:
+                    time.sleep(10)  # the results might take some time depending on domains
                     if retry_attempts &gt; 10:
                         raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Failed to perform discovery.&#39;)
 
-                    return self._get_discover_users(use_without_refresh_url=True ,
+                    return self._get_discover_users(use_without_refresh_url=True,
                                                     retry_attempts=retry_attempts + 1)
-
 
                 if &#39;discoverInfo&#39; in discover_content.keys():
                     if &#39;mailBoxes&#39; in discover_content[&#39;discoverInfo&#39;]:
@@ -2235,7 +2234,7 @@ subclient id</p></div>
         groups = []
 
         self._EMAIL_POLICY_ASSOCIATIONS = self._commcell_object._services[
-            &#39;GET_EMAIL_POLICY_ASSOCIATIONS&#39;] % (self.subclient_id, &#39;User&#39;)
+                                              &#39;GET_EMAIL_POLICY_ASSOCIATIONS&#39;] % (self.subclient_id, &#39;User&#39;)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;GET&#39;, self._EMAIL_POLICY_ASSOCIATIONS
@@ -2309,7 +2308,7 @@ subclient id</p></div>
         databases = []
 
         self._EMAIL_POLICY_ASSOCIATIONS = self._commcell_object._services[
-            &#39;GET_EMAIL_POLICY_ASSOCIATIONS&#39;] % (self.subclient_id, &#39;Database&#39;)
+                                              &#39;GET_EMAIL_POLICY_ASSOCIATIONS&#39;] % (self.subclient_id, &#39;Database&#39;)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;GET&#39;, self._EMAIL_POLICY_ASSOCIATIONS
@@ -2360,7 +2359,7 @@ subclient id</p></div>
         adgroups = []
 
         self._EMAIL_POLICY_ASSOCIATIONS = self._commcell_object._services[
-            &#39;GET_EMAIL_POLICY_ASSOCIATIONS&#39;] % (self.subclient_id, &#39;AD Group&#39;)
+                                              &#39;GET_EMAIL_POLICY_ASSOCIATIONS&#39;] % (self.subclient_id, &#39;AD Group&#39;)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;GET&#39;, self._EMAIL_POLICY_ASSOCIATIONS
@@ -2555,7 +2554,7 @@ subclient id</p></div>
                 &#39;pstOwnerManagement&#39;: {
                     &#39;adProperty&#39;: &#34;&#34;,
                     &#39;startingFolderPath&#39;: &#34;&#34;,
-                    &#39;pstStubsAction&#39;:1,
+                    &#39;pstStubsAction&#39;: 1,
                     &#39;managePSTStubs&#39;: False,
                     &#39;mergeintoMailBox&#39;: True,
                     &#39;pstOwnerBasedOnACL&#39;: True,
@@ -2638,8 +2637,8 @@ subclient id</p></div>
                                                (str(subclient_name), str(backupset_name)))
                         subclient_name = subclient_name.lower()
                         sub_dict = {&#34;subclientId&#34;: int(backupset_obj.subclients.all_subclients[
-                            subclient_name][&#39;id&#39;]),
-                            &#34;subclientName&#34;: subclient_name}
+                                                           subclient_name][&#39;id&#39;]),
+                                    &#34;subclientName&#34;: subclient_name}
                         sub_dict.update(backupset_dict)
                         sub_dict[&#34;_type_&#34;] = _type_id[&#34;subclient&#34;]
                         assoc_list.append(sub_dict)
@@ -2809,7 +2808,7 @@ subclient id</p></div>
             }
         }
         task_dict[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;backupOpts&#34;][&#34;exchOnePassOptions&#34;][
-                &#34;genericAssociations&#34;]= subclient_content
+            &#34;genericAssociations&#34;] = subclient_content
         return task_dict
 
     def enable_ews_support(self, service_url):
@@ -2823,8 +2822,7 @@ subclient id</p></div>
         self.agentproperties[&#34;onePassProperties&#34;][&#34;onePassProp&#34;][&#34;ewsDetails&#34;][&#34;ewsConnectionUrl&#34;] = service_url
         self._agent_object.update_properties(self.agentproperties)
 
-
-    def browse_mailboxes(self,retry_attempts=0):
+    def browse_mailboxes(self, retry_attempts=0):
         &#34;&#34;&#34;
         This function returns the mailboxes available for OOP restore
         return: dictionary containing mailbox info
@@ -2832,7 +2830,7 @@ subclient id</p></div>
         BROWSE_MAILBOXES = self._commcell_object._services[&#39;EMAIL_DISCOVERY_WITHOUT_REFRESH&#39;] % (
             int(self._backupset_object.backupset_id), &#39;User&#39;
         )
-        flag,response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;,BROWSE_MAILBOXES)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, BROWSE_MAILBOXES)
         if flag:
             if response and response.json():
                 discover_content = response.json()
@@ -2840,16 +2838,16 @@ subclient id</p></div>
                     time.sleep(10)
                     if retry_attempts &gt; 10:
                         raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Failed to perform browse operation.&#39;)
-                    return self.browse_mailboxes(retry_attempts+1)
+                    return self.browse_mailboxes(retry_attempts + 1)
                 if &#39;discoverInfo&#39; in discover_content.keys():
                     if &#39;mailBoxes&#39; in discover_content[&#39;discoverInfo&#39;]:
-                        mailboxes=discover_content[&#34;discoverInfo&#34;][&#34;mailBoxes&#34;]
+                        mailboxes = discover_content[&#34;discoverInfo&#34;][&#34;mailBoxes&#34;]
                         return mailboxes
             else:
                 raise SDKException(&#34;Response&#34;, &#34;102&#34;)
         else:
-            response_string=self.commcell._update_response_(response.text)
-            raise SDKException(&#39;Response&#39;,&#39;101&#39;,response_string)
+            response_string = self.commcell._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     def backup_generic_items(self, subclient_content):
         &#34;&#34;&#34;
@@ -3133,7 +3131,8 @@ subclient id</p></div>
         }
         _assocaition_json_ = self._association_json(subclient_content)
         _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailStatus&#34;] = 1
-        _assocaition_json_[&#34;emailAssociation&#34;][&#34;advanceOptions&#34;][&#34;enableAutoDiscovery&#34;]=subclient_content[&#34;is_auto_discover_user&#34;]
+        _assocaition_json_[&#34;emailAssociation&#34;][&#34;advanceOptions&#34;][&#34;enableAutoDiscovery&#34;] = subclient_content[
+            &#34;is_auto_discover_user&#34;]
         _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
         self._set_association_request(_assocaition_json_)
 
@@ -3236,7 +3235,6 @@ subclient id</p></div>
         }
         self._set_association_request(_association_json)
 
-
     def delete_auto_discover_association(self, association_name, subclient_content, use_policies=True):
         &#34;&#34;&#34;
             Delete all users association for UserMailboxSubclient.
@@ -3277,7 +3275,7 @@ subclient id</p></div>
                             }
 
         if association_name.lower() not in association_dict:
-            raise SDKException(&#34;Subclient&#34;, &#34;102&#34;,&#34;Invalid Association Name supplied&#34;)
+            raise SDKException(&#34;Subclient&#34;, &#34;102&#34;, &#34;Invalid Association Name supplied&#34;)
 
         if use_policies == True:
             _association_json_ = self._association_json(subclient_content)
@@ -3285,7 +3283,6 @@ subclient id</p></div>
             planobject = self._commcell_object.plans.get(subclient_content[&#34;plan_name&#34;])
             _association_json_ = self._association_json_with_plan(plan_details=planobject)
 
-        
         discover_info = {
             &#34;discoverByType&#34;: association_dict[association_name.lower()],
             &#34;genericAssociations&#34;: [
@@ -3317,7 +3314,7 @@ subclient id</p></div>
         )
         return self._process_backup_response(flag, response)
 
-    def create_recovery_point(self, mailbox_prop, job = None, job_id = None):
+    def create_recovery_point(self, mailbox_prop, job=None, job_id=None):
         &#34;&#34;&#34;
             Method to create a recovery point
 
@@ -3343,10 +3340,10 @@ subclient id</p></div>
                 }
         &#34;&#34;&#34;
 
-        if(job==None and job_id ==None):
+        if (job == None and job_id == None):
             raise Exception(&#34;At least one value out of job or job_id should be passed&#34;)
 
-        if(job == None and type(job_id)==int):
+        if (job == None and type(job_id) == int):
             job = self._commcell_object.job_controller.get(job_id)
 
         index_server = self._commcell_object.clients.get(mailbox_prop[&#39;index_server&#39;])
@@ -3410,21 +3407,23 @@ subclient id</p></div>
                 browse_response = response.json()
 
                 if &#39;browseResponses&#39; in browse_response.keys():
-                    recovery_point_job_id = browse_response.get(&#39;browseResponses&#39;, [{}])[0].get(&#39;browseResult&#39;, {}).get(&#39;advConfig&#39;, {}).get(
+                    recovery_point_job_id = browse_response.get(&#39;browseResponses&#39;, [{}])[0].get(&#39;browseResult&#39;, {}).get(
+                        &#39;advConfig&#39;, {}).get(
                         &#39;applicationMining&#39;, {}).get(&#39;browseInitResp&#39;, {}).get(&#39;recoveryPointJobID&#39;)
 
-                    recovery_point_id = browse_response.get(&#39;browseResponses&#39;, [{}])[0].get(&#39;browseResult&#39;, {}).get(&#39;advConfig&#39;, {}).get(
-                        &#39;applicationMining&#39;, {}).get(&#39;browseInitResp&#39;, {}).get(&#39;recoveryPointID&#39;,{})
+                    recovery_point_id = browse_response.get(&#39;browseResponses&#39;, [{}])[0].get(&#39;browseResult&#39;, {}).get(
+                        &#39;advConfig&#39;, {}).get(
+                        &#39;applicationMining&#39;, {}).get(&#39;browseInitResp&#39;, {}).get(&#39;recoveryPointID&#39;, {})
 
                     res_dict = {
-                        &#39;recovery_point_job_id&#39; : recovery_point_job_id,
+                        &#39;recovery_point_job_id&#39;: recovery_point_job_id,
                         &#39;recovery_point_id&#39;: recovery_point_id
                     }
                     return res_dict
                 else:
                     raise SDKException(&#39;Response&#39;, &#39;102&#39;, response.json)
             else:
-                raise SDKException(&#39;Response&#39;, &#39;102&#39;, response.json )
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, response.json)
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
@@ -3452,7 +3451,7 @@ subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L683-L686" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L681-L684" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def adgroups(self):
@@ -3466,7 +3465,7 @@ def adgroups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L678-L681" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L676-L679" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def databases(self):
@@ -3480,7 +3479,7 @@ def databases(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L668-L671" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L666-L669" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def discover_adgroups(self):
@@ -3494,7 +3493,7 @@ def discover_adgroups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L663-L666" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L661-L664" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def discover_databases(self):
@@ -3508,7 +3507,7 @@ def discover_databases(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L658-L661" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L656-L659" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def discover_users(self):
@@ -3522,7 +3521,7 @@ def discover_users(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L688-L691" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L686-L689" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def o365groups(self):
@@ -3536,7 +3535,7 @@ def o365groups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L673-L676" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L671-L674" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def users(self):
@@ -3571,7 +3570,7 @@ List having dictionary of items to be backed up</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1110-L1136" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1107-L1133" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup_generic_items(self, subclient_content):
     &#34;&#34;&#34;
@@ -3616,7 +3615,7 @@ Sample Values:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1559-L1574" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1555-L1570" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup_mailboxes(self, mailbox_alias_names):
     &#34;&#34;&#34;
@@ -3645,9 +3644,9 @@ return: dictionary containing mailbox info</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1083-L1108" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1080-L1105" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def browse_mailboxes(self,retry_attempts=0):
+<pre><code class="python">def browse_mailboxes(self, retry_attempts=0):
     &#34;&#34;&#34;
     This function returns the mailboxes available for OOP restore
     return: dictionary containing mailbox info
@@ -3655,7 +3654,7 @@ return: dictionary containing mailbox info</p></div>
     BROWSE_MAILBOXES = self._commcell_object._services[&#39;EMAIL_DISCOVERY_WITHOUT_REFRESH&#39;] % (
         int(self._backupset_object.backupset_id), &#39;User&#39;
     )
-    flag,response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;,BROWSE_MAILBOXES)
+    flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, BROWSE_MAILBOXES)
     if flag:
         if response and response.json():
             discover_content = response.json()
@@ -3663,16 +3662,16 @@ return: dictionary containing mailbox info</p></div>
                 time.sleep(10)
                 if retry_attempts &gt; 10:
                     raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Failed to perform browse operation.&#39;)
-                return self.browse_mailboxes(retry_attempts+1)
+                return self.browse_mailboxes(retry_attempts + 1)
             if &#39;discoverInfo&#39; in discover_content.keys():
                 if &#39;mailBoxes&#39; in discover_content[&#39;discoverInfo&#39;]:
-                    mailboxes=discover_content[&#34;discoverInfo&#34;][&#34;mailBoxes&#34;]
+                    mailboxes = discover_content[&#34;discoverInfo&#34;][&#34;mailBoxes&#34;]
                     return mailboxes
         else:
             raise SDKException(&#34;Response&#34;, &#34;102&#34;)
     else:
-        response_string=self.commcell._update_response_(response.text)
-        raise SDKException(&#39;Response&#39;,&#39;101&#39;,response_string)</code></pre>
+        response_string = self.commcell._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.create_recovery_point"><code class="name flex">
@@ -3709,9 +3708,9 @@ Format:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1576-L1686" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1572-L1684" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def create_recovery_point(self, mailbox_prop, job = None, job_id = None):
+<pre><code class="python">def create_recovery_point(self, mailbox_prop, job=None, job_id=None):
     &#34;&#34;&#34;
         Method to create a recovery point
 
@@ -3737,10 +3736,10 @@ Format:
             }
     &#34;&#34;&#34;
 
-    if(job==None and job_id ==None):
+    if (job == None and job_id == None):
         raise Exception(&#34;At least one value out of job or job_id should be passed&#34;)
 
-    if(job == None and type(job_id)==int):
+    if (job == None and type(job_id) == int):
         job = self._commcell_object.job_controller.get(job_id)
 
     index_server = self._commcell_object.clients.get(mailbox_prop[&#39;index_server&#39;])
@@ -3804,21 +3803,23 @@ Format:
             browse_response = response.json()
 
             if &#39;browseResponses&#39; in browse_response.keys():
-                recovery_point_job_id = browse_response.get(&#39;browseResponses&#39;, [{}])[0].get(&#39;browseResult&#39;, {}).get(&#39;advConfig&#39;, {}).get(
+                recovery_point_job_id = browse_response.get(&#39;browseResponses&#39;, [{}])[0].get(&#39;browseResult&#39;, {}).get(
+                    &#39;advConfig&#39;, {}).get(
                     &#39;applicationMining&#39;, {}).get(&#39;browseInitResp&#39;, {}).get(&#39;recoveryPointJobID&#39;)
 
-                recovery_point_id = browse_response.get(&#39;browseResponses&#39;, [{}])[0].get(&#39;browseResult&#39;, {}).get(&#39;advConfig&#39;, {}).get(
-                    &#39;applicationMining&#39;, {}).get(&#39;browseInitResp&#39;, {}).get(&#39;recoveryPointID&#39;,{})
+                recovery_point_id = browse_response.get(&#39;browseResponses&#39;, [{}])[0].get(&#39;browseResult&#39;, {}).get(
+                    &#39;advConfig&#39;, {}).get(
+                    &#39;applicationMining&#39;, {}).get(&#39;browseInitResp&#39;, {}).get(&#39;recoveryPointID&#39;, {})
 
                 res_dict = {
-                    &#39;recovery_point_job_id&#39; : recovery_point_job_id,
+                    &#39;recovery_point_job_id&#39;: recovery_point_job_id,
                     &#39;recovery_point_id&#39;: recovery_point_id
                 }
                 return res_dict
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;, response.json)
         else:
-            raise SDKException(&#39;Response&#39;, &#39;102&#39;, response.json )
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;, response.json)
     else:
         response_string = self._commcell_object._update_response_(response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
@@ -3850,7 +3851,7 @@ dict of the adgroups to delete from subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1340-L1394" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1337-L1392" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_adgroup_assocaition(self, subclient_content):
     &#34;&#34;&#34;Deletes Ad groups assocaition for UserMailboxSubclient.
@@ -3904,7 +3905,8 @@ dict of the adgroups to delete from subclient</p>
     }
     _assocaition_json_ = self._association_json(subclient_content)
     _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailStatus&#34;] = 1
-    _assocaition_json_[&#34;emailAssociation&#34;][&#34;advanceOptions&#34;][&#34;enableAutoDiscovery&#34;]=subclient_content[&#34;is_auto_discover_user&#34;]
+    _assocaition_json_[&#34;emailAssociation&#34;][&#34;advanceOptions&#34;][&#34;enableAutoDiscovery&#34;] = subclient_content[
+        &#34;is_auto_discover_user&#34;]
     _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
     self._set_association_request(_assocaition_json_)</code></pre>
 </details>
@@ -3942,7 +3944,7 @@ dict of the adgroups to delete from subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1496-L1557" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1493-L1553" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_auto_discover_association(self, association_name, subclient_content, use_policies=True):
     &#34;&#34;&#34;
@@ -3984,7 +3986,7 @@ dict of the adgroups to delete from subclient</p>
                         }
 
     if association_name.lower() not in association_dict:
-        raise SDKException(&#34;Subclient&#34;, &#34;102&#34;,&#34;Invalid Association Name supplied&#34;)
+        raise SDKException(&#34;Subclient&#34;, &#34;102&#34;, &#34;Invalid Association Name supplied&#34;)
 
     if use_policies == True:
         _association_json_ = self._association_json(subclient_content)
@@ -3992,7 +3994,6 @@ dict of the adgroups to delete from subclient</p>
         planobject = self._commcell_object.plans.get(subclient_content[&#34;plan_name&#34;])
         _association_json_ = self._association_json_with_plan(plan_details=planobject)
 
-    
     discover_info = {
         &#34;discoverByType&#34;: association_dict[association_name.lower()],
         &#34;genericAssociations&#34;: [
@@ -4034,7 +4035,7 @@ dict of the databases to delete from subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1285-L1338" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1282-L1335" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_database_assocaition(self, subclient_content):
     &#34;&#34;&#34;Deletes Database assocaition for UserMailboxSubclient.
@@ -4116,7 +4117,7 @@ dict of the Users to delete from subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1235-L1283" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1232-L1280" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_o365group_association(self, subclient_content):
     &#34;&#34;&#34;delete O365 group association for UserMailboxSubclient.
@@ -4197,7 +4198,7 @@ subclient_content = {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1165-L1233" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1162-L1230" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_user_assocaition(self, subclient_content, use_policies=True):
     &#34;&#34;&#34;delete User assocaition for UserMailboxSubclient.
@@ -4278,7 +4279,7 @@ subclient_content = {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1432-L1449" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1430-L1447" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_allusers_associations(self):
     &#34;&#34;&#34;Disables alluser assocaition for UserMailboxSubclient.&#34;&#34;&#34;
@@ -4325,7 +4326,7 @@ assigned to all user assocaitions</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1396-L1430" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1394-L1428" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_allusers_associations(self, subclient_content):
     &#34;&#34;&#34;Enable all users assocaition for UserMailboxSubclient.
@@ -4385,7 +4386,7 @@ Name of the plan to associate with users/groups</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1451-L1493" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1449-L1491" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_auto_discover_association(self, association_name, plan_name):
     &#34;&#34;&#34;Enable all users assocaition for UserMailboxSubclient.
@@ -4443,7 +4444,7 @@ Returns: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1071-L1080" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1069-L1078" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_ews_support(self, service_url):
     &#34;&#34;&#34;This function provides support for EWS protocol to backup on-prem mailboxes
@@ -4465,7 +4466,7 @@ Returns: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1688-L1696" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1686-L1694" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the User Mailbox Subclient.&#34;&#34;&#34;
@@ -4504,7 +4505,7 @@ dict of the adgroups to add to the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L963-L1015" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L961-L1013" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_adgroup_associations(self, subclient_content):
     &#34;&#34;&#34;Create Ad groups assocaition for UserMailboxSubclient.
@@ -4587,7 +4588,7 @@ dict of the databases to add to the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L909-L961" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L907-L959" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_database_assocaition(self, subclient_content):
     &#34;&#34;&#34;Create Database assocaition for UserMailboxSubclient.
@@ -4658,7 +4659,7 @@ all backupsets under client2 to the association</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L853-L907" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L851-L905" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_fs_association_for_pst(self, association):
     &#34;&#34;&#34;Helper method to create pst association for PST Ingestion by FS
@@ -4704,8 +4705,8 @@ all backupsets under client2 to the association</p></div>
                                            (str(subclient_name), str(backupset_name)))
                     subclient_name = subclient_name.lower()
                     sub_dict = {&#34;subclientId&#34;: int(backupset_obj.subclients.all_subclients[
-                        subclient_name][&#39;id&#39;]),
-                        &#34;subclientName&#34;: subclient_name}
+                                                       subclient_name][&#39;id&#39;]),
+                                &#34;subclientName&#34;: subclient_name}
                     sub_dict.update(backupset_dict)
                     sub_dict[&#34;_type_&#34;] = _type_id[&#34;subclient&#34;]
                     assoc_list.append(sub_dict)
@@ -4739,7 +4740,7 @@ dict of the policies to associate</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1138-L1163" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1135-L1160" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_o365group_asscoiations(self, subclient_content):
     &#34;&#34;&#34;Create O365 Group association for UserMailboxSubclient.
@@ -4803,7 +4804,7 @@ dict of the pst to add to the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L769-L851" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L767-L849" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_pst_association(self, subclient_content):
     &#34;&#34;&#34;Create PST assocaition for UserMailboxSubclient.
@@ -4850,7 +4851,7 @@ dict of the pst to add to the subclient</p>
             &#39;pstOwnerManagement&#39;: {
                 &#39;adProperty&#39;: &#34;&#34;,
                 &#39;startingFolderPath&#39;: &#34;&#34;,
-                &#39;pstStubsAction&#39;:1,
+                &#39;pstStubsAction&#39;: 1,
                 &#39;managePSTStubs&#39;: False,
                 &#39;mergeintoMailBox&#39;: True,
                 &#39;pstOwnerBasedOnACL&#39;: True,
@@ -4923,7 +4924,7 @@ dict of the Users to add to the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/usermailbox_subclient.py#L693-L767" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L691-L765" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_user_assocaition(self, subclient_content, use_policies=True):
     &#34;&#34;&#34;Create User assocaition for UserMailboxSubclient.

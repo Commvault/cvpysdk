@@ -32,7 +32,7 @@
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/livesync/hyperv_live_sync.py#L1-L174" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/livesync/hyperv_live_sync.py#L1-L172" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -63,8 +63,6 @@ HyperVLiveSync:
     generate_restore_options_json()     -- To generate the restore options json for Hyper-V live sync
 
 &#34;&#34;&#34;
-
-from past.builtins import basestring
 
 from .vsa_live_sync import VsaLiveSync
 from ....exception import SDKException
@@ -169,10 +167,10 @@ class HyperVLiveSync(VsaLiveSync):
         if restore_option is None:
             restore_option = {}
 
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
-        if not restored_vm_name and isinstance(vm_to_restore, basestring):
+        if not restored_vm_name and isinstance(vm_to_restore, str):
             restored_vm_name = &#34;LiveSync_&#34;
         restore_option[&#39;restore_new_name&#39;] = restored_vm_name
 
@@ -184,7 +182,7 @@ class HyperVLiveSync(VsaLiveSync):
 
         # check mandatory input parameters are correct
         if bool(restore_option):
-            if not (isinstance(destination_path, basestring) and
+            if not (isinstance(destination_path, str) and
                     isinstance(overwrite, bool) and
                     isinstance(power_on, bool)):
                 raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -233,7 +231,7 @@ class HyperVLiveSync(VsaLiveSync):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/livesync/hyperv_live_sync.py#L37-L174" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/livesync/hyperv_live_sync.py#L35-L172" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class HyperVLiveSync(VsaLiveSync):
     &#34;&#34;&#34;Class for configuring and monitoring Hyper-V live sync operations&#34;&#34;&#34;
@@ -334,10 +332,10 @@ class HyperVLiveSync(VsaLiveSync):
         if restore_option is None:
             restore_option = {}
 
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
-        if not restored_vm_name and isinstance(vm_to_restore, basestring):
+        if not restored_vm_name and isinstance(vm_to_restore, str):
             restored_vm_name = &#34;LiveSync_&#34;
         restore_option[&#39;restore_new_name&#39;] = restored_vm_name
 
@@ -349,7 +347,7 @@ class HyperVLiveSync(VsaLiveSync):
 
         # check mandatory input parameters are correct
         if bool(restore_option):
-            if not (isinstance(destination_path, basestring) and
+            if not (isinstance(destination_path, str) and
                     isinstance(overwrite, bool) and
                     isinstance(power_on, bool)):
                 raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -473,7 +471,7 @@ default: False</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/livesync/hyperv_live_sync.py#L40-L174" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/livesync/hyperv_live_sync.py#L38-L172" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def configure_live_sync(self,
                         schedule_name=None,
@@ -571,10 +569,10 @@ default: False</p>
     if restore_option is None:
         restore_option = {}
 
-    if vm_to_restore and not isinstance(vm_to_restore, basestring):
+    if vm_to_restore and not isinstance(vm_to_restore, str):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
-    if not restored_vm_name and isinstance(vm_to_restore, basestring):
+    if not restored_vm_name and isinstance(vm_to_restore, str):
         restored_vm_name = &#34;LiveSync_&#34;
     restore_option[&#39;restore_new_name&#39;] = restored_vm_name
 
@@ -586,7 +584,7 @@ default: False</p>
 
     # check mandatory input parameters are correct
     if bool(restore_option):
-        if not (isinstance(destination_path, basestring) and
+        if not (isinstance(destination_path, str) and
                 isinstance(overwrite, bool) and
                 isinstance(power_on, bool)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)

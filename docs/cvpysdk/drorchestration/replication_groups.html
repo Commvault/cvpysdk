@@ -134,7 +134,7 @@ not</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L1-L625" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L1-L645" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -252,8 +252,8 @@ from __future__ import unicode_literals
 
 from enum import Enum
 
-from cvpysdk.drorchestration.blr_pairs import BLRPairs
-from past.builtins import basestring
+from ..constants import AppIDAType, AppIDAName
+from .blr_pairs import BLRPairs
 from ..exception import SDKException
 
 
@@ -317,7 +317,7 @@ class ReplicationGroups:
                 SDKException:
                     if proper inputs are not provided
         &#34;&#34;&#34;
-        if not isinstance(replication_group_name, basestring):
+        if not isinstance(replication_group_name, str):
             raise SDKException(&#39;ReplicationGroup&#39;, &#39;101&#39;)
 
         return self.replication_groups and replication_group_name.lower() in self.replication_groups
@@ -336,7 +336,7 @@ class ReplicationGroups:
                     if proper inputs are not provided
                     If Replication group doesnt exists with given name
         &#34;&#34;&#34;
-        if not isinstance(replication_group_name, basestring):
+        if not isinstance(replication_group_name, str):
             raise SDKException(&#39;ReplicationGroup&#39;, &#39;101&#39;)
         replication_group_name = replication_group_name.lower()
         if self.has_replication_group(replication_group_name):
@@ -364,7 +364,7 @@ class ReplicationGroups:
                     if response is not success
         &#34;&#34;&#34;
 
-        if not isinstance(replication_group_name, basestring):
+        if not isinstance(replication_group_name, str):
             raise SDKException(&#39;ReplicationGroup&#39;, &#39;101&#39;)
 
         replication_group_name = replication_group_name.lower()
@@ -580,6 +580,7 @@ class ReplicationGroup:
     def refresh(self):
         &#34;&#34;&#34; Refresh the replication group properties &#34;&#34;&#34;
         self._replication_group_properties = self._get_replication_group_properties()
+        self._vm_pairs = None
 
     @property
     def group_name(self):
@@ -628,22 +629,27 @@ class ReplicationGroup:
         &#34;&#34;&#34;Returns: (bool) Whether Warm sync is enabled or not&#34;&#34;&#34;
         return (self.restore_options.get(&#39;virtualServerRstOption&#39;, {})
                 .get(&#39;diskLevelVMRestoreOption&#39;, {}).get(&#39;createVmsDuringFailover&#39;, False))
+    
+    @property
+    def is_intelli_snap_enabled(self):
+        &#34;&#34;&#34;Returns: (bool) Whether Snapshot on source is utilised or not&#34;&#34;&#34;
+        return self.subclient.is_intelli_snap_enabled
 
     @property
     def source_client(self):
         &#34;&#34;&#34;Returns:  the client object of the source hypervisor&#34;&#34;&#34;
         if not self._source_client:
-            client_name = self._replication_group_properties.get(&#39;associations&#39;, [{}])[0].get(&#39;clientName&#39;)
-            self._source_client = self._commcell_object.clients.get(client_name)
+            client_id = self._replication_group_properties.get(&#39;associations&#39;, [{}])[0].get(&#39;clientId&#39;)
+            self._source_client = self._commcell_object.clients.get(int(client_id))
         return self._source_client
 
     @property
     def destination_client(self):
         &#34;&#34;&#34;Returns: (str) the client object for the destination hypervisor&#34;&#34;&#34;
         if not self._destination_client:
-            client_name = (self.restore_options.get(&#39;virtualServerRstOption&#39;, {})
-                           .get(&#39;vCenterInstance&#39;, {}).get(&#39;clientName&#39;))
-            self._destination_client = self._commcell_object.clients.get(client_name)
+            client_id = (self.restore_options.get(&#39;virtualServerRstOption&#39;, {})
+                         .get(&#39;vCenterInstance&#39;, {}).get(&#39;clientId&#39;))
+            self._destination_client = self._commcell_object.clients.get(int(client_id))
         return self._destination_client
 
     @property
@@ -651,6 +657,9 @@ class ReplicationGroup:
         &#34;&#34;&#34;Returns: the agent object of the source hypervisor&#34;&#34;&#34;
         if not self._source_agent:
             agent_name = self._replication_group_properties.get(&#39;associations&#39;, [{}])[0].get(&#39;appName&#39;)
+            if not agent_name:
+                app_id = self._replication_group_properties.get(&#39;associations&#39;, [{}])[0].get(&#39;applicationId&#39;)
+                agent_name = AppIDAName[AppIDAType(app_id).name].value
             self._source_agent = self.source_client.agents.get(agent_name)
         return self._source_agent
 
@@ -659,6 +668,9 @@ class ReplicationGroup:
         &#34;&#34;&#34;Returns: the agent object of the destination hypervisor&#34;&#34;&#34;
         if not self._destination_agent:
             agent_name = self._replication_group_properties.get(&#39;associations&#39;, [{}])[0].get(&#39;appName&#39;)
+            if not agent_name:
+                app_id = self._replication_group_properties.get(&#39;associations&#39;, [{}])[0].get(&#39;applicationId&#39;)
+                agent_name = AppIDAName[AppIDAType(app_id).name].value
             self._destination_agent = self.destination_client.agents.get(agent_name)
         return self._destination_agent
 
@@ -703,10 +715,12 @@ class ReplicationGroup:
         if self.replication_type == ReplicationGroups.ReplicationGroupType.VSA_PERIODIC:
             live_sync_name = self.group_name.replace(&#39;_ReplicationPlan__ReplicationGroup&#39;, &#39;&#39;)
             live_sync = self.subclient.live_sync.get(live_sync_name)
+            live_sync.refresh()
             _live_sync_pairs = list(live_sync.vm_pairs)
         elif self.replication_type == ReplicationGroups.ReplicationGroupType.VSA_CONTINUOUS:
             blr_pairs = BLRPairs(self._commcell_object, self.group_name)
-            _live_sync_pairs = list(blr_pairs.blr_pairs)
+            blr_pairs.refresh()
+            _live_sync_pairs = [blr_pair.get(&#39;sourceName&#39;) for blr_pair in blr_pairs.blr_pairs.values()]
         else:
             raise SDKException(&#39;ReplicationGroup&#39;, &#39;101&#39;, &#39;Implemented only for replication groups&#39;
                                                           &#39; of virtual server periodic&#39;)
@@ -760,7 +774,13 @@ class ReplicationGroup:
     def recovery_target(self):
         &#34;&#34;&#34;Returns: (str) The recovery target used for the replication&#34;&#34;&#34;
         return (self.restore_options.get(&#39;virtualServerRstOption&#39;, {}).get(&#39;allocationPolicy&#39;, {})
-                .get(&#39;vmAllocPolicyName&#39;))</code></pre>
+                .get(&#39;vmAllocPolicyName&#39;))
+
+    @property
+    def intelli_snap_engine(self):
+        &#34;&#34;&#34;Returns: (str) Intelli Snap Engine Name&#34;&#34;&#34;
+        snap_engine_name = self.subclient.snapshot_engine_name if self.is_intelli_snap_enabled else &#39;&#39;
+        return snap_engine_name</code></pre>
 </details>
 </section>
 <section>
@@ -789,7 +809,7 @@ name of the replication group</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L352-L625" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L352-L645" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ReplicationGroup:
     &#34;&#34;&#34;Class for all Replication groups related SDK&#34;&#34;&#34;
@@ -884,6 +904,7 @@ name of the replication group</p></div>
     def refresh(self):
         &#34;&#34;&#34; Refresh the replication group properties &#34;&#34;&#34;
         self._replication_group_properties = self._get_replication_group_properties()
+        self._vm_pairs = None
 
     @property
     def group_name(self):
@@ -932,22 +953,27 @@ name of the replication group</p></div>
         &#34;&#34;&#34;Returns: (bool) Whether Warm sync is enabled or not&#34;&#34;&#34;
         return (self.restore_options.get(&#39;virtualServerRstOption&#39;, {})
                 .get(&#39;diskLevelVMRestoreOption&#39;, {}).get(&#39;createVmsDuringFailover&#39;, False))
+    
+    @property
+    def is_intelli_snap_enabled(self):
+        &#34;&#34;&#34;Returns: (bool) Whether Snapshot on source is utilised or not&#34;&#34;&#34;
+        return self.subclient.is_intelli_snap_enabled
 
     @property
     def source_client(self):
         &#34;&#34;&#34;Returns:  the client object of the source hypervisor&#34;&#34;&#34;
         if not self._source_client:
-            client_name = self._replication_group_properties.get(&#39;associations&#39;, [{}])[0].get(&#39;clientName&#39;)
-            self._source_client = self._commcell_object.clients.get(client_name)
+            client_id = self._replication_group_properties.get(&#39;associations&#39;, [{}])[0].get(&#39;clientId&#39;)
+            self._source_client = self._commcell_object.clients.get(int(client_id))
         return self._source_client
 
     @property
     def destination_client(self):
         &#34;&#34;&#34;Returns: (str) the client object for the destination hypervisor&#34;&#34;&#34;
         if not self._destination_client:
-            client_name = (self.restore_options.get(&#39;virtualServerRstOption&#39;, {})
-                           .get(&#39;vCenterInstance&#39;, {}).get(&#39;clientName&#39;))
-            self._destination_client = self._commcell_object.clients.get(client_name)
+            client_id = (self.restore_options.get(&#39;virtualServerRstOption&#39;, {})
+                         .get(&#39;vCenterInstance&#39;, {}).get(&#39;clientId&#39;))
+            self._destination_client = self._commcell_object.clients.get(int(client_id))
         return self._destination_client
 
     @property
@@ -955,6 +981,9 @@ name of the replication group</p></div>
         &#34;&#34;&#34;Returns: the agent object of the source hypervisor&#34;&#34;&#34;
         if not self._source_agent:
             agent_name = self._replication_group_properties.get(&#39;associations&#39;, [{}])[0].get(&#39;appName&#39;)
+            if not agent_name:
+                app_id = self._replication_group_properties.get(&#39;associations&#39;, [{}])[0].get(&#39;applicationId&#39;)
+                agent_name = AppIDAName[AppIDAType(app_id).name].value
             self._source_agent = self.source_client.agents.get(agent_name)
         return self._source_agent
 
@@ -963,6 +992,9 @@ name of the replication group</p></div>
         &#34;&#34;&#34;Returns: the agent object of the destination hypervisor&#34;&#34;&#34;
         if not self._destination_agent:
             agent_name = self._replication_group_properties.get(&#39;associations&#39;, [{}])[0].get(&#39;appName&#39;)
+            if not agent_name:
+                app_id = self._replication_group_properties.get(&#39;associations&#39;, [{}])[0].get(&#39;applicationId&#39;)
+                agent_name = AppIDAName[AppIDAType(app_id).name].value
             self._destination_agent = self.destination_client.agents.get(agent_name)
         return self._destination_agent
 
@@ -1007,10 +1039,12 @@ name of the replication group</p></div>
         if self.replication_type == ReplicationGroups.ReplicationGroupType.VSA_PERIODIC:
             live_sync_name = self.group_name.replace(&#39;_ReplicationPlan__ReplicationGroup&#39;, &#39;&#39;)
             live_sync = self.subclient.live_sync.get(live_sync_name)
+            live_sync.refresh()
             _live_sync_pairs = list(live_sync.vm_pairs)
         elif self.replication_type == ReplicationGroups.ReplicationGroupType.VSA_CONTINUOUS:
             blr_pairs = BLRPairs(self._commcell_object, self.group_name)
-            _live_sync_pairs = list(blr_pairs.blr_pairs)
+            blr_pairs.refresh()
+            _live_sync_pairs = [blr_pair.get(&#39;sourceName&#39;) for blr_pair in blr_pairs.blr_pairs.values()]
         else:
             raise SDKException(&#39;ReplicationGroup&#39;, &#39;101&#39;, &#39;Implemented only for replication groups&#39;
                                                           &#39; of virtual server periodic&#39;)
@@ -1064,7 +1098,13 @@ name of the replication group</p></div>
     def recovery_target(self):
         &#34;&#34;&#34;Returns: (str) The recovery target used for the replication&#34;&#34;&#34;
         return (self.restore_options.get(&#39;virtualServerRstOption&#39;, {}).get(&#39;allocationPolicy&#39;, {})
-                .get(&#39;vmAllocPolicyName&#39;))</code></pre>
+                .get(&#39;vmAllocPolicyName&#39;))
+
+    @property
+    def intelli_snap_engine(self):
+        &#34;&#34;&#34;Returns: (str) Intelli Snap Engine Name&#34;&#34;&#34;
+        snap_engine_name = self.subclient.snapshot_engine_name if self.is_intelli_snap_enabled else &#39;&#39;
+        return snap_engine_name</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
@@ -1074,7 +1114,7 @@ name of the replication group</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L614-L619" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L628-L633" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_for_replication(self):
@@ -1090,7 +1130,7 @@ def copy_for_replication(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L608-L612" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L622-L626" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_precedence_applicable(self):
@@ -1105,13 +1145,16 @@ def copy_precedence_applicable(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L519-L525" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L528-L537" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination_agent(self):
     &#34;&#34;&#34;Returns: the agent object of the destination hypervisor&#34;&#34;&#34;
     if not self._destination_agent:
         agent_name = self._replication_group_properties.get(&#39;associations&#39;, [{}])[0].get(&#39;appName&#39;)
+        if not agent_name:
+            app_id = self._replication_group_properties.get(&#39;associations&#39;, [{}])[0].get(&#39;applicationId&#39;)
+            agent_name = AppIDAName[AppIDAType(app_id).name].value
         self._destination_agent = self.destination_client.agents.get(agent_name)
     return self._destination_agent</code></pre>
 </details>
@@ -1122,15 +1165,15 @@ def destination_agent(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L502-L509" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L508-L515" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination_client(self):
     &#34;&#34;&#34;Returns: (str) the client object for the destination hypervisor&#34;&#34;&#34;
     if not self._destination_client:
-        client_name = (self.restore_options.get(&#39;virtualServerRstOption&#39;, {})
-                       .get(&#39;vCenterInstance&#39;, {}).get(&#39;clientName&#39;))
-        self._destination_client = self._commcell_object.clients.get(client_name)
+        client_id = (self.restore_options.get(&#39;virtualServerRstOption&#39;, {})
+                     .get(&#39;vCenterInstance&#39;, {}).get(&#39;clientId&#39;))
+        self._destination_client = self._commcell_object.clients.get(int(client_id))
     return self._destination_client</code></pre>
 </details>
 </dd>
@@ -1140,7 +1183,7 @@ def destination_client(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L535-L546" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L547-L558" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination_instance(self):
@@ -1162,7 +1205,7 @@ def destination_instance(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L603-L606" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L617-L620" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def group_frequency(self):
@@ -1176,7 +1219,7 @@ def group_frequency(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L451-L454" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L452-L455" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def group_id(self):
@@ -1190,12 +1233,27 @@ def group_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L446-L449" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L447-L450" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def group_name(self):
     &#34;&#34;&#34;Returns: (str) Returns the name of the replication group&#34;&#34;&#34;
     return self._group_name</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.drorchestration.replication_groups.ReplicationGroup.intelli_snap_engine"><code class="name">var <span class="ident">intelli_snap_engine</span></code></dt>
+<dd>
+<div class="desc"><p>Returns: (str) Intelli Snap Engine Name</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L641-L645" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def intelli_snap_engine(self):
+    &#34;&#34;&#34;Returns: (str) Intelli Snap Engine Name&#34;&#34;&#34;
+    snap_engine_name = self.subclient.snapshot_engine_name if self.is_intelli_snap_enabled else &#39;&#39;
+    return snap_engine_name</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.drorchestration.replication_groups.ReplicationGroup.is_dvdf_enabled"><code class="name">var <span class="ident">is_dvdf_enabled</span></code></dt>
@@ -1204,7 +1262,7 @@ def group_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L482-L486" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L483-L487" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_dvdf_enabled(self):
@@ -1219,12 +1277,26 @@ def is_dvdf_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L598-L601" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L612-L615" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_enabled(self):
     &#34;&#34;&#34;Returns: (bool) Returns True if state of the replication group &#39;Enabled&#39; else False&#34;&#34;&#34;
     return not self._replication_group_properties.get(&#39;task&#39;, {}).get(&#39;taskFlags&#39;, {}).get(&#39;disabled&#39;, False)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.drorchestration.replication_groups.ReplicationGroup.is_intelli_snap_enabled"><code class="name">var <span class="ident">is_intelli_snap_enabled</span></code></dt>
+<dd>
+<div class="desc"><p>Returns: (bool) Whether Snapshot on source is utilised or not</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L495-L498" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_intelli_snap_enabled(self):
+    &#34;&#34;&#34;Returns: (bool) Whether Snapshot on source is utilised or not&#34;&#34;&#34;
+    return self.subclient.is_intelli_snap_enabled</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.drorchestration.replication_groups.ReplicationGroup.is_warm_sync_enabled"><code class="name">var <span class="ident">is_warm_sync_enabled</span></code></dt>
@@ -1233,7 +1305,7 @@ def is_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L488-L492" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L489-L493" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_warm_sync_enabled(self):
@@ -1249,7 +1321,7 @@ eg: ["vm1", "vm2"]</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L558-L575" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L570-L589" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def live_sync_pairs(self):
@@ -1261,10 +1333,12 @@ def live_sync_pairs(self):
     if self.replication_type == ReplicationGroups.ReplicationGroupType.VSA_PERIODIC:
         live_sync_name = self.group_name.replace(&#39;_ReplicationPlan__ReplicationGroup&#39;, &#39;&#39;)
         live_sync = self.subclient.live_sync.get(live_sync_name)
+        live_sync.refresh()
         _live_sync_pairs = list(live_sync.vm_pairs)
     elif self.replication_type == ReplicationGroups.ReplicationGroupType.VSA_CONTINUOUS:
         blr_pairs = BLRPairs(self._commcell_object, self.group_name)
-        _live_sync_pairs = list(blr_pairs.blr_pairs)
+        blr_pairs.refresh()
+        _live_sync_pairs = [blr_pair.get(&#39;sourceName&#39;) for blr_pair in blr_pairs.blr_pairs.values()]
     else:
         raise SDKException(&#39;ReplicationGroup&#39;, &#39;101&#39;, &#39;Implemented only for replication groups&#39;
                                                       &#39; of virtual server periodic&#39;)
@@ -1277,7 +1351,7 @@ def live_sync_pairs(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L621-L625" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L635-L639" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def recovery_target(self):
@@ -1292,7 +1366,7 @@ def recovery_target(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L461-L466" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L462-L467" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def replication_type(self):
@@ -1309,7 +1383,7 @@ The dictionary structure depends on the vendor</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L473-L480" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L474-L481" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def restore_options(self):
@@ -1327,13 +1401,16 @@ def restore_options(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L511-L517" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L517-L526" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def source_agent(self):
     &#34;&#34;&#34;Returns: the agent object of the source hypervisor&#34;&#34;&#34;
     if not self._source_agent:
         agent_name = self._replication_group_properties.get(&#39;associations&#39;, [{}])[0].get(&#39;appName&#39;)
+        if not agent_name:
+            app_id = self._replication_group_properties.get(&#39;associations&#39;, [{}])[0].get(&#39;applicationId&#39;)
+            agent_name = AppIDAName[AppIDAType(app_id).name].value
         self._source_agent = self.source_client.agents.get(agent_name)
     return self._source_agent</code></pre>
 </details>
@@ -1345,14 +1422,14 @@ the client object of the source hypervisor</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L494-L500" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L500-L506" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def source_client(self):
     &#34;&#34;&#34;Returns:  the client object of the source hypervisor&#34;&#34;&#34;
     if not self._source_client:
-        client_name = self._replication_group_properties.get(&#39;associations&#39;, [{}])[0].get(&#39;clientName&#39;)
-        self._source_client = self._commcell_object.clients.get(client_name)
+        client_id = self._replication_group_properties.get(&#39;associations&#39;, [{}])[0].get(&#39;clientId&#39;)
+        self._source_client = self._commcell_object.clients.get(int(client_id))
     return self._source_client</code></pre>
 </details>
 </dd>
@@ -1362,7 +1439,7 @@ def source_client(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L527-L533" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L539-L545" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def source_instance(self):
@@ -1379,7 +1456,7 @@ def source_instance(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L548-L556" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L560-L568" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient(self):
@@ -1398,7 +1475,7 @@ def subclient(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L456-L459" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L457-L460" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def task_id(self):
@@ -1413,7 +1490,7 @@ eg: {"src_vm1": LiveSyncVMPair, "src_vm2": LiveSyncVMPair}</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L577-L596" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L591-L610" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_pairs(self):
@@ -1443,7 +1520,7 @@ def vm_pairs(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L468-L471" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L469-L472" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def zeal_group(self):
@@ -1462,11 +1539,12 @@ def zeal_group(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L442-L444" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L442-L445" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34; Refresh the replication group properties &#34;&#34;&#34;
-    self._replication_group_properties = self._get_replication_group_properties()</code></pre>
+    self._replication_group_properties = self._get_replication_group_properties()
+    self._vm_pairs = None</code></pre>
 </details>
 </dd>
 </dl>
@@ -1485,7 +1563,7 @@ instance of the Commcell class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L122-L349" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L122-L349" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ReplicationGroups:
     &#34;&#34;&#34;Class for getting all the replication groups in commcell.&#34;&#34;&#34;
@@ -1547,7 +1625,7 @@ instance of the Commcell class</p></div>
                 SDKException:
                     if proper inputs are not provided
         &#34;&#34;&#34;
-        if not isinstance(replication_group_name, basestring):
+        if not isinstance(replication_group_name, str):
             raise SDKException(&#39;ReplicationGroup&#39;, &#39;101&#39;)
 
         return self.replication_groups and replication_group_name.lower() in self.replication_groups
@@ -1566,7 +1644,7 @@ instance of the Commcell class</p></div>
                     if proper inputs are not provided
                     If Replication group doesnt exists with given name
         &#34;&#34;&#34;
-        if not isinstance(replication_group_name, basestring):
+        if not isinstance(replication_group_name, str):
             raise SDKException(&#39;ReplicationGroup&#39;, &#39;101&#39;)
         replication_group_name = replication_group_name.lower()
         if self.has_replication_group(replication_group_name):
@@ -1594,7 +1672,7 @@ instance of the Commcell class</p></div>
                     if response is not success
         &#34;&#34;&#34;
 
-        if not isinstance(replication_group_name, basestring):
+        if not isinstance(replication_group_name, str):
             raise SDKException(&#39;ReplicationGroup&#39;, &#39;101&#39;)
 
         replication_group_name = replication_group_name.lower()
@@ -1734,7 +1812,7 @@ Args:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L282-L291" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L282-L291" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def replication_groups(self):
@@ -1769,7 +1847,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L213-L280" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L213-L280" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, replication_group_name):
     &#34;&#34;&#34; Deletes the specified replication group name.
@@ -1787,7 +1865,7 @@ if response is not success</p></div>
                 if response is not success
     &#34;&#34;&#34;
 
-    if not isinstance(replication_group_name, basestring):
+    if not isinstance(replication_group_name, str):
         raise SDKException(&#39;ReplicationGroup&#39;, &#39;101&#39;)
 
     replication_group_name = replication_group_name.lower()
@@ -1859,7 +1937,7 @@ If Replication group doesnt exists with given name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L187-L211" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L187-L211" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, replication_group_name):
     &#34;&#34;&#34;Returns a replication group object of the specified replication group name.
@@ -1875,7 +1953,7 @@ If Replication group doesnt exists with given name</p></div>
                 if proper inputs are not provided
                 If Replication group doesnt exists with given name
     &#34;&#34;&#34;
-    if not isinstance(replication_group_name, basestring):
+    if not isinstance(replication_group_name, str):
         raise SDKException(&#39;ReplicationGroup&#39;, &#39;101&#39;)
     replication_group_name = replication_group_name.lower()
     if self.has_replication_group(replication_group_name):
@@ -1905,7 +1983,7 @@ if proper inputs are not provided</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L169-L185" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L169-L185" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_replication_group(self, replication_group_name):
     &#34;&#34;&#34;Checks if replication group exists or not
@@ -1920,7 +1998,7 @@ if proper inputs are not provided</p></div>
             SDKException:
                 if proper inputs are not provided
     &#34;&#34;&#34;
-    if not isinstance(replication_group_name, basestring):
+    if not isinstance(replication_group_name, str):
         raise SDKException(&#39;ReplicationGroup&#39;, &#39;101&#39;)
 
     return self.replication_groups and replication_group_name.lower() in self.replication_groups</code></pre>
@@ -1937,7 +2015,7 @@ Args:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/replication_groups.py#L340-L349" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/replication_groups.py#L340-L349" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34; Refresh the replication groups created in the commcell.
@@ -2032,8 +2110,10 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.drorchestration.replication_groups.ReplicationGroup.group_frequency" href="#cvpysdk.drorchestration.replication_groups.ReplicationGroup.group_frequency">group_frequency</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.replication_groups.ReplicationGroup.group_id" href="#cvpysdk.drorchestration.replication_groups.ReplicationGroup.group_id">group_id</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.replication_groups.ReplicationGroup.group_name" href="#cvpysdk.drorchestration.replication_groups.ReplicationGroup.group_name">group_name</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.replication_groups.ReplicationGroup.intelli_snap_engine" href="#cvpysdk.drorchestration.replication_groups.ReplicationGroup.intelli_snap_engine">intelli_snap_engine</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.replication_groups.ReplicationGroup.is_dvdf_enabled" href="#cvpysdk.drorchestration.replication_groups.ReplicationGroup.is_dvdf_enabled">is_dvdf_enabled</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.replication_groups.ReplicationGroup.is_enabled" href="#cvpysdk.drorchestration.replication_groups.ReplicationGroup.is_enabled">is_enabled</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.replication_groups.ReplicationGroup.is_intelli_snap_enabled" href="#cvpysdk.drorchestration.replication_groups.ReplicationGroup.is_intelli_snap_enabled">is_intelli_snap_enabled</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.replication_groups.ReplicationGroup.is_warm_sync_enabled" href="#cvpysdk.drorchestration.replication_groups.ReplicationGroup.is_warm_sync_enabled">is_warm_sync_enabled</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.replication_groups.ReplicationGroup.live_sync_pairs" href="#cvpysdk.drorchestration.replication_groups.ReplicationGroup.live_sync_pairs">live_sync_pairs</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.replication_groups.ReplicationGroup.recovery_target" href="#cvpysdk.drorchestration.replication_groups.ReplicationGroup.recovery_target">recovery_target</a></code></li>

@@ -84,8 +84,6 @@ Class for representing a single substore associated to the deduplication store.<
 - initializes all substore properties</p>
 <p>refresh()
 - refreshes store properties</p>
-<p>all_substores()
-- returns list of all substores in a store</p>
 <p>has_substore()
 - checks if a substore exists in a store</p>
 <p>get()
@@ -97,9 +95,41 @@ Class for representing a single substore associated to the deduplication store.<
 - starts DDB space reclaimation job for store</p>
 <p>run_ddb_verification()
 - starts DDB verification job for store</p>
-<p>enable_store_pruning
--
-Property to get the current state of store pruning or enable/disable store pruning</p>
+<p>config_only_move_partition()
+- performs config-only ddb move operation on specified substore</p>
+<p>move_partition()
+- performs normal ddb move operation on specified substore</p>
+<h2 id="attributes">Attributes</h2>
+<pre><code>**all_substores**       -- returns list of all substores present on a deduplication store
+
+**store_flags**         -- returns the deduplication flags on store
+
+**store_name**          -- returns the store display name
+
+**store_id**            -- return the store id
+
+**version**             -- returns deduplication store version
+
+**status**              -- returns the store display name
+
+**storage_policy_name** -- returns storage policy name associated with store
+
+**copy_name**           -- returns copy name associated with store
+
+**copy_id**             -- returns copy id the store is associated to
+
+**enable_store_pruning**            -- returns whether purning is enabled or disabled on store
+
+**enable_store_pruning.setter**     -- sets store purning value to true or false
+
+**enable_garbage_collection**       -- returns garbage collection property value for store
+
+**enable_garbage_collection.setter** -- sets garbage collection property value for store
+
+**enable_journal_pruning**           --  Returns the value of journal pruning property
+
+**enable_journal_pruning.setter**    --  Sets the value of journal pruning property
+</code></pre>
 <h2 id="substore">Substore</h2>
 <p><strong>init</strong>(commcell_object, storage_policy_name, copy_name,
 store_id, substore-id)
@@ -117,7 +147,7 @@ store_id, substore-id)
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L1-L1105" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L1-L1353" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -201,8 +231,6 @@ Store:
 
     refresh()                   - refreshes store properties
 
-    all_substores()             - returns list of all substores in a store
-
     has_substore()              - checks if a substore exists in a store
 
     get()                      - gets a substore class object for provided substore id
@@ -215,7 +243,42 @@ Store:
 
     run_ddb_verification()      - starts DDB verification job for store
 
-    enable_store_pruning        -  Property to get the current state of store pruning or enable/disable store pruning
+    config_only_move_partition()    - performs config-only ddb move operation on specified substore
+
+    move_partition()            - performs normal ddb move operation on specified substore
+
+Attributes
+----------
+    **all_substores**       -- returns list of all substores present on a deduplication store
+
+    **store_flags**         -- returns the deduplication flags on store
+
+    **store_name**          -- returns the store display name
+
+    **store_id**            -- return the store id
+
+    **version**             -- returns deduplication store version
+
+    **status**              -- returns the store display name
+
+    **storage_policy_name** -- returns storage policy name associated with store
+
+    **copy_name**           -- returns copy name associated with store
+
+    **copy_id**             -- returns copy id the store is associated to
+
+    **enable_store_pruning**            -- returns whether purning is enabled or disabled on store
+
+    **enable_store_pruning.setter**     -- sets store purning value to true or false
+
+    **enable_garbage_collection**       -- returns garbage collection property value for store
+
+    **enable_garbage_collection.setter** -- sets garbage collection property value for store
+
+    **enable_journal_pruning**           --  Returns the value of journal pruning property
+
+    **enable_journal_pruning.setter**    --  Sets the value of journal pruning property
+
 
 Substore:
     __init__(commcell_object, storage_policy_name, copy_name,
@@ -234,18 +297,17 @@ Substore:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from past.builtins import basestring
-from future.standard_library import install_aliases
 from enum import Enum
 
 from .exception import SDKException
 from .job import Job
 
-install_aliases()
 
 
 class StoreFlags(Enum):
     IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED = 536870912
+    IDX_SIDBSTORE_FLAGS_DDB_NEEDS_AUTO_RESYNC = 33554432
+    IDX_SIDBSTORE_FLAGS_DDB_UNDER_MAINTENANCE = 16777216
 
 
 class DeduplicationEngines(object):
@@ -359,7 +421,7 @@ class DeduplicationEngines(object):
                 SDKException:
                     if type of the storage policy and copy name arguments are not string
         &#34;&#34;&#34;
-        if not isinstance(storage_policy_name, basestring) and not isinstance(copy_name, basestring):
+        if not isinstance(storage_policy_name, str) and not isinstance(copy_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
         return self._engines and (storage_policy_name.lower(), copy_name.lower()) in self._engines
 
@@ -381,7 +443,7 @@ class DeduplicationEngines(object):
 
                 if no engine exists with given storage policy and copy name
         &#34;&#34;&#34;
-        if not isinstance(storage_policy_name, basestring) and  not isinstance(copy_name, basestring):
+        if not isinstance(storage_policy_name, str) and  not isinstance(copy_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         storage_policy_name = storage_policy_name.lower()
@@ -837,6 +899,50 @@ class Store(object):
             self._commcell_object.qoperation_execute(request_json)
         self.refresh()
 
+    @property
+    def enable_journal_pruning(self):
+        &#34;&#34;&#34;returns journal pruning property value for store&#34;&#34;&#34;
+        if (self._extended_flags &amp; 8) == 0:
+            return False
+        return True
+
+    @enable_journal_pruning.setter
+    def enable_journal_pruning(self, value):
+        &#34;&#34;&#34;sets enable journal pruning with true or false
+        Args:
+              value (bool) -- value to enable journal pruning
+        &#34;&#34;&#34;
+        if not self._extended_flags &amp; 8 and value or self.version == -1:
+
+            if value:
+                new_value = self._extended_flags | 8
+            else:
+                new_value = self._extended_flags &amp; ~8
+
+            request_json = {
+                &#34;EVGui_ParallelDedupConfigReq&#34;: {
+                    &#34;processinginstructioninfo&#34;: &#34;&#34;,
+                    &#34;SIDBStore&#34;: {
+                        &#34;SIDBStoreId&#34;: self.store_id,
+                        &#34;SIDBStoreName&#34;: self.store_name,
+                        &#34;extendedFlags&#34;: new_value,
+                        &#34;flags&#34;: self._store_flags,
+                        &#34;minObjSizeKB&#34;: 50,
+                        &#34;oldestEligibleObjArchiveTime&#34;: -1
+                    },
+                    &#34;appTypeGroupId&#34;: 0,
+                    &#34;commCellId&#34;: 2,
+                    &#34;copyId&#34;: self.copy_id,
+                    &#34;operation&#34;: 3
+                }
+            }
+            self._commcell_object.qoperation_execute(request_json)
+            self.refresh()
+        elif self._extended_flags &amp; 8 and value:
+            raise SDKException(&#34;Response&#34;, &#39;500&#39;, &#34;Journal pruning is already enabled.&#34;)
+        else:
+            raise SDKException(&#34;Response&#34;, &#39;500&#39;, &#34;Journal pruning once enabled cannot be disabled.&#34;)
+
     def seal_deduplication_database(self):
         &#34;&#34;&#34; Seals the deduplication database &#34;&#34;&#34;
 
@@ -937,7 +1043,7 @@ class Store(object):
         response_string = self._commcell_object._update_response_(response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def run_space_reclaimation(self, level=3, clean_orphan_data=False, use_scalable_resource=False):
+    def run_space_reclaimation(self, level=3, clean_orphan_data=False, use_scalable_resource=True):
         &#34;&#34;&#34;
         runs DDB Space reclaimation job with provided level
 
@@ -949,6 +1055,7 @@ class Store(object):
                         Default: False
 
             use_scalable_resource (bool)    - Use Scalable Resource Allocation while running DDB Space Reclamation Job
+                        Default: True
 
         Returns:
              object - instance of Job class for DDB Verification job
@@ -1043,7 +1150,7 @@ class Store(object):
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     def run_ddb_verification(self, incremental_verification=True, quick_verification=True,
-                             use_scalable_resource=False):
+                             use_scalable_resource=True):
         &#34;&#34;&#34;
         runs deduplication data verification(dv2) job with verification type and dv2 option
 
@@ -1055,6 +1162,7 @@ class Store(object):
                                             Default: True (quick verification)
 
             use_scalable_resource (bool)    - Use Scalable Resource Allocation while running DDB Verification Job
+                                            Default: True
 
         Returns:
              object - instance of Job class for DDB Verification job
@@ -1142,6 +1250,170 @@ class Store(object):
         response_string = self._commcell_object._update_response_(response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
+    def config_only_move_partition(self, substoreid, dest_path, dest_ma_name):
+        &#34;&#34;&#34;
+        runs config-only ddb move operation on specified substore
+
+        Args:
+            substoreid - (int) - substore Id for partition to be moved
+
+            dest_path - (str) - full path for partition destination directory
+
+            dest_ma_name - (str) - destination media agent name
+
+        Returns:
+             boolean - returns true or false value depending on success of config only
+        &#34;&#34;&#34;
+        dest_ma = self._commcell_object.media_agents.get(dest_ma_name)
+        dest_ma_id = int(dest_ma.media_agent_id)
+        substore = self.get(substoreid)
+
+        request_json = {
+            &#34;MediaManager_CanDDBMoveRunReq&#34;: {
+                &#34;intReserveFiled1&#34;: 0,
+                &#34;sourceMaId&#34;: substore.media_agent_id,
+                &#34;flags&#34;: 1,
+                &#34;targetPath&#34;: dest_path,
+                &#34;stringReserveField1&#34;: &#34;&#34;,
+                &#34;storeId&#34;: self.store_id,
+                &#34;subStoreId&#34;: substoreid,
+                &#34;targetMAId&#34;: dest_ma_id,
+                &#34;sourcePath&#34;: substore.path
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._commcell_object._services[&#39;EXECUTE_QCOMMAND&#39;], request_json
+        )
+
+        if flag:
+            if response and response.json():
+                if &#34;errorCode&#34; in response.json():
+                    error_message = response.json()[&#39;errorMessage&#39;]
+                    o_str = &#39;DDB move job failed\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str)
+                else:
+                    return flag
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def move_partition(self, substoreid, dest_path, dest_ma_name):
+        &#34;&#34;&#34;
+        runs normal ddb move operation on specified substore
+
+        Args:
+            substoreid - (int) - substore Id for partition to be moved
+
+            dest_path - (str) - full path for partition destination directory
+
+            dest_ma_name - (str) - destination media agent name
+
+        Returns:
+             object - instance of Job class for DDB Move job
+
+        Raises:
+             SDKException:
+                if DDB Move job failed
+
+                if response if empty
+
+                if response in not success
+        &#34;&#34;&#34;
+        dest_ma = self._commcell_object.media_agents.get(dest_ma_name)
+        dest_ma_id = int(dest_ma.media_agent_id)
+        substore = self.get(substoreid)
+
+        request_json = {
+            &#34;TMMsg_CreateTaskReq&#34;: {
+                &#34;taskInfo&#34;: {
+                    &#34;associations&#34;: [
+                        {
+                            &#34;sidbStoreId&#34;: self.store_id,
+                            &#34;_type_&#34;: 18,
+                            &#34;appName&#34;: &#34;&#34;
+                        }
+                    ],
+                    &#34;task&#34;: {
+                        &#34;ownerId&#34;: 1,
+                        &#34;taskType&#34;: 1,
+                        &#34;ownerName&#34;: &#34;admin&#34;,
+                        &#34;sequenceNumber&#34;: 0,
+                        &#34;initiatedFrom&#34;: 1,
+                        &#34;policyType&#34;: 0,
+                        &#34;taskId&#34;: 0,
+                        &#34;taskFlags&#34;: {
+                            &#34;disabled&#34;: False
+                        }
+                    },
+                    &#34;subTasks&#34;: [
+                        {
+                            &#34;subTaskOperation&#34;: 1,
+                            &#34;subTask&#34;: {
+                                &#34;subTaskType&#34;: 1,
+                                &#34;operationType&#34;: 5013
+                            },
+                            &#34;options&#34;: {
+                                &#34;adminOpts&#34;: {
+                                    &#34;contentIndexingOption&#34;: {
+                                        &#34;subClientBasedAnalytics&#34;: False
+                                    },
+                                    &#34;libraryOption&#34;: {
+                                        &#34;operation&#34;: 20,
+                                        &#34;ddbMoveOption&#34;: {
+                                            &#34;flags&#34;: 2,
+                                            &#34;subStoreList&#34;: [
+                                                {
+                                                    &#34;srcPath&#34;: substore.path,
+                                                    &#34;storeId&#34;: self.store_id,
+                                                    &#34;changeOnlyDB&#34;: False,
+                                                    &#34;destPath&#34;: dest_path,
+                                                    &#34;subStoreId&#34;: substoreid,
+                                                    &#34;destMediaAgent&#34;: {
+                                                        &#34;name&#34;: dest_ma_name,
+                                                        &#34;id&#34;: dest_ma_id
+                                                    },
+                                                    &#34;srcMediaAgent&#34;: {
+                                                        &#34;name&#34;: substore.media_agent,
+                                                        &#34;id&#34;: substore.media_agent_id
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                },
+                                &#34;restoreOptions&#34;: {
+                                    &#34;virtualServerRstOption&#34;: {
+                                        &#34;isBlockLevelReplication&#34;: False
+                                    },
+                                    &#34;commonOptions&#34;: {
+                                        &#34;syncRestore&#34;: False
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._commcell_object._services[&#39;EXECUTE_QCOMMAND&#39;], request_json
+        )
+
+        if flag:
+            if response and response.json():
+                if &#34;jobIds&#34; in response.json():
+                    return Job(self._commcell_object, response.json()[&#39;jobIds&#39;][0])
+                elif &#34;errorCode&#34; in response.json():
+                    error_message = response.json()[&#39;errorMessage&#39;]
+                    o_str = &#39;DDB move job failed\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str)
+                raise SDKException(&#39;Storage&#39;, &#39;108&#39;)
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
 
 class SubStore(object):
     &#34;&#34;&#34;Class to performing substore level operations for Deduplication engine&#34;&#34;&#34;
@@ -1182,6 +1454,7 @@ class SubStore(object):
         self._substore_properties = store._substores[self._substore_id]
         self._path = self._substore_properties[&#39;Path&#39;]
         self._media_agent = self._substore_properties[&#39;MediaAgent&#39;][&#39;name&#39;]
+        self._media_agent_id = self._substore_properties[&#39;MediaAgent&#39;][&#39;id&#39;]
 
     def refresh(self):
         &#34;&#34;&#34;refresh the properties of a substore&#34;&#34;&#34;
@@ -1209,6 +1482,11 @@ class SubStore(object):
     def media_agent(self):
         &#34;&#34;&#34;returns media agent for the substore&#34;&#34;&#34;
         return self._media_agent
+
+    @property
+    def media_agent_id(self):
+        &#34;&#34;&#34;returns media agent id for the substore&#34;&#34;&#34;
+        return self._media_agent_id
 
     @property
     def path(self):
@@ -1256,7 +1534,7 @@ class SubStore(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L278-L453" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L310-L485" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class DeduplicationEngine(object):
     &#34;&#34;&#34;Class to get all stores associated for deduplication engine&#34;&#34;&#34;
@@ -1443,7 +1721,7 @@ class SubStore(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L396-L403" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L428-L435" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_stores(self):
@@ -1461,7 +1739,7 @@ def all_stores(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L410-L413" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L442-L445" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_id(self):
@@ -1475,7 +1753,7 @@ def copy_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L405-L408" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L437-L440" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy_id(self):
@@ -1501,7 +1779,7 @@ def storage_policy_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L431-L453" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L463-L485" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, store_id):
     &#34;&#34;&#34;
@@ -1543,7 +1821,7 @@ if type of the store id argument is not int</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L415-L429" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L447-L461" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_store(self, store_id):
     &#34;&#34;&#34;Checks if a deduplication store exists in a engine with provided storeid id.
@@ -1570,7 +1848,7 @@ if type of the store id argument is not int</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L392-L394" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L424-L426" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;refreshes all the deduplication engine properties&#34;&#34;&#34;
@@ -1595,7 +1873,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L130-L275" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L162-L307" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class DeduplicationEngines(object):
     &#34;&#34;&#34;Class for getting all the deduplication engines associated with the commcell.&#34;&#34;&#34;
@@ -1708,7 +1986,7 @@ instance of the Commcell class</p>
                 SDKException:
                     if type of the storage policy and copy name arguments are not string
         &#34;&#34;&#34;
-        if not isinstance(storage_policy_name, basestring) and not isinstance(copy_name, basestring):
+        if not isinstance(storage_policy_name, str) and not isinstance(copy_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
         return self._engines and (storage_policy_name.lower(), copy_name.lower()) in self._engines
 
@@ -1730,7 +2008,7 @@ instance of the Commcell class</p>
 
                 if no engine exists with given storage policy and copy name
         &#34;&#34;&#34;
-        if not isinstance(storage_policy_name, basestring) and  not isinstance(copy_name, basestring):
+        if not isinstance(storage_policy_name, str) and  not isinstance(copy_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         storage_policy_name = storage_policy_name.lower()
@@ -1752,7 +2030,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L217-L220" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L249-L252" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_engines(self):
@@ -1781,7 +2059,7 @@ if type of arguments are not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L245-L275" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L277-L307" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, storage_policy_name, copy_name):
     &#34;&#34;&#34;
@@ -1801,7 +2079,7 @@ if type of arguments are not string</p>
 
             if no engine exists with given storage policy and copy name
     &#34;&#34;&#34;
-    if not isinstance(storage_policy_name, basestring) and  not isinstance(copy_name, basestring):
+    if not isinstance(storage_policy_name, str) and  not isinstance(copy_name, str):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     storage_policy_name = storage_policy_name.lower()
@@ -1836,7 +2114,7 @@ if type of the storage policy and copy name arguments are not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L226-L243" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L258-L275" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_engine(self, storage_policy_name, copy_name):
     &#34;&#34;&#34;Checks if a deduplication engine exists in the commcell with the input storage policy and copy name.
@@ -1853,7 +2131,7 @@ if type of the storage policy and copy name arguments are not string</p></div>
             SDKException:
                 if type of the storage policy and copy name arguments are not string
     &#34;&#34;&#34;
-    if not isinstance(storage_policy_name, basestring) and not isinstance(copy_name, basestring):
+    if not isinstance(storage_policy_name, str) and not isinstance(copy_name, str):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
     return self._engines and (storage_policy_name.lower(), copy_name.lower()) in self._engines</code></pre>
 </details>
@@ -1866,7 +2144,7 @@ if type of the storage policy and copy name arguments are not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L222-L224" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L254-L256" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;refreshes all the deduplication engines and their properties&#34;&#34;&#34;
@@ -1894,7 +2172,7 @@ if type of the storage policy and copy name arguments are not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L456-L1022" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L488-L1264" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Store(object):
     &#34;&#34;&#34;Class for performing deduplication store level operations for deduplication engine&#34;&#34;&#34;
@@ -2159,6 +2437,50 @@ if type of the storage policy and copy name arguments are not string</p></div>
             self._commcell_object.qoperation_execute(request_json)
         self.refresh()
 
+    @property
+    def enable_journal_pruning(self):
+        &#34;&#34;&#34;returns journal pruning property value for store&#34;&#34;&#34;
+        if (self._extended_flags &amp; 8) == 0:
+            return False
+        return True
+
+    @enable_journal_pruning.setter
+    def enable_journal_pruning(self, value):
+        &#34;&#34;&#34;sets enable journal pruning with true or false
+        Args:
+              value (bool) -- value to enable journal pruning
+        &#34;&#34;&#34;
+        if not self._extended_flags &amp; 8 and value or self.version == -1:
+
+            if value:
+                new_value = self._extended_flags | 8
+            else:
+                new_value = self._extended_flags &amp; ~8
+
+            request_json = {
+                &#34;EVGui_ParallelDedupConfigReq&#34;: {
+                    &#34;processinginstructioninfo&#34;: &#34;&#34;,
+                    &#34;SIDBStore&#34;: {
+                        &#34;SIDBStoreId&#34;: self.store_id,
+                        &#34;SIDBStoreName&#34;: self.store_name,
+                        &#34;extendedFlags&#34;: new_value,
+                        &#34;flags&#34;: self._store_flags,
+                        &#34;minObjSizeKB&#34;: 50,
+                        &#34;oldestEligibleObjArchiveTime&#34;: -1
+                    },
+                    &#34;appTypeGroupId&#34;: 0,
+                    &#34;commCellId&#34;: 2,
+                    &#34;copyId&#34;: self.copy_id,
+                    &#34;operation&#34;: 3
+                }
+            }
+            self._commcell_object.qoperation_execute(request_json)
+            self.refresh()
+        elif self._extended_flags &amp; 8 and value:
+            raise SDKException(&#34;Response&#34;, &#39;500&#39;, &#34;Journal pruning is already enabled.&#34;)
+        else:
+            raise SDKException(&#34;Response&#34;, &#39;500&#39;, &#34;Journal pruning once enabled cannot be disabled.&#34;)
+
     def seal_deduplication_database(self):
         &#34;&#34;&#34; Seals the deduplication database &#34;&#34;&#34;
 
@@ -2259,7 +2581,7 @@ if type of the storage policy and copy name arguments are not string</p></div>
         response_string = self._commcell_object._update_response_(response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def run_space_reclaimation(self, level=3, clean_orphan_data=False, use_scalable_resource=False):
+    def run_space_reclaimation(self, level=3, clean_orphan_data=False, use_scalable_resource=True):
         &#34;&#34;&#34;
         runs DDB Space reclaimation job with provided level
 
@@ -2271,6 +2593,7 @@ if type of the storage policy and copy name arguments are not string</p></div>
                         Default: False
 
             use_scalable_resource (bool)    - Use Scalable Resource Allocation while running DDB Space Reclamation Job
+                        Default: True
 
         Returns:
              object - instance of Job class for DDB Verification job
@@ -2365,7 +2688,7 @@ if type of the storage policy and copy name arguments are not string</p></div>
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     def run_ddb_verification(self, incremental_verification=True, quick_verification=True,
-                             use_scalable_resource=False):
+                             use_scalable_resource=True):
         &#34;&#34;&#34;
         runs deduplication data verification(dv2) job with verification type and dv2 option
 
@@ -2377,6 +2700,7 @@ if type of the storage policy and copy name arguments are not string</p></div>
                                             Default: True (quick verification)
 
             use_scalable_resource (bool)    - Use Scalable Resource Allocation while running DDB Verification Job
+                                            Default: True
 
         Returns:
              object - instance of Job class for DDB Verification job
@@ -2462,6 +2786,170 @@ if type of the storage policy and copy name arguments are not string</p></div>
                 raise SDKException(&#39;Storage&#39;, &#39;108&#39;)
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def config_only_move_partition(self, substoreid, dest_path, dest_ma_name):
+        &#34;&#34;&#34;
+        runs config-only ddb move operation on specified substore
+
+        Args:
+            substoreid - (int) - substore Id for partition to be moved
+
+            dest_path - (str) - full path for partition destination directory
+
+            dest_ma_name - (str) - destination media agent name
+
+        Returns:
+             boolean - returns true or false value depending on success of config only
+        &#34;&#34;&#34;
+        dest_ma = self._commcell_object.media_agents.get(dest_ma_name)
+        dest_ma_id = int(dest_ma.media_agent_id)
+        substore = self.get(substoreid)
+
+        request_json = {
+            &#34;MediaManager_CanDDBMoveRunReq&#34;: {
+                &#34;intReserveFiled1&#34;: 0,
+                &#34;sourceMaId&#34;: substore.media_agent_id,
+                &#34;flags&#34;: 1,
+                &#34;targetPath&#34;: dest_path,
+                &#34;stringReserveField1&#34;: &#34;&#34;,
+                &#34;storeId&#34;: self.store_id,
+                &#34;subStoreId&#34;: substoreid,
+                &#34;targetMAId&#34;: dest_ma_id,
+                &#34;sourcePath&#34;: substore.path
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._commcell_object._services[&#39;EXECUTE_QCOMMAND&#39;], request_json
+        )
+
+        if flag:
+            if response and response.json():
+                if &#34;errorCode&#34; in response.json():
+                    error_message = response.json()[&#39;errorMessage&#39;]
+                    o_str = &#39;DDB move job failed\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str)
+                else:
+                    return flag
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def move_partition(self, substoreid, dest_path, dest_ma_name):
+        &#34;&#34;&#34;
+        runs normal ddb move operation on specified substore
+
+        Args:
+            substoreid - (int) - substore Id for partition to be moved
+
+            dest_path - (str) - full path for partition destination directory
+
+            dest_ma_name - (str) - destination media agent name
+
+        Returns:
+             object - instance of Job class for DDB Move job
+
+        Raises:
+             SDKException:
+                if DDB Move job failed
+
+                if response if empty
+
+                if response in not success
+        &#34;&#34;&#34;
+        dest_ma = self._commcell_object.media_agents.get(dest_ma_name)
+        dest_ma_id = int(dest_ma.media_agent_id)
+        substore = self.get(substoreid)
+
+        request_json = {
+            &#34;TMMsg_CreateTaskReq&#34;: {
+                &#34;taskInfo&#34;: {
+                    &#34;associations&#34;: [
+                        {
+                            &#34;sidbStoreId&#34;: self.store_id,
+                            &#34;_type_&#34;: 18,
+                            &#34;appName&#34;: &#34;&#34;
+                        }
+                    ],
+                    &#34;task&#34;: {
+                        &#34;ownerId&#34;: 1,
+                        &#34;taskType&#34;: 1,
+                        &#34;ownerName&#34;: &#34;admin&#34;,
+                        &#34;sequenceNumber&#34;: 0,
+                        &#34;initiatedFrom&#34;: 1,
+                        &#34;policyType&#34;: 0,
+                        &#34;taskId&#34;: 0,
+                        &#34;taskFlags&#34;: {
+                            &#34;disabled&#34;: False
+                        }
+                    },
+                    &#34;subTasks&#34;: [
+                        {
+                            &#34;subTaskOperation&#34;: 1,
+                            &#34;subTask&#34;: {
+                                &#34;subTaskType&#34;: 1,
+                                &#34;operationType&#34;: 5013
+                            },
+                            &#34;options&#34;: {
+                                &#34;adminOpts&#34;: {
+                                    &#34;contentIndexingOption&#34;: {
+                                        &#34;subClientBasedAnalytics&#34;: False
+                                    },
+                                    &#34;libraryOption&#34;: {
+                                        &#34;operation&#34;: 20,
+                                        &#34;ddbMoveOption&#34;: {
+                                            &#34;flags&#34;: 2,
+                                            &#34;subStoreList&#34;: [
+                                                {
+                                                    &#34;srcPath&#34;: substore.path,
+                                                    &#34;storeId&#34;: self.store_id,
+                                                    &#34;changeOnlyDB&#34;: False,
+                                                    &#34;destPath&#34;: dest_path,
+                                                    &#34;subStoreId&#34;: substoreid,
+                                                    &#34;destMediaAgent&#34;: {
+                                                        &#34;name&#34;: dest_ma_name,
+                                                        &#34;id&#34;: dest_ma_id
+                                                    },
+                                                    &#34;srcMediaAgent&#34;: {
+                                                        &#34;name&#34;: substore.media_agent,
+                                                        &#34;id&#34;: substore.media_agent_id
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                },
+                                &#34;restoreOptions&#34;: {
+                                    &#34;virtualServerRstOption&#34;: {
+                                        &#34;isBlockLevelReplication&#34;: False
+                                    },
+                                    &#34;commonOptions&#34;: {
+                                        &#34;syncRestore&#34;: False
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._commcell_object._services[&#39;EXECUTE_QCOMMAND&#39;], request_json
+        )
+
+        if flag:
+            if response and response.json():
+                if &#34;jobIds&#34; in response.json():
+                    return Job(self._commcell_object, response.json()[&#39;jobIds&#39;][0])
+                elif &#34;errorCode&#34; in response.json():
+                    error_message = response.json()[&#39;errorMessage&#39;]
+                    o_str = &#39;DDB move job failed\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str)
+                raise SDKException(&#39;Storage&#39;, &#39;108&#39;)
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        response_string = self._commcell_object._update_response_(response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 <h3>Instance variables</h3>
@@ -2472,7 +2960,7 @@ if type of the storage policy and copy name arguments are not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L550-L557" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L582-L589" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_substores(self):
@@ -2490,7 +2978,7 @@ def all_substores(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L636-L639" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L668-L671" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_id(self):
@@ -2504,7 +2992,7 @@ def copy_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L631-L634" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L663-L666" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_name(self):
@@ -2518,12 +3006,28 @@ def copy_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L641-L646" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L673-L678" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def enable_garbage_collection(self):
     &#34;&#34;&#34;returns garbage collection property value for store&#34;&#34;&#34;
     if (self._extended_flags &amp; 4) == 0:
+        return False
+    return True</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.deduplication_engines.Store.enable_journal_pruning"><code class="name">var <span class="ident">enable_journal_pruning</span></code></dt>
+<dd>
+<div class="desc"><p>returns journal pruning property value for store</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L751-L756" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def enable_journal_pruning(self):
+    &#34;&#34;&#34;returns journal pruning property value for store&#34;&#34;&#34;
+    if (self._extended_flags &amp; 8) == 0:
         return False
     return True</code></pre>
 </details>
@@ -2534,7 +3038,7 @@ def enable_garbage_collection(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L648-L651" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L680-L683" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def enable_store_pruning(self):
@@ -2548,7 +3052,7 @@ def enable_store_pruning(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L621-L624" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L653-L656" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def status(self):
@@ -2562,7 +3066,7 @@ def status(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L626-L629" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L658-L661" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy_name(self):
@@ -2576,7 +3080,7 @@ def storage_policy_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L600-L604" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L632-L636" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def store_flags(self):
@@ -2591,7 +3095,7 @@ def store_flags(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L611-L614" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L643-L646" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def store_id(self):
@@ -2605,7 +3109,7 @@ def store_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L606-L609" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L638-L641" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def store_name(self):
@@ -2619,7 +3123,7 @@ def store_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L616-L619" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L648-L651" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def version(self):
@@ -2630,6 +3134,71 @@ def version(self):
 </dl>
 <h3>Methods</h3>
 <dl>
+<dt id="cvpysdk.deduplication_engines.Store.config_only_move_partition"><code class="name flex">
+<span>def <span class="ident">config_only_move_partition</span></span>(<span>self, substoreid, dest_path, dest_ma_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>runs config-only ddb move operation on specified substore</p>
+<h2 id="args">Args</h2>
+<p>substoreid - (int) - substore Id for partition to be moved</p>
+<p>dest_path - (str) - full path for partition destination directory</p>
+<p>dest_ma_name - (str) - destination media agent name</p>
+<h2 id="returns">Returns</h2>
+<p>boolean - returns true or false value depending on success of config only</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L1102-L1148" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def config_only_move_partition(self, substoreid, dest_path, dest_ma_name):
+    &#34;&#34;&#34;
+    runs config-only ddb move operation on specified substore
+
+    Args:
+        substoreid - (int) - substore Id for partition to be moved
+
+        dest_path - (str) - full path for partition destination directory
+
+        dest_ma_name - (str) - destination media agent name
+
+    Returns:
+         boolean - returns true or false value depending on success of config only
+    &#34;&#34;&#34;
+    dest_ma = self._commcell_object.media_agents.get(dest_ma_name)
+    dest_ma_id = int(dest_ma.media_agent_id)
+    substore = self.get(substoreid)
+
+    request_json = {
+        &#34;MediaManager_CanDDBMoveRunReq&#34;: {
+            &#34;intReserveFiled1&#34;: 0,
+            &#34;sourceMaId&#34;: substore.media_agent_id,
+            &#34;flags&#34;: 1,
+            &#34;targetPath&#34;: dest_path,
+            &#34;stringReserveField1&#34;: &#34;&#34;,
+            &#34;storeId&#34;: self.store_id,
+            &#34;subStoreId&#34;: substoreid,
+            &#34;targetMAId&#34;: dest_ma_id,
+            &#34;sourcePath&#34;: substore.path
+        }
+    }
+
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._commcell_object._services[&#39;EXECUTE_QCOMMAND&#39;], request_json
+    )
+
+    if flag:
+        if response and response.json():
+            if &#34;errorCode&#34; in response.json():
+                error_message = response.json()[&#39;errorMessage&#39;]
+                o_str = &#39;DDB move job failed\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str)
+            else:
+                return flag
+        raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    response_string = self._commcell_object._update_response_(response.text)
+    raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.deduplication_engines.Store.get"><code class="name flex">
 <span>def <span class="ident">get</span></span>(<span>self, substore_id)</span>
 </code></dt>
@@ -2645,7 +3214,7 @@ def version(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L575-L598" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L607-L630" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, substore_id):
     &#34;&#34;&#34;
@@ -2688,7 +3257,7 @@ if type of the store id argument is not int</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L559-L573" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L591-L605" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_substore(self, substore_id):
     &#34;&#34;&#34;Checks if a substore exists in a deduplication store with provided substore id.
@@ -2705,6 +3274,144 @@ if type of the store id argument is not int</p></div>
     if not isinstance(substore_id, int):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
     return self._substores and substore_id in self._substores</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.deduplication_engines.Store.move_partition"><code class="name flex">
+<span>def <span class="ident">move_partition</span></span>(<span>self, substoreid, dest_path, dest_ma_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>runs normal ddb move operation on specified substore</p>
+<h2 id="args">Args</h2>
+<p>substoreid - (int) - substore Id for partition to be moved</p>
+<p>dest_path - (str) - full path for partition destination directory</p>
+<p>dest_ma_name - (str) - destination media agent name</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of Job class for DDB Move job</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if DDB Move job failed</p>
+<p>if response if empty</p>
+<p>if response in not success</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L1150-L1264" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def move_partition(self, substoreid, dest_path, dest_ma_name):
+    &#34;&#34;&#34;
+    runs normal ddb move operation on specified substore
+
+    Args:
+        substoreid - (int) - substore Id for partition to be moved
+
+        dest_path - (str) - full path for partition destination directory
+
+        dest_ma_name - (str) - destination media agent name
+
+    Returns:
+         object - instance of Job class for DDB Move job
+
+    Raises:
+         SDKException:
+            if DDB Move job failed
+
+            if response if empty
+
+            if response in not success
+    &#34;&#34;&#34;
+    dest_ma = self._commcell_object.media_agents.get(dest_ma_name)
+    dest_ma_id = int(dest_ma.media_agent_id)
+    substore = self.get(substoreid)
+
+    request_json = {
+        &#34;TMMsg_CreateTaskReq&#34;: {
+            &#34;taskInfo&#34;: {
+                &#34;associations&#34;: [
+                    {
+                        &#34;sidbStoreId&#34;: self.store_id,
+                        &#34;_type_&#34;: 18,
+                        &#34;appName&#34;: &#34;&#34;
+                    }
+                ],
+                &#34;task&#34;: {
+                    &#34;ownerId&#34;: 1,
+                    &#34;taskType&#34;: 1,
+                    &#34;ownerName&#34;: &#34;admin&#34;,
+                    &#34;sequenceNumber&#34;: 0,
+                    &#34;initiatedFrom&#34;: 1,
+                    &#34;policyType&#34;: 0,
+                    &#34;taskId&#34;: 0,
+                    &#34;taskFlags&#34;: {
+                        &#34;disabled&#34;: False
+                    }
+                },
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTaskOperation&#34;: 1,
+                        &#34;subTask&#34;: {
+                            &#34;subTaskType&#34;: 1,
+                            &#34;operationType&#34;: 5013
+                        },
+                        &#34;options&#34;: {
+                            &#34;adminOpts&#34;: {
+                                &#34;contentIndexingOption&#34;: {
+                                    &#34;subClientBasedAnalytics&#34;: False
+                                },
+                                &#34;libraryOption&#34;: {
+                                    &#34;operation&#34;: 20,
+                                    &#34;ddbMoveOption&#34;: {
+                                        &#34;flags&#34;: 2,
+                                        &#34;subStoreList&#34;: [
+                                            {
+                                                &#34;srcPath&#34;: substore.path,
+                                                &#34;storeId&#34;: self.store_id,
+                                                &#34;changeOnlyDB&#34;: False,
+                                                &#34;destPath&#34;: dest_path,
+                                                &#34;subStoreId&#34;: substoreid,
+                                                &#34;destMediaAgent&#34;: {
+                                                    &#34;name&#34;: dest_ma_name,
+                                                    &#34;id&#34;: dest_ma_id
+                                                },
+                                                &#34;srcMediaAgent&#34;: {
+                                                    &#34;name&#34;: substore.media_agent,
+                                                    &#34;id&#34;: substore.media_agent_id
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            &#34;restoreOptions&#34;: {
+                                &#34;virtualServerRstOption&#34;: {
+                                    &#34;isBlockLevelReplication&#34;: False
+                                },
+                                &#34;commonOptions&#34;: {
+                                    &#34;syncRestore&#34;: False
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._commcell_object._services[&#39;EXECUTE_QCOMMAND&#39;], request_json
+    )
+
+    if flag:
+        if response and response.json():
+            if &#34;jobIds&#34; in response.json():
+                return Job(self._commcell_object, response.json()[&#39;jobIds&#39;][0])
+            elif &#34;errorCode&#34; in response.json():
+                error_message = response.json()[&#39;errorMessage&#39;]
+                o_str = &#39;DDB move job failed\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str)
+            raise SDKException(&#39;Storage&#39;, &#39;108&#39;)
+        raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    response_string = self._commcell_object._update_response_(response.text)
+    raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.deduplication_engines.Store.recover_deduplication_database"><code class="name flex">
@@ -2729,7 +3436,7 @@ if DDB Reconstruction job failed</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L729-L817" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L805-L893" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def recover_deduplication_database(self, full_reconstruction=False, scalable_resources=True):
     &#34;&#34;&#34;
@@ -2830,7 +3537,7 @@ if DDB Reconstruction job failed</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L546-L548" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L578-L580" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;refreshes all the deduplication store properties&#34;&#34;&#34;
@@ -2838,7 +3545,7 @@ if DDB Reconstruction job failed</p>
 </details>
 </dd>
 <dt id="cvpysdk.deduplication_engines.Store.run_ddb_verification"><code class="name flex">
-<span>def <span class="ident">run_ddb_verification</span></span>(<span>self, incremental_verification=True, quick_verification=True, use_scalable_resource=False)</span>
+<span>def <span class="ident">run_ddb_verification</span></span>(<span>self, incremental_verification=True, quick_verification=True, use_scalable_resource=True)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>runs deduplication data verification(dv2) job with verification type and dv2 option</p>
@@ -2849,7 +3556,8 @@ Default: True (Incremental)</p>
 - DV2 job option, Quick or Complete (True/False)
 Default: True (quick verification)</p>
 <p>use_scalable_resource (bool)
-- Use Scalable Resource Allocation while running DDB Verification Job</p>
+- Use Scalable Resource Allocation while running DDB Verification Job
+Default: True</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of Job class for DDB Verification job</p>
 <h2 id="raises">Raises</h2>
@@ -2860,10 +3568,10 @@ if DDB Verification job failed</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L924-L1022" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L1001-L1100" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_ddb_verification(self, incremental_verification=True, quick_verification=True,
-                         use_scalable_resource=False):
+                         use_scalable_resource=True):
     &#34;&#34;&#34;
     runs deduplication data verification(dv2) job with verification type and dv2 option
 
@@ -2875,6 +3583,7 @@ if DDB Verification job failed</p>
                                         Default: True (quick verification)
 
         use_scalable_resource (bool)    - Use Scalable Resource Allocation while running DDB Verification Job
+                                        Default: True
 
     Returns:
          object - instance of Job class for DDB Verification job
@@ -2964,7 +3673,7 @@ if DDB Verification job failed</p>
 </details>
 </dd>
 <dt id="cvpysdk.deduplication_engines.Store.run_space_reclaimation"><code class="name flex">
-<span>def <span class="ident">run_space_reclaimation</span></span>(<span>self, level=3, clean_orphan_data=False, use_scalable_resource=False)</span>
+<span>def <span class="ident">run_space_reclaimation</span></span>(<span>self, level=3, clean_orphan_data=False, use_scalable_resource=True)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>runs DDB Space reclaimation job with provided level</p>
@@ -2974,7 +3683,8 @@ Default: 3</p>
 <p>clean_orphan_data (bool) - run space reclaimation with OCL or not (True/False)
 Default: False</p>
 <p>use_scalable_resource (bool)
-- Use Scalable Resource Allocation while running DDB Space Reclamation Job</p>
+- Use Scalable Resource Allocation while running DDB Space Reclamation Job
+Default: True</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of Job class for DDB Verification job</p>
 <h2 id="raises">Raises</h2>
@@ -2986,9 +3696,9 @@ if invalid level is provided</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L819-L922" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L895-L999" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def run_space_reclaimation(self, level=3, clean_orphan_data=False, use_scalable_resource=False):
+<pre><code class="python">def run_space_reclaimation(self, level=3, clean_orphan_data=False, use_scalable_resource=True):
     &#34;&#34;&#34;
     runs DDB Space reclaimation job with provided level
 
@@ -3000,6 +3710,7 @@ if invalid level is provided</p>
                     Default: False
 
         use_scalable_resource (bool)    - Use Scalable Resource Allocation while running DDB Space Reclamation Job
+                    Default: True
 
     Returns:
          object - instance of Job class for DDB Verification job
@@ -3102,7 +3813,7 @@ if invalid level is provided</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L719-L727" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L795-L803" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def seal_deduplication_database(self):
     &#34;&#34;&#34; Seals the deduplication database &#34;&#34;&#34;
@@ -3126,10 +3837,12 @@ if invalid level is provided</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L126-L127" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L156-L159" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class StoreFlags(Enum):
-    IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED = 536870912</code></pre>
+    IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED = 536870912
+    IDX_SIDBSTORE_FLAGS_DDB_NEEDS_AUTO_RESYNC = 33554432
+    IDX_SIDBSTORE_FLAGS_DDB_UNDER_MAINTENANCE = 16777216</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -3137,6 +3850,14 @@ if invalid level is provided</p>
 </ul>
 <h3>Class variables</h3>
 <dl>
+<dt id="cvpysdk.deduplication_engines.StoreFlags.IDX_SIDBSTORE_FLAGS_DDB_NEEDS_AUTO_RESYNC"><code class="name">var <span class="ident">IDX_SIDBSTORE_FLAGS_DDB_NEEDS_AUTO_RESYNC</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.deduplication_engines.StoreFlags.IDX_SIDBSTORE_FLAGS_DDB_UNDER_MAINTENANCE"><code class="name">var <span class="ident">IDX_SIDBSTORE_FLAGS_DDB_UNDER_MAINTENANCE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
 <dt id="cvpysdk.deduplication_engines.StoreFlags.IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED"><code class="name">var <span class="ident">IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED</span></code></dt>
 <dd>
 <div class="desc"></div>
@@ -3164,7 +3885,7 @@ if invalid level is provided</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L1025-L1105" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L1267-L1353" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SubStore(object):
     &#34;&#34;&#34;Class to performing substore level operations for Deduplication engine&#34;&#34;&#34;
@@ -3205,6 +3926,7 @@ if invalid level is provided</p>
         self._substore_properties = store._substores[self._substore_id]
         self._path = self._substore_properties[&#39;Path&#39;]
         self._media_agent = self._substore_properties[&#39;MediaAgent&#39;][&#39;name&#39;]
+        self._media_agent_id = self._substore_properties[&#39;MediaAgent&#39;][&#39;id&#39;]
 
     def refresh(self):
         &#34;&#34;&#34;refresh the properties of a substore&#34;&#34;&#34;
@@ -3234,6 +3956,11 @@ if invalid level is provided</p>
         return self._media_agent
 
     @property
+    def media_agent_id(self):
+        &#34;&#34;&#34;returns media agent id for the substore&#34;&#34;&#34;
+        return self._media_agent_id
+
+    @property
     def path(self):
         &#34;&#34;&#34;returns path for the substore&#34;&#34;&#34;
         return self._path
@@ -3256,12 +3983,26 @@ if invalid level is provided</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L1087-L1090" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L1330-L1333" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def media_agent(self):
     &#34;&#34;&#34;returns media agent for the substore&#34;&#34;&#34;
     return self._media_agent</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.deduplication_engines.SubStore.media_agent_id"><code class="name">var <span class="ident">media_agent_id</span></code></dt>
+<dd>
+<div class="desc"><p>returns media agent id for the substore</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L1335-L1338" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def media_agent_id(self):
+    &#34;&#34;&#34;returns media agent id for the substore&#34;&#34;&#34;
+    return self._media_agent_id</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.deduplication_engines.SubStore.path"><code class="name">var <span class="ident">path</span></code></dt>
@@ -3270,7 +4011,7 @@ def media_agent(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L1092-L1095" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L1340-L1343" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def path(self):
@@ -3284,7 +4025,7 @@ def path(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L1097-L1100" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L1345-L1348" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def store_id(self):
@@ -3298,7 +4039,7 @@ def store_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L1102-L1105" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L1350-L1353" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def substore_id(self):
@@ -3317,7 +4058,7 @@ def substore_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L1069-L1085" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L1312-L1328" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def mark_for_recovery(self):
     &#34;&#34;&#34;mark a substore for recovery and refresh substore properties&#34;&#34;&#34;
@@ -3346,7 +4087,7 @@ def substore_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/deduplication_engines.py#L1065-L1067" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deduplication_engines.py#L1308-L1310" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;refresh the properties of a substore&#34;&#34;&#34;
@@ -3413,7 +4154,9 @@ setTimeout(() => input.focus(), 100);
 </script>
 <h1>Index</h1>
 <div class="toc">
-<ul></ul>
+<ul>
+<li><a href="#attributes">Attributes</a></li>
+</ul>
 </div>
 <ul id="index">
 <li><h3>Super-module</h3>
@@ -3447,12 +4190,15 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="cvpysdk.deduplication_engines.Store" href="#cvpysdk.deduplication_engines.Store">Store</a></code></h4>
 <ul class="">
 <li><code><a title="cvpysdk.deduplication_engines.Store.all_substores" href="#cvpysdk.deduplication_engines.Store.all_substores">all_substores</a></code></li>
+<li><code><a title="cvpysdk.deduplication_engines.Store.config_only_move_partition" href="#cvpysdk.deduplication_engines.Store.config_only_move_partition">config_only_move_partition</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.Store.copy_id" href="#cvpysdk.deduplication_engines.Store.copy_id">copy_id</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.Store.copy_name" href="#cvpysdk.deduplication_engines.Store.copy_name">copy_name</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.Store.enable_garbage_collection" href="#cvpysdk.deduplication_engines.Store.enable_garbage_collection">enable_garbage_collection</a></code></li>
+<li><code><a title="cvpysdk.deduplication_engines.Store.enable_journal_pruning" href="#cvpysdk.deduplication_engines.Store.enable_journal_pruning">enable_journal_pruning</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.Store.enable_store_pruning" href="#cvpysdk.deduplication_engines.Store.enable_store_pruning">enable_store_pruning</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.Store.get" href="#cvpysdk.deduplication_engines.Store.get">get</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.Store.has_substore" href="#cvpysdk.deduplication_engines.Store.has_substore">has_substore</a></code></li>
+<li><code><a title="cvpysdk.deduplication_engines.Store.move_partition" href="#cvpysdk.deduplication_engines.Store.move_partition">move_partition</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.Store.recover_deduplication_database" href="#cvpysdk.deduplication_engines.Store.recover_deduplication_database">recover_deduplication_database</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.Store.refresh" href="#cvpysdk.deduplication_engines.Store.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.Store.run_ddb_verification" href="#cvpysdk.deduplication_engines.Store.run_ddb_verification">run_ddb_verification</a></code></li>
@@ -3469,6 +4215,8 @@ setTimeout(() => input.focus(), 100);
 <li>
 <h4><code><a title="cvpysdk.deduplication_engines.StoreFlags" href="#cvpysdk.deduplication_engines.StoreFlags">StoreFlags</a></code></h4>
 <ul class="">
+<li><code><a title="cvpysdk.deduplication_engines.StoreFlags.IDX_SIDBSTORE_FLAGS_DDB_NEEDS_AUTO_RESYNC" href="#cvpysdk.deduplication_engines.StoreFlags.IDX_SIDBSTORE_FLAGS_DDB_NEEDS_AUTO_RESYNC">IDX_SIDBSTORE_FLAGS_DDB_NEEDS_AUTO_RESYNC</a></code></li>
+<li><code><a title="cvpysdk.deduplication_engines.StoreFlags.IDX_SIDBSTORE_FLAGS_DDB_UNDER_MAINTENANCE" href="#cvpysdk.deduplication_engines.StoreFlags.IDX_SIDBSTORE_FLAGS_DDB_UNDER_MAINTENANCE">IDX_SIDBSTORE_FLAGS_DDB_UNDER_MAINTENANCE</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.StoreFlags.IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED" href="#cvpysdk.deduplication_engines.StoreFlags.IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED">IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED</a></code></li>
 </ul>
 </li>
@@ -3477,6 +4225,7 @@ setTimeout(() => input.focus(), 100);
 <ul class="two-column">
 <li><code><a title="cvpysdk.deduplication_engines.SubStore.mark_for_recovery" href="#cvpysdk.deduplication_engines.SubStore.mark_for_recovery">mark_for_recovery</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.SubStore.media_agent" href="#cvpysdk.deduplication_engines.SubStore.media_agent">media_agent</a></code></li>
+<li><code><a title="cvpysdk.deduplication_engines.SubStore.media_agent_id" href="#cvpysdk.deduplication_engines.SubStore.media_agent_id">media_agent_id</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.SubStore.path" href="#cvpysdk.deduplication_engines.SubStore.path">path</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.SubStore.refresh" href="#cvpysdk.deduplication_engines.SubStore.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.deduplication_engines.SubStore.store_id" href="#cvpysdk.deduplication_engines.SubStore.store_id">store_id</a></code></li>

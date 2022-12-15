@@ -45,6 +45,8 @@ in restore JSONRe
 
 restore_in_place()                   --     Restores the postgres data/log files
 specified in the input paths list to the same location
+
+change_sa_password()                 --     Changes postgresql user password
 </code></pre>
 <h1 id="postgresqlinstance-instance-attributes">PostgreSQLInstance instance Attributes</h1>
 <pre><code>**postgres_bin_directory**           --  returns the postgres bin directory of postgres server
@@ -80,7 +82,7 @@ with postgres server
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/postgresinstance.py#L1-L650" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L1-L691" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -128,6 +130,8 @@ PostgreSQLInstance:
     restore_in_place()                   --     Restores the postgres data/log files
     specified in the input paths list to the same location
 
+    change_sa_password()                 --     Changes postgresql user password
+
 PostgreSQLInstance instance Attributes
 ======================================
 
@@ -166,6 +170,7 @@ PostgreSQLInstance instance Attributes
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+from base64 import b64encode
 from ..instance import Instance
 from ..exception import SDKException
 
@@ -249,6 +254,22 @@ class PostgreSQLInstance(Instance):
         &#34;&#34;&#34;
         return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;logStoragePolicy&#39;, {}).get(&#39;storagePolicyName&#39;, None)
 
+    @log_storage_policy.setter
+    def log_storage_policy(self, value):
+        &#34;&#34;&#34; Setter for log storage policy in instance property
+
+            Args:
+
+                value (str)  -- Storage policy name
+
+        &#34;&#34;&#34;
+        if not isinstance(value, str):
+            raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+        properties = self._properties
+        properties[&#39;postGreSQLInstance&#39;][&#39;logStoragePolicy&#39;] = {}
+        properties[&#39;postGreSQLInstance&#39;][&#39;logStoragePolicy&#39;][&#39;storagePolicyName&#39;] = value
+        self.update_properties(properties)
+
     @property
     def postgres_server_user_name(self):
         &#34;&#34;&#34;Returns the username of postgres server
@@ -408,6 +429,20 @@ class PostgreSQLInstance(Instance):
         properties[&#39;postGreSQLInstance&#39;][&#39;standbyOptions&#39;][&#39;useMasterForDataBkp&#39;] = value
         self.update_properties(properties)
 
+    def change_sa_password(self, value):
+        &#34;&#34;&#34; Changes postgresql user password
+
+            Args:
+
+                value (bool)  -- PostgreSQL password
+
+        &#34;&#34;&#34;
+        if not isinstance(value, str):
+            raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+        properties = self._properties
+        properties[&#39;postGreSQLInstance&#39;][&#39;SAUser&#39;][&#39;password&#39;] = b64encode(value.encode()).decode()
+        self.update_properties(properties)
+
     def _get_instance_properties(self):
         &#34;&#34;&#34;Gets the properties of this instance.
 
@@ -469,14 +504,14 @@ class PostgreSQLInstance(Instance):
         super(PostgreSQLInstance, self)._restore_common_options_json(value)
         if value.get(&#34;baseline_jobid&#34;):
             self._commonoption_restore_json = {
-                &#34;clusterDBBackedup&#34;:False,
-                &#34;restoreToDisk&#34;:False,
-                &#34;baselineBackup&#34;:1,
+                &#34;clusterDBBackedup&#34;: False,
+                &#34;restoreToDisk&#34;: False,
+                &#34;baselineBackup&#34;: 1,
                 &#34;baselineRefTime&#34;: value.get(&#34;baseline_ref_time&#34;, &#34;&#34;),
-                &#34;baselineJobId&#34;:value.get(&#34;baseline_jobid&#34;, &#34;&#34;),
-                &#34;copyToObjectStore&#34;:False,
-                &#34;onePassRestore&#34;:False,
-                &#34;syncRestore&#34;:value.get(&#34;sync_restore&#34;, True)
+                &#34;baselineJobId&#34;: value.get(&#34;baseline_jobid&#34;, &#34;&#34;),
+                &#34;copyToObjectStore&#34;: False,
+                &#34;onePassRestore&#34;: False,
+                &#34;syncRestore&#34;: value.get(&#34;sync_restore&#34;, True)
             }
 
     def _restore_destination_json(self, value):
@@ -573,7 +608,8 @@ class PostgreSQLInstance(Instance):
             redirect_path=None,
             restore_to_disk=False,
             restore_to_disk_job=None,
-            destination_path=None):
+            destination_path=None,
+            revert=False):
         &#34;&#34;&#34;Restores the postgres data/log files specified in the input paths
         list to the same location.
 
@@ -671,6 +707,10 @@ class PostgreSQLInstance(Instance):
 
                     default: None
 
+                revert                  (bool)  --  boolean to specify whether to do a
+                                                    hardware revert in restore
+                    default: False
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -731,6 +771,9 @@ class PostgreSQLInstance(Instance):
             request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
                 &#39;restoreOptions&#39;][&#39;destination&#39;][&#34;destPath&#34;] = [destination_path]
 
+        if revert:
+            request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
+                &#39;restoreOptions&#39;][&#39;commonOptions&#39;][&#34;revert&#34;] = revert
         return self._process_restore_response(request_json)</code></pre>
 </details>
 </section>
@@ -760,7 +803,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/postgresinstance.py#L89-L650" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L92-L691" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class PostgreSQLInstance(Instance):
     &#34;&#34;&#34;Derived class from Instance Base class, representing a POSTGRESQL instance,
@@ -841,6 +884,22 @@ instance of the Agent class</p>
         &#34;&#34;&#34;
         return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;logStoragePolicy&#39;, {}).get(&#39;storagePolicyName&#39;, None)
 
+    @log_storage_policy.setter
+    def log_storage_policy(self, value):
+        &#34;&#34;&#34; Setter for log storage policy in instance property
+
+            Args:
+
+                value (str)  -- Storage policy name
+
+        &#34;&#34;&#34;
+        if not isinstance(value, str):
+            raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+        properties = self._properties
+        properties[&#39;postGreSQLInstance&#39;][&#39;logStoragePolicy&#39;] = {}
+        properties[&#39;postGreSQLInstance&#39;][&#39;logStoragePolicy&#39;][&#39;storagePolicyName&#39;] = value
+        self.update_properties(properties)
+
     @property
     def postgres_server_user_name(self):
         &#34;&#34;&#34;Returns the username of postgres server
@@ -1000,6 +1059,20 @@ instance of the Agent class</p>
         properties[&#39;postGreSQLInstance&#39;][&#39;standbyOptions&#39;][&#39;useMasterForDataBkp&#39;] = value
         self.update_properties(properties)
 
+    def change_sa_password(self, value):
+        &#34;&#34;&#34; Changes postgresql user password
+
+            Args:
+
+                value (bool)  -- PostgreSQL password
+
+        &#34;&#34;&#34;
+        if not isinstance(value, str):
+            raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+        properties = self._properties
+        properties[&#39;postGreSQLInstance&#39;][&#39;SAUser&#39;][&#39;password&#39;] = b64encode(value.encode()).decode()
+        self.update_properties(properties)
+
     def _get_instance_properties(self):
         &#34;&#34;&#34;Gets the properties of this instance.
 
@@ -1061,14 +1134,14 @@ instance of the Agent class</p>
         super(PostgreSQLInstance, self)._restore_common_options_json(value)
         if value.get(&#34;baseline_jobid&#34;):
             self._commonoption_restore_json = {
-                &#34;clusterDBBackedup&#34;:False,
-                &#34;restoreToDisk&#34;:False,
-                &#34;baselineBackup&#34;:1,
+                &#34;clusterDBBackedup&#34;: False,
+                &#34;restoreToDisk&#34;: False,
+                &#34;baselineBackup&#34;: 1,
                 &#34;baselineRefTime&#34;: value.get(&#34;baseline_ref_time&#34;, &#34;&#34;),
-                &#34;baselineJobId&#34;:value.get(&#34;baseline_jobid&#34;, &#34;&#34;),
-                &#34;copyToObjectStore&#34;:False,
-                &#34;onePassRestore&#34;:False,
-                &#34;syncRestore&#34;:value.get(&#34;sync_restore&#34;, True)
+                &#34;baselineJobId&#34;: value.get(&#34;baseline_jobid&#34;, &#34;&#34;),
+                &#34;copyToObjectStore&#34;: False,
+                &#34;onePassRestore&#34;: False,
+                &#34;syncRestore&#34;: value.get(&#34;sync_restore&#34;, True)
             }
 
     def _restore_destination_json(self, value):
@@ -1165,7 +1238,8 @@ instance of the Agent class</p>
             redirect_path=None,
             restore_to_disk=False,
             restore_to_disk_job=None,
-            destination_path=None):
+            destination_path=None,
+            revert=False):
         &#34;&#34;&#34;Restores the postgres data/log files specified in the input paths
         list to the same location.
 
@@ -1263,6 +1337,10 @@ instance of the Agent class</p>
 
                     default: None
 
+                revert                  (bool)  --  boolean to specify whether to do a
+                                                    hardware revert in restore
+                    default: False
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -1323,6 +1401,9 @@ instance of the Agent class</p>
             request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
                 &#39;restoreOptions&#39;][&#39;destination&#39;][&#34;destPath&#34;] = [destination_path]
 
+        if revert:
+            request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
+                &#39;restoreOptions&#39;][&#39;commonOptions&#39;][&#34;revert&#34;] = revert
         return self._process_restore_response(request_json)</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -1338,7 +1419,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/postgresinstance.py#L224-L231" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L243-L250" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def archive_delete(self):
@@ -1357,7 +1438,7 @@ def archive_delete(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/postgresinstance.py#L270-L277" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L289-L296" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_standby_enabled(self):
@@ -1377,7 +1458,7 @@ Default: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/postgresinstance.py#L159-L166" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L162-L169" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def log_storage_policy(self):
@@ -1396,7 +1477,7 @@ def log_storage_policy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/postgresinstance.py#L196-L208" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L215-L227" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def maintenance_database(self):
@@ -1420,7 +1501,7 @@ def maintenance_database(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/postgresinstance.py#L145-L157" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L148-L160" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_archive_log_directory(self):
@@ -1444,7 +1525,7 @@ def postgres_archive_log_directory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/postgresinstance.py#L117-L129" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L120-L132" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_bin_directory(self):
@@ -1468,7 +1549,7 @@ def postgres_bin_directory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/postgresinstance.py#L131-L143" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L134-L146" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_lib_directory(self):
@@ -1492,7 +1573,7 @@ def postgres_lib_directory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/postgresinstance.py#L182-L194" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L201-L213" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_server_port_number(self):
@@ -1516,7 +1597,7 @@ def postgres_server_port_number(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/postgresinstance.py#L168-L180" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L187-L199" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_server_user_name(self):
@@ -1540,7 +1621,7 @@ def postgres_server_user_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/postgresinstance.py#L210-L222" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L229-L241" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_version(self):
@@ -1564,7 +1645,7 @@ def postgres_version(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/postgresinstance.py#L259-L268" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L278-L287" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def standby_instance_id(self):
@@ -1585,7 +1666,7 @@ def standby_instance_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/postgresinstance.py#L248-L257" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L267-L276" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def standby_instance_name(self):
@@ -1606,7 +1687,7 @@ def standby_instance_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/postgresinstance.py#L303-L310" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L322-L329" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def use_master_for_data_backup(self):
@@ -1625,7 +1706,7 @@ def use_master_for_data_backup(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/postgresinstance.py#L279-L286" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L298-L305" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def use_master_for_log_backup(self):
@@ -1640,8 +1721,36 @@ def use_master_for_log_backup(self):
 </dl>
 <h3>Methods</h3>
 <dl>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.change_sa_password"><code class="name flex">
+<span>def <span class="ident">change_sa_password</span></span>(<span>self, value)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Changes postgresql user password</p>
+<h2 id="args">Args</h2>
+<p>value (bool)
+&ndash; PostgreSQL password</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L346-L358" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def change_sa_password(self, value):
+    &#34;&#34;&#34; Changes postgresql user password
+
+        Args:
+
+            value (bool)  -- PostgreSQL password
+
+    &#34;&#34;&#34;
+    if not isinstance(value, str):
+        raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+    properties = self._properties
+    properties[&#39;postGreSQLInstance&#39;][&#39;SAUser&#39;][&#39;password&#39;] = b64encode(value.encode()).decode()
+    self.update_properties(properties)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.restore_in_place"><code class="name flex">
-<span>def <span class="ident">restore_in_place</span></span>(<span>self, path, dest_client_name, dest_instance_name, backupset_name, backupset_flag, overwrite=True, copy_precedence=None, from_time=None, to_time=None, clone_env=False, clone_options=None, media_agent=None, table_level_restore=False, staging_path=None, no_of_streams=None, volume_level_restore=False, redirect_enabled=False, redirect_path=None, restore_to_disk=False, restore_to_disk_job=None, destination_path=None)</span>
+<span>def <span class="ident">restore_in_place</span></span>(<span>self, path, dest_client_name, dest_instance_name, backupset_name, backupset_flag, overwrite=True, copy_precedence=None, from_time=None, to_time=None, clone_env=False, clone_options=None, media_agent=None, table_level_restore=False, staging_path=None, no_of_streams=None, volume_level_restore=False, redirect_enabled=False, redirect_path=None, restore_to_disk=False, restore_to_disk_job=None, destination_path=None, revert=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the postgres data/log files specified in the input paths
@@ -1740,6 +1849,10 @@ list to the same location.</p>
 
         default: None
 
+    revert                  (bool)  --  boolean to specify whether to do a
+                                        hardware revert in restore
+        default: False
+
 Returns:
     object - instance of the Job class for this restore job
 
@@ -1756,7 +1869,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/postgresinstance.py#L470-L650" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L503-L691" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -1780,7 +1893,8 @@ Raises:
         redirect_path=None,
         restore_to_disk=False,
         restore_to_disk_job=None,
-        destination_path=None):
+        destination_path=None,
+        revert=False):
     &#34;&#34;&#34;Restores the postgres data/log files specified in the input paths
     list to the same location.
 
@@ -1878,6 +1992,10 @@ Raises:
 
                 default: None
 
+            revert                  (bool)  --  boolean to specify whether to do a
+                                                hardware revert in restore
+                default: False
+
         Returns:
             object - instance of the Job class for this restore job
 
@@ -1938,6 +2056,9 @@ Raises:
         request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
             &#39;restoreOptions&#39;][&#39;destination&#39;][&#34;destPath&#34;] = [destination_path]
 
+    if revert:
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][
+            &#39;restoreOptions&#39;][&#39;commonOptions&#39;][&#34;revert&#34;] = revert
     return self._process_restore_response(request_json)</code></pre>
 </details>
 </dd>
@@ -2033,6 +2154,7 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="cvpysdk.instances.postgresinstance.PostgreSQLInstance" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance">PostgreSQLInstance</a></code></h4>
 <ul class="">
 <li><code><a title="cvpysdk.instances.postgresinstance.PostgreSQLInstance.archive_delete" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.archive_delete">archive_delete</a></code></li>
+<li><code><a title="cvpysdk.instances.postgresinstance.PostgreSQLInstance.change_sa_password" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.change_sa_password">change_sa_password</a></code></li>
 <li><code><a title="cvpysdk.instances.postgresinstance.PostgreSQLInstance.is_standby_enabled" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.is_standby_enabled">is_standby_enabled</a></code></li>
 <li><code><a title="cvpysdk.instances.postgresinstance.PostgreSQLInstance.log_storage_policy" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.log_storage_policy">log_storage_policy</a></code></li>
 <li><code><a title="cvpysdk.instances.postgresinstance.PostgreSQLInstance.maintenance_database" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.maintenance_database">maintenance_database</a></code></li>

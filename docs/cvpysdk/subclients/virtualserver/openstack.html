@@ -46,7 +46,7 @@ Openstack project or tenant</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/openstack.py#L1-L529" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/openstack.py#L1-L528" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -93,7 +93,6 @@ OpenStackVirtualServerSubclient:
 
 from ..vssubclient import VirtualServerSubclient
 from ...exception import SDKException
-from past.builtins import basestring
 
 
 class OpenStackVirtualServerSubclient(VirtualServerSubclient):
@@ -157,7 +156,7 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence       (int)         --  copy precedence value
                                                         default: 0
 
-                proxy_client          (basestring)  --  proxy client to be used for restore
+                proxy_client          (str)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
                 **kwargs                         : Arbitrary keyword arguments Properties as of
@@ -183,7 +182,7 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
 
         restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
         # check input parameters are correct
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         if copy_precedence:
@@ -246,13 +245,13 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
                 restored_vm_name         (str)    --  new name of vm. If nothing is passed,
                                                       &#39;delete&#39; is appended to the original vm name
 
-                vcenter_client    (basestring)    --  name of the vcenter client where the VM
+                vcenter_client    (str)    --  name of the vcenter client where the VM
                                                       should be restored.
 
-                esx_host          (basestring)    --  destination esx host. Restores to the source
+                esx_host          (str)    --  destination esx host. Restores to the source
                                                       VM esx if this value is not specified
 
-                datastore         (basestring)    --  datastore where the restored VM should be
+                datastore         (str)    --  datastore where the restored VM should be
                                                       located. Restores to the source VM datastore
                                                       if this value is not specified
 
@@ -265,11 +264,11 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence          (int)    --  copy precedence value
                                                       default: 0
 
-                proxy_client      (basestring)    --  destination proxy client
+                proxy_client      (str)    --  destination proxy client
 
-                source_ip           (basestring)    --  IP of the source VM
+                source_ip           (str)    --  IP of the source VM
 
-                destination_ip      (basestring)    --  IP of the destination VM
+                destination_ip      (str)    --  IP of the destination VM
 
                 **kwargs                         : Arbitrary keyword arguments Properties as of
                                                      full_vm_restore_out_of_place
@@ -296,7 +295,7 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
 
         # check mandatory input parameters are correct
         for vm in vm_to_restore:
-            if vm and not isinstance(vm, basestring):
+            if vm and not isinstance(vm, str):
                 raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         if copy_precedence:
@@ -308,8 +307,8 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
             restore_option[&#39;client&#39;] = proxy_client
 
         if restored_vm_name:
-            if not(isinstance(vm_to_restore, basestring) or
-                   isinstance(restored_vm_name, basestring)):
+            if not(isinstance(vm_to_restore, str) or
+                   isinstance(restored_vm_name, str)):
                 raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
             restore_option[&#39;restore_new_name&#39;] = restored_vm_name
 
@@ -349,10 +348,10 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
         &#34;&#34;&#34;Restores the disk specified in the input paths list to the same location
 
             Args:
-                vm_name             (basestring)    --  Name of the VM added in subclient content
+                vm_name             (str)    --  Name of the VM added in subclient content
                                                         whose  disk is selected for restore
 
-                destination_path        (basestring)    --  Staging (destination) path to restore the
+                destination_path        (str)    --  Staging (destination) path to restore the
                                                         disk.
 
                 disk_name                 (list)    --  name of the disk which has to be restored
@@ -360,13 +359,13 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
                                                         name of the disk)
                                                         default: None
 
-                proxy_client        (basestring)    --  Destination proxy client to be used
+                proxy_client        (str)    --  Destination proxy client to be used
                                                         default: None
 
                 copy_precedence            (int)    --  SP copy precedence from which browse has to
                                                          be performed
 
-                convert_to          (basestring)    --  disk format for the restored disk
+                convert_to          (str)    --  disk format for the restored disk
                                                         (applicable only when the vmdk disk is
                                                         selected for restore). Allowed values are
                                                         &#34;VHDX&#34; or &#34;VHD&#34;
@@ -399,8 +398,8 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
             disk_extn = self._get_disk_extension(disk_name)
 
         # check if inputs are correct
-        if not (isinstance(vm_name, basestring) and
-                isinstance(destination_path, basestring) and
+        if not (isinstance(vm_name, str) and
+                isinstance(destination_path, str) and
                 isinstance(disk_name, list) and
                 disk_extn == &#39;.vmdk&#39;):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -482,17 +481,17 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
         &#34;&#34;&#34;Attaches the Disks to the provided vm
 
             Args:
-                vm_name             (basestring)    --  Name of the VM added in subclient content
+                vm_name             (str)    --  Name of the VM added in subclient content
                                                         whose  disk is selected for restore
 
                 vcenter             (dict)          --  Dictinoary of vcenter, username and creds
 
-                esx                 (basestring)    --  Esx host where the vm resides
+                esx                 (str)    --  Esx host where the vm resides
 
                 datastore               (string)    --  Datastore where disks will be restoed to
                                                         default: None
 
-                proxy_client        (basestring)    --  Destination proxy client to be used
+                proxy_client        (str)    --  Destination proxy client to be used
                                                         default: None
 
                 copy_precedence            (int)    --  SP copy precedence from which browse has to
@@ -524,7 +523,7 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
         disk_name = []
 
         # check if inputs are correct
-        if not (isinstance(vm_name, basestring) and
+        if not (isinstance(vm_name, str) and
                 isinstance(disk_name, list)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
@@ -605,7 +604,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/openstack.py#L49-L529" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/openstack.py#L48-L528" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class OpenStackVirtualServerSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient Base class.
@@ -668,7 +667,7 @@ backupset class, subclient name, subclient id</p></div>
                 copy_precedence       (int)         --  copy precedence value
                                                         default: 0
 
-                proxy_client          (basestring)  --  proxy client to be used for restore
+                proxy_client          (str)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
                 **kwargs                         : Arbitrary keyword arguments Properties as of
@@ -694,7 +693,7 @@ backupset class, subclient name, subclient id</p></div>
 
         restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
         # check input parameters are correct
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         if copy_precedence:
@@ -757,13 +756,13 @@ backupset class, subclient name, subclient id</p></div>
                 restored_vm_name         (str)    --  new name of vm. If nothing is passed,
                                                       &#39;delete&#39; is appended to the original vm name
 
-                vcenter_client    (basestring)    --  name of the vcenter client where the VM
+                vcenter_client    (str)    --  name of the vcenter client where the VM
                                                       should be restored.
 
-                esx_host          (basestring)    --  destination esx host. Restores to the source
+                esx_host          (str)    --  destination esx host. Restores to the source
                                                       VM esx if this value is not specified
 
-                datastore         (basestring)    --  datastore where the restored VM should be
+                datastore         (str)    --  datastore where the restored VM should be
                                                       located. Restores to the source VM datastore
                                                       if this value is not specified
 
@@ -776,11 +775,11 @@ backupset class, subclient name, subclient id</p></div>
                 copy_precedence          (int)    --  copy precedence value
                                                       default: 0
 
-                proxy_client      (basestring)    --  destination proxy client
+                proxy_client      (str)    --  destination proxy client
 
-                source_ip           (basestring)    --  IP of the source VM
+                source_ip           (str)    --  IP of the source VM
 
-                destination_ip      (basestring)    --  IP of the destination VM
+                destination_ip      (str)    --  IP of the destination VM
 
                 **kwargs                         : Arbitrary keyword arguments Properties as of
                                                      full_vm_restore_out_of_place
@@ -807,7 +806,7 @@ backupset class, subclient name, subclient id</p></div>
 
         # check mandatory input parameters are correct
         for vm in vm_to_restore:
-            if vm and not isinstance(vm, basestring):
+            if vm and not isinstance(vm, str):
                 raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         if copy_precedence:
@@ -819,8 +818,8 @@ backupset class, subclient name, subclient id</p></div>
             restore_option[&#39;client&#39;] = proxy_client
 
         if restored_vm_name:
-            if not(isinstance(vm_to_restore, basestring) or
-                   isinstance(restored_vm_name, basestring)):
+            if not(isinstance(vm_to_restore, str) or
+                   isinstance(restored_vm_name, str)):
                 raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
             restore_option[&#39;restore_new_name&#39;] = restored_vm_name
 
@@ -860,10 +859,10 @@ backupset class, subclient name, subclient id</p></div>
         &#34;&#34;&#34;Restores the disk specified in the input paths list to the same location
 
             Args:
-                vm_name             (basestring)    --  Name of the VM added in subclient content
+                vm_name             (str)    --  Name of the VM added in subclient content
                                                         whose  disk is selected for restore
 
-                destination_path        (basestring)    --  Staging (destination) path to restore the
+                destination_path        (str)    --  Staging (destination) path to restore the
                                                         disk.
 
                 disk_name                 (list)    --  name of the disk which has to be restored
@@ -871,13 +870,13 @@ backupset class, subclient name, subclient id</p></div>
                                                         name of the disk)
                                                         default: None
 
-                proxy_client        (basestring)    --  Destination proxy client to be used
+                proxy_client        (str)    --  Destination proxy client to be used
                                                         default: None
 
                 copy_precedence            (int)    --  SP copy precedence from which browse has to
                                                          be performed
 
-                convert_to          (basestring)    --  disk format for the restored disk
+                convert_to          (str)    --  disk format for the restored disk
                                                         (applicable only when the vmdk disk is
                                                         selected for restore). Allowed values are
                                                         &#34;VHDX&#34; or &#34;VHD&#34;
@@ -910,8 +909,8 @@ backupset class, subclient name, subclient id</p></div>
             disk_extn = self._get_disk_extension(disk_name)
 
         # check if inputs are correct
-        if not (isinstance(vm_name, basestring) and
-                isinstance(destination_path, basestring) and
+        if not (isinstance(vm_name, str) and
+                isinstance(destination_path, str) and
                 isinstance(disk_name, list) and
                 disk_extn == &#39;.vmdk&#39;):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -993,17 +992,17 @@ backupset class, subclient name, subclient id</p></div>
         &#34;&#34;&#34;Attaches the Disks to the provided vm
 
             Args:
-                vm_name             (basestring)    --  Name of the VM added in subclient content
+                vm_name             (str)    --  Name of the VM added in subclient content
                                                         whose  disk is selected for restore
 
                 vcenter             (dict)          --  Dictinoary of vcenter, username and creds
 
-                esx                 (basestring)    --  Esx host where the vm resides
+                esx                 (str)    --  Esx host where the vm resides
 
                 datastore               (string)    --  Datastore where disks will be restoed to
                                                         default: None
 
-                proxy_client        (basestring)    --  Destination proxy client to be used
+                proxy_client        (str)    --  Destination proxy client to be used
                                                         default: None
 
                 copy_precedence            (int)    --  SP copy precedence from which browse has to
@@ -1035,7 +1034,7 @@ backupset class, subclient name, subclient id</p></div>
         disk_name = []
 
         # check if inputs are correct
-        if not (isinstance(vm_name, basestring) and
+        if not (isinstance(vm_name, str) and
                 isinstance(disk_name, list)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
@@ -1103,7 +1102,7 @@ backupset class, subclient name, subclient id</p></div>
 <div class="desc"><p>Attaches the Disks to the provided vm</p>
 <h2 id="args">Args</h2>
 <p>vm_name
-(basestring)
+(str)
 &ndash;
 Name of the VM added in subclient content
 whose
@@ -1113,7 +1112,7 @@ disk is selected for restore</p>
 &ndash;
 Dictinoary of vcenter, username and creds</p>
 <p>esx
-(basestring)
+(str)
 &ndash;
 Esx host where the vm resides</p>
 <p>datastore
@@ -1122,7 +1121,7 @@ Esx host where the vm resides</p>
 Datastore where disks will be restoed to
 default: None</p>
 <p>proxy_client
-(basestring)
+(str)
 &ndash;
 Destination proxy client to be used
 default: None</p>
@@ -1157,7 +1156,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/openstack.py#L418-L529" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/openstack.py#L417-L528" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def attach_disk_restore(self,
                         vm_name,
@@ -1176,17 +1175,17 @@ if response is not success
     &#34;&#34;&#34;Attaches the Disks to the provided vm
 
         Args:
-            vm_name             (basestring)    --  Name of the VM added in subclient content
+            vm_name             (str)    --  Name of the VM added in subclient content
                                                     whose  disk is selected for restore
 
             vcenter             (dict)          --  Dictinoary of vcenter, username and creds
 
-            esx                 (basestring)    --  Esx host where the vm resides
+            esx                 (str)    --  Esx host where the vm resides
 
             datastore               (string)    --  Datastore where disks will be restoed to
                                                     default: None
 
-            proxy_client        (basestring)    --  Destination proxy client to be used
+            proxy_client        (str)    --  Destination proxy client to be used
                                                     default: None
 
             copy_precedence            (int)    --  SP copy precedence from which browse has to
@@ -1218,7 +1217,7 @@ if response is not success
     disk_name = []
 
     # check if inputs are correct
-    if not (isinstance(vm_name, basestring) and
+    if not (isinstance(vm_name, str) and
             isinstance(disk_name, list)):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
@@ -1280,13 +1279,13 @@ if response is not success
 <div class="desc"><p>Restores the disk specified in the input paths list to the same location</p>
 <h2 id="args">Args</h2>
 <p>vm_name
-(basestring)
+(str)
 &ndash;
 Name of the VM added in subclient content
 whose
 disk is selected for restore</p>
 <p>destination_path
-(basestring)
+(str)
 &ndash;
 Staging (destination) path to restore the
 disk.</p>
@@ -1298,7 +1297,7 @@ name of the disk which has to be restored
 name of the disk)
 default: None</p>
 <p>proxy_client
-(basestring)
+(str)
 &ndash;
 Destination proxy client to be used
 default: None</p>
@@ -1308,7 +1307,7 @@ default: None</p>
 SP copy precedence from which browse has to
 be performed</p>
 <p>convert_to
-(basestring)
+(str)
 &ndash;
 disk format for the restored disk
 (applicable only when the vmdk disk is
@@ -1336,7 +1335,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/openstack.py#L290-L416" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/openstack.py#L289-L415" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_restore(self,
                  vm_name,
@@ -1350,10 +1349,10 @@ if response is not success
     &#34;&#34;&#34;Restores the disk specified in the input paths list to the same location
 
         Args:
-            vm_name             (basestring)    --  Name of the VM added in subclient content
+            vm_name             (str)    --  Name of the VM added in subclient content
                                                     whose  disk is selected for restore
 
-            destination_path        (basestring)    --  Staging (destination) path to restore the
+            destination_path        (str)    --  Staging (destination) path to restore the
                                                     disk.
 
             disk_name                 (list)    --  name of the disk which has to be restored
@@ -1361,13 +1360,13 @@ if response is not success
                                                     name of the disk)
                                                     default: None
 
-            proxy_client        (basestring)    --  Destination proxy client to be used
+            proxy_client        (str)    --  Destination proxy client to be used
                                                     default: None
 
             copy_precedence            (int)    --  SP copy precedence from which browse has to
                                                      be performed
 
-            convert_to          (basestring)    --  disk format for the restored disk
+            convert_to          (str)    --  disk format for the restored disk
                                                     (applicable only when the vmdk disk is
                                                     selected for restore). Allowed values are
                                                     &#34;VHDX&#34; or &#34;VHD&#34;
@@ -1400,8 +1399,8 @@ if response is not success
         disk_extn = self._get_disk_extension(disk_name)
 
     # check if inputs are correct
-    if not (isinstance(vm_name, basestring) and
-            isinstance(destination_path, basestring) and
+    if not (isinstance(vm_name, str) and
+            isinstance(destination_path, str) and
             isinstance(disk_name, list) and
             disk_extn == &#39;.vmdk&#39;):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -1496,7 +1495,7 @@ default: True</p>
 copy precedence value
 default: 0</p>
 <p>proxy_client
-(basestring)
+(str)
 &ndash;
 proxy client to be used for restore
 default: proxy added in subclient</p>
@@ -1522,7 +1521,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/openstack.py#L68-L166" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/openstack.py#L67-L165" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(
         self,
@@ -1566,7 +1565,7 @@ if response is not success
             copy_precedence       (int)         --  copy precedence value
                                                     default: 0
 
-            proxy_client          (basestring)  --  proxy client to be used for restore
+            proxy_client          (str)  --  proxy client to be used for restore
                                                     default: proxy added in subclient
 
             **kwargs                         : Arbitrary keyword arguments Properties as of
@@ -1592,7 +1591,7 @@ if response is not success
 
     restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
     # check input parameters are correct
-    if vm_to_restore and not isinstance(vm_to_restore, basestring):
+    if vm_to_restore and not isinstance(vm_to_restore, str):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
     if copy_precedence:
@@ -1644,17 +1643,17 @@ VM that is to be restored</p>
 new name of vm. If nothing is passed,
 'delete' is appended to the original vm name</p>
 <p>vcenter_client
-(basestring)
+(str)
 &ndash;
 name of the vcenter client where the VM
 should be restored.</p>
 <p>esx_host
-(basestring)
+(str)
 &ndash;
 destination esx host. Restores to the source
 VM esx if this value is not specified</p>
 <p>datastore
-(basestring)
+(str)
 &ndash;
 datastore where the restored VM should be
 located. Restores to the source VM datastore
@@ -1676,15 +1675,15 @@ default: True</p>
 copy precedence value
 default: 0</p>
 <p>proxy_client
-(basestring)
+(str)
 &ndash;
 destination proxy client</p>
 <p>source_ip
-(basestring)
+(str)
 &ndash;
 IP of the source VM</p>
 <p>destination_ip
-(basestring)
+(str)
 &ndash;
 IP of the destination VM</p>
 <p>**kwargs
@@ -1709,7 +1708,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/virtualserver/openstack.py#L168-L288" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/openstack.py#L167-L287" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(
         self,
@@ -1742,13 +1741,13 @@ if response is not success
             restored_vm_name         (str)    --  new name of vm. If nothing is passed,
                                                   &#39;delete&#39; is appended to the original vm name
 
-            vcenter_client    (basestring)    --  name of the vcenter client where the VM
+            vcenter_client    (str)    --  name of the vcenter client where the VM
                                                   should be restored.
 
-            esx_host          (basestring)    --  destination esx host. Restores to the source
+            esx_host          (str)    --  destination esx host. Restores to the source
                                                   VM esx if this value is not specified
 
-            datastore         (basestring)    --  datastore where the restored VM should be
+            datastore         (str)    --  datastore where the restored VM should be
                                                   located. Restores to the source VM datastore
                                                   if this value is not specified
 
@@ -1761,11 +1760,11 @@ if response is not success
             copy_precedence          (int)    --  copy precedence value
                                                   default: 0
 
-            proxy_client      (basestring)    --  destination proxy client
+            proxy_client      (str)    --  destination proxy client
 
-            source_ip           (basestring)    --  IP of the source VM
+            source_ip           (str)    --  IP of the source VM
 
-            destination_ip      (basestring)    --  IP of the destination VM
+            destination_ip      (str)    --  IP of the destination VM
 
             **kwargs                         : Arbitrary keyword arguments Properties as of
                                                  full_vm_restore_out_of_place
@@ -1792,7 +1791,7 @@ if response is not success
 
     # check mandatory input parameters are correct
     for vm in vm_to_restore:
-        if vm and not isinstance(vm, basestring):
+        if vm and not isinstance(vm, str):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
     if copy_precedence:
@@ -1804,8 +1803,8 @@ if response is not success
         restore_option[&#39;client&#39;] = proxy_client
 
     if restored_vm_name:
-        if not(isinstance(vm_to_restore, basestring) or
-               isinstance(restored_vm_name, basestring)):
+        if not(isinstance(vm_to_restore, str) or
+               isinstance(restored_vm_name, str)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
         restore_option[&#39;restore_new_name&#39;] = restored_vm_name
 

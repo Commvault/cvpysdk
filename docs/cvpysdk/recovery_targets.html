@@ -78,7 +78,7 @@ refresh the object properties</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L1-L600" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L1-L609" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -154,7 +154,6 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from cvpysdk.exception import SDKException
-from past.builtins import basestring
 
 
 class RecoveryTargets:
@@ -260,7 +259,7 @@ class RecoveryTargets:
                     if type of the target name argument is not string
 
         &#34;&#34;&#34;
-        if not isinstance(target_name, basestring):
+        if not isinstance(target_name, str):
             raise SDKException(&#39;Target&#39;, &#39;101&#39;)
 
         return self._recovery_targets and target_name.lower() in self._recovery_targets
@@ -281,7 +280,7 @@ class RecoveryTargets:
                     if no target exists with the given name
 
         &#34;&#34;&#34;
-        if not isinstance(recovery_target_name, basestring):
+        if not isinstance(recovery_target_name, str):
             raise SDKException(&#39;Target&#39;, &#39;101&#39;)
         else:
             recovery_target_name = recovery_target_name.lower()
@@ -336,10 +335,12 @@ class RecoveryTarget:
         self._destination_hypervisor = None
         self._access_node = None
         self._users = []
+        self._user_groups = []
         self._vm_prefix = &#39;&#39;
         self._vm_suffix = &#39;&#39;
 
         self._destination_host = None
+        self._vm_storage_policy = None
         self._datastore = None
         self._resource_pool = None
         self._destination_network = None
@@ -357,6 +358,7 @@ class RecoveryTarget:
         self._vm_size = None
         self._disk_type = None
         self._virtual_network = None
+        self._vm_folder = None
         self._security_group = None
         self._create_public_ip = None
         self._restore_as_managed_vm = None
@@ -400,12 +402,13 @@ class RecoveryTarget:
                 vm_name_edit_string = self._recovery_target_properties.get(&#39;vmNameEditString&#39;)
                 vm_name_edit_type = self._recovery_target_properties.get(&#39;vmNameEditType&#39;, 1)
                 if vm_name_edit_string and vm_name_edit_type == 2:
-                    self._vm_suffix = self._recovery_target_properties[&#39;vmNameEditString&#39;]
+                    self._vm_suffix = self._recovery_target_properties.get(&#39;vmNameEditString&#39;)
                 elif vm_name_edit_string and vm_name_edit_type == 1:
-                    self._vm_prefix = self._recovery_target_properties[&#39;vmNameEditString&#39;]
-                self._access_node = self._recovery_target_properties[&#39;proxyClientEntity&#39;][&#39;clientName&#39;]
-                self._users = self._recovery_target_properties[&#39;securityAssociations&#39;][&#39;users&#39;]
-                self._policy_type = self._recovery_target_properties[&#34;entity&#34;][&#34;policyType&#34;]
+                    self._vm_prefix = self._recovery_target_properties.get(&#39;vmNameEditString&#39;)
+                self._access_node = self._recovery_target_properties.get(&#39;proxyClientEntity&#39;, {}).get(&#39;clientName&#39;)
+                self._users = self._recovery_target_properties.get(&#39;securityAssociations&#39;, {}).get(&#39;users&#39;)
+                self._user_groups = self._recovery_target_properties.get(&#39;securityAssociations&#39;, {}).get(&#39;userGroups&#39;)
+                self._policy_type = self._recovery_target_properties.get(&#34;entity&#34;, {}).get(&#34;policyType&#34;)
 
                 if self._policy_type == 1:
                     self._availability_zone = (self._recovery_target_properties.get(&#39;amazonPolicy&#39;,{}).get(&#39;availabilityZones&#39;, [{}])[0].get(&#39;availabilityZoneName&#39;, None))
@@ -424,7 +427,7 @@ class RecoveryTarget:
                     self._test_virtual_network = self._recovery_target_properties.get(&#39;networkInfo&#39;, [{}])[0].get(&#39;label&#39;, None)
                     self._test_security_group = self._recovery_target_properties.get(&#39;testSecurityGroups&#39;, [{}])[0].get(&#39;name&#39;, &#39;&#39;)
                     self._test_vm_size = (self._recovery_target_properties.get(&#39;amazonPolicy&#39;, {}).get(&#39;vmInstanceTypes&#39;, [{}])[0].get(&#39;vmInstanceTypeName&#39;,&#39;&#39;))
-                    
+
                 elif self._policy_type == 2:
                     self._vm_folder = self._recovery_target_properties[&#39;dataStores&#39;][0][&#39;dataStoreName&#39;]
                     self._destination_network = self._recovery_target_properties[&#39;networkList&#39;][0][&#39;networkName&#39;]
@@ -459,6 +462,7 @@ class RecoveryTarget:
                     self._vm_folder = self._recovery_target_properties[&#39;folderPath&#39;]
                     self._destination_network = self._recovery_target_properties[&#39;networkList&#39;][0][&#39;destinationNetwork&#39;]
 
+                    self._vm_storage_policy = self._recovery_target_properties.get(&#39;vmStoragePolicyName&#39;)
                     expiry_hours = self._recovery_target_properties.get(&#34;minutesRetainUntil&#34;)
                     expiry_days = self._recovery_target_properties.get(&#34;daysRetainUntil&#34;)
                     if expiry_hours:
@@ -539,6 +543,11 @@ class RecoveryTarget:
     def destination_host(self):
         &#34;&#34;&#34;Returns: (str) VMware: the destination ESX host name&#34;&#34;&#34;
         return self._destination_host
+
+    @property
+    def vm_storage_policy(self):
+        &#34;&#34;&#34;Returns: (str) VMware: the vm storage policy name&#34;&#34;&#34;
+        return self._vm_storage_policy
 
     @property
     def datastore(self):
@@ -716,7 +725,7 @@ id of the target</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L218-L600" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L217-L609" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class RecoveryTarget:
 
@@ -757,10 +766,12 @@ id of the target</p>
         self._destination_hypervisor = None
         self._access_node = None
         self._users = []
+        self._user_groups = []
         self._vm_prefix = &#39;&#39;
         self._vm_suffix = &#39;&#39;
 
         self._destination_host = None
+        self._vm_storage_policy = None
         self._datastore = None
         self._resource_pool = None
         self._destination_network = None
@@ -778,6 +789,7 @@ id of the target</p>
         self._vm_size = None
         self._disk_type = None
         self._virtual_network = None
+        self._vm_folder = None
         self._security_group = None
         self._create_public_ip = None
         self._restore_as_managed_vm = None
@@ -821,12 +833,13 @@ id of the target</p>
                 vm_name_edit_string = self._recovery_target_properties.get(&#39;vmNameEditString&#39;)
                 vm_name_edit_type = self._recovery_target_properties.get(&#39;vmNameEditType&#39;, 1)
                 if vm_name_edit_string and vm_name_edit_type == 2:
-                    self._vm_suffix = self._recovery_target_properties[&#39;vmNameEditString&#39;]
+                    self._vm_suffix = self._recovery_target_properties.get(&#39;vmNameEditString&#39;)
                 elif vm_name_edit_string and vm_name_edit_type == 1:
-                    self._vm_prefix = self._recovery_target_properties[&#39;vmNameEditString&#39;]
-                self._access_node = self._recovery_target_properties[&#39;proxyClientEntity&#39;][&#39;clientName&#39;]
-                self._users = self._recovery_target_properties[&#39;securityAssociations&#39;][&#39;users&#39;]
-                self._policy_type = self._recovery_target_properties[&#34;entity&#34;][&#34;policyType&#34;]
+                    self._vm_prefix = self._recovery_target_properties.get(&#39;vmNameEditString&#39;)
+                self._access_node = self._recovery_target_properties.get(&#39;proxyClientEntity&#39;, {}).get(&#39;clientName&#39;)
+                self._users = self._recovery_target_properties.get(&#39;securityAssociations&#39;, {}).get(&#39;users&#39;)
+                self._user_groups = self._recovery_target_properties.get(&#39;securityAssociations&#39;, {}).get(&#39;userGroups&#39;)
+                self._policy_type = self._recovery_target_properties.get(&#34;entity&#34;, {}).get(&#34;policyType&#34;)
 
                 if self._policy_type == 1:
                     self._availability_zone = (self._recovery_target_properties.get(&#39;amazonPolicy&#39;,{}).get(&#39;availabilityZones&#39;, [{}])[0].get(&#39;availabilityZoneName&#39;, None))
@@ -845,7 +858,7 @@ id of the target</p>
                     self._test_virtual_network = self._recovery_target_properties.get(&#39;networkInfo&#39;, [{}])[0].get(&#39;label&#39;, None)
                     self._test_security_group = self._recovery_target_properties.get(&#39;testSecurityGroups&#39;, [{}])[0].get(&#39;name&#39;, &#39;&#39;)
                     self._test_vm_size = (self._recovery_target_properties.get(&#39;amazonPolicy&#39;, {}).get(&#39;vmInstanceTypes&#39;, [{}])[0].get(&#39;vmInstanceTypeName&#39;,&#39;&#39;))
-                    
+
                 elif self._policy_type == 2:
                     self._vm_folder = self._recovery_target_properties[&#39;dataStores&#39;][0][&#39;dataStoreName&#39;]
                     self._destination_network = self._recovery_target_properties[&#39;networkList&#39;][0][&#39;networkName&#39;]
@@ -880,6 +893,7 @@ id of the target</p>
                     self._vm_folder = self._recovery_target_properties[&#39;folderPath&#39;]
                     self._destination_network = self._recovery_target_properties[&#39;networkList&#39;][0][&#39;destinationNetwork&#39;]
 
+                    self._vm_storage_policy = self._recovery_target_properties.get(&#39;vmStoragePolicyName&#39;)
                     expiry_hours = self._recovery_target_properties.get(&#34;minutesRetainUntil&#34;)
                     expiry_days = self._recovery_target_properties.get(&#34;daysRetainUntil&#34;)
                     if expiry_hours:
@@ -960,6 +974,11 @@ id of the target</p>
     def destination_host(self):
         &#34;&#34;&#34;Returns: (str) VMware: the destination ESX host name&#34;&#34;&#34;
         return self._destination_host
+
+    @property
+    def vm_storage_policy(self):
+        &#34;&#34;&#34;Returns: (str) VMware: the vm storage policy name&#34;&#34;&#34;
+        return self._vm_storage_policy
 
     @property
     def datastore(self):
@@ -1110,7 +1129,7 @@ id of the target</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L436-L439" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L440-L443" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def access_node(self):
@@ -1126,7 +1145,7 @@ def access_node(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L423-L429" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L427-L433" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def application_type(self):
@@ -1143,7 +1162,7 @@ def application_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L528-L531" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L537-L540" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def availability_zone(self):
@@ -1157,7 +1176,7 @@ def availability_zone(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L558-L561" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L567-L570" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def create_public_ip(self):
@@ -1171,7 +1190,7 @@ def create_public_ip(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L461-L464" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L470-L473" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def datastore(self):
@@ -1185,7 +1204,7 @@ def datastore(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L456-L459" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L460-L463" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination_host(self):
@@ -1199,7 +1218,7 @@ def destination_host(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L431-L434" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L435-L438" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination_hypervisor(self):
@@ -1213,7 +1232,7 @@ def destination_hypervisor(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L476-L479" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L485-L488" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination_network(self):
@@ -1227,7 +1246,7 @@ def destination_network(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L543-L546" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L552-L555" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def disk_type(self):
@@ -1241,7 +1260,7 @@ def disk_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L588-L591" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L597-L600" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def encryption_key(self):
@@ -1256,7 +1275,7 @@ eg: 4 hours or 3 days</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L481-L486" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L490-L495" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def expiration_time(self):
@@ -1272,7 +1291,7 @@ def expiration_time(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L488-L491" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L497-L500" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def failover_ma(self):
@@ -1286,7 +1305,7 @@ def failover_ma(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L593-L596" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L602-L605" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_type(self):
@@ -1300,7 +1319,7 @@ def instance_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L498-L501" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L507-L510" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def iso_path(self):
@@ -1314,7 +1333,7 @@ def iso_path(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L493-L496" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L502-L505" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def isolated_network(self):
@@ -1328,7 +1347,7 @@ def isolated_network(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L508-L511" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L517-L520" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def no_of_cpu(self):
@@ -1342,7 +1361,7 @@ def no_of_cpu(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L513-L516" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L522-L525" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def no_of_vm(self):
@@ -1363,7 +1382,7 @@ def no_of_vm(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L413-L421" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L417-L425" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def policy_type(self):
@@ -1382,7 +1401,7 @@ def policy_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L403-L406" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L407-L410" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def recovery_target_id(self):
@@ -1396,7 +1415,7 @@ def recovery_target_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L408-L411" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L412-L415" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def recovery_target_name(self):
@@ -1410,7 +1429,7 @@ def recovery_target_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L523-L526" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L532-L535" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def region(self):
@@ -1424,7 +1443,7 @@ def region(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L518-L521" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L527-L530" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def resource_group(self):
@@ -1438,7 +1457,7 @@ def resource_group(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L466-L469" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L475-L478" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def resource_pool(self):
@@ -1452,7 +1471,7 @@ def resource_pool(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L563-L566" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L572-L575" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def restore_as_managed_vm(self):
@@ -1466,7 +1485,7 @@ def restore_as_managed_vm(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L553-L556" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L562-L565" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def security_group(self):
@@ -1480,7 +1499,7 @@ def security_group(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L441-L444" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L445-L448" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def security_user_names(self):
@@ -1494,7 +1513,7 @@ def security_user_names(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L503-L506" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L512-L515" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def server_group(self):
@@ -1508,7 +1527,7 @@ def server_group(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L533-L536" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L542-L545" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_account(self):
@@ -1522,7 +1541,7 @@ def storage_account(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L573-L576" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L582-L585" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def test_security_group(self):
@@ -1536,7 +1555,7 @@ def test_security_group(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L568-L571" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L577-L580" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def test_virtual_network(self):
@@ -1550,7 +1569,7 @@ def test_virtual_network(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L578-L581" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L587-L590" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def test_vm_size(self):
@@ -1564,7 +1583,7 @@ def test_vm_size(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L548-L551" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L557-L560" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def virtual_network(self):
@@ -1578,7 +1597,7 @@ def virtual_network(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L471-L474" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L480-L483" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_folder(self):
@@ -1592,7 +1611,7 @@ def vm_folder(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L446-L449" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L450-L453" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_prefix(self):
@@ -1606,12 +1625,26 @@ def vm_prefix(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L538-L541" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L547-L550" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_size(self):
     &#34;&#34;&#34;Returns: (str) Azure: the size of the destination VM. This defines the hardware config&#34;&#34;&#34;
     return self._vm_size</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.recovery_targets.RecoveryTarget.vm_storage_policy"><code class="name">var <span class="ident">vm_storage_policy</span></code></dt>
+<dd>
+<div class="desc"><p>Returns: (str) VMware: the vm storage policy name</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L465-L468" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def vm_storage_policy(self):
+    &#34;&#34;&#34;Returns: (str) VMware: the vm storage policy name&#34;&#34;&#34;
+    return self._vm_storage_policy</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.recovery_targets.RecoveryTarget.vm_suffix"><code class="name">var <span class="ident">vm_suffix</span></code></dt>
@@ -1620,7 +1653,7 @@ def vm_size(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L451-L454" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L455-L458" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_suffix(self):
@@ -1634,7 +1667,7 @@ def vm_suffix(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L583-L586" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L592-L595" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def volume_type(self):
@@ -1653,7 +1686,7 @@ def volume_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L598-L600" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L607-L609" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Recovery Target.&#34;&#34;&#34;
@@ -1676,7 +1709,7 @@ instance of the Commcell class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L78-L215" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L77-L214" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class RecoveryTargets:
 
@@ -1781,7 +1814,7 @@ instance of the Commcell class</p></div>
                     if type of the target name argument is not string
 
         &#34;&#34;&#34;
-        if not isinstance(target_name, basestring):
+        if not isinstance(target_name, str):
             raise SDKException(&#39;Target&#39;, &#39;101&#39;)
 
         return self._recovery_targets and target_name.lower() in self._recovery_targets
@@ -1802,7 +1835,7 @@ instance of the Commcell class</p></div>
                     if no target exists with the given name
 
         &#34;&#34;&#34;
-        if not isinstance(recovery_target_name, basestring):
+        if not isinstance(recovery_target_name, str):
             raise SDKException(&#39;Target&#39;, &#39;101&#39;)
         else:
             recovery_target_name = recovery_target_name.lower()
@@ -1834,7 +1867,7 @@ consists of all targets</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L152-L165" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L151-L164" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_targets(self):
@@ -1874,7 +1907,7 @@ if type of the target name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L186-L211" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L185-L210" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, recovery_target_name):
     &#34;&#34;&#34;Returns a target object.
@@ -1892,7 +1925,7 @@ if type of the target name argument is not string</p>
                 if no target exists with the given name
 
     &#34;&#34;&#34;
-    if not isinstance(recovery_target_name, basestring):
+    if not isinstance(recovery_target_name, str):
         raise SDKException(&#39;Target&#39;, &#39;101&#39;)
     else:
         recovery_target_name = recovery_target_name.lower()
@@ -1921,7 +1954,7 @@ if type of the target name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L167-L184" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L166-L183" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_recovery_target(self, target_name):
     &#34;&#34;&#34;Checks if a target is present in the commcell.
@@ -1937,7 +1970,7 @@ if type of the target name argument is not string</p></div>
                 if type of the target name argument is not string
 
     &#34;&#34;&#34;
-    if not isinstance(target_name, basestring):
+    if not isinstance(target_name, str):
         raise SDKException(&#39;Target&#39;, &#39;101&#39;)
 
     return self._recovery_targets and target_name.lower() in self._recovery_targets</code></pre>
@@ -1951,7 +1984,7 @@ if type of the target name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/recovery_targets.py#L213-L215" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/recovery_targets.py#L212-L214" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the recovery targets&#34;&#34;&#34;
@@ -2070,6 +2103,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.recovery_targets.RecoveryTarget.vm_folder" href="#cvpysdk.recovery_targets.RecoveryTarget.vm_folder">vm_folder</a></code></li>
 <li><code><a title="cvpysdk.recovery_targets.RecoveryTarget.vm_prefix" href="#cvpysdk.recovery_targets.RecoveryTarget.vm_prefix">vm_prefix</a></code></li>
 <li><code><a title="cvpysdk.recovery_targets.RecoveryTarget.vm_size" href="#cvpysdk.recovery_targets.RecoveryTarget.vm_size">vm_size</a></code></li>
+<li><code><a title="cvpysdk.recovery_targets.RecoveryTarget.vm_storage_policy" href="#cvpysdk.recovery_targets.RecoveryTarget.vm_storage_policy">vm_storage_policy</a></code></li>
 <li><code><a title="cvpysdk.recovery_targets.RecoveryTarget.vm_suffix" href="#cvpysdk.recovery_targets.RecoveryTarget.vm_suffix">vm_suffix</a></code></li>
 <li><code><a title="cvpysdk.recovery_targets.RecoveryTarget.volume_type" href="#cvpysdk.recovery_targets.RecoveryTarget.volume_type">volume_type</a></code></li>
 </ul>

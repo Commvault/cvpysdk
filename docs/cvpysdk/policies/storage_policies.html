@@ -277,7 +277,7 @@ sets the Key Management Server to this copy</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L1-L4172" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1-L4188" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -493,17 +493,12 @@ from __future__ import unicode_literals
 
 from base64 import b64encode
 
-from past.builtins import basestring
-from future.standard_library import install_aliases
-
 from ..exception import SDKException
 from ..job import Job
 from ..schedules import Schedules, SchedulePattern
 
 from ..storage import DiskLibrary
 from ..storage import MediaAgent
-
-install_aliases()
 
 
 class StoragePolicies(object):
@@ -609,7 +604,7 @@ class StoragePolicies(object):
                 SDKException:
                     if type of the storage policy name argument is not string
         &#34;&#34;&#34;
-        if not isinstance(policy_name, basestring):
+        if not isinstance(policy_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         return self._policies and policy_name.lower() in self._policies
@@ -629,7 +624,7 @@ class StoragePolicies(object):
 
                     if no storage policy exists with the given name
         &#34;&#34;&#34;
-        if not isinstance(storage_policy_name, basestring):
+        if not isinstance(storage_policy_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         storage_policy_name = storage_policy_name.lower()
@@ -685,13 +680,13 @@ class StoragePolicies(object):
 
         &#34;&#34;&#34;
 
-        if not (isinstance(global_storage_policy_name, basestring) and
-                isinstance(library, basestring) and
-                isinstance(media_agent, basestring)):
+        if not (isinstance(global_storage_policy_name, str) and
+                isinstance(library, str) and
+                isinstance(media_agent, str)):
             raise SDKException(&#34;Storage&#34;, &#34;101&#34;)
 
-        if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
-                dedup_path_media_agent is not None and not isinstance(dedup_path_media_agent, basestring)):
+        if ((dedup_path is not None and not isinstance(dedup_path, str)) or
+                dedup_path_media_agent is not None and not isinstance(dedup_path_media_agent, str)):
             raise SDKException(&#34;Storage&#34;, &#34;101&#34;)
 
         request_json = {
@@ -866,15 +861,15 @@ class StoragePolicies(object):
         # global_policy_name decides if user wants to create sp using existing global dedup policy or not
         extra_arguments.update(kwargs)
 
-        if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
-                (not (isinstance(storage_policy_name, basestring) and
+        if ((dedup_path is not None and not isinstance(dedup_path, str)) or
+                (not (isinstance(storage_policy_name, str) and
                       isinstance(retention_period, int))) or
-                (incremental_sp is not None and not isinstance(incremental_sp, basestring))):
+                (incremental_sp is not None and not isinstance(incremental_sp, str))):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         if isinstance(library, DiskLibrary):
             disk_library = library
-        elif isinstance(library, basestring):
+        elif isinstance(library, str):
             disk_library = DiskLibrary(self._commcell_object, library)
         elif extra_arguments[&#34;global_policy_name&#34;] is not None:
             pass
@@ -884,7 +879,7 @@ class StoragePolicies(object):
 
         if isinstance(media_agent, MediaAgent):
             media_agent = media_agent
-        elif isinstance(media_agent, basestring):
+        elif isinstance(media_agent, str):
             media_agent = MediaAgent(self._commcell_object, media_agent)
         elif extra_arguments[&#34;global_policy_name&#34;] is not None:
             pass
@@ -1086,11 +1081,11 @@ class StoragePolicies(object):
                     if response is not success
         &#34;&#34;&#34;
         tape_library = library
-        if not (isinstance(drive_pool, basestring) and
-                isinstance(scratch_pool, basestring) and
-                isinstance(tape_library, basestring) and
-                isinstance(media_agent, basestring) and
-                isinstance(storage_policy_name, basestring) and
+        if not (isinstance(drive_pool, str) and
+                isinstance(scratch_pool, str) and
+                isinstance(tape_library, str) and
+                isinstance(media_agent, str) and
+                isinstance(storage_policy_name, str) and
                 (retention_period_days is None or isinstance(retention_period_days, int))):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
@@ -1173,7 +1168,7 @@ class StoragePolicies(object):
 
                     if response is not success
         &#34;&#34;&#34;
-        if not isinstance(storage_policy_name, basestring):
+        if not isinstance(storage_policy_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         if self.has_policy(storage_policy_name):
@@ -1340,7 +1335,7 @@ class StoragePolicy(object):
                 SDKException:
                     if type of the storage policy copy name argument is not string
         &#34;&#34;&#34;
-        if not isinstance(copy_name, basestring):
+        if not isinstance(copy_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         return self._copies and copy_name.lower() in self._copies
@@ -1383,7 +1378,7 @@ class StoragePolicy(object):
                     if response is not success
         &#34;&#34;&#34;
         if global_policy is not None:
-            if not (isinstance(copy_name, basestring) and isinstance(global_policy, basestring)):
+            if not (isinstance(copy_name, str) and isinstance(global_policy, str)):
                 raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
             if self.has_copy(copy_name):
@@ -1428,9 +1423,9 @@ class StoragePolicy(object):
                     }
 
         else:
-            if not (isinstance(copy_name, basestring) and
-                    isinstance(library_name, basestring) and
-                    isinstance(media_agent_name, basestring)):
+            if not (isinstance(copy_name, str) and
+                    isinstance(library_name, str) and
+                    isinstance(media_agent_name, str)):
                 raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
             if self.has_copy(copy_name):
@@ -1592,7 +1587,7 @@ class StoragePolicy(object):
 
                             if response is not success
         &#34;&#34;&#34;
-        if not isinstance(cloud_id, basestring):
+        if not isinstance(cloud_id, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         if include_doc_type is None:
@@ -1660,7 +1655,7 @@ class StoragePolicy(object):
         &#34;&#34;&#34;
         if not (isinstance(entity_details, list) and isinstance(entity_names, list)):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
-        if not isinstance(ca_client_name, basestring):
+        if not isinstance(ca_client_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
         request_xml = &#34;&#34;&#34;&lt;EVGui_SetEntityExtractionListReq archGroupId=&#34;{0}&#34;&gt;
         &lt;entityExtraction isConfigured=&#34;1&#34;&gt;&#34;&#34;&#34;.format(self._storage_policy_id)
@@ -1725,7 +1720,8 @@ class StoragePolicy(object):
                          source_copy,
                          provisioning_policy=None,
                          resource_pool=None,
-                         is_replica_copy=None):
+                         is_replica_copy=None,
+                         **kwargs):
         &#34;&#34;&#34;Creates Snap copy for this storage policy
 
             Args:
@@ -1750,6 +1746,9 @@ class StoragePolicy(object):
                 is_replica_copy     (bool)   --  if true then Replica Copy will be created
                 default : None
 
+                job_retention       (bool)  -- if true job based retention will be set
+                default : False
+
             Raises:
                 SDKException:
                     if type of inputs in not string
@@ -1762,9 +1761,9 @@ class StoragePolicy(object):
 
                     if response is not success
         &#34;&#34;&#34;
-        if not (isinstance(copy_name, basestring) and
-                isinstance(library_name, basestring) and
-                isinstance(media_agent_name, basestring)):
+        if not (isinstance(copy_name, str) and
+                isinstance(library_name, str) and
+                isinstance(media_agent_name, str)):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         if self.has_copy(copy_name):
@@ -1789,6 +1788,8 @@ class StoragePolicy(object):
             provisioning_policy = &#34;&#34;
             resource_pool = &#34;&#34;
 
+        job_based_retention = kwargs.get(&#39;job_based_retention&#39;, False)
+        job_retention = 1 if job_based_retention else 0
         request_xml = &#34;&#34;&#34;
                     &lt;App_CreateStoragePolicyCopyReq copyName=&#34;{0}&#34;&gt;
                         &lt;storagePolicyCopyInfo active=&#34;1&#34; isMirrorCopy=&#34;{1}&#34; isSnapCopy=&#34;{2}&#34; provisioningPolicyName=&#34;{3}&#34;&gt;
@@ -1797,14 +1798,16 @@ class StoragePolicy(object):
                             &lt;library _type_=&#34;9&#34; libraryName=&#34;{7}&#34; /&gt;
                             &lt;mediaAgent _type_=&#34;11&#34; mediaAgentName=&#34;{8}&#34; /&gt;
                             &lt;spareMediaGroup _type_=&#34;67&#34; libraryName=&#34;{7}&#34; /&gt;
-                            &lt;retentionRules retainArchiverDataForDays=&#34;-1&#34; retainBackupDataForCycles=&#34;5&#34; retainBackupDataForDays=&#34;1&#34; /&gt;
+                            &lt;retentionRules jobs=&#34;8&#34; retainArchiverDataForDays=&#34;-1&#34; retainBackupDataForCycles=&#34;5&#34; retainBackupDataForDays=&#34;1&#34;&gt;
+                            &lt;retentionFlags jobBasedRetention=&#34;{11}&#34; /&gt;
+                            &lt;/retentionRules&gt;
                             &lt;sourceCopy _type_=&#34;18&#34; copyName=&#34;{9}&#34; storagePolicyName=&#34;{4}&#34; /&gt;
                             &lt;resourcePoolsList operation=&#34;1&#34; resourcePoolName=&#34;{10}&#34; /&gt;
                         &lt;/storagePolicyCopyInfo&gt;
                     &lt;/App_CreateStoragePolicyCopyReq&gt;
                     &#34;&#34;&#34;.format(copy_name, is_mirror_copy, is_snap_copy, provisioning_policy,
                                self.storage_policy_name, arrayReplicaCopy, useOfflineReplication,
-                               library_name, media_agent_name, source_copy, resource_pool)
+                               library_name, media_agent_name, source_copy, resource_pool, job_retention)
 
         create_copy_service = self._commcell_object._services[&#39;CREATE_STORAGE_POLICY_COPY&#39;]
 
@@ -1854,7 +1857,7 @@ class StoragePolicy(object):
 
                     if response is not success
         &#34;&#34;&#34;
-        if not isinstance(copy_name, basestring):
+        if not isinstance(copy_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
         else:
             copy_name = copy_name.lower()
@@ -1927,9 +1930,9 @@ class StoragePolicy(object):
 
                     if response is not success
         &#34;&#34;&#34;
-        if not (isinstance(copy_name, basestring) and
-                isinstance(library_name, basestring) and
-                isinstance(media_agent_name, basestring)):
+        if not (isinstance(copy_name, str) and
+                isinstance(library_name, str) and
+                isinstance(media_agent_name, str)):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         if self.has_copy(copy_name):
@@ -2430,8 +2433,8 @@ class StoragePolicy(object):
             all_copies = False
             if not media_agent:
                 media_agent = &#34;&amp;lt;ANY MEDIAAGENT&amp;gt;&#34;
-            if not (isinstance(storage_policy_copy_name, basestring) and
-                    isinstance(media_agent, basestring)):
+            if not (isinstance(storage_policy_copy_name, str) and
+                    isinstance(media_agent, str)):
                 raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
         else:
             if all_copies is False:
@@ -2530,7 +2533,7 @@ class StoragePolicy(object):
                 SDKException:
                     if type of input parameters is not string
         &#34;&#34;&#34;
-        if not isinstance(copy_name, basestring):
+        if not isinstance(copy_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         request_xml = &#34;&#34;&#34;
@@ -2559,7 +2562,7 @@ class StoragePolicy(object):
                 SDKException:
                     if type of input parameters is not string
         &#34;&#34;&#34;
-        if not (isinstance(copy_name, basestring) and isinstance(media_agent_name, basestring)):
+        if not (isinstance(copy_name, str) and isinstance(media_agent_name, str)):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         request_xml = &#34;&#34;&#34;
@@ -2627,11 +2630,11 @@ class StoragePolicy(object):
 
                     if response is not success
         &#34;&#34;&#34;
-        if not (isinstance(copy_name, basestring) and
-                isinstance(library_name, basestring) and
-                isinstance(path, basestring) and
-                isinstance(ddb_media_agent, basestring) and
-                isinstance(media_agent_name, basestring)):
+        if not (isinstance(copy_name, str) and
+                isinstance(library_name, str) and
+                isinstance(path, str) and
+                isinstance(ddb_media_agent, str) and
+                isinstance(media_agent_name, str)):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         if dash_full is None:
@@ -2714,7 +2717,8 @@ class StoragePolicy(object):
     def run_ddb_verification(self,
                              copy_name,
                              ver_type,
-                             ddb_ver_level):
+                             ddb_ver_level,
+                             use_scalable=True):
         &#34;&#34;&#34;
         Runs DDB verification job
 
@@ -2726,6 +2730,9 @@ class StoragePolicy(object):
                 ddb_ver_level   (str)   --  DDB verification type
                                             (DDB_VERIFICATION/ DDB_AND_DATA_VERIFICATION /
                                             QUICK_DDB_VERIFICATION/ DDB_DEFRAGMENTATION)
+
+                use_scalable    (bool)  --  True/False to use Scalable Resource Allocation
+                                            Default: True
 
             Returns:
                 object - instance of the Job class for this DDB verification job
@@ -2740,9 +2747,9 @@ class StoragePolicy(object):
 
                     if response is not success
         &#34;&#34;&#34;
-        if not (isinstance(copy_name, basestring) and
-                isinstance(ver_type, basestring) and
-                isinstance(ddb_ver_level, basestring)):
+        if not (isinstance(copy_name, str) and
+                isinstance(ver_type, str) and
+                isinstance(ddb_ver_level, str)):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         request = {
@@ -2771,7 +2778,7 @@ class StoragePolicy(object):
                                         &#34;maxNumberOfStreams&#34;: 0,
                                         &#34;allCopies&#34;: True,
                                         &#34;useMaximumStreams&#34;: True,
-                                        &#34;useScallableResourceManagement&#34;: False,
+                                        &#34;useScallableResourceManagement&#34;: use_scalable,
                                         &#34;mediaAgent&#34;: {
                                             &#34;mediaAgentName&#34;: &#34;&#34;
                                         }
@@ -2813,7 +2820,7 @@ class StoragePolicy(object):
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     def run_data_verification(self, media_agent_name=&#39;&#39;, copy_name=&#39;&#39;, streams=0,
-                              jobs_to_verify=&#39;NEW&#39;, use_scalable=False, schedule_pattern=None, **kwargs):
+                              jobs_to_verify=&#39;NEW&#39;, use_scalable=True, schedule_pattern=None, **kwargs):
         &#34;&#34;&#34;Runs Data verification job
 
         Args:
@@ -2829,6 +2836,7 @@ class StoragePolicy(object):
                                          (NEW/ VERF_EXPIRED/ ALL)
 
             use_scalable       (bool) : True/False to use Scalable Resource Allocation
+                                         (default - True)
 
             kwargs              (dict) : optional arguments
                 Available kwargs Options:
@@ -2839,8 +2847,8 @@ class StoragePolicy(object):
 
             errorMessage - If Data Verification Job fails to Start
         &#34;&#34;&#34;
-        if not (isinstance(copy_name, basestring) and isinstance(jobs_to_verify, basestring)
-                and isinstance(media_agent_name, basestring) and isinstance(streams, int)):
+        if not (isinstance(copy_name, str) and isinstance(jobs_to_verify, str)
+                and isinstance(media_agent_name, str) and isinstance(streams, int)):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         if jobs_to_verify.upper() == &#39;NEW&#39;:
@@ -2956,11 +2964,11 @@ class StoragePolicy(object):
 
                     if response is not success
         &#34;&#34;&#34;
-        if not (isinstance(copy_name, basestring) and
-                isinstance(dest_path, basestring) and
-                isinstance(src_path, basestring) and
-                isinstance(dest_media_agent, basestring) and
-                isinstance(src_media_agent, basestring)):
+        if not (isinstance(copy_name, str) and
+                isinstance(dest_path, str) and
+                isinstance(src_path, str) and
+                isinstance(dest_media_agent, str) and
+                isinstance(src_media_agent, str)):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         request = {
@@ -3047,15 +3055,15 @@ class StoragePolicy(object):
                 SDKException:
                     if type of input parameters is not string
         &#34;&#34;&#34;
-        if not (isinstance(copy_id, basestring) and
-                isinstance(sidb_store_id, basestring) and
-                isinstance(sidb_new_path, basestring) and
-                isinstance(media_agent, basestring)):
+        if not (isinstance(copy_id, str) and
+                isinstance(sidb_store_id, str) and
+                isinstance(sidb_new_path, str) and
+                isinstance(media_agent, str)):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         if isinstance(media_agent, MediaAgent):
             media_agent = media_agent
-        elif isinstance(media_agent, basestring):
+        elif isinstance(media_agent, str):
             media_agent = MediaAgent(self._commcell_object, media_agent)
 
         request_xml = &#34;&#34;&#34;
@@ -3086,7 +3094,7 @@ class StoragePolicy(object):
 
                    if no copy exists with the given name
         &#34;&#34;&#34;
-        if not isinstance(copy_name, basestring):
+        if not isinstance(copy_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         if self.has_copy(copy_name):
@@ -3605,6 +3613,7 @@ class StoragePolicyCopy(object):
         retention_values[&#34;days&#34;] = self._retention_rules[&#39;retainBackupDataForDays&#39;]
         retention_values[&#34;cycles&#34;] = self._retention_rules[&#39;retainBackupDataForCycles&#39;]
         retention_values[&#34;archiveDays&#34;] = self._retention_rules[&#39;retainArchiverDataForDays&#39;]
+        retention_values[&#34;jobs&#34;] = self._retention_rules[&#39;jobs&#39;]
         return retention_values
 
     @copy_retention.setter
@@ -3621,21 +3630,28 @@ class StoragePolicyCopy(object):
 
                         **int** -   value to specify retainArchiverDataForDays
 
+                        **int** -   value to specify jobs
+
                     e.g. :
-                         storage_policy_copy.copy_retention = (30, 15, 1)
+                         storage_policy_copy.copy_retention = (30, 15, 1, 8)
 
             Raises:
                 SDKException:
                     if failed to update retention values on the copy
 
         &#34;&#34;&#34;
-
         if retention_values[0] &gt;= 0:
             self._retention_rules[&#39;retainBackupDataForDays&#39;] = retention_values[0]
         if retention_values[1] &gt;= 0:
             self._retention_rules[&#39;retainBackupDataForCycles&#39;] = retention_values[1]
         if retention_values[2] &gt;= 0:
             self._retention_rules[&#39;retainArchiverDataForDays&#39;] = retention_values[2]
+        if len(retention_values) &gt; 3:
+            self._retention_rules[&#39;jobs&#39;] = retention_values[3]
+            if retention_values[3] &gt; 0:
+                self._retention_rules[&#39;retentionFlags&#39;][&#39;jobBasedRetention&#39;] = 1
+            else:
+                self._retention_rules[&#39;retentionFlags&#39;][&#39;jobBasedRetention&#39;] = 0
 
         self._set_copy_properties()
 
@@ -3970,7 +3986,7 @@ class StoragePolicyCopy(object):
             self._copy_flags[&#39;preserveEncryptionModeAsInSource&#39;] = 1
 
         if int(encryption_values[0]) == 1:
-            if (isinstance(encryption_values[1], basestring)
+            if (isinstance(encryption_values[1], str)
                     and isinstance(encryption_values[2], int)):
                 self._copy_properties[&#39;extendedFlags&#39;][&#39;encryptOnDependentPrimary&#39;] = 1
                 self._copy_flags[&#39;auxCopyReencryptData&#39;] = 1
@@ -4003,7 +4019,7 @@ class StoragePolicyCopy(object):
             SDKException:
                 if type of input parameters is not string
         &#34;&#34;&#34;
-        if not isinstance(job_id, basestring):
+        if not isinstance(job_id, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         request_xml = &#34;&#34;&#34;
@@ -4026,9 +4042,9 @@ class StoragePolicyCopy(object):
             SDKException:
                 if type of input parameters is not string or List of strings
         &#34;&#34;&#34;
-        if not isinstance(job_id, basestring) and not isinstance(job_id, int):
+        if not isinstance(job_id, str) and not isinstance(job_id, int):
             if not isinstance(job_id, list) or\
-                    (not all(isinstance(id, int) for id in job_id) and not all(isinstance(id, basestring) for id in job_id)):
+                    (not all(isinstance(id, int) for id in job_id) and not all(isinstance(id, str) for id in job_id)):
                 raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         # send multiple requests to counter limit of URL length in IIS
@@ -4478,7 +4494,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L228-L931" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L223-L926" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class StoragePolicies(object):
     &#34;&#34;&#34;Class for getting all the storage policies associated with the commcell.&#34;&#34;&#34;
@@ -4583,7 +4599,7 @@ instance of the Commcell class</p>
                 SDKException:
                     if type of the storage policy name argument is not string
         &#34;&#34;&#34;
-        if not isinstance(policy_name, basestring):
+        if not isinstance(policy_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         return self._policies and policy_name.lower() in self._policies
@@ -4603,7 +4619,7 @@ instance of the Commcell class</p>
 
                     if no storage policy exists with the given name
         &#34;&#34;&#34;
-        if not isinstance(storage_policy_name, basestring):
+        if not isinstance(storage_policy_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         storage_policy_name = storage_policy_name.lower()
@@ -4659,13 +4675,13 @@ instance of the Commcell class</p>
 
         &#34;&#34;&#34;
 
-        if not (isinstance(global_storage_policy_name, basestring) and
-                isinstance(library, basestring) and
-                isinstance(media_agent, basestring)):
+        if not (isinstance(global_storage_policy_name, str) and
+                isinstance(library, str) and
+                isinstance(media_agent, str)):
             raise SDKException(&#34;Storage&#34;, &#34;101&#34;)
 
-        if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
-                dedup_path_media_agent is not None and not isinstance(dedup_path_media_agent, basestring)):
+        if ((dedup_path is not None and not isinstance(dedup_path, str)) or
+                dedup_path_media_agent is not None and not isinstance(dedup_path_media_agent, str)):
             raise SDKException(&#34;Storage&#34;, &#34;101&#34;)
 
         request_json = {
@@ -4840,15 +4856,15 @@ instance of the Commcell class</p>
         # global_policy_name decides if user wants to create sp using existing global dedup policy or not
         extra_arguments.update(kwargs)
 
-        if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
-                (not (isinstance(storage_policy_name, basestring) and
+        if ((dedup_path is not None and not isinstance(dedup_path, str)) or
+                (not (isinstance(storage_policy_name, str) and
                       isinstance(retention_period, int))) or
-                (incremental_sp is not None and not isinstance(incremental_sp, basestring))):
+                (incremental_sp is not None and not isinstance(incremental_sp, str))):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         if isinstance(library, DiskLibrary):
             disk_library = library
-        elif isinstance(library, basestring):
+        elif isinstance(library, str):
             disk_library = DiskLibrary(self._commcell_object, library)
         elif extra_arguments[&#34;global_policy_name&#34;] is not None:
             pass
@@ -4858,7 +4874,7 @@ instance of the Commcell class</p>
 
         if isinstance(media_agent, MediaAgent):
             media_agent = media_agent
-        elif isinstance(media_agent, basestring):
+        elif isinstance(media_agent, str):
             media_agent = MediaAgent(self._commcell_object, media_agent)
         elif extra_arguments[&#34;global_policy_name&#34;] is not None:
             pass
@@ -5060,11 +5076,11 @@ instance of the Commcell class</p>
                     if response is not success
         &#34;&#34;&#34;
         tape_library = library
-        if not (isinstance(drive_pool, basestring) and
-                isinstance(scratch_pool, basestring) and
-                isinstance(tape_library, basestring) and
-                isinstance(media_agent, basestring) and
-                isinstance(storage_policy_name, basestring) and
+        if not (isinstance(drive_pool, str) and
+                isinstance(scratch_pool, str) and
+                isinstance(tape_library, str) and
+                isinstance(media_agent, str) and
+                isinstance(storage_policy_name, str) and
                 (retention_period_days is None or isinstance(retention_period_days, int))):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
@@ -5147,7 +5163,7 @@ instance of the Commcell class</p>
 
                     if response is not success
         &#34;&#34;&#34;
-        if not isinstance(storage_policy_name, basestring):
+        if not isinstance(storage_policy_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         if self.has_policy(storage_policy_name):
@@ -5198,7 +5214,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L306-L316" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L301-L311" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_storage_policies(self):
@@ -5309,7 +5325,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L507-L765" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L502-L760" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self,
         storage_policy_name,
@@ -5392,15 +5408,15 @@ if response is not success
     # global_policy_name decides if user wants to create sp using existing global dedup policy or not
     extra_arguments.update(kwargs)
 
-    if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
-            (not (isinstance(storage_policy_name, basestring) and
+    if ((dedup_path is not None and not isinstance(dedup_path, str)) or
+            (not (isinstance(storage_policy_name, str) and
                   isinstance(retention_period, int))) or
-            (incremental_sp is not None and not isinstance(incremental_sp, basestring))):
+            (incremental_sp is not None and not isinstance(incremental_sp, str))):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     if isinstance(library, DiskLibrary):
         disk_library = library
-    elif isinstance(library, basestring):
+    elif isinstance(library, str):
         disk_library = DiskLibrary(self._commcell_object, library)
     elif extra_arguments[&#34;global_policy_name&#34;] is not None:
         pass
@@ -5410,7 +5426,7 @@ if response is not success
 
     if isinstance(media_agent, MediaAgent):
         media_agent = media_agent
-    elif isinstance(media_agent, basestring):
+    elif isinstance(media_agent, str):
         media_agent = MediaAgent(self._commcell_object, media_agent)
     elif extra_arguments[&#34;global_policy_name&#34;] is not None:
         pass
@@ -5620,7 +5636,7 @@ is not of type String</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L365-L505" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L360-L500" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_global_storage_policy(self,
                               global_storage_policy_name,
@@ -5664,13 +5680,13 @@ is not of type String</p>
 
     &#34;&#34;&#34;
 
-    if not (isinstance(global_storage_policy_name, basestring) and
-            isinstance(library, basestring) and
-            isinstance(media_agent, basestring)):
+    if not (isinstance(global_storage_policy_name, str) and
+            isinstance(library, str) and
+            isinstance(media_agent, str)):
         raise SDKException(&#34;Storage&#34;, &#34;101&#34;)
 
-    if ((dedup_path is not None and not isinstance(dedup_path, basestring)) or
-            dedup_path_media_agent is not None and not isinstance(dedup_path_media_agent, basestring)):
+    if ((dedup_path is not None and not isinstance(dedup_path, str)) or
+            dedup_path_media_agent is not None and not isinstance(dedup_path_media_agent, str)):
         raise SDKException(&#34;Storage&#34;, &#34;101&#34;)
 
     request_json = {
@@ -5808,7 +5824,7 @@ if type of the storage policy name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L767-L877" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L762-L872" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_tape_sp(self, storage_policy_name, library, media_agent, drive_pool, scratch_pool, retention_period_days=15,
                 ocum_server=None):
@@ -5851,11 +5867,11 @@ if type of the storage policy name argument is not string</p>
                 if response is not success
     &#34;&#34;&#34;
     tape_library = library
-    if not (isinstance(drive_pool, basestring) and
-            isinstance(scratch_pool, basestring) and
-            isinstance(tape_library, basestring) and
-            isinstance(media_agent, basestring) and
-            isinstance(storage_policy_name, basestring) and
+    if not (isinstance(drive_pool, str) and
+            isinstance(scratch_pool, str) and
+            isinstance(tape_library, str) and
+            isinstance(media_agent, str) and
+            isinstance(storage_policy_name, str) and
             (retention_period_days is None or isinstance(retention_period_days, int))):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
@@ -5944,7 +5960,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L879-L927" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L874-L922" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, storage_policy_name):
     &#34;&#34;&#34;Deletes a storage policy from the commcell.
@@ -5962,7 +5978,7 @@ if response is not success
 
                 if response is not success
     &#34;&#34;&#34;
-    if not isinstance(storage_policy_name, basestring):
+    if not isinstance(storage_policy_name, str):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     if self.has_policy(storage_policy_name):
@@ -6017,7 +6033,7 @@ if type of the storage policy name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L336-L363" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L331-L358" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, storage_policy_name):
     &#34;&#34;&#34;Returns a StoragePolicy object of the specified storage policy name.
@@ -6034,7 +6050,7 @@ if type of the storage policy name argument is not string</p>
 
                 if no storage policy exists with the given name
     &#34;&#34;&#34;
-    if not isinstance(storage_policy_name, basestring):
+    if not isinstance(storage_policy_name, str):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     storage_policy_name = storage_policy_name.lower()
@@ -6066,7 +6082,7 @@ if type of the storage policy name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L318-L334" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L313-L329" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_policy(self, policy_name):
     &#34;&#34;&#34;Checks if a storage policy exists in the commcell with the input storage policy name.
@@ -6081,7 +6097,7 @@ if type of the storage policy name argument is not string</p></div>
             SDKException:
                 if type of the storage policy name argument is not string
     &#34;&#34;&#34;
-    if not isinstance(policy_name, basestring):
+    if not isinstance(policy_name, str):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     return self._policies and policy_name.lower() in self._policies</code></pre>
@@ -6095,7 +6111,7 @@ if type of the storage policy name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L929-L931" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L924-L926" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the storage policies associated with the Commcell.&#34;&#34;&#34;
@@ -6114,7 +6130,7 @@ if type of the storage policy name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L934-L3132" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L929-L3140" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class StoragePolicy(object):
     &#34;&#34;&#34;Class for performing storage policy operations for a specific storage policy&#34;&#34;&#34;
@@ -6244,7 +6260,7 @@ if type of the storage policy name argument is not string</p></div>
                 SDKException:
                     if type of the storage policy copy name argument is not string
         &#34;&#34;&#34;
-        if not isinstance(copy_name, basestring):
+        if not isinstance(copy_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         return self._copies and copy_name.lower() in self._copies
@@ -6287,7 +6303,7 @@ if type of the storage policy name argument is not string</p></div>
                     if response is not success
         &#34;&#34;&#34;
         if global_policy is not None:
-            if not (isinstance(copy_name, basestring) and isinstance(global_policy, basestring)):
+            if not (isinstance(copy_name, str) and isinstance(global_policy, str)):
                 raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
             if self.has_copy(copy_name):
@@ -6332,9 +6348,9 @@ if type of the storage policy name argument is not string</p></div>
                     }
 
         else:
-            if not (isinstance(copy_name, basestring) and
-                    isinstance(library_name, basestring) and
-                    isinstance(media_agent_name, basestring)):
+            if not (isinstance(copy_name, str) and
+                    isinstance(library_name, str) and
+                    isinstance(media_agent_name, str)):
                 raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
             if self.has_copy(copy_name):
@@ -6496,7 +6512,7 @@ if type of the storage policy name argument is not string</p></div>
 
                             if response is not success
         &#34;&#34;&#34;
-        if not isinstance(cloud_id, basestring):
+        if not isinstance(cloud_id, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         if include_doc_type is None:
@@ -6564,7 +6580,7 @@ if type of the storage policy name argument is not string</p></div>
         &#34;&#34;&#34;
         if not (isinstance(entity_details, list) and isinstance(entity_names, list)):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
-        if not isinstance(ca_client_name, basestring):
+        if not isinstance(ca_client_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
         request_xml = &#34;&#34;&#34;&lt;EVGui_SetEntityExtractionListReq archGroupId=&#34;{0}&#34;&gt;
         &lt;entityExtraction isConfigured=&#34;1&#34;&gt;&#34;&#34;&#34;.format(self._storage_policy_id)
@@ -6629,7 +6645,8 @@ if type of the storage policy name argument is not string</p></div>
                          source_copy,
                          provisioning_policy=None,
                          resource_pool=None,
-                         is_replica_copy=None):
+                         is_replica_copy=None,
+                         **kwargs):
         &#34;&#34;&#34;Creates Snap copy for this storage policy
 
             Args:
@@ -6654,6 +6671,9 @@ if type of the storage policy name argument is not string</p></div>
                 is_replica_copy     (bool)   --  if true then Replica Copy will be created
                 default : None
 
+                job_retention       (bool)  -- if true job based retention will be set
+                default : False
+
             Raises:
                 SDKException:
                     if type of inputs in not string
@@ -6666,9 +6686,9 @@ if type of the storage policy name argument is not string</p></div>
 
                     if response is not success
         &#34;&#34;&#34;
-        if not (isinstance(copy_name, basestring) and
-                isinstance(library_name, basestring) and
-                isinstance(media_agent_name, basestring)):
+        if not (isinstance(copy_name, str) and
+                isinstance(library_name, str) and
+                isinstance(media_agent_name, str)):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         if self.has_copy(copy_name):
@@ -6693,6 +6713,8 @@ if type of the storage policy name argument is not string</p></div>
             provisioning_policy = &#34;&#34;
             resource_pool = &#34;&#34;
 
+        job_based_retention = kwargs.get(&#39;job_based_retention&#39;, False)
+        job_retention = 1 if job_based_retention else 0
         request_xml = &#34;&#34;&#34;
                     &lt;App_CreateStoragePolicyCopyReq copyName=&#34;{0}&#34;&gt;
                         &lt;storagePolicyCopyInfo active=&#34;1&#34; isMirrorCopy=&#34;{1}&#34; isSnapCopy=&#34;{2}&#34; provisioningPolicyName=&#34;{3}&#34;&gt;
@@ -6701,14 +6723,16 @@ if type of the storage policy name argument is not string</p></div>
                             &lt;library _type_=&#34;9&#34; libraryName=&#34;{7}&#34; /&gt;
                             &lt;mediaAgent _type_=&#34;11&#34; mediaAgentName=&#34;{8}&#34; /&gt;
                             &lt;spareMediaGroup _type_=&#34;67&#34; libraryName=&#34;{7}&#34; /&gt;
-                            &lt;retentionRules retainArchiverDataForDays=&#34;-1&#34; retainBackupDataForCycles=&#34;5&#34; retainBackupDataForDays=&#34;1&#34; /&gt;
+                            &lt;retentionRules jobs=&#34;8&#34; retainArchiverDataForDays=&#34;-1&#34; retainBackupDataForCycles=&#34;5&#34; retainBackupDataForDays=&#34;1&#34;&gt;
+                            &lt;retentionFlags jobBasedRetention=&#34;{11}&#34; /&gt;
+                            &lt;/retentionRules&gt;
                             &lt;sourceCopy _type_=&#34;18&#34; copyName=&#34;{9}&#34; storagePolicyName=&#34;{4}&#34; /&gt;
                             &lt;resourcePoolsList operation=&#34;1&#34; resourcePoolName=&#34;{10}&#34; /&gt;
                         &lt;/storagePolicyCopyInfo&gt;
                     &lt;/App_CreateStoragePolicyCopyReq&gt;
                     &#34;&#34;&#34;.format(copy_name, is_mirror_copy, is_snap_copy, provisioning_policy,
                                self.storage_policy_name, arrayReplicaCopy, useOfflineReplication,
-                               library_name, media_agent_name, source_copy, resource_pool)
+                               library_name, media_agent_name, source_copy, resource_pool, job_retention)
 
         create_copy_service = self._commcell_object._services[&#39;CREATE_STORAGE_POLICY_COPY&#39;]
 
@@ -6758,7 +6782,7 @@ if type of the storage policy name argument is not string</p></div>
 
                     if response is not success
         &#34;&#34;&#34;
-        if not isinstance(copy_name, basestring):
+        if not isinstance(copy_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
         else:
             copy_name = copy_name.lower()
@@ -6831,9 +6855,9 @@ if type of the storage policy name argument is not string</p></div>
 
                     if response is not success
         &#34;&#34;&#34;
-        if not (isinstance(copy_name, basestring) and
-                isinstance(library_name, basestring) and
-                isinstance(media_agent_name, basestring)):
+        if not (isinstance(copy_name, str) and
+                isinstance(library_name, str) and
+                isinstance(media_agent_name, str)):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         if self.has_copy(copy_name):
@@ -7334,8 +7358,8 @@ if type of the storage policy name argument is not string</p></div>
             all_copies = False
             if not media_agent:
                 media_agent = &#34;&amp;lt;ANY MEDIAAGENT&amp;gt;&#34;
-            if not (isinstance(storage_policy_copy_name, basestring) and
-                    isinstance(media_agent, basestring)):
+            if not (isinstance(storage_policy_copy_name, str) and
+                    isinstance(media_agent, str)):
                 raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
         else:
             if all_copies is False:
@@ -7434,7 +7458,7 @@ if type of the storage policy name argument is not string</p></div>
                 SDKException:
                     if type of input parameters is not string
         &#34;&#34;&#34;
-        if not isinstance(copy_name, basestring):
+        if not isinstance(copy_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         request_xml = &#34;&#34;&#34;
@@ -7463,7 +7487,7 @@ if type of the storage policy name argument is not string</p></div>
                 SDKException:
                     if type of input parameters is not string
         &#34;&#34;&#34;
-        if not (isinstance(copy_name, basestring) and isinstance(media_agent_name, basestring)):
+        if not (isinstance(copy_name, str) and isinstance(media_agent_name, str)):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         request_xml = &#34;&#34;&#34;
@@ -7531,11 +7555,11 @@ if type of the storage policy name argument is not string</p></div>
 
                     if response is not success
         &#34;&#34;&#34;
-        if not (isinstance(copy_name, basestring) and
-                isinstance(library_name, basestring) and
-                isinstance(path, basestring) and
-                isinstance(ddb_media_agent, basestring) and
-                isinstance(media_agent_name, basestring)):
+        if not (isinstance(copy_name, str) and
+                isinstance(library_name, str) and
+                isinstance(path, str) and
+                isinstance(ddb_media_agent, str) and
+                isinstance(media_agent_name, str)):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         if dash_full is None:
@@ -7618,7 +7642,8 @@ if type of the storage policy name argument is not string</p></div>
     def run_ddb_verification(self,
                              copy_name,
                              ver_type,
-                             ddb_ver_level):
+                             ddb_ver_level,
+                             use_scalable=True):
         &#34;&#34;&#34;
         Runs DDB verification job
 
@@ -7630,6 +7655,9 @@ if type of the storage policy name argument is not string</p></div>
                 ddb_ver_level   (str)   --  DDB verification type
                                             (DDB_VERIFICATION/ DDB_AND_DATA_VERIFICATION /
                                             QUICK_DDB_VERIFICATION/ DDB_DEFRAGMENTATION)
+
+                use_scalable    (bool)  --  True/False to use Scalable Resource Allocation
+                                            Default: True
 
             Returns:
                 object - instance of the Job class for this DDB verification job
@@ -7644,9 +7672,9 @@ if type of the storage policy name argument is not string</p></div>
 
                     if response is not success
         &#34;&#34;&#34;
-        if not (isinstance(copy_name, basestring) and
-                isinstance(ver_type, basestring) and
-                isinstance(ddb_ver_level, basestring)):
+        if not (isinstance(copy_name, str) and
+                isinstance(ver_type, str) and
+                isinstance(ddb_ver_level, str)):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         request = {
@@ -7675,7 +7703,7 @@ if type of the storage policy name argument is not string</p></div>
                                         &#34;maxNumberOfStreams&#34;: 0,
                                         &#34;allCopies&#34;: True,
                                         &#34;useMaximumStreams&#34;: True,
-                                        &#34;useScallableResourceManagement&#34;: False,
+                                        &#34;useScallableResourceManagement&#34;: use_scalable,
                                         &#34;mediaAgent&#34;: {
                                             &#34;mediaAgentName&#34;: &#34;&#34;
                                         }
@@ -7717,7 +7745,7 @@ if type of the storage policy name argument is not string</p></div>
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     def run_data_verification(self, media_agent_name=&#39;&#39;, copy_name=&#39;&#39;, streams=0,
-                              jobs_to_verify=&#39;NEW&#39;, use_scalable=False, schedule_pattern=None, **kwargs):
+                              jobs_to_verify=&#39;NEW&#39;, use_scalable=True, schedule_pattern=None, **kwargs):
         &#34;&#34;&#34;Runs Data verification job
 
         Args:
@@ -7733,6 +7761,7 @@ if type of the storage policy name argument is not string</p></div>
                                          (NEW/ VERF_EXPIRED/ ALL)
 
             use_scalable       (bool) : True/False to use Scalable Resource Allocation
+                                         (default - True)
 
             kwargs              (dict) : optional arguments
                 Available kwargs Options:
@@ -7743,8 +7772,8 @@ if type of the storage policy name argument is not string</p></div>
 
             errorMessage - If Data Verification Job fails to Start
         &#34;&#34;&#34;
-        if not (isinstance(copy_name, basestring) and isinstance(jobs_to_verify, basestring)
-                and isinstance(media_agent_name, basestring) and isinstance(streams, int)):
+        if not (isinstance(copy_name, str) and isinstance(jobs_to_verify, str)
+                and isinstance(media_agent_name, str) and isinstance(streams, int)):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         if jobs_to_verify.upper() == &#39;NEW&#39;:
@@ -7860,11 +7889,11 @@ if type of the storage policy name argument is not string</p></div>
 
                     if response is not success
         &#34;&#34;&#34;
-        if not (isinstance(copy_name, basestring) and
-                isinstance(dest_path, basestring) and
-                isinstance(src_path, basestring) and
-                isinstance(dest_media_agent, basestring) and
-                isinstance(src_media_agent, basestring)):
+        if not (isinstance(copy_name, str) and
+                isinstance(dest_path, str) and
+                isinstance(src_path, str) and
+                isinstance(dest_media_agent, str) and
+                isinstance(src_media_agent, str)):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         request = {
@@ -7951,15 +7980,15 @@ if type of the storage policy name argument is not string</p></div>
                 SDKException:
                     if type of input parameters is not string
         &#34;&#34;&#34;
-        if not (isinstance(copy_id, basestring) and
-                isinstance(sidb_store_id, basestring) and
-                isinstance(sidb_new_path, basestring) and
-                isinstance(media_agent, basestring)):
+        if not (isinstance(copy_id, str) and
+                isinstance(sidb_store_id, str) and
+                isinstance(sidb_new_path, str) and
+                isinstance(media_agent, str)):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         if isinstance(media_agent, MediaAgent):
             media_agent = media_agent
-        elif isinstance(media_agent, basestring):
+        elif isinstance(media_agent, str):
             media_agent = MediaAgent(self._commcell_object, media_agent)
 
         request_xml = &#34;&#34;&#34;
@@ -7990,7 +8019,7 @@ if type of the storage policy name argument is not string</p></div>
 
                    if no copy exists with the given name
         &#34;&#34;&#34;
-        if not isinstance(copy_name, basestring):
+        if not isinstance(copy_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         if self.has_copy(copy_name):
@@ -8326,7 +8355,7 @@ if type of the storage policy name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L2082-L2093" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2085-L2096" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def aux_copies(self):
@@ -8348,7 +8377,7 @@ def aux_copies(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L1742-L1745" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1745-L1748" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copies(self):
@@ -8362,7 +8391,7 @@ def copies(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L1762-L1767" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1765-L1770" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -8378,7 +8407,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L2074-L2080" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2077-L2083" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def library_id(self):
@@ -8395,7 +8424,7 @@ def library_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L2066-L2072" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2069-L2075" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def library_name(self):
@@ -8412,7 +8441,7 @@ def library_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L1752-L1755" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1755-L1758" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -8428,7 +8457,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L2095-L2106" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2098-L2109" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def snap_copy(self):
@@ -8452,7 +8481,7 @@ storage policy advanced properties</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L2056-L2064" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2059-L2067" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy_advanced_properties(self):
@@ -8471,7 +8500,7 @@ def storage_policy_advanced_properties(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L1747-L1750" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1750-L1753" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy_id(self):
@@ -8485,7 +8514,7 @@ def storage_policy_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L1757-L1760" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1760-L1763" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy_name(self):
@@ -8500,7 +8529,7 @@ def storage_policy_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L2048-L2054" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2051-L2057" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy_properties(self):
@@ -8536,7 +8565,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L2749-L2791" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2757-L2799" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_ddb_partition(self,
                       copy_id,
@@ -8558,15 +8587,15 @@ Raises:
             SDKException:
                 if type of input parameters is not string
     &#34;&#34;&#34;
-    if not (isinstance(copy_id, basestring) and
-            isinstance(sidb_store_id, basestring) and
-            isinstance(sidb_new_path, basestring) and
-            isinstance(media_agent, basestring)):
+    if not (isinstance(copy_id, str) and
+            isinstance(sidb_store_id, str) and
+            isinstance(sidb_new_path, str) and
+            isinstance(media_agent, str)):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     if isinstance(media_agent, MediaAgent):
         media_agent = media_agent
-    elif isinstance(media_agent, basestring):
+    elif isinstance(media_agent, str):
         media_agent = MediaAgent(self._commcell_object, media_agent)
 
     request_xml = &#34;&#34;&#34;
@@ -8637,7 +8666,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L2309-L2431" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2312-L2434" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_dedupe_secondary_copy(self, copy_name, library_name,
                                  media_agent_name, path, ddb_media_agent,
@@ -8679,11 +8708,11 @@ if response is not success
 
                 if response is not success
     &#34;&#34;&#34;
-    if not (isinstance(copy_name, basestring) and
-            isinstance(library_name, basestring) and
-            isinstance(path, basestring) and
-            isinstance(ddb_media_agent, basestring) and
-            isinstance(media_agent_name, basestring)):
+    if not (isinstance(copy_name, str) and
+            isinstance(library_name, str) and
+            isinstance(path, str) and
+            isinstance(ddb_media_agent, str) and
+            isinstance(media_agent_name, str)):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     if dash_full is None:
@@ -8808,7 +8837,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L1067-L1221" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1062-L1216" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_secondary_copy(self,
                           copy_name,
@@ -8848,7 +8877,7 @@ if response is not success
                 if response is not success
     &#34;&#34;&#34;
     if global_policy is not None:
-        if not (isinstance(copy_name, basestring) and isinstance(global_policy, basestring)):
+        if not (isinstance(copy_name, str) and isinstance(global_policy, str)):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         if self.has_copy(copy_name):
@@ -8893,9 +8922,9 @@ if response is not success
                 }
 
     else:
-        if not (isinstance(copy_name, basestring) and
-                isinstance(library_name, basestring) and
-                isinstance(media_agent_name, basestring)):
+        if not (isinstance(copy_name, str) and
+                isinstance(library_name, str) and
+                isinstance(media_agent_name, str)):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         if self.has_copy(copy_name):
@@ -9006,7 +9035,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L1617-L1740" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1620-L1743" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_selective_copy(self,
                           copy_name,
@@ -9040,9 +9069,9 @@ if response is not success
 
                 if response is not success
     &#34;&#34;&#34;
-    if not (isinstance(copy_name, basestring) and
-            isinstance(library_name, basestring) and
-            isinstance(media_agent_name, basestring)):
+    if not (isinstance(copy_name, str) and
+            isinstance(library_name, str) and
+            isinstance(media_agent_name, str)):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     if self.has_copy(copy_name):
@@ -9135,7 +9164,7 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.policies.storage_policies.StoragePolicy.create_snap_copy"><code class="name flex">
-<span>def <span class="ident">create_snap_copy</span></span>(<span>self, copy_name, is_mirror_copy, is_snap_copy, library_name, media_agent_name, source_copy, provisioning_policy=None, resource_pool=None, is_replica_copy=None)</span>
+<span>def <span class="ident">create_snap_copy</span></span>(<span>self, copy_name, is_mirror_copy, is_snap_copy, library_name, media_agent_name, source_copy, provisioning_policy=None, resource_pool=None, is_replica_copy=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Creates Snap copy for this storage policy</p>
@@ -9178,6 +9207,10 @@ default : None</p>
 &ndash;
 if true then Replica Copy will be created
 default : None</p>
+<p>job_retention
+(bool)
+&ndash; if true job based retention will be set
+default : False</p>
 <h2 id="raises">Raises</h2>
 <p>SDKException:
 if type of inputs in not string</p>
@@ -9192,7 +9225,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L1438-L1556" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1433-L1559" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_snap_copy(self,
                      copy_name,
@@ -9203,7 +9236,8 @@ if response is not success
                      source_copy,
                      provisioning_policy=None,
                      resource_pool=None,
-                     is_replica_copy=None):
+                     is_replica_copy=None,
+                     **kwargs):
     &#34;&#34;&#34;Creates Snap copy for this storage policy
 
         Args:
@@ -9228,6 +9262,9 @@ if response is not success
             is_replica_copy     (bool)   --  if true then Replica Copy will be created
             default : None
 
+            job_retention       (bool)  -- if true job based retention will be set
+            default : False
+
         Raises:
             SDKException:
                 if type of inputs in not string
@@ -9240,9 +9277,9 @@ if response is not success
 
                 if response is not success
     &#34;&#34;&#34;
-    if not (isinstance(copy_name, basestring) and
-            isinstance(library_name, basestring) and
-            isinstance(media_agent_name, basestring)):
+    if not (isinstance(copy_name, str) and
+            isinstance(library_name, str) and
+            isinstance(media_agent_name, str)):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     if self.has_copy(copy_name):
@@ -9267,6 +9304,8 @@ if response is not success
         provisioning_policy = &#34;&#34;
         resource_pool = &#34;&#34;
 
+    job_based_retention = kwargs.get(&#39;job_based_retention&#39;, False)
+    job_retention = 1 if job_based_retention else 0
     request_xml = &#34;&#34;&#34;
                 &lt;App_CreateStoragePolicyCopyReq copyName=&#34;{0}&#34;&gt;
                     &lt;storagePolicyCopyInfo active=&#34;1&#34; isMirrorCopy=&#34;{1}&#34; isSnapCopy=&#34;{2}&#34; provisioningPolicyName=&#34;{3}&#34;&gt;
@@ -9275,14 +9314,16 @@ if response is not success
                         &lt;library _type_=&#34;9&#34; libraryName=&#34;{7}&#34; /&gt;
                         &lt;mediaAgent _type_=&#34;11&#34; mediaAgentName=&#34;{8}&#34; /&gt;
                         &lt;spareMediaGroup _type_=&#34;67&#34; libraryName=&#34;{7}&#34; /&gt;
-                        &lt;retentionRules retainArchiverDataForDays=&#34;-1&#34; retainBackupDataForCycles=&#34;5&#34; retainBackupDataForDays=&#34;1&#34; /&gt;
+                        &lt;retentionRules jobs=&#34;8&#34; retainArchiverDataForDays=&#34;-1&#34; retainBackupDataForCycles=&#34;5&#34; retainBackupDataForDays=&#34;1&#34;&gt;
+                        &lt;retentionFlags jobBasedRetention=&#34;{11}&#34; /&gt;
+                        &lt;/retentionRules&gt;
                         &lt;sourceCopy _type_=&#34;18&#34; copyName=&#34;{9}&#34; storagePolicyName=&#34;{4}&#34; /&gt;
                         &lt;resourcePoolsList operation=&#34;1&#34; resourcePoolName=&#34;{10}&#34; /&gt;
                     &lt;/storagePolicyCopyInfo&gt;
                 &lt;/App_CreateStoragePolicyCopyReq&gt;
                 &#34;&#34;&#34;.format(copy_name, is_mirror_copy, is_snap_copy, provisioning_policy,
                            self.storage_policy_name, arrayReplicaCopy, useOfflineReplication,
-                           library_name, media_agent_name, source_copy, resource_pool)
+                           library_name, media_agent_name, source_copy, resource_pool, job_retention)
 
     create_copy_service = self._commcell_object._services[&#39;CREATE_STORAGE_POLICY_COPY&#39;]
 
@@ -9339,7 +9380,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L1558-L1615" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1561-L1618" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_secondary_copy(self, copy_name):
     &#34;&#34;&#34;Deletes the copy associated with this storage policy
@@ -9359,7 +9400,7 @@ if response is not success
 
                 if response is not success
     &#34;&#34;&#34;
-    if not isinstance(copy_name, basestring):
+    if not isinstance(copy_name, str):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
     else:
         copy_name = copy_name.lower()
@@ -9445,7 +9486,7 @@ if type of inputs is not valid</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L1275-L1354" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1270-L1349" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_content_indexing(
         self,
@@ -9486,7 +9527,7 @@ if type of inputs is not valid</p>
 
                         if response is not success
     &#34;&#34;&#34;
-    if not isinstance(cloud_id, basestring):
+    if not isinstance(cloud_id, str):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     if include_doc_type is None:
@@ -9561,7 +9602,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L1356-L1436" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1351-L1431" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_entity_extraction(self, entity_details, entity_names, ca_client_name):
     &#34;&#34;&#34;configures offline CI entity extraction for given subclient id&#39;s on this storage policy
@@ -9589,7 +9630,7 @@ if response is not success
     &#34;&#34;&#34;
     if not (isinstance(entity_details, list) and isinstance(entity_names, list)):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
-    if not isinstance(ca_client_name, basestring):
+    if not isinstance(ca_client_name, str):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
     request_xml = &#34;&#34;&#34;&lt;EVGui_SetEntityExtractionListReq archGroupId=&#34;{0}&#34;&gt;
     &lt;entityExtraction isConfigured=&#34;1&#34;&gt;&#34;&#34;&#34;.format(self._storage_policy_id)
@@ -9665,7 +9706,7 @@ if type of the copy name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L2793-L2816" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2801-L2824" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_copy(self, copy_name):
     &#34;&#34;&#34;Returns a storage policy copy object if copy exists
@@ -9682,7 +9723,7 @@ if type of the copy name argument is not string</p>
 
                if no copy exists with the given name
     &#34;&#34;&#34;
-    if not isinstance(copy_name, basestring):
+    if not isinstance(copy_name, str):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     if self.has_copy(copy_name):
@@ -9715,7 +9756,7 @@ if unable to find the given copy name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L1769-L1791" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1772-L1794" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_copy_precedence(self, copy_name):
     &#34;&#34;&#34; returns the copy precedence value associated with the copy name
@@ -9757,7 +9798,7 @@ if unable to find a primary copy in the storage policy</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L2818-L2834" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2826-L2842" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_primary_copy(self):
     &#34;&#34;&#34;Returns the primary copy of the storage policy
@@ -9790,7 +9831,7 @@ A list of storage policy copy instances.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L2836-L2852" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2844-L2860" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_secondary_copies(self):
     &#34;&#34;&#34;Returns all the secondary copies in the storage policy sorted by copy precedence
@@ -9829,7 +9870,7 @@ if type of the storage policy copy name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L1048-L1065" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1043-L1060" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_copy(self, copy_name):
     &#34;&#34;&#34;Checks if a storage policy copy exists for this storage
@@ -9845,7 +9886,7 @@ if type of the storage policy copy name argument is not string</p></div>
             SDKException:
                 if type of the storage policy copy name argument is not string
     &#34;&#34;&#34;
-    if not isinstance(copy_name, basestring):
+    if not isinstance(copy_name, str):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     return self._copies and copy_name.lower() in self._copies</code></pre>
@@ -9875,7 +9916,7 @@ SIDB store path</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L2854-L2873" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2862-L2881" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def mark_for_recovery(self, store_id, sub_store_id, media_agent_name, dedupe_path):
     &#34;&#34;&#34; Marks Deduplication store for recovery
@@ -9911,7 +9952,7 @@ Args:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L1950-L1967" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1953-L1970" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def modify_dynamic_stream_allocation(self, enable=True):
     &#34;&#34;&#34;
@@ -9968,7 +10009,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L2641-L2747" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2649-L2755" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def move_dedupe_store(self,
                       copy_name,
@@ -10007,11 +10048,11 @@ Raises:
 
                 if response is not success
     &#34;&#34;&#34;
-    if not (isinstance(copy_name, basestring) and
-            isinstance(dest_path, basestring) and
-            isinstance(src_path, basestring) and
-            isinstance(dest_media_agent, basestring) and
-            isinstance(src_media_agent, basestring)):
+    if not (isinstance(copy_name, str) and
+            isinstance(dest_path, str) and
+            isinstance(src_path, str) and
+            isinstance(dest_media_agent, str) and
+            isinstance(src_media_agent, str)):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     request = {
@@ -10099,7 +10140,7 @@ Default Value:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L2930-L2971" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2938-L2979" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def reassociate_all_subclients(self, dest_storage_policy_name=&#39;CV_DEFAULT&#39;):
     &#34;&#34;&#34;
@@ -10153,7 +10194,7 @@ Default Value:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L2236-L2239" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2239-L2242" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the StoragePolicy.&#34;&#34;&#34;
@@ -10202,7 +10243,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L2108-L2234" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2111-L2237" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_aux_copy(self, storage_policy_copy_name=None,
                  media_agent=None, use_scale=True, streams=0,
@@ -10248,8 +10289,8 @@ if response is not success
         all_copies = False
         if not media_agent:
             media_agent = &#34;&amp;lt;ANY MEDIAAGENT&amp;gt;&#34;
-        if not (isinstance(storage_policy_copy_name, basestring) and
-                isinstance(media_agent, basestring)):
+        if not (isinstance(storage_policy_copy_name, str) and
+                isinstance(media_agent, str)):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
     else:
         if all_copies is False:
@@ -10353,7 +10394,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L1876-L1948" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1879-L1951" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_backup_copy(self):
     &#34;&#34;&#34;
@@ -10451,7 +10492,7 @@ if type of inputs is not valid</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L1223-L1273" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1218-L1268" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_content_indexing(self):
     &#34;&#34;&#34;starts the offline CI job for this storage policy
@@ -10523,7 +10564,7 @@ Returns None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3019-L3132" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3027-L3140" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_data_forecast(self, **kwargs):
     &#34;&#34;&#34;runs data forecast and retention report generation operation
@@ -10642,7 +10683,7 @@ Returns None</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.policies.storage_policies.StoragePolicy.run_data_verification"><code class="name flex">
-<span>def <span class="ident">run_data_verification</span></span>(<span>self, media_agent_name='', copy_name='', streams=0, jobs_to_verify='NEW', use_scalable=False, schedule_pattern=None, **kwargs)</span>
+<span>def <span class="ident">run_data_verification</span></span>(<span>self, media_agent_name='', copy_name='', streams=0, jobs_to_verify='NEW', use_scalable=True, schedule_pattern=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Runs Data verification job</p>
@@ -10663,7 +10704,8 @@ Returns None</p></div>
 : jobs to be Verified
 (NEW/ VERF_EXPIRED/ ALL)</p>
 <p>use_scalable
-(bool) : True/False to use Scalable Resource Allocation</p>
+(bool) : True/False to use Scalable Resource Allocation
+(default - True)</p>
 <p>kwargs
 (dict) : optional arguments
 Available kwargs Options:
@@ -10675,10 +10717,10 @@ job_description
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L2534-L2639" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2541-L2647" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_data_verification(self, media_agent_name=&#39;&#39;, copy_name=&#39;&#39;, streams=0,
-                          jobs_to_verify=&#39;NEW&#39;, use_scalable=False, schedule_pattern=None, **kwargs):
+                          jobs_to_verify=&#39;NEW&#39;, use_scalable=True, schedule_pattern=None, **kwargs):
     &#34;&#34;&#34;Runs Data verification job
 
     Args:
@@ -10694,6 +10736,7 @@ job_description
                                      (NEW/ VERF_EXPIRED/ ALL)
 
         use_scalable       (bool) : True/False to use Scalable Resource Allocation
+                                     (default - True)
 
         kwargs              (dict) : optional arguments
             Available kwargs Options:
@@ -10704,8 +10747,8 @@ job_description
 
         errorMessage - If Data Verification Job fails to Start
     &#34;&#34;&#34;
-    if not (isinstance(copy_name, basestring) and isinstance(jobs_to_verify, basestring)
-            and isinstance(media_agent_name, basestring) and isinstance(streams, int)):
+    if not (isinstance(copy_name, str) and isinstance(jobs_to_verify, str)
+            and isinstance(media_agent_name, str) and isinstance(streams, int)):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     if jobs_to_verify.upper() == &#39;NEW&#39;:
@@ -10786,7 +10829,7 @@ job_description
 </details>
 </dd>
 <dt id="cvpysdk.policies.storage_policies.StoragePolicy.run_ddb_verification"><code class="name flex">
-<span>def <span class="ident">run_ddb_verification</span></span>(<span>self, copy_name, ver_type, ddb_ver_level)</span>
+<span>def <span class="ident">run_ddb_verification</span></span>(<span>self, copy_name, ver_type, ddb_ver_level, use_scalable=True)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Runs DDB verification job</p>
@@ -10798,6 +10841,9 @@ job_description
     ddb_ver_level   (str)   --  DDB verification type
                                 (DDB_VERIFICATION/ DDB_AND_DATA_VERIFICATION /
                                 QUICK_DDB_VERIFICATION/ DDB_DEFRAGMENTATION)
+
+    use_scalable    (bool)  --  True/False to use Scalable Resource Allocation
+                                Default: True
 
 Returns:
     object - instance of the Job class for this DDB verification job
@@ -10815,12 +10861,13 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L2433-L2532" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2436-L2539" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_ddb_verification(self,
                          copy_name,
                          ver_type,
-                         ddb_ver_level):
+                         ddb_ver_level,
+                         use_scalable=True):
     &#34;&#34;&#34;
     Runs DDB verification job
 
@@ -10832,6 +10879,9 @@ Raises:
             ddb_ver_level   (str)   --  DDB verification type
                                         (DDB_VERIFICATION/ DDB_AND_DATA_VERIFICATION /
                                         QUICK_DDB_VERIFICATION/ DDB_DEFRAGMENTATION)
+
+            use_scalable    (bool)  --  True/False to use Scalable Resource Allocation
+                                        Default: True
 
         Returns:
             object - instance of the Job class for this DDB verification job
@@ -10846,9 +10896,9 @@ Raises:
 
                 if response is not success
     &#34;&#34;&#34;
-    if not (isinstance(copy_name, basestring) and
-            isinstance(ver_type, basestring) and
-            isinstance(ddb_ver_level, basestring)):
+    if not (isinstance(copy_name, str) and
+            isinstance(ver_type, str) and
+            isinstance(ddb_ver_level, str)):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     request = {
@@ -10877,7 +10927,7 @@ Raises:
                                     &#34;maxNumberOfStreams&#34;: 0,
                                     &#34;allCopies&#34;: True,
                                     &#34;useMaximumStreams&#34;: True,
-                                    &#34;useScallableResourceManagement&#34;: False,
+                                    &#34;useScallableResourceManagement&#34;: use_scalable,
                                     &#34;mediaAgent&#34;: {
                                         &#34;mediaAgentName&#34;: &#34;&#34;
                                     }
@@ -10954,7 +11004,7 @@ Valid values:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L2875-L2928" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2883-L2936" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_recon(self, copy_name, sp_name, store_id, full_reconstruction=0, use_scalable_resource=&#39;false&#39;):
     &#34;&#34;&#34; Runs non-mem DB Reconstruction job
@@ -11032,7 +11082,7 @@ Valid values:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L1969-L2046" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1972-L2049" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_snapshot_cataloging(self):
     &#34;&#34;&#34;
@@ -11129,7 +11179,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L2241-L2264" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2244-L2267" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def seal_ddb(self, copy_name):
     &#34;&#34;&#34;
@@ -11142,7 +11192,7 @@ Raises:
             SDKException:
                 if type of input parameters is not string
     &#34;&#34;&#34;
-    if not isinstance(copy_name, basestring):
+    if not isinstance(copy_name, str):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     request_xml = &#34;&#34;&#34;
@@ -11171,7 +11221,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L2973-L3017" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2981-L3025" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def start_over(self):
     &#34;&#34;&#34;
@@ -11250,7 +11300,7 @@ ocum server</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L1793-L1874" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1796-L1877" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_snapshot_options(self, **options):
     &#34;&#34;&#34;
@@ -11355,7 +11405,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L2266-L2307" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2269-L2310" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_transactional_ddb(self, update_value, copy_name, media_agent_name):
     &#34;&#34;&#34;
@@ -11372,7 +11422,7 @@ Raises:
             SDKException:
                 if type of input parameters is not string
     &#34;&#34;&#34;
-    if not (isinstance(copy_name, basestring) and isinstance(media_agent_name, basestring)):
+    if not (isinstance(copy_name, str) and isinstance(media_agent_name, str)):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     request_xml = &#34;&#34;&#34;
@@ -11429,7 +11479,7 @@ Default : None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3134-L4172" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3142-L4188" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class StoragePolicyCopy(object):
     &#34;&#34;&#34;Class for performing storage policy copy operations for a specific storage policy copy&#34;&#34;&#34;
@@ -11624,6 +11674,7 @@ Default : None</p>
         retention_values[&#34;days&#34;] = self._retention_rules[&#39;retainBackupDataForDays&#39;]
         retention_values[&#34;cycles&#34;] = self._retention_rules[&#39;retainBackupDataForCycles&#39;]
         retention_values[&#34;archiveDays&#34;] = self._retention_rules[&#39;retainArchiverDataForDays&#39;]
+        retention_values[&#34;jobs&#34;] = self._retention_rules[&#39;jobs&#39;]
         return retention_values
 
     @copy_retention.setter
@@ -11640,21 +11691,28 @@ Default : None</p>
 
                         **int** -   value to specify retainArchiverDataForDays
 
+                        **int** -   value to specify jobs
+
                     e.g. :
-                         storage_policy_copy.copy_retention = (30, 15, 1)
+                         storage_policy_copy.copy_retention = (30, 15, 1, 8)
 
             Raises:
                 SDKException:
                     if failed to update retention values on the copy
 
         &#34;&#34;&#34;
-
         if retention_values[0] &gt;= 0:
             self._retention_rules[&#39;retainBackupDataForDays&#39;] = retention_values[0]
         if retention_values[1] &gt;= 0:
             self._retention_rules[&#39;retainBackupDataForCycles&#39;] = retention_values[1]
         if retention_values[2] &gt;= 0:
             self._retention_rules[&#39;retainArchiverDataForDays&#39;] = retention_values[2]
+        if len(retention_values) &gt; 3:
+            self._retention_rules[&#39;jobs&#39;] = retention_values[3]
+            if retention_values[3] &gt; 0:
+                self._retention_rules[&#39;retentionFlags&#39;][&#39;jobBasedRetention&#39;] = 1
+            else:
+                self._retention_rules[&#39;retentionFlags&#39;][&#39;jobBasedRetention&#39;] = 0
 
         self._set_copy_properties()
 
@@ -11989,7 +12047,7 @@ Default : None</p>
             self._copy_flags[&#39;preserveEncryptionModeAsInSource&#39;] = 1
 
         if int(encryption_values[0]) == 1:
-            if (isinstance(encryption_values[1], basestring)
+            if (isinstance(encryption_values[1], str)
                     and isinstance(encryption_values[2], int)):
                 self._copy_properties[&#39;extendedFlags&#39;][&#39;encryptOnDependentPrimary&#39;] = 1
                 self._copy_flags[&#39;auxCopyReencryptData&#39;] = 1
@@ -12022,7 +12080,7 @@ Default : None</p>
             SDKException:
                 if type of input parameters is not string
         &#34;&#34;&#34;
-        if not isinstance(job_id, basestring):
+        if not isinstance(job_id, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         request_xml = &#34;&#34;&#34;
@@ -12045,9 +12103,9 @@ Default : None</p>
             SDKException:
                 if type of input parameters is not string or List of strings
         &#34;&#34;&#34;
-        if not isinstance(job_id, basestring) and not isinstance(job_id, int):
+        if not isinstance(job_id, str) and not isinstance(job_id, int):
             if not isinstance(job_id, list) or\
-                    (not all(isinstance(id, int) for id in job_id) and not all(isinstance(id, basestring) for id in job_id)):
+                    (not all(isinstance(id, int) for id in job_id) and not all(isinstance(id, str) for id in job_id)):
                 raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         # send multiple requests to counter limit of URL length in IIS
@@ -12486,7 +12544,7 @@ the storage policy copy associated with this storage policy</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3180-L3191" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3188-L3199" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_copies(self):
@@ -12508,7 +12566,7 @@ def all_copies(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3465-L3468" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3481-L3484" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_client_side_dedup(self):
@@ -12522,7 +12580,7 @@ def copy_client_side_dedup(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3388-L3391" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3404-L3407" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_dedupe_dash_full(self):
@@ -12536,7 +12594,7 @@ def copy_dedupe_dash_full(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3416-L3419" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3432-L3435" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_dedupe_disk_cache(self):
@@ -12550,7 +12608,7 @@ def copy_dedupe_disk_cache(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3315-L3318" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3323-L3326" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_name(self):
@@ -12564,7 +12622,7 @@ def copy_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3705-L3708" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3721-L3724" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_precedence(self):
@@ -12578,7 +12636,7 @@ def copy_precedence(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3630-L3641" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3646-L3657" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_reencryption(self):
@@ -12600,7 +12658,7 @@ def copy_reencryption(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3320-L3327" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3328-L3336" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_retention(self):
@@ -12609,6 +12667,7 @@ def copy_retention(self):
     retention_values[&#34;days&#34;] = self._retention_rules[&#39;retainBackupDataForDays&#39;]
     retention_values[&#34;cycles&#34;] = self._retention_rules[&#39;retainBackupDataForCycles&#39;]
     retention_values[&#34;archiveDays&#34;] = self._retention_rules[&#39;retainArchiverDataForDays&#39;]
+    retention_values[&#34;jobs&#34;] = self._retention_rules[&#39;jobs&#39;]
     return retention_values</code></pre>
 </details>
 </dd>
@@ -12618,7 +12677,7 @@ def copy_retention(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3947-L3950" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3963-L3966" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_retention_managed_disk_space(self):
@@ -12632,7 +12691,7 @@ def copy_retention_managed_disk_space(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3361-L3364" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3377-L3380" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_software_compression(self):
@@ -12646,7 +12705,7 @@ def copy_software_compression(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3829-L3886" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3845-L3902" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def extended_retention_rules(self):
@@ -12714,7 +12773,7 @@ def extended_retention_rules(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3201-L3204" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3209-L3212" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_active(self):
@@ -12728,7 +12787,7 @@ def is_active(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L4021-L4024" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L4037-L4040" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_inline_copy(self):
@@ -12742,7 +12801,7 @@ def is_inline_copy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3974-L3977" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3990-L3993" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_parallel_copy(self):
@@ -12756,7 +12815,7 @@ def is_parallel_copy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3710-L3713" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3726-L3729" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def media_agent(self):
@@ -12772,7 +12831,7 @@ def media_agent(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L4044-L4051" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L4060-L4067" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def network_throttle_bandwidth(self):
@@ -12790,7 +12849,7 @@ def network_throttle_bandwidth(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3497-L3500" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3513-L3516" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def source_copy(self):
@@ -12804,7 +12863,7 @@ def source_copy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3997-L4002" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L4013-L4018" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def space_optimized_auxillary_copy(self):
@@ -12820,7 +12879,7 @@ def space_optimized_auxillary_copy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3440-L3443" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3456-L3459" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def store_priming(self):
@@ -12856,7 +12915,7 @@ Name of the Target Array</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L4071-L4151" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L4087-L4167" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_svm_association(self, src_array_id, source_array, tgt_array_id, target_array):
     &#34;&#34;&#34; Method to add SVM association on Replica/vault and Mirror Copy
@@ -12957,7 +13016,7 @@ if type of input parameters is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3715-L3734" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3731-L3750" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_job(self, job_id):
     &#34;&#34;&#34;
@@ -12969,7 +13028,7 @@ if type of input parameters is not string</p></div>
         SDKException:
             if type of input parameters is not string
     &#34;&#34;&#34;
-    if not isinstance(job_id, basestring):
+    if not isinstance(job_id, str):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     request_xml = &#34;&#34;&#34;
@@ -12993,7 +13052,7 @@ Job Id(s) that needs to be marked</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3797-L3803" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3813-L3819" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def do_not_copy_jobs(self, job_id):
     &#34;&#34;&#34;Marks job(s) as Do Not Copy to a secondary copy
@@ -13016,7 +13075,7 @@ Job Id(s) that needs to be marked</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3813-L3819" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3829-L3835" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def do_not_verify_data(self, job_id):
     &#34;&#34;&#34;Marks job(s) on a copy to not be Picked for Data Verification
@@ -13035,7 +13094,7 @@ Job Id(s) that needs to be marked</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3197-L3199" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3205-L3207" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_copy_Precedence(self):
     &#34;&#34;&#34;Gets the copyprecendence asscoiated with the storage policy copy&#34;&#34;&#34;
@@ -13050,7 +13109,7 @@ Job Id(s) that needs to be marked</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3193-L3195" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3201-L3203" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_copy_id(self):
     &#34;&#34;&#34;Gets the storage policy id asscoiated with the storage policy&#34;&#34;&#34;
@@ -13066,7 +13125,7 @@ returns Boolean</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3490-L3495" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3506-L3511" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def is_dedupe_enabled(self):
     &#34;&#34;&#34;
@@ -13088,7 +13147,7 @@ Job Id(s) that needs to be marked</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3821-L3827" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3837-L3843" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def mark_jobs_bad(self, job_id):
     &#34;&#34;&#34;Marks job(s) on a copy as Bad
@@ -13110,7 +13169,7 @@ Job Id(s) that needs to be marked</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3781-L3787" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3797-L3803" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def pick_for_copy(self, job_id):
     &#34;&#34;&#34;Marks job(s) to be Picked for Copy to a secondary copy
@@ -13133,7 +13192,7 @@ Job Id(s) that needs to be marked</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3805-L3811" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3821-L3827" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def pick_jobs_for_data_verification(self, job_id):
     &#34;&#34;&#34;Marks job(s) on a copy to be Picked for Data Verification
@@ -13155,7 +13214,7 @@ Job Id(s) that needs to be marked</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3789-L3795" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3805-L3811" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def recopy_jobs(self, job_id):
     &#34;&#34;&#34;Marks job(s) to be picked for ReCopying to a secondary copy
@@ -13174,7 +13233,7 @@ Job Id(s) that needs to be marked</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3224-L3226" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3232-L3234" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the StoragePolicy.&#34;&#34;&#34;
@@ -13198,7 +13257,7 @@ if failed to update compression values on copy</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3366-L3386" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3382-L3402" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_copy_software_compression(self, value):
     &#34;&#34;&#34;Sets the copy software compression setting as the value provided as input.
@@ -13280,7 +13339,7 @@ encryption_type="BlowFish", encryption_length=128)</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3534-L3628" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3550-L3644" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_encryption_properties(self, **props):
     &#34;&#34;&#34;sets copy encryption properties based on given inputs
@@ -13396,7 +13455,7 @@ if failed to update inline copy on storage policy copy</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L4026-L4042" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L4042-L4058" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_inline_copy(self, value):
     &#34;&#34;&#34; Sets the inline copy on storage policy copy as the value provided as input.
@@ -13432,7 +13491,7 @@ If input is not valid</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L4153-L4172" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L4169-L4188" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_key_management_server(self, kms_name):
     &#34;&#34;&#34;Sets the Key Management Server to this copy
@@ -13473,7 +13532,7 @@ if failed to update parallel copy on storage policy copy</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/policies/storage_policies.py#L3979-L3995" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3995-L4011" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_parallel_copy(self, value):
     &#34;&#34;&#34; Sets the parallel copy on storage policy copy as the value provided as input.

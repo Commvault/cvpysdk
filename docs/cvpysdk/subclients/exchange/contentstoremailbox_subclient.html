@@ -52,7 +52,7 @@ runs in-place restore for the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L1-L335" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L1-L333" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -97,8 +97,6 @@ JournalMailboxSubclient:
 &#34;&#34;&#34;
 
 from __future__ import unicode_literals
-
-from past.builtins import basestring
 
 from ...exception import SDKException
 
@@ -221,7 +219,7 @@ class ContentStoreMailboxSubclient(ExchangeSubclient):
         content_store_servers = []
 
         for client in clients_list:
-            if isinstance(client, basestring):
+            if isinstance(client, str):
                 client = client.strip().lower()
 
                 if self._commcell_object.clients.has_client(client):
@@ -280,21 +278,21 @@ class ContentStoreMailboxSubclient(ExchangeSubclient):
         from ...policies.configuration_policies import ConfigurationPolicy
 
         if not (isinstance(subclient_content[
-                &#39;journal_policy&#39;], (ConfigurationPolicy, basestring)) and
+                &#39;journal_policy&#39;], (ConfigurationPolicy, str)) and
                 isinstance(subclient_content[
-                    &#39;retention_policy&#39;], (ConfigurationPolicy, basestring)) and
+                    &#39;retention_policy&#39;], (ConfigurationPolicy, str)) and
                 isinstance(subclient_content[&#39;mailboxNames&#39;], list)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         if isinstance(subclient_content[&#39;journal_policy&#39;], ConfigurationPolicy):
             journal_policy = subclient_content[&#39;journal_policy&#39;]
-        elif isinstance(subclient_content[&#39;journal_policy&#39;], basestring):
+        elif isinstance(subclient_content[&#39;journal_policy&#39;], str):
             journal_policy = ConfigurationPolicy(
                 self._commcell_object, subclient_content[&#39;journal_policy&#39;])
 
         if isinstance(subclient_content[&#39;retention_policy&#39;], ConfigurationPolicy):
             retention_policy = subclient_content[&#39;retention_policy&#39;]
-        elif isinstance(subclient_content[&#39;retention_policy&#39;], basestring):
+        elif isinstance(subclient_content[&#39;retention_policy&#39;], str):
             retention_policy = ConfigurationPolicy(
                 self._commcell_object, subclient_content[&#39;retention_policy&#39;])
         content_store_server = self._content_store_servers(
@@ -425,7 +423,7 @@ subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L53-L335" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L51-L333" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ContentStoreMailboxSubclient(ExchangeSubclient):
     &#34;&#34;&#34;Derived class from ExchangeSubclient Base class.
@@ -542,7 +540,7 @@ subclient id</p></div>
         content_store_servers = []
 
         for client in clients_list:
-            if isinstance(client, basestring):
+            if isinstance(client, str):
                 client = client.strip().lower()
 
                 if self._commcell_object.clients.has_client(client):
@@ -601,21 +599,21 @@ subclient id</p></div>
         from ...policies.configuration_policies import ConfigurationPolicy
 
         if not (isinstance(subclient_content[
-                &#39;journal_policy&#39;], (ConfigurationPolicy, basestring)) and
+                &#39;journal_policy&#39;], (ConfigurationPolicy, str)) and
                 isinstance(subclient_content[
-                    &#39;retention_policy&#39;], (ConfigurationPolicy, basestring)) and
+                    &#39;retention_policy&#39;], (ConfigurationPolicy, str)) and
                 isinstance(subclient_content[&#39;mailboxNames&#39;], list)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         if isinstance(subclient_content[&#39;journal_policy&#39;], ConfigurationPolicy):
             journal_policy = subclient_content[&#39;journal_policy&#39;]
-        elif isinstance(subclient_content[&#39;journal_policy&#39;], basestring):
+        elif isinstance(subclient_content[&#39;journal_policy&#39;], str):
             journal_policy = ConfigurationPolicy(
                 self._commcell_object, subclient_content[&#39;journal_policy&#39;])
 
         if isinstance(subclient_content[&#39;retention_policy&#39;], ConfigurationPolicy):
             retention_policy = subclient_content[&#39;retention_policy&#39;]
-        elif isinstance(subclient_content[&#39;retention_policy&#39;], basestring):
+        elif isinstance(subclient_content[&#39;retention_policy&#39;], str):
             retention_policy = ConfigurationPolicy(
                 self._commcell_object, subclient_content[&#39;retention_policy&#39;])
         content_store_server = self._content_store_servers(
@@ -724,7 +722,7 @@ subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L194-L197" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L192-L195" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def content_store_mailboxes(self):
@@ -743,7 +741,7 @@ def content_store_mailboxes(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L332-L335" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L330-L333" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the User Mailbox Subclient.&#34;&#34;&#34;
@@ -777,7 +775,7 @@ dict of the Users to add to the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L199-L330" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L197-L328" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_contentstore_assocaition(self, subclient_content):
     &#34;&#34;&#34;Create User assocaition for UserMailboxSubclient.
@@ -807,21 +805,21 @@ dict of the Users to add to the subclient</p>
     from ...policies.configuration_policies import ConfigurationPolicy
 
     if not (isinstance(subclient_content[
-            &#39;journal_policy&#39;], (ConfigurationPolicy, basestring)) and
+            &#39;journal_policy&#39;], (ConfigurationPolicy, str)) and
             isinstance(subclient_content[
-                &#39;retention_policy&#39;], (ConfigurationPolicy, basestring)) and
+                &#39;retention_policy&#39;], (ConfigurationPolicy, str)) and
             isinstance(subclient_content[&#39;mailboxNames&#39;], list)):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
     if isinstance(subclient_content[&#39;journal_policy&#39;], ConfigurationPolicy):
         journal_policy = subclient_content[&#39;journal_policy&#39;]
-    elif isinstance(subclient_content[&#39;journal_policy&#39;], basestring):
+    elif isinstance(subclient_content[&#39;journal_policy&#39;], str):
         journal_policy = ConfigurationPolicy(
             self._commcell_object, subclient_content[&#39;journal_policy&#39;])
 
     if isinstance(subclient_content[&#39;retention_policy&#39;], ConfigurationPolicy):
         retention_policy = subclient_content[&#39;retention_policy&#39;]
-    elif isinstance(subclient_content[&#39;retention_policy&#39;], basestring):
+    elif isinstance(subclient_content[&#39;retention_policy&#39;], str):
         retention_policy = ConfigurationPolicy(
             self._commcell_object, subclient_content[&#39;retention_policy&#39;])
     content_store_server = self._content_store_servers(

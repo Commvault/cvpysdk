@@ -48,7 +48,7 @@ related properties of this subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/virtualserver/oraclevm.py#L1-L112" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/virtualserver/oraclevm.py#L1-L116" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -128,6 +128,12 @@ class OracleVMInstance(VirtualServerInstance):
 
         &#34;&#34;&#34;
         super(OracleVMInstance, self)._get_instance_properties()
+        if &#34;vmwareVendor&#34; in self._virtualserverinstance:
+            self._vmwarvendor = self._virtualserverinstance[&#39;vmwareVendor&#39;][&#39;virtualCenter&#39;]
+
+            self._server_name.append(self._instance[&#39;clientName&#39;])
+
+            self._server_host_name.append(self._vmwarvendor[&#34;domainName&#34;])
 
     def _get_instance_properties_json(self):
         &#34;&#34;&#34;get the all instance related properties of this subclient.
@@ -154,14 +160,12 @@ class OracleVMInstance(VirtualServerInstance):
     @property
     def server_host_name(self):
         &#34;&#34;&#34;getter for the domain name in the OracleVM vendor json&#34;&#34;&#34;
-        return [&#34;vmcontrol.commvault.com&#34;]
-
+        return self._server_host_name
 
     @property
     def server_name(self):
         &#34;&#34;&#34;return the Oracle client associated with the PseudoClient&#34;&#34;&#34;
-        # TODO will change with Praveen Form(rsn)
-        return [&#34;vmcontrol.commvault.com&#34;]</code></pre>
+        return self._server_name</code></pre>
 </details>
 </section>
 <section>
@@ -196,7 +200,7 @@ instance id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/virtualserver/oraclevm.py#L47-L112" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/virtualserver/oraclevm.py#L47-L116" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class OracleVMInstance(VirtualServerInstance):
 
@@ -230,6 +234,12 @@ instance id</p></div>
 
         &#34;&#34;&#34;
         super(OracleVMInstance, self)._get_instance_properties()
+        if &#34;vmwareVendor&#34; in self._virtualserverinstance:
+            self._vmwarvendor = self._virtualserverinstance[&#39;vmwareVendor&#39;][&#39;virtualCenter&#39;]
+
+            self._server_name.append(self._instance[&#39;clientName&#39;])
+
+            self._server_host_name.append(self._vmwarvendor[&#34;domainName&#34;])
 
     def _get_instance_properties_json(self):
         &#34;&#34;&#34;get the all instance related properties of this subclient.
@@ -256,14 +266,12 @@ instance id</p></div>
     @property
     def server_host_name(self):
         &#34;&#34;&#34;getter for the domain name in the OracleVM vendor json&#34;&#34;&#34;
-        return [&#34;vmcontrol.commvault.com&#34;]
-
+        return self._server_host_name
 
     @property
     def server_name(self):
         &#34;&#34;&#34;return the Oracle client associated with the PseudoClient&#34;&#34;&#34;
-        # TODO will change with Praveen Form(rsn)
-        return [&#34;vmcontrol.commvault.com&#34;]</code></pre>
+        return self._server_name</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -278,12 +286,12 @@ instance id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/virtualserver/oraclevm.py#L102-L105" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/virtualserver/oraclevm.py#L108-L111" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def server_host_name(self):
     &#34;&#34;&#34;getter for the domain name in the OracleVM vendor json&#34;&#34;&#34;
-    return [&#34;vmcontrol.commvault.com&#34;]</code></pre>
+    return self._server_host_name</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.instances.virtualserver.oraclevm.OracleVMInstance.server_name"><code class="name">var <span class="ident">server_name</span></code></dt>
@@ -292,13 +300,12 @@ def server_host_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/virtualserver/oraclevm.py#L108-L112" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/virtualserver/oraclevm.py#L113-L116" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def server_name(self):
     &#34;&#34;&#34;return the Oracle client associated with the PseudoClient&#34;&#34;&#34;
-    # TODO will change with Praveen Form(rsn)
-    return [&#34;vmcontrol.commvault.com&#34;]</code></pre>
+    return self._server_name</code></pre>
 </details>
 </dd>
 </dl>

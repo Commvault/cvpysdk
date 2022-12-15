@@ -193,7 +193,7 @@ refresh the properties of the instance</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L1-L2986" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L1-L3020" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -344,7 +344,6 @@ from __future__ import unicode_literals
 import copy
 
 from base64 import b64encode
-from past.builtins import basestring
 
 from .job import Job
 from .subclient import Subclients
@@ -493,7 +492,7 @@ class Instances(object):
                     error_string = error[&#39;errorString&#39;]
                     raise SDKException(&#39;Instance&#39;, &#39;102&#39;, error_string)
                 else:
-                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                    return {}
             else:
                 return {}
         else:
@@ -525,7 +524,7 @@ class Instances(object):
                 SDKException:
                     if type of the instance name argument is not string
         &#34;&#34;&#34;
-        if not isinstance(instance_name, basestring):
+        if not isinstance(instance_name, str):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
         return self._instances and instance_name.lower() in self._instances
@@ -545,7 +544,7 @@ class Instances(object):
 
                     if no instance exists with the given name
         &#34;&#34;&#34;
-        if isinstance(instance_name, basestring):
+        if isinstance(instance_name, str):
             instance_name = instance_name.lower()
 
             if self.has_instance(instance_name):
@@ -572,7 +571,7 @@ class Instances(object):
                 request_json    (dict)  --  JSON request to run for the API
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -747,7 +746,7 @@ class Instances(object):
 
                     if no instance exists with the given name
         &#34;&#34;&#34;
-        if not isinstance(instance_name, basestring):
+        if not isinstance(instance_name, str):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
         else:
             instance_name = instance_name.lower()
@@ -2086,7 +2085,7 @@ class Instance(object):
                 update_request  (str)  --  update request specifying the details to update
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -2257,7 +2256,7 @@ class Instance(object):
         # restore_option should use client key for destination client info
         client = restore_option.get(&#34;client&#34;, self._agent_object._client_object)
 
-        if isinstance(client, basestring):
+        if isinstance(client, str):
             client = self._commcell_object.clients.get(client)
 
         restore_option[&#34;client_name&#34;] = client.client_name
@@ -2613,8 +2612,8 @@ class Instance(object):
         &#34;&#34;&#34;
         from .client import Client
 
-        if not ((isinstance(client, basestring) or isinstance(client, Client)) and
-                isinstance(destination_path, basestring) and
+        if not ((isinstance(client, str) or isinstance(client, Client)) and
+                isinstance(destination_path, str) and
                 isinstance(paths, list) and
                 isinstance(overwrite, bool) and
                 isinstance(restore_data_and_acl, bool)):
@@ -2625,7 +2624,7 @@ class Instance(object):
 
         if isinstance(client, Client):
             client = client
-        elif isinstance(client, basestring):
+        elif isinstance(client, str):
             client = Client(self._commcell_object, client)
         else:
             raise SDKException(&#39;Subclient&#39;, &#39;105&#39;)
@@ -3003,6 +3002,41 @@ class Instance(object):
             &#34;validateOnly&#34;: value.get(&#34;validate_only&#34;, False)
         }
 
+        if value.get(&#39;advanced_options&#39;):
+            if value[&#39;advanced_options&#39;].get(&#34;iSeriesObject&#34;):
+                ibmi_value = value[&#39;advanced_options&#39;][&#34;iSeriesObject&#34;]
+                ibmi_opts = {}
+                if ibmi_value.get(&#34;restorePrivateAuthority&#34;):
+                    ibmi_opts.update({&#39;restorePrivateAuthority&#39;: ibmi_value.get(&#39;restorePrivateAuthority&#39;)})
+                if ibmi_value.get(&#34;restoreSpooledFileData&#34;):
+                    ibmi_opts.update({&#39;restoreSpooledFileData&#39;: ibmi_value.get(&#39;restoreSpooledFileData&#39;)})
+                if ibmi_value.get(&#34;iseriesDifferentObjectType&#34;):
+                    if ibmi_value.get(&#34;iseriesDifferentObjectType&#34;) == &#34;None&#34;:
+                        ibmi_opts.update({&#39;iseriesDifferentObjectType&#39;: &#34;0&#34;})
+                    if ibmi_value.get(&#34;iseriesDifferentObjectType&#34;) == &#34;*ALL&#34;:
+                        ibmi_opts.update({&#39;iseriesDifferentObjectType&#39;: &#34;1&#34;})
+                    if ibmi_value.get(&#34;iseriesDifferentObjectType&#34;) == &#34;*COMPATIBLE&#34;:
+                        ibmi_opts.update({&#39;iseriesDifferentObjectType&#39;: &#34;2&#34;})
+                    if ibmi_value.get(&#34;iseriesDifferentObjectType&#34;) == &#34;OTHER&#34;:
+                        ibmi_opts.update({&#39;iseriesDifferentObjectType&#39;: &#34;3&#34;})
+                        if ibmi_value.get(&#34;autl&#34;):
+                            ibmi_opts.update({&#39;autl&#39;: ibmi_value.get(&#39;autl&#39;)})
+                        if ibmi_value.get(&#34;fileLevel&#34;):
+                            ibmi_opts.update({&#39;fileLevel&#39;: ibmi_value.get(&#39;fileLevel&#39;)})
+                        if ibmi_value.get(&#34;owner&#34;):
+                            ibmi_opts.update({&#39;owner&#39;: ibmi_value.get(&#39;owner&#39;)})
+                        if ibmi_value.get(&#34;pgp&#34;):
+                            ibmi_opts.update({&#39;pgp&#39;: ibmi_value.get(&#39;pgp&#39;)})
+                if ibmi_value.get(&#34;forceObjectConversionSelction&#34;):
+                    ibmi_opts.update({&#39;forceObjectConversionSelction&#39;: ibmi_value.get(
+                        &#39;forceObjectConversionSelction&#39;)})
+                if ibmi_value.get(&#34;securityDataParameter&#34;):
+                    ibmi_opts.update({&#39;securityDataParameter&#39;: ibmi_value.get(&#39;securityDataParameter&#39;)})
+                if ibmi_value.get(&#34;deferId&#34;):
+                    ibmi_opts.update({&#39;deferId&#39;: ibmi_value.get(&#39;deferId&#39;)})
+
+                self._commonoption_restore_json[&#39;iSeriesObject&#39;] = ibmi_opts
+
         if value.get(&#34;instant_clone_options&#34;, {}).get(&#34;post_clone_script&#34;, None):
             self._commonoption_restore_json[&#39;prePostCloneOption&#39;] = {
                 &#39;postCloneCmd&#39;: value.get(&#34;instant_clone_options&#34;).get(&#34;post_clone_script&#34;)
@@ -3218,7 +3252,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L1651-L2986" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L1650-L3020" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Instance(object):
     &#34;&#34;&#34;Class for performing instance operations for a specific instance.&#34;&#34;&#34;
@@ -3461,7 +3495,7 @@ default: None</p>
                 update_request  (str)  --  update request specifying the details to update
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -3632,7 +3666,7 @@ default: None</p>
         # restore_option should use client key for destination client info
         client = restore_option.get(&#34;client&#34;, self._agent_object._client_object)
 
-        if isinstance(client, basestring):
+        if isinstance(client, str):
             client = self._commcell_object.clients.get(client)
 
         restore_option[&#34;client_name&#34;] = client.client_name
@@ -3988,8 +4022,8 @@ default: None</p>
         &#34;&#34;&#34;
         from .client import Client
 
-        if not ((isinstance(client, basestring) or isinstance(client, Client)) and
-                isinstance(destination_path, basestring) and
+        if not ((isinstance(client, str) or isinstance(client, Client)) and
+                isinstance(destination_path, str) and
                 isinstance(paths, list) and
                 isinstance(overwrite, bool) and
                 isinstance(restore_data_and_acl, bool)):
@@ -4000,7 +4034,7 @@ default: None</p>
 
         if isinstance(client, Client):
             client = client
-        elif isinstance(client, basestring):
+        elif isinstance(client, str):
             client = Client(self._commcell_object, client)
         else:
             raise SDKException(&#39;Subclient&#39;, &#39;105&#39;)
@@ -4378,6 +4412,41 @@ default: None</p>
             &#34;validateOnly&#34;: value.get(&#34;validate_only&#34;, False)
         }
 
+        if value.get(&#39;advanced_options&#39;):
+            if value[&#39;advanced_options&#39;].get(&#34;iSeriesObject&#34;):
+                ibmi_value = value[&#39;advanced_options&#39;][&#34;iSeriesObject&#34;]
+                ibmi_opts = {}
+                if ibmi_value.get(&#34;restorePrivateAuthority&#34;):
+                    ibmi_opts.update({&#39;restorePrivateAuthority&#39;: ibmi_value.get(&#39;restorePrivateAuthority&#39;)})
+                if ibmi_value.get(&#34;restoreSpooledFileData&#34;):
+                    ibmi_opts.update({&#39;restoreSpooledFileData&#39;: ibmi_value.get(&#39;restoreSpooledFileData&#39;)})
+                if ibmi_value.get(&#34;iseriesDifferentObjectType&#34;):
+                    if ibmi_value.get(&#34;iseriesDifferentObjectType&#34;) == &#34;None&#34;:
+                        ibmi_opts.update({&#39;iseriesDifferentObjectType&#39;: &#34;0&#34;})
+                    if ibmi_value.get(&#34;iseriesDifferentObjectType&#34;) == &#34;*ALL&#34;:
+                        ibmi_opts.update({&#39;iseriesDifferentObjectType&#39;: &#34;1&#34;})
+                    if ibmi_value.get(&#34;iseriesDifferentObjectType&#34;) == &#34;*COMPATIBLE&#34;:
+                        ibmi_opts.update({&#39;iseriesDifferentObjectType&#39;: &#34;2&#34;})
+                    if ibmi_value.get(&#34;iseriesDifferentObjectType&#34;) == &#34;OTHER&#34;:
+                        ibmi_opts.update({&#39;iseriesDifferentObjectType&#39;: &#34;3&#34;})
+                        if ibmi_value.get(&#34;autl&#34;):
+                            ibmi_opts.update({&#39;autl&#39;: ibmi_value.get(&#39;autl&#39;)})
+                        if ibmi_value.get(&#34;fileLevel&#34;):
+                            ibmi_opts.update({&#39;fileLevel&#39;: ibmi_value.get(&#39;fileLevel&#39;)})
+                        if ibmi_value.get(&#34;owner&#34;):
+                            ibmi_opts.update({&#39;owner&#39;: ibmi_value.get(&#39;owner&#39;)})
+                        if ibmi_value.get(&#34;pgp&#34;):
+                            ibmi_opts.update({&#39;pgp&#39;: ibmi_value.get(&#39;pgp&#39;)})
+                if ibmi_value.get(&#34;forceObjectConversionSelction&#34;):
+                    ibmi_opts.update({&#39;forceObjectConversionSelction&#39;: ibmi_value.get(
+                        &#39;forceObjectConversionSelction&#39;)})
+                if ibmi_value.get(&#34;securityDataParameter&#34;):
+                    ibmi_opts.update({&#39;securityDataParameter&#39;: ibmi_value.get(&#39;securityDataParameter&#39;)})
+                if ibmi_value.get(&#34;deferId&#34;):
+                    ibmi_opts.update({&#39;deferId&#39;: ibmi_value.get(&#39;deferId&#39;)})
+
+                self._commonoption_restore_json[&#39;iSeriesObject&#39;] = ibmi_opts
+
         if value.get(&#34;instant_clone_options&#34;, {}).get(&#34;post_clone_script&#34;, None):
             self._commonoption_restore_json[&#39;prePostCloneOption&#39;] = {
                 &#39;postCloneCmd&#39;: value.get(&#34;instant_clone_options&#34;).get(&#34;post_clone_script&#34;)
@@ -4584,7 +4653,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L2547-L2550" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L2546-L2549" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_id(self):
@@ -4598,7 +4667,7 @@ def instance_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L2552-L2555" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L2551-L2554" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_name(self):
@@ -4612,7 +4681,7 @@ def instance_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L2518-L2521" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L2517-L2520" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -4626,7 +4695,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L2513-L2516" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L2512-L2515" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -4684,7 +4753,7 @@ Refer <code>default_browse_options</code>_ for all the supported options.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L2557-L2613" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L2556-L2612" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, *args, **kwargs):
     &#34;&#34;&#34;Browses the content of the Instance.
@@ -4804,7 +4873,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L2615-L2681" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L2614-L2680" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find(self, *args, **kwargs):
     &#34;&#34;&#34;Searches a file/folder in the backed up content of the instance,
@@ -4883,7 +4952,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L2980-L2986" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L3014-L3020" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Instance.&#34;&#34;&#34;
@@ -4918,7 +4987,7 @@ need to change and use the update_properties method to set the properties</p></d
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L2483-L2511" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L2482-L2510" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;Updates the instance properties
@@ -4969,7 +5038,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L159-L1648" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L158-L1647" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Instances(object):
     &#34;&#34;&#34;Class for getting all the instances associated with a client.&#34;&#34;&#34;
@@ -5111,7 +5180,7 @@ instance of the Agent class</p>
                     error_string = error[&#39;errorString&#39;]
                     raise SDKException(&#39;Instance&#39;, &#39;102&#39;, error_string)
                 else:
-                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                    return {}
             else:
                 return {}
         else:
@@ -5143,7 +5212,7 @@ instance of the Agent class</p>
                 SDKException:
                     if type of the instance name argument is not string
         &#34;&#34;&#34;
-        if not isinstance(instance_name, basestring):
+        if not isinstance(instance_name, str):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
         return self._instances and instance_name.lower() in self._instances
@@ -5163,7 +5232,7 @@ instance of the Agent class</p>
 
                     if no instance exists with the given name
         &#34;&#34;&#34;
-        if isinstance(instance_name, basestring):
+        if isinstance(instance_name, str):
             instance_name = instance_name.lower()
 
             if self.has_instance(instance_name):
@@ -5190,7 +5259,7 @@ instance of the Agent class</p>
                 request_json    (dict)  --  JSON request to run for the API
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -5365,7 +5434,7 @@ instance of the Agent class</p>
 
                     if no instance exists with the given name
         &#34;&#34;&#34;
-        if not isinstance(instance_name, basestring):
+        if not isinstance(instance_name, str):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
         else:
             instance_name = instance_name.lower()
@@ -6475,7 +6544,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L305-L316" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L304-L315" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_instances(self):
@@ -6516,7 +6585,7 @@ if cannot retrieve cluster type from default Instance</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L831-L938" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L830-L937" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_big_data_apps_instance(self, distributed_options):
     &#34;&#34;&#34;
@@ -6739,7 +6808,7 @@ SDKException :</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L940-L1115" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L939-L1114" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_cloud_storage_instance(self, cloud_options):
     &#34;&#34;&#34;Returns the JSON request to pass to the API for adding a cloud storage instance
@@ -6946,7 +7015,7 @@ if None value in db2 options</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L713-L829" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L712-L828" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_db2_instance(self, db2_options):
     &#34;&#34;&#34;
@@ -7098,7 +7167,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L419-L533" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L418-L532" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_informix_instance(self, informix_options):
     &#34;&#34;&#34;Adds new Informix Instance to given Client
@@ -7255,7 +7324,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L1465-L1554" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L1464-L1553" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_mysql_instance(self, instance_name, database_options):
     &#34;&#34;&#34;Adds new mysql Instance to given Client
@@ -7417,7 +7486,7 @@ Given storage policies do not exist in Commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L1556-L1644" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L1555-L1643" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_oracle_instance(self, instance_name, **oracle_options):
     &#34;&#34;&#34;Adds new oracle instance for the given client
@@ -7562,7 +7631,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L1237-L1294" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L1236-L1293" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_postgresql_instance(self, instance_name, **kwargs):
     &#34;&#34;&#34;Adds new postgresql instance to given client
@@ -7684,7 +7753,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L1117-L1235" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L1116-L1234" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_salesforce_instance(
         self, instance_name, access_node,
@@ -7840,7 +7909,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L600-L711" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L599-L710" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_sybase_instance(self, sybase_options):
     &#34;&#34;&#34;
@@ -7979,7 +8048,7 @@ if no instance exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L535-L598" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L534-L597" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, instance_name):
     &#34;&#34;&#34;Deletes the instance specified by the instance_name from the agent.
@@ -7999,7 +8068,7 @@ if no instance exists with the given name
 
                 if no instance exists with the given name
     &#34;&#34;&#34;
-    if not isinstance(instance_name, basestring):
+    if not isinstance(instance_name, str):
         raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
     else:
         instance_name = instance_name.lower()
@@ -8066,7 +8135,7 @@ if type of the instance name argument is not string or Int</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L336-L368" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L335-L367" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, instance_name):
     &#34;&#34;&#34;Returns a instance object of the specified instance name.
@@ -8083,7 +8152,7 @@ if type of the instance name argument is not string or Int</p>
 
                 if no instance exists with the given name
     &#34;&#34;&#34;
-    if isinstance(instance_name, basestring):
+    if isinstance(instance_name, str):
         instance_name = instance_name.lower()
 
         if self.has_instance(instance_name):
@@ -8120,7 +8189,7 @@ if type of the instance name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L318-L334" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L317-L333" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_instance(self, instance_name):
     &#34;&#34;&#34;Checks if a instance exists for the agent with the input instance name.
@@ -8135,7 +8204,7 @@ if type of the instance name argument is not string</p></div>
             SDKException:
                 if type of the instance name argument is not string
     &#34;&#34;&#34;
-    if not isinstance(instance_name, basestring):
+    if not isinstance(instance_name, str):
         raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
     return self._instances and instance_name.lower() in self._instances</code></pre>
@@ -8149,7 +8218,7 @@ if type of the instance name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instance.py#L1646-L1648" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L1645-L1647" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the instances associated with the Agent of the selected Client.&#34;&#34;&#34;

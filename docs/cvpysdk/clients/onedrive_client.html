@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.10.0" />
-<title>cvpysdk.clients.vmclient API documentation</title>
-<meta name="description" content="VMClient class is defined in this file …" />
+<title>cvpysdk.clients.onedrive_client API documentation</title>
+<meta name="description" content="OneDriveClient class is defined in this file …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -20,29 +20,29 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>cvpysdk.clients.vmclient</code></h1>
+<h1 class="title">Module <code>cvpysdk.clients.onedrive_client</code></h1>
 </header>
 <section id="section-intro">
-<p>VMClient class is defined in this file.</p>
-<p>VMClient:
-Class for a single vm client of the commcell</p>
-<h1 id="vmclient">VMClient</h1>
-<p>_return_parent_subclient()
+<p>OneDriveClient class is defined in this file.</p>
+<p>OneDriveClient:
+Class for a single OneDrive for Business client (v2) of the commcell</p>
+<h1 id="onedriveclient">OneDriveClient</h1>
+<p>_get_subclient() &ndash;
+Returns the sub-client object for OneDrive for Business client (v2)</p>
+<p>backup_all_users_in_client() &ndash; Run backup for all users present in OneDrive for Business client (v2)</p>
+<p>in_place_restore()
 &ndash;
-Returns the parent subclient where the vm has been backed up</p>
-<p>_child_job_subclient_details()
+Run an inplace restore of specified users for OneDrive for business client (v2)</p>
+<p>out_of_place_restore()
 &ndash;
-returns the subclient details of the child job</p>
-<p>full_vm_restore_in_place()
+Run an out-of-place restore of specified users for OneDrive for business client (v2)</p>
+<p>disk_restore()
 &ndash;
-Performs in place full vm restore and return job object</p>
-<p>full_vm_restore_out_of_place()
-&ndash;
-Performs out of place full vm restore and return job object</p>
+Runs disk restore of specified users for OneDrive for business client (v2)</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clients/vmclient.py#L1-L205" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clients/onedrive_client.py#L1-L170" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -63,33 +63,30 @@ Performs out of place full vm restore and return job object</p>
 # --------------------------------------------------------------------------
 
 &#34;&#34;&#34;
-VMClient class is defined in this file.
+OneDriveClient class is defined in this file.
 
-VMClient:     Class for a single vm client of the commcell
+OneDriveClient:     Class for a single OneDrive for Business client (v2) of the commcell
 
-VMClient
+OneDriveClient
 =======
 
-_return_parent_subclient()              --  Returns the parent subclient where the vm has been backed up
+_get_subclient() --  Returns the sub-client object for OneDrive for Business client (v2)
 
-_child_job_subclient_details()          --  returns the subclient details of the child job
+backup_all_users_in_client() -- Run backup for all users present in OneDrive for Business client (v2)
 
-full_vm_restore_in_place()              --  Performs in place full vm restore and return job object
+in_place_restore()  --  Run an inplace restore of specified users for OneDrive for business client (v2)
 
-full_vm_restore_out_of_place()          --  Performs out of place full vm restore and return job object
+out_of_place_restore()  --  Run an out-of-place restore of specified users for OneDrive for business client (v2)
+
+disk_restore()  --  Runs disk restore of specified users for OneDrive for business client (v2)
 &#34;&#34;&#34;
 
-import copy
-from ..job import Job
-from ..exception import SDKException
 from ..client import Client
 
 
-class VMClient(Client):
-    &#34;&#34;&#34; Class for representing client of a vm client.&#34;&#34;&#34;
-
+class OneDriveClient(Client):
     def __init__(self, commcell_object, client_name, client_id=None):
-        &#34;&#34;&#34;Initialise the VM Client class instance.
+        &#34;&#34;&#34;Initialise the OneDrive Client class instance.
 
             Args:
                 commcell_object (object)     --  instance of the Commcell class
@@ -100,81 +97,42 @@ class VMClient(Client):
                                                 default: None
 
             Returns:
-                object - instance of the VM Client class
+                object - instance of the OneDrive Client class
         &#34;&#34;&#34;
-        super(VMClient, self).__init__(commcell_object, client_name, client_id)
+        super(OneDriveClient, self).__init__(commcell_object, client_name, client_id)
 
-    def _return_parent_subclient(self):
-        &#34;&#34;&#34;
-        Returns the parent subclient if the client is VSA client and is backed up else returns None
+    def _get_subclient(self):
+        &#34;&#34;&#34; Returns the sub-client object for OneDrive for Business client
 
-        Returns:
-            _parent_subclient           (object)   :        Subclient object
-
-        &#34;&#34;&#34;
-        _subclient_entity = copy.deepcopy(self.properties.get(&#39;vmStatusInfo&#39;, {}).get(&#39;vsaSubClientEntity&#39;))
-        if _subclient_entity:
-            _parent_client = self._commcell_object.clients.get(_subclient_entity.get(&#39;clientName&#39;))
-            _parent_agent = _parent_client.agents.get(_subclient_entity.get(&#39;appName&#39;))
-            _parent_instance = _parent_agent.instances.get(_subclient_entity.get(&#39;instanceName&#39;))
-            _parent_backupset = _parent_instance.backupsets.get(_subclient_entity.get(&#39;backupsetName&#39;))
-            _parent_subclient = _parent_backupset.subclients.get(_subclient_entity.get(&#39;subclientName&#39;))
-            return _parent_subclient
-        else:
-            return None
-
-    def _child_job_subclient_details(self, parent_job_id):
-        &#34;&#34;&#34;
-        Returns the  child subclient details
-
-        Args:
-            parent_job_id           (string):       job id of the parent
-
-        Returns:
-            _child_job_obj          (dict):         Child subclient details:
-                                    eg: {
-                                            &#39;clientName&#39;: &#39;vm_client1&#39;,
-                                            &#39;instanceName&#39;: &#39;VMInstance&#39;,
-                                            &#39;displayName&#39;: &#39;vm_client1&#39;,
-                                            &#39;backupsetId&#39;: 12,
-                                            &#39;instanceId&#39;: 2,
-                                            &#39;subclientId&#39;: 123,
-                                            &#39;clientId&#39;: 1234,
-                                            &#39;appName&#39;: &#39;Virtual Server&#39;,
-                                            &#39;backupsetName&#39;: &#39;defaultBackupSet&#39;,
-                                            &#39;applicationId&#39;: 106,
-                                            &#39;subclientName&#39;: &#39;default&#39;
-                                        }
-
+            Returns:
+                _subclient (object) -   Subclient object
 
         &#34;&#34;&#34;
-        _parent_job_obj = Job(self._commcell_object, parent_job_id)
-        _child_jobs = _parent_job_obj.get_child_jobs()
-        if _child_jobs:
-            _child_job = None
-            for _job in _child_jobs:
-                if self.vm_guid == _job[&#39;GUID&#39;]:
-                    _child_job = _job[&#39;jobID&#39;]
-                    break
-            if not _child_job:
-                return None
-            _child_job_obj = Job(self._commcell_object, _child_job)
-            return _child_job_obj.details.get(&#39;jobDetail&#39;, {}).get(&#39;generalInfo&#39;, {}).get(&#39;subclient&#39;)
-        else:
-            return None
+        _client = self._commcell_object.clients.get(self.client_name)
+        _agent = _client.agents.get(&#39;Cloud Apps&#39;)
+        _instance = _agent.instances.get(&#39;OneDrive&#39;)
+        _backupset = _instance.backupsets.get(&#39;defaultbackupset&#39;)
+        _subclient = _backupset.subclients.get(&#39;default&#39;)
+        return _subclient
 
-    def full_vm_restore_in_place(self, **kwargs):
-        &#34;&#34;&#34;Restores in place  FULL Virtual machine for the client
+    def backup_all_users_in_client(self):
+        &#34;&#34;&#34; Run backup for all users present in OneDrive client
 
-        Args:
-            **kwargs                         : Arbitrary keyword arguments Properties as of
-                                                full_vm_restore_in_place
-            eg:
-                            overwrite             (bool)        --  overwrite the existing VM
+            Returns:
+                object - instance of the Job class for this backup job
+        &#34;&#34;&#34;
+        _subclient_object = self._get_subclient()
+        return _subclient_object.backup(backup_level=&#39;INCREMENTAL&#39;)
 
-                            power_on              (bool)        --  power on the  restored VM
+    def in_place_restore(self, users, **kwargs):
+        &#34;&#34;&#34; Run an inplace restore of specified users for OneDrive for business client
 
-                            copy_precedence       (int)         --  copy precedence value
+            Args:
+                users (list) :  List of SMTP addresses of users
+                **kwargs (dict) : Additional parameters
+                    overwrite (bool) : unconditional overwrite files during restore (default: False)
+                    restore_as_copy (bool) : restore files as copy during restore (default: False)
+                    skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -190,36 +148,20 @@ class VMClient(Client):
                     if response is not success
 
         &#34;&#34;&#34;
-        if self.vm_guid:
-            _sub_client_obj = self._return_parent_subclient()
-            kwargs.pop(&#39;vm_to_restore&#39;, None)
-            if self.properties.get(&#39;clientProps&#39;, {}).get(&#39;isIndexingV2VSA&#39;):
-                _child_details = self._child_job_subclient_details(self.properties[&#39;vmStatusInfo&#39;][&#39;vmBackupJob&#39;])
-                vm_restore_job = _sub_client_obj.full_vm_restore_in_place(vm_to_restore=self.name,
-                                                                          v2_details=_child_details,
-                                                                          **kwargs)
-            else:
-                vm_restore_job = _sub_client_obj.full_vm_restore_in_place(vm_to_restore=self.name,
-                                                                          **kwargs)
-            return vm_restore_job
-        else:
-            return None
+        _subclient_object = self._get_subclient()
+        restore_job = _subclient_object.in_place_restore_v2(users, **kwargs)
+        return restore_job
 
-    def full_vm_restore_out_of_place(self, **kwargs):
-        &#34;&#34;&#34;Restores out of place FULL Virtual machine for the client
+    def out_of_place_restore(self, users, destination_path, **kwargs):
+        &#34;&#34;&#34; Run an out-of-place restore of specified users for OneDrive for business client
 
-        Args:
-            **kwargs                         : Arbitrary keyword arguments Properties as of
-                                                full_vm_restore_out_of_place
-            ex:
-                        restored_vm_name         (str)    --  new name of vm. If nothing is passed,
-                                                                &#39;del&#39; is appended to the original vm name
-
-                        vcenter_client    (str)    --  name of the vcenter client where the VM
-                                                              should be restored.
-
-                        esx_host          (str)    --  destination esx host. Restores to the source
-                                                              VM esx if this value is not specified
+            Args:
+                users (list) : list of SMTP addresses of users
+                destination_path (str) : SMTP address of destination user
+                **kwargs (dict) : Additional parameters
+                    overwrite (bool) : unconditional overwrite files during restore (default: False)
+                    restore_as_copy (bool) : restore files as copy during restore (default: False)
+                    skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -235,20 +177,43 @@ class VMClient(Client):
                     if response is not success
 
         &#34;&#34;&#34;
-        if self.vm_guid:
-            _sub_client_obj = self._return_parent_subclient()
-            kwargs.pop(&#39;vm_to_restore&#39;, None)
-            if self.properties.get(&#39;clientProps&#39;, {}).get(&#39;isIndexingV2VSA&#39;):
-                _child_details = self._child_job_subclient_details(self.properties[&#39;vmStatusInfo&#39;][&#39;vmBackupJob&#39;])
-                vm_restore_job = _sub_client_obj.full_vm_restore_out_of_place(vm_to_restore=self.name,
-                                                                              v2_details=_child_details,
-                                                                              **kwargs)
-            else:
-                vm_restore_job = _sub_client_obj.full_vm_restore_out_of_place(vm_to_restore=self.name,
-                                                                              **kwargs)
-            return vm_restore_job
-        else:
-            return None</code></pre>
+        _subclient_object = self._get_subclient()
+        restore_job = _subclient_object.out_of_place_restore_v2(users, destination_path, **kwargs)
+        return restore_job
+
+    def disk_restore(self,
+                     users,
+                     destination_client,
+                     destination_path,
+                     skip_file_permissions=False):
+        &#34;&#34;&#34; Runs disk restore of specified users for OneDrive for business client
+
+               Args:
+                users (list) : list of SMTP addresses of users
+                destination_client (str) : client where the users need to be restored
+                destination_path (str) : Destination folder location
+                skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if inputs are not of correct type as per definition
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        _subclient_object = self._get_subclient()
+        restore_job = _subclient_object.disk_restore_v2(users,
+                                                        destination_client,
+                                                        destination_path,
+                                                        skip_file_permissions=skip_file_permissions)
+        return restore_job</code></pre>
 </details>
 </section>
 <section>
@@ -260,13 +225,13 @@ class VMClient(Client):
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="cvpysdk.clients.vmclient.VMClient"><code class="flex name class">
-<span>class <span class="ident">VMClient</span></span>
+<dt id="cvpysdk.clients.onedrive_client.OneDriveClient"><code class="flex name class">
+<span>class <span class="ident">OneDriveClient</span></span>
 <span>(</span><span>commcell_object, client_name, client_id=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing client of a vm client.</p>
-<p>Initialise the VM Client class instance.</p>
+<div class="desc"><p>Class for performing client operations for a specific client.</p>
+<p>Initialise the OneDrive Client class instance.</p>
 <h2 id="args">Args</h2>
 <p>commcell_object (object)
 &ndash;
@@ -281,17 +246,15 @@ name of the client</p>
 id of the client
 default: None</p>
 <h2 id="returns">Returns</h2>
-<p>object - instance of the VM Client class</p></div>
+<p>object - instance of the OneDrive Client class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clients/vmclient.py#L42-L205" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clients/onedrive_client.py#L41-L170" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">class VMClient(Client):
-    &#34;&#34;&#34; Class for representing client of a vm client.&#34;&#34;&#34;
-
+<pre><code class="python">class OneDriveClient(Client):
     def __init__(self, commcell_object, client_name, client_id=None):
-        &#34;&#34;&#34;Initialise the VM Client class instance.
+        &#34;&#34;&#34;Initialise the OneDrive Client class instance.
 
             Args:
                 commcell_object (object)     --  instance of the Commcell class
@@ -302,81 +265,42 @@ default: None</p>
                                                 default: None
 
             Returns:
-                object - instance of the VM Client class
+                object - instance of the OneDrive Client class
         &#34;&#34;&#34;
-        super(VMClient, self).__init__(commcell_object, client_name, client_id)
+        super(OneDriveClient, self).__init__(commcell_object, client_name, client_id)
 
-    def _return_parent_subclient(self):
-        &#34;&#34;&#34;
-        Returns the parent subclient if the client is VSA client and is backed up else returns None
+    def _get_subclient(self):
+        &#34;&#34;&#34; Returns the sub-client object for OneDrive for Business client
 
-        Returns:
-            _parent_subclient           (object)   :        Subclient object
-
-        &#34;&#34;&#34;
-        _subclient_entity = copy.deepcopy(self.properties.get(&#39;vmStatusInfo&#39;, {}).get(&#39;vsaSubClientEntity&#39;))
-        if _subclient_entity:
-            _parent_client = self._commcell_object.clients.get(_subclient_entity.get(&#39;clientName&#39;))
-            _parent_agent = _parent_client.agents.get(_subclient_entity.get(&#39;appName&#39;))
-            _parent_instance = _parent_agent.instances.get(_subclient_entity.get(&#39;instanceName&#39;))
-            _parent_backupset = _parent_instance.backupsets.get(_subclient_entity.get(&#39;backupsetName&#39;))
-            _parent_subclient = _parent_backupset.subclients.get(_subclient_entity.get(&#39;subclientName&#39;))
-            return _parent_subclient
-        else:
-            return None
-
-    def _child_job_subclient_details(self, parent_job_id):
-        &#34;&#34;&#34;
-        Returns the  child subclient details
-
-        Args:
-            parent_job_id           (string):       job id of the parent
-
-        Returns:
-            _child_job_obj          (dict):         Child subclient details:
-                                    eg: {
-                                            &#39;clientName&#39;: &#39;vm_client1&#39;,
-                                            &#39;instanceName&#39;: &#39;VMInstance&#39;,
-                                            &#39;displayName&#39;: &#39;vm_client1&#39;,
-                                            &#39;backupsetId&#39;: 12,
-                                            &#39;instanceId&#39;: 2,
-                                            &#39;subclientId&#39;: 123,
-                                            &#39;clientId&#39;: 1234,
-                                            &#39;appName&#39;: &#39;Virtual Server&#39;,
-                                            &#39;backupsetName&#39;: &#39;defaultBackupSet&#39;,
-                                            &#39;applicationId&#39;: 106,
-                                            &#39;subclientName&#39;: &#39;default&#39;
-                                        }
-
+            Returns:
+                _subclient (object) -   Subclient object
 
         &#34;&#34;&#34;
-        _parent_job_obj = Job(self._commcell_object, parent_job_id)
-        _child_jobs = _parent_job_obj.get_child_jobs()
-        if _child_jobs:
-            _child_job = None
-            for _job in _child_jobs:
-                if self.vm_guid == _job[&#39;GUID&#39;]:
-                    _child_job = _job[&#39;jobID&#39;]
-                    break
-            if not _child_job:
-                return None
-            _child_job_obj = Job(self._commcell_object, _child_job)
-            return _child_job_obj.details.get(&#39;jobDetail&#39;, {}).get(&#39;generalInfo&#39;, {}).get(&#39;subclient&#39;)
-        else:
-            return None
+        _client = self._commcell_object.clients.get(self.client_name)
+        _agent = _client.agents.get(&#39;Cloud Apps&#39;)
+        _instance = _agent.instances.get(&#39;OneDrive&#39;)
+        _backupset = _instance.backupsets.get(&#39;defaultbackupset&#39;)
+        _subclient = _backupset.subclients.get(&#39;default&#39;)
+        return _subclient
 
-    def full_vm_restore_in_place(self, **kwargs):
-        &#34;&#34;&#34;Restores in place  FULL Virtual machine for the client
+    def backup_all_users_in_client(self):
+        &#34;&#34;&#34; Run backup for all users present in OneDrive client
 
-        Args:
-            **kwargs                         : Arbitrary keyword arguments Properties as of
-                                                full_vm_restore_in_place
-            eg:
-                            overwrite             (bool)        --  overwrite the existing VM
+            Returns:
+                object - instance of the Job class for this backup job
+        &#34;&#34;&#34;
+        _subclient_object = self._get_subclient()
+        return _subclient_object.backup(backup_level=&#39;INCREMENTAL&#39;)
 
-                            power_on              (bool)        --  power on the  restored VM
+    def in_place_restore(self, users, **kwargs):
+        &#34;&#34;&#34; Run an inplace restore of specified users for OneDrive for business client
 
-                            copy_precedence       (int)         --  copy precedence value
+            Args:
+                users (list) :  List of SMTP addresses of users
+                **kwargs (dict) : Additional parameters
+                    overwrite (bool) : unconditional overwrite files during restore (default: False)
+                    restore_as_copy (bool) : restore files as copy during restore (default: False)
+                    skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -392,36 +316,20 @@ default: None</p>
                     if response is not success
 
         &#34;&#34;&#34;
-        if self.vm_guid:
-            _sub_client_obj = self._return_parent_subclient()
-            kwargs.pop(&#39;vm_to_restore&#39;, None)
-            if self.properties.get(&#39;clientProps&#39;, {}).get(&#39;isIndexingV2VSA&#39;):
-                _child_details = self._child_job_subclient_details(self.properties[&#39;vmStatusInfo&#39;][&#39;vmBackupJob&#39;])
-                vm_restore_job = _sub_client_obj.full_vm_restore_in_place(vm_to_restore=self.name,
-                                                                          v2_details=_child_details,
-                                                                          **kwargs)
-            else:
-                vm_restore_job = _sub_client_obj.full_vm_restore_in_place(vm_to_restore=self.name,
-                                                                          **kwargs)
-            return vm_restore_job
-        else:
-            return None
+        _subclient_object = self._get_subclient()
+        restore_job = _subclient_object.in_place_restore_v2(users, **kwargs)
+        return restore_job
 
-    def full_vm_restore_out_of_place(self, **kwargs):
-        &#34;&#34;&#34;Restores out of place FULL Virtual machine for the client
+    def out_of_place_restore(self, users, destination_path, **kwargs):
+        &#34;&#34;&#34; Run an out-of-place restore of specified users for OneDrive for business client
 
-        Args:
-            **kwargs                         : Arbitrary keyword arguments Properties as of
-                                                full_vm_restore_out_of_place
-            ex:
-                        restored_vm_name         (str)    --  new name of vm. If nothing is passed,
-                                                                &#39;del&#39; is appended to the original vm name
-
-                        vcenter_client    (str)    --  name of the vcenter client where the VM
-                                                              should be restored.
-
-                        esx_host          (str)    --  destination esx host. Restores to the source
-                                                              VM esx if this value is not specified
+            Args:
+                users (list) : list of SMTP addresses of users
+                destination_path (str) : SMTP address of destination user
+                **kwargs (dict) : Additional parameters
+                    overwrite (bool) : unconditional overwrite files during restore (default: False)
+                    restore_as_copy (bool) : restore files as copy during restore (default: False)
+                    skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -437,20 +345,43 @@ default: None</p>
                     if response is not success
 
         &#34;&#34;&#34;
-        if self.vm_guid:
-            _sub_client_obj = self._return_parent_subclient()
-            kwargs.pop(&#39;vm_to_restore&#39;, None)
-            if self.properties.get(&#39;clientProps&#39;, {}).get(&#39;isIndexingV2VSA&#39;):
-                _child_details = self._child_job_subclient_details(self.properties[&#39;vmStatusInfo&#39;][&#39;vmBackupJob&#39;])
-                vm_restore_job = _sub_client_obj.full_vm_restore_out_of_place(vm_to_restore=self.name,
-                                                                              v2_details=_child_details,
-                                                                              **kwargs)
-            else:
-                vm_restore_job = _sub_client_obj.full_vm_restore_out_of_place(vm_to_restore=self.name,
-                                                                              **kwargs)
-            return vm_restore_job
-        else:
-            return None</code></pre>
+        _subclient_object = self._get_subclient()
+        restore_job = _subclient_object.out_of_place_restore_v2(users, destination_path, **kwargs)
+        return restore_job
+
+    def disk_restore(self,
+                     users,
+                     destination_client,
+                     destination_path,
+                     skip_file_permissions=False):
+        &#34;&#34;&#34; Runs disk restore of specified users for OneDrive for business client
+
+               Args:
+                users (list) : list of SMTP addresses of users
+                destination_client (str) : client where the users need to be restored
+                destination_path (str) : Destination folder location
+                skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if inputs are not of correct type as per definition
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+        _subclient_object = self._get_subclient()
+        restore_job = _subclient_object.disk_restore_v2(users,
+                                                        destination_client,
+                                                        destination_path,
+                                                        skip_file_permissions=skip_file_permissions)
+        return restore_job</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -458,136 +389,66 @@ default: None</p>
 </ul>
 <h3>Methods</h3>
 <dl>
-<dt id="cvpysdk.clients.vmclient.VMClient.full_vm_restore_in_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_in_place</span></span>(<span>self, **kwargs)</span>
+<dt id="cvpysdk.clients.onedrive_client.OneDriveClient.backup_all_users_in_client"><code class="name flex">
+<span>def <span class="ident">backup_all_users_in_client</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Restores in place
-FULL Virtual machine for the client</p>
-<h2 id="args">Args</h2>
-<p>**kwargs
-: Arbitrary keyword arguments Properties as of
-full_vm_restore_in_place
-eg:
-overwrite
-(bool)
-&ndash;
-overwrite the existing VM</p>
-<pre><code>            power_on              (bool)        --  power on the  restored VM
-
-            copy_precedence       (int)         --  copy precedence value
-</code></pre>
-<p>Returns:
-object - instance of the Job class for this restore job</p>
-<p>Raises:
-SDKException:
-if inputs are not of correct type as per definition</p>
-<pre><code>    if failed to initialize job
-
-    if response is empty
-
-    if response is not success
-</code></pre></div>
+<div class="desc"><p>Run backup for all users present in OneDrive client</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Job class for this backup job</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clients/vmclient.py#L120-L160" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clients/onedrive_client.py#L72-L79" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def full_vm_restore_in_place(self, **kwargs):
-    &#34;&#34;&#34;Restores in place  FULL Virtual machine for the client
-
-    Args:
-        **kwargs                         : Arbitrary keyword arguments Properties as of
-                                            full_vm_restore_in_place
-        eg:
-                        overwrite             (bool)        --  overwrite the existing VM
-
-                        power_on              (bool)        --  power on the  restored VM
-
-                        copy_precedence       (int)         --  copy precedence value
+<pre><code class="python">def backup_all_users_in_client(self):
+    &#34;&#34;&#34; Run backup for all users present in OneDrive client
 
         Returns:
-            object - instance of the Job class for this restore job
-
-        Raises:
-            SDKException:
-                if inputs are not of correct type as per definition
-
-                if failed to initialize job
-
-                if response is empty
-
-                if response is not success
-
+            object - instance of the Job class for this backup job
     &#34;&#34;&#34;
-    if self.vm_guid:
-        _sub_client_obj = self._return_parent_subclient()
-        kwargs.pop(&#39;vm_to_restore&#39;, None)
-        if self.properties.get(&#39;clientProps&#39;, {}).get(&#39;isIndexingV2VSA&#39;):
-            _child_details = self._child_job_subclient_details(self.properties[&#39;vmStatusInfo&#39;][&#39;vmBackupJob&#39;])
-            vm_restore_job = _sub_client_obj.full_vm_restore_in_place(vm_to_restore=self.name,
-                                                                      v2_details=_child_details,
-                                                                      **kwargs)
-        else:
-            vm_restore_job = _sub_client_obj.full_vm_restore_in_place(vm_to_restore=self.name,
-                                                                      **kwargs)
-        return vm_restore_job
-    else:
-        return None</code></pre>
+    _subclient_object = self._get_subclient()
+    return _subclient_object.backup(backup_level=&#39;INCREMENTAL&#39;)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.clients.vmclient.VMClient.full_vm_restore_out_of_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, **kwargs)</span>
+<dt id="cvpysdk.clients.onedrive_client.OneDriveClient.disk_restore"><code class="name flex">
+<span>def <span class="ident">disk_restore</span></span>(<span>self, users, destination_client, destination_path, skip_file_permissions=False)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Restores out of place FULL Virtual machine for the client</p>
-<h2 id="args">Args</h2>
-<p>**kwargs
-: Arbitrary keyword arguments Properties as of
-full_vm_restore_out_of_place
-ex:
-restored_vm_name
-(str)
-&ndash;
-new name of vm. If nothing is passed,
-'del' is appended to the original vm name</p>
-<pre><code>        vcenter_client    (str)    --  name of the vcenter client where the VM
-                                              should be restored.
-
-        esx_host          (str)    --  destination esx host. Restores to the source
-                                              VM esx if this value is not specified
-</code></pre>
-<p>Returns:
-object - instance of the Job class for this restore job</p>
-<p>Raises:
-SDKException:
+<div class="desc"><p>Runs disk restore of specified users for OneDrive for business client</p>
+<p>Args:
+users (list) : list of SMTP addresses of users
+destination_client (str) : client where the users need to be restored
+destination_path (str) : Destination folder location
+skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Job class for this restore job</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
 if inputs are not of correct type as per definition</p>
-<pre><code>    if failed to initialize job
+<pre><code>if failed to initialize job
 
-    if response is empty
+if response is empty
 
-    if response is not success
+if response is not success
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clients/vmclient.py#L162-L205" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clients/onedrive_client.py#L138-L170" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def full_vm_restore_out_of_place(self, **kwargs):
-    &#34;&#34;&#34;Restores out of place FULL Virtual machine for the client
+<pre><code class="python">def disk_restore(self,
+                 users,
+                 destination_client,
+                 destination_path,
+                 skip_file_permissions=False):
+    &#34;&#34;&#34; Runs disk restore of specified users for OneDrive for business client
 
-    Args:
-        **kwargs                         : Arbitrary keyword arguments Properties as of
-                                            full_vm_restore_out_of_place
-        ex:
-                    restored_vm_name         (str)    --  new name of vm. If nothing is passed,
-                                                            &#39;del&#39; is appended to the original vm name
-
-                    vcenter_client    (str)    --  name of the vcenter client where the VM
-                                                          should be restored.
-
-                    esx_host          (str)    --  destination esx host. Restores to the source
-                                                          VM esx if this value is not specified
+           Args:
+            users (list) : list of SMTP addresses of users
+            destination_client (str) : client where the users need to be restored
+            destination_path (str) : Destination folder location
+            skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
 
         Returns:
             object - instance of the Job class for this restore job
@@ -603,20 +464,127 @@ if inputs are not of correct type as per definition</p>
                 if response is not success
 
     &#34;&#34;&#34;
-    if self.vm_guid:
-        _sub_client_obj = self._return_parent_subclient()
-        kwargs.pop(&#39;vm_to_restore&#39;, None)
-        if self.properties.get(&#39;clientProps&#39;, {}).get(&#39;isIndexingV2VSA&#39;):
-            _child_details = self._child_job_subclient_details(self.properties[&#39;vmStatusInfo&#39;][&#39;vmBackupJob&#39;])
-            vm_restore_job = _sub_client_obj.full_vm_restore_out_of_place(vm_to_restore=self.name,
-                                                                          v2_details=_child_details,
-                                                                          **kwargs)
-        else:
-            vm_restore_job = _sub_client_obj.full_vm_restore_out_of_place(vm_to_restore=self.name,
-                                                                          **kwargs)
-        return vm_restore_job
-    else:
-        return None</code></pre>
+    _subclient_object = self._get_subclient()
+    restore_job = _subclient_object.disk_restore_v2(users,
+                                                    destination_client,
+                                                    destination_path,
+                                                    skip_file_permissions=skip_file_permissions)
+    return restore_job</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.clients.onedrive_client.OneDriveClient.in_place_restore"><code class="name flex">
+<span>def <span class="ident">in_place_restore</span></span>(<span>self, users, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Run an inplace restore of specified users for OneDrive for business client</p>
+<h2 id="args">Args</h2>
+<p>users (list) :
+List of SMTP addresses of users
+**kwargs (dict) : Additional parameters
+overwrite (bool) : unconditional overwrite files during restore (default: False)
+restore_as_copy (bool) : restore files as copy during restore (default: False)
+skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Job class for this restore job</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if inputs are not of correct type as per definition</p>
+<pre><code>if failed to initialize job
+
+if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clients/onedrive_client.py#L81-L107" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def in_place_restore(self, users, **kwargs):
+    &#34;&#34;&#34; Run an inplace restore of specified users for OneDrive for business client
+
+        Args:
+            users (list) :  List of SMTP addresses of users
+            **kwargs (dict) : Additional parameters
+                overwrite (bool) : unconditional overwrite files during restore (default: False)
+                restore_as_copy (bool) : restore files as copy during restore (default: False)
+                skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
+
+        Returns:
+            object - instance of the Job class for this restore job
+
+        Raises:
+            SDKException:
+                if inputs are not of correct type as per definition
+
+                if failed to initialize job
+
+                if response is empty
+
+                if response is not success
+
+    &#34;&#34;&#34;
+    _subclient_object = self._get_subclient()
+    restore_job = _subclient_object.in_place_restore_v2(users, **kwargs)
+    return restore_job</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.clients.onedrive_client.OneDriveClient.out_of_place_restore"><code class="name flex">
+<span>def <span class="ident">out_of_place_restore</span></span>(<span>self, users, destination_path, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Run an out-of-place restore of specified users for OneDrive for business client</p>
+<h2 id="args">Args</h2>
+<p>users (list) : list of SMTP addresses of users
+destination_path (str) : SMTP address of destination user
+**kwargs (dict) : Additional parameters
+overwrite (bool) : unconditional overwrite files during restore (default: False)
+restore_as_copy (bool) : restore files as copy during restore (default: False)
+skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Job class for this restore job</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if inputs are not of correct type as per definition</p>
+<pre><code>if failed to initialize job
+
+if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clients/onedrive_client.py#L109-L136" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def out_of_place_restore(self, users, destination_path, **kwargs):
+    &#34;&#34;&#34; Run an out-of-place restore of specified users for OneDrive for business client
+
+        Args:
+            users (list) : list of SMTP addresses of users
+            destination_path (str) : SMTP address of destination user
+            **kwargs (dict) : Additional parameters
+                overwrite (bool) : unconditional overwrite files during restore (default: False)
+                restore_as_copy (bool) : restore files as copy during restore (default: False)
+                skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
+
+        Returns:
+            object - instance of the Job class for this restore job
+
+        Raises:
+            SDKException:
+                if inputs are not of correct type as per definition
+
+                if failed to initialize job
+
+                if response is empty
+
+                if response is not success
+
+    &#34;&#34;&#34;
+    _subclient_object = self._get_subclient()
+    restore_job = _subclient_object.out_of_place_restore_v2(users, destination_path, **kwargs)
+    return restore_job</code></pre>
 </details>
 </dd>
 </dl>
@@ -780,7 +748,7 @@ setTimeout(() => input.focus(), 100);
 <h1>Index</h1>
 <div class="toc">
 <ul>
-<li><a href="#vmclient">VMClient</a></li>
+<li><a href="#onedriveclient">OneDriveClient</a></li>
 </ul>
 </div>
 <ul id="index">
@@ -792,10 +760,12 @@ setTimeout(() => input.focus(), 100);
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="cvpysdk.clients.vmclient.VMClient" href="#cvpysdk.clients.vmclient.VMClient">VMClient</a></code></h4>
+<h4><code><a title="cvpysdk.clients.onedrive_client.OneDriveClient" href="#cvpysdk.clients.onedrive_client.OneDriveClient">OneDriveClient</a></code></h4>
 <ul class="">
-<li><code><a title="cvpysdk.clients.vmclient.VMClient.full_vm_restore_in_place" href="#cvpysdk.clients.vmclient.VMClient.full_vm_restore_in_place">full_vm_restore_in_place</a></code></li>
-<li><code><a title="cvpysdk.clients.vmclient.VMClient.full_vm_restore_out_of_place" href="#cvpysdk.clients.vmclient.VMClient.full_vm_restore_out_of_place">full_vm_restore_out_of_place</a></code></li>
+<li><code><a title="cvpysdk.clients.onedrive_client.OneDriveClient.backup_all_users_in_client" href="#cvpysdk.clients.onedrive_client.OneDriveClient.backup_all_users_in_client">backup_all_users_in_client</a></code></li>
+<li><code><a title="cvpysdk.clients.onedrive_client.OneDriveClient.disk_restore" href="#cvpysdk.clients.onedrive_client.OneDriveClient.disk_restore">disk_restore</a></code></li>
+<li><code><a title="cvpysdk.clients.onedrive_client.OneDriveClient.in_place_restore" href="#cvpysdk.clients.onedrive_client.OneDriveClient.in_place_restore">in_place_restore</a></code></li>
+<li><code><a title="cvpysdk.clients.onedrive_client.OneDriveClient.out_of_place_restore" href="#cvpysdk.clients.onedrive_client.OneDriveClient.out_of_place_restore">out_of_place_restore</a></code></li>
 </ul>
 </li>
 </ul>

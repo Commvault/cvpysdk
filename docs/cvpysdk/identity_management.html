@@ -24,9 +24,10 @@
 </header>
 <section id="section-intro">
 <p>Main file for performing identity management operations</p>
-<p>IdentityManagementApps and IdentityManagementApp are the classes defined in this file</p>
+<p>IdentityManagementApps, IdentityManagementApp and SamlApp are the classes defined in this file</p>
 <p>IdentityManagementApps: Class for representing all the identity management apps in the commcell</p>
 <p>IdentityManagementApp: Class for representing a single identity management app in the commcell</p>
+<p>SamlApp: class for representing a single saml app in commcell</p>
 <h1 id="identitymanagementapps">IdentityManagementApps</h1>
 <pre><code>__init__(commcell_object)       --  initialise object of identity management apps
 class of the commcell
@@ -44,6 +45,12 @@ get_local_identity_app          --  gets the local identity app of the commcell
 get_commcell_identity_apps      --  gets the list of commcell identity apps of the commcell
 
 delete_identity_app()           --  deletes the specified local identity app
+
+delete_saml_app()               --  deletes the specified saml app
+
+get_saml()                      --  returns instance of SamlApp class
+
+configure_saml_app()            --  creates a saml app
 
 configure_local_identity_app()  --  sets up the local identity app for the specified commcell
 
@@ -66,10 +73,44 @@ get_app_props()             -- returns a dict containing the properties of a thi
 
 refresh()                   -- refresh the details of the app
 </code></pre>
+<h1 id="samlapp">SamlApp</h1>
+<pre><code>__init__()                  --  initialize instance of the SamlApp instance
+
+__repr__()                  -- return the appname name, the instance it is associated with
+
+_get_saml_details()         -- gets details of saml app
+
+modify_saml_app()           --  modifies saml app
+
+refresh()                   -- refresh the details of the saml app
+
+saml_app_details()          --  gets saml app details in dict
+
+get_saml_user_redirect_url() -- gets redirect url of saml user
+</code></pre>
+<h1 id="samlapp-instance-attributes">SamlApp instance Attributes</h1>
+<pre><code>**is_saml_app_enabled**         --  returns True if saml app is enabled, False otherwise
+
+**is_auto_create_user**         --  returns True if auto create user flag is enabled, False otherwise
+
+**saml_app_default_user_groups** -  returns list of dict of default usergroups of saml app
+
+**saml_app_nameid_attribute**   --  returns value of NameId attribute of saml app
+
+**saml_app_attribute_mappings** --  returns attribute mappings of saml app
+
+**saml_app_identity_provider_metadata** -   returns IDP metadata of saml app
+
+**saml_app_service_provider_metadata**  -   returns SP metadata of saml app
+
+**saml_app_associations**       --  returns saml app associations
+
+**is_company_saml_app**         -- returns True if saml app is created for a company, False otherwise
+</code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/identity_management.py#L1-L685" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L1-L1041" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -91,11 +132,13 @@ refresh()                   -- refresh the details of the app
 
 &#34;&#34;&#34;Main file for performing identity management operations
 
-IdentityManagementApps and IdentityManagementApp are the classes defined in this file
+IdentityManagementApps, IdentityManagementApp and SamlApp are the classes defined in this file
 
 IdentityManagementApps: Class for representing all the identity management apps in the commcell
 
 IdentityManagementApp: Class for representing a single identity management app in the commcell
+
+SamlApp: class for representing a single saml app in commcell
 
 IdentityManagementApps
 ======================
@@ -116,6 +159,12 @@ IdentityManagementApps
     get_commcell_identity_apps      --  gets the list of commcell identity apps of the commcell
 
     delete_identity_app()           --  deletes the specified local identity app
+
+    delete_saml_app()               --  deletes the specified saml app
+
+    get_saml()                      --  returns instance of SamlApp class
+
+    configure_saml_app()            --  creates a saml app
 
     configure_local_identity_app()  --  sets up the local identity app for the specified commcell
 
@@ -139,11 +188,45 @@ IdentityManagementApp
     get_app_props()             -- returns a dict containing the properties of a third party app
 
     refresh()                   -- refresh the details of the app
+
+
+SamlApp
+======================
+    __init__()                  --  initialize instance of the SamlApp instance
+
+    __repr__()                  -- return the appname name, the instance it is associated with
+
+    _get_saml_details()         -- gets details of saml app
+
+    modify_saml_app()           --  modifies saml app
+
+    refresh()                   -- refresh the details of the saml app
+
+    saml_app_details()          --  gets saml app details in dict
+
+    get_saml_user_redirect_url() -- gets redirect url of saml user
+
+SamlApp instance Attributes
+============================
+
+    **is_saml_app_enabled**         --  returns True if saml app is enabled, False otherwise
+
+    **is_auto_create_user**         --  returns True if auto create user flag is enabled, False otherwise
+
+    **saml_app_default_user_groups** -  returns list of dict of default usergroups of saml app
+
+    **saml_app_nameid_attribute**   --  returns value of NameId attribute of saml app
+
+    **saml_app_attribute_mappings** --  returns attribute mappings of saml app
+
+    **saml_app_identity_provider_metadata** -   returns IDP metadata of saml app
+
+    **saml_app_service_provider_metadata**  -   returns SP metadata of saml app
+
+    **saml_app_associations**       --  returns saml app associations
+
+    **is_company_saml_app**         -- returns True if saml app is created for a company, False otherwise
 &#34;&#34;&#34;
-
-import time
-
-from past.builtins import basestring
 
 from .exception import SDKException
 
@@ -164,6 +247,8 @@ class IdentityManagementApps(object):
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._update_response_ = commcell_object._update_response_
         self._APPS = commcell_object._services[&#39;IDENTITY_APPS&#39;]
+        self._ADD_SAML = commcell_object._services[&#39;ADD_OR_GET_SAML&#39;]
+        self._SAML = commcell_object._services[&#39;EDIT_SAML&#39;]
         self._apps = None
         self.refresh()
 
@@ -253,7 +338,7 @@ class IdentityManagementApps(object):
                 SDKException:
                     if type of the app name argument is not string
         &#34;&#34;&#34;
-        if not isinstance(app_name, basestring):
+        if not isinstance(app_name, str):
             raise SDKException(&#39;IdentityManagement&#39;, &#39;101&#39;)
         else:
             app_name = app_name.lower()
@@ -262,6 +347,31 @@ class IdentityManagementApps(object):
                     self._commcell_object,
                     app_name,
                     self._apps[app_name]
+                )
+
+            raise SDKException(&#39;IdentityManagement&#39;, &#39;102&#39;)
+
+    def get_saml(self, app_name):
+        &#34;&#34;&#34;Returns a SamlApp object of the specified app name
+
+            Args:
+                app_name    (str)   --  name of the saml app
+
+            Returns:
+                object  -   instance of SamlApp class for the given app name
+
+            Raises:
+                SDKException:
+                    if type of the app name argument is not string
+        &#34;&#34;&#34;
+        if not isinstance(app_name, str):
+            raise SDKException(&#39;IdentityManagement&#39;, &#39;101&#39;)
+        else:
+            app_name = app_name.lower()
+            if self.has_identity_app(app_name):
+                return SamlApp(
+                    self._commcell_object,
+                    app_name
                 )
 
             raise SDKException(&#39;IdentityManagement&#39;, &#39;102&#39;)
@@ -352,6 +462,103 @@ class IdentityManagementApps(object):
                         &#39;101&#39;,
                         response.json()[&#39;error&#39;][&#39;warningMessage&#39;]
                     )
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def delete_saml_app(self, app_name):
+        &#34;&#34;&#34;Deletes the specified saml app
+            Args:
+                app_name       (string) name of the saml app
+
+            Raises :
+                SDK Exception :
+                    if failure in response
+                    if invalid response
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;DELETE&#39;, self._SAML % app_name
+        )
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                if response.json()[&#39;errorCode&#39;] == 0:
+                    self.refresh()
+                else:
+                    raise SDKException(
+                        &#39;IdentityManagement&#39;,
+                        &#39;104&#39;,
+                        &#39; - error {0}&#39;.format(response.json()[&#39;errorMessage&#39;])
+                    )
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;500&#39; + &#39;Invalid Response Returned&#39;)
+
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def configure_saml_app(self, app_name, desc, idp_metadata, sp_metadata, associations):
+        &#34;&#34;&#34;Creates a saml app
+
+            Args:
+                app_name        (string)    saml app name
+
+                desc            (string)    saml app description
+
+                idp_metadata   (dict)  idp_metadata = {
+                                            &#39;entityId&#39; : &#39;&#39;,
+                                            &#39;redirectUrl&#39; : &#39;&#39;,
+                                            &#39;logoutUrl&#39; : &#39;&#39;,
+                                            &#39;certificateData&#39;: &#39;&#39;,
+                                            &#39;SAMLProtocolVersion&#39; : &#34;urn:oasis:names:tc:SAML:2.0:metadata&#34;
+                                        }
+                sp_metadata      (dict)  dict of serviceProviderEndpoint, autoGenerateSPMetaData, jksFileContents
+                                        sp_metadata = {
+                                            &#34;serviceProviderEndpoint&#34;: &#34;https://test.mydomain:443/webconsole&#34;,
+                                            &#34;autoGenerateSPMetaData&#34;: true,
+                                            &#34;jksFileContents&#34;:[]
+                                        }
+                associations    (dict)  dict of email suffixes, companies, domains and usergroups
+                                        associations = {
+                                            &#39;emails&#39; = [&#39;a.com&#39;, b.com&#39;],
+                                            &#39;companies&#39; = [],
+                                            &#39;domains&#39; = [],
+                                            &#39;usergroups&#39;= []
+                                        }
+
+            Returns:
+                object - returns object of SamlApp class
+
+            Raises:
+                SDKException:   if failure in response
+                                if invalid response
+        &#34;&#34;&#34;
+        req_body = {
+            &#34;name&#34;: app_name,
+            &#34;description&#34;: desc,
+            &#34;identityProviderMetaData&#34;: idp_metadata,
+            &#34;serviceProviderMetaData&#34;: sp_metadata,
+            &#34;associations&#34;: associations
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._ADD_SAML, req_body
+        )
+
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                if response.json()[&#39;errorCode&#39;] == 0:
+                    self.refresh()
+                    return SamlApp(
+                        self._commcell_object,
+                        app_name
+                    )
+                else:
+                    raise SDKException(
+                        &#39;IdentityManagement&#39;,
+                        &#39;103&#39;,
+                        &#39; - error {0}&#39;.format(response.json()[&#39;errorMessage&#39;])
+                    )
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;500&#39; + &#39;Invalid Response Returned&#39;)
         else:
             response_string = self._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
@@ -595,7 +802,7 @@ class IdentityManagementApps(object):
                 SDKException:
                     if type of the app name argument is not string
         &#34;&#34;&#34;
-        if not isinstance(app_name, basestring):
+        if not isinstance(app_name, str):
             raise SDKException(&#39;IdentityManagement&#39;, &#39;102&#39;)
 
         return self._apps and app_name.lower() in self._apps
@@ -687,7 +894,6 @@ class IdentityManagementApp(object):
         flag, response = self._cvpysdk_object.make_request(
             &#39;GET&#39;, self._APPS
         )
-
         if flag:
             if response.json() and &#39;clientThirdPartyApps&#39; in response.json():
                 response_value = response.json()[&#39;clientThirdPartyApps&#39;]
@@ -755,7 +961,198 @@ class IdentityManagementApp(object):
     @property
     def flags(self):
         &#34;&#34;&#34;Treats the app flags as a read-only attribute.&#34;&#34;&#34;
-        return self._flags</code></pre>
+        return self._flags
+
+
+class SamlApp(object):
+    &#34;&#34;&#34;Class for performing operations on a specific saml app&#34;&#34;&#34;
+
+    def __init__(self, commcell, appname, properties=None):
+        &#34;&#34;&#34;Initialise SamlApp class
+            Args:
+                commcell            (object)        instance of commcell class
+
+                appname             (string)        saml app name
+
+                properties          (dict)          dict containing properties of saml app
+                    Default: None
+
+            Returns:
+                object - instnace of the SamlApp class
+        &#34;&#34;&#34;
+
+        self._commcell = commcell
+        self._cvpysdk_object = commcell._cvpysdk_object
+        self._update_response_ = commcell._update_response_
+        self._appname = appname
+        self._properties = None
+        self._SAML = commcell._services[&#39;EDIT_SAML&#39;]
+        self._redirecturl = commcell._services[&#39;POLL_REQUEST_ROUTER&#39;]
+
+        if properties:
+            self._properties = properties
+        else:
+            self.refresh()
+
+    def __repr__(self):
+        &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
+        representation_string = &#39;SamlApp class instance for app: \
+                                &#34;{0}&#34;, of Commcell: &#34;{1}&#34;&#39;
+
+        return representation_string.format(
+            self._appname, self._commcell.commserv_name
+        )
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the saml app properties&#34;&#34;&#34;
+        self._properties = self._get_saml_app_details()
+
+    def _get_saml_app_details(self):
+        &#34;&#34;&#34;gets the properties of a saml app
+        Returns:
+                        prop        (dict)      properties of a saml app
+
+        Raises:
+                SDK Exception:
+                    if saml app is not found
+                    if request is not successful
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._SAML % self._appname
+        )
+        if flag:
+            if response.json() and &#39;name&#39; in response.json():
+                if response.json()[&#39;name&#39;] == self._appname:
+                    return response.json()
+                else:
+                    raise SDKException(
+                        &#39;IdentityManagement&#39;,
+                        &#39;102&#39;,
+                        &#39; - error {0}&#39;.format(response.json()[&#39;errorMessage&#39;])
+                    )
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;500&#39; + &#39;Invalid Response Returned&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def modify_saml_app(self, req_body):
+        &#34;&#34;&#34;Modifies a saml app
+            Args:
+                req_body  (json)       saml app properties in json format
+
+            Raises:
+                SDKException:
+                    if failed to modify saml app
+                    if request is not successful
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;PUT&#39;, self._SAML% self._appname, req_body
+        )
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                if response.json()[&#39;errorCode&#39;] == 0:
+                    self.refresh()
+                else:
+                    raise SDKException(
+                        &#39;IdentityManagement&#39;,
+                        &#39;105&#39;,
+                        &#39; - error {0}&#39;.format(response.json()[&#39;errorMessage&#39;])
+                    )
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;500&#39; + &#39;Invalid Response Returned&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def get_saml_user_redirect_url(self, user_email):
+        &#34;&#34;&#34;Get Redirect Url of SAML User
+        Args:
+            user_email         (str)        user email
+
+        Returns :
+                redirect url of user, None if redirect url is not found for the user
+        Raises:
+                SDKException:
+                    if failed to get redirect url
+                    if request is not successful
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._redirecturl % user_email
+        )
+        if flag:
+            if response.json() and &#39;error&#39; in response.json() and &#39;errorCode&#39; in response.json()[&#39;error&#39;]:
+                if response.json()[&#39;error&#39;][&#39;errorCode&#39;] == 0:
+                    if &#39;AvailableRedirects&#39; in response.json():
+                        return response.json()[&#39;AvailableRedirects&#39;][0].get(&#39;redirectUrl&#39;)
+                else:
+                    raise SDKException(
+                        &#39;IdentityManagement&#39;,
+                        &#39;106&#39;,
+                        &#39; - error {0}&#39;.format(response.json()[&#39;error&#39;])
+                    )
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;500&#39; + &#39;Invalid Response Returned&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    @property
+    def saml_app_description(self):
+        &#34;&#34;&#34;Treats the saml_app_description as a read-only attribute.&#34;&#34;&#34;
+        return self._properties.get(&#39;description&#39;)
+
+    @property
+    def is_saml_app_enabled(self):
+        &#34;&#34;&#34;Treats the is_saml_app_enabled as a read-only attribute.&#34;&#34;&#34;
+        return self._properties.get(&#39;enabled&#39;)
+
+    @property
+    def is_auto_create_user(self):
+        &#34;&#34;&#34;Treats the is_auto_create_user as a read-only attribute.&#34;&#34;&#34;
+        return self._properties.get(&#39;autoCreateUser&#39;)
+
+    @property
+    def saml_app_default_user_groups(self):
+        &#34;&#34;&#34;Treats the saml_app_default_user_groups as a read-only attribute.&#34;&#34;&#34;
+        return self._properties.get(&#39;userGroups&#39;)
+
+    @property
+    def saml_app_nameid_attribute(self):
+        &#34;&#34;&#34;Treats the saml_app_nameid_attribute as a read-only attribute.&#34;&#34;&#34;
+        return self._properties.get(&#39;nameIDAttribute&#39;)
+
+    @property
+    def saml_app_attribute_mappings(self):
+        &#34;&#34;&#34;Treats the saml_app_attribute_mappings as a read-only attribute.&#34;&#34;&#34;
+        return self._properties.get(&#39;attributeMappings&#39;)
+
+    @property
+    def saml_app_identity_provider_metadata(self):
+        &#34;&#34;&#34;Treats the saml_app_identity_provider_metadata as a read-only attribute.&#34;&#34;&#34;
+        return self._properties.get(&#39;identityProviderMetaData&#39;)
+
+    @property
+    def saml_app_service_provider_metadata(self):
+        &#34;&#34;&#34;Treats the saml_app_service_provider_metadata as a read-only attribute.&#34;&#34;&#34;
+        return self._properties.get(&#39;serviceProviderMetaData&#39;)
+
+    @property
+    def saml_app_associations(self):
+        &#34;&#34;&#34;Treats the saml_app_associations as a read-only attribute.&#34;&#34;&#34;
+        return self._properties.get(&#39;associations&#39;)
+
+    @property
+    def is_company_saml_app(self):
+        &#34;&#34;&#34;Treats the is_company_saml_app as a read-only attribute.
+            Returns
+                    True if saml app is created for a company, False otherwise
+        &#34;&#34;&#34;
+        if self._properties.get(&#39;createdForCompany&#39;):
+            return True
+        else:
+            return False</code></pre>
 </details>
 </section>
 <section>
@@ -797,7 +1194,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/identity_management.py#L535-L685" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L701-L850" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class IdentityManagementApp(object):
     &#34;&#34;&#34;Class for performing operations on a specific identity management app&#34;&#34;&#34;
@@ -881,7 +1278,6 @@ default: None</p>
         flag, response = self._cvpysdk_object.make_request(
             &#39;GET&#39;, self._APPS
         )
-
         if flag:
             if response.json() and &#39;clientThirdPartyApps&#39; in response.json():
                 response_value = response.json()[&#39;clientThirdPartyApps&#39;]
@@ -959,7 +1355,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/identity_management.py#L667-L670" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L832-L835" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def app_description(self):
@@ -973,7 +1369,7 @@ def app_description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/identity_management.py#L662-L665" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L827-L830" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def app_key(self):
@@ -987,7 +1383,7 @@ def app_key(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/identity_management.py#L657-L660" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L822-L825" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def app_name(self):
@@ -1001,7 +1397,7 @@ def app_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/identity_management.py#L672-L675" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L837-L840" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def app_type(self):
@@ -1015,7 +1411,7 @@ def app_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/identity_management.py#L682-L685" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L847-L850" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def flags(self):
@@ -1029,7 +1425,7 @@ def flags(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/identity_management.py#L677-L680" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L842-L845" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_enabled(self):
@@ -1055,7 +1451,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/identity_management.py#L634-L651" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L799-L816" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_app_props(self):
     &#34;&#34;&#34;Returns a dict containing the properties of a third party app.
@@ -1085,7 +1481,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/identity_management.py#L653-L655" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L818-L820" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the app.&#34;&#34;&#34;
@@ -1111,7 +1507,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/identity_management.py#L78-L532" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L120-L698" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class IdentityManagementApps(object):
     &#34;&#34;&#34;Class for representing third party apps in the commcell&#34;&#34;&#34;
@@ -1129,6 +1525,8 @@ instance of the Commcell class</p>
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._update_response_ = commcell_object._update_response_
         self._APPS = commcell_object._services[&#39;IDENTITY_APPS&#39;]
+        self._ADD_SAML = commcell_object._services[&#39;ADD_OR_GET_SAML&#39;]
+        self._SAML = commcell_object._services[&#39;EDIT_SAML&#39;]
         self._apps = None
         self.refresh()
 
@@ -1218,7 +1616,7 @@ instance of the Commcell class</p>
                 SDKException:
                     if type of the app name argument is not string
         &#34;&#34;&#34;
-        if not isinstance(app_name, basestring):
+        if not isinstance(app_name, str):
             raise SDKException(&#39;IdentityManagement&#39;, &#39;101&#39;)
         else:
             app_name = app_name.lower()
@@ -1227,6 +1625,31 @@ instance of the Commcell class</p>
                     self._commcell_object,
                     app_name,
                     self._apps[app_name]
+                )
+
+            raise SDKException(&#39;IdentityManagement&#39;, &#39;102&#39;)
+
+    def get_saml(self, app_name):
+        &#34;&#34;&#34;Returns a SamlApp object of the specified app name
+
+            Args:
+                app_name    (str)   --  name of the saml app
+
+            Returns:
+                object  -   instance of SamlApp class for the given app name
+
+            Raises:
+                SDKException:
+                    if type of the app name argument is not string
+        &#34;&#34;&#34;
+        if not isinstance(app_name, str):
+            raise SDKException(&#39;IdentityManagement&#39;, &#39;101&#39;)
+        else:
+            app_name = app_name.lower()
+            if self.has_identity_app(app_name):
+                return SamlApp(
+                    self._commcell_object,
+                    app_name
                 )
 
             raise SDKException(&#39;IdentityManagement&#39;, &#39;102&#39;)
@@ -1317,6 +1740,103 @@ instance of the Commcell class</p>
                         &#39;101&#39;,
                         response.json()[&#39;error&#39;][&#39;warningMessage&#39;]
                     )
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def delete_saml_app(self, app_name):
+        &#34;&#34;&#34;Deletes the specified saml app
+            Args:
+                app_name       (string) name of the saml app
+
+            Raises :
+                SDK Exception :
+                    if failure in response
+                    if invalid response
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;DELETE&#39;, self._SAML % app_name
+        )
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                if response.json()[&#39;errorCode&#39;] == 0:
+                    self.refresh()
+                else:
+                    raise SDKException(
+                        &#39;IdentityManagement&#39;,
+                        &#39;104&#39;,
+                        &#39; - error {0}&#39;.format(response.json()[&#39;errorMessage&#39;])
+                    )
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;500&#39; + &#39;Invalid Response Returned&#39;)
+
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def configure_saml_app(self, app_name, desc, idp_metadata, sp_metadata, associations):
+        &#34;&#34;&#34;Creates a saml app
+
+            Args:
+                app_name        (string)    saml app name
+
+                desc            (string)    saml app description
+
+                idp_metadata   (dict)  idp_metadata = {
+                                            &#39;entityId&#39; : &#39;&#39;,
+                                            &#39;redirectUrl&#39; : &#39;&#39;,
+                                            &#39;logoutUrl&#39; : &#39;&#39;,
+                                            &#39;certificateData&#39;: &#39;&#39;,
+                                            &#39;SAMLProtocolVersion&#39; : &#34;urn:oasis:names:tc:SAML:2.0:metadata&#34;
+                                        }
+                sp_metadata      (dict)  dict of serviceProviderEndpoint, autoGenerateSPMetaData, jksFileContents
+                                        sp_metadata = {
+                                            &#34;serviceProviderEndpoint&#34;: &#34;https://test.mydomain:443/webconsole&#34;,
+                                            &#34;autoGenerateSPMetaData&#34;: true,
+                                            &#34;jksFileContents&#34;:[]
+                                        }
+                associations    (dict)  dict of email suffixes, companies, domains and usergroups
+                                        associations = {
+                                            &#39;emails&#39; = [&#39;a.com&#39;, b.com&#39;],
+                                            &#39;companies&#39; = [],
+                                            &#39;domains&#39; = [],
+                                            &#39;usergroups&#39;= []
+                                        }
+
+            Returns:
+                object - returns object of SamlApp class
+
+            Raises:
+                SDKException:   if failure in response
+                                if invalid response
+        &#34;&#34;&#34;
+        req_body = {
+            &#34;name&#34;: app_name,
+            &#34;description&#34;: desc,
+            &#34;identityProviderMetaData&#34;: idp_metadata,
+            &#34;serviceProviderMetaData&#34;: sp_metadata,
+            &#34;associations&#34;: associations
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._ADD_SAML, req_body
+        )
+
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                if response.json()[&#39;errorCode&#39;] == 0:
+                    self.refresh()
+                    return SamlApp(
+                        self._commcell_object,
+                        app_name
+                    )
+                else:
+                    raise SDKException(
+                        &#39;IdentityManagement&#39;,
+                        &#39;103&#39;,
+                        &#39; - error {0}&#39;.format(response.json()[&#39;errorMessage&#39;])
+                    )
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;500&#39; + &#39;Invalid Response Returned&#39;)
         else:
             response_string = self._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
@@ -1560,7 +2080,7 @@ instance of the Commcell class</p>
                 SDKException:
                     if type of the app name argument is not string
         &#34;&#34;&#34;
-        if not isinstance(app_name, basestring):
+        if not isinstance(app_name, str):
             raise SDKException(&#39;IdentityManagement&#39;, &#39;102&#39;)
 
         return self._apps and app_name.lower() in self._apps
@@ -1584,7 +2104,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/identity_management.py#L227-L240" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L296-L309" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_apps(self):
@@ -1617,7 +2137,7 @@ List containing commcell apps in the SP commcell</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/identity_management.py#L208-L225" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L277-L294" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def get_commcell_identity_apps(self):
@@ -1649,7 +2169,7 @@ object of IdentityManangementApp class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/identity_management.py#L196-L206" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L265-L275" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def get_local_identity_app(self):
@@ -1723,7 +2243,7 @@ if failed to configure identity app</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/identity_management.py#L336-L439" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L502-L605" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def configure_commcell_app(self,
                            idp_props,
@@ -1852,7 +2372,7 @@ if failed to configure identity app</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/identity_management.py#L286-L334" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L452-L500" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def configure_local_identity_app(self, user_list=None):
     &#34;&#34;&#34;Creates a local identity app by associating speccified users
@@ -1948,7 +2468,7 @@ if failed to configure identity app</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/identity_management.py#L441-L510" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L607-L676" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def configure_openid_app(self, appname, props, user_to_be_added):
     &#34;&#34;&#34;
@@ -2022,6 +2542,125 @@ if failed to configure identity app</p></div>
         self.refresh()</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.identity_management.IdentityManagementApps.configure_saml_app"><code class="name flex">
+<span>def <span class="ident">configure_saml_app</span></span>(<span>self, app_name, desc, idp_metadata, sp_metadata, associations)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Creates a saml app</p>
+<h2 id="args">Args</h2>
+<p>app_name
+(string)
+saml app name</p>
+<p>desc
+(string)
+saml app description</p>
+<p>idp_metadata
+(dict)
+idp_metadata = {
+'entityId' : '',
+'redirectUrl' : '',
+'logoutUrl' : '',
+'certificateData': '',
+'SAMLProtocolVersion' : "urn:oasis:names:tc:SAML:2.0:metadata"
+}
+sp_metadata
+(dict)
+dict of serviceProviderEndpoint, autoGenerateSPMetaData, jksFileContents
+sp_metadata = {
+"serviceProviderEndpoint": "https://test.mydomain:443/webconsole",
+"autoGenerateSPMetaData": true,
+"jksFileContents":[]
+}
+associations
+(dict)
+dict of email suffixes, companies, domains and usergroups
+associations = {
+'emails' = ['a.com', b.com'],
+'companies' = [],
+'domains' = [],
+'usergroups'= []
+}</p>
+<h2 id="returns">Returns</h2>
+<p>object - returns object of SamlApp class</p>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>SDKException</code></dt>
+<dd>if failure in response
+if invalid response</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L385-L450" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def configure_saml_app(self, app_name, desc, idp_metadata, sp_metadata, associations):
+    &#34;&#34;&#34;Creates a saml app
+
+        Args:
+            app_name        (string)    saml app name
+
+            desc            (string)    saml app description
+
+            idp_metadata   (dict)  idp_metadata = {
+                                        &#39;entityId&#39; : &#39;&#39;,
+                                        &#39;redirectUrl&#39; : &#39;&#39;,
+                                        &#39;logoutUrl&#39; : &#39;&#39;,
+                                        &#39;certificateData&#39;: &#39;&#39;,
+                                        &#39;SAMLProtocolVersion&#39; : &#34;urn:oasis:names:tc:SAML:2.0:metadata&#34;
+                                    }
+            sp_metadata      (dict)  dict of serviceProviderEndpoint, autoGenerateSPMetaData, jksFileContents
+                                    sp_metadata = {
+                                        &#34;serviceProviderEndpoint&#34;: &#34;https://test.mydomain:443/webconsole&#34;,
+                                        &#34;autoGenerateSPMetaData&#34;: true,
+                                        &#34;jksFileContents&#34;:[]
+                                    }
+            associations    (dict)  dict of email suffixes, companies, domains and usergroups
+                                    associations = {
+                                        &#39;emails&#39; = [&#39;a.com&#39;, b.com&#39;],
+                                        &#39;companies&#39; = [],
+                                        &#39;domains&#39; = [],
+                                        &#39;usergroups&#39;= []
+                                    }
+
+        Returns:
+            object - returns object of SamlApp class
+
+        Raises:
+            SDKException:   if failure in response
+                            if invalid response
+    &#34;&#34;&#34;
+    req_body = {
+        &#34;name&#34;: app_name,
+        &#34;description&#34;: desc,
+        &#34;identityProviderMetaData&#34;: idp_metadata,
+        &#34;serviceProviderMetaData&#34;: sp_metadata,
+        &#34;associations&#34;: associations
+    }
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._ADD_SAML, req_body
+    )
+
+    if flag:
+        if response.json() and &#39;errorCode&#39; in response.json():
+            if response.json()[&#39;errorCode&#39;] == 0:
+                self.refresh()
+                return SamlApp(
+                    self._commcell_object,
+                    app_name
+                )
+            else:
+                raise SDKException(
+                    &#39;IdentityManagement&#39;,
+                    &#39;103&#39;,
+                    &#39; - error {0}&#39;.format(response.json()[&#39;errorMessage&#39;])
+                )
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;500&#39; + &#39;Invalid Response Returned&#39;)
+    else:
+        response_string = self._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.identity_management.IdentityManagementApps.delete_identity_app"><code class="name flex">
 <span>def <span class="ident">delete_identity_app</span></span>(<span>self, app_name)</span>
 </code></dt>
@@ -2043,7 +2682,7 @@ if passed app not found</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/identity_management.py#L242-L284" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L311-L353" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_identity_app(self, app_name):
     &#34;&#34;&#34;Deletes the specified local identity app
@@ -2090,6 +2729,54 @@ if passed app not found</p>
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.identity_management.IdentityManagementApps.delete_saml_app"><code class="name flex">
+<span>def <span class="ident">delete_saml_app</span></span>(<span>self, app_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Deletes the specified saml app</p>
+<h2 id="args">Args</h2>
+<p>app_name
+(string) name of the saml app
+Raises :
+SDK Exception :
+if failure in response
+if invalid response</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L355-L383" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def delete_saml_app(self, app_name):
+    &#34;&#34;&#34;Deletes the specified saml app
+        Args:
+            app_name       (string) name of the saml app
+
+        Raises :
+            SDK Exception :
+                if failure in response
+                if invalid response
+    &#34;&#34;&#34;
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;DELETE&#39;, self._SAML % app_name
+    )
+    if flag:
+        if response.json() and &#39;errorCode&#39; in response.json():
+            if response.json()[&#39;errorCode&#39;] == 0:
+                self.refresh()
+            else:
+                raise SDKException(
+                    &#39;IdentityManagement&#39;,
+                    &#39;104&#39;,
+                    &#39; - error {0}&#39;.format(response.json()[&#39;errorMessage&#39;])
+                )
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;500&#39; + &#39;Invalid Response Returned&#39;)
+
+    else:
+        response_string = self._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.identity_management.IdentityManagementApps.get"><code class="name flex">
 <span>def <span class="ident">get</span></span>(<span>self, app_name)</span>
 </code></dt>
@@ -2110,7 +2797,7 @@ if type of the app name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/identity_management.py#L170-L194" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L214-L238" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, app_name):
     &#34;&#34;&#34;Returns a identitymanagementapp object of the specified app name
@@ -2125,7 +2812,7 @@ if type of the app name argument is not string</p></div>
             SDKException:
                 if type of the app name argument is not string
     &#34;&#34;&#34;
-    if not isinstance(app_name, basestring):
+    if not isinstance(app_name, str):
         raise SDKException(&#39;IdentityManagement&#39;, &#39;101&#39;)
     else:
         app_name = app_name.lower()
@@ -2134,6 +2821,54 @@ if type of the app name argument is not string</p></div>
                 self._commcell_object,
                 app_name,
                 self._apps[app_name]
+            )
+
+        raise SDKException(&#39;IdentityManagement&#39;, &#39;102&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.identity_management.IdentityManagementApps.get_saml"><code class="name flex">
+<span>def <span class="ident">get_saml</span></span>(<span>self, app_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a SamlApp object of the specified app name</p>
+<h2 id="args">Args</h2>
+<p>app_name
+(str)
+&ndash;
+name of the saml app</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+instance of SamlApp class for the given app name</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the app name argument is not string</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L240-L263" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_saml(self, app_name):
+    &#34;&#34;&#34;Returns a SamlApp object of the specified app name
+
+        Args:
+            app_name    (str)   --  name of the saml app
+
+        Returns:
+            object  -   instance of SamlApp class for the given app name
+
+        Raises:
+            SDKException:
+                if type of the app name argument is not string
+    &#34;&#34;&#34;
+    if not isinstance(app_name, str):
+        raise SDKException(&#39;IdentityManagement&#39;, &#39;101&#39;)
+    else:
+        app_name = app_name.lower()
+        if self.has_identity_app(app_name):
+            return SamlApp(
+                self._commcell_object,
+                app_name
             )
 
         raise SDKException(&#39;IdentityManagement&#39;, &#39;102&#39;)</code></pre>
@@ -2159,7 +2894,7 @@ if type of the app name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/identity_management.py#L512-L528" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L678-L694" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_identity_app(self, app_name):
     &#34;&#34;&#34;Checks if an identity app exits in the commcell
@@ -2174,7 +2909,7 @@ if type of the app name argument is not string</p></div>
             SDKException:
                 if type of the app name argument is not string
     &#34;&#34;&#34;
-    if not isinstance(app_name, basestring):
+    if not isinstance(app_name, str):
         raise SDKException(&#39;IdentityManagement&#39;, &#39;102&#39;)
 
     return self._apps and app_name.lower() in self._apps</code></pre>
@@ -2188,11 +2923,498 @@ if type of the app name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/identity_management.py#L530-L532" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L696-L698" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the apps associated with the Commcell.&#34;&#34;&#34;
     self._apps = self._get_apps()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.identity_management.SamlApp"><code class="flex name class">
+<span>class <span class="ident">SamlApp</span></span>
+<span>(</span><span>commcell, appname, properties=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for performing operations on a specific saml app</p>
+<p>Initialise SamlApp class</p>
+<h2 id="args">Args</h2>
+<p>commcell
+(object)
+instance of commcell class</p>
+<p>appname
+(string)
+saml app name</p>
+<p>properties
+(dict)
+dict containing properties of saml app
+Default: None</p>
+<h2 id="returns">Returns</h2>
+<p>object - instnace of the SamlApp class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L853-L1041" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class SamlApp(object):
+    &#34;&#34;&#34;Class for performing operations on a specific saml app&#34;&#34;&#34;
+
+    def __init__(self, commcell, appname, properties=None):
+        &#34;&#34;&#34;Initialise SamlApp class
+            Args:
+                commcell            (object)        instance of commcell class
+
+                appname             (string)        saml app name
+
+                properties          (dict)          dict containing properties of saml app
+                    Default: None
+
+            Returns:
+                object - instnace of the SamlApp class
+        &#34;&#34;&#34;
+
+        self._commcell = commcell
+        self._cvpysdk_object = commcell._cvpysdk_object
+        self._update_response_ = commcell._update_response_
+        self._appname = appname
+        self._properties = None
+        self._SAML = commcell._services[&#39;EDIT_SAML&#39;]
+        self._redirecturl = commcell._services[&#39;POLL_REQUEST_ROUTER&#39;]
+
+        if properties:
+            self._properties = properties
+        else:
+            self.refresh()
+
+    def __repr__(self):
+        &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
+        representation_string = &#39;SamlApp class instance for app: \
+                                &#34;{0}&#34;, of Commcell: &#34;{1}&#34;&#39;
+
+        return representation_string.format(
+            self._appname, self._commcell.commserv_name
+        )
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the saml app properties&#34;&#34;&#34;
+        self._properties = self._get_saml_app_details()
+
+    def _get_saml_app_details(self):
+        &#34;&#34;&#34;gets the properties of a saml app
+        Returns:
+                        prop        (dict)      properties of a saml app
+
+        Raises:
+                SDK Exception:
+                    if saml app is not found
+                    if request is not successful
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._SAML % self._appname
+        )
+        if flag:
+            if response.json() and &#39;name&#39; in response.json():
+                if response.json()[&#39;name&#39;] == self._appname:
+                    return response.json()
+                else:
+                    raise SDKException(
+                        &#39;IdentityManagement&#39;,
+                        &#39;102&#39;,
+                        &#39; - error {0}&#39;.format(response.json()[&#39;errorMessage&#39;])
+                    )
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;500&#39; + &#39;Invalid Response Returned&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def modify_saml_app(self, req_body):
+        &#34;&#34;&#34;Modifies a saml app
+            Args:
+                req_body  (json)       saml app properties in json format
+
+            Raises:
+                SDKException:
+                    if failed to modify saml app
+                    if request is not successful
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;PUT&#39;, self._SAML% self._appname, req_body
+        )
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                if response.json()[&#39;errorCode&#39;] == 0:
+                    self.refresh()
+                else:
+                    raise SDKException(
+                        &#39;IdentityManagement&#39;,
+                        &#39;105&#39;,
+                        &#39; - error {0}&#39;.format(response.json()[&#39;errorMessage&#39;])
+                    )
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;500&#39; + &#39;Invalid Response Returned&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def get_saml_user_redirect_url(self, user_email):
+        &#34;&#34;&#34;Get Redirect Url of SAML User
+        Args:
+            user_email         (str)        user email
+
+        Returns :
+                redirect url of user, None if redirect url is not found for the user
+        Raises:
+                SDKException:
+                    if failed to get redirect url
+                    if request is not successful
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._redirecturl % user_email
+        )
+        if flag:
+            if response.json() and &#39;error&#39; in response.json() and &#39;errorCode&#39; in response.json()[&#39;error&#39;]:
+                if response.json()[&#39;error&#39;][&#39;errorCode&#39;] == 0:
+                    if &#39;AvailableRedirects&#39; in response.json():
+                        return response.json()[&#39;AvailableRedirects&#39;][0].get(&#39;redirectUrl&#39;)
+                else:
+                    raise SDKException(
+                        &#39;IdentityManagement&#39;,
+                        &#39;106&#39;,
+                        &#39; - error {0}&#39;.format(response.json()[&#39;error&#39;])
+                    )
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;500&#39; + &#39;Invalid Response Returned&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    @property
+    def saml_app_description(self):
+        &#34;&#34;&#34;Treats the saml_app_description as a read-only attribute.&#34;&#34;&#34;
+        return self._properties.get(&#39;description&#39;)
+
+    @property
+    def is_saml_app_enabled(self):
+        &#34;&#34;&#34;Treats the is_saml_app_enabled as a read-only attribute.&#34;&#34;&#34;
+        return self._properties.get(&#39;enabled&#39;)
+
+    @property
+    def is_auto_create_user(self):
+        &#34;&#34;&#34;Treats the is_auto_create_user as a read-only attribute.&#34;&#34;&#34;
+        return self._properties.get(&#39;autoCreateUser&#39;)
+
+    @property
+    def saml_app_default_user_groups(self):
+        &#34;&#34;&#34;Treats the saml_app_default_user_groups as a read-only attribute.&#34;&#34;&#34;
+        return self._properties.get(&#39;userGroups&#39;)
+
+    @property
+    def saml_app_nameid_attribute(self):
+        &#34;&#34;&#34;Treats the saml_app_nameid_attribute as a read-only attribute.&#34;&#34;&#34;
+        return self._properties.get(&#39;nameIDAttribute&#39;)
+
+    @property
+    def saml_app_attribute_mappings(self):
+        &#34;&#34;&#34;Treats the saml_app_attribute_mappings as a read-only attribute.&#34;&#34;&#34;
+        return self._properties.get(&#39;attributeMappings&#39;)
+
+    @property
+    def saml_app_identity_provider_metadata(self):
+        &#34;&#34;&#34;Treats the saml_app_identity_provider_metadata as a read-only attribute.&#34;&#34;&#34;
+        return self._properties.get(&#39;identityProviderMetaData&#39;)
+
+    @property
+    def saml_app_service_provider_metadata(self):
+        &#34;&#34;&#34;Treats the saml_app_service_provider_metadata as a read-only attribute.&#34;&#34;&#34;
+        return self._properties.get(&#39;serviceProviderMetaData&#39;)
+
+    @property
+    def saml_app_associations(self):
+        &#34;&#34;&#34;Treats the saml_app_associations as a read-only attribute.&#34;&#34;&#34;
+        return self._properties.get(&#39;associations&#39;)
+
+    @property
+    def is_company_saml_app(self):
+        &#34;&#34;&#34;Treats the is_company_saml_app as a read-only attribute.
+            Returns
+                    True if saml app is created for a company, False otherwise
+        &#34;&#34;&#34;
+        if self._properties.get(&#39;createdForCompany&#39;):
+            return True
+        else:
+            return False</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.identity_management.SamlApp.is_auto_create_user"><code class="name">var <span class="ident">is_auto_create_user</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the is_auto_create_user as a read-only attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L997-L1000" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_auto_create_user(self):
+    &#34;&#34;&#34;Treats the is_auto_create_user as a read-only attribute.&#34;&#34;&#34;
+    return self._properties.get(&#39;autoCreateUser&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.identity_management.SamlApp.is_company_saml_app"><code class="name">var <span class="ident">is_company_saml_app</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the is_company_saml_app as a read-only attribute.
+Returns
+True if saml app is created for a company, False otherwise</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L1032-L1041" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_company_saml_app(self):
+    &#34;&#34;&#34;Treats the is_company_saml_app as a read-only attribute.
+        Returns
+                True if saml app is created for a company, False otherwise
+    &#34;&#34;&#34;
+    if self._properties.get(&#39;createdForCompany&#39;):
+        return True
+    else:
+        return False</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.identity_management.SamlApp.is_saml_app_enabled"><code class="name">var <span class="ident">is_saml_app_enabled</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the is_saml_app_enabled as a read-only attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L992-L995" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_saml_app_enabled(self):
+    &#34;&#34;&#34;Treats the is_saml_app_enabled as a read-only attribute.&#34;&#34;&#34;
+    return self._properties.get(&#39;enabled&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.identity_management.SamlApp.saml_app_associations"><code class="name">var <span class="ident">saml_app_associations</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the saml_app_associations as a read-only attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L1027-L1030" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def saml_app_associations(self):
+    &#34;&#34;&#34;Treats the saml_app_associations as a read-only attribute.&#34;&#34;&#34;
+    return self._properties.get(&#39;associations&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.identity_management.SamlApp.saml_app_attribute_mappings"><code class="name">var <span class="ident">saml_app_attribute_mappings</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the saml_app_attribute_mappings as a read-only attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L1012-L1015" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def saml_app_attribute_mappings(self):
+    &#34;&#34;&#34;Treats the saml_app_attribute_mappings as a read-only attribute.&#34;&#34;&#34;
+    return self._properties.get(&#39;attributeMappings&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.identity_management.SamlApp.saml_app_default_user_groups"><code class="name">var <span class="ident">saml_app_default_user_groups</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the saml_app_default_user_groups as a read-only attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L1002-L1005" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def saml_app_default_user_groups(self):
+    &#34;&#34;&#34;Treats the saml_app_default_user_groups as a read-only attribute.&#34;&#34;&#34;
+    return self._properties.get(&#39;userGroups&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.identity_management.SamlApp.saml_app_description"><code class="name">var <span class="ident">saml_app_description</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the saml_app_description as a read-only attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L987-L990" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def saml_app_description(self):
+    &#34;&#34;&#34;Treats the saml_app_description as a read-only attribute.&#34;&#34;&#34;
+    return self._properties.get(&#39;description&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.identity_management.SamlApp.saml_app_identity_provider_metadata"><code class="name">var <span class="ident">saml_app_identity_provider_metadata</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the saml_app_identity_provider_metadata as a read-only attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L1017-L1020" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def saml_app_identity_provider_metadata(self):
+    &#34;&#34;&#34;Treats the saml_app_identity_provider_metadata as a read-only attribute.&#34;&#34;&#34;
+    return self._properties.get(&#39;identityProviderMetaData&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.identity_management.SamlApp.saml_app_nameid_attribute"><code class="name">var <span class="ident">saml_app_nameid_attribute</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the saml_app_nameid_attribute as a read-only attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L1007-L1010" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def saml_app_nameid_attribute(self):
+    &#34;&#34;&#34;Treats the saml_app_nameid_attribute as a read-only attribute.&#34;&#34;&#34;
+    return self._properties.get(&#39;nameIDAttribute&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.identity_management.SamlApp.saml_app_service_provider_metadata"><code class="name">var <span class="ident">saml_app_service_provider_metadata</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the saml_app_service_provider_metadata as a read-only attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L1022-L1025" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def saml_app_service_provider_metadata(self):
+    &#34;&#34;&#34;Treats the saml_app_service_provider_metadata as a read-only attribute.&#34;&#34;&#34;
+    return self._properties.get(&#39;serviceProviderMetaData&#39;)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.identity_management.SamlApp.get_saml_user_redirect_url"><code class="name flex">
+<span>def <span class="ident">get_saml_user_redirect_url</span></span>(<span>self, user_email)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get Redirect Url of SAML User</p>
+<h2 id="args">Args</h2>
+<p>user_email
+(str)
+user email
+Returns :
+redirect url of user, None if redirect url is not found for the user</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if failed to get redirect url
+if request is not successful</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L955-L985" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_saml_user_redirect_url(self, user_email):
+    &#34;&#34;&#34;Get Redirect Url of SAML User
+    Args:
+        user_email         (str)        user email
+
+    Returns :
+            redirect url of user, None if redirect url is not found for the user
+    Raises:
+            SDKException:
+                if failed to get redirect url
+                if request is not successful
+    &#34;&#34;&#34;
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;GET&#39;, self._redirecturl % user_email
+    )
+    if flag:
+        if response.json() and &#39;error&#39; in response.json() and &#39;errorCode&#39; in response.json()[&#39;error&#39;]:
+            if response.json()[&#39;error&#39;][&#39;errorCode&#39;] == 0:
+                if &#39;AvailableRedirects&#39; in response.json():
+                    return response.json()[&#39;AvailableRedirects&#39;][0].get(&#39;redirectUrl&#39;)
+            else:
+                raise SDKException(
+                    &#39;IdentityManagement&#39;,
+                    &#39;106&#39;,
+                    &#39; - error {0}&#39;.format(response.json()[&#39;error&#39;])
+                )
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;500&#39; + &#39;Invalid Response Returned&#39;)
+    else:
+        response_string = self._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.identity_management.SamlApp.modify_saml_app"><code class="name flex">
+<span>def <span class="ident">modify_saml_app</span></span>(<span>self, req_body)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Modifies a saml app</p>
+<h2 id="args">Args</h2>
+<p>req_body
+(json)
+saml app properties in json format</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if failed to modify saml app
+if request is not successful</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L925-L953" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def modify_saml_app(self, req_body):
+    &#34;&#34;&#34;Modifies a saml app
+        Args:
+            req_body  (json)       saml app properties in json format
+
+        Raises:
+            SDKException:
+                if failed to modify saml app
+                if request is not successful
+
+    &#34;&#34;&#34;
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;PUT&#39;, self._SAML% self._appname, req_body
+    )
+    if flag:
+        if response.json() and &#39;errorCode&#39; in response.json():
+            if response.json()[&#39;errorCode&#39;] == 0:
+                self.refresh()
+            else:
+                raise SDKException(
+                    &#39;IdentityManagement&#39;,
+                    &#39;105&#39;,
+                    &#39; - error {0}&#39;.format(response.json()[&#39;errorMessage&#39;])
+                )
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;500&#39; + &#39;Invalid Response Returned&#39;)
+    else:
+        response_string = self._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.identity_management.SamlApp.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the saml app properties</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/identity_management.py#L892-L894" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refresh the saml app properties&#34;&#34;&#34;
+    self._properties = self._get_saml_app_details()</code></pre>
 </details>
 </dd>
 </dl>
@@ -2258,6 +3480,8 @@ setTimeout(() => input.focus(), 100);
 <ul>
 <li><a href="#identitymanagementapps">IdentityManagementApps</a></li>
 <li><a href="#identitymanagementapp">IdentityManagementApp</a></li>
+<li><a href="#samlapp">SamlApp</a></li>
+<li><a href="#samlapp-instance-attributes">SamlApp instance Attributes</a></li>
 </ul>
 </div>
 <ul id="index">
@@ -2288,12 +3512,33 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.identity_management.IdentityManagementApps.configure_commcell_app" href="#cvpysdk.identity_management.IdentityManagementApps.configure_commcell_app">configure_commcell_app</a></code></li>
 <li><code><a title="cvpysdk.identity_management.IdentityManagementApps.configure_local_identity_app" href="#cvpysdk.identity_management.IdentityManagementApps.configure_local_identity_app">configure_local_identity_app</a></code></li>
 <li><code><a title="cvpysdk.identity_management.IdentityManagementApps.configure_openid_app" href="#cvpysdk.identity_management.IdentityManagementApps.configure_openid_app">configure_openid_app</a></code></li>
+<li><code><a title="cvpysdk.identity_management.IdentityManagementApps.configure_saml_app" href="#cvpysdk.identity_management.IdentityManagementApps.configure_saml_app">configure_saml_app</a></code></li>
 <li><code><a title="cvpysdk.identity_management.IdentityManagementApps.delete_identity_app" href="#cvpysdk.identity_management.IdentityManagementApps.delete_identity_app">delete_identity_app</a></code></li>
+<li><code><a title="cvpysdk.identity_management.IdentityManagementApps.delete_saml_app" href="#cvpysdk.identity_management.IdentityManagementApps.delete_saml_app">delete_saml_app</a></code></li>
 <li><code><a title="cvpysdk.identity_management.IdentityManagementApps.get" href="#cvpysdk.identity_management.IdentityManagementApps.get">get</a></code></li>
 <li><code><a title="cvpysdk.identity_management.IdentityManagementApps.get_commcell_identity_apps" href="#cvpysdk.identity_management.IdentityManagementApps.get_commcell_identity_apps">get_commcell_identity_apps</a></code></li>
 <li><code><a title="cvpysdk.identity_management.IdentityManagementApps.get_local_identity_app" href="#cvpysdk.identity_management.IdentityManagementApps.get_local_identity_app">get_local_identity_app</a></code></li>
+<li><code><a title="cvpysdk.identity_management.IdentityManagementApps.get_saml" href="#cvpysdk.identity_management.IdentityManagementApps.get_saml">get_saml</a></code></li>
 <li><code><a title="cvpysdk.identity_management.IdentityManagementApps.has_identity_app" href="#cvpysdk.identity_management.IdentityManagementApps.has_identity_app">has_identity_app</a></code></li>
 <li><code><a title="cvpysdk.identity_management.IdentityManagementApps.refresh" href="#cvpysdk.identity_management.IdentityManagementApps.refresh">refresh</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.identity_management.SamlApp" href="#cvpysdk.identity_management.SamlApp">SamlApp</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.identity_management.SamlApp.get_saml_user_redirect_url" href="#cvpysdk.identity_management.SamlApp.get_saml_user_redirect_url">get_saml_user_redirect_url</a></code></li>
+<li><code><a title="cvpysdk.identity_management.SamlApp.is_auto_create_user" href="#cvpysdk.identity_management.SamlApp.is_auto_create_user">is_auto_create_user</a></code></li>
+<li><code><a title="cvpysdk.identity_management.SamlApp.is_company_saml_app" href="#cvpysdk.identity_management.SamlApp.is_company_saml_app">is_company_saml_app</a></code></li>
+<li><code><a title="cvpysdk.identity_management.SamlApp.is_saml_app_enabled" href="#cvpysdk.identity_management.SamlApp.is_saml_app_enabled">is_saml_app_enabled</a></code></li>
+<li><code><a title="cvpysdk.identity_management.SamlApp.modify_saml_app" href="#cvpysdk.identity_management.SamlApp.modify_saml_app">modify_saml_app</a></code></li>
+<li><code><a title="cvpysdk.identity_management.SamlApp.refresh" href="#cvpysdk.identity_management.SamlApp.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.identity_management.SamlApp.saml_app_associations" href="#cvpysdk.identity_management.SamlApp.saml_app_associations">saml_app_associations</a></code></li>
+<li><code><a title="cvpysdk.identity_management.SamlApp.saml_app_attribute_mappings" href="#cvpysdk.identity_management.SamlApp.saml_app_attribute_mappings">saml_app_attribute_mappings</a></code></li>
+<li><code><a title="cvpysdk.identity_management.SamlApp.saml_app_default_user_groups" href="#cvpysdk.identity_management.SamlApp.saml_app_default_user_groups">saml_app_default_user_groups</a></code></li>
+<li><code><a title="cvpysdk.identity_management.SamlApp.saml_app_description" href="#cvpysdk.identity_management.SamlApp.saml_app_description">saml_app_description</a></code></li>
+<li><code><a title="cvpysdk.identity_management.SamlApp.saml_app_identity_provider_metadata" href="#cvpysdk.identity_management.SamlApp.saml_app_identity_provider_metadata">saml_app_identity_provider_metadata</a></code></li>
+<li><code><a title="cvpysdk.identity_management.SamlApp.saml_app_nameid_attribute" href="#cvpysdk.identity_management.SamlApp.saml_app_nameid_attribute">saml_app_nameid_attribute</a></code></li>
+<li><code><a title="cvpysdk.identity_management.SamlApp.saml_app_service_provider_metadata" href="#cvpysdk.identity_management.SamlApp.saml_app_service_provider_metadata">saml_app_service_provider_metadata</a></code></li>
 </ul>
 </li>
 </ul>

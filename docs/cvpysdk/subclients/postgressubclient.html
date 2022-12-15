@@ -55,7 +55,7 @@ of subclient content
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/postgressubclient.py#L1-L420" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/postgressubclient.py#L1-L426" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -361,7 +361,8 @@ class PostgresSubclient(DatabaseSubclient):
             no_of_streams=None,
             volume_level_restore=False,
             redirect_enabled=False,
-            redirect_path=None):
+            redirect_path=None,
+            **kwargs):
         &#34;&#34;&#34;
         Method to restore the Postgres server
 
@@ -437,6 +438,10 @@ class PostgresSubclient(DatabaseSubclient):
 
                     default: None
 
+                revert                 (bool)  --  boolean to specify whether to do a
+                                                   hardware revert in restore
+                    default: False
+
             Returns:
                 object -- Job containing restore details
 
@@ -476,7 +481,8 @@ class PostgresSubclient(DatabaseSubclient):
             no_of_streams=no_of_streams,
             volume_level_restore=volume_level_restore,
             redirect_enabled=redirect_enabled,
-            redirect_path=redirect_path)</code></pre>
+            redirect_path=redirect_path,
+            revert=kwargs.get(&#34;revert&#34;, False))</code></pre>
 </details>
 </section>
 <section>
@@ -509,7 +515,7 @@ and to perform operations on that subclient.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/postgressubclient.py#L61-L420" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/postgressubclient.py#L61-L426" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class PostgresSubclient(DatabaseSubclient):
     &#34;&#34;&#34;Derived class from Subclient Base class, representing a file system subclient,
@@ -755,7 +761,8 @@ and to perform operations on that subclient.</p>
             no_of_streams=None,
             volume_level_restore=False,
             redirect_enabled=False,
-            redirect_path=None):
+            redirect_path=None,
+            **kwargs):
         &#34;&#34;&#34;
         Method to restore the Postgres server
 
@@ -831,6 +838,10 @@ and to perform operations on that subclient.</p>
 
                     default: None
 
+                revert                 (bool)  --  boolean to specify whether to do a
+                                                   hardware revert in restore
+                    default: False
+
             Returns:
                 object -- Job containing restore details
 
@@ -870,7 +881,8 @@ and to perform operations on that subclient.</p>
             no_of_streams=no_of_streams,
             volume_level_restore=volume_level_restore,
             redirect_enabled=redirect_enabled,
-            redirect_path=redirect_path)</code></pre>
+            redirect_path=redirect_path,
+            revert=kwargs.get(&#34;revert&#34;, False))</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -890,7 +902,7 @@ False if the flag is not set</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/postgressubclient.py#L156-L168" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/postgressubclient.py#L156-L168" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def collect_object_list(self):
@@ -913,7 +925,7 @@ def collect_object_list(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/postgressubclient.py#L85-L99" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/postgressubclient.py#L85-L99" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def content(self):
@@ -965,7 +977,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/postgressubclient.py#L248-L287" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/postgressubclient.py#L248-L287" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(
         self,
@@ -1010,7 +1022,7 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.subclients.postgressubclient.PostgresSubclient.restore_postgres_server"><code class="name flex">
-<span>def <span class="ident">restore_postgres_server</span></span>(<span>self, database_list=None, dest_client_name=None, dest_instance_name=None, copy_precedence=None, from_time=None, to_time=None, clone_env=False, clone_options=None, media_agent=None, table_level_restore=False, staging_path=None, no_of_streams=None, volume_level_restore=False, redirect_enabled=False, redirect_path=None)</span>
+<span>def <span class="ident">restore_postgres_server</span></span>(<span>self, database_list=None, dest_client_name=None, dest_instance_name=None, copy_precedence=None, from_time=None, to_time=None, clone_env=False, clone_options=None, media_agent=None, table_level_restore=False, staging_path=None, no_of_streams=None, volume_level_restore=False, redirect_enabled=False, redirect_path=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Method to restore the Postgres server</p>
@@ -1086,13 +1098,17 @@ if response is not success
 
         default: None
 
+    revert                 (bool)  --  boolean to specify whether to do a
+                                       hardware revert in restore
+        default: False
+
 Returns:
     object -- Job containing restore details
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/postgressubclient.py#L289-L420" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/postgressubclient.py#L289-L426" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_postgres_server(
         self,
@@ -1110,7 +1126,8 @@ Returns:
         no_of_streams=None,
         volume_level_restore=False,
         redirect_enabled=False,
-        redirect_path=None):
+        redirect_path=None,
+        **kwargs):
     &#34;&#34;&#34;
     Method to restore the Postgres server
 
@@ -1186,6 +1203,10 @@ Returns:
 
                 default: None
 
+            revert                 (bool)  --  boolean to specify whether to do a
+                                               hardware revert in restore
+                default: False
+
         Returns:
             object -- Job containing restore details
 
@@ -1225,7 +1246,8 @@ Returns:
         no_of_streams=no_of_streams,
         volume_level_restore=volume_level_restore,
         redirect_enabled=redirect_enabled,
-        redirect_path=redirect_path)</code></pre>
+        redirect_path=redirect_path,
+        revert=kwargs.get(&#34;revert&#34;, False))</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.postgressubclient.PostgresSubclient.set_content"><code class="name flex">
@@ -1258,7 +1280,7 @@ if the operation is performed on default subclient
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/subclients/postgressubclient.py#L101-L154" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/postgressubclient.py#L101-L154" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_content(self, database_list, operation_type=&#34;OVERWRITE&#34;):
     &#34;&#34;&#34; Adds/Updates/Deletes the postgresql subclient contents

@@ -38,7 +38,7 @@ get_vm_list()
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/drjob.py#L1-L153" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/drjob.py#L1-L155" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -139,7 +139,7 @@ class DRJob(Job):
 
         if flag:
             if response.json() and &#39;job&#39; in response.json():
-                return response.json()[&#39;job&#39;]
+                return response.json()[&#39;job&#39;] or []
             elif response.json() and &#39;errors&#39; in response.json():
                 errors = response.json().get(&#39;errors&#39;, [{}])
                 error_list = errors[0].get(&#39;errList&#39;, [{}])
@@ -177,6 +177,8 @@ class DRJob(Job):
             }
         &#34;&#34;&#34;
         job_stats = {}
+        if not self._replication_job_stats:
+            return job_stats
         for pair_stats in self._replication_job_stats:
             phases = []
             for phase in pair_stats.get(&#39;phase&#39;, []):
@@ -214,7 +216,7 @@ class DRJob(Job):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/drjob.py#L36-L153" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/drjob.py#L36-L155" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class DRJob(Job):
     &#34;&#34;&#34;Class for performing DR orchestration operations on ReplicationMonitor.&#34;&#34;&#34;
@@ -280,7 +282,7 @@ class DRJob(Job):
 
         if flag:
             if response.json() and &#39;job&#39; in response.json():
-                return response.json()[&#39;job&#39;]
+                return response.json()[&#39;job&#39;] or []
             elif response.json() and &#39;errors&#39; in response.json():
                 errors = response.json().get(&#39;errors&#39;, [{}])
                 error_list = errors[0].get(&#39;errList&#39;, [{}])
@@ -318,6 +320,8 @@ class DRJob(Job):
             }
         &#34;&#34;&#34;
         job_stats = {}
+        if not self._replication_job_stats:
+            return job_stats
         for pair_stats in self._replication_job_stats:
             phases = []
             for phase in pair_stats.get(&#39;phase&#39;, []):
@@ -359,7 +363,7 @@ Returns: dictionaries of phases for each source and destination VM pair
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/drorchestration/drjob.py#L123-L153" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/drjob.py#L123-L155" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_phases(self):
     &#34;&#34;&#34;
@@ -376,6 +380,8 @@ Returns: dictionaries of phases for each source and destination VM pair
         }
     &#34;&#34;&#34;
     job_stats = {}
+    if not self._replication_job_stats:
+        return job_stats
     for pair_stats in self._replication_job_stats:
         phases = []
         for phase in pair_stats.get(&#39;phase&#39;, []):

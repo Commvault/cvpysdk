@@ -79,7 +79,7 @@ get the properties of the domain</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/domains.py#L1-L584" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L1-L583" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -151,7 +151,6 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from base64 import b64encode
-from past.builtins import basestring
 
 from .exception import SDKException
 
@@ -297,7 +296,7 @@ class Domains(object):
                     if type of the domain name argument is not string
 
         &#34;&#34;&#34;
-        if not isinstance(domain_name, basestring):
+        if not isinstance(domain_name, str):
             raise SDKException(&#39;Domain&#39;, &#39;101&#39;)
 
         return self._domains and domain_name.lower() in self._domains
@@ -319,7 +318,7 @@ class Domains(object):
                                         if type of the domain name argument is not string
 
         &#34;&#34;&#34;
-        if not isinstance(domain_name, basestring):
+        if not isinstance(domain_name, str):
             raise SDKException(&#39;Domain&#39;, &#39;101&#39;)
         if not self.has_domain(domain_name):
             raise SDKException(
@@ -349,7 +348,7 @@ class Domains(object):
 
         &#34;&#34;&#34;
 
-        if not isinstance(domain_name, basestring):
+        if not isinstance(domain_name, str):
             raise SDKException(&#39;Domain&#39;, &#39;101&#39;)
         else:
             domain_name = domain_name.lower()
@@ -462,10 +461,10 @@ class Domains(object):
         service_type = service_type_mapping.get(type_of_server.lower())
         if not service_type:
             raise SDKException(&#39;Domain&#39;, &#34;102&#34;, &#34;please pass valid server type&#34;)
-        if not (isinstance(domain_name, basestring) and
-                isinstance(netbios_name, basestring) and
-                isinstance(user_name, basestring) and
-                isinstance(password, basestring)):
+        if not (isinstance(domain_name, str) and
+                isinstance(netbios_name, str) and
+                isinstance(user_name, str) and
+                isinstance(password, str)):
             raise SDKException(&#39;Domain&#39;, &#39;101&#39;)
         else:
             domain_name = domain_name.lower()
@@ -697,7 +696,7 @@ id of the domain</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/domains.py#L504-L583" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L503-L582" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Domain(object):
     &#34;&#34;&#34;Class for representing a particular domain configured on a commcell&#34;&#34;&#34;
@@ -788,7 +787,7 @@ id of the domain</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/domains.py#L580-L583" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L579-L582" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def domain_id(self):
@@ -802,7 +801,7 @@ def domain_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/domains.py#L575-L578" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L574-L577" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def domain_name(self):
@@ -821,7 +820,7 @@ def domain_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/domains.py#L571-L573" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L570-L572" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the domain.&#34;&#34;&#34;
@@ -847,7 +846,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/domains.py#L76-L502" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L75-L501" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Domains(object):
     &#34;&#34;&#34;Class for getting all the domains associated with a commcell.&#34;&#34;&#34;
@@ -990,7 +989,7 @@ instance of the Commcell class</p>
                     if type of the domain name argument is not string
 
         &#34;&#34;&#34;
-        if not isinstance(domain_name, basestring):
+        if not isinstance(domain_name, str):
             raise SDKException(&#39;Domain&#39;, &#39;101&#39;)
 
         return self._domains and domain_name.lower() in self._domains
@@ -1012,7 +1011,7 @@ instance of the Commcell class</p>
                                         if type of the domain name argument is not string
 
         &#34;&#34;&#34;
-        if not isinstance(domain_name, basestring):
+        if not isinstance(domain_name, str):
             raise SDKException(&#39;Domain&#39;, &#39;101&#39;)
         if not self.has_domain(domain_name):
             raise SDKException(
@@ -1042,7 +1041,7 @@ instance of the Commcell class</p>
 
         &#34;&#34;&#34;
 
-        if not isinstance(domain_name, basestring):
+        if not isinstance(domain_name, str):
             raise SDKException(&#39;Domain&#39;, &#39;101&#39;)
         else:
             domain_name = domain_name.lower()
@@ -1155,10 +1154,10 @@ instance of the Commcell class</p>
         service_type = service_type_mapping.get(type_of_server.lower())
         if not service_type:
             raise SDKException(&#39;Domain&#39;, &#34;102&#34;, &#34;please pass valid server type&#34;)
-        if not (isinstance(domain_name, basestring) and
-                isinstance(netbios_name, basestring) and
-                isinstance(user_name, basestring) and
-                isinstance(password, basestring)):
+        if not (isinstance(domain_name, str) and
+                isinstance(netbios_name, str) and
+                isinstance(user_name, str) and
+                isinstance(password, str)):
             raise SDKException(&#39;Domain&#39;, &#39;101&#39;)
         else:
             domain_name = domain_name.lower()
@@ -1292,7 +1291,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/domains.py#L189-L201" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L188-L200" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_domains(self):
@@ -1392,7 +1391,7 @@ if type of the domain name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/domains.py#L309-L502" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L308-L501" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self,
         domain_name,
@@ -1467,10 +1466,10 @@ if type of the domain name argument is not string</p>
     service_type = service_type_mapping.get(type_of_server.lower())
     if not service_type:
         raise SDKException(&#39;Domain&#39;, &#34;102&#34;, &#34;please pass valid server type&#34;)
-    if not (isinstance(domain_name, basestring) and
-            isinstance(netbios_name, basestring) and
-            isinstance(user_name, basestring) and
-            isinstance(password, basestring)):
+    if not (isinstance(domain_name, str) and
+            isinstance(netbios_name, str) and
+            isinstance(user_name, str) and
+            isinstance(password, str)):
         raise SDKException(&#39;Domain&#39;, &#39;101&#39;)
     else:
         domain_name = domain_name.lower()
@@ -1614,7 +1613,7 @@ if no domain exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/domains.py#L249-L303" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L248-L302" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, domain_name):
     &#34;&#34;&#34;Deletes the domain from the commcell.
@@ -1636,7 +1635,7 @@ if no domain exists with the given name
 
     &#34;&#34;&#34;
 
-    if not isinstance(domain_name, basestring):
+    if not isinstance(domain_name, str):
         raise SDKException(&#39;Domain&#39;, &#39;101&#39;)
     else:
         domain_name = domain_name.lower()
@@ -1693,7 +1692,7 @@ name of the domain</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/domains.py#L222-L247" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L221-L246" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, domain_name):
     &#34;&#34;&#34;Returns a domain object of the specified domain name.
@@ -1712,7 +1711,7 @@ name of the domain</p>
                                     if type of the domain name argument is not string
 
     &#34;&#34;&#34;
-    if not isinstance(domain_name, basestring):
+    if not isinstance(domain_name, str):
         raise SDKException(&#39;Domain&#39;, &#39;101&#39;)
     if not self.has_domain(domain_name):
         raise SDKException(
@@ -1743,7 +1742,7 @@ if type of the domain name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/domains.py#L203-L220" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L202-L219" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_domain(self, domain_name):
     &#34;&#34;&#34;Checks if a domain exists in the commcell with the input domain name.
@@ -1759,7 +1758,7 @@ if type of the domain name argument is not string</p></div>
                 if type of the domain name argument is not string
 
     &#34;&#34;&#34;
-    if not isinstance(domain_name, basestring):
+    if not isinstance(domain_name, str):
         raise SDKException(&#39;Domain&#39;, &#39;101&#39;)
 
     return self._domains and domain_name.lower() in self._domains</code></pre>
@@ -1773,7 +1772,7 @@ if type of the domain name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/domains.py#L305-L307" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L304-L306" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the domains associated with the Commcell.&#34;&#34;&#34;

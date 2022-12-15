@@ -29,6 +29,10 @@
 Google (GMail/GDrive) and OneDrive instance,
 and to perform operations on that instance</p>
 <h2 id="googleinstance">Googleinstance</h2>
+<p>_prepare_restore_json_v2()
+&ndash;
+Utility function to prepare user level restore json for
+OneDrive for bussiness clients</p>
 <p>_get_instance_properties()
 &ndash;
 Instance class method overwritten to add cloud apps
@@ -39,7 +43,7 @@ runs out-of-place restore for the instance</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/google_instance.py#L1-L335" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/google_instance.py#L1-L442" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -69,6 +73,9 @@ and to perform operations on that instance
 
 GoogleInstance:
 
+    _prepare_restore_json_v2()  --  Utility function to prepare user level restore json for
+                                    OneDrive for bussiness clients
+
     _get_instance_properties()  --  Instance class method overwritten to add cloud apps
     instance properties as well
 
@@ -77,9 +84,9 @@ GoogleInstance:
 &#34;&#34;&#34;
 
 from __future__ import unicode_literals
-from past.builtins import basestring
 from ...exception import SDKException
 from ..cainstance import CloudAppsInstance
+from ...constants import AppIDAType
 
 
 class GoogleInstance(CloudAppsInstance):
@@ -152,7 +159,7 @@ class GoogleInstance(CloudAppsInstance):
                         &#39;generalCloudProperties&#39;, {}).get(&#39;proxyServers&#39;, [{}])[0].get(&#39;clientName&#39;)
                 else:
                     if &#39;clientName&#39; in cloud_apps_instance.get(
-                        &#39;generalCloudProperties&#39;, {}).get(&#39;memberServers&#39;, [{}])[0].get(&#39;client&#39;):
+                            &#39;generalCloudProperties&#39;, {}).get(&#39;memberServers&#39;, [{}])[0].get(&#39;client&#39;):
                         self._proxy_client = cloud_apps_instance.get(&#39;generalCloudProperties&#39;, {}).get(
                             &#39;memberServers&#39;, [{}])[0].get(&#39;client&#39;, {}).get(&#39;clientName&#39;)
                     else:
@@ -223,6 +230,110 @@ class GoogleInstance(CloudAppsInstance):
         &#34;&#34;&#34;Returns the proxy client name to this instance&#34;&#34;&#34;
         return self._proxy_client
 
+    def _prepare_restore_json_v2(self, source_item_list, **kwargs):
+
+        &#34;&#34;&#34; Utility function to prepare user level restore json for OneDrive for bussiness clients
+
+            Args:
+                source_item_list (list)         --  list of user GUID to process in restore
+
+            Kwargs:
+
+                out_of_place (bool)             --  If True, out of place restore will be performed
+
+                disk_restore (bool)             --  If True, restore to disk will be performed
+
+                destination_path (str)          --  destination path for oop and disk restores
+
+                destination_client              -- destination client for disk restore
+
+                overwrite (bool)                --  If True, files will be overwritten in destination if already exists
+
+                restore_as_copy (bool)          --  If True, files will be restored as copy if already exists
+
+                skip_file_permissions (bool)    --  If True, file permissions will be restored
+
+            Returns:
+                request_json (dict) - request json for restore job
+
+            Raises:
+                SDKException:
+
+                    if destination client with given name does not exist
+
+                    if type of parameter is invalid
+
+        &#34;&#34;&#34;
+
+        out_of_place = kwargs.get(&#39;out_of_place&#39;, False)
+        disk_restore = kwargs.get(&#39;disk_restore&#39;, False)
+        destination_path = kwargs.get(&#39;destination_path&#39;, False)
+        destination_client = kwargs.get(&#39;destination_client&#39;)
+        overwrite = kwargs.get(&#39;overwrite&#39;, False)
+        restore_as_copy = kwargs.get(&#39;restore_as_copy&#39;, False)
+        skip_file_permissions = kwargs.get(&#39;skip_file_permissions&#39;, False)
+
+        if destination_client:
+            if self._commcell_object.clients.all_clients.get(destination_client):
+                destination_client_object = self._commcell_object.clients.all_clients.get(destination_client)
+                destination_client_id = int(destination_client_object.get(&#39;id&#39;))
+            else:
+                raise SDKException(&#39;Client&#39;, &#39;102&#39;, &#39;Client &#34;{0}&#34; does not exist.&#39;.format(destination_client))
+
+        if ((destination_client and not isinstance(destination_client, str) or
+             destination_path and not isinstance(destination_path, str)) or not
+            (isinstance(source_item_list, list) and
+             isinstance(skip_file_permissions, bool) and
+             isinstance(disk_restore, bool) and
+             isinstance(out_of_place, bool) and
+             isinstance(overwrite, bool) and
+             isinstance(restore_as_copy, bool))):
+            raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+
+        request_json = self._restore_json(client=self._agent_object._client_object)
+
+        subtasks = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0]
+        options = subtasks[&#39;options&#39;]
+        restore_options = options[&#39;restoreOptions&#39;]
+
+        common_options = restore_options[&#39;commonOptions&#39;]
+        common_options[&#39;skip&#39;] = False if overwrite or restore_as_copy else True
+        common_options[&#39;overwriteFiles&#39;] = False if disk_restore else overwrite
+        common_options[&#39;unconditionalOverwrite&#39;] = False if disk_restore else overwrite
+        common_options[&#39;restoreToDisk&#39;] = disk_restore
+
+        destination = restore_options[&#39;destination&#39;]
+        destination[&#39;destAppId&#39;] = AppIDAType.WINDOWS_FILE_SYSTEM.value if disk_restore else AppIDAType.CLOUD_APP.value
+        destination[&#39;inPlace&#39;] = False if out_of_place or disk_restore else True
+
+        destination[&#39;destClient&#39;] = {
+            &#34;clientId&#34;: destination_client_id,
+            &#34;clientName&#34;: destination_client
+        } if disk_restore else {
+            &#34;clientId&#34;: int(self._agent_object._client_object.client_id),
+            &#34;clientName&#34;: self._agent_object._client_object.client_name
+        }
+
+        if destination_path:
+            destination[&#39;destPath&#39;] = [destination_path]
+
+        restore_options[&#39;fileOption&#39;][&#39;sourceItem&#39;] = source_item_list
+
+        restore_options[&#39;cloudAppsRestoreOptions&#39;] = {
+            &#34;instanceType&#34;: self._ca_instance_type,
+            &#34;googleRestoreOptions&#34;: {
+                &#34;skipPermissionsRestore&#34;: False if disk_restore else skip_file_permissions,
+                &#34;restoreToDifferentAccount&#34;: True if out_of_place else False,
+                &#34;restoreAsCopy&#34;: False if disk_restore else restore_as_copy,
+                &#34;filelevelRestore&#34;: False,
+                &#34;strDestUserAccount&#34;: destination_path if out_of_place else &#39;&#39;,
+                &#34;overWriteItems&#34;: False if disk_restore else overwrite,
+                &#34;restoreToGoogle&#34;: False if disk_restore else True
+            }
+        }
+
+        return request_json
+
     def restore_out_of_place(
             self,
             client,
@@ -286,8 +397,8 @@ class GoogleInstance(CloudAppsInstance):
         &#34;&#34;&#34;
         from cvpysdk.client import Client
 
-        if not ((isinstance(client, basestring) or isinstance(client, Client)) and
-                isinstance(destination_path, basestring) and
+        if not ((isinstance(client, str) or isinstance(client, Client)) and
+                isinstance(destination_path, str) and
                 isinstance(paths, list) and
                 isinstance(overwrite, bool) and
                 isinstance(restore_data_and_acl, bool)):
@@ -295,7 +406,7 @@ class GoogleInstance(CloudAppsInstance):
 
         if isinstance(client, Client):
             client = client
-        elif isinstance(client, basestring):
+        elif isinstance(client, str):
             client = Client(self._commcell_object, client)
         else:
             raise SDKException(&#39;Subclient&#39;, &#39;105&#39;)
@@ -328,13 +439,13 @@ class GoogleInstance(CloudAppsInstance):
             restore_to_google = False
         request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][
             &#34;restoreOptions&#34;][&#39;cloudAppsRestoreOptions&#39;] = {
-                &#34;instanceType&#34;: self._ca_instance_type,
-                &#34;googleRestoreOptions&#34;: {
-                    &#34;strDestUserAccount&#34;: dest_user_account,
-                    &#34;folderGuid&#34;: &#34;&#34;,
-                    &#34;restoreToDifferentAccount&#34;: rest_different_account,
-                    &#34;restoreToGoogle&#34;: restore_to_google
-                }
+            &#34;instanceType&#34;: self._ca_instance_type,
+            &#34;googleRestoreOptions&#34;: {
+                &#34;strDestUserAccount&#34;: dest_user_account,
+                &#34;folderGuid&#34;: &#34;&#34;,
+                &#34;restoreToDifferentAccount&#34;: rest_different_account,
+                &#34;restoreToGoogle&#34;: restore_to_google
+            }
         }
         return self._process_restore_response(request_json)
 
@@ -413,7 +524,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/google_instance.py#L42-L335" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/google_instance.py#L45-L442" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class GoogleInstance(CloudAppsInstance):
     &#34;&#34;&#34;Class for representing an Instance of the GMail/Gdrive instance type.&#34;&#34;&#34;
@@ -485,7 +596,7 @@ default: None</p>
                         &#39;generalCloudProperties&#39;, {}).get(&#39;proxyServers&#39;, [{}])[0].get(&#39;clientName&#39;)
                 else:
                     if &#39;clientName&#39; in cloud_apps_instance.get(
-                        &#39;generalCloudProperties&#39;, {}).get(&#39;memberServers&#39;, [{}])[0].get(&#39;client&#39;):
+                            &#39;generalCloudProperties&#39;, {}).get(&#39;memberServers&#39;, [{}])[0].get(&#39;client&#39;):
                         self._proxy_client = cloud_apps_instance.get(&#39;generalCloudProperties&#39;, {}).get(
                             &#39;memberServers&#39;, [{}])[0].get(&#39;client&#39;, {}).get(&#39;clientName&#39;)
                     else:
@@ -556,6 +667,110 @@ default: None</p>
         &#34;&#34;&#34;Returns the proxy client name to this instance&#34;&#34;&#34;
         return self._proxy_client
 
+    def _prepare_restore_json_v2(self, source_item_list, **kwargs):
+
+        &#34;&#34;&#34; Utility function to prepare user level restore json for OneDrive for bussiness clients
+
+            Args:
+                source_item_list (list)         --  list of user GUID to process in restore
+
+            Kwargs:
+
+                out_of_place (bool)             --  If True, out of place restore will be performed
+
+                disk_restore (bool)             --  If True, restore to disk will be performed
+
+                destination_path (str)          --  destination path for oop and disk restores
+
+                destination_client              -- destination client for disk restore
+
+                overwrite (bool)                --  If True, files will be overwritten in destination if already exists
+
+                restore_as_copy (bool)          --  If True, files will be restored as copy if already exists
+
+                skip_file_permissions (bool)    --  If True, file permissions will be restored
+
+            Returns:
+                request_json (dict) - request json for restore job
+
+            Raises:
+                SDKException:
+
+                    if destination client with given name does not exist
+
+                    if type of parameter is invalid
+
+        &#34;&#34;&#34;
+
+        out_of_place = kwargs.get(&#39;out_of_place&#39;, False)
+        disk_restore = kwargs.get(&#39;disk_restore&#39;, False)
+        destination_path = kwargs.get(&#39;destination_path&#39;, False)
+        destination_client = kwargs.get(&#39;destination_client&#39;)
+        overwrite = kwargs.get(&#39;overwrite&#39;, False)
+        restore_as_copy = kwargs.get(&#39;restore_as_copy&#39;, False)
+        skip_file_permissions = kwargs.get(&#39;skip_file_permissions&#39;, False)
+
+        if destination_client:
+            if self._commcell_object.clients.all_clients.get(destination_client):
+                destination_client_object = self._commcell_object.clients.all_clients.get(destination_client)
+                destination_client_id = int(destination_client_object.get(&#39;id&#39;))
+            else:
+                raise SDKException(&#39;Client&#39;, &#39;102&#39;, &#39;Client &#34;{0}&#34; does not exist.&#39;.format(destination_client))
+
+        if ((destination_client and not isinstance(destination_client, str) or
+             destination_path and not isinstance(destination_path, str)) or not
+            (isinstance(source_item_list, list) and
+             isinstance(skip_file_permissions, bool) and
+             isinstance(disk_restore, bool) and
+             isinstance(out_of_place, bool) and
+             isinstance(overwrite, bool) and
+             isinstance(restore_as_copy, bool))):
+            raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+
+        request_json = self._restore_json(client=self._agent_object._client_object)
+
+        subtasks = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0]
+        options = subtasks[&#39;options&#39;]
+        restore_options = options[&#39;restoreOptions&#39;]
+
+        common_options = restore_options[&#39;commonOptions&#39;]
+        common_options[&#39;skip&#39;] = False if overwrite or restore_as_copy else True
+        common_options[&#39;overwriteFiles&#39;] = False if disk_restore else overwrite
+        common_options[&#39;unconditionalOverwrite&#39;] = False if disk_restore else overwrite
+        common_options[&#39;restoreToDisk&#39;] = disk_restore
+
+        destination = restore_options[&#39;destination&#39;]
+        destination[&#39;destAppId&#39;] = AppIDAType.WINDOWS_FILE_SYSTEM.value if disk_restore else AppIDAType.CLOUD_APP.value
+        destination[&#39;inPlace&#39;] = False if out_of_place or disk_restore else True
+
+        destination[&#39;destClient&#39;] = {
+            &#34;clientId&#34;: destination_client_id,
+            &#34;clientName&#34;: destination_client
+        } if disk_restore else {
+            &#34;clientId&#34;: int(self._agent_object._client_object.client_id),
+            &#34;clientName&#34;: self._agent_object._client_object.client_name
+        }
+
+        if destination_path:
+            destination[&#39;destPath&#39;] = [destination_path]
+
+        restore_options[&#39;fileOption&#39;][&#39;sourceItem&#39;] = source_item_list
+
+        restore_options[&#39;cloudAppsRestoreOptions&#39;] = {
+            &#34;instanceType&#34;: self._ca_instance_type,
+            &#34;googleRestoreOptions&#34;: {
+                &#34;skipPermissionsRestore&#34;: False if disk_restore else skip_file_permissions,
+                &#34;restoreToDifferentAccount&#34;: True if out_of_place else False,
+                &#34;restoreAsCopy&#34;: False if disk_restore else restore_as_copy,
+                &#34;filelevelRestore&#34;: False,
+                &#34;strDestUserAccount&#34;: destination_path if out_of_place else &#39;&#39;,
+                &#34;overWriteItems&#34;: False if disk_restore else overwrite,
+                &#34;restoreToGoogle&#34;: False if disk_restore else True
+            }
+        }
+
+        return request_json
+
     def restore_out_of_place(
             self,
             client,
@@ -619,8 +834,8 @@ default: None</p>
         &#34;&#34;&#34;
         from cvpysdk.client import Client
 
-        if not ((isinstance(client, basestring) or isinstance(client, Client)) and
-                isinstance(destination_path, basestring) and
+        if not ((isinstance(client, str) or isinstance(client, Client)) and
+                isinstance(destination_path, str) and
                 isinstance(paths, list) and
                 isinstance(overwrite, bool) and
                 isinstance(restore_data_and_acl, bool)):
@@ -628,7 +843,7 @@ default: None</p>
 
         if isinstance(client, Client):
             client = client
-        elif isinstance(client, basestring):
+        elif isinstance(client, str):
             client = Client(self._commcell_object, client)
         else:
             raise SDKException(&#39;Subclient&#39;, &#39;105&#39;)
@@ -661,13 +876,13 @@ default: None</p>
             restore_to_google = False
         request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][
             &#34;restoreOptions&#34;][&#39;cloudAppsRestoreOptions&#39;] = {
-                &#34;instanceType&#34;: self._ca_instance_type,
-                &#34;googleRestoreOptions&#34;: {
-                    &#34;strDestUserAccount&#34;: dest_user_account,
-                    &#34;folderGuid&#34;: &#34;&#34;,
-                    &#34;restoreToDifferentAccount&#34;: rest_different_account,
-                    &#34;restoreToGoogle&#34;: restore_to_google
-                }
+            &#34;instanceType&#34;: self._ca_instance_type,
+            &#34;googleRestoreOptions&#34;: {
+                &#34;strDestUserAccount&#34;: dest_user_account,
+                &#34;folderGuid&#34;: &#34;&#34;,
+                &#34;restoreToDifferentAccount&#34;: rest_different_account,
+                &#34;restoreToGoogle&#34;: restore_to_google
+            }
         }
         return self._process_restore_response(request_json)
 
@@ -723,7 +938,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/google_instance.py#L148-L151" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/google_instance.py#L151-L154" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def app_email_id(self):
@@ -737,7 +952,7 @@ def app_email_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/google_instance.py#L143-L146" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/google_instance.py#L146-L149" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def auto_discovery_mode(self):
@@ -751,7 +966,7 @@ def auto_discovery_mode(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/google_instance.py#L138-L141" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/google_instance.py#L141-L144" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def auto_discovery_status(self):
@@ -765,7 +980,7 @@ def auto_discovery_status(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/google_instance.py#L122-L131" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/google_instance.py#L125-L134" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def ca_instance_type(self):
@@ -785,7 +1000,7 @@ def ca_instance_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/google_instance.py#L153-L156" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/google_instance.py#L156-L159" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def google_admin_id(self):
@@ -799,7 +1014,7 @@ def google_admin_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/google_instance.py#L163-L166" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/google_instance.py#L166-L169" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def google_client_id(self):
@@ -813,7 +1028,7 @@ def google_client_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/google_instance.py#L158-L161" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/google_instance.py#L161-L164" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def key_file_path(self):
@@ -827,7 +1042,7 @@ def key_file_path(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/google_instance.py#L133-L136" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/google_instance.py#L136-L139" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def manage_content_automatically(self):
@@ -841,7 +1056,7 @@ def manage_content_automatically(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/google_instance.py#L168-L171" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/google_instance.py#L171-L174" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def onedrive_client_id(self):
@@ -855,7 +1070,7 @@ def onedrive_client_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/google_instance.py#L173-L176" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/google_instance.py#L176-L179" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def onedrive_tenant(self):
@@ -869,7 +1084,7 @@ def onedrive_tenant(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/google_instance.py#L178-L181" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/google_instance.py#L181-L184" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def proxy_client(self):
@@ -896,7 +1111,7 @@ GROUP
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/google_instance.py#L298-L330" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/google_instance.py#L405-L437" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_auto_discovery(self, mode=&#39;REGEX&#39;):
     &#34;&#34;&#34;Enables auto discovery on instance.
@@ -1004,7 +1219,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/google_instance.py#L183-L296" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/google_instance.py#L290-L403" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -1069,8 +1284,8 @@ if response is not success
     &#34;&#34;&#34;
     from cvpysdk.client import Client
 
-    if not ((isinstance(client, basestring) or isinstance(client, Client)) and
-            isinstance(destination_path, basestring) and
+    if not ((isinstance(client, str) or isinstance(client, Client)) and
+            isinstance(destination_path, str) and
             isinstance(paths, list) and
             isinstance(overwrite, bool) and
             isinstance(restore_data_and_acl, bool)):
@@ -1078,7 +1293,7 @@ if response is not success
 
     if isinstance(client, Client):
         client = client
-    elif isinstance(client, basestring):
+    elif isinstance(client, str):
         client = Client(self._commcell_object, client)
     else:
         raise SDKException(&#39;Subclient&#39;, &#39;105&#39;)
@@ -1111,13 +1326,13 @@ if response is not success
         restore_to_google = False
     request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][
         &#34;restoreOptions&#34;][&#39;cloudAppsRestoreOptions&#39;] = {
-            &#34;instanceType&#34;: self._ca_instance_type,
-            &#34;googleRestoreOptions&#34;: {
-                &#34;strDestUserAccount&#34;: dest_user_account,
-                &#34;folderGuid&#34;: &#34;&#34;,
-                &#34;restoreToDifferentAccount&#34;: rest_different_account,
-                &#34;restoreToGoogle&#34;: restore_to_google
-            }
+        &#34;instanceType&#34;: self._ca_instance_type,
+        &#34;googleRestoreOptions&#34;: {
+            &#34;strDestUserAccount&#34;: dest_user_account,
+            &#34;folderGuid&#34;: &#34;&#34;,
+            &#34;restoreToDifferentAccount&#34;: rest_different_account,
+            &#34;restoreToGoogle&#34;: restore_to_google
+        }
     }
     return self._process_restore_response(request_json)</code></pre>
 </details>

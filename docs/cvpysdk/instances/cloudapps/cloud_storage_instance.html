@@ -70,7 +70,7 @@ proxy passing explicit credentials of destination cloud</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L1-L790" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L1-L802" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -129,7 +129,6 @@ CloudStorageInstance:
                                                 proxy passing explicit credentials of destination cloud
 
 &#34;&#34;&#34;
-from past.builtins import basestring
 from cvpysdk.instances.cainstance import CloudAppsInstance
 from cvpysdk.client import Client
 from cvpysdk.exception import SDKException
@@ -182,7 +181,7 @@ class CloudStorageInstance(CloudAppsInstance):
             instance_id)
 
     def _get_instance_properties(self):
-        &#34;&#34;&#34;Gets the properties of this instance &#34;&#34;&#34;
+        &#34;&#34;&#34;Gets the properties of this instance&#34;&#34;&#34;
         super(CloudStorageInstance, self)._get_instance_properties()
 
         if &#39;cloudAppsInstance&#39; in self._properties:
@@ -239,8 +238,8 @@ class CloudStorageInstance(CloudAppsInstance):
                 self._access_node = cloud_apps_instance.get(
                     &#39;generalCloudProperties&#39;, {}).get(
                     &#39;proxyServers&#39;, [{}])[0].get(&#39;clientName&#39;, cloud_apps_instance.get(
-                    &#39;generalCloudProperties&#39;, {}).get(&#39;memberServers&#39;, [{}])[
-                    0].get(&#39;client&#39;, {}).get(&#39;clientName&#39;))
+                        &#39;generalCloudProperties&#39;, {}).get(&#39;memberServers&#39;, [{}])[
+                        0].get(&#39;client&#39;, {}).get(&#39;clientName&#39;))
 
     @property
     def google_host_url(self):
@@ -286,7 +285,6 @@ class CloudStorageInstance(CloudAppsInstance):
     def access_keyid(self):
         &#34;&#34;&#34;Returns the access key ID property as a read-only attribute.&#34;&#34;&#34;
         return self._access_keyid
-
 
     @property
     def server_name(self):
@@ -340,7 +338,6 @@ class CloudStorageInstance(CloudAppsInstance):
             for key in kwargs:
 
                 if not key == &#34;restore_options&#34;:
-
                     restore_options[key] = kwargs[key]
 
         else:
@@ -356,7 +353,7 @@ class CloudStorageInstance(CloudAppsInstance):
             &#34;cloudAppsRestoreOptions&#34;] = self._set_cloud_restore_options_json
         cloud_restore_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][
             &#34;restoreOptions&#34;][&#34;commonOptions&#34;] = self._common_options_json
-        cloud_restore_json[&#34;taskInfo&#34;][&#34;associations&#34;][0][&#34;backupsetId&#34;] =  int(self._agent_object.backupsets.get(
+        cloud_restore_json[&#34;taskInfo&#34;][&#34;associations&#34;][0][&#34;backupsetId&#34;] = int(self._agent_object.backupsets.get(
             &#39;defaultBackupSet&#39;).backupset_id)
 
         return cloud_restore_json
@@ -398,7 +395,6 @@ class CloudStorageInstance(CloudAppsInstance):
 
         if not (isinstance(paths, list) and
                 isinstance(overwrite, bool)):
-
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
         request_json = self._generate_json(
@@ -421,7 +417,8 @@ class CloudStorageInstance(CloudAppsInstance):
             destination_path,
             overwrite=True,
             copy_precedence=None,
-            no_of_streams=2):
+            no_of_streams=2,
+            **kwargs):
         &#34;&#34;&#34;Restores the files/folders specified in the input paths list to the input client,
             at the specified destination location.
 
@@ -446,6 +443,19 @@ class CloudStorageInstance(CloudAppsInstance):
                 no_of_streams           (int)   --  number of streams for restore
                                                     default : 2
 
+               kwargs                  (dict)  -- dict of keyword arguments as follows
+
+                    from_time           (str)   --  time to retore the contents after
+                        format: YYYY-MM-DD HH:MM:SS
+                        default: None
+
+                    to_time             (str)   --  time to retore the contents before
+                        format: YYYY-MM-DD HH:MM:SS
+                        default: None
+
+                    no_image            (bool)  --  restore deleted items
+                        default: False
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -465,10 +475,10 @@ class CloudStorageInstance(CloudAppsInstance):
 
         &#34;&#34;&#34;
 
-        if not ((isinstance(destination_client, basestring) or
+        if not ((isinstance(destination_client, str) or
                  isinstance(destination_client, Client)) and
-                isinstance(destination_instance_name, basestring) and
-                isinstance(destination_path, basestring) and
+                isinstance(destination_instance_name, str) and
+                isinstance(destination_path, str) and
                 isinstance(paths, list) and
                 isinstance(overwrite, bool)):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -482,7 +492,8 @@ class CloudStorageInstance(CloudAppsInstance):
             in_place=False,
             copy_precedence=copy_precedence,
             no_of_streams=no_of_streams,
-            restore_To_FileSystem=False)
+            restore_To_FileSystem=False,
+            **kwargs)
 
         return self._process_restore_response(request_json)
 
@@ -535,15 +546,15 @@ class CloudStorageInstance(CloudAppsInstance):
 
         &#34;&#34;&#34;
 
-        if not ((isinstance(destination_client, basestring) or
+        if not ((isinstance(destination_client, str) or
                  isinstance(destination_client, Client)) and
-                isinstance(destination_path, basestring) and
+                isinstance(destination_path, str) and
                 isinstance(paths, list) and
                 isinstance(overwrite, bool)):
-
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
-        destination_appTypeId = int(self._commcell_object.clients.get(destination_client).agents.get(&#39;file system&#39;).agent_id)
+        destination_appTypeId = int(
+            self._commcell_object.clients.get(destination_client).agents.get(&#39;file system&#39;).agent_id)
 
         request_json = self._generate_json(
             paths=paths,
@@ -714,7 +725,8 @@ class CloudStorageInstance(CloudAppsInstance):
             self._proxy_credential_json = {
                 &#34;instanceType&#34;: 20,
                 &#34;googleCloudInstance&#34;: {
-                    &#34;serverName&#34;: destination_cloud.get(&#39;google_cloud&#39;, {}).get(&#39;google_host_url&#39;, &#39;storage.googleapis.com&#39;),
+                    &#34;serverName&#34;: destination_cloud.get(&#39;google_cloud&#39;, {}).get(&#39;google_host_url&#39;,
+                                                                                &#39;storage.googleapis.com&#39;),
                     &#34;credentials&#34;: {
                         &#34;userName&#34;: destination_cloud.get(&#39;google_cloud&#39;, {}).get(&#39;google_access_key&#39;, &#34;&#34;),
                         &#34;password&#34;: destination_cloud.get(&#39;google_cloud&#39;, {}).get(&#39;google_secret_key&#39;, &#34;&#34;)
@@ -821,7 +833,7 @@ class CloudStorageInstance(CloudAppsInstance):
         if len(destination_cloud) &gt; 1:
             raise SDKException(
                 &#39;Instance&#39;, &#39;102&#39;, &#39;only one cloud vendor details can&#39;
-                &#39;be passed.Multiple entries not allowed&#39;)
+                                   &#39;be passed.Multiple entries not allowed&#39;)
 
         cloud_vendors = [&#34;google_cloud&#34;, &#34;amazon_s3&#34;, &#34;azure_blob&#34;]
         # Check if destination cloud falls within supported cloud vendors
@@ -834,9 +846,9 @@ class CloudStorageInstance(CloudAppsInstance):
                 &#39;102&#39;,
                 &#39;Unsupported destination cloud for restore&#39;)
 
-        if not ((isinstance(destination_client_proxy, basestring) or
+        if not ((isinstance(destination_client_proxy, str) or
                  isinstance(destination_client_proxy, Client)) and
-                isinstance(destination_path, basestring) and
+                isinstance(destination_path, str) and
                 isinstance(paths, list) and
                 isinstance(overwrite, bool)):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -899,7 +911,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L64-L790" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L63-L802" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CloudStorageInstance(CloudAppsInstance):
     &#34;&#34;&#34;Class for representing an Instance of the cloud storage instance type.&#34;&#34;&#34;
@@ -948,7 +960,7 @@ default: None</p>
             instance_id)
 
     def _get_instance_properties(self):
-        &#34;&#34;&#34;Gets the properties of this instance &#34;&#34;&#34;
+        &#34;&#34;&#34;Gets the properties of this instance&#34;&#34;&#34;
         super(CloudStorageInstance, self)._get_instance_properties()
 
         if &#39;cloudAppsInstance&#39; in self._properties:
@@ -1005,8 +1017,8 @@ default: None</p>
                 self._access_node = cloud_apps_instance.get(
                     &#39;generalCloudProperties&#39;, {}).get(
                     &#39;proxyServers&#39;, [{}])[0].get(&#39;clientName&#39;, cloud_apps_instance.get(
-                    &#39;generalCloudProperties&#39;, {}).get(&#39;memberServers&#39;, [{}])[
-                    0].get(&#39;client&#39;, {}).get(&#39;clientName&#39;))
+                        &#39;generalCloudProperties&#39;, {}).get(&#39;memberServers&#39;, [{}])[
+                        0].get(&#39;client&#39;, {}).get(&#39;clientName&#39;))
 
     @property
     def google_host_url(self):
@@ -1052,7 +1064,6 @@ default: None</p>
     def access_keyid(self):
         &#34;&#34;&#34;Returns the access key ID property as a read-only attribute.&#34;&#34;&#34;
         return self._access_keyid
-
 
     @property
     def server_name(self):
@@ -1106,7 +1117,6 @@ default: None</p>
             for key in kwargs:
 
                 if not key == &#34;restore_options&#34;:
-
                     restore_options[key] = kwargs[key]
 
         else:
@@ -1122,7 +1132,7 @@ default: None</p>
             &#34;cloudAppsRestoreOptions&#34;] = self._set_cloud_restore_options_json
         cloud_restore_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][
             &#34;restoreOptions&#34;][&#34;commonOptions&#34;] = self._common_options_json
-        cloud_restore_json[&#34;taskInfo&#34;][&#34;associations&#34;][0][&#34;backupsetId&#34;] =  int(self._agent_object.backupsets.get(
+        cloud_restore_json[&#34;taskInfo&#34;][&#34;associations&#34;][0][&#34;backupsetId&#34;] = int(self._agent_object.backupsets.get(
             &#39;defaultBackupSet&#39;).backupset_id)
 
         return cloud_restore_json
@@ -1164,7 +1174,6 @@ default: None</p>
 
         if not (isinstance(paths, list) and
                 isinstance(overwrite, bool)):
-
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
         request_json = self._generate_json(
@@ -1187,7 +1196,8 @@ default: None</p>
             destination_path,
             overwrite=True,
             copy_precedence=None,
-            no_of_streams=2):
+            no_of_streams=2,
+            **kwargs):
         &#34;&#34;&#34;Restores the files/folders specified in the input paths list to the input client,
             at the specified destination location.
 
@@ -1212,6 +1222,19 @@ default: None</p>
                 no_of_streams           (int)   --  number of streams for restore
                                                     default : 2
 
+               kwargs                  (dict)  -- dict of keyword arguments as follows
+
+                    from_time           (str)   --  time to retore the contents after
+                        format: YYYY-MM-DD HH:MM:SS
+                        default: None
+
+                    to_time             (str)   --  time to retore the contents before
+                        format: YYYY-MM-DD HH:MM:SS
+                        default: None
+
+                    no_image            (bool)  --  restore deleted items
+                        default: False
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -1231,10 +1254,10 @@ default: None</p>
 
         &#34;&#34;&#34;
 
-        if not ((isinstance(destination_client, basestring) or
+        if not ((isinstance(destination_client, str) or
                  isinstance(destination_client, Client)) and
-                isinstance(destination_instance_name, basestring) and
-                isinstance(destination_path, basestring) and
+                isinstance(destination_instance_name, str) and
+                isinstance(destination_path, str) and
                 isinstance(paths, list) and
                 isinstance(overwrite, bool)):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -1248,7 +1271,8 @@ default: None</p>
             in_place=False,
             copy_precedence=copy_precedence,
             no_of_streams=no_of_streams,
-            restore_To_FileSystem=False)
+            restore_To_FileSystem=False,
+            **kwargs)
 
         return self._process_restore_response(request_json)
 
@@ -1301,15 +1325,15 @@ default: None</p>
 
         &#34;&#34;&#34;
 
-        if not ((isinstance(destination_client, basestring) or
+        if not ((isinstance(destination_client, str) or
                  isinstance(destination_client, Client)) and
-                isinstance(destination_path, basestring) and
+                isinstance(destination_path, str) and
                 isinstance(paths, list) and
                 isinstance(overwrite, bool)):
-
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
-        destination_appTypeId = int(self._commcell_object.clients.get(destination_client).agents.get(&#39;file system&#39;).agent_id)
+        destination_appTypeId = int(
+            self._commcell_object.clients.get(destination_client).agents.get(&#39;file system&#39;).agent_id)
 
         request_json = self._generate_json(
             paths=paths,
@@ -1480,7 +1504,8 @@ default: None</p>
             self._proxy_credential_json = {
                 &#34;instanceType&#34;: 20,
                 &#34;googleCloudInstance&#34;: {
-                    &#34;serverName&#34;: destination_cloud.get(&#39;google_cloud&#39;, {}).get(&#39;google_host_url&#39;, &#39;storage.googleapis.com&#39;),
+                    &#34;serverName&#34;: destination_cloud.get(&#39;google_cloud&#39;, {}).get(&#39;google_host_url&#39;,
+                                                                                &#39;storage.googleapis.com&#39;),
                     &#34;credentials&#34;: {
                         &#34;userName&#34;: destination_cloud.get(&#39;google_cloud&#39;, {}).get(&#39;google_access_key&#39;, &#34;&#34;),
                         &#34;password&#34;: destination_cloud.get(&#39;google_cloud&#39;, {}).get(&#39;google_secret_key&#39;, &#34;&#34;)
@@ -1587,7 +1612,7 @@ default: None</p>
         if len(destination_cloud) &gt; 1:
             raise SDKException(
                 &#39;Instance&#39;, &#39;102&#39;, &#39;only one cloud vendor details can&#39;
-                &#39;be passed.Multiple entries not allowed&#39;)
+                                   &#39;be passed.Multiple entries not allowed&#39;)
 
         cloud_vendors = [&#34;google_cloud&#34;, &#34;amazon_s3&#34;, &#34;azure_blob&#34;]
         # Check if destination cloud falls within supported cloud vendors
@@ -1600,9 +1625,9 @@ default: None</p>
                 &#39;102&#39;,
                 &#39;Unsupported destination cloud for restore&#39;)
 
-        if not ((isinstance(destination_client_proxy, basestring) or
+        if not ((isinstance(destination_client_proxy, str) or
                  isinstance(destination_client_proxy, Client)) and
-                isinstance(destination_path, basestring) and
+                isinstance(destination_path, str) and
                 isinstance(paths, list) and
                 isinstance(overwrite, bool)):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -1642,7 +1667,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L201-L204" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L200-L203" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def access_key(self):
@@ -1656,7 +1681,7 @@ def access_key(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L211-L214" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L210-L213" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def access_keyid(self):
@@ -1670,7 +1695,7 @@ def access_keyid(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L243-L246" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L241-L244" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def access_node(self):
@@ -1684,7 +1709,7 @@ def access_node(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L206-L209" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L205-L208" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def account_name(self):
@@ -1698,7 +1723,7 @@ def account_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L191-L194" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L190-L193" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def ca_instance_type(self):
@@ -1715,7 +1740,7 @@ def ca_instance_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L232-L241" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L230-L239" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_name(self):
@@ -1735,7 +1760,7 @@ def client_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L227-L230" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L225-L228" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def endpointurl(self):
@@ -1753,7 +1778,7 @@ string representing google cloud account access key</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L181-L189" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L180-L188" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def google_access_key(self):
@@ -1776,7 +1801,7 @@ string representing host URL of goole cloud</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L171-L179" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L170-L178" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def google_host_url(self):
@@ -1795,7 +1820,7 @@ def google_host_url(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L196-L199" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L195-L198" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def host_url(self):
@@ -1809,7 +1834,7 @@ def host_url(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L217-L220" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L215-L218" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def server_name(self):
@@ -1823,7 +1848,7 @@ def server_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L222-L225" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L220-L223" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def username(self):
@@ -1873,7 +1898,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L290-L340" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L287-L336" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -1912,7 +1937,6 @@ if response is not success
 
     if not (isinstance(paths, list) and
             isinstance(overwrite, bool)):
-
         raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
     request_json = self._generate_json(
@@ -1929,7 +1953,7 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.instances.cloudapps.cloud_storage_instance.CloudStorageInstance.restore_out_of_place"><code class="name flex">
-<span>def <span class="ident">restore_out_of_place</span></span>(<span>self, paths, destination_client, destination_instance_name, destination_path, overwrite=True, copy_precedence=None, no_of_streams=2)</span>
+<span>def <span class="ident">restore_out_of_place</span></span>(<span>self, paths, destination_client, destination_instance_name, destination_path, overwrite=True, copy_precedence=None, no_of_streams=2, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the files/folders specified in the input paths list to the input client,
@@ -1968,6 +1992,20 @@ default: None</p>
 &ndash;
 number of streams for restore
 default : 2</p>
+<p>kwargs
+(dict)
+&ndash; dict of keyword arguments as follows</p>
+<pre><code> from_time           (str)   --  time to retore the contents after
+     format: YYYY-MM-DD HH:MM:SS
+     default: None
+
+ to_time             (str)   --  time to retore the contents before
+     format: YYYY-MM-DD HH:MM:SS
+     default: None
+
+ no_image            (bool)  --  restore deleted items
+     default: False
+</code></pre>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
 <h2 id="raises">Raises</h2>
@@ -1986,7 +2024,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L342-L413" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L338-L424" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -1996,7 +2034,8 @@ if response is not success
         destination_path,
         overwrite=True,
         copy_precedence=None,
-        no_of_streams=2):
+        no_of_streams=2,
+        **kwargs):
     &#34;&#34;&#34;Restores the files/folders specified in the input paths list to the input client,
         at the specified destination location.
 
@@ -2021,6 +2060,19 @@ if response is not success
             no_of_streams           (int)   --  number of streams for restore
                                                 default : 2
 
+           kwargs                  (dict)  -- dict of keyword arguments as follows
+
+                from_time           (str)   --  time to retore the contents after
+                    format: YYYY-MM-DD HH:MM:SS
+                    default: None
+
+                to_time             (str)   --  time to retore the contents before
+                    format: YYYY-MM-DD HH:MM:SS
+                    default: None
+
+                no_image            (bool)  --  restore deleted items
+                    default: False
+
         Returns:
             object - instance of the Job class for this restore job
 
@@ -2040,10 +2092,10 @@ if response is not success
 
     &#34;&#34;&#34;
 
-    if not ((isinstance(destination_client, basestring) or
+    if not ((isinstance(destination_client, str) or
              isinstance(destination_client, Client)) and
-            isinstance(destination_instance_name, basestring) and
-            isinstance(destination_path, basestring) and
+            isinstance(destination_instance_name, str) and
+            isinstance(destination_path, str) and
             isinstance(paths, list) and
             isinstance(overwrite, bool)):
         raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -2057,7 +2109,8 @@ if response is not success
         in_place=False,
         copy_precedence=copy_precedence,
         no_of_streams=no_of_streams,
-        restore_To_FileSystem=False)
+        restore_To_FileSystem=False,
+        **kwargs)
 
     return self._process_restore_response(request_json)</code></pre>
 </details>
@@ -2117,7 +2170,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L415-L485" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L426-L496" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_to_fs(
         self,
@@ -2168,15 +2221,15 @@ if response is not success
 
     &#34;&#34;&#34;
 
-    if not ((isinstance(destination_client, basestring) or
+    if not ((isinstance(destination_client, str) or
              isinstance(destination_client, Client)) and
-            isinstance(destination_path, basestring) and
+            isinstance(destination_path, str) and
             isinstance(paths, list) and
             isinstance(overwrite, bool)):
-
         raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
-    destination_appTypeId = int(self._commcell_object.clients.get(destination_client).agents.get(&#39;file system&#39;).agent_id)
+    destination_appTypeId = int(
+        self._commcell_object.clients.get(destination_client).agents.get(&#39;file system&#39;).agent_id)
 
     request_json = self._generate_json(
         paths=paths,
@@ -2274,7 +2327,7 @@ destination_cloud = {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L661-L790" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/cloudapps/cloud_storage_instance.py#L673-L802" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_using_proxy(self,
                         paths,
@@ -2365,7 +2418,7 @@ destination_cloud = {
     if len(destination_cloud) &gt; 1:
         raise SDKException(
             &#39;Instance&#39;, &#39;102&#39;, &#39;only one cloud vendor details can&#39;
-            &#39;be passed.Multiple entries not allowed&#39;)
+                               &#39;be passed.Multiple entries not allowed&#39;)
 
     cloud_vendors = [&#34;google_cloud&#34;, &#34;amazon_s3&#34;, &#34;azure_blob&#34;]
     # Check if destination cloud falls within supported cloud vendors
@@ -2378,9 +2431,9 @@ destination_cloud = {
             &#39;102&#39;,
             &#39;Unsupported destination cloud for restore&#39;)
 
-    if not ((isinstance(destination_client_proxy, basestring) or
+    if not ((isinstance(destination_client_proxy, str) or
              isinstance(destination_client_proxy, Client)) and
-            isinstance(destination_path, basestring) and
+            isinstance(destination_path, str) and
             isinstance(paths, list) and
             isinstance(overwrite, bool)):
         raise SDKException(&#39;Instance&#39;, &#39;101&#39;)

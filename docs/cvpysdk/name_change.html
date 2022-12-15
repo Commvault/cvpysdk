@@ -68,10 +68,16 @@ setters</p>
 &ndash;
 performs commserver namechange based on the
 setters</p>
+<p>get_clients_for_name_change_post_ccm()
+&ndash; gets all the clients available for name change
+post commcell migration</p>
+<p>name_change_post_ccm(parameters_dict)
+&ndash; perfoms name change for migrated clients post
+commcell migration</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/name_change.py#L1-L393" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/name_change.py#L1-L535" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -127,6 +133,11 @@ NameChange:
     _commcell_name_change_op(parameters_dict)       --  performs commserver namechange based on the
                                                         setters
 
+    get_clients_for_name_change_post_ccm()          -- gets all the clients available for name change
+                                                        post commcell migration
+
+    name_change_post_ccm(parameters_dict)           -- perfoms name change for migrated clients post
+                                                        commcell migration
 &#34;&#34;&#34;
 
 import re
@@ -465,7 +476,144 @@ class NameChange(object):
                 &#39;Response&#39;,
                 &#39;101&#39;,
                 self._update_response_(
-                    response. text))</code></pre>
+                    response. text))
+
+    def get_clients_for_name_change_post_ccm(self):
+        &#34;&#34;&#34;
+            Gets clients available for name change after commcell migration.
+            Raises:
+            SDKException::
+                if the client namechange failed
+                if the response is empty
+        &#34;&#34;&#34;
+        xml = &#34;&#34;&#34;
+            &lt;EVGui_GetClientForNameControlReq&gt;
+            &lt;/EVGui_GetClientForNameControlReq&gt;
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;EXECUTE_QCOMMAND&#39;], xml
+        )
+        def get_clients(response):
+            clients_list = []
+            all_clients = response.json()[&#34;clientList&#34;]
+            for client in all_clients:
+                temp_dict = {}
+                name = client.get(&#34;name&#34;, &#34;&#34;)
+                domain = client.get(&#34;domain&#34;, &#34;&#34;)
+                cs_host_name = client.get(&#34;csHostName&#34;, &#34;&#34;)
+                if name + &#34;.&#34; + domain != cs_host_name and name != cs_host_name:
+                    clients_list.append({&#34;csHostname&#34;: cs_host_name, &#34;name&#34;: name})
+            return clients_list
+        if flag:
+            if response.json():
+                if &#39;errorCode&#39; in response.json().get(&#39;error&#39;):
+                    error_code = int(
+                        response.json().get(&#39;error&#39;).get(&#39;errorCode&#39;))
+                    if error_code != 1:
+                        # for errorString: &#34;Failed to get clients for name change operation&#34;
+                        # errorCode: 0 or others
+                        error_message = &#34;Failed to get clients for name change operation&#34; \
+                                        &#34;with errorCode [{0}], errorString [{1}]&#34;.format(
+                            response.json().get(&#39;error&#39;).get(&#39;errorCode&#39;),
+                            response.json().get(&#39;error&#39;).get(&#39;errorString&#39;)
+                        )
+                        raise SDKException(&#39;Client&#39;, &#39;102&#39;, error_message)
+                    elif error_code == 1:
+                        return get_clients(response)
+                elif &#39;errorMessage&#39; in response.json():
+                    error_message = &#34;Failed to get clients for name change operation&#34; \
+                                    &#34;with errorCode [{0}], errorMessage [{1}]&#34;.format(
+                        response.json().get(&#39;errorCode&#39;),
+                        response.json().get(&#39;errorMessage&#39;)
+                    )
+                    raise SDKException(&#39;Client&#39;, &#39;102&#39;, error_message)
+                else:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            else:
+                raise SDKException(
+                    &#39;Response&#39;, &#39;101&#39;, self._update_response_(
+                        response.text))
+        else:
+            raise SDKException(
+                &#39;Response&#39;,
+                &#39;101&#39;,
+                self._update_response_(
+                    response.text))
+
+    def name_change_post_ccm(self, parameters_dict):
+        &#34;&#34;&#34;
+        Performs the commcell namechange for clients post commcell migration
+        Args:
+            parameters_dict (dict)      --  contains old commcell hostname, new commcell hostname,
+                                            Ids of clients on which name change is to be performed
+                                            {
+                                            &#34;sourceCommcellHostname&#34;: &#34;source-1&#34;
+                                            &#34;destinationCommcellHostname&#34;: &#34;dest-1&#34;
+                                            &#34;clientIds&#34;: [&#34;id1&#34;, &#34;id2&#34;]
+                                            }
+            Raises:
+            SDKException::
+                if the client namechange failed
+                if the response is empty
+        &#34;&#34;&#34;
+        name_change_xml = &#34;&#34;&#34;
+            &lt;EVGui_ClientNameControlReq 
+                commCellId=&#34;0&#34; 
+                destinationConfiguration=&#34;2&#34; 
+                isPostMigration=&#34;1&#34; 
+                newName=&#34;{0}&#34;
+                oldName=&#34;{1}&#34;
+                operation=&#34;139&#34; 
+                setWithoutConditionFlag=&#34;0&#34; 
+                sourceConfiguration=&#34;2&#34;&gt; 
+                {2}
+            &lt;/EVGui_ClientNameControlReq&gt;
+        &#34;&#34;&#34;
+        client_tag = &#34;&#34;&#34;
+            &lt;clientList val= &#34;{0}&#34;/&gt;
+        &#34;&#34;&#34;
+        clients_string = &#34;&#34;
+        for clients_id in parameters_dict.get(&#34;clientIds&#34;, []):
+            clients_string += client_tag.format(clients_id)
+        name_change_xml = name_change_xml.format(parameters_dict[&#34;destinationCommcellHostname&#34;],
+                                                 parameters_dict[&#34;sourceCommcellHostname&#34;],
+                                                 clients_string)
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;EXECUTE_QCOMMAND&#39;], name_change_xml
+        )
+        if flag:
+            if response.json():
+                if &#39;errorCode&#39; in response.json().get(&#39;error&#39;):
+                    error_code = int(
+                        response.json().get(&#39;error&#39;).get(&#39;errorCode&#39;))
+                    if error_code != 1:
+                        error_message = &#34;Failed to perform name change operation&#34; \
+                                        &#34;with errorCode [{0}], errorString [{1}]&#34;.format(
+                                        response.json().get(&#39;error&#39;).get(&#39;errorCode&#39;),
+                                        response.json().get(&#39;error&#39;).get(&#39;errorString&#39;)
+                                        )
+                        raise SDKException(&#39;Client&#39;, &#39;102&#39;, error_message)
+                    elif error_code == 1:
+                        return True
+                elif &#39;errorMessage&#39; in response.json():
+                    error_message = &#34;Failed to get clients for name change operation&#34; \
+                                    &#34;with errorCode [{0}], errorMessage [{1}]&#34;.format(response.json().get(&#39;errorCode&#39;),
+                                                                                      response.json().get(
+                                                                                          &#39;errorMessage&#39;)
+                                                                                      )
+                    raise SDKException(&#39;Client&#39;, &#39;102&#39;, error_message)
+                else:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            else:
+                raise SDKException(
+                    &#39;Response&#39;, &#39;101&#39;, self._update_response_(
+                        response.text))
+        else:
+            raise SDKException(
+                &#39;Response&#39;,
+                &#39;101&#39;,
+                self._update_response_(
+                    response.text))</code></pre>
 </details>
 </section>
 <section>
@@ -491,7 +639,7 @@ instance of the client/commcell class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/name_change.py#L70-L393" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/name_change.py#L75-L535" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class NameChange(object):
     &#34;&#34;&#34;Class for doing Name Change operations on clients and commcell&#34;&#34;&#34;
@@ -816,7 +964,144 @@ instance of the client/commcell class</p></div>
                 &#39;Response&#39;,
                 &#39;101&#39;,
                 self._update_response_(
-                    response. text))</code></pre>
+                    response. text))
+
+    def get_clients_for_name_change_post_ccm(self):
+        &#34;&#34;&#34;
+            Gets clients available for name change after commcell migration.
+            Raises:
+            SDKException::
+                if the client namechange failed
+                if the response is empty
+        &#34;&#34;&#34;
+        xml = &#34;&#34;&#34;
+            &lt;EVGui_GetClientForNameControlReq&gt;
+            &lt;/EVGui_GetClientForNameControlReq&gt;
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;EXECUTE_QCOMMAND&#39;], xml
+        )
+        def get_clients(response):
+            clients_list = []
+            all_clients = response.json()[&#34;clientList&#34;]
+            for client in all_clients:
+                temp_dict = {}
+                name = client.get(&#34;name&#34;, &#34;&#34;)
+                domain = client.get(&#34;domain&#34;, &#34;&#34;)
+                cs_host_name = client.get(&#34;csHostName&#34;, &#34;&#34;)
+                if name + &#34;.&#34; + domain != cs_host_name and name != cs_host_name:
+                    clients_list.append({&#34;csHostname&#34;: cs_host_name, &#34;name&#34;: name})
+            return clients_list
+        if flag:
+            if response.json():
+                if &#39;errorCode&#39; in response.json().get(&#39;error&#39;):
+                    error_code = int(
+                        response.json().get(&#39;error&#39;).get(&#39;errorCode&#39;))
+                    if error_code != 1:
+                        # for errorString: &#34;Failed to get clients for name change operation&#34;
+                        # errorCode: 0 or others
+                        error_message = &#34;Failed to get clients for name change operation&#34; \
+                                        &#34;with errorCode [{0}], errorString [{1}]&#34;.format(
+                            response.json().get(&#39;error&#39;).get(&#39;errorCode&#39;),
+                            response.json().get(&#39;error&#39;).get(&#39;errorString&#39;)
+                        )
+                        raise SDKException(&#39;Client&#39;, &#39;102&#39;, error_message)
+                    elif error_code == 1:
+                        return get_clients(response)
+                elif &#39;errorMessage&#39; in response.json():
+                    error_message = &#34;Failed to get clients for name change operation&#34; \
+                                    &#34;with errorCode [{0}], errorMessage [{1}]&#34;.format(
+                        response.json().get(&#39;errorCode&#39;),
+                        response.json().get(&#39;errorMessage&#39;)
+                    )
+                    raise SDKException(&#39;Client&#39;, &#39;102&#39;, error_message)
+                else:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            else:
+                raise SDKException(
+                    &#39;Response&#39;, &#39;101&#39;, self._update_response_(
+                        response.text))
+        else:
+            raise SDKException(
+                &#39;Response&#39;,
+                &#39;101&#39;,
+                self._update_response_(
+                    response.text))
+
+    def name_change_post_ccm(self, parameters_dict):
+        &#34;&#34;&#34;
+        Performs the commcell namechange for clients post commcell migration
+        Args:
+            parameters_dict (dict)      --  contains old commcell hostname, new commcell hostname,
+                                            Ids of clients on which name change is to be performed
+                                            {
+                                            &#34;sourceCommcellHostname&#34;: &#34;source-1&#34;
+                                            &#34;destinationCommcellHostname&#34;: &#34;dest-1&#34;
+                                            &#34;clientIds&#34;: [&#34;id1&#34;, &#34;id2&#34;]
+                                            }
+            Raises:
+            SDKException::
+                if the client namechange failed
+                if the response is empty
+        &#34;&#34;&#34;
+        name_change_xml = &#34;&#34;&#34;
+            &lt;EVGui_ClientNameControlReq 
+                commCellId=&#34;0&#34; 
+                destinationConfiguration=&#34;2&#34; 
+                isPostMigration=&#34;1&#34; 
+                newName=&#34;{0}&#34;
+                oldName=&#34;{1}&#34;
+                operation=&#34;139&#34; 
+                setWithoutConditionFlag=&#34;0&#34; 
+                sourceConfiguration=&#34;2&#34;&gt; 
+                {2}
+            &lt;/EVGui_ClientNameControlReq&gt;
+        &#34;&#34;&#34;
+        client_tag = &#34;&#34;&#34;
+            &lt;clientList val= &#34;{0}&#34;/&gt;
+        &#34;&#34;&#34;
+        clients_string = &#34;&#34;
+        for clients_id in parameters_dict.get(&#34;clientIds&#34;, []):
+            clients_string += client_tag.format(clients_id)
+        name_change_xml = name_change_xml.format(parameters_dict[&#34;destinationCommcellHostname&#34;],
+                                                 parameters_dict[&#34;sourceCommcellHostname&#34;],
+                                                 clients_string)
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;EXECUTE_QCOMMAND&#39;], name_change_xml
+        )
+        if flag:
+            if response.json():
+                if &#39;errorCode&#39; in response.json().get(&#39;error&#39;):
+                    error_code = int(
+                        response.json().get(&#39;error&#39;).get(&#39;errorCode&#39;))
+                    if error_code != 1:
+                        error_message = &#34;Failed to perform name change operation&#34; \
+                                        &#34;with errorCode [{0}], errorString [{1}]&#34;.format(
+                                        response.json().get(&#39;error&#39;).get(&#39;errorCode&#39;),
+                                        response.json().get(&#39;error&#39;).get(&#39;errorString&#39;)
+                                        )
+                        raise SDKException(&#39;Client&#39;, &#39;102&#39;, error_message)
+                    elif error_code == 1:
+                        return True
+                elif &#39;errorMessage&#39; in response.json():
+                    error_message = &#34;Failed to get clients for name change operation&#34; \
+                                    &#34;with errorCode [{0}], errorMessage [{1}]&#34;.format(response.json().get(&#39;errorCode&#39;),
+                                                                                      response.json().get(
+                                                                                          &#39;errorMessage&#39;)
+                                                                                      )
+                    raise SDKException(&#39;Client&#39;, &#39;102&#39;, error_message)
+                else:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            else:
+                raise SDKException(
+                    &#39;Response&#39;, &#39;101&#39;, self._update_response_(
+                        response.text))
+        else:
+            raise SDKException(
+                &#39;Response&#39;,
+                &#39;101&#39;,
+                self._update_response_(
+                    response.text))</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
@@ -828,7 +1113,7 @@ instance of the client/commcell class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/name_change.py#L220-L231" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/name_change.py#L225-L236" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_name(self):
@@ -852,7 +1137,7 @@ def client_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/name_change.py#L188-L199" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/name_change.py#L193-L204" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def display_name(self):
@@ -876,7 +1161,7 @@ def display_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/name_change.py#L155-L163" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/name_change.py#L160-L168" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def domain_name(self):
@@ -897,7 +1182,7 @@ str - client hostname or commserver hostname</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/name_change.py#L105-L116" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/name_change.py#L110-L121" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def hostname(self):
@@ -914,6 +1199,186 @@ def hostname(self):
 </details>
 </dd>
 </dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.name_change.NameChange.get_clients_for_name_change_post_ccm"><code class="name flex">
+<span>def <span class="ident">get_clients_for_name_change_post_ccm</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gets clients available for name change after commcell migration.
+Raises:
+SDKException::
+if the client namechange failed
+if the response is empty</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/name_change.py#L400-L460" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_clients_for_name_change_post_ccm(self):
+    &#34;&#34;&#34;
+        Gets clients available for name change after commcell migration.
+        Raises:
+        SDKException::
+            if the client namechange failed
+            if the response is empty
+    &#34;&#34;&#34;
+    xml = &#34;&#34;&#34;
+        &lt;EVGui_GetClientForNameControlReq&gt;
+        &lt;/EVGui_GetClientForNameControlReq&gt;
+    &#34;&#34;&#34;
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._services[&#39;EXECUTE_QCOMMAND&#39;], xml
+    )
+    def get_clients(response):
+        clients_list = []
+        all_clients = response.json()[&#34;clientList&#34;]
+        for client in all_clients:
+            temp_dict = {}
+            name = client.get(&#34;name&#34;, &#34;&#34;)
+            domain = client.get(&#34;domain&#34;, &#34;&#34;)
+            cs_host_name = client.get(&#34;csHostName&#34;, &#34;&#34;)
+            if name + &#34;.&#34; + domain != cs_host_name and name != cs_host_name:
+                clients_list.append({&#34;csHostname&#34;: cs_host_name, &#34;name&#34;: name})
+        return clients_list
+    if flag:
+        if response.json():
+            if &#39;errorCode&#39; in response.json().get(&#39;error&#39;):
+                error_code = int(
+                    response.json().get(&#39;error&#39;).get(&#39;errorCode&#39;))
+                if error_code != 1:
+                    # for errorString: &#34;Failed to get clients for name change operation&#34;
+                    # errorCode: 0 or others
+                    error_message = &#34;Failed to get clients for name change operation&#34; \
+                                    &#34;with errorCode [{0}], errorString [{1}]&#34;.format(
+                        response.json().get(&#39;error&#39;).get(&#39;errorCode&#39;),
+                        response.json().get(&#39;error&#39;).get(&#39;errorString&#39;)
+                    )
+                    raise SDKException(&#39;Client&#39;, &#39;102&#39;, error_message)
+                elif error_code == 1:
+                    return get_clients(response)
+            elif &#39;errorMessage&#39; in response.json():
+                error_message = &#34;Failed to get clients for name change operation&#34; \
+                                &#34;with errorCode [{0}], errorMessage [{1}]&#34;.format(
+                    response.json().get(&#39;errorCode&#39;),
+                    response.json().get(&#39;errorMessage&#39;)
+                )
+                raise SDKException(&#39;Client&#39;, &#39;102&#39;, error_message)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(
+                &#39;Response&#39;, &#39;101&#39;, self._update_response_(
+                    response.text))
+    else:
+        raise SDKException(
+            &#39;Response&#39;,
+            &#39;101&#39;,
+            self._update_response_(
+                response.text))</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.name_change.NameChange.name_change_post_ccm"><code class="name flex">
+<span>def <span class="ident">name_change_post_ccm</span></span>(<span>self, parameters_dict)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Performs the commcell namechange for clients post commcell migration</p>
+<h2 id="args">Args</h2>
+<p>parameters_dict (dict)
+&ndash;
+contains old commcell hostname, new commcell hostname,
+Ids of clients on which name change is to be performed
+{
+"sourceCommcellHostname": "source-1"
+"destinationCommcellHostname": "dest-1"
+"clientIds": ["id1", "id2"]
+}
+Raises:
+SDKException::
+if the client namechange failed
+if the response is empty</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/name_change.py#L462-L535" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def name_change_post_ccm(self, parameters_dict):
+    &#34;&#34;&#34;
+    Performs the commcell namechange for clients post commcell migration
+    Args:
+        parameters_dict (dict)      --  contains old commcell hostname, new commcell hostname,
+                                        Ids of clients on which name change is to be performed
+                                        {
+                                        &#34;sourceCommcellHostname&#34;: &#34;source-1&#34;
+                                        &#34;destinationCommcellHostname&#34;: &#34;dest-1&#34;
+                                        &#34;clientIds&#34;: [&#34;id1&#34;, &#34;id2&#34;]
+                                        }
+        Raises:
+        SDKException::
+            if the client namechange failed
+            if the response is empty
+    &#34;&#34;&#34;
+    name_change_xml = &#34;&#34;&#34;
+        &lt;EVGui_ClientNameControlReq 
+            commCellId=&#34;0&#34; 
+            destinationConfiguration=&#34;2&#34; 
+            isPostMigration=&#34;1&#34; 
+            newName=&#34;{0}&#34;
+            oldName=&#34;{1}&#34;
+            operation=&#34;139&#34; 
+            setWithoutConditionFlag=&#34;0&#34; 
+            sourceConfiguration=&#34;2&#34;&gt; 
+            {2}
+        &lt;/EVGui_ClientNameControlReq&gt;
+    &#34;&#34;&#34;
+    client_tag = &#34;&#34;&#34;
+        &lt;clientList val= &#34;{0}&#34;/&gt;
+    &#34;&#34;&#34;
+    clients_string = &#34;&#34;
+    for clients_id in parameters_dict.get(&#34;clientIds&#34;, []):
+        clients_string += client_tag.format(clients_id)
+    name_change_xml = name_change_xml.format(parameters_dict[&#34;destinationCommcellHostname&#34;],
+                                             parameters_dict[&#34;sourceCommcellHostname&#34;],
+                                             clients_string)
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._services[&#39;EXECUTE_QCOMMAND&#39;], name_change_xml
+    )
+    if flag:
+        if response.json():
+            if &#39;errorCode&#39; in response.json().get(&#39;error&#39;):
+                error_code = int(
+                    response.json().get(&#39;error&#39;).get(&#39;errorCode&#39;))
+                if error_code != 1:
+                    error_message = &#34;Failed to perform name change operation&#34; \
+                                    &#34;with errorCode [{0}], errorString [{1}]&#34;.format(
+                                    response.json().get(&#39;error&#39;).get(&#39;errorCode&#39;),
+                                    response.json().get(&#39;error&#39;).get(&#39;errorString&#39;)
+                                    )
+                    raise SDKException(&#39;Client&#39;, &#39;102&#39;, error_message)
+                elif error_code == 1:
+                    return True
+            elif &#39;errorMessage&#39; in response.json():
+                error_message = &#34;Failed to get clients for name change operation&#34; \
+                                &#34;with errorCode [{0}], errorMessage [{1}]&#34;.format(response.json().get(&#39;errorCode&#39;),
+                                                                                  response.json().get(
+                                                                                      &#39;errorMessage&#39;)
+                                                                                  )
+                raise SDKException(&#39;Client&#39;, &#39;102&#39;, error_message)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(
+                &#39;Response&#39;, &#39;101&#39;, self._update_response_(
+                    response.text))
+    else:
+        raise SDKException(
+            &#39;Response&#39;,
+            &#39;101&#39;,
+            self._update_response_(
+                response.text))</code></pre>
+</details>
+</dd>
+</dl>
 </dd>
 <dt id="cvpysdk.name_change.OperationType"><code class="flex name class">
 <span>class <span class="ident">OperationType</span></span>
@@ -924,7 +1389,7 @@ def hostname(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/name_change.py#L62-L67" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/name_change.py#L67-L72" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class OperationType(Enum):
     &#34;&#34;&#34; Operation Types supported to get schedules of particular optype&#34;&#34;&#34;
@@ -1031,7 +1496,9 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.name_change.NameChange.client_name" href="#cvpysdk.name_change.NameChange.client_name">client_name</a></code></li>
 <li><code><a title="cvpysdk.name_change.NameChange.display_name" href="#cvpysdk.name_change.NameChange.display_name">display_name</a></code></li>
 <li><code><a title="cvpysdk.name_change.NameChange.domain_name" href="#cvpysdk.name_change.NameChange.domain_name">domain_name</a></code></li>
+<li><code><a title="cvpysdk.name_change.NameChange.get_clients_for_name_change_post_ccm" href="#cvpysdk.name_change.NameChange.get_clients_for_name_change_post_ccm">get_clients_for_name_change_post_ccm</a></code></li>
 <li><code><a title="cvpysdk.name_change.NameChange.hostname" href="#cvpysdk.name_change.NameChange.hostname">hostname</a></code></li>
+<li><code><a title="cvpysdk.name_change.NameChange.name_change_post_ccm" href="#cvpysdk.name_change.NameChange.name_change_post_ccm">name_change_post_ccm</a></code></li>
 </ul>
 </li>
 <li>

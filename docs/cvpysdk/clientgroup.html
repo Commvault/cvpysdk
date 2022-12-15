@@ -134,10 +134,33 @@ autodiscover option at client group level</p>
 <p>disable_auto_discover()
 &ndash; disables
 autodiscover option at client group level</p>
+<h2 id="clientgroup-attributes">Clientgroup Attributes</h2>
+<pre><code>Following attributes are available for an instance of the ClientGroup class:
+
+    **name**                       --      returns the name of client group
+
+    **clientgroup_id**             --      returns the id of client group
+
+    **clientgroup_name**           --      returns the name of client group
+
+    **description**                --      returns the description of client group
+
+    **associated_clients**         --      returns the associated clients of client group
+
+    **is_backup_enabled**          --      returns the backup activity status of client group
+
+    **is_restore_enabled**         --      returns the restore activity status of client group
+
+    **is_data_aging_enabled**      --      returns the data aging activity status of client group
+
+    **is_smart_client_group**      --      returns true if client group is a smart client group
+
+    **is_auto_discover_enabled**   --      returns the auto discover status of client group
+</code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1-L1945" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1-L1975" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -271,6 +294,31 @@ ClientGroup:
 
     disable_auto_discover()         -- disables  autodiscover option at client group level
 
+ClientGroup Attributes
+-----------------------
+
+    Following attributes are available for an instance of the ClientGroup class:
+
+        **name**                       --      returns the name of client group
+        
+        **clientgroup_id**             --      returns the id of client group
+        
+        **clientgroup_name**           --      returns the name of client group
+        
+        **description**                --      returns the description of client group
+        
+        **associated_clients**         --      returns the associated clients of client group
+        
+        **is_backup_enabled**          --      returns the backup activity status of client group
+        
+        **is_restore_enabled**         --      returns the restore activity status of client group
+        
+        **is_data_aging_enabled**      --      returns the data aging activity status of client group
+        
+        **is_smart_client_group**      --      returns true if client group is a smart client group
+        
+        **is_auto_discover_enabled**   --      returns the auto discover status of client group
+        
 &#34;&#34;&#34;
 
 from __future__ import absolute_import
@@ -278,8 +326,6 @@ from __future__ import unicode_literals
 
 import time
 import copy
-
-from past.builtins import basestring
 
 from .exception import SDKException
 from .network import Network
@@ -418,7 +464,7 @@ class ClientGroups(object):
         clients = []
 
         for client in clients_list:
-            if isinstance(client, basestring):
+            if isinstance(client, str):
                 client = client.strip().lower()
 
                 if self._commcell_object.clients.has_client(client):
@@ -451,7 +497,7 @@ class ClientGroups(object):
                 SDKException:
                     if type of the client group name argument is not string
         &#34;&#34;&#34;
-        if not isinstance(clientgroup_name, basestring):
+        if not isinstance(clientgroup_name, str):
             raise SDKException(&#39;ClientGroup&#39;, &#39;101&#39;)
 
         return self._clientgroups and clientgroup_name.lower() in self._clientgroups
@@ -782,14 +828,14 @@ class ClientGroups(object):
 
                     if client group already exists with the given name
         &#34;&#34;&#34;
-        if not (isinstance(clientgroup_name, basestring) and
-                isinstance(kwargs.get(&#39;clientgroup_description&#39;, &#39;&#39;), basestring)):
+        if not (isinstance(clientgroup_name, str) and
+                isinstance(kwargs.get(&#39;clientgroup_description&#39;, &#39;&#39;), str)):
             raise SDKException(&#39;ClientGroup&#39;, &#39;101&#39;)
 
         if not self.has_clientgroup(clientgroup_name):
             if isinstance(clients, list):
                 clients = self._valid_clients(clients)
-            elif isinstance(clients, basestring):
+            elif isinstance(clients, str):
                 clients = self._valid_clients(clients.split(&#39;,&#39;))
             else:
                 raise SDKException(&#39;ClientGroup&#39;, &#39;101&#39;)
@@ -901,7 +947,7 @@ class ClientGroups(object):
 
                     if no client group exists with the given name
         &#34;&#34;&#34;
-        if not isinstance(clientgroup_name, basestring):
+        if not isinstance(clientgroup_name, str):
             raise SDKException(&#39;ClientGroup&#39;, &#39;101&#39;)
         else:
             clientgroup_name = clientgroup_name.lower()
@@ -934,7 +980,7 @@ class ClientGroups(object):
                     if no clientgroup exists with the given name
         &#34;&#34;&#34;
 
-        if not isinstance(clientgroup_name, basestring):
+        if not isinstance(clientgroup_name, str):
             raise SDKException(&#39;ClientGroup&#39;, &#39;101&#39;)
         else:
             clientgroup_name = clientgroup_name.lower()
@@ -1021,6 +1067,7 @@ class ClientGroup(object):
         self._is_backup_enabled = None
         self._is_restore_enabled = None
         self._is_data_aging_enabled = None
+        self._is_smart_client_group = None
 
         self.refresh()
 
@@ -1091,6 +1138,7 @@ class ClientGroup(object):
             for client in clientgroup_props[&#39;associatedClients&#39;]:
                 self._associated_clients.append(client[&#39;clientName&#39;])
 
+        self._is_smart_client_group = self._properties[&#39;isSmartClientGroup&#39;]
         self._is_backup_enabled = False
         self._is_restore_enabled = False
         self._is_data_aging_enabled = False
@@ -1309,12 +1357,12 @@ class ClientGroup(object):
 
                     if failed to remove clients from the ClientGroup
         &#34;&#34;&#34;
-        if isinstance(clients, (basestring, list)):
+        if isinstance(clients, (str, list)):
             clientgroups_object = ClientGroups(self._commcell_object)
 
             if isinstance(clients, list):
                 validated_clients_list = clientgroups_object._valid_clients(clients)
-            elif isinstance(clients, basestring):
+            elif isinstance(clients, str):
                 validated_clients_list = clientgroups_object._valid_clients(clients.split(&#39;,&#39;))
 
             if operation_type in [&#39;ADD&#39;, &#39;OVERWRITE&#39;]:
@@ -1393,6 +1441,11 @@ class ClientGroup(object):
         &#34;&#34;&#34;Treats the clientgroup data aging attribute as a property of the ClientGroup class.&#34;&#34;&#34;
         return self._is_data_aging_enabled
 
+    @property
+    def is_smart_client_group(self):
+        &#34;&#34;&#34;Returns boolean indicating whether client group is smart client group&#34;&#34;&#34;
+        return self._is_smart_client_group
+    
     @property
     def network(self):
         &#34;&#34;&#34;Returns the object of Network class.&#34;&#34;&#34;
@@ -1715,7 +1768,7 @@ class ClientGroup(object):
     @clientgroup_name.setter
     def clientgroup_name(self, value):
         &#34;&#34;&#34;Sets the name of the clientgroup as the value provided as input.&#34;&#34;&#34;
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             output = self._update(
                 clientgroup_name=value,
                 clientgroup_description=self.description,
@@ -1735,7 +1788,7 @@ class ClientGroup(object):
     @description.setter
     def description(self, value):
         &#34;&#34;&#34;Sets the description of the clientgroup as the value provided in input.&#34;&#34;&#34;
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             output = self._update(
                 clientgroup_name=self.name,
                 clientgroup_description=value,
@@ -2121,7 +2174,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L844-L1945" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L867-L1975" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ClientGroup(object):
     &#34;&#34;&#34;Class for performing operations for a specific ClientGroup.&#34;&#34;&#34;
@@ -2162,6 +2215,7 @@ default: None</p>
         self._is_backup_enabled = None
         self._is_restore_enabled = None
         self._is_data_aging_enabled = None
+        self._is_smart_client_group = None
 
         self.refresh()
 
@@ -2232,6 +2286,7 @@ default: None</p>
             for client in clientgroup_props[&#39;associatedClients&#39;]:
                 self._associated_clients.append(client[&#39;clientName&#39;])
 
+        self._is_smart_client_group = self._properties[&#39;isSmartClientGroup&#39;]
         self._is_backup_enabled = False
         self._is_restore_enabled = False
         self._is_data_aging_enabled = False
@@ -2450,12 +2505,12 @@ default: None</p>
 
                     if failed to remove clients from the ClientGroup
         &#34;&#34;&#34;
-        if isinstance(clients, (basestring, list)):
+        if isinstance(clients, (str, list)):
             clientgroups_object = ClientGroups(self._commcell_object)
 
             if isinstance(clients, list):
                 validated_clients_list = clientgroups_object._valid_clients(clients)
-            elif isinstance(clients, basestring):
+            elif isinstance(clients, str):
                 validated_clients_list = clientgroups_object._valid_clients(clients.split(&#39;,&#39;))
 
             if operation_type in [&#39;ADD&#39;, &#39;OVERWRITE&#39;]:
@@ -2534,6 +2589,11 @@ default: None</p>
         &#34;&#34;&#34;Treats the clientgroup data aging attribute as a property of the ClientGroup class.&#34;&#34;&#34;
         return self._is_data_aging_enabled
 
+    @property
+    def is_smart_client_group(self):
+        &#34;&#34;&#34;Returns boolean indicating whether client group is smart client group&#34;&#34;&#34;
+        return self._is_smart_client_group
+    
     @property
     def network(self):
         &#34;&#34;&#34;Returns the object of Network class.&#34;&#34;&#34;
@@ -2856,7 +2916,7 @@ default: None</p>
     @clientgroup_name.setter
     def clientgroup_name(self, value):
         &#34;&#34;&#34;Sets the name of the clientgroup as the value provided as input.&#34;&#34;&#34;
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             output = self._update(
                 clientgroup_name=value,
                 clientgroup_description=self.description,
@@ -2876,7 +2936,7 @@ default: None</p>
     @description.setter
     def description(self, value):
         &#34;&#34;&#34;Sets the description of the clientgroup as the value provided in input.&#34;&#34;&#34;
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             output = self._update(
                 clientgroup_name=self.name,
                 clientgroup_description=value,
@@ -3234,7 +3294,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1235-L1238" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1260-L1263" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def associated_clients(self):
@@ -3248,7 +3308,7 @@ def associated_clients(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1271-L1285" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1301-L1315" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_group_filter(self):
@@ -3273,7 +3333,7 @@ def client_group_filter(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1220-L1223" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1245-L1248" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def clientgroup_id(self):
@@ -3287,7 +3347,7 @@ def clientgroup_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1225-L1228" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1250-L1253" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def clientgroup_name(self):
@@ -3301,7 +3361,7 @@ def clientgroup_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1230-L1233" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1255-L1258" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -3315,7 +3375,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1287-L1290" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1317-L1320" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_auto_discover_enabled(self):
@@ -3329,7 +3389,7 @@ def is_auto_discover_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1240-L1243" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1265-L1268" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_backup_enabled(self):
@@ -3343,7 +3403,7 @@ def is_backup_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1250-L1253" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1275-L1278" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_data_aging_enabled(self):
@@ -3357,12 +3417,26 @@ def is_data_aging_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1245-L1248" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1270-L1273" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_restore_enabled(self):
     &#34;&#34;&#34;Treats the clientgroup restore attribute as a propetry of the ClientGroup class.&#34;&#34;&#34;
     return self._is_restore_enabled</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.clientgroup.ClientGroup.is_smart_client_group"><code class="name">var <span class="ident">is_smart_client_group</span></code></dt>
+<dd>
+<div class="desc"><p>Returns boolean indicating whether client group is smart client group</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1280-L1283" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_smart_client_group(self):
+    &#34;&#34;&#34;Returns boolean indicating whether client group is smart client group&#34;&#34;&#34;
+    return self._is_smart_client_group</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.clientgroup.ClientGroup.name"><code class="name">var <span class="ident">name</span></code></dt>
@@ -3371,7 +3445,7 @@ def is_restore_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1215-L1218" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1240-L1243" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -3385,7 +3459,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1255-L1261" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1285-L1291" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def network(self):
@@ -3402,7 +3476,7 @@ def network(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1263-L1269" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1293-L1299" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def network_throttle(self):
@@ -3419,7 +3493,7 @@ def network_throttle(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1210-L1213" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1235-L1238" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -3467,7 +3541,7 @@ if response code is not as expected
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1843-L1889" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1873-L1919" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_additional_setting(
         self,
@@ -3542,7 +3616,7 @@ if clients is not of type string / list</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1614-L1637" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1644-L1667" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_clients(self, clients, overwrite=False):
     &#34;&#34;&#34;Adds clients to the ClientGroup.
@@ -3581,7 +3655,7 @@ if failed to disable_auto_discover</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1916-L1939" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1946-L1969" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_auto_discover(self):
     &#34;&#34;&#34;Disables autodiscover at ClientGroup level..
@@ -3620,7 +3694,7 @@ if failed to disable backup</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1380-L1400" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1410-L1430" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_backup(self):
     &#34;&#34;&#34;Disables Backup for this ClientGroup.
@@ -3656,7 +3730,7 @@ if failed to disable data aging</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1552-L1572" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1582-L1602" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_data_aging(self):
     &#34;&#34;&#34;Disables Data Aging for this ClientGroup.
@@ -3692,7 +3766,7 @@ if failed to disable restore</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1466-L1486" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1496-L1516" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_restore(self):
     &#34;&#34;&#34;Disables Restore for this ClientGroup.
@@ -3728,7 +3802,7 @@ if failed to enable_auto_discover</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1891-L1914" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1921-L1944" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_auto_discover(self):
     &#34;&#34;&#34;Enables autodiscover at ClientGroup level..
@@ -3767,7 +3841,7 @@ if failed to enable backup</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1316-L1336" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1346-L1366" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_backup(self):
     &#34;&#34;&#34;Enable Backup for this ClientGroup.
@@ -3818,7 +3892,7 @@ if failed to enable backup
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1338-L1378" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1368-L1408" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_backup_at_time(self, enable_time, **kwargs):
     &#34;&#34;&#34;Disables Backup if not already disabled, and enables at the time specified.
@@ -3874,7 +3948,7 @@ if failed to enable data aging</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1488-L1508" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1518-L1538" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_data_aging(self):
     &#34;&#34;&#34;Enable Data Aging for this ClientGroup.
@@ -3925,7 +3999,7 @@ if failed to enable Data Aging
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1510-L1550" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1540-L1580" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_data_aging_at_time(self, enable_time, **kwargs):
     &#34;&#34;&#34;Disables Data Aging if not already disabled, and enables at the time specified.
@@ -3981,7 +4055,7 @@ if failed to enable restore</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1402-L1422" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1432-L1452" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_restore(self):
     &#34;&#34;&#34;Enable Restore for this ClientGroup.
@@ -4032,7 +4106,7 @@ if failed to enable Restore
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1424-L1464" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1454-L1494" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_restore_at_time(self, enable_time, **kwargs):
     &#34;&#34;&#34;Disables restore if not already disabled, and enables at the time specified.
@@ -4090,7 +4164,7 @@ if failed to enable Restore
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1677-L1723" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1707-L1753" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def push_network_config(self):
     &#34;&#34;&#34;Performs a push network configuration on the client group
@@ -4172,7 +4246,7 @@ if another download job is already running
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1725-L1762" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1755-L1792" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def push_servicepack_and_hotfix(
         self,
@@ -4222,7 +4296,7 @@ if another download job is already running
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1941-L1945" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1971-L1975" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the ClientGroup.&#34;&#34;&#34;
@@ -4242,7 +4316,7 @@ if failed to remove all clients from client group</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1657-L1675" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1687-L1705" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def remove_all_clients(self):
     &#34;&#34;&#34;Clears the associated clients from client group
@@ -4287,7 +4361,7 @@ if failed to remove clients from client group
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1639-L1655" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1669-L1685" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def remove_clients(self, clients):
     &#34;&#34;&#34;Deletes clients from the ClientGroup.
@@ -4339,7 +4413,7 @@ if install job failed</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1764-L1803" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1794-L1833" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def repair_software(
         self,
@@ -4407,7 +4481,7 @@ need to change and use the update_properties method to set the properties</p></d
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L1805-L1841" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L1835-L1871" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;Updates the client group properties
@@ -4466,7 +4540,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L149-L841" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L172-L864" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ClientGroups(object):
     &#34;&#34;&#34;Class for representing all the clientgroups associated with a Commcell.&#34;&#34;&#34;
@@ -4599,7 +4673,7 @@ instance of the Commcell class</p>
         clients = []
 
         for client in clients_list:
-            if isinstance(client, basestring):
+            if isinstance(client, str):
                 client = client.strip().lower()
 
                 if self._commcell_object.clients.has_client(client):
@@ -4632,7 +4706,7 @@ instance of the Commcell class</p>
                 SDKException:
                     if type of the client group name argument is not string
         &#34;&#34;&#34;
-        if not isinstance(clientgroup_name, basestring):
+        if not isinstance(clientgroup_name, str):
             raise SDKException(&#39;ClientGroup&#39;, &#39;101&#39;)
 
         return self._clientgroups and clientgroup_name.lower() in self._clientgroups
@@ -4963,14 +5037,14 @@ instance of the Commcell class</p>
 
                     if client group already exists with the given name
         &#34;&#34;&#34;
-        if not (isinstance(clientgroup_name, basestring) and
-                isinstance(kwargs.get(&#39;clientgroup_description&#39;, &#39;&#39;), basestring)):
+        if not (isinstance(clientgroup_name, str) and
+                isinstance(kwargs.get(&#39;clientgroup_description&#39;, &#39;&#39;), str)):
             raise SDKException(&#39;ClientGroup&#39;, &#39;101&#39;)
 
         if not self.has_clientgroup(clientgroup_name):
             if isinstance(clients, list):
                 clients = self._valid_clients(clients)
-            elif isinstance(clients, basestring):
+            elif isinstance(clients, str):
                 clients = self._valid_clients(clients.split(&#39;,&#39;))
             else:
                 raise SDKException(&#39;ClientGroup&#39;, &#39;101&#39;)
@@ -5082,7 +5156,7 @@ instance of the Commcell class</p>
 
                     if no client group exists with the given name
         &#34;&#34;&#34;
-        if not isinstance(clientgroup_name, basestring):
+        if not isinstance(clientgroup_name, str):
             raise SDKException(&#39;ClientGroup&#39;, &#39;101&#39;)
         else:
             clientgroup_name = clientgroup_name.lower()
@@ -5115,7 +5189,7 @@ instance of the Commcell class</p>
                     if no clientgroup exists with the given name
         &#34;&#34;&#34;
 
-        if not isinstance(clientgroup_name, basestring):
+        if not isinstance(clientgroup_name, str):
             raise SDKException(&#39;ClientGroup&#39;, &#39;101&#39;)
         else:
             clientgroup_name = clientgroup_name.lower()
@@ -5175,7 +5249,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L288-L298" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L311-L321" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_clientgroups(self):
@@ -5248,7 +5322,7 @@ if client group already exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L596-L746" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L619-L769" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, clientgroup_name, clients=[], **kwargs):
     &#34;&#34;&#34;Adds a new Client Group to the Commcell.
@@ -5298,14 +5372,14 @@ if client group already exists with the given name
 
                 if client group already exists with the given name
     &#34;&#34;&#34;
-    if not (isinstance(clientgroup_name, basestring) and
-            isinstance(kwargs.get(&#39;clientgroup_description&#39;, &#39;&#39;), basestring)):
+    if not (isinstance(clientgroup_name, str) and
+            isinstance(kwargs.get(&#39;clientgroup_description&#39;, &#39;&#39;), str)):
         raise SDKException(&#39;ClientGroup&#39;, &#39;101&#39;)
 
     if not self.has_clientgroup(clientgroup_name):
         if isinstance(clients, list):
             clients = self._valid_clients(clients)
-        elif isinstance(clients, basestring):
+        elif isinstance(clients, str):
             clients = self._valid_clients(clients.split(&#39;,&#39;))
         else:
             raise SDKException(&#39;ClientGroup&#39;, &#39;101&#39;)
@@ -5435,7 +5509,7 @@ value required to create rule</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L318-L510" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L341-L533" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_smart_rule(self,
                       filter_rule=&#39;OS Type&#39;,
@@ -5653,7 +5727,7 @@ if no clientgroup exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L779-L837" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L802-L860" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, clientgroup_name):
     &#34;&#34;&#34;Deletes the clientgroup from the commcell.
@@ -5672,7 +5746,7 @@ if no clientgroup exists with the given name
                 if no clientgroup exists with the given name
     &#34;&#34;&#34;
 
-    if not isinstance(clientgroup_name, basestring):
+    if not isinstance(clientgroup_name, str):
         raise SDKException(&#39;ClientGroup&#39;, &#39;101&#39;)
     else:
         clientgroup_name = clientgroup_name.lower()
@@ -5735,7 +5809,7 @@ if type of the client group name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L748-L777" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L771-L800" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, clientgroup_name):
     &#34;&#34;&#34;Returns a client group object of the specified client group name.
@@ -5752,7 +5826,7 @@ if type of the client group name argument is not string</p>
 
                 if no client group exists with the given name
     &#34;&#34;&#34;
-    if not isinstance(clientgroup_name, basestring):
+    if not isinstance(clientgroup_name, str):
         raise SDKException(&#39;ClientGroup&#39;, &#39;101&#39;)
     else:
         clientgroup_name = clientgroup_name.lower()
@@ -5786,7 +5860,7 @@ if type of the client group name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L300-L316" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L323-L339" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_clientgroup(self, clientgroup_name):
     &#34;&#34;&#34;Checks if a client group exists in the commcell with the input client group name.
@@ -5801,7 +5875,7 @@ if type of the client group name argument is not string</p></div>
             SDKException:
                 if type of the client group name argument is not string
     &#34;&#34;&#34;
-    if not isinstance(clientgroup_name, basestring):
+    if not isinstance(clientgroup_name, str):
         raise SDKException(&#39;ClientGroup&#39;, &#39;101&#39;)
 
     return self._clientgroups and clientgroup_name.lower() in self._clientgroups</code></pre>
@@ -5831,7 +5905,7 @@ Rule group to create smart client group</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L512-L550" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L535-L573" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def merge_smart_rules(self, rule_list, op_value=&#39;all&#39;, scg_op=&#39;all&#39;):
     &#34;&#34;&#34;Merge multiple rules into (SCG) rule to create smart client group.
@@ -5882,7 +5956,7 @@ Rule group to create smart client group</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/clientgroup.py#L839-L841" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/clientgroup.py#L862-L864" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the client groups associated with the Commcell.&#34;&#34;&#34;
@@ -5949,7 +6023,9 @@ setTimeout(() => input.focus(), 100);
 </script>
 <h1>Index</h1>
 <div class="toc">
-<ul></ul>
+<ul>
+<li><a href="#clientgroup-attributes">ClientGroup Attributes</a></li>
+</ul>
 </div>
 <ul id="index">
 <li><h3>Super-module</h3>
@@ -5984,6 +6060,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.clientgroup.ClientGroup.is_backup_enabled" href="#cvpysdk.clientgroup.ClientGroup.is_backup_enabled">is_backup_enabled</a></code></li>
 <li><code><a title="cvpysdk.clientgroup.ClientGroup.is_data_aging_enabled" href="#cvpysdk.clientgroup.ClientGroup.is_data_aging_enabled">is_data_aging_enabled</a></code></li>
 <li><code><a title="cvpysdk.clientgroup.ClientGroup.is_restore_enabled" href="#cvpysdk.clientgroup.ClientGroup.is_restore_enabled">is_restore_enabled</a></code></li>
+<li><code><a title="cvpysdk.clientgroup.ClientGroup.is_smart_client_group" href="#cvpysdk.clientgroup.ClientGroup.is_smart_client_group">is_smart_client_group</a></code></li>
 <li><code><a title="cvpysdk.clientgroup.ClientGroup.name" href="#cvpysdk.clientgroup.ClientGroup.name">name</a></code></li>
 <li><code><a title="cvpysdk.clientgroup.ClientGroup.network" href="#cvpysdk.clientgroup.ClientGroup.network">network</a></code></li>
 <li><code><a title="cvpysdk.clientgroup.ClientGroup.network_throttle" href="#cvpysdk.clientgroup.ClientGroup.network_throttle">network_throttle</a></code></li>

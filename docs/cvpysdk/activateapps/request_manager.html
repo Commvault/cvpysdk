@@ -122,7 +122,7 @@ Approves the review request</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L1-L924" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L1-L924" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -706,7 +706,7 @@ class Request:
 
             Returns:
 
-                dict        --  Containing document details
+                int,dict        --  Containing document count &amp; document details
 
             Raises:
 
@@ -733,7 +733,7 @@ class Request:
         if flag:
             if response.json():
                 if &#39;response&#39; in response.json():
-                    return response.json()[&#39;response&#39;][&#39;docs&#39;]
+                    return response.json()[&#39;response&#39;][&#39;numFound&#39;], response.json()[&#39;response&#39;][&#39;docs&#39;]
             raise SDKException(&#39;RequestManager&#39;, &#39;102&#39;, &#39;Failed to get document details for this request&#39;)
         self._response_not_success(response)
 
@@ -1086,7 +1086,7 @@ instance of the Request class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L328-L924" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L328-L924" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Request:
     &#34;&#34;&#34;Class to represent single request in the commcell&#34;&#34;&#34;
@@ -1343,7 +1343,7 @@ instance of the Request class</p></div>
 
             Returns:
 
-                dict        --  Containing document details
+                int,dict        --  Containing document count &amp; document details
 
             Raises:
 
@@ -1370,7 +1370,7 @@ instance of the Request class</p></div>
         if flag:
             if response.json():
                 if &#39;response&#39; in response.json():
-                    return response.json()[&#39;response&#39;][&#39;docs&#39;]
+                    return response.json()[&#39;response&#39;][&#39;numFound&#39;], response.json()[&#39;response&#39;][&#39;docs&#39;]
             raise SDKException(&#39;RequestManager&#39;, &#39;102&#39;, &#39;Failed to get document details for this request&#39;)
         self._response_not_success(response)
 
@@ -1698,7 +1698,7 @@ Approver user details</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L861-L869" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L861-L869" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def approvers(self):
@@ -1720,7 +1720,7 @@ Request criteria</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L871-L880" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L871-L880" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def criteria(self):
@@ -1744,7 +1744,7 @@ Request owner's name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L826-L838" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L826-L838" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def owner(self):
@@ -1770,7 +1770,7 @@ Activate app name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L893-L902" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L893-L902" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def request_app(self):
@@ -1794,7 +1794,7 @@ Request id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L793-L802" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L793-L802" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def request_id(self):
@@ -1818,7 +1818,7 @@ Request name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L815-L824" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L815-L824" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def request_name(self):
@@ -1842,7 +1842,7 @@ Request properties</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L840-L849" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L840-L849" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def request_props(self):
@@ -1865,7 +1865,7 @@ Request type</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L904-L913" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L904-L913" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def request_type(self):
@@ -1888,7 +1888,7 @@ Requestor mail id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L915-L924" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L915-L924" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def requestor(self):
@@ -1912,7 +1912,7 @@ Request review set id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L804-L813" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L804-L813" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def review_set_id(self):
@@ -1936,7 +1936,7 @@ Reviewer user details</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L851-L859" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L851-L859" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def reviewers(self):
@@ -1958,7 +1958,7 @@ Request status</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L882-L891" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L882-L891" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def status(self):
@@ -2006,7 +2006,7 @@ if reviewers/approvers doesn't exists
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L478-L557" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L478-L557" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def configure(self, projects, reviewers, approvers):
     &#34;&#34;&#34;configure created request with provided details
@@ -2124,9 +2124,9 @@ No of document details to fetch</p>
 query to be performed (acts as q param in query)
 default:None (Means <em>:</em>)</p>
 <h2 id="returns">Returns</h2>
-<p>dict
+<p>int,dict
 &ndash;
-Containing document details</p>
+Containing document count &amp; document details</p>
 <h2 id="raises">Raises</h2>
 <p>SDKException:</p>
 <pre><code>if failed to perform search
@@ -2134,7 +2134,7 @@ Containing document details</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L559-L612" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L559-L612" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_document_details(self, criteria=None, attr_list=None, query=&#34;*:*&#34;, start=0, rows=10):
     &#34;&#34;&#34;Returns the document details for this request
@@ -2160,7 +2160,7 @@ Containing document details</p>
 
         Returns:
 
-            dict        --  Containing document details
+            int,dict        --  Containing document count &amp; document details
 
         Raises:
 
@@ -2187,7 +2187,7 @@ Containing document details</p>
     if flag:
         if response.json():
             if &#39;response&#39; in response.json():
-                return response.json()[&#39;response&#39;][&#39;docs&#39;]
+                return response.json()[&#39;response&#39;][&#39;numFound&#39;], response.json()[&#39;response&#39;][&#39;docs&#39;]
         raise SDKException(&#39;RequestManager&#39;, &#39;102&#39;, &#39;Failed to get document details for this request&#39;)
     self._response_not_success(response)</code></pre>
 </details>
@@ -2219,7 +2219,7 @@ Workflow job id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L761-L791" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L761-L791" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def give_approval(self, workflow_job_id, action=&#34;Approve&#34;):
     &#34;&#34;&#34;Gives approval for the review request
@@ -2270,7 +2270,7 @@ Workflow job id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L683-L707" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L683-L707" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def mark_review_complete(self):
     &#34;&#34;&#34;Marks review request as review complete
@@ -2307,7 +2307,7 @@ Workflow job id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L679-L681" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L679-L681" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the request details from the commcell.&#34;&#34;&#34;
@@ -2331,7 +2331,7 @@ Workflow job id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L709-L729" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L709-L729" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def request_approval(self):
     &#34;&#34;&#34;Invokes workflow job requesting approval for this request
@@ -2394,7 +2394,7 @@ if input is not valid
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L731-L759" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L731-L759" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def review_document(self, comment, doc_id=None, ds_id=None, consent=True, redact=False):
     &#34;&#34;&#34;does document review update for consent/comment on this request
@@ -2458,7 +2458,7 @@ Example </code></dt>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L614-L677" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L614-L677" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def review_stats(self):
     &#34;&#34;&#34;returns review statistics for this request
@@ -2547,7 +2547,7 @@ instance of the Requests class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L109-L325" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L109-L325" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Requests:
     &#34;&#34;&#34;Class for representing all requests in the commcell.&#34;&#34;&#34;
@@ -2817,7 +2817,7 @@ delete_backup       (bool)      --  Specifies whether to delete data from backup
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L248-L325" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L248-L325" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, req_name, req_type, requestor, criteria, **kwargs):
     &#34;&#34;&#34;adds request to request manager app
@@ -2921,7 +2921,7 @@ if failed to delete request
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L213-L246" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L213-L246" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, req_name):
     &#34;&#34;&#34;deletes the request for given request name
@@ -2979,7 +2979,7 @@ if type of the request name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L192-L211" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L192-L211" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, req_name):
     &#34;&#34;&#34;Returns the Instance of Request class for given request name
@@ -3020,7 +3020,7 @@ if type of the request name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L174-L190" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L174-L190" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_request(self, req_name):
     &#34;&#34;&#34;Checks if a request exists in the commcell with the input name or not
@@ -3049,7 +3049,7 @@ if type of the request name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f7abe1b9ca096708102158076791ca4258a39b9e/cvpysdk/activateapps/request_manager.py#L170-L172" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/request_manager.py#L170-L172" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the requests with the commcell.&#34;&#34;&#34;
