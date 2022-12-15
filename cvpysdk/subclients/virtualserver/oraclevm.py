@@ -39,7 +39,6 @@ OracleVMVirtualServerSubclient:
                                                     user to the same location
 """
 
-from past.builtins import basestring
 from ..vssubclient import VirtualServerSubclient
 from ...exception import SDKException
 
@@ -80,7 +79,7 @@ class OracleVMVirtualServerSubclient(VirtualServerSubclient):
                                                    restore
                                                    default: None
 
-                destination_client (basestring)  -- proxy client to be used for
+                destination_client (str)  -- proxy client to be used for
                                                     restore
                                                     default: proxy added in
                                                     subclient
@@ -91,12 +90,12 @@ class OracleVMVirtualServerSubclient(VirtualServerSubclient):
                 power_on            (bool)     --  power on the  restored VM
                                                    default: True
 
-                disk_option       (basestring) -- disk provisioning for the
+                disk_option       (str) -- disk provisioning for the
                                                   restored vm
                                                   default: 0 which is equivalent
                                                   to Original
 
-                transport_mode    (basestring) -- transport mode that need to be
+                transport_mode    (str) -- transport mode that need to be
                                                   used
 
                 copy_precedence     (int)      --  copy precedence value
@@ -176,16 +175,16 @@ class OracleVMVirtualServerSubclient(VirtualServerSubclient):
                 disk_name_prefix    (string) -- new name for the disks while restoring
                                                 the VM
 
-                virtualization_client   (basestring) -- name of the Oracle
+                virtualization_client   (str) -- name of the Oracle
                                                     virtualization
                                                     client that needs to be
                                                     restored
 
-                destination_client    (basestring) -- name of the proxy that
+                destination_client    (str) -- name of the proxy that
                                                     should be used during
                                                     restore
 
-                repository         (basestring) -- datastore where the
+                repository         (str) -- datastore where the
                                                   restored VM should be located
                                                   restores to the source VM
                                                   datastore if this value is
@@ -197,7 +196,7 @@ class OracleVMVirtualServerSubclient(VirtualServerSubclient):
                 power_on          (bool)       -- power on the  restored VM
                                                   default: True
 
-                server          (basestring) -- destination cluster or  host
+                server          (str) -- destination cluster or  host
                                                     restores to the source VM
                                                     esx if this value is not
                                                     specified
@@ -205,7 +204,7 @@ class OracleVMVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence   (int)        -- copy precedence value
                                                   default: 0
 
-                disk_provisioning       (basestring) -- disk provisioning for the
+                disk_provisioning       (str) -- disk provisioning for the
                                                   restored vm default: 0
                                                   which is equivalent
                                                   to Original
@@ -234,18 +233,15 @@ class OracleVMVirtualServerSubclient(VirtualServerSubclient):
         """
         restore_option = {"v2_details": kwargs.get("v2_details", None)}
 
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException('Subclient', '101')
-
-        if not restored_vm_name and isinstance(vm_to_restore, basestring):
-            restored_vm_name = "Delete" + vm_to_restore
 
         if copy_precedence:
             restore_option["copy_precedence_applicable"] = True
 
         if restored_vm_name:
-            if not (isinstance(vm_to_restore, basestring) or
-                    isinstance(restored_vm_name, basestring)):
+            if not (isinstance(vm_to_restore, str) or
+                    isinstance(restored_vm_name, str)):
                 raise SDKException('Subclient', '101')
             restore_option['restore_new_name'] = restored_vm_name
 

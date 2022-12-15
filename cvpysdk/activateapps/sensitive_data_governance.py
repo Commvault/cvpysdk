@@ -82,6 +82,8 @@ Project Attributes
 
     **schedule**                --  returns the schedule object for associated project schedule
 
+    **sensitive_files_count**   --  returns the total sensitive files count
+
 """
 
 from ..schedules import Schedules
@@ -415,7 +417,7 @@ class Project():
 
             Returns:
 
-                list(dict),dict    --  Containing document details & facet details(if any)
+                int,list(dict),dict    --  Containing document count, document details & facet details(if any)
 
             Raises:
 
@@ -593,3 +595,16 @@ class Project():
 
         """
         return self._schedule_obj
+
+    @property
+    def sensitive_files_count(self):
+        """returns the total sensitive files count on this project
+
+            Returns:
+
+                int --  Sensitive files count
+
+        """
+        count, _, _ = self.search(criteria=EdiscoveryConstants.CRITERIA_EXTRACTED_DOCS,
+                                  params={"rows":"0"})
+        return count

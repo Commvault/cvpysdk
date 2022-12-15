@@ -85,7 +85,6 @@ HACCluster Attributes
 """
 
 from copy import deepcopy
-from past.builtins import basestring
 from .exception import SDKException
 from .datacube.constants import IndexServerConstants
 
@@ -189,7 +188,7 @@ class HACClusters(object):
                 SDKException:
                     Data type of the input(s) is not valid
         """
-        if not isinstance(hac_name, basestring):
+        if not isinstance(hac_name, str):
             raise SDKException('HACClusters', '101')
         return hac_name.lower() in self._all_hac_clusters
 
@@ -208,7 +207,7 @@ class HACClusters(object):
 
                     HAC Cluster not found
         """
-        if isinstance(hac_name, basestring):
+        if isinstance(hac_name, str):
             if hac_name.lower() in self.all_hac_clusters:
                 return HACCluster(self._commcell_object, hac_name.lower())
         elif isinstance(hac_name, int):
@@ -245,7 +244,7 @@ class HACClusters(object):
             Returns:
                 Object  -   Instance of class HACCluster
         """
-        if not (isinstance(cloud_name, basestring) and isinstance(cloud_node_names, list)):
+        if not (isinstance(cloud_name, str) and isinstance(cloud_node_names, list)):
             raise SDKException('HACClusters', '101')
         cloud_node_names = sorted(cloud_node_names)
         node_meta_infos = {
@@ -319,7 +318,7 @@ class HACClusters(object):
 
                 Response was empty.
         """
-        if not isinstance(cloud_name, basestring):
+        if not isinstance(cloud_name, str):
             raise SDKException('HACCluster', '101')
         cloud_id = self.all_hac_clusters[cloud_name.lower()]
         req_json = IndexServerConstants.REQUEST_JSON.copy()

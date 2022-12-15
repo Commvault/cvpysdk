@@ -126,11 +126,11 @@ LiveSyncVMPair Attributes:
 
     **reverse_replication_schedule_id -- Returns the ID of the reverse replication schedule
 
+    **replication_group_name** -- Returns the name of the replication group associated
+
 """
 
 import uuid
-
-from past.builtins import basestring
 
 from ....constants import HypervisorType as hv_type
 from ....constants import VSALiveSyncStatus as sync_status
@@ -242,6 +242,8 @@ class VsaLiveSync:
         if flag:
             live_sync_pairs_dict = {}
             if not bool(response.json()):
+                return live_sync_pairs_dict
+            if response.json() and 'siteInfo' not in response.json():
                 return live_sync_pairs_dict
             elif response.json() and 'siteInfo' in response.json():
                 for dictionary in response.json()['siteInfo']:
@@ -377,7 +379,7 @@ class VsaLiveSync:
                 if type of the live sync name argument is not string
 
         """
-        if not isinstance(live_sync_name, basestring):
+        if not isinstance(live_sync_name, str):
             raise SDKException('LiveSync', '101')
         live_sync_name = live_sync_name.lower()
         if self.has_live_sync_pair(live_sync_name):
@@ -550,7 +552,7 @@ class LiveSyncPairs:
                 if type of the vm pair name argument is not string
 
         """
-        if not isinstance(vm_pair_name, basestring):
+        if not isinstance(vm_pair_name, str):
             raise SDKException('LiveSync', '101')
         if self.has_vm_pair(vm_pair_name):
             return LiveSyncVMPair(
@@ -638,6 +640,7 @@ class LiveSyncVMPair:
         self._destination_instance = None
         self._last_backup_job = None
         self._latest_replication_job = None
+        self._is_warm_sync_pair = None
 
         self.refresh()
 
@@ -691,11 +694,17 @@ class LiveSyncVMPair:
                     'instanceName') or self._agent_object.instances.get(
                         self._properties['destinationInstance'].get('instanceId')).name
                 self._last_backup_job = self._properties['lastSyncedBkpJob']
+                self._is_warm_sync_pair = self._properties.get('isWarmSyncPair', False)
 
             else:
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    @property
+    def task_id(self):
+        """ Returns: (int) The ID of the replication schedule task"""
+        return self._properties.get('subTask', {}).get('taskId')
 
     @property
     def vm_pair_id(self):
@@ -718,9 +727,19 @@ class LiveSyncVMPair:
         return self._source_vm
 
     @property
+    def source_vm_guid(self):
+        """ Returns (str): The GUID of the source VM """
+        return self._properties.get('sourceGuid')
+
+    @property
     def destination_vm(self):
         """Treats the destination VM as a read-only attribute."""
         return self._destination_vm
+
+    @property
+    def destination_vm_guid(self):
+        """ Returns (str): The GUID of the destination VM """
+        return self._properties.get('destinationGuid')
 
     @property
     def destination_client(self):
@@ -784,6 +803,20 @@ class LiveSyncVMPair:
             if prop.get('propertyId', 0) == 2212 and prop.get('propertyValue'):
                 return int(prop.get('propertyValue'))
         return None
+
+    @property
+    def replication_group_name(self):
+        """Returns (str): The name of the replication group associated to the VM pair
+        Note: This also removes the CV prefix for new replication groups
+        """
+        group_name = (self._properties.get('replicationGroup', {}).get('replicationGroupName')
+                      or self._properties.get('subTask', {}).get('subTaskName'))
+        return group_name.replace('_ReplicationPlan__ReplicationGroup', '')
+
+    @property
+    def is_warm_sync_pair(self):
+        """Returns (bool): Warm Sync enabled/disabled"""
+        return self._is_warm_sync_pair
 
     def refresh(self):
         """Refreshes the properties of the live sync"""

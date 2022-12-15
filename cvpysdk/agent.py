@@ -96,8 +96,6 @@ import string
 import time
 import copy
 
-from past.builtins import basestring
-
 from .constants import AppIDAName
 from .instance import Instances
 from .backupset import Backupsets
@@ -245,7 +243,7 @@ class Agents(object):
                 SDKException:
                     if type of the agent name argument is not string
         """
-        if not isinstance(agent_name, basestring):
+        if not isinstance(agent_name, str):
             raise SDKException('Agent', '101')
 
         return self._agents and agent_name.lower() in self._agents
@@ -265,7 +263,7 @@ class Agents(object):
 
                     if no agent exists with the given name
         """
-        if not isinstance(agent_name, basestring):
+        if not isinstance(agent_name, str):
             raise SDKException('Agent', '101')
         else:
             agent_name = agent_name.lower()
@@ -287,7 +285,7 @@ class Agents(object):
                 request_json    (dict)  --  JSON request to run for the API
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response

@@ -97,6 +97,8 @@ UserGroup:
 
     company_name()                  --  returns the company name of this user group
 
+    company_id()                    --  returns the company id of this user group
+
     associations()                  --  Returns security associations present on the usergroup
 
     is_tfa_enabled()                --  Returns status of tfa
@@ -111,7 +113,6 @@ UserGroup:
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
-from past.builtins import basestring
 from .security_association import SecurityAssociation
 
 from ..exception import SDKException
@@ -207,7 +208,7 @@ class UserGroups(object):
                 SDKException:
                     if type of the user group name argument is not string
         """
-        if not isinstance(user_group_name, basestring):
+        if not isinstance(user_group_name, str):
             raise SDKException('UserGroup', '101')
 
         return self._user_groups and user_group_name.lower() in self._user_groups
@@ -227,7 +228,7 @@ class UserGroups(object):
 
                     if no user group exists with the given name
         """
-        if not isinstance(user_group_name, basestring):
+        if not isinstance(user_group_name, str):
             raise SDKException('UserGroup', '101')
         else:
             user_group_name = user_group_name.lower()
@@ -507,6 +508,7 @@ class UserGroup(object):
         self._users = []
         self._usergroups = []
         self._usergroup_status = None
+        self._company_id = None
         self._company_name = None
         self.refresh()
 
@@ -555,7 +557,9 @@ class UserGroup(object):
                     self._email = self._properties['email']
 
                 if 'userGroupEntity' in self._properties:
-                    if 'entityInfo' in self._properties['userGroupEntity']: self._company_name = self._properties['userGroupEntity']['entityInfo'].get('companyName')
+                    if 'entityInfo' in self._properties['userGroupEntity']:
+                        self._company_name = self._properties['userGroupEntity']['entityInfo'].get('companyName')
+                        self._company_id = self._properties['userGroupEntity']['entityInfo'].get('companyId')
 
                 security_properties = self._properties.get('securityAssociations', {}).get(
                     'associations', {})
@@ -608,6 +612,11 @@ class UserGroup(object):
     def email(self):
         """Treats the usergroup email as a read-only attribute."""
         return self._email
+
+    @property
+    def company_id(self):
+        """Treats the usergroup company id as a read-only attribute."""
+        return self._company_id
 
     @property
     def company_name(self):

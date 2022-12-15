@@ -68,7 +68,6 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from base64 import b64encode
-from past.builtins import basestring
 
 from .exception import SDKException
 
@@ -214,7 +213,7 @@ class Domains(object):
                     if type of the domain name argument is not string
 
         """
-        if not isinstance(domain_name, basestring):
+        if not isinstance(domain_name, str):
             raise SDKException('Domain', '101')
 
         return self._domains and domain_name.lower() in self._domains
@@ -236,7 +235,7 @@ class Domains(object):
 					if type of the domain name argument is not string
 
         """
-        if not isinstance(domain_name, basestring):
+        if not isinstance(domain_name, str):
             raise SDKException('Domain', '101')
         if not self.has_domain(domain_name):
             raise SDKException(
@@ -266,7 +265,7 @@ class Domains(object):
 
         """
 
-        if not isinstance(domain_name, basestring):
+        if not isinstance(domain_name, str):
             raise SDKException('Domain', '101')
         else:
             domain_name = domain_name.lower()
@@ -379,10 +378,10 @@ class Domains(object):
         service_type = service_type_mapping.get(type_of_server.lower())
         if not service_type:
             raise SDKException('Domain', "102", "please pass valid server type")
-        if not (isinstance(domain_name, basestring) and
-                isinstance(netbios_name, basestring) and
-                isinstance(user_name, basestring) and
-                isinstance(password, basestring)):
+        if not (isinstance(domain_name, str) and
+                isinstance(netbios_name, str) and
+                isinstance(user_name, str) and
+                isinstance(password, str)):
             raise SDKException('Domain', '101')
         else:
             domain_name = domain_name.lower()

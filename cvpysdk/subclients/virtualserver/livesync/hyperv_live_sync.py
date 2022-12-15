@@ -28,8 +28,6 @@ HyperVLiveSync:
 
 """
 
-from past.builtins import basestring
-
 from .vsa_live_sync import VsaLiveSync
 from ....exception import SDKException
 
@@ -133,10 +131,10 @@ class HyperVLiveSync(VsaLiveSync):
         if restore_option is None:
             restore_option = {}
 
-        if vm_to_restore and not isinstance(vm_to_restore, basestring):
+        if vm_to_restore and not isinstance(vm_to_restore, str):
             raise SDKException('Subclient', '101')
 
-        if not restored_vm_name and isinstance(vm_to_restore, basestring):
+        if not restored_vm_name and isinstance(vm_to_restore, str):
             restored_vm_name = "LiveSync_"
         restore_option['restore_new_name'] = restored_vm_name
 
@@ -148,7 +146,7 @@ class HyperVLiveSync(VsaLiveSync):
 
         # check mandatory input parameters are correct
         if bool(restore_option):
-            if not (isinstance(destination_path, basestring) and
+            if not (isinstance(destination_path, str) and
                     isinstance(overwrite, bool) and
                     isinstance(power_on, bool)):
                 raise SDKException('Subclient', '101')

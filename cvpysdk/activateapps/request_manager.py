@@ -580,7 +580,7 @@ class Request:
 
             Returns:
 
-                dict        --  Containing document details
+                int,dict        --  Containing document count & document details
 
             Raises:
 
@@ -607,7 +607,7 @@ class Request:
         if flag:
             if response.json():
                 if 'response' in response.json():
-                    return response.json()['response']['docs']
+                    return response.json()['response']['numFound'], response.json()['response']['docs']
             raise SDKException('RequestManager', '102', 'Failed to get document details for this request')
         self._response_not_success(response)
 

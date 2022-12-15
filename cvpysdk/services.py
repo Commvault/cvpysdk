@@ -60,13 +60,15 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_ALL_CLIENTS': '{0}Client',
     'GET_VIRTUAL_CLIENTS': '{0}Client?PseudoClientType=VSPseudo',
+    'GET_FILE_SERVER_CLIENTS': '{0}/v4/FileServers',
     'CLIENTFORCEDELETE':'{0}Client/%s?forceDelete=1',
     'CLIENT': '{0}Client/%s',
     'FILTER_CLIENTS':'{0}Client?%s',
     'GET_ALL_CLIENTS_PLUS_HIDDEN': '{0}Client?hiddenclients=true',
     'GET_ALL_PSEUDO_CLIENTS': '{0}Client?PseudoClientType',
     'CHECK_READINESS': '{0}Client/%s/CheckReadiness?network=%s&resourceCapacity=%s'
-                       '&NeedXmlResp=true&includeDisabledClients=%s&CSCCNetworkCheck=%s',
+                       '&NeedXmlResp=true&includeDisabledClients=%s&CSCCNetworkCheck=%s'
+                       '&applicationCheck=%s&additionalResources=%s',
 
     'GET_ALL_AGENTS': '{0}Agent?clientId=%s',
     'AGENT': '{0}Agent',
@@ -137,9 +139,11 @@ SERVICES_DICT_TEMPLATE = {
     'BROWSE_MOUNT_POINTS': '{0}/Client/%s/Action/BrowseMountPoints',
 
     'GET_VM_BROWSE': '{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AApplications%%3AApplications&PseudoClientId=%s',
-    'GET_VOLUME_BROWSE': '{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AVolumes%%3AVolumes%%5CFOLDER%%3A%s%%3A%s&PseudoClientId=%s',
-    'GET_APP_BROWSE': '{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AApplications%%3AApplications%%5CFOLDER%%3A%s%%3A%s&PseudoClientId=%s',
-    'GET_LABEL_BROWSE': '{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3ALabels%%3ALabels%%5CFOLDER%%3A%s%%3A%s&PseudoClientId=%s',
+
+    'GET_K8S_NS_BROWSE': '{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AApplications%%3AApplications&PseudoClientId=%s&vendor=KUBERNETES',
+    'GET_K8S_VOLUME_BROWSE': '{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AVolumes%%3AVolumes%%5CFOLDER%%3A%s%%3A%s&PseudoClientId=%s&vendor=KUBERNETES',
+    'GET_K8S_APP_BROWSE': '{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3AApplications%%3AApplications%%5CFOLDER%%3A%s%%3A%s&PseudoClientId=%s&vendor=KUBERNETES',
+    'GET_K8S_LABEL_BROWSE': '{0}/VMBrowse?inventoryPath=%%5CFOLDER%%3ALabels%%3ALabels%%5CFOLDER%%3A%s%%3A%s&PseudoClientId=%s&vendor=KUBERNETES',
 
     'MODIFY_ALERT': '{0}AlertRule/%s/Action/Modify',
     'GET_ALL_CONSOLE_ALERTS': '{0}Alert?pageNo=%s&pageCount=%s',
@@ -181,6 +185,8 @@ SERVICES_DICT_TEMPLATE = {
     'SQL_CLONES': '{0}sql/clones',
     'SQL_DATABASES': '{0}sql/databases?databaseName=%s',
     'SQL_DATABASE_DETAILS': '{0}sql/instance/%s/database/%s',
+    'SQL_AG_GROUPS': '{0}v2/sql/availabilityGroups/client/%s/instance/%s',
+    'SQL_AG_GROUP_REPLICAS': '{0}v2/sql/availabilityGroupReplicas/client/%s/instance/%s/availabilityGroup/%s',
 
     'GET_WORKFLOWS': '{0}Workflow',
     'DEPLOY_WORKFLOW': '{0}Workflow/%s/action/deploy',
@@ -223,6 +229,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_JDBC_DRIVERS': '{0}dcube/GetJDBCDrivers/%s',
     'DELETE_DATASOURCE_CONTENTS': '{0}dcube/deletedata/%s?softdelete=true',
     'DELETE_DATASOURCE': '{0}dcube/deleteDataSource/%s',
+    'PRUNE_DATASOURCE': '{0}indexing/uns/deletecollection',
     'CREATE_DATASOURCE': '{0}dcube/createDataSource',
     'DATACUBE_IMPORT_DATA': '{0}dcube/post/%s/%s',
     'START_JOB_DATASOURCE': '{0}dcube/startjob/%s',
@@ -397,6 +404,7 @@ SERVICES_DICT_TEMPLATE = {
     'CREATE_NAS_CLIENT': '{0}NASClient',
     'GET_OFFICE_365_ENTITIES': '{0}Office365/entities',
     'GET_DYNAMICS_365_CLIENTS': '{0}Office365/entities?agentType=5',
+    'GET_SALESFORCE_CLIENTS': '{0}Salesforce/Organization',
     'CLOUD_DISCOVERY': '{0}Instance/%s/CloudDiscovery?clientId=%s&appType=%s',
     'SET_USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/SetUserPolicyAssociation',
     'USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/UserPolicyAssociation',
@@ -429,6 +437,14 @@ SERVICES_DICT_TEMPLATE = {
     'RELEASE_LICENSE': '{0}Client/License/Release',
     'RECONFIGURE_LICENSE': '{0}Client/License/Reconfigure',
     'LIST_LICENSES': '{0}Client/%s/License',
+    'APPLY_LICENSE': '{0}License',
+    'CAPACITY_LICENSE':'{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:feabb5ca-b6b7-4572-b0cb-39352c7e1b67/data',
+    'OI_LICENSE':'{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:cd38c52a-e099-4252-d36f-3e2c54540f6f/data',
+    'VIRTUALIZATION_LICENSE':'{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:0aac5b36-10a4-4970-838a-c41fa2365583/data',
+    'USER_LICENSE':'{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:44cd7de8-ecb2-4ec8-8b2b-162491172eef/data',
+    'ACTIVATE_LICENSE':'{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:f7c6b473-f99d-44b4-ff5e-466b55656500/data',
+    'METALLIC_LICENSE':'{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:cc2e77ec-9315-4446-cd7e-44ef80a8860e/data',
+    'OTHER_LICENSE':'{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:2654b01f-9bb0-481e-b273-4b4fddc585b1/data',
     'GET_CLOUDAPPS_USERS': '{0}Instance/%s/CloudDiscovery?clientId=%s&eDiscoverType=%s',
     'GET_CLOUDAPPS_ONEDRIVE_USERS': '{0}Instance/%s/CloudDiscovery?clientId=%s&eDiscoverType=%s&subclientId=%s',
     'ENABLE_CLIENT_PRIVACY': '{0}/V3/Client/%s/Lock',
@@ -473,6 +489,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_ALL_LIVE_SYNC_PAIRS': '{0}Replications/Monitors/streaming?subclientId=%s',
     'GET_ALL_LIVE_SYNC_VM_PAIRS': '{0}Replications/Monitors/streaming?subclientId=%s&taskId=%s',
     'GET_LIVE_SYNC_VM_PAIR': '{0}Replications/Monitors/streaming?subclientId=%s&replicationPairId=%s',
+    'GET_REPLICATION_PAIR': '{0}Replications/Monitors/streaming?replicationPairId=%s',
 
     'BACKUP_NETWORK_PAIRS': '{0}CommServ/DataInterfacePairs?ClientId=%s',
     'BACKUP_NETWORK_PAIR': '{0}CommServ/DataInterfacePairs',
@@ -499,7 +516,15 @@ SERVICES_DICT_TEMPLATE = {
     'METALLIC_COMPLETED_SETUPS': '{0}CloudService/CompletedSetups',
     'USER_MAPPINGS': '{0}GetUserMappings',
     'METALLIC_REGISTERED': '{0}CloudServices/Registered',
-    'METALLIC_UNLINK': '{0}CloudService/Unsubscribe'
+    'METALLIC_UNLINK': '{0}CloudService/Unsubscribe',
+    'ADD_OR_GET_SAML': '{0}/v4/SAML',
+    'EDIT_SAML': '{0}/v4/SAML/%s',
+
+    'EDIT_REGION': '{0}/entity/%s/%s/region',
+    'GET_REGION': '{0}/entity/%s/%s/region?entityRegionType=%s',
+    'CALCULATE_REGION': '{0}/entity/%s/%s/region?calculate=True&entityRegionType=%s',
+    
+    'GET_OEM_ID': '{0}/GetOemId'
 }
 
 

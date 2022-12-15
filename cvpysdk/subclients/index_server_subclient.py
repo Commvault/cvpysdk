@@ -42,7 +42,6 @@ IndexServerSubClient:
 
 """
 
-from past.builtins import basestring
 from ..exception import SDKException
 from ..index_server import IndexServerOSType
 from ..subclients.bigdataappssubclient import BigDataAppsSubclient
@@ -247,7 +246,7 @@ class IndexServerSubclient(BigDataAppsSubclient):
                     if failed to initialize job
 
         """
-        if not isinstance(dest_path, basestring) or not isinstance(dest_client, basestring):
+        if not isinstance(dest_path, str) or not isinstance(dest_client, str):
             raise SDKException('IndexServers', '101')
 
         paths = self._get_path_for_restore(roles=roles, core_name=core_name, client=client)
@@ -365,7 +364,7 @@ class IndexServerSubclient(BigDataAppsSubclient):
                                 if response is not success
         """
 
-        if not isinstance(storage_policy, basestring):
+        if not isinstance(storage_policy, str):
             raise SDKException('IndexServers', '101')
         if not isinstance(role_content, list):
             raise SDKException('IndexServers', '101')

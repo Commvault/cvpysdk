@@ -86,6 +86,19 @@ class IndexServerConstants:
 
     }
 
+    PRUNE_REQUEST_JSON = {
+        "forceDelete": False,
+        "datasourceId": 0,
+        "collectionProperty": {
+            "nameValues": [
+                {
+                    "name": "PruneAllDataSources",
+                    "value": "true"
+                }
+            ]
+        }
+    }
+
 
 class ContentAnalyzerConstants:
     """Class to maintain all the content analyzer cloud related constants"""

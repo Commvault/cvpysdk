@@ -78,7 +78,6 @@ Credential:
 """
 
 from base64 import b64encode
-from past.builtins import basestring
 from .security.usergroup import UserGroups
 from .exception import SDKException
 
@@ -168,7 +167,7 @@ class Credentials(object):
                 SDKException:
                     if data type of input is invalid
         """
-        if not isinstance(credential_name, basestring):
+        if not isinstance(credential_name, str):
             raise SDKException('Credentials', '101')
 
         return self._credentials and credential_name.lower() in self._credentials
@@ -223,7 +222,7 @@ class Credentials(object):
 
         """
 
-        if not (isinstance(credential_name, basestring) and isinstance(user_name, basestring)):
+        if not (isinstance(credential_name, str) and isinstance(user_name, str)):
             raise SDKException('User', '101')
 
         if self.has_credential(credential_name):

@@ -123,6 +123,8 @@ Commcell:
 
     _get_commserv_metadata()               -- Returns back the commserv metadata on this commcell
 
+    _get_commserv_oem_id()               -- Returns back the commserv OEM ID on this commcell
+
     enable_privacy()                    --  Enables users to enable data privacy on commcell
 
     disable_privacy()                   --  Enables users to disable data privacy on commcell
@@ -156,7 +158,9 @@ Commcell instance Attributes
 
     **commcell_id**             --  returns the `CommCell` ID
 
-    **commser_metadata**        -- returns the commserv metadata of the commserv
+    **commserv_metadata**       -- returns the commserv metadata of the commserv
+
+    **commserv_oem_id**         -- returns the commserv OEM ID of the commserv
 
     **webconsole_hostname**     --  returns the host name of the `webconsole`,
     class instance is connected to
@@ -313,7 +317,6 @@ import getpass
 import socket
 
 from base64 import b64encode
-from past.builtins import basestring
 
 from requests.exceptions import SSLError
 from requests.exceptions import Timeout
@@ -367,6 +370,7 @@ from .backup_network_pairs import BackupNetworkPairs
 from .reports import report
 from .recovery_targets import RecoveryTargets
 from .drorchestration.replication_groups import ReplicationGroups
+from .drorchestration.failovergroups import FailoverGroups
 from .drorchestration.blr_pairs import BLRPairs
 from .job import JobManagement
 from .index_server import IndexServers
@@ -557,6 +561,7 @@ class Commcell(object):
         self._version_info = None
         self._is_linux_commserv = None
         self._commserv_metadata = None
+        self._commserv_oem_id = None
 
         self._id = None
         self._clients = None
@@ -601,6 +606,7 @@ class Commcell(object):
         self._backup_network_pairs = None
         self._reports = None
         self._replication_groups = None
+        self._failover_groups = None
         self._recovery_targets = None
         self._blr_pairs = None
         self._job_management = None
@@ -1530,6 +1536,17 @@ class Commcell(object):
             return USER_LOGGED_OUT_MESSAGE
 
     @property
+    def failover_groups(self):
+        """Returns the instance of FailoverGroups class"""
+        try:
+            if self._failover_groups is None:
+                self._failover_groups = FailoverGroups(self)
+            return self._failover_groups
+
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
     def recovery_targets(self):
         """Returns the instance of RecoverTargets class"""
         try:
@@ -1602,6 +1619,17 @@ class Commcell(object):
         if self._commserv_metadata is None:
             self._commserv_metadata = self._get_commserv_metadata()
         return self._commserv_metadata
+
+    @property
+    def commserv_oem_id(self):
+        """Returns the OEM ID of the commserve"""
+        try:
+            if self._commserv_oem_id is None:
+                self._commserv_oem_id = self._get_commserv_oem_id()
+
+            return self._commserv_oem_id
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
 
     @property
     def metallic(self):
@@ -2899,7 +2927,7 @@ class Commcell(object):
                 SDKException:
                     if type of the commcell_name is not string
         """
-        if not isinstance(commcell_name, basestring):
+        if not isinstance(commcell_name, str):
             raise SDKException('CommcellRegistration', '104')
 
         return self.registered_routing_commcells and commcell_name.lower() in self.registered_routing_commcells
@@ -3046,7 +3074,7 @@ class Commcell(object):
             if there is no response
 
         """
-        if not isinstance(commcell_name, basestring):
+        if not isinstance(commcell_name, str):
             raise SDKException('CommcellRegistration', '104')
         else:
             commcell_name = commcell_name.lower()
@@ -3214,7 +3242,7 @@ class Commcell(object):
                 if response is not success
         """
 
-        if not isinstance(service_commcell, basestring):
+        if not isinstance(service_commcell, str):
             raise SDKException('User', '101')
 
         request_json = {
@@ -3396,6 +3424,28 @@ class Commcell(object):
                         'commserv_certificate': response.json()['certificate']
                     }
                     return commserv_metadata
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def _get_commserv_oem_id(self):
+        """Loads the commserve OEM ID and returns it
+
+            Returns:
+                commserv_oem_id (int) : returns a int representing the commserv OEM ID
+
+            Raises:
+                SDKException:
+                    if failed to get commserv details
+                    if response is not success
+        """
+
+        flag, response = self._cvpysdk_object.make_request('GET', self._services['GET_OEM_ID'])
+
+        if flag:
+            if response.json():
+                    return response.json()['id']
             else:
                 raise SDKException('Response', '102')
         else:

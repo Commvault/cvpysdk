@@ -42,7 +42,6 @@ MSDynamics365Instance:
 """
 
 from __future__ import unicode_literals
-from past.builtins import basestring
 from ...exception import SDKException
 from ..cainstance import CloudAppsInstance
 

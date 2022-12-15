@@ -77,6 +77,7 @@ class UnixDownloadFeatures(Enum):
     PYTHON_SDK = 1154
     CONTENT_ANALYZER = 1108
     DB2_AGENT = 1207
+    INFORMIX = 1201
 
 
 class WindowsDownloadFeatures(Enum):
@@ -105,6 +106,7 @@ class WindowsDownloadFeatures(Enum):
     INDEX_GATEWAY = 263
     CONTENT_EXTRACTOR = 259
     DB2_AGENT = 351
+    INFORMIX = 360
 
 
 class OSNameIDMapping(Enum):

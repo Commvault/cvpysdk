@@ -31,7 +31,6 @@ AlibabaCloudVirtualServerSubclient:
 
 """
 
-from past.builtins import basestring
 from ..vssubclient import VirtualServerSubclient
 from ...exception import SDKException
 
@@ -129,7 +128,7 @@ class AlibabaCloudVirtualServerSubclient(VirtualServerSubclient):
                 raise SDKException('Subclient', '101')
 
         if new_name:
-            if not isinstance(new_name, basestring):
+            if not isinstance(new_name, str):
                 raise SDKException('Subclient', '101')
             restore_option['restore_new_name'] = new_name
 

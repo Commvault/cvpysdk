@@ -64,6 +64,8 @@ BLRPairs:
 
     get_rpstore_id(rpstore_name)                --  Get the RPStore ID for the given name
 
+    get_rpstore_mountpath(rpstore_name)         --  Get the RPstore mounth path for the given name
+
     #### internal methods ###
     _update_data()                              -- REST API call to get all BLR pairs in the commcell
 
@@ -197,18 +199,18 @@ class BLRPairs:
         self._commcell_object = commcell_object
         self._services = commcell_object._services
         self._replication_group_name = replication_group_name.lower()
+        self._replication_group_id = None
+        if self._replication_group_name:
+            self._replication_group_id = self._get_replication_group_id()
 
-        if replication_group_name:
-            self._LIST_BLR_PAIRS = (f"{self._services['GET_BLR_PAIRS']}"
-                                    f"?replicationGroupId={self._get_replication_group_id()}")
-        else:
-            self._LIST_BLR_PAIRS = self._services['GET_BLR_PAIRS']
+        self._LIST_BLR_PAIRS = self._services['GET_BLR_PAIRS']
 
         self._DELETE_BLR = self._services['DELETE_BLR_PAIR']
         self._QEXEC = self._services['EXEC_QCOMMAND']
 
         self._site_info = None
         self._summary = None
+        self._rpstore_list = None
 
         self.refresh()
 
@@ -245,12 +247,33 @@ class BLRPairs:
         if flag:
             if response.json():
                 self._summary = response.json().get('summary', {})
-                self._site_info = response.json().get('siteInfo', [])
+                if self._replication_group_id:
+                    self._site_info = [site_info for site_info in response.json().get('siteInfo', [])
+                                       if str(site_info.get('replicationGroup', {}).get('replicationGroupId', 0))
+                                       == self._replication_group_id]
+                else:
+                    self._site_info = response.json().get('siteInfo', [])
             else:
                 raise SDKException('Response', '102')
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def _update_rpstorelist(self):
+        """REST API call for getting all the rp store in the commcell.
+            Args:
+            Returns:
+            Raises:
+                SDKException:
+                    if response is empty
+                    if response is not success
+        """
+        response = self._commcell_object.qoperation_execute('<EVGui_GetLibraryListWCReq libraryType="RPSTORE" />')
+
+        if response and 'libraryList' in response:
+            self._rpstore_list = response.get('libraryList', [])
+        else:
+            raise SDKException('Response', '102')
 
     @property
     def blr_pairs(self):
@@ -482,6 +505,7 @@ class BLRPairs:
 
         """
         self._update_data()
+        self._update_rpstorelist()
 
     def get_rpstore_id(self, rpstore_name):
         """Gets the RPStore ID for the given name
@@ -489,18 +513,25 @@ class BLRPairs:
                 rpstore_name (str)  : The name of the RP store
         """
 
-        response = self._commcell_object.qoperation_execute('<EVGui_GetLibraryListWCReq libraryType="RPSTORE" />')
-
-        if response and 'libraryList' in response:
-            rpstore_list = response.get('libraryList', [])
-            for rpstore in rpstore_list:
-                if rpstore.get('library', {}).get('libraryName') == rpstore_name and rpstore.get('MountPathList', ''):
-                    return str(rpstore.get('MountPathList')[0]
-                               .get('rpStoreLibraryInfo', {}).get('rpStoreId', ''))
-            else:
-                raise SDKException('BLRPairs', '103', f'No RP Store found with name {rpstore_name}')
+        for rpstore in self._rpstore_list:
+            if rpstore.get('library', {}).get('libraryName') == rpstore_name and rpstore.get('MountPathList', ''):
+                return str(rpstore.get('MountPathList')[0]
+                           .get('rpStoreLibraryInfo', {}).get('rpStoreId', ''))
         else:
-            raise SDKException('Response', '102')
+            raise SDKException('BLRPairs', '103', f'No RP Store found with name {rpstore_name}')
+
+    def get_rpstore_mountpath(self, rpstore_name):
+        """Gets the RPStore mount path for the given name
+            Args:
+                rpstore_name (str)  : The name of the RP store
+        """
+
+        for rpstore in self._rpstore_list:
+            if rpstore.get('library', {}).get('libraryName') == rpstore_name:
+                mount_path = str(rpstore.get('MountPathList', {})[0]['mountPathName'])
+                return mount_path.split()[1].strip()
+        else:
+            raise SDKException('BLRPairs', '103', f'No RP Store found with name {rpstore_name}')
 
 
 class BLRPair:

@@ -28,8 +28,6 @@ Download
 
 """
 
-from past.builtins import basestring
-
 from ..job import Job
 from ..exception import SDKException
 
@@ -92,7 +90,7 @@ class Uninstall(object):
 
                     if response is not success
         """
-        if not isinstance(client_name, basestring):
+        if not isinstance(client_name, str):
             raise SDKException('Uninstall', '101')
         optype = 7 # default value to remove all the packages
         if client_composition:

@@ -437,7 +437,8 @@ EXCEPTION_DICT = {
     },
     'FailoverGroup': {
         '101': 'Data type of the input(s) is not valid',
-        '102': ''
+        '102': '',
+        '103': 'Failover group does not exist'
     },
     'ConfigurationPolicies': {
         '101': 'Data type of the input(s) is not valid',
@@ -459,6 +460,9 @@ EXCEPTION_DICT = {
         '101': 'Failed to retreive apps',
         '102': 'App not found',
         '103': 'Failed to configure identity app',
+        '104': 'Failed to delete identity app',
+        '105': 'Failed to modify identity app',
+        '106': 'Failed to get redirect url of user'
     },
     'CommCellMigration': {
         '101': 'Data type of the input(s) is not valid',
@@ -552,6 +556,10 @@ EXCEPTION_DICT = {
         '102': 'Key Management Server not found',
         '103': 'Key Management Server type is not valid',
         '104': 'Key Management Server type not found',
+    },
+    'Region': {
+        '101': 'Entity type not found.',
+        '102': ''
     }
 }
 

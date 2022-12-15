@@ -171,15 +171,11 @@ import math
 import time
 import copy
 from base64 import b64encode
-from past.builtins import basestring
-from future.standard_library import install_aliases
 from .job import Job
 from .job import JobController
 from .schedules import Schedules
 from .exception import SDKException
 from .schedules import SchedulePattern
-
-install_aliases()
 
 
 class Subclients(object):
@@ -502,7 +498,7 @@ class Subclients(object):
                 SDKException:
                     if type of the subclient name argument is not string
         """
-        if not isinstance(subclient_name, basestring):
+        if not isinstance(subclient_name, str):
             raise SDKException('Subclient', '101')
 
         return self._subclients and subclient_name.lower() in self._subclients
@@ -602,9 +598,9 @@ class Subclients(object):
                     if subclient already exists with the given name
 
         """
-        if not (isinstance(subclient_name, basestring) and
-                isinstance(storage_policy, basestring) and
-                isinstance(description, basestring)):
+        if not (isinstance(subclient_name, str) and
+                isinstance(storage_policy, str) and
+                isinstance(description, str)):
             raise SDKException('Subclient', '101')
 
         if self.has_subclient(subclient_name):
@@ -725,12 +721,12 @@ class Subclients(object):
                     if storage policy does not exist
 
         """
-        if not (isinstance(subclient_name, basestring) and
-                isinstance(storage_policy, basestring) and
-                isinstance(dump_dir, basestring) and
-                isinstance(user_name,basestring) and
-                isinstance(domain_name, basestring) and
-                isinstance(password, basestring) and
+        if not (isinstance(subclient_name, str) and
+                isinstance(storage_policy, str) and
+                isinstance(dump_dir, str) and
+                isinstance(user_name,str) and
+                isinstance(domain_name, str) and
+                isinstance(password, str) and
                 isinstance(full_mode, bool)):
             raise SDKException('Subclient', '101')
         if (full_mode == False and not
@@ -871,8 +867,8 @@ class Subclients(object):
                     if subclient already exists with the given name
 
         """
-        if not (isinstance(subclient_name, basestring) and
-                isinstance(storage_policy, basestring) and
+        if not (isinstance(subclient_name, str) and
+                isinstance(storage_policy, str) and
                 isinstance(contents, list)):
             raise SDKException('Subclient', '101')
 
@@ -1015,7 +1011,7 @@ class Subclients(object):
                     if subclient already exists with the given name
 
         """
-        if not (isinstance(subclient_name, basestring) and
+        if not (isinstance(subclient_name, str) and
                 isinstance(subclient_content, list)):
             raise SDKException('Subclient', '101')
 
@@ -1161,8 +1157,8 @@ class Subclients(object):
 
                 """
 
-        if not (isinstance(subclient_name, basestring) and
-                isinstance(server_plan, basestring)):
+        if not (isinstance(subclient_name, str) and
+                isinstance(server_plan, str)):
             raise SDKException('Subclient', '101')
 
         if self.has_subclient(subclient_name):
@@ -1235,7 +1231,7 @@ class Subclients(object):
 
                     if no subclient exists with the given name
         """
-        if not isinstance(subclient_name, basestring):
+        if not isinstance(subclient_name, str):
             raise SDKException('Subclient', '101')
         else:
             subclient_name = subclient_name.lower()
@@ -1273,7 +1269,7 @@ class Subclients(object):
 
                     if no subclient exists with the given name
         """
-        if not isinstance(subclient_name, basestring):
+        if not isinstance(subclient_name, str):
             raise SDKException('Subclient', '101')
         else:
             subclient_name = subclient_name.lower()
@@ -1616,7 +1612,7 @@ class Subclient(object):
                 update_request  (str)  --  update request specifying the details to update
 
             Returns:
-                (bool, basestring, basestring):
+                (bool, str, str):
                     bool -  flag specifies whether success / failure
 
                     str  -  error code received in the response
@@ -2154,7 +2150,7 @@ c
 
                     if the type of value input is not string
         """
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             self._set_subclient_properties(
                 "_commonProperties['description']", value)
         else:
@@ -2176,7 +2172,7 @@ c
                     if failed to update storage policy name
 
         """
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             value = value.lower()
 
             if not self._commcell_object.storage_policies.has_policy(value):
@@ -2284,7 +2280,7 @@ c
                 SDKException:
                     if failed to enable intelli snap for subclient
         """
-        if not isinstance(snap_engine_name, basestring):
+        if not isinstance(snap_engine_name, str):
             raise SDKException("Subclient", "101")
 
         properties_dict = {
@@ -2330,7 +2326,7 @@ c
             proxy_name(str) -- Name of the proxy to be used
 
         """
-        if not isinstance(proxy_name, basestring):
+        if not isinstance(proxy_name, str):
             raise SDKException("Subclient", "101")
 
         properties_dict = {
@@ -2981,7 +2977,7 @@ c
                     if the type of value input is not string
 
         """
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             self._set_subclient_properties(
                 "_commonProperties['storageDevice']['softwareCompression']", value
             )
@@ -3050,7 +3046,7 @@ c
 
         """
 
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             self._set_subclient_properties("_commonProperties['encryptionFlag']", value)
         else:
             raise SDKException('Subclient', '101')
@@ -3176,7 +3172,7 @@ c
                 })
             else:
                 raise SDKException('Subclient','102', 'Plan does not exist')
-        elif isinstance(value, basestring):
+        elif isinstance(value, str):
             if self._commcell_object.plans.has_plan(value):
                 self.update_properties({
                     'planEntity': {

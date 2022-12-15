@@ -114,8 +114,8 @@ from __future__ import unicode_literals
 
 from enum import Enum
 
-from cvpysdk.drorchestration.blr_pairs import BLRPairs
-from past.builtins import basestring
+from ..constants import AppIDAType, AppIDAName
+from .blr_pairs import BLRPairs
 from ..exception import SDKException
 
 
@@ -179,7 +179,7 @@ class ReplicationGroups:
                 SDKException:
                     if proper inputs are not provided
         """
-        if not isinstance(replication_group_name, basestring):
+        if not isinstance(replication_group_name, str):
             raise SDKException('ReplicationGroup', '101')
 
         return self.replication_groups and replication_group_name.lower() in self.replication_groups
@@ -198,7 +198,7 @@ class ReplicationGroups:
                     if proper inputs are not provided
                     If Replication group doesnt exists with given name
         """
-        if not isinstance(replication_group_name, basestring):
+        if not isinstance(replication_group_name, str):
             raise SDKException('ReplicationGroup', '101')
         replication_group_name = replication_group_name.lower()
         if self.has_replication_group(replication_group_name):
@@ -226,7 +226,7 @@ class ReplicationGroups:
                     if response is not success
         """
 
-        if not isinstance(replication_group_name, basestring):
+        if not isinstance(replication_group_name, str):
             raise SDKException('ReplicationGroup', '101')
 
         replication_group_name = replication_group_name.lower()
@@ -442,6 +442,7 @@ class ReplicationGroup:
     def refresh(self):
         """ Refresh the replication group properties """
         self._replication_group_properties = self._get_replication_group_properties()
+        self._vm_pairs = None
 
     @property
     def group_name(self):
@@ -490,22 +491,27 @@ class ReplicationGroup:
         """Returns: (bool) Whether Warm sync is enabled or not"""
         return (self.restore_options.get('virtualServerRstOption', {})
                 .get('diskLevelVMRestoreOption', {}).get('createVmsDuringFailover', False))
+    
+    @property
+    def is_intelli_snap_enabled(self):
+        """Returns: (bool) Whether Snapshot on source is utilised or not"""
+        return self.subclient.is_intelli_snap_enabled
 
     @property
     def source_client(self):
         """Returns:  the client object of the source hypervisor"""
         if not self._source_client:
-            client_name = self._replication_group_properties.get('associations', [{}])[0].get('clientName')
-            self._source_client = self._commcell_object.clients.get(client_name)
+            client_id = self._replication_group_properties.get('associations', [{}])[0].get('clientId')
+            self._source_client = self._commcell_object.clients.get(int(client_id))
         return self._source_client
 
     @property
     def destination_client(self):
         """Returns: (str) the client object for the destination hypervisor"""
         if not self._destination_client:
-            client_name = (self.restore_options.get('virtualServerRstOption', {})
-                           .get('vCenterInstance', {}).get('clientName'))
-            self._destination_client = self._commcell_object.clients.get(client_name)
+            client_id = (self.restore_options.get('virtualServerRstOption', {})
+                         .get('vCenterInstance', {}).get('clientId'))
+            self._destination_client = self._commcell_object.clients.get(int(client_id))
         return self._destination_client
 
     @property
@@ -513,6 +519,9 @@ class ReplicationGroup:
         """Returns: the agent object of the source hypervisor"""
         if not self._source_agent:
             agent_name = self._replication_group_properties.get('associations', [{}])[0].get('appName')
+            if not agent_name:
+                app_id = self._replication_group_properties.get('associations', [{}])[0].get('applicationId')
+                agent_name = AppIDAName[AppIDAType(app_id).name].value
             self._source_agent = self.source_client.agents.get(agent_name)
         return self._source_agent
 
@@ -521,6 +530,9 @@ class ReplicationGroup:
         """Returns: the agent object of the destination hypervisor"""
         if not self._destination_agent:
             agent_name = self._replication_group_properties.get('associations', [{}])[0].get('appName')
+            if not agent_name:
+                app_id = self._replication_group_properties.get('associations', [{}])[0].get('applicationId')
+                agent_name = AppIDAName[AppIDAType(app_id).name].value
             self._destination_agent = self.destination_client.agents.get(agent_name)
         return self._destination_agent
 
@@ -565,10 +577,12 @@ class ReplicationGroup:
         if self.replication_type == ReplicationGroups.ReplicationGroupType.VSA_PERIODIC:
             live_sync_name = self.group_name.replace('_ReplicationPlan__ReplicationGroup', '')
             live_sync = self.subclient.live_sync.get(live_sync_name)
+            live_sync.refresh()
             _live_sync_pairs = list(live_sync.vm_pairs)
         elif self.replication_type == ReplicationGroups.ReplicationGroupType.VSA_CONTINUOUS:
             blr_pairs = BLRPairs(self._commcell_object, self.group_name)
-            _live_sync_pairs = list(blr_pairs.blr_pairs)
+            blr_pairs.refresh()
+            _live_sync_pairs = [blr_pair.get('sourceName') for blr_pair in blr_pairs.blr_pairs.values()]
         else:
             raise SDKException('ReplicationGroup', '101', 'Implemented only for replication groups'
                                                           ' of virtual server periodic')
@@ -623,3 +637,9 @@ class ReplicationGroup:
         """Returns: (str) The recovery target used for the replication"""
         return (self.restore_options.get('virtualServerRstOption', {}).get('allocationPolicy', {})
                 .get('vmAllocPolicyName'))
+
+    @property
+    def intelli_snap_engine(self):
+        """Returns: (str) Intelli Snap Engine Name"""
+        snap_engine_name = self.subclient.snapshot_engine_name if self.is_intelli_snap_enabled else ''
+        return snap_engine_name

@@ -199,6 +199,10 @@ Organization Attributes
 
         **is_login_disabled**        -- returns the Login activity status for the Organization
 
+        **password_age_days**        -- returns the password age days for the Organization
+        
+        **is_download_software_from_internet_enabled**  --  returns the status of download software option for the Organization
+
          **is_tfa_enabled**          -- returns the status of tfa for the organization.
 
          **tfa_enabled_user_groups**    --  returns list of user groups names for which tfa is enabled.
@@ -241,7 +245,6 @@ Organization Attributes
 import re
 
 from datetime import datetime
-from past.builtins import basestring
 
 from .exception import SDKException
 
@@ -458,7 +461,7 @@ class Organizations:
                     if type of the organization name argument is not string
 
         """
-        if not isinstance(name, basestring):
+        if not isinstance(name, str):
             raise SDKException('Organization', '101')
 
         return self._organizations and name.lower() in self._organizations
@@ -529,10 +532,10 @@ class Organizations:
         if self.has_organization(name):
             raise SDKException('Organization', '106')
 
-        if not (isinstance(name, basestring) and
-                isinstance(email, basestring) and
-                isinstance(contact_name, basestring) and
-                isinstance(company_alias, basestring)):
+        if not (isinstance(name, str) and
+                isinstance(email, str) and
+                isinstance(contact_name, str) and
+                isinstance(company_alias, str)):
             raise SDKException('Organization', '101')
 
         if not re.match(r'[^@]+@[^@]+\.[^@]+', email):
@@ -645,7 +648,7 @@ class Organizations:
                     if no organization exists with the given name
 
         """
-        if not isinstance(name, basestring):
+        if not isinstance(name, str):
             raise SDKException('Organization', '101')
 
         name = name.lower()
@@ -779,7 +782,8 @@ class Organization:
         self._restore_disabled = None
         self._login_disabled = None
         self._retire_laptops = None
-
+        self._password_age = None
+        self._download_software_from_internet = None
         self._tfa_obj = TwoFactorAuthentication(self._commcell_object, organization_id=self._organization_id)
         self.refresh()
 
@@ -961,6 +965,8 @@ class Organization:
                 else:
                     self._job_start_time = 'System default'
 
+                self._password_age = organization_properties.get('agePasswordDays', 0)
+                self._download_software_from_internet = organization_properties['clientGroupForceClientSideDownload']
                 time_epoch = organization_properties.get('orgCreationDateTime')
                 time_string = (datetime.fromtimestamp(time_epoch).strftime("%b %#d") +
                                (datetime.fromtimestamp(time_epoch).strftime(
@@ -1281,7 +1287,7 @@ class Organization:
 
         Args:
 
-            value (basestring): company alias to be set
+            value (str): company alias to be set
         """
         req_json = {
             "newAliasName": value
@@ -1320,6 +1326,16 @@ class Organization:
     def is_login_disabled(self):
         """Returns boolean whether login is disabled for this organisation"""
         return self._login_disabled
+
+    @property
+    def password_age_days(self):
+        """Returns the password age days for the organisation"""
+        return self._password_age
+        
+    @property
+    def is_download_software_from_internet_enabled(self):
+        """Returns boolean indicating whether download software from the internet is enabled"""
+        return True if self._download_software_from_internet else False
 
     @property
     def shared_laptop(self):
@@ -2068,8 +2084,8 @@ class Organization:
 
         """
 
-        if not (isinstance(name, basestring) and
-                isinstance(service_commcell, basestring)):
+        if not (isinstance(name, str) and
+                isinstance(service_commcell, str)):
             raise SDKException('Organization', '101')
 
         request_json = {
@@ -2137,7 +2153,7 @@ class Organization:
 
         """
 
-        if not isinstance(name, basestring):
+        if not isinstance(name, str):
             raise SDKException('Organization', '101')
 
         request_json = {
@@ -2302,7 +2318,7 @@ class Organization:
 
                     if response is not success
         """
-        organization_name = self._organization_name
+        organization_name = self._organization_name.lower()
         if self._client_groups is None:
             flag, response = self._commcell_object._cvpysdk_object.make_request(
                 'GET', self._services['CLIENTGROUPS']
@@ -2316,7 +2332,7 @@ class Organization:
                     for client_group in client_groups:
                         temp_name = client_group['name'].lower()
                         temp_id = str(client_group['Id']).lower()
-                        company_name = client_group['clientGroup']['entityInfo']['companyName']
+                        company_name = client_group['clientGroup']['entityInfo']['companyName'].lower()
                         if company_name in clientgroups_dict.keys():
                             clientgroups_dict[company_name][temp_name] = temp_id
                         else:

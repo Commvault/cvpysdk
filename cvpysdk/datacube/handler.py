@@ -60,8 +60,6 @@ Handler:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from past.builtins import basestring
-
 from ..exception import SDKException
 
 
@@ -155,7 +153,7 @@ class Handlers(object):
                     if type of the handler name argument is not string
 
         """
-        if not isinstance(handler_name, basestring):
+        if not isinstance(handler_name, str):
             raise SDKException('Datacube', '101')
 
         return self._handlers and handler_name.lower() in map(str.lower, self._handlers)
@@ -185,7 +183,7 @@ class Handlers(object):
 
 
         """
-        if not isinstance(handler_name, basestring):
+        if not isinstance(handler_name, str):
             raise SDKException('Datacube', '101')
 
         if self.has_handler(handler_name):
@@ -405,7 +403,7 @@ class Handler(object):
                         if error in fetching handler data
         """
 
-        if not isinstance(handler_filter, basestring):
+        if not isinstance(handler_filter, str):
             raise SDKException('Datacube', '101')
         self._execute_handler = self.commcell_obj._services['EXECUTE_HANDLER'] % (
             self.handler_id, self._handler_name, handler_filter

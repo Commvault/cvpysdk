@@ -85,7 +85,7 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
                 copy_precedence     (int)      --  copy precedence value
                                                    default: 0
 
-                proxy_client          (basestring)  --  proxy client to be used for restore
+                proxy_client          (str)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
                 **kwargs                         : Arbitrary keyword arguments Properties as of
@@ -168,6 +168,9 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
                     eg:
                     v2_details          (dict)       -- details for v2 subclient
                                                     eg: check clients.vmclient.VMClient._child_job_subclient_details
+                    destination_network (string)     -- Name of the destination network
+                    networks_nic        (string)     -- Link for the destination network
+                    subnetwork_nic      (string)    -- Link for the destination subnetwork
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -183,9 +186,13 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
                     if response is not success
 
         """
-        if not restore_option:
-            restore_option = {}
-        restore_option["v2_details"] = kwargs.get("v2_details", None)
+        restore_option = {}
+        extra_options = ['destination_network', 'networks_nic', 'subnetwork_nic']
+        for key in extra_options:
+            if key in kwargs:
+                restore_option[key] = kwargs[key]
+            else:
+                restore_option[key] = None
 
         if vm_to_restore:
             vm_to_restore = [vm_to_restore]

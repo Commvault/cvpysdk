@@ -224,7 +224,7 @@ class nutanixsubclient(VirtualServerSubclient):
         """
         Conversion from AHV VM to VMware
         Args:
-                vcenter_client    (basestring) -- name of the vcenter client
+                vcenter_client    (str) -- name of the vcenter client
                                                   where the VM should be
                                                     restored.
 
@@ -236,12 +236,12 @@ class nutanixsubclient(VirtualServerSubclient):
                                                    restored VM.
                                                     default: {}
 
-                esx_host          (basestring) -- destination esx host
+                esx_host          (str) -- destination esx host
                                                     restores to the source VM
                                                     esx if this value is not
                                                     specified
 
-                datastore         (basestring) -- datastore where the
+                datastore         (str) -- datastore where the
                                                   restored VM should be located
                                                   restores to the source VM
                                                   datastore if this value is
@@ -256,21 +256,21 @@ class nutanixsubclient(VirtualServerSubclient):
                 copy_precedence   (int)        -- copy precedence value
                                                   default: 0
 
-                disk_option       (basestring) -- disk provisioning for the
+                disk_option       (str) -- disk provisioning for the
                                                   restored vm
                                                   Options for input are: 'Original',
                                                   'Thick Lazy Zero', 'Thin', 'Thick Eager Zero'
                                                   default: Original
 
-                transport_mode    (basestring) -- transport mode to be used for
+                transport_mode    (str) -- transport mode to be used for
                                                   the restore.
                                                   Options for input are: 'Auto', 'SAN', 'Hot Add',
                                                   'NBD', 'NBD SSL'
                                                   default: Auto
 
-                proxy_client      (basestring) -- destination proxy client
+                proxy_client      (str) -- destination proxy client
 
-                destination_network (basestring)-- destiantion network
+                destination_network (str)-- destiantion network
                                                     to which VM has to be connected
 
             Returns:
