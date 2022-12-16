@@ -321,7 +321,8 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
             disk_prefix=None,
             availability_zone=None,
             media_agent=None,
-            disk_name=None
+            disk_name=None,
+            **kwargs,
     ):
         """Restores the Attach Disk restore with  specified in the input list
             to the provided instance.
@@ -411,9 +412,17 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
         if proxy_client is not None:
             _attach_disk_restore_option['client'] = proxy_client
         if not destination_vm:
-            destination_vm = vm_to_restore
+            destination_vm = 'del' + vm_to_restore
         instance_dict = self._backupset_object._instance_object._properties['instance']
         _attach_disk_restore_option = self.amazon_defaults(vm_to_restore, _attach_disk_restore_option)
+
+        if kwargs.get('new_instance', False):
+            _attach_disk_restore_option['keyPairList'][0] = {}
+            _attach_disk_restore_option['keyPairList'][0]['KeyId'] = kwargs.get('key_pair', None)
+            _attach_disk_restore_option['keyPairList'][0]['KeyName'] = kwargs.get('key_pair', None)
+            _attach_disk_restore_option['new_instance'] = True
+            _attach_disk_restore_option['ami'] = {'templateId': kwargs.get('ami_id', None)}
+            _attach_disk_restore_option['os_id'] = kwargs['os_id']
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
@@ -432,7 +441,9 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
             newGUID=destination_vm_guid,
             disk_name_prefix=disk_prefix,
             ami=_attach_disk_restore_option.get('ami', None),
-            vmSize=_attach_disk_restore_option.get('instance_type', None)
+            vmSize=_attach_disk_restore_option.get('instance_type', None),
+            new_instance=_attach_disk_restore_option.get('new_instance', None),
+            os_id=_attach_disk_restore_option.get('os_id', None)
         )
 
         request_json = self._prepare_attach_disk_restore_json(_attach_disk_restore_option)

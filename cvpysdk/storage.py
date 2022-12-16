@@ -20,6 +20,7 @@
 
 This file has all the classes related to Storage operations.
 
+
 MediaAgents:      Class for representing all the media agents attached to the commcell.
 
 MediaAgent:       Class for representing a single media agent attached to the commcell.
@@ -98,6 +99,9 @@ MediaAgent:
 
     set_ransomware_protection()  -- set / unset ransomware protection on Windows MA
 
+    set_concurrent_lan()        --  set / unset concurrent LAN backup in Media agent properties.
+
+    is_power_management_enabled() -- returns of power management is enabled or not
 
 Libraries:
 
@@ -377,7 +381,7 @@ class MediaAgents(object):
             raise SDKException(
                 'Storage', '102', 'No media agent exists with name: {0}'.format(media_agent_name)
             )
-    
+
     def delete(self, media_agent, force=False):
         """Deletes the media agent from the commcell.
 
@@ -415,16 +419,16 @@ class MediaAgents(object):
                 error_code = 0
                 if flag:
                     if 'errorCode' in response.json():
-                        o_str = 'Failed to delete mediaagent' 
-                        error_code = response.json()['errorCode'] 
+                        o_str = 'Failed to delete mediaagent'
+                        error_code = response.json()['errorCode']
                         if error_code == 0:
                             # initialize the mediaagents again
                             # so the mediaagents object has all the mediaagents
                             self.refresh()
-                        else:                                
+                        else:
                             error_message = response.json()['errorMessage']
                             if error_message:
-                                o_str += '\nError: "{0}"'.format(error_message)                        
+                                o_str += '\nError: "{0}"'.format(error_message)
                             raise SDKException('Storage', '102', o_str)
                     else:
                         raise SDKException('Response', '102')
@@ -953,6 +957,53 @@ class MediaAgent(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101')
+    
+    def set_concurrent_lan(self, enable=True):
+        """
+        disable / enable concurrent LAN backup in Media agent properties.
+            Args:
+            enable      -   (bool)
+                            True        - Enable concurent LAN Backup
+                            False       - Disable concurent LAN Backup
+
+        Returns:
+            None                   --   if operation performed successfully.
+
+        Raises:
+            SDKException:
+                - if there is failure in executing the operation
+
+        """
+
+        if type(enable) != bool:
+            raise SDKException('Storage', '101')
+
+        media_id = int(self.media_agent_id)
+        request_json = {
+            "mediaAgentInfo": {
+                "mediaAgent": {
+                    "mediaAgentId": media_id
+                },
+                "mediaAgentProps": {
+                    "optimizeForConcurrentLANBackups": enable
+                }
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'PUT', self._MEDIA_AGENTS, request_json
+        )
+
+        if flag:
+            if response and response.json():
+                response = response.json()
+                if response.get('error', {}).get('errorCode', -1) != 0:
+                    error_message = response.get('error', {}).get('errorString', '')
+                    raise SDKException('Storage', '102', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
 
     @property
     def name(self):
@@ -990,6 +1041,11 @@ class MediaAgent(object):
         return self._index_cache_enabled
 
     @property
+    def is_power_management_enabled(self):
+        """ Returns power management enable status"""
+        return self._is_power_management_enabled
+
+    @property
     def current_power_status(self):
         """
                 Returns the power state of the MA.
@@ -1016,7 +1072,7 @@ class MediaAgent(object):
 
 class Libraries(object):
     """ Class for libraries"""
-    
+
     def __init__(self, commcell_object):
         """Initialize object of the DiskLibraries class.
 
@@ -1376,7 +1432,8 @@ class DiskLibrary(object):
         )
 
     def move_mountpath(self, mountpath_id, source_device_path,
-                       source_mediaagent_id, target_device_path, target_mediaagent_id):
+                       source_mediaagent_id, target_device_path, target_mediaagent_id,
+                       target_device_id=0):
 
         """ To perform move mountpath operation
         Args:
@@ -1389,6 +1446,8 @@ class DiskLibrary(object):
             target_device_path    (str)   -- New Mountpath location
 
             target_mediaagent_id    (int)   -- MediaAgent Id on which new mountpath exists
+
+            target_device_id        (int)   --  Device Id of target path if already exists
 
         Returns:
             instance of the Job class for this move mountpath job
@@ -1407,40 +1466,57 @@ class DiskLibrary(object):
         if not (isinstance(mountpath_id, int) and
                 isinstance(source_mediaagent_id, int) and
                 isinstance(target_mediaagent_id, int) and
-                isinstance(target_device_path, str) and
+                (isinstance(target_device_path, str) or target_device_id > 0) and
                 isinstance(source_device_path, str)):
             raise SDKException('Storage', '101')
 
-        request_xml = """<TMMsg_CreateTaskReq>
-                        <taskInfo>
-                            <task initiatedFrom="1" ownerId="1" sequenceNumber="0" taskId="0" taskType="1">
-                                <taskFlags disabled="0" />
-                            </task>
-                            <associations mountPathId="{1}" />
-                            <subTasks subTaskOperation="1">
-                                <subTask operationType="5017" subTaskType="1" />
-                                <options> <adminOpts> <libraryOption>
-                                    <library libraryId="{0}" />
-                                    <moveMPOption>
-                                        <mountPathMoveList mountPathId="{1}" sourceDevicePath="{2}" 
-                                        sourcemediaAgentId="{3}" targetDevicePath="{4}" targetMediaAgentId="{5}">
-                                        <credential credentialId="0" credentialName=" " />
-                                        </mountPathMoveList>
-                                    </moveMPOption>
-                                </libraryOption> </adminOpts> </options>
-                            </subTasks>
-                        </taskInfo>
-                    </TMMsg_CreateTaskReq>""".format(self.library_id, mountpath_id, source_device_path,
-                                                     source_mediaagent_id, target_device_path, target_mediaagent_id)
+        MOVE_MOUNTPATH_DETAILS = self._commcell_object._services['GET_MOVE_MOUNTPATH_DETAILS'] % (mountpath_id)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', MOVE_MOUNTPATH_DETAILS)
+
+        source_device_id = None
+
+        if flag:
+            if response.json():
+                if 'sourceDeviceInfo' in response.json():
+                    source_device_id = response.json().get('sourceDeviceInfo').get('deviceId', None)
+                if not source_device_id:
+                    raise SDKException('Storage', '102', 'Failed to get details of the mountpath for move')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        request_json = {
+            'MPMoveOption': {
+                'mountPathMoveList': [{
+                    'sourceDeviceId': source_device_id,
+                    'sourcemediaAgentId': source_mediaagent_id,
+                    'targetMediaAgentId': target_mediaagent_id,
+                }]
+            }
+        }
+        if target_device_id > 0:
+            request_json['MPMoveOption']['mountPathMoveList'][0]['targetDeviceId'] = target_device_id
+        else:
+            request_json['MPMoveOption']['mountPathMoveList'][0]['targetDevicePath'] = target_device_path
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services['CREATE_TASK'], request_xml)
+            'POST', self._commcell_object._services['MOVE_MOUNTPATH'], request_json)
 
         if flag:
             if response.json():
                 if "jobIds" in response.json():
-                    from cvpysdk.job import Job
-                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                    if len(response.json()['jobIds']) == 1:
+                        from cvpysdk.job import Job
+                        return Job(self._commcell_object, response.json()['jobIds'][0])
+                    else:
+                        from cvpysdk.job import Job
+                        mp_move_job_list = []
+                        for job_id in response.json()['jobIds']:
+                            mp_move_job_list.append(Job(self._commcell_object, job_id))
+                        return mp_move_job_list
 
                 if "errorCode" in response.json():
                     error_message = response.json()['errorMessage']
@@ -1449,7 +1525,6 @@ class DiskLibrary(object):
 
                 else:
                     raise SDKException('Commcell', '105')
-
             else:
                 raise SDKException('Response', '102')
         else:
@@ -1927,13 +2002,9 @@ class DiskLibrary(object):
     @property
     def media_agents_associated(self):
         """ Returns the media agents associated with the disk library """
-        media_agents = self._library_properties['magLibSummary'].get(
-            'associatedMediaAgents', None)
-        if media_agents is None:
-            mount_paths = self._library_properties.get('MountPathList')
-            media_agents = [mount_path.get('mediaAgents') for mount_path in mount_paths if "mediaAgents" in mount_path]
-            return media_agents
-        return media_agents.strip().split(",")
+        mount_paths = self._library_properties.get('MountPathList')
+        media_agents = [mount_path.get('mountPathName').split('[')[1].split(']')[0] for mount_path in mount_paths if "mountPathName" in mount_path]
+        return list(set(media_agents))
 
     @property
     def name(self):
@@ -1975,7 +2046,7 @@ class DiskLibrary(object):
     def media_agent(self, media_agent):
         """setter for media agent"""
         self.mediaagent = media_agent
-        
+
     def share_mount_path(self, new_media_agent, new_mount_path, **kwargs):
         """
         Method to share a mountpath to a disklibrary
@@ -2040,14 +2111,14 @@ class DiskLibrary(object):
 
                 - if response code is not as expected
         """
-        
+
         media_agent = kwargs.get('media_agent', self.mediaagent)
         library_name = kwargs.get('library_name', self.library_name)
         mount_path = kwargs.get('mount_path', self.mountpath)
         access_type = kwargs.get('access_type', 22)
         username = kwargs.get('username', '')
         password = kwargs.get('password', '')
-       
+
         self._EXECUTE = self._commcell_object._services['EXECUTE_QCOMMAND']
         self.library = {
             "opType": 64,
@@ -2108,8 +2179,10 @@ class RPStores(object):
         response = self._commcell.execute_qcommand("qoperation execute", xml)
 
         try:
-            return {library["library"]["libraryName"].lower(): library["MountPathList"][0]["rpStoreLibraryInfo"]
-                    ["rpStoreId"] for library in response.json()["libraryList"]}
+            if response.json().get('libraryList'):
+                return {library["library"]["libraryName"].lower(): library["MountPathList"][0]["rpStoreLibraryInfo"]
+                        ["rpStoreId"] for library in response.json()["libraryList"]}
+            return {}
         except (KeyError, ValueError):
             generic_msg = "Unable to fetch RPStore"
             err_msg = response.json().get("errorMessage", generic_msg) if response.status_code == 200 else generic_msg
@@ -2444,9 +2517,9 @@ class TapeLibraries(Libraries):
 
         if not flag:
             raise SDKException('Storage', '102', "Failed to configure the library")
-            
+
         self.refresh()
-        
+
         tape_library_name = tape_library_name.lower()
         for lib_name, lib_id in self._libraries.items():
             if lib_name.startswith(tape_library_name + " "):
@@ -2518,12 +2591,12 @@ class TapeLibrary(object):
             Returns:
                 list - List of the drives of this tape library
         """
-        
-        self.refresh()
-        
-        drive_list=[]
 
-        if self.library_properties["DriveList"]:
+        self.refresh()
+
+        drive_list=[]
+        
+        if 'DriveList' in self.library_properties:
             for drive in self.library_properties["DriveList"]:
                 drive_list.append(drive["driveName"])
 
@@ -2561,7 +2634,7 @@ class TapeLibrary(object):
     def refresh(self):
         """Refresh the properties of this tape library."""
         self.library_properties = self._get_library_properties()
-        
+
 
     @property
     def library_name(self):

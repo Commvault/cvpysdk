@@ -53,6 +53,7 @@ SERVICES_DICT_TEMPLATE = {
     'TFA_DISABLE': '{0}Commcell/Properties/TwoFactorAuth/Action/Disable',
     'PRIVACY_ENABLE': '{0}Commcell/Properties/Privacy/Action/Enable',
     'PRIVACY_DISABLE': '{0}Commcell/Properties/Privacy/Action/Disable',
+    'ACCOUNT_lOCK_SETTINGS': '{0}Commcell/Properties/AccountLockSettings',
     'ORG_TFA': '{0}Organization/%s/TwoFactorAuth',
     'ORG_TFA_ENABLE': '{0}Organization/%s/TwoFactorAuth/Action/Enable',
     'ORG_TFA_DISABLE': '{0}Organization/%s/TwoFactorAuth/Action/Disable',
@@ -60,6 +61,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_ALL_CLIENTS': '{0}Client',
     'GET_VIRTUAL_CLIENTS': '{0}Client?PseudoClientType=VSPseudo',
+    'GET_VIRTUALIZATION_ACCESS_NODES': '{0}VSAClientAndClientGroupList',
     'GET_FILE_SERVER_CLIENTS': '{0}/v4/FileServers',
     'CLIENTFORCEDELETE':'{0}Client/%s?forceDelete=1',
     'CLIENT': '{0}Client/%s',
@@ -110,11 +112,15 @@ SERVICES_DICT_TEMPLATE = {
     'GET_LIBRARY_PROPERTIES': '{0}Library/%s',
     'DETECT_TAPE_LIBRARY': '{0}Library?Action=detect',
     'CONFIGURE_TAPE_LIBRARY': '{0}Library?Action=configureTape',
-    
+
+    'GET_MOVE_MOUNTPATH_DETAILS': '{0}MountPath/%s/Move',
+    'MOVE_MOUNTPATH': '{0}MountPath/Move',
+
     'LOCK_MM_CONFIGURATION': '{0}LockMMConfiguration',
 
     'STORAGE_POLICY': '{0}StoragePolicy',
     'GET_STORAGE_POLICY': '{0}StoragePolicy/%s',
+    'DELETE_STORAGE_POLICY': '{0}V2/StoragePolicy',
     'GET_STORAGE_POLICY_ADVANCED': '{0}v2/StoragePolicy/%s?propertyLevel=10',
     'CREATE_STORAGE_POLICY_COPY': '{0}StoragePolicy?Action=createCopy',
     'DELETE_STORAGE_POLICY_COPY': '{0}StoragePolicy?Action=deleteCopy',
@@ -250,9 +256,13 @@ SERVICES_DICT_TEMPLATE = {
     'START_TRAINING': '{0}ContentAnalyzer/%s/%s/ml/action/train',
     'CANCEL_TRAINING': '{0}ContentAnalyzer/%s/%s/training/cancel',
 
-    'EDISCOVERY_INVENTORIES': '{0}EDiscoveryClients/Inventories',
-    'EDISCOVERY_INVENTORY': '{0}EDiscoveryClients/Inventories/%s',
-    'EDISCOVERY_ASSETS': '{0}EDiscoveryClients/Inventories/%s/Assets',
+    'V4_ACTIVATE_DS_PERMISSION': '{0}V4/Activate/SEA_DATASOURCE_ENTITY/%s/Permissions',
+    'V4_INVENTORY_CRAWL': '{0}V4/InventoryManager/Inventory/%s/Crawl',
+    'EDISCOVERY_INVENTORIES': '{0}V4/InventoryManager/Inventory',
+    'EDISCOVERY_INVENTORY': '{0}V4/InventoryManager/Inventory/%s',
+    'EDISCOVERY_ASSETS': '{0}V4/InventoryManager/Inventory/%s/Assets',
+    'EDISCOVERY_ASSET': '{0}V4/InventoryManager/Inventory/%s/Assets/%s',
+    'EDISCOVERY_ASSET_JOBS': '{0}V4/InventoryManager/Inventory/%s/Assets/%s/jobs',
     'EDISCOVERY_CRAWL': '{0}EDiscoveryClients/Clients/%s/Jobs?datasourceId=%s&type=%s&operation=%s',
     'EDISCOVERY_JOBS_HISTORY': '{0}EDiscoveryClients/Clients/%s/Jobs/History?type=%s&datasourceId=%s',
     'EDISCOVERY_JOB_STATUS': '{0}EDiscoveryClients/Clients/%s/Jobs/Status?type=%s&datasourceId=%s',
@@ -297,6 +307,9 @@ SERVICES_DICT_TEMPLATE = {
     'ELIGIBLE_PLANS': '{0}V2/Plan/Eligible?%s',
     'ASSOCIATED_ENTITIES': '{0}V2/Plan/%s/AssociatedEntities',
     'GET_PLANS': '{0}V2/Plan?type=%s&subType=%s',
+    'APPLICABLE_SOLNS_ENABLE': '{0}V4/ServerPlan/%s/ApplicableSolutions/Restrict/Enable',
+    'APPLICABLE_SOLNS_DISABLE': '{0}V4/ServerPlan/%s/ApplicableSolutions/Restrict/Disable',
+    'PLAN_SUPPORTED_SOLUTIONS': '{0}V4/Solutions?filter=PLAN_SUPPORTED_SOLUTIONS',
 
     'DOMAIN_CONTROLER': '{0}CommCell/DomainController',
     'DELETE_DOMAIN_CONTROLER': '{0}CommCell/DomainController/%s',
@@ -307,12 +320,14 @@ SERVICES_DICT_TEMPLATE = {
     'CVDRBACKUP_STATUS': '{0}/cvdrbackup/status?commcellid=%s',
     'CVDRBACKUP_INFO': '{0}/cvdrbackup/info',
     'CVDRBACKUP_DOWNLOAD': '{0}/cvdrbackup/download',
-    'CVDRBACKUP_REQUEST': '{0}cvdrbackup/requests',
+    'CVDRBACKUP_REQUEST': '{0}/cvdrbackup/requests',
+    'CVDRBACKUP_REQUEST_HISTORY': '{0}/cr/reportsplusengine/datasets/%s/data/?parameter.duration=%s',
 
     'ORACLE_INSTANCE_BROWSE': '{0}Instance/DBBrowse/%s',
 
     'METRICS': '{0}CommServ/MetricsReporting',
     'GET_METRICS': '{0}CommServ/MetricsReporting?isPrivateCloud=%s',
+    'LOCAL_METRICS': '{0}CommServ/MetricsReporting?isLocalMetrics=%s',
 
     'INTERNET_PROXY': '{0}/Commcell/InternetOptions/Proxy',
 
@@ -327,6 +342,8 @@ SERVICES_DICT_TEMPLATE = {
     'USER': '{0}User/%s?Level=50',
     'DELETE_USER': '{0}User/%s?newUserId=%s&newUserGroupId=%s',
     'OTP': '{0}User/%s/preferences/OTP',
+
+    'UNLOCK': '{0}User/Unlock',
 
     'ROLES': '{0}Role',
     'ROLE': '{0}Role/%s',
@@ -359,12 +376,14 @@ SERVICES_DICT_TEMPLATE = {
     'ORGANIZATION_ASSOCIATION': '{0}company/%s/company-association',
     'ENABLE_PRIVACY_COMPANY_DATA': '{0}V2/Organization/%s/Privacy/Action/Lock',
     'DISABLE_PRIVACY_COMPANY_DATA': '{0}V2/Organization/%s/Privacy/Action/Unlock',
+    'ORGANIZATION_THEME': '{0}V2/Organization/%s/Customization',
     'ORGANIZATION_TAGS' : '{0}Tags',
     'GET_ORGANIZATION_TAGS' : '{0}Tags/PROVIDER_ENTITY/%s',
     'COMPANY_PASSKEY' : '{0}Company/%s/Passkey',
     'COMPANY_AUTH_RESTORE' : '{0}Company/%s/AuthRestore',
     'EDIT_COMPANY_DETAILS': '{0}v4/company/%s',
     'CHECK_ELIGIBILITY_MIGRATION' : '{0}Company/%s/migration-entities',
+    'COMPANY_ENTITIES': '{0}Company/%s/AssociatedEntities',
     'MIGRATE_CLIENTS' : '{0}Company/%s/company-association',
 
     'STORAGE_POOL': '{0}StoragePool',
@@ -395,6 +414,12 @@ SERVICES_DICT_TEMPLATE = {
     'DR_GROUP_MACHINES': '{0}DRGroups/ClientList?source=1&entityType=3&entityId=%s',
     'DR_GROUP_JOB_STATS': '{0}DRGroups/JobStats?jobId=%s&drGroupId=%s&replicationId=%s&clientId=0',
     'DR_JOB_STATS': '{0}DRGroups/JobStats?jobId=%s',
+
+    'FAILOVER_GROUPS': '{0}FailoverGroups',
+    'GET_FAILOVER_GROUP': '{0}FailoverGroups/%s',
+    'FAILOVER_GROUP_MACHINES': '{0}FailoverGroups/ClientList?source=1&entityType=3&entityId=%s',
+    'FAILOVER_GROUP_JOB_STATS': '{0}DR/JobStats?jobId=%s&failoverGroupId=%s&replicationId=%s&clientId=0',
+    'DRORCHESTRATION_JOB_STATS': '{0}DR/JobStats?jobId=%s',
 
     'REVERSE_REPLICATION_TASK': '{0}Replications/Monitors/streaming/Operation',
     'REPLICATION_MONITOR': '{0}Replications/Monitors/streaming?subclientId=0',
@@ -452,8 +477,8 @@ SERVICES_DICT_TEMPLATE = {
 
     'IDENTITY_APPS': '{0}ThirdParty/App',
 
-    'GLOBAL_PARAM': '{0}/setGlobalParam',
-    'GET_GLOBAL_PARAM': '{0}/CommServ/AddRemoveSoftware/CommServeSoftwareCache',
+    'SET_GLOBAL_PARAM': '{0}/setGlobalParam',
+    'GET_GLOBAL_PARAM': '{0}/CommServ/GlobalParams',
 
     'SNAP_OPERATIONS': '{0}/Snaps/Operations',
     'STORAGE_ARRAYS': '{0}/StorageArrays',
@@ -490,6 +515,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_ALL_LIVE_SYNC_VM_PAIRS': '{0}Replications/Monitors/streaming?subclientId=%s&taskId=%s',
     'GET_LIVE_SYNC_VM_PAIR': '{0}Replications/Monitors/streaming?subclientId=%s&replicationPairId=%s',
     'GET_REPLICATION_PAIR': '{0}Replications/Monitors/streaming?replicationPairId=%s',
+    'GET_REPLICATION_PAIRS': '{0}Replications/Monitors/streaming?',
 
     'BACKUP_NETWORK_PAIRS': '{0}CommServ/DataInterfacePairs?ClientId=%s',
     'BACKUP_NETWORK_PAIR': '{0}CommServ/DataInterfacePairs',
@@ -520,11 +546,23 @@ SERVICES_DICT_TEMPLATE = {
     'ADD_OR_GET_SAML': '{0}/v4/SAML',
     'EDIT_SAML': '{0}/v4/SAML/%s',
 
+    'REGIONS': '{0}/v4/Regions',
     'EDIT_REGION': '{0}/entity/%s/%s/region',
     'GET_REGION': '{0}/entity/%s/%s/region?entityRegionType=%s',
     'CALCULATE_REGION': '{0}/entity/%s/%s/region?calculate=True&entityRegionType=%s',
     
-    'GET_OEM_ID': '{0}/GetOemId'
+    'GET_OEM_ID': '{0}/GetOemId',
+
+    'DO_WEB_SEARCH': '{0}/Search',
+
+    
+    'GET_SLA': '{0}GetSLAConfiguration',
+    'WORKLOAD_REGION': '{0}entity/COMMCELL/%s/region?entityRegionType=WORKLOAD',
+
+    'GET_USER_SUGGESTIONS': '{0}getADUserSuggestions?namePattern=%s&getDomainUsers=true&getCommcellUsers=true&'
+                            'getDomainGroups=true&returnDomain=true&getCommCellGroups=true&searchOnDisplayName=true'
+                            '&searchOnAliasName=true&searchOnSmtp=1&ignoreSmtpRule=1&getOrganizationUsers=false&'
+                            'getOrganizationGroups=false'
 }
 
 

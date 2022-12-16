@@ -72,7 +72,7 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
             to the location same as the actual location of the VM in VCenter.
 
             Args:
-                vm_to_restore       (list)     --  provide the VM name to
+                vm_to_restore       (list)     --  provide the list of VM name to
                                                    restore
                                                    default: None
 
@@ -145,7 +145,7 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
 
 
             Args:
-                vm_to_restore     (list):       provide the VM name to restore
+                vm_to_restore     (list):       provide the list of VM name to restore
                                                 default: None
 
                 proxy_client     (str):         proxy client to be used for restore

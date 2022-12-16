@@ -57,6 +57,9 @@ Clients
     _get_virtualization_clients()         --  gets all the virtualization clients associated with
     the commcell
 
+    _get_virtualization_access_nodes()    --  gets all the virtualization access nodes associated with
+    the commcell
+
     _get_client_dict()                    --  returns the client dict for client to be added to
     member server
 
@@ -69,7 +72,7 @@ Clients
     _get_hidden_client_from_hostname()    --  returns the client name if associated with specified
     hostname if exists
 
-     _get_client_from_displayname()        --  get the client name for given display name
+    _get_client_from_displayname()        --  get the client name for given display name
 
     has_client(client_name)               --  checks if a client exists with the given name or not
 
@@ -130,6 +133,9 @@ Clients Attributes
     that are associated with the commcell and their information such as id and hostname
 
     **virtualization_clients**  --  returns the dictionary consisting of only the virtualization
+    clients that are associated with the commcell and their information such as id and hostname
+
+    **virtualization_access_nodes** --  returns the dictionary consisting of only the virtualization
     clients that are associated with the commcell and their information such as id and hostname
 
     **office365_clients**       --  Returns the dictionary consisting of all the office 365 clients that are
@@ -347,6 +353,18 @@ Client Attributes
     **company_name**                 -- returns company name for the client
 
     **is_privacy_enabled**          -- returns if client privacy is enabled
+
+    **latitude**                    -- Returns the latitude from geo location of the client
+
+    **longitude**                   -- Returns the longitude from geo location of the client
+
+    **is_vm**                       -- Returns True if its a VM client
+
+    **hyperv_id_of_vm**             -- Returns the Id of hyperV that the given VM is associated with
+
+    **associated_client_group**     -- Returns the list of clientgroups that the client is associated to
+
+    **company_id**                  -- Returns the company Id of the client
 """
 
 from __future__ import absolute_import
@@ -405,6 +423,7 @@ class Clients(object):
         self._SALESFORCE_CLIENTS = self._services['GET_SALESFORCE_CLIENTS']
         self._ALL_CLIENTS = self._services['GET_ALL_CLIENTS_PLUS_HIDDEN']
         self._VIRTUALIZATION_CLIENTS = self._services['GET_VIRTUAL_CLIENTS']
+        self._GET_VIRTUALIZATION_ACCESS_NODES = self._services['GET_VIRTUALIZATION_ACCESS_NODES']
         self._FS_CLIENTS = self._services['GET_FILE_SERVER_CLIENTS']
         self._ADD_EXCHANGE_CLIENT = self._ADD_SHAREPOINT_CLIENT = self._ADD_SALESFORCE_CLIENT = \
             self._services['CREATE_PSEUDO_CLIENT']
@@ -415,6 +434,7 @@ class Clients(object):
         self._clients = None
         self._hidden_clients = None
         self._virtualization_clients = None
+        self._virtualization_access_nodes = None
         self._office_365_clients = None
         self._dynamics365_clients = None
         self._salesforce_clients = None
@@ -667,8 +687,7 @@ class Clients(object):
                     }
                     for sf_subclient in map(lambda org: org['sfSubclient'], response.json()['orgs'])
                 }
-            else:
-                raise SDKException('Response', '102')
+            return {}
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
@@ -788,6 +807,49 @@ class Clients(object):
                 return virtualization_clients
 
             return {}
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def _get_virtualization_access_nodes(self):
+        """REST API call to get all virtualization access nodes in the commcell
+            Returns:
+                dict - consists of all access nodes in the commcell
+                {
+                     "display_name1": {
+                            "id": client1_id,
+                            "name": client1_name,
+                            "hostname": client1_hostname
+                    },
+                     "display_name2": {
+                            "id": client2_id,
+                            "name": client2_name,
+                            "hostname": client2_hostname
+                     },
+                }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._GET_VIRTUALIZATION_ACCESS_NODES)
+
+        virtualization_access_nodes = {}
+        if flag and response:
+            if response.json() and 'clients' in response.json():
+                for virtualization_access_node in response.json()['clients']:
+                    client_id = virtualization_access_node.get('clientId')
+                    client_name = virtualization_access_node.get('clientName').lower()
+                    display_name = virtualization_access_node.get('displayName').lower()
+                    host_name = virtualization_access_node.get('hostName').lower()
+                    if client_name:
+                        virtualization_access_nodes[display_name] = {
+                            'id': client_id,
+                            'name': client_name,
+                            'hostName': host_name
+                        }
+            return virtualization_access_nodes
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
@@ -932,7 +994,7 @@ class Clients(object):
                     return hidden_client
 
     def _get_client_from_displayname(self, displayname):
-        """get the client name for given displayname
+        """get the client name for given display name
             name
 
             Args:
@@ -940,7 +1002,7 @@ class Clients(object):
 
             Returns:
                 str     -   name of the client associated with this displayname
-            
+
                 None    -   if no client has the displayname as the given input
             Raises:
                 Exception:
@@ -955,6 +1017,7 @@ class Clients(object):
             raise Exception('multiple clients have same display name')
         else:
             return client_name
+
 
     @property
     def all_clients(self):
@@ -1007,10 +1070,10 @@ class Clients(object):
             raise SDKException('Client', '101')
 
         if "windows" in client_type.lower():
-            os_id = 0
+            os_id = "WINDOWS"
 
         if "unix" in client_type.lower():
-            os_id = 1
+            os_id = "UNIX"
 
         if "unix cluster" in client_type.lower():
             os_id = 11
@@ -1146,6 +1209,26 @@ class Clients(object):
 
         """
         return self._virtualization_clients
+
+    @property
+    def virtualization_access_nodes(self):
+        """Returns the dictionary consisting of the virtualization access nodes
+
+                dict - consists of all access nodes in the commcell
+                {
+                     "display_name1": {
+                            "id": client1_id,
+                            "name": client1_name,
+                            "hostname": client1_hostname
+                    },
+                     "display_name2": {
+                            "id": client2_id,
+                            "name": client2_name,
+                            "hostname": client2_hostname
+                     },
+                }
+        """
+        return self._virtualization_access_nodes
 
     @property
     def file_server_clients(self):
@@ -1713,6 +1796,13 @@ class Clients(object):
 
                 azure_directory_id    (str)   --  azure directory id for sharepoint online
 
+                cloud_region            (int)   --  stores the cloud region for the SharePoint client
+                                                    - Default (Global Service) [1]
+                                                    - Germany [2]
+                                                    - China [3]
+                                                    - U.S. Government GCC [4]
+                                                    - U.S. Government GCC High [5]
+
 
             Returns:
                 object  -   instance of the Client class for this new client
@@ -1810,11 +1900,15 @@ class Clients(object):
 
         }
         tenant_url = kwargs.get('tenant_url')
+        if 'cloud_region' in kwargs.keys():
+            cloud_region = kwargs.get('cloud_region')
+        else:
+            cloud_region = 1
         global_administrator = kwargs.get('global_administrator')
         request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
             "spOffice365BackupSetProp"] = {
             "tenantUrlItem": tenant_url,
-            "cloudRegion": 1,
+            "cloudRegion": cloud_region,
             "isModernAuthEnabled": kwargs.get('is_modern_auth_enabled', False),
             "infraStructurePoolEnabled": False,
              "office365Credentials": {
@@ -3454,6 +3548,7 @@ class Clients(object):
         self._clients = self._get_clients()
         self._hidden_clients = self._get_hidden_clients()
         self._virtualization_clients = self._get_virtualization_clients()
+        self._virtualization_access_nodes = self._get_virtualization_access_nodes()
         self._office_365_clients = None
         self._file_server_clients = None
         self._salesforce_clients = None
@@ -3566,7 +3661,12 @@ class Client(object):
         self._readiness = None
         self._vm_guid = None
         self._company_name = None
-
+        self._is_vm = None
+        self._vm_hyperv_id = None
+        self._client_latitude = None
+        self._client_longitude = None
+        self._associated_client_groups = None
+        self._company_id = None
         self.refresh()
 
     def __repr__(self):
@@ -3671,6 +3771,26 @@ class Client(object):
 
                 if 'BlockLevelCacheDir' in client_props:
                     self._block_level_cache_dir = client_props['BlockLevelCacheDir']
+
+                if 'clientRegionInfo' in client_props:
+                    self._client_latitude = client_props.get('clientRegionInfo', {}).get('geoLocation', {}). \
+                        get('latitude')
+                    self._client_longitude = client_props.get('clientRegionInfo', {}).get('geoLocation', {}). \
+                        get('longitude')
+
+                if 'vmStatusInfo' in self._properties:
+                    self._is_vm = True
+                    self._vm_hyperv_id = self._properties.get('vmStatusInfo', {}).get('pseudoClient', {}).get(
+                        'clientId')
+                else:
+                    self._is_vm = False
+
+                if 'clientGroups' in self._properties:
+                    self._associated_client_groups = self._properties.get('clientGroups', {})
+
+                if 'company' in client_props:
+                    self._company_id = client_props.get('company', {}).get('shortName', {}).get('id')
+
 
             else:
                 raise SDKException('Response', '102')
@@ -4140,6 +4260,36 @@ class Client(object):
     def properties(self):
         """Returns the client properties"""
         return copy.deepcopy(self._properties)
+
+    @property
+    def latitude(self):
+        """Returns the client latitude from clientRegionInfo GeoLocation"""
+        return self._client_latitude
+
+    @property
+    def longitude(self):
+        """Returns the client Longitude from clientRegionInfo GeoLocation"""
+        return self._client_longitude
+
+    @property
+    def is_vm(self):
+        """Returns True if the given client is a VM else False"""
+        return self._is_vm
+
+    @property
+    def hyperv_id_of_vm(self):
+        """Returns the Hypervisor ID associated to a VM client"""
+        return self._vm_hyperv_id
+
+    @property
+    def associated_client_groups(self):
+        """Returns the list of client groups to which the given client is assocaited with"""
+        return self._associated_client_groups
+
+    @property
+    def company_id(self):
+        """Returns the client's Company ID"""
+        return self._company_id
 
     @property
     def name(self):
@@ -5374,7 +5524,7 @@ class Client(object):
                 Change the Job Result Directory of a O365 Client
 
                 Arguments:
-                    new_directory   (str)   -- The new JR directory
+                    new_directory_path   (str)   -- The new JR directory
                         Example:
                             C:\ JR
                             or
@@ -5655,7 +5805,9 @@ class Client(object):
                            prop_value,
                            client_side_cache=None,
                            max_cache_db=None,
-                           high_latency_optimization=None):
+                           high_latency_optimization=None,
+                           variable_content_alignment=None
+                           ):
         """
             Set DDB propeties
 
@@ -5682,6 +5834,12 @@ class Client(object):
                                     32768
                                     65536
                                     131072
+                    variable_content_alignment: to increase the effectiveness of deduplication on the client computer.
+                                                Variable content alignment reduces the amount of data stored during a
+                                                backup operation.
+                               Values - None(Default) - DoNotModify the property value
+                                        True/False - Enable/Disable optimization respectively
+
                     high_latency_optimization: To set Optimization for High latency Networks
                                 Values - None(Default) - DoNotModify the property value
                                          True/False - Enable/Disable optimization respectively
@@ -5701,6 +5859,11 @@ class Client(object):
                 if high_latency_optimization is not None:
                     dedupe_props['deDuplicationProperties'][
                         'enableHighLatencyOptimization'] = high_latency_optimization
+
+                if variable_content_alignment is not None:
+                    dedupe_props['deDuplicationProperties'][
+                        'enableVariableContentAlignment'] = variable_content_alignment
+
             else:
                 dedupe_props = {
                     'deDuplicationProperties': {

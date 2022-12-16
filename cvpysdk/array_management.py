@@ -50,6 +50,7 @@ ArrayManagement:
 from __future__ import unicode_literals
 from .job import Job
 from .exception import SDKException
+import base64
 
 
 class ArrayManagement(object):
@@ -352,6 +353,9 @@ class ArrayManagement(object):
                 }
                 selectedMAs.append(node_dict)
 
+        if password is not None:
+            password = base64.encodebytes(password.encode()).decode()
+
         request_json = {
             "clientId": 0,
             "flags": 0,
@@ -642,6 +646,7 @@ class ArrayManagement(object):
                                 break
 
         request_json['configs'] = request_json.pop('configList')
+        del request_json['info']['region']
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'PUT', self.storage_arrays, request_json

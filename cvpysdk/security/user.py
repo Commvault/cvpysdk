@@ -106,6 +106,9 @@ User
 
     user_company_name()                 -- returns company name if user is a company user else returns empty str
 
+    get_account_lock_info()             -- returns account lock information
+
+    unlock()                            --  Unlocks user account
 """
 
 from base64 import b64encode
@@ -371,6 +374,7 @@ class Users(object):
             }]
         }
         response_json = self._add_user(create_user_request)
+
 
         created_user_username = response_json.get("response", [{}])[0].get("entity", {}).get("userName")
 
@@ -727,6 +731,11 @@ class User(object):
         return self._properties['userEntity']['userName']
 
     @property
+    def full_name(self):
+        """Returns the full name of this commcell user"""
+        return self._properties.get('fullName','')
+
+    @property
     def user_name(self):
         """Returns the user name of this commcell user"""
         return self._user_name
@@ -1028,3 +1037,52 @@ class User(object):
         bool    --  tfa status
         """
         return self._tfa_status
+
+    @property
+    def get_account_lock_info(self):
+        """
+        Returns user account lock status
+        dict     --  account lock info
+        example:
+            {
+                "isAccountLocked" : True,
+                "lockStartTime" : 1646640752,
+                "lockEndTime" : 1646727152
+            }
+        """
+        lock_info = dict()
+        lock_info['isAccountLocked'] = self._properties.get('isAccountLocked', False)
+        lock_info['lockStartTime'] = self._properties.get('lockStartTime', 0)
+        lock_info['lockEndTime'] = self._properties.get('lockEndTime', 0)
+        return lock_info
+
+    def unlock(self):
+        """
+        Unlocks user account.
+        Returns:
+            status      (str)   --      unlock operation status
+                Example:-
+                "Unlock successful for user account"
+                "Logged in user cannot unlock their own account"
+                "Unlock failed for user account"
+                "User account is not locked"
+                "Logged in user does not have rights to unlock this user account"
+            statusCode
+        Raises:
+            SDKException:
+                if response is empty
+                if response is not success
+        """
+        payload = {"lockedAccounts": [{"user": {"userName": self._user_name, "userId": self._user_id}}]}
+        service = self._commcell_object._services['UNLOCK']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', service, payload
+        )
+        if flag:
+            if response and response.json() and 'lockedAccounts' in response.json():
+                return response.json().get('lockedAccounts')[0].get('status'), response.json().get('lockedAccounts')[0].get('statusCode')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)

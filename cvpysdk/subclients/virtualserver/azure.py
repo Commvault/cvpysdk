@@ -62,7 +62,7 @@ class AzureSubclient(VirtualServerSubclient):
 
                 storage_account     (str)          --  provide the storage account
 
-                vm_to_restore         (list)       --  provide the VM name to restore
+                vm_to_restore         (list)       --  provide the list of VM name(s) to restore
 
                 overwrite
                         default:False   (bool)      --  overwrite the existing VM
@@ -77,7 +77,7 @@ class AzureSubclient(VirtualServerSubclient):
                                                      full_vm_restore_out_of_place
                     eg:
                     v2_details          (dict)       -- details for v2 subclient
-                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
+                                                  eg: check clients.vmclient.VMClient._child_job_subclient_details
 
 
             Returns:
@@ -135,7 +135,7 @@ class AzureSubclient(VirtualServerSubclient):
             to the location same as source .
 
             Args:
-                vm_to_restore         (list)       --  provide the VM name to restore
+                vm_to_restore         (list)       --  provide the list of VM name(s) to restore
 
                 overwrite
                         default:true   (bool)      --  overwrite the existing VM
