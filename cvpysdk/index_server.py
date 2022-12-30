@@ -89,6 +89,8 @@ IndexServer
 
     modify()                            --  to modify the index server node details
 
+    change_plan()                       --  changes the plan of a given index server
+
     update_role()                       --  to update the roles assigned to cloud
 
     hard_commit                         --  do hard commit on specified index server solr core
@@ -102,6 +104,8 @@ IndexServer
     get_index_node()                    --  returns an Index server node object for given node name
 
     get_os_info()                       --  returns the OS type for the Index server
+
+    get_plan_info()                     --  Returns the plan information of the index server
 
     __form_field_query()                --  returns the query with the key and value passed
 
@@ -144,6 +148,8 @@ IndexServer Attributes
     **node_count**                      --  returns the number of Index server nodes
 
     **os_info**                         --  returns the OS type for the Index server
+
+    **plan_name**                       --  Returns the plan name associated with index server
 
 
 IndexNode
@@ -651,6 +657,7 @@ class IndexServer(object):
             self._cloud_id = self._get_cloud_id()
         self._properties = None
         self._roles_obj = None
+        self.plan_info = None
         self.os_type = None
         self.refresh()
 
@@ -680,6 +687,8 @@ class IndexServer(object):
             self.os_type = self.get_os_info()
         if not self._roles_obj:
             self._roles_obj = _Roles(self._commcell_obj)
+        if self.plan_info is None:
+            self.plan_info = self.get_plan_info()
 
     def update_roles_data(self):
         """Synchronize the cloud roles data with the commcell"""
@@ -722,6 +731,40 @@ class IndexServer(object):
             json_req['cloudNodes'][0]['nodeMetaInfos'].append(param)
         flag, response = self._cvpysdk_object.make_request(
             "POST", self._services['CLOUD_MODIFY'], json_req)
+        if flag:
+            if response.json():
+                if 'cloudId' in response.json():
+                    self.refresh()
+                    return
+            raise SDKException('Response', '102')
+        raise SDKException('Response', '101')
+
+    def change_plan(self, plan_name):
+        """Modifies the plan used by an index server
+
+            Args:
+                plan_name      (str)       --  Name of the plan to be used for the index server
+            Raises:
+                SDKException:
+                    Response was not success.
+                    Response was empty.
+                    if plan with given name doesn't exist
+        """
+        if not self._commcell_obj.plans.has_plan(plan_name):
+            raise SDKException(
+                'Plan', '102', f"Plan with name [{plan_name}] doesn't exist")
+        request_json = {
+            "opType": IndexServerConstants.OPERATION_EDIT,
+            "type": 1,
+            "planInfo": {
+                "planId": int(self._commcell_obj.plans.get(plan_name).plan_id)
+            },
+            "cloudInfoEntity": {
+                "cloudId": self.cloud_id
+            }
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            "POST", self._services['CLOUD_MODIFY'], request_json)
         if flag:
             if response.json():
                 if 'cloudId' in response.json():
@@ -1014,6 +1057,13 @@ class IndexServer(object):
             return IndexNode(self._commcell_obj, self.engine_name, node_name)
         raise SDKException("IndexServers", '104', 'Index server node not found')
 
+    def get_plan_info(self):
+        """Returns the plan information of the index server"""
+        client = self._commcell_obj.clients.get(self.index_server_client_id)
+        instance_props = client.properties.get("pseudoClientInfo", {}).get("distributedClusterInstanceProperties", {})
+        plan_details = instance_props.get("clusterConfig",{}).get("cloudInfo", {}).get("planInfo", {})
+        return plan_details
+
     def get_os_info(self):
         """Returns the OS type for the Index server"""
 
@@ -1046,6 +1096,11 @@ class IndexServer(object):
         else:
             query = f'&{key}={str(value)}'
         return query
+
+    @property
+    def plan_name(self):
+        """Returns the plan name associated with index server"""
+        return self.plan_info.get("planName")
 
     @property
     def os_info(self):

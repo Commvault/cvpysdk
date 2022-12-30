@@ -668,3 +668,170 @@ class ApplicationGroup(Enum):
     CLOUDAPPS = auto()
     MSSQLSERVER = auto()
     SHAREPOINTSERVER = auto()
+
+
+class StoragePoolConstants:
+    """Class to maintain storage policy constants"""
+
+    AZURE_STORAGE_REQ_JSON = {
+        "type": "CVA_REGULAR_SP",
+        "numberOfCopies": 1,
+        "storagePolicyCopyInfo": {
+            "copyType": "SYNCHRONOUS",
+            "isDefault": "SET_TRUE",
+            "active": "SET_TRUE",
+            "storagePolicyFlags": {
+                "blockLevelDedup": "SET_TRUE",
+                "enableGlobalDeduplication": "SET_TRUE"
+            },
+            "library": {
+                "libraryId": 0,
+                "libraryName": ""
+            },
+            "mediaAgent": {
+                "mediaAgentId": 0,
+                "mediaAgentName": ""
+            },
+            "retentionRules": {
+                "retentionFlags": {
+                    "enableDataAging": "SET_TRUE"
+                }
+            },
+            "isFromGui": True,
+            "numberOfStreamsToCombine": 1,
+            "dedupeFlags": {
+                "enableDeduplication": "SET_TRUE",
+                "enableDASHFull": "SET_TRUE",
+                "hostGlobalDedupStore": "SET_TRUE"
+            },
+            "DDBPartitionInfo": {
+                "maInfoList": [
+
+                ]
+            }
+        },
+        "storage": [
+            {
+                "mediaAgent": {
+                    "mediaAgentId": 0,
+                    "mediaAgentName": ""
+                },
+                "path": "",
+                "deviceType": 3,
+                "metallicStorageInfo": {
+                    "region": [
+                        {
+                            "regionId": 0
+                        }
+                    ],
+                    "storageClass": [
+                        "CONTAINER_DEFAULT"
+                    ],
+                    "replication": [
+                        "NONE"
+                    ]
+                },
+                "credentials": {
+                    "userName": "",
+                    "password": ""
+                },
+                "savedCredential": {
+                    "credentialId": 0,
+                    "credentialName": ""
+                }
+            }
+        ],
+        "storagePolicyName": ""
+    }
+
+    MA_INFO_LIST = {
+        "mediaAgent": {
+            "mediaAgentId": 0,
+            "mediaAgentName": ""
+        },
+        "subStoreList": [
+            {
+                "accessPath": {
+                    "path": ""
+                }
+            }
+        ]
+    }
+
+
+class CommcellEntity(Enum):
+    """Class to maintain Commcell Entity types"""
+
+    COMMCELL_ENTITY = 1
+    CLIENT_ENTITY = 3
+    APPTYPE_ENTITY = 4
+    INSTANCE_ENTITY = 5
+    BACKUPSET_ENTITY = 6
+    SUBCLIENT_ENTITY = 7
+    LIBRARIES_ENTITY = 8
+    LIBRARY_ENTITY = 9
+    MEDIAAGENT_ENTITY = 11
+    USER_ENTITY = 13
+    USERGROUP_ENTITY = 15
+    STORAGE_POLICIES_ENTITY = 16
+    STORAGE_POLICY_ENTITY = 17
+    STORAGE_POLICY_COPY_ENTITY = 18
+    ALL_USERS_ENTITY = 12
+    ALL_USERGROUPS_ENTITY = 14
+    TRACKING_POLICIES_ENTITY = 20
+    TRACKING_POLICY_ENTITY = 21
+    VAULTRACKER_JOBS = 22
+    DATAPROTECTION_JOBS = 23
+    AUX_COPY_JOBS = 24
+    MACHINE_ENTITIY = 26
+    CLIENT_GROUP_ENTITY = 28
+    SRM_REPORT_SET = 29
+    SRM_REPORT_ENTITY = 30
+    LEGAL_HOLD = 31
+    SRM_REPORTS_SET = 32
+    SRM_REPORTS_ENTITY = 33
+    SCHEDULE_POLICY_ENTITY = 35
+    SECURITY = 36
+    HOLIDAYS = 37
+    OPERATION_WINDOW = 38
+    CALENDAR = 39
+    GLOBALFILTERS = 40
+    MEDIA_LOCATIONS = 41
+    CALENDARS = 44
+    APPID_ENTITY = 45
+    MEDIA_ENTITY = 46
+    DRIVE_POOL_ENTITY = 47
+    SCRATCH_POOL_ENTITY = 48
+    LIBRARY_MEDIA_TYPE_ENTITY = 49
+    MEDIA_SIDE_ENTITY = 50
+    DRIVE_ENTITY = 51
+    MOUNT_PATH_ENTITY = 52
+    LOCATION_ENTITY = 53
+    TIME_RANGE = 54
+    TIME_ZONE = 55
+    DATE_TIME = 56
+    SHELF_ENTITY = 57
+    GALAXYRELEASE_ENTITY = 58
+    LICENSE_ENTITY = 59
+    COMPONENT_ENTITY = 60
+    PROVIDER_ENTITY = 61
+    EXTERNAL_GROUP_ENTITY = 62
+    CALENDAR_ENTITY = 63
+    ALERT_ENTITY = 64
+    SUBCLIENT_POLICY_ENTITY = 65
+    LOCALE_ENTITY = 66
+    SPARE_MEDIA_GROUP_ENTITY = 67
+    SUBTASK_ENTITY = 68
+    TASK_ENTITY = 69
+    MEDIA_TYPE_ENTITY = 70
+
+
+class Credential_Type(Enum):
+    """Class to maintain Credential types"""
+
+    WINDOWSACCOUNT = 1
+    LINUXACCOUNT = 2
+    SSHACCOUNT = 3
+    AZUREACCOUNT = 4
+    VMWAREACCOUNT = 5
+    MICROSOFT_AZURE = 103

@@ -110,6 +110,7 @@ class WindowsDownloadFeatures(Enum):
     CONTENT_EXTRACTOR = 259
     DB2_AGENT = 351
     INFORMIX = 360
+    SYBASE = 1202
 
 
 class OSNameIDMapping(Enum):

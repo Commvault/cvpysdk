@@ -113,6 +113,8 @@ Commcell:
 
     get_email_settings()                -- Get the SMTP settings for the commcell
 
+    set_email_settings()                -- Set the SMTP settings for the commcell
+
     get_commcell_properties()           -- Get the general, privacy and other properties of commcell
 
     get_commcell_organization_properties()     -- Get the organization properties of commcell
@@ -1521,8 +1523,7 @@ class Commcell(object):
     def commserv_client(self):
         """Returns the instance of the Client class for the CommServ client."""
         if self._commserv_client is None:
-            self._commserv_client = self.clients.get(self._commserv_name)
-
+            self._commserv_client = self.clients.get(self._id)
         return self._commserv_client
 
     @property
@@ -2289,7 +2290,8 @@ class Commcell(object):
             all_client_computer_groups=False,
             reboot_client=False,
             run_db_maintenance=True,
-            maintenance_release_only=False):
+            maintenance_release_only=False,
+            **kwargs):
         """triggers installation of service pack and hotfixes
 
         Args:
@@ -2319,12 +2321,17 @@ class Commcell(object):
 
             maintenance_release_only (bool) -- for clients of feature releases lesser than CS, this option
             maintenance release of that client FR, if present in cache
+            **kwargs: (dict) -- Key value pairs for supporting conditional initializations
+                Supported -
+                schedule_pattern (dict)           -- Request JSON for scheduling the operation
 
         Returns:
-            object - instance of the Job class for this download job
+            object - instance of the Job/Task class for this download
 
         Raises:
                 SDKException:
+                    if schedule is not of type dictionary
+
                     if Download job failed
 
                     if response is empty
@@ -2336,6 +2343,10 @@ class Commcell(object):
         **NOTE:** push_serivcepack_and_hotfixes cannot be used for revision upgrades
 
         """
+        schedule_pattern = kwargs.get("schedule_pattern", None)
+        if schedule_pattern:
+            if not isinstance(schedule_pattern, dict):
+                raise SDKException("Commcell", "101")
         install = Install(self)
         return install.push_servicepack_and_hotfix(
             client_computers=client_computers,
@@ -2344,7 +2355,8 @@ class Commcell(object):
             all_client_computer_groups=all_client_computer_groups,
             reboot_client=reboot_client,
             run_db_maintenance=run_db_maintenance,
-            maintenance_release_only=maintenance_release_only
+            maintenance_release_only=maintenance_release_only,
+            schedule_pattern=schedule_pattern
         )
 
     def install_software(
@@ -2705,6 +2717,77 @@ class Commcell(object):
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def set_email_settings(self, smtp_server, sender_name, sender_email, **kwargs):
+        """Set Email Server (SMTP) setup for commcell
+
+            Args:
+                smtp_server(str)    --  hostname of the SMTP server
+                sender_name(str)    --  Name of the sender
+                sender_email(str)   --  Email address of the sender to be used
+                ** kwargs(dict)     --  Key value pairs for supported arguments
+                Supported argument values:
+
+                    enable_ssl(boolean) --  option to represent whether ssl is supported for the EMail Server
+                                            Default value: False
+                    smtp_port(int)      --  Port number to be used by Email Server
+                                            Default value: 25
+                    username(str)       --  Username to be used
+                    password(str)       --  Password to be used
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if invalid argument type is passed
+                    if failed to update Email server
+                    if response is empty
+                    if response is not success
+
+        """
+
+        if not (isinstance(smtp_server, str) and isinstance(sender_email, str)
+                and isinstance(sender_name, str)):
+            raise SDKException("Commcell", "101")
+
+        enable_ssl = kwargs.get("enable_ssl", False)
+        smtp_port = kwargs.get("smtp_port", 25)
+        username = kwargs.get("username", "")
+        password = kwargs.get("password", "")
+
+        if not (isinstance(enable_ssl, bool) and isinstance(smtp_port, int)
+                and isinstance(username, str) and isinstance(password, str)):
+            raise SDKException("Commcell", "101")
+
+        request_json = {"smtpInfo":
+                            {"enableSSL": enable_ssl,
+                             "smtpServer": smtp_server,
+                             "smtpPort": smtp_port,
+                             "useAuthentication": False,
+                             "maxMailServerSize": 0,
+                             "userInfo": {
+                                 "password": username,
+                                 "userName": password
+                             },
+                             "senderInfo": {
+                                 "senderName": sender_name,
+                                 "senderAddress": sender_email
+                             }
+                             }
+                        }
+        url = self._services['EMAIL_SERVER']
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', url, request_json
+        )
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', 0)
+                if error_code != 0:
+                    raise SDKException('Response', '101', self._update_response_(response.text))
+                return
+            raise SDKException('Response', '102')
+        raise SDKException('Response', '101', self._update_response_(response.text))
 
     def get_password_encryption_config(self):
         """ Get the password encryption config for commcell

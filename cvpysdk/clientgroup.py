@@ -376,6 +376,7 @@ class ClientGroups(object):
             'is false': 2,
             'contains': 10,
             'starts with': 14,
+            'ends with': 15,
             }
         prop_id_dict = {
             'Name': 1,
@@ -447,7 +448,7 @@ class ClientGroups(object):
             'Clients With Encryption': 80,
             'Client CIDR Address Range': 81,
             'HAC Cluster': 85,
-            'Client Display Name': 116
+            'Client Display Name': 116,
             }
         ptype_dict = {
             'Name': 2,
@@ -519,6 +520,7 @@ class ClientGroups(object):
             'Clients With Encryption': 1,
             'Client CIDR Address Range': 10,
             'HAC Cluster': 1,
+            'Client Display Name': 2,
             }
 
         rule_mk = {

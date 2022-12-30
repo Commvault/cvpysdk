@@ -1053,6 +1053,7 @@ class Clients(object):
                     Available Values for client_type : "windows"
                                                        "unix"
                                                        "unix cluster"
+                                                       "sap hana"
 
             Returns:
                 client object for the created client.
@@ -1066,17 +1067,16 @@ class Clients(object):
                     if failed to get client id from response
 
         """
+        client_type_dict = {
+            "windows": "WINDOWS",
+            "unix": "UNIX",
+            "unix cluster": 11,
+            "sap hana": 16
+        }
         if not isinstance(client_name, str):
             raise SDKException('Client', '101')
 
-        if "windows" in client_type.lower():
-            os_id = "WINDOWS"
-
-        if "unix" in client_type.lower():
-            os_id = "UNIX"
-
-        if "unix cluster" in client_type.lower():
-            os_id = 11
+        os_id = client_type_dict[client_type.lower()]
 
         request_json = {
             'App_CreatePseudoClientRequest':

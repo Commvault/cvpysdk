@@ -45,6 +45,11 @@ Credentials:
 
     delete()                    --  deletes the credential record on this commcell
 
+    get_security_associations() --  Returns the security association dictionary for a given user or user group
+
+    add_azure_cloud_creds()     --  Creates azure access key based credential on this commcell
+
+
 Credential:
     __init__()                  --  initiaizes the credential class object
 
@@ -80,6 +85,7 @@ Credential:
 from base64 import b64encode
 from .security.usergroup import UserGroups
 from .exception import SDKException
+from .constants import Credential_Type
 
 
 class Credentials(object):
@@ -178,7 +184,6 @@ class Credentials(object):
             Args:
                 credential_name  (str)    --  name of the Credential for which the object has to
                                               be created
-
             Raises:
                 SDKException:
                     if Credential doesn't exist with specified name
@@ -334,6 +339,145 @@ class Credentials(object):
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', delete_credential, request_json
+        )
+        if flag:
+            if response.json():
+                response_json = response.json()['error']
+                error_code = response_json['errorCode']
+                error_message = response_json['errorMessage']
+                if not error_code == 0:
+                    raise SDKException('Response', '101', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
+
+    def get_security_associations(self, owner, is_user=False):
+        """
+        Returns the security association dictionary for a given user or user group
+        Args:
+            owner(str)          -   Owner of the user or user group
+            is_user(bool)       -   True if the owner is a user
+                                    False if the owner is a user group
+
+        Returns:
+            dict containing the security association
+        """
+        if is_user is True:
+            userOrGroupInfo = {
+                "entityTypeName": "USER_ENTITY",
+                "userGroupName": owner,
+                "userGroupId": int(self._commcell_object.users.get(owner).user_id)
+            }
+        else:
+            userOrGroupInfo = {
+                "entityTypeName": "USERGROUP_ENTITY",
+                "userGroupName": owner,
+                "userGroupId": int(self._commcell_object.user_groups.get(owner).user_group_id)
+            }
+        security_association = {
+            "associationsOperationType": 1,
+            "associations": [
+                {
+                    "userOrGroup": [
+                        userOrGroupInfo
+                    ],
+                    "properties": {
+                        "isCreatorAssociation": False,
+                        "permissions": [
+                            {
+                                "permissionId": 218,
+                                "_type_": 122,
+                                "permissionName": "User Credential"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+        return security_association
+
+    def add_azure_cloud_creds(self, credential_name, account_name, access_key_id, **kwargs):
+        """Creates azure access key based credential on this commcell
+
+            Args:
+
+                credential_name (str)   --  name to be given to credential account
+
+                account_name  (str)     --  name of the azure storage account
+
+                access_key_id   (str)   --  access key for azure storage
+
+                ** kwargs(dict)         --  Key value pairs for supported arguments
+
+                Supported argument values:
+                    owner(str)                  -   owner of the credentials
+                    is_user(bool)               -   Represents whether owner passed is a user or user group
+                                                    is_user=1 for user, is_user=0 for usergroup
+                    description(str)            -   description of the credentials
+
+            Raises:
+                SDKException:
+                    if arguments type is incorrect
+
+                    if credential account is already present on the commcell
+
+                    if string format are not proper
+
+                    if response is not successful
+
+        """
+        owner = kwargs.get("owner", "")
+        is_user = kwargs.get("is_user", True)
+        description = kwargs.get("description", "")
+
+        if not (isinstance(access_key_id, str) and isinstance(owner, str)
+                and isinstance(is_user, bool) and isinstance(account_name, str)
+                and isinstance(description, str) and isinstance(credential_name, str)):
+            raise SDKException("Credential", "101")
+
+        if self.has_credential(credential_name):
+            raise SDKException(
+                'Credential', '102', "Credential {0} already exists on this commcell.".format(
+                    credential_name)
+            )
+
+        creator = self.owner_json(owner=owner, isuser_flag=is_user)
+        password = b64encode(access_key_id.encode()).decode()
+        additional_information = {
+            "azureCredInfo": {
+                "authType": "AZURE_OAUTH_SHARED_SECRET",
+                "endpoints": {
+                    "activeDirectoryEndpoint": "https://login.microsoftonline.com/",
+                    "storageEndpoint": "blob.core.windows.net",
+                    "resourceManagerEndpoint": "https://management.azure.com/"
+                }
+            }
+        }
+        create_credential_account = {
+            "credentialRecordInfo": [
+                {
+                    "credentialRecord": {
+                        "credentialName": credential_name
+                    },
+                    "securityAssociations": self.get_security_associations(owner, is_user),
+                    "createAs": creator["createAs"],
+                    "record": {
+                        "userName": account_name,
+                        "password": password
+                    },
+                    "recordType": "MICROSOFT_AZURE",
+                    "additionalInformation": additional_information,
+                    "description": description
+                }
+            ]
+        }
+
+        request = self._services['CREDENTIAL']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', request, create_credential_account
         )
         if flag:
             if response.json():
@@ -534,6 +678,7 @@ class Credential(object):
 
         if flag:
             if response.json() and 'credentialRecordInfo' in response.json():
+                json_resp = response.json()
                 self._credential_properties = response.json()['credentialRecordInfo'][0]
 
                 self._credential_id = self._credential_properties['credentialRecord'].get(
@@ -543,17 +688,18 @@ class Credential(object):
                 self._credential_user_name = self._credential_properties['record']['userName']
                 self._record_type = self._credential_properties['recordType']
                 self._credential_owner_json = self._credential_properties.get('createAs', {})
-                if "userGroup" in self._credential_owner_json:
-                    cred_id = self._credential_owner_json.get('userGroup', {}).get('userGroupId')
-                    urs = UserGroups(self._commcell_object)
-                    all_groups = urs.all_user_groups
-                    for group_name, group_id in all_groups.items():
-                        if group_id == str(cred_id):
-                            self._credential_owner = group_name
-                else:
-                    self._credential_owner = self._credential_owner_json.get('user', {}).get(
-                        'user').get('userName')
-                    self._credential_owner_json = self._credential_owner_json.get('user')
+                if self._record_type != Credential_Type.MICROSOFT_AZURE.value: # Azure Storage Credentials
+                    if "userGroup" in self._credential_owner_json:
+                        cred_id = self._credential_owner_json.get('userGroup', {}).get('userGroupId')
+                        urs = UserGroups(self._commcell_object)
+                        all_groups = urs.all_user_groups
+                        for group_name, group_id in all_groups.items():
+                            if group_id == str(cred_id):
+                                self._credential_owner = group_name
+                    else:
+                        self._credential_owner = self._credential_owner_json.get('user', {}).get(
+                            'user').get('userName')
+                        self._credential_owner_json = self._credential_owner_json.get('user')
             else:
                 raise SDKException('Response', '102')
 

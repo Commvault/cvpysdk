@@ -338,20 +338,32 @@ class Alerts(object):
         associations = []
 
         for entity, values in entities.items():
-            entity_obj = getattr(self._commcell_object, entity)
+            if entity == "entity_type_names":
+                for value in values:
+                    if value == "ALL_CLIENT_GROUPS_ENTITY":
+                        entity_type = 27
+                    else:
+                        entity_type = 2
+                    temp_dict = {
+                        "entityTypeName": value,
+                        "_type_": entity_type
+                    }
+                    associations.append(temp_dict)
+            else:
+                entity_obj = getattr(self._commcell_object, entity)
 
-            # this will allows us to loop through even for single item
-            values = values.split() if not isinstance(values, list) else values
+                # this will allows us to loop through even for single item
+                values = values.split() if not isinstance(values, list) else values
 
-            for value in values:
-                temp_dict = entity_dict[entity].copy()
-                for name, entity_attr in temp_dict.items():
-                    if name != "_type_":
-                        try: # to convert the string values to int types
-                            temp_dict[name] = int(getattr(entity_obj.get(value), entity_attr))
-                        except ValueError:
-                            temp_dict[name] = getattr(entity_obj.get(value), entity_attr)
-                associations.append(temp_dict)
+                for value in values:
+                    temp_dict = entity_dict[entity].copy()
+                    for name, entity_attr in temp_dict.items():
+                        if name != "_type_":
+                            try: # to convert the string values to int types
+                                temp_dict[name] = int(getattr(entity_obj.get(value), entity_attr))
+                            except ValueError:
+                                temp_dict[name] = getattr(entity_obj.get(value), entity_attr)
+                    associations.append(temp_dict)
 
         return associations
 

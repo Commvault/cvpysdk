@@ -634,7 +634,7 @@ class User(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _update_user_props(self, properties_dict):
+    def _update_user_props(self, properties_dict, **kwargs):
         """Updates the properties of this user
 
             Args:
@@ -642,8 +642,16 @@ class User(object):
                     e.g.: {
                             "description": "My description"
                         }
+                ** kwargs(dict)         --  Key value pairs for supported arguments
+                Supported arguments values:
+                    new_username (str)  -- New login name for the user
             Returns:
                 User Properties update dict
+            Raises:
+                SDKException:
+                    If invalid type arguments are passed
+                    Response was not success.
+                    Response was empty.
         """
         request_json = {
             "users": [{
@@ -652,7 +660,11 @@ class User(object):
                 }
             }]
         }
-
+        new_username = kwargs.get("new_username", None)
+        if new_username is not None:
+            if not isinstance(new_username, str):
+                raise SDKException("USER", "101")
+            request_json["users"][0]["userEntity"]["userName"] = new_username
         request_json['users'][0].update(properties_dict)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -754,6 +766,11 @@ class User(object):
     def email(self):
         """Returns the email associated with this commcell user"""
         return self._email
+
+    @user_name.setter
+    def user_name(self, value):
+        """Sets the new username for this commcell user"""
+        self._update_user_props("", new_username=value)
 
     @email.setter
     def email(self, value):
