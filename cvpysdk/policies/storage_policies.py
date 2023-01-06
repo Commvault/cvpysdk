@@ -1477,6 +1477,9 @@ class StoragePolicy(object):
                 is_replica_copy     (bool)   --  if true then Replica Copy will be created
                 default : None
 
+                is_c2c_target       (bool)   -- if true then NetApp Cloud target copy will be created 
+                default : False
+
                 job_retention       (bool)  -- if true job based retention will be set
                 default : False
 
@@ -1519,13 +1522,16 @@ class StoragePolicy(object):
             provisioning_policy = ""
             resource_pool = ""
 
+        is_c2c_target = kwargs.get('is_c2c_target', False)
+        isNetAppSnapCloudTargetCopy = 1 if is_c2c_target else 0
+
         job_based_retention = kwargs.get('job_based_retention', False)
         job_retention = 1 if job_based_retention else 0
         request_xml = """
                     <App_CreateStoragePolicyCopyReq copyName="{0}">
                         <storagePolicyCopyInfo active="1" isMirrorCopy="{1}" isSnapCopy="{2}" provisioningPolicyName="{3}">
                             <StoragePolicyCopy _type_="18" copyName="{0}" storagePolicyName="{4}" />
-                            <extendedFlags arrayReplicaCopy="{5}" useOfflineArrayReplication="{6}" />
+                            <extendedFlags arrayReplicaCopy="{5}" isNetAppSnapCloudTargetCopy="{12}" useOfflineArrayReplication="{6}" />
                             <library _type_="9" libraryName="{7}" />
                             <mediaAgent _type_="11" mediaAgentName="{8}" />
                             <spareMediaGroup _type_="67" libraryName="{7}" />
@@ -1538,7 +1544,7 @@ class StoragePolicy(object):
                     </App_CreateStoragePolicyCopyReq>
                     """.format(copy_name, is_mirror_copy, is_snap_copy, provisioning_policy,
                                self.storage_policy_name, arrayReplicaCopy, useOfflineReplication,
-                               library_name, media_agent_name, source_copy, resource_pool, job_retention)
+                               library_name, media_agent_name, source_copy, resource_pool, job_retention, isNetAppSnapCloudTargetCopy)
 
         create_copy_service = self._commcell_object._services['CREATE_STORAGE_POLICY_COPY']
 
@@ -1822,6 +1828,7 @@ class StoragePolicy(object):
 
             is_ocum                          (bool)   --  True if Storage policy is enabled with
                                                           ocum server
+            enable_selective_copy                 (int)   -- Enable selective copy option based on input value
 
         """
         enable_backup_copy = options['enable_backup_copy']
@@ -1849,6 +1856,8 @@ class StoragePolicy(object):
         else:
             source_copy_for_snapshot_catalog_id = 0
 
+        selective_type = options.get('enable_selective_copy', 0)
+
         update_snapshot_tab_service = self._commcell_object._services['EXECUTE_QCOMMAND']
 
         request_xml = """
@@ -1856,14 +1865,14 @@ class StoragePolicy(object):
                         <header localeId="0" userId="0" />
                         <snapshotToTapeProps archGroupId="{2}" calendarId="1" dayNumber="0" deferredDays="0"
                             enable="{3}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
-                            sourceCopyId="{4}" startTime="0" type="0" />
+                            sourceCopyId="{4}" startTime="0" type="{7}" />
                         <deferredCatalogProps archGroupId="{2}" calendarId="1" dayNumber="0" deferredDays="0"
                             enable="{5}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
                             sourceCopyId="{6}" startTime="0" type="0" />
                     </EVGui_SetSnapOpPropsReq>
         """.format(defferred_catalog_value, backup_copy_value, self.storage_policy_id,
                    int(enable_backup_copy), source_copy_for_snap_to_tape_id,
-                   int(enable_snapshot_catalog), source_copy_for_snapshot_catalog_id)
+                   int(enable_snapshot_catalog), source_copy_for_snapshot_catalog_id, selective_type)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', update_snapshot_tab_service, request_xml
@@ -4180,7 +4189,8 @@ class StoragePolicyCopy(object):
         self._copy_properties['throttleNetworkBandWidthMBHR'] = value
         self._set_copy_properties()
 
-    def add_svm_association(self, src_array_id, source_array, tgt_array_id, target_array):
+    def add_svm_association(self, src_array_id, source_array, tgt_array_id,
+                            target_array, **kwargs):
         """ Method to add SVM association on Replica/vault and Mirror Copy
 
             Agrs:
@@ -4192,7 +4202,13 @@ class StoragePolicyCopy(object):
 
                 target_array    (str)   --  Name of the Target Array
 
+                target_vendor   (str)   --  Target Vendor Name
+                
+                tgt_vendor_id   (int)   --  Target Vendor id
+
         """
+        target_vendor = kwargs.get('target_vendor', "")
+        tgt_vendor_id = kwargs.get('tgt_vendor_id', 0)
 
         request_json = {
             "EVGui_MMSMArrayReplicaPairReq": {
@@ -4228,6 +4244,14 @@ class StoragePolicyCopy(object):
                         "srcArray": {
                             "name": source_array,
                             "id": src_array_id
+                        },
+                        "vendor": {
+                            "name": "",
+                            "id": 0
+                        },
+                        "tgtVendor": {
+                            "name": target_vendor,
+                            "id": tgt_vendor_id
                         },
                         "tgtArray": {
                             "name": target_array,
