@@ -1009,6 +1009,7 @@ class Clients(object):
                     if multiple clients has same display name
         """
         displayname_occurence = 0
+        client_name = None
         for client  in self._get_clients():
             if self._get_clients()[client]['displayName'] == displayname:
                 displayname_occurence += 1
