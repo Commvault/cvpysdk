@@ -244,7 +244,7 @@ SERVICES_DICT_TEMPLATE = {
     'DELETE_HANDLER': '{0}dcube/deletehandler/%s',
     'SHARE_HANDLER': '{0}dcube/share/handler',
     'SHARE_DATASOURCE': '{0}dcube/share/datasource',
-    'GET_CONTENT_ANALYZER_CLOUD': '{0}getContentAnalyzerCloud',
+    'GET_CONTENT_ANALYZER_CLOUD': '{0}getContentAnalyzerClient',
     'ACTIVATE_ENTITIES': '{0}dcube/entity',
     'ACTIVATE_ENTITY': '{0}dcube/entity/%s',
     'ACTIVATE_ENTITY_CONTAINER': '{0}EntityExtractionRules?getDisabled=true',

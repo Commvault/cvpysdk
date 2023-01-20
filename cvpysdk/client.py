@@ -1010,8 +1010,8 @@ class Clients(object):
         """
         displayname_occurence = 0
         client_name = None
-        for client  in self._get_clients():
-            if self._get_clients()[client]['displayName'] == displayname:
+        for client in self.all_clients:
+            if self.all_clients[client]['displayName'] == displayname:
                 displayname_occurence += 1
                 client_name = client
         if displayname_occurence > 1:
@@ -1028,11 +1028,13 @@ class Clients(object):
                     {
                          "client1_name": {
                                 "id": client1_id,
-                                "hostname": client1_hostname
+                                "hostname": client1_hostname,
+                                "displayName": client1 display name
                         },
                          "client2_name": {
                                 "id": client2_id,
-                                "hostname": client2_hostname
+                                "hostname": client2_hostname,
+                                "displayName": client2 display name
                          },
                     }
 

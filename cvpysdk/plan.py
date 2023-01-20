@@ -802,7 +802,7 @@ class Plans(object):
 
                     index_content       (bool)      --  Speifies whether to index content or not to index server
 
-                    content_analyzer    (list)      --  list of Content analyzer cloud name
+                    content_analyzer    (list)      --  list of Content analyzer client name
 
                     entity_list         (list)      --  list of entities which needs to be extracted
 
@@ -870,11 +870,11 @@ class Plans(object):
                 raise SDKException('Plan', '103')
             ca_list = []
             for ca in kwargs.get('content_analyzer', []):
-                ca_cloud_id = self._commcell_object.content_analyzers.get(ca).cloud_id
+                ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
                 ca_list.append({
-                    'cloudId': ca_cloud_id
+                    'clientId': ca_client_id
                 })
-            request_json['plan']['eDiscoveryInfo']['contentAnalyzerCloud'] = ca_list
+            request_json['plan']['eDiscoveryInfo']['contentAnalyzerClient'] = ca_list
             if 'entity_list' not in kwargs and 'classifier_list' not in kwargs:
                 raise SDKException('Plan', '104')
             activate_obj = self._commcell_object.activate
@@ -2234,7 +2234,7 @@ class Plan(object):
 
                     index_content       (bool)      --  Speifies whether to index content or not to index server
 
-                    content_analyzer    (list)      --  list of Content analyzer cloud name
+                    content_analyzer    (list)      --  list of Content analyzer client name
 
                     entity_list         (list)      --  list of entities which needs to be extracted
 
@@ -2276,12 +2276,12 @@ class Plan(object):
                 if 'content_analyzer' in kwargs:
                     ca_list = []
                     for ca in kwargs.get('content_analyzer', []):
-                        ca_cloud_id = self._commcell_object.content_analyzers.get(ca).cloud_id
+                        ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
                         ca_list.append({
-                            'cloudId': ca_cloud_id
+                            'clientId': ca_client_id
                         })
                     request_json['eDiscoveryInfo'] = {
-                        'contentAnalyzerCloud': ca_list}
+                        'contentAnalyzerClient': ca_list}
                 if 'entity_list' in kwargs or 'classifier_list' in kwargs:
                     entity_mgr_obj = activate_obj.entity_manager()
                     # classifier is also an activate entity with type alone different so
