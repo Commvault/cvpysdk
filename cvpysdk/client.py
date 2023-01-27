@@ -993,31 +993,28 @@ class Clients(object):
                 if hostname.lower() == self.hidden_clients[hidden_client]['hostname']:
                     return hidden_client
 
-    def _get_client_from_displayname(self, displayname):
+    def _get_client_from_displayname(self, display_name):
         """get the client name for given display name
-            name
-
             Args:
-                displayname    (str)   --  displayname of the  client on this commcell
+                displayname    (str)   --  display name of the  client on this commcell
 
             Returns:
-                str     -   name of the client associated with this displayname
+                str     -   name of the client associated with this display name
 
-                None    -   if no client has the displayname as the given input
+                None    -   None when no clients exists with this name
             Raises:
                 Exception:
                     if multiple clients has same display name
         """
-        displayname_occurence = 0
+        display_name_occurence = 0
         client_name = None
         for client in self.all_clients:
-            if self.all_clients[client]['displayName'] == displayname:
-                displayname_occurence += 1
+            if self.all_clients[client]['displayName'] == display_name:
+                display_name_occurence += 1
                 client_name = client
-        if displayname_occurence > 1:
-            raise Exception('multiple clients have same display name')
-        else:
-            return client_name
+            if display_name_occurence > 1:
+                raise SDKException('Client', '102', 'Multiple clients have the same display name')
+        return client_name
 
 
     @property
@@ -3415,12 +3412,13 @@ class Clients(object):
             raise SDKException('Response', '101', self._update_response_(response.text))
 
     def get(self, name):
-        """Returns a client object if client name or host name or ID matches the client attribute
+        """Returns a client object if client name or host name or ID or display name matches the client attribute
+
             We check if specified name matches any of the existing client names else
             compare specified name with host names of existing clients else if name matches with the ID
 
             Args:
-                name (str/int)  --  name / hostname / ID of the client
+                name (str/int)  --  name / hostname / ID of the client / display name 
 
             Returns:
                 object - instance of the Client class for the given client name
@@ -3435,18 +3433,17 @@ class Clients(object):
             name = name.lower()
             client_name = None
             client_id = None
-
+            client_from_hostname = None
             if self.has_client(name):
                 client_from_hostname = self._get_client_from_hostname(name)
                 if self.has_hidden_client(name) and not client_from_hostname and name not in self.all_clients:
                     client_from_hostname = self._get_hidden_client_from_hostname(name)
-            elif not self.has_client(name):
-                client_from_hostname = self._get_client_from_displayname(name)
             else:
-                raise SDKException(
-                    'Client', '102', 'No client exists with given name/hostname: {0}'.format(name)
-                )
-
+                name = self._get_client_from_displayname(name)
+                if name is None:
+                    raise SDKException(
+                        'Client', '102', 'No client exists with given name/hostname: {0}'.format(name)
+                    )
             client_name = name if client_from_hostname is None else client_from_hostname
 
             if client_name in self.all_clients:

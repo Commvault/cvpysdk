@@ -259,7 +259,7 @@ class ContentAnalyzer(object):
     @property
     def client_id(self):
         """Returns the value of the Content analyzer client id attribute."""
-        return self._client_id
+        return int(self._client_id)
 
     @property
     def cloud_url(self):
