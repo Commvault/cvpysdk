@@ -199,7 +199,9 @@ _Roles Attributes
 
     **roles_data**                      --  returns the list of details of all cloud roles
     """
+import json
 
+import http.client as httplib
 from copy import deepcopy
 import enum
 from .exception import SDKException
@@ -1036,6 +1038,30 @@ class IndexServer(object):
         flag, response = self._cvpysdk_object.make_request("GET", solr_url)
         if flag and response.json():
             return response.json()
+        elif response.status_code == httplib.FORBIDDEN:
+            cmd = f"(Invoke-WebRequest -UseBasicParsing -uri \"{solr_url}\").content"
+            client_obj = None
+            if solr_client:
+                client_obj = self._commcell_obj.clients.get(solr_client)
+            else:
+                # if no client is passed, then take first client in index server cloud
+                client_obj = self._commcell_obj.clients.get(self.client_name[0])
+            exit_code, output, error_message = client_obj.execute_script(script_type="PowerShell",
+                                                                         script=cmd)
+            if exit_code != 0:
+                raise SDKException(
+                    'IndexServers',
+                    '104',
+                    f"Something went wrong while querying solr - {exit_code}")
+            elif error_message:
+                raise SDKException(
+                    'IndexServers',
+                    '104',
+                    f"Something went wrong while querying solr - {error_message}")
+            try:
+                return json.loads(output.strip())
+            except Exception:
+                raise SDKException('IndexServers', '104', f"Something went wrong while querying solr - {output}")
         raise SDKException('IndexServers', '104', "Something went wrong while querying solr")
 
     def get_index_node(self, node_name):
