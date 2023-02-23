@@ -448,7 +448,9 @@ class CVPySDK(object):
             except Exception as e:
                 pass
 
-            if response.status_code == httplib.UNAUTHORIZED and headers['Authtoken'] is not None:
+            if response.status_code == httplib.UNAUTHORIZED and headers.get('Authtoken') is not None:
+                if headers['Authtoken'].startswith('Bearer '):
+                    raise SDKException('CVPySDK', '106')
                 if attempts < 3:
                     self._commcell_object._headers['Authtoken'] = self._renew_login_token()
                     return self.make_request(method, url, payload, attempts + 1)

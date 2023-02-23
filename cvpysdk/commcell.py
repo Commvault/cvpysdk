@@ -520,7 +520,7 @@ class Commcell(object):
             authtoken = commcell_password['Authtoken']
 
         if authtoken and not is_service_commcell:
-            if authtoken.startswith('QSDK ') or authtoken.startswith('SAML '):
+            if authtoken.startswith('QSDK ') or authtoken.startswith('SAML ') or authtoken.startswith('Bearer '):
                 self._headers['Authtoken'] = authtoken
             else:
                 self._headers['Authtoken'] = '{0}{1}'.format('QSDK ', authtoken)
