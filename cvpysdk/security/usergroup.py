@@ -267,6 +267,7 @@ class UserGroups(object):
                                     {
                                         'entity_type':['entity_name'],
                                         'entity_type':['entity_name', 'entity_name'],
+                                        '_type_':['entity_type1', 'entity_type2']
                                         'role': ['role1']
                                     },
                                 'assoc2':
@@ -275,7 +276,13 @@ class UserGroups(object):
                                         'clientName': ['Linux1'],
                                         'role': ['New1']
                                         }
-                                    }
+                                    },
+                                'assoc3':
+                                    {
+                                        '_type_': ['CLIENT_ENTITY', 'STORAGE_POLICIES_ENTITY'],
+                                        'role': ['Alert Owner']
+                                        }
+                                    },
                 entity_type         --      key for the entity present in dictionary
                                             on which user will have access
                 entity_name         --      Value of the key

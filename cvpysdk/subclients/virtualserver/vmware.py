@@ -547,7 +547,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
 
         if not disk_name:  # if disk names are not provided, restore all vmdk disks
             for each_disk_path in disk_list:
-                disk_name.append(each_disk_path.split('\\')[-1])
+                disk_name.append(disk_info_dict[each_disk_path]['snap_display_name'])
 
         else:  # else, check if the given VM has a disk with the list of disks in disk_name.
             for each_disk in disk_name:

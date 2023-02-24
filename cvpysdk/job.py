@@ -488,6 +488,8 @@ class JobController(object):
                                     job_type = ''
                                     pending_reason = ''
                                     subclient_id = ''
+                                    client_id = ''
+                                    client_name = ''
                                     job_elapsed_time = 0
                                     job_start_time = 0
 
@@ -510,6 +512,10 @@ class JobController(object):
                                         job_subclient = job_summary['subclient']
                                         if 'subclientId' in job_subclient:
                                             subclient_id = job_subclient['subclientId']
+                                        if 'clientId' in job_subclient:
+                                            client_id = job_subclient['clientId']
+                                        if 'clientName' in job_subclient:
+                                            client_name = job_subclient['clientName']
 
                                     jobs_dict[job_id] = {
                                         'operation': operation,
@@ -518,6 +524,8 @@ class JobController(object):
                                         'job_type': job_type,
                                         'percent_complete': percent_complete,
                                         'pending_reason': pending_reason,
+                                        'client_id': client_id,
+                                        'client_name': client_name,
                                         'subclient_id': subclient_id,
                                         'backup_level': backup_level,
                                         'job_start_time': job_start_time,
@@ -2040,7 +2048,7 @@ class Job(object):
             if flag:
                 if response.json():
                     if response.json().get('totalRecordsWithoutPaging', 0) == 0:
-                        time.sleep(3)
+                        time.sleep(2**attempts)
                         continue
 
                     if 'jobs' in response.json():

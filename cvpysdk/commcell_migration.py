@@ -180,10 +180,28 @@ class CommCellMigration(object):
                 raise SDKException('CommCellMigration', '103')
             sql_password = b64encode(sql_password.encode()).decode()
 
+        common_options = {
+            "otherSqlInstance": other_sql_instance,
+            "pathType": self._path_type,
+            "dumpFolder": export_location,
+            "splitCSDB": 1,
+            "sqlLinkedServer": {
+                "sqlServerName": sql_instance_name,
+                "sqlUserAccount": {
+                    "userName": sql_user_name,
+                    "password": sql_password
+                }
+            }
+        }
+
         if self._path_type == 1:
             if network_user_name == "" or network_user_password == "":
                 raise SDKException('CommCellMigration', '103')
             network_user_password = b64encode(network_user_password.encode()).decode()
+            common_options["userAccount"] = {
+                "password": network_user_password,
+                "userName": network_user_name
+            }
 
         export_json = {
             "taskInfo": {
@@ -207,23 +225,7 @@ class CommCellMigration(object):
                         "options": {
                             "adminOpts": {
                                 "ccmOption": {
-                                    "commonOptions": {
-                                        "otherSqlInstance": other_sql_instance,
-                                        "pathType": self._path_type,
-                                        "dumpFolder": export_location,
-                                        "splitCSDB": 1,
-                                        "userAccount": {
-                                            "password": network_user_password,
-                                            "userName": network_user_name
-                                        },
-                                        "sqlLinkedServer": {
-                                            "sqlServerName": sql_instance_name,
-                                            "sqlUserAccount": {
-                                                "userName": sql_user_name,
-                                                "password": sql_password
-                                            }
-                                        }
-                                    },
+                                    "commonOptions": common_options,
                                     "captureOptions": {
                                         "captureMediaAgents": capture_ma,
                                         "lastHours": 60,
@@ -232,7 +234,7 @@ class CommCellMigration(object):
                                         "captureSchedules": capture_schedules,
                                         "captureActivityControl": capture_activity_control,
                                         "captureOperationWindow": capture_opw,
-                                        "captureHolidays":capture_holidays,
+                                        "captureHolidays": capture_holidays,
                                         "pruneExportedDump": False,
                                         "autopickCluster": auto_pick_cluster,
                                         "copyDumpToRemoteCS": False,
@@ -275,7 +277,7 @@ class CommCellMigration(object):
 
         if client_list:
             if other_sql_instance:
-                if  not sql_instance_name \
+                if not sql_instance_name \
                         or not sql_user_name \
                         or not sql_password \
                         or not client_ids:
@@ -318,6 +320,7 @@ class CommCellMigration(object):
                         "forceOverwrite": False,
                         "failIfEntityAlreadyExists": False,
                         "deleteEntitiesNotPresent": False,
+                        "deleteEntitiesIfOnlyfromSource": False,
                         "forceOverwriteHolidays": False,
                         "mergeHolidays": True,
                         "forceOverwriteOperationWindow": False,
@@ -343,6 +346,7 @@ class CommCellMigration(object):
         force_overwrite = options_dictionary.get('forceOverwrite', False)
         fail_if_entry_already_exists = options_dictionary.get('failIfEntityAlreadyExists', False)
         delete_entities_not_present = options_dictionary.get('deleteEntitiesNotPresent', False)
+        delete_only_source = options_dictionary.get('deleteEntitiesIfOnlyfromSource', False)
         fo_holidays = options_dictionary.get("forceOverwriteHolidays", False)
         merge_holidays = options_dictionary.get("mergeHolidays", True)
         fo_operation_window = options_dictionary.get("forceOverwriteOperationWindow", False)
@@ -353,10 +357,22 @@ class CommCellMigration(object):
         if not (isinstance(path_type, str) and isinstance(import_location, str)):
             raise SDKException('CommCellMigration', '101')
 
+        common_options = {
+            "bRoboJob": False,
+            "databaseConfiguredRemote": False,
+            "pathType": self._path_type,
+            "dumpFolder": import_location,
+            "splitCSDB": 0
+        }
+
         if path_type.lower() == 'local':
             self._path_type = 0
         elif path_type.lower() == 'network':
             self._path_type = 1
+            common_options["userAccount"] = {
+                "password": network_user_password,
+                "userName": network_user_name
+            }
         else:
             raise SDKException('CommCellMigration', '104')
 
@@ -400,6 +416,7 @@ class CommCellMigration(object):
                                         "pruneImportedDump": False,
                                         "alwaysUseFallbackDataPath": True,
                                         "deleteEntitiesNotPresent": delete_entities_not_present,
+                                        "deleteEntitiesIfOnlyfromSource": delete_only_source,
                                         "forceOverwrite": force_overwrite,
                                         "mergeHolidays": merge_holidays,
                                         "forceOverwriteSchedule": fo_schedules,
@@ -412,17 +429,7 @@ class CommCellMigration(object):
                                         "skipConflictMedia": False,
                                         "stagingPath": ""
                                     },
-                                    "commonOptions": {
-                                        "bRoboJob": False,
-                                        "databaseConfiguredRemote": False,
-                                        "pathType": self._path_type,
-                                        "dumpFolder": import_location,
-                                        "splitCSDB": 0,
-                                        "userAccount": {
-                                            "password": network_user_password,
-                                            "userName": network_user_name
-                                        }
-                                    }
+                                    "commonOptions": common_options
                                 }
                             }
                         }

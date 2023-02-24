@@ -1449,7 +1449,9 @@ class Backupset(object):
                 "showDeletedFiles": options['show_deleted'],
                 "restoreIndex": options['restore_index'],
                 "vsDiskBrowse": options['vm_disk_browse'],
-                "vsFileBrowse": options.get('vs_file_browse', False)
+                "vsFileBrowse": options.get('vs_file_browse', False),
+                "includeMetadata": options.get('include_meta_data', False),
+                "hideUserHidden": options.get('hide_user_hidden', False)
             },
             "entity": {
                 "clientName": self._client_object.client_name,
@@ -2306,19 +2308,45 @@ class Backupset(object):
         self.subclients = Subclients(self)
         self.schedules = Schedules(self)
 
-    def backed_up_files_count(self):
+    def backed_up_files_count(self, path="\\**\\*"):
         """Returns the count of the total number of files present in the backed up data
-         of all the subclients of the given backupset.
+         of all the subclients of the given backupset and given path.
+
+                Args:
+
+                    path        (str)       --  Folder path to find no of backed up files
+                                                    (Default: \\**\\*)
+
+                Returns:
+
+                    int --  No of backed up files count in given path
+
+                Raises:
+
+                    Exception:
+
+                        if browse response is not proper
          """
-        options_dic = {"operation": "find", "opType": 1, "path": "\**\*",
-               "_custom_queries": [{"type": "AGGREGATE", "queryId": "2",
-                                    "aggrParam": {"aggrType": "COUNT"}, "whereClause": [{
-                       "criteria": {
-                           "field": "Flags",
-                           "dataOperator": "IN",
-                           "values": ["file"]
-                       }
-                   }]}], "_raw_response": True}
+        options_dic = {"operation": "find", "opType": 1, "path": path,
+                       "_custom_queries": [{"type": "AGGREGATE", "queryId": "2",
+                                            "aggrParam": {"aggrType": "COUNT"}, "whereClause": [{
+                                                "criteria": {
+                                                    "field": "Flags",
+                                                    "dataOperator": "IN",
+                                                    "values": ["file"]
+                                                }
+                                            }]}], "_raw_response": True}
 
         browse_response = self._do_browse(options_dic)
-        return browse_response[1]['browseResponses'][0]['browseResult']['aggrResultSet'][0]['count']
+        if not len(browse_response) > 1:
+            raise SDKException('Backupset', '102', 'Browse response is not proper')
+        browse_response = browse_response[1]
+        if 'browseResponses' not in browse_response or len(browse_response['browseResponses']) == 0:
+            raise SDKException('Backupset', '102', 'Browse response is missing browseResponses')
+        browse_response = browse_response['browseResponses'][0]
+        if 'browseResult' not in browse_response:
+            raise SDKException('Backupset', '102', 'Browse response is missing browseResult')
+        browse_result = browse_response['browseResult']
+        if 'aggrResultSet' not in browse_result or len(browse_result['aggrResultSet']) == 0:
+            raise SDKException('Backupset', '102', 'Browse response is missing aggrResultSet')
+        return browse_result['aggrResultSet'][0].get('count', 0)

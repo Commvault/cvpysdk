@@ -82,7 +82,7 @@ class AzureRMSubclient(VirtualServerSubclient):
 
             Args:
 
-                vm_to_restore         (list)       --  provide the VM name to restore
+                vm_to_restore         (list)       --  provide the list of VM name(s) to restore
 
                 resource_group        (str)        -- provide the resource group to restore
 
@@ -178,7 +178,7 @@ class AzureRMSubclient(VirtualServerSubclient):
             to the location same as source .
 
             Args:
-                vm_to_restore         (list)       --  provide the VM name to restore
+                vm_to_restore         (list)       --  provide the list of VM name(s) to restore
 
                 createPublicIP
                         default:True   (bool)      --  creates the Public IP of the new VM
@@ -248,7 +248,7 @@ class AzureRMSubclient(VirtualServerSubclient):
         """
                 This converts the AzureRM to Azurestack
                 Args:
-                        vm_to_restore          (list):     provide the VM names to restore
+                        vm_to_restore          (list):     provide the list of VM name(s) to restore
 
                         azure_client    (str):      name of the AzureRM client
                                                            where the VM should be
@@ -342,7 +342,7 @@ class AzureRMSubclient(VirtualServerSubclient):
         """
                 This converts the AzureRM to Amazon
                 Args:
-                        vm_to_restore          (list):     provide the VM names to restore
+                        vm_to_restore          (list):     provide the list of VM name(s) to restore
 
                         amazon_client    (str):     name of the Amazon client
                                                            where the VM should be
@@ -527,10 +527,12 @@ class AzureRMSubclient(VirtualServerSubclient):
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
-        disk_options = request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['virtualServerRstOption']['diskLevelVMRestoreOption']
+        disk_options = request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'virtualServerRstOption']['diskLevelVMRestoreOption']
         for disk_info in disk_options['advancedRestoreOptions'][0]['disks']:
             disk_info['newName'] = ''
-        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['volumeRstOption']['volumeLevelRestoreType'] = 1
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'volumeRstOption']['volumeLevelRestoreType'] = 1
 
         return self._process_restore_response(request_json)
 
@@ -652,7 +654,8 @@ class AzureRMSubclient(VirtualServerSubclient):
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
-        disk_options = request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['virtualServerRstOption']['diskLevelVMRestoreOption']
+        disk_options = request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'virtualServerRstOption']['diskLevelVMRestoreOption']
         for disk_info in disk_options['advancedRestoreOptions'][0]['disks']:
             disk_info['newName'] = ''
 

@@ -80,6 +80,9 @@ MYSQLInstance instance Attributes:
     **mysql_enterprise_backup_binary_path** --  Returns the MySQL Enterprise backup binary path
     details
 
+    **no_lock_status**                  --  Returns the No Lock check box status for MySQL Instance
+
+    **ssl_enabled**                     --  Returns(boolean) True/False based on SSL status
 
 """
 
@@ -308,6 +311,38 @@ class MYSQLInstance(Instance):
         }
         properties['mySqlInstance']['mebSettings'] = meb_bin_path_update
         self.update_properties(properties)
+
+    @property
+    def no_lock_status(self):
+        """ Returns the status of No Lock Checkbox in MySQL Instance
+
+            Returns:
+            (bool)  --  True if No Lock checkbox is enabled
+                        False if No Lock checkbox is disabled
+
+        """
+        return self._properties.get('mySqlInstance', {}).get('EnableNoLocking', False)
+
+    @no_lock_status.setter
+    def no_lock_status(self, value):
+        """ Setter for No Lock property in MySQL Instance
+
+            Args:
+
+                value (bool)  -- True or False to enable or disable the No Lock
+                property in MySQL Instance
+
+        """
+        if not isinstance(value, bool):
+            raise SDKException('Instance', '101')
+        properties = self._properties
+        properties['mySqlInstance']['EnableNoLocking'] = value
+        self.update_properties(properties)
+
+    @property
+    def ssl_enabled(self):
+        """ Returns(boolean) True/False based on SSL status """
+        return self._properties.get('mySqlInstance', {}).get('sslEnabled', False)
 
     def _get_instance_properties(self):
         """Gets the properties of this instance.

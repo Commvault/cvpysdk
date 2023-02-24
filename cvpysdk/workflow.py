@@ -568,23 +568,27 @@ class WorkFlows(object):
                 'Getting Pacakge id for workflow failed. {0}'.format(response.text)
             )
 
-        if response.json():
-            if "packageId" in response.json():
-                package_id = response.json()["packageId"]
-            else:
-                raise SDKException(
-                    'Workflow', '102', response.json()['errorDetail']['errorMessage']
-                )
-        else:
+        if not response.json():
             raise SDKException('Response', '102')
+        
+        if "packageId" not in response.json():
+            raise SDKException(
+                'Workflow', '102', response.json()['errorDetail']['errorMessage']
+            )
+        package_id = response.json()["packageId"]
+        platform_id = 1
+        if "platforms" in response.json():
+            platforms = response.json()["platforms"]
+            if isinstance(platforms, list) and platforms:
+                platform_id = platforms[0]["id"]
 
         download_xml = """
         <DM2ContentIndexing_OpenFileReq>
             <fileParams id="3" name="Package"/>
             <fileParams id="2" name="{0}"/>
-            <fileParams id="9" name="1"/>
+            <fileParams id="9" name="{1}"/>
         </DM2ContentIndexing_OpenFileReq>
-        """.format(package_id)
+        """.format(package_id, platform_id)
 
         flag, response = cvpysdk_object.make_request(
             'POST', services['SOFTWARESTORE_DOWNLOADITEM'], download_xml
@@ -603,7 +607,7 @@ class WorkFlows(object):
 
                 download_path = os.path.join(download_location, workflow_name + ".xml")
 
-                with open(download_path, "w") as file_pointer:
+                with open(download_path, "w", encoding="utf-8") as file_pointer:
                     file_pointer.write(file_content)
 
                 return download_path
@@ -1255,7 +1259,7 @@ class WorkFlow(object):
                     else:
                         return output, Job(self._commcell_object, response.json()['jobId'])
                 elif "errorCode" in response.json():
-                    if response.json()['errorCode'] == 0:
+                    if int(response.json()['errorCode']) == 0:
                         return output, 'Workflow Execution Finished Successfully'
                     else:
                         error_message = response.json()['errorMessage']

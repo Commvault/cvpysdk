@@ -65,6 +65,7 @@ class UnixDownloadFeatures(Enum):
     CLOUD_APPS = 1140
     DOMINO_DATABASE = 1051
     FILE_SYSTEM = 1101
+    FILE_SYSTEM_CORE = 1002
     FILE_SYSTEM_FOR_IBMI = 1137
     FILE_SYSTEM_FOR_OPEN_VMS = 1138
     MEDIA_AGENT = 1301
@@ -90,6 +91,7 @@ class WindowsDownloadFeatures(Enum):
     DOMINO_DATABASE = 201
     EXCHANGE = 151
     FILE_SYSTEM = 702
+    FILE_SYSTEM_CORE = 1
     MEDIA_AGENT = 51
     SHAREPOINT = 101
     ORACLE = 352
@@ -97,6 +99,7 @@ class WindowsDownloadFeatures(Enum):
     SQLSERVER = 353
     VIRTUAL_SERVER = 713
     VSS_PROVIDER = 453
+    VSS_HARDWARE_PROVIDER = 455
     WEB_CONSOLE = 726
     TEST_AUTOMATION = 719
     PYTHON_SDK = 754
@@ -107,6 +110,7 @@ class WindowsDownloadFeatures(Enum):
     CONTENT_EXTRACTOR = 259
     DB2_AGENT = 351
     INFORMIX = 360
+    SYBASE = 1202
 
 
 class OSNameIDMapping(Enum):
