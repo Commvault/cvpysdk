@@ -563,7 +563,9 @@ SERVICES_DICT_TEMPLATE = {
                             'getDomainGroups=true&returnDomain=true&getCommCellGroups=true&searchOnDisplayName=true'
                             '&searchOnAliasName=true&searchOnSmtp=1&ignoreSmtpRule=1&getOrganizationUsers=false&'
                             'getOrganizationGroups=false',
-    'DOMAIN_SSO': '{0}V4/LDAP/%s'
+    'DOMAIN_SSO': '{0}V4/LDAP/%s',
+
+    'VM_GROUP': '{0}V4/VmGroup/%s'
 }
 
 

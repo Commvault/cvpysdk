@@ -66,6 +66,7 @@ class VMInstanceSubclient(Subclient):
         self._parent_backupset = None
         self._parent_subclient = None
         self._vm_guid = None
+        self._vm_settings = {}
         self.filter_types = {
             '1': 'Datastore',
             '2': 'Virtual Disk Name/Pattern',
@@ -271,3 +272,50 @@ class VMInstanceSubclient(Subclient):
         if len(vm_diskfilter) == 0:
             vm_diskfilter = None
         return vm_diskfilter
+
+    def _get_vm_settings(self):
+        """
+            Gets the VM Instance Subclient settings
+
+        Returns:
+            (Dict)    VM Subclient settings
+
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._commcell_object._services['VM_GROUP'] % (
+            self.subclient_id))
+
+        if flag:
+            if response.json() and 'settings' in response.json():
+                return response.json()['settings']
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException(
+                'Response',
+                '101',
+                self._update_response_(
+                    response.text))
+
+    @property
+    def vm_settings(self):
+        """
+            Gets the VM Instance Subclient settings
+
+        Returns:
+            (Dict)    VM Subclient settings
+
+        """
+        if not self._vm_settings:
+            self._vm_settings = self._get_vm_settings()
+        return self._vm_settings
+
+    @property
+    def include_vm_group_disk_filters(self):
+        """
+            Gets the value set for the option - Include VM Group disk filters
+
+        Returns:
+            (Boolean)    True/False
+
+        """
+        return self.vm_settings.get('isVMGroupDiskFiltersIncluded')
