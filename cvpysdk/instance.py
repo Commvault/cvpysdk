@@ -2826,6 +2826,9 @@ class Instance(object):
         if value.get("include_metadata", False):
             self._browse_restore_json["includeMetaData"] = True
 
+        if value.get('cvcBrowse'):
+            self._browse_restore_json["cvcBrowse"] = True
+
     def _restore_common_opts_json(self, value):
         """ Method to set commonOpts for restore
 

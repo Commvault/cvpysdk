@@ -2621,7 +2621,7 @@ class TapeLibrary(object):
         """
 
         self.refresh()
-
+        
         drive_list=[]
         
         if 'DriveList' in self.library_properties:
