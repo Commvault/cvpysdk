@@ -93,6 +93,9 @@ IndexServer
 
     update_role()                       --  to update the roles assigned to cloud
 
+    delete_docs_from_core()             --  Deletes the docs from the given core name on index server depending
+                                            on the select dict passed
+
     hard_commit                         --  do hard commit on specified index server solr core
 
     get_all_cores                       --  gets all the cores in index server
@@ -814,6 +817,48 @@ class IndexServer(object):
                     return
             raise SDKException('Response', '102')
         raise SDKException('Response', '101')
+
+    def delete_docs_from_core(self, core_name, select_dict = None):
+        """Deletes the docs from the given core name on index server depending on the select dict passed
+
+                Args:
+
+                        core_name               (str)  --  name of the solr core
+                        select_dict             (dict) --  dict with query to delete specific documents
+                                                    default query - "*:*" (Deletes all the docs)
+
+                    Returns:
+                        None
+
+                    Raises:
+                        SDKException:
+
+                            if input data is not valid
+
+                            if index server is cloud, not implemented error
+
+                            if response is empty
+
+                            if response is not success
+        """
+        if not isinstance(core_name, str):
+            raise SDKException('IndexServers', '101')
+        if self.is_cloud:
+            raise SDKException('IndexServers', '104', "Not implemented for solr cloud")
+        json_req = {"delete": {"query": self._create_solr_query(select_dict).replace("q=", "").replace("&wt=json", "")}}
+        baseurl = f"{self.server_url[0]}/solr/{core_name}/update?commitWithin=1000&overwrite=true&wt=json"
+        flag, response = self._cvpysdk_object.make_request("POST", baseurl, json_req)
+        if flag and response.json():
+            if 'error' in response.json():
+                raise SDKException('IndexServers', '104', f' Failed with error message - '
+                                                          f'{response.json().get("error").get("msg")}')
+            if 'responseHeader' in response.json():
+                commitstatus = str(response.json().get("responseHeader").get("status"))
+                if int(commitstatus) != 0:
+                    raise SDKException('IndexServers', '104',
+                                       f"Deleting docs from the core returned bad status - {commitstatus}")
+                return
+        raise SDKException('IndexServers', '111')
 
     def hard_commit(self, core_name):
         """do hard commit for the given core name on index server

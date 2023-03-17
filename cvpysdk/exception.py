@@ -552,7 +552,8 @@ EXCEPTION_DICT = {
         '107': 'Backup is not enabled for client/subclient',
         '108': 'Client name not specified for solr cloud restore',
         '109': 'Provide the Index Server Node name for browse to work',
-        '110': 'Multiple roles found, Unix Index Server Browse works for only 1 role at a time.'
+        '110': 'Multiple roles found, Unix Index Server Browse works for only 1 role at a time.',
+        '111': 'Failed to delete docs in the core'
     },
     'HACClusters': {
         '101': 'Data type of the input(s) is not valid',

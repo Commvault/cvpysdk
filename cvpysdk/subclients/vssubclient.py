@@ -413,7 +413,7 @@ class VirtualServerSubclient(Subclient):
                         'name': item.get('name',""),
                         'displayName': item.get('display_name',''),
                         'path': '',
-                        'type': item['type'] if isinstance(item['type'], int) else item['type'].value
+                        'type': item['type'] if (isinstance(item['type'], int) or isinstance(item['type'], str)) else item['type'].value
                     }
                     if item['type'] == VSAObjects.VMNotes:
                         temp['value'] = item['display_name']
@@ -1907,6 +1907,8 @@ class VirtualServerSubclient(Subclient):
 
         else:
             _temp_res_list = []
+            if not isinstance(vm_to_restore, list):
+                vm_to_restore = [vm_to_restore]
             for each_vm in vm_to_restore:
                 _temp_res_list.append(each_vm)
 
@@ -2126,6 +2128,8 @@ class VirtualServerSubclient(Subclient):
                 else new_name_prefix + "_" + data["name"]
             if self._instance_object.instance_name == HypervisorType.GOOGLE_CLOUD.value.lower():
                 new_name = ""
+                if data["advanced_data"]["browseMetaData"]["virtualServerMetaData"].get('replicaZones', False):
+                    replicaZones = restore_option.get("replicaZones")
             if restore_option['destination_instance'].lower() == 'vmware':
                 _disk_dict = self._disk_dict_pattern(data['snap_display_name'], ds, new_name)
             else:

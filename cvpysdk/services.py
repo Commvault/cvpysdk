@@ -565,6 +565,8 @@ SERVICES_DICT_TEMPLATE = {
                             'getOrganizationGroups=false',
     'DOMAIN_SSO': '{0}V4/LDAP/%s',
 
+    'LAUNCH_O365_LICENSING': '{0}Office365/License',
+
     'VM_GROUP': '{0}V4/VmGroup/%s'
 }
 

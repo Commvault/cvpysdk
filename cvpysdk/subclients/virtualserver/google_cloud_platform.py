@@ -67,6 +67,7 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
             power_on=True,
             proxy_client=None,
             copy_precedence=0,
+            zone=None,
             **kwargs):
         """Restores the FULL Virtual machine specified in the input list
             to the location same as the actual location of the VM in VCenter.
@@ -108,7 +109,7 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
                     if response is not success
 
         """
-        restore_option = {"v2_details": kwargs.get("v2_details", None)}
+        restore_option = {"v2_details": kwargs.get("v2_details", None), "datacenter": zone[:-2]}
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
@@ -204,6 +205,11 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
             if not (isinstance(overwrite, bool) and
                     isinstance(power_on, bool)):
                 raise SDKException('Subclient', '101')
+        restore_option["datacenter"] = zone[:-2]
+        if kwargs.get("replica_zone"):
+            restore_option["replicaZones"] = []
+            restore_option["replicaZones"].append(zone)
+            restore_option["replicaZones"].append(kwargs.get("replica_zone"))
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
