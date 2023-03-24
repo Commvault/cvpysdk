@@ -2978,6 +2978,7 @@ class Clients(object):
                     user_name (str) : User name for shared job results
                     user_password (str) : User password for shared job results
                     shared_jr_directory (str) : Shared Job results directory path
+                    cloud_region(int) : Cloud region for the client which determines the gcc or gcc high configuration
 
             Returns:
                 object  -   instance of the Client class for this new client
@@ -3015,6 +3016,7 @@ class Clients(object):
         user_name = kwargs.get('user_name')
         user_password = kwargs.get('user_password')
         shared_jr_directory = kwargs.get('shared_jr_directory')
+        cloud_region = kwargs.get('cloud_region', 1)
 
         # If server plan is not resource pool enabled and infrastructure details are not provided, raise Exception
         if not is_resource_pool_enabled and (access_nodes_list is None or index_server is None):
@@ -3099,7 +3101,7 @@ class Clients(object):
                             "oneDriveInstance": {
                                 "manageContentAutomatically": False,
                                 "isAutoDiscoveryEnabled": False,
-                                "cloudRegion": 1,
+                                "cloudRegion": cloud_region,
                                 "azureAppList": {
                                     "azureApps": [
                                         {
@@ -4164,9 +4166,11 @@ class Client(object):
                 commvault = r'/usr/local/bin/commvault'
 
             if self.instance:
-                command = '{0} -instance {1} {2}'.format(
-                    commvault, self.instance, operations_dict[operation]['unix_command']
-                )
+                command = '{0} -instance {1} {2} {3}'.format(
+                    commvault,
+                    self.instance,
+                    f"-service {service_name}" if service_name != 'ALL' else "",
+                    operations_dict[operation]['unix_command'])
 
                 __, __, error = self.execute_command(command, wait_for_completion=False)
 
@@ -5304,8 +5308,6 @@ class Client(object):
             Args:
                 service_name    (str)   --  name of the service to be started
 
-                    service name is required only for Windows Clients, as for UNIX clients, the
-                    operation is executed on all services
 
                     default:    None
 
@@ -5327,9 +5329,6 @@ class Client(object):
             Args:
                 service_name    (str)   --  name of the service to be stopped
 
-                    service name is required only for Windows Clients, as for UNIX clients, the
-                    operation is executed on all services
-
                     default:    None
 
                     Example:    GxVssProv(Instance001)
@@ -5349,9 +5348,6 @@ class Client(object):
 
             Args:
                 service_name    (str)   --  name of the service to be restarted
-
-                    service name is required only for Windows Clients, as for UNIX clients, the
-                    operation is executed on all services
 
                     default:    None
 
