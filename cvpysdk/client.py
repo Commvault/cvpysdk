@@ -946,15 +946,16 @@ class Clients(object):
                 Exception:
                     if multiple clients has same display name
         """
-        displayname_occurence = 0
-        for client  in self._get_clients():
-            if self._get_clients()[client]['displayName'] == displayname:
-                displayname_occurence += 1
+        display_name_occurence = 0
+        client_name = None
+        for client in self.all_clients:
+            if self.all_clients[client]['displayName'] == display_name:
+                display_name_occurence += 1
                 client_name = client
-        if displayname_occurence > 1:
-            raise Exception('multiple clients have same display name')
-        else:
-            return client_name
+            if display_name_occurence > 1:
+                raise SDKException('Client', '102', 'Multiple clients have the same display name')
+        return client_name
+
 
     @property
     def all_clients(self):
