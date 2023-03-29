@@ -99,7 +99,7 @@ class Credentials(object):
         self._credentials = self._get_credentials()
         self.record_type = {
             'windows': 1,
-            'Linux': 2
+            'linux': 2
         }
 
     def __str__(self):
