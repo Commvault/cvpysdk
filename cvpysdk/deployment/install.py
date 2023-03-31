@@ -36,6 +36,7 @@ Download
 from ..job import Job
 from ..exception import SDKException
 from ..deployment.deploymentconstants import UnixDownloadFeatures, WindowsDownloadFeatures
+from ..schedules import SchedulePattern, Schedules
 
 
 class Install(object):
@@ -199,7 +200,8 @@ class Install(object):
             all_client_computer_groups=False,
             reboot_client=False,
             run_db_maintenance=True,
-            maintenance_release_only=False):
+            maintenance_release_only=False,
+            **kwargs):
         """Installs the software packages on the clients
 
         Args:
@@ -230,11 +232,17 @@ class Install(object):
             maintenance_release_only (bool)       -- for clients of feature releases lesser than CS, this option
             maintenance release of that client FR, if present in cache
 
+            **kwargs: (dict) -- Key value pairs for supporting conditional initializations
+                Supported -
+                schedule_pattern (dict)           -- Request JSON for scheduling the operation
+
         Returns:
-            object - instance of the Job class for this download job
+            object - instance of the Job/Task class for this download
 
         Raises:
                 SDKException:
+                    if schedule is not of type dictionary
+
                     if Download job failed
 
                     if response is empty
@@ -248,7 +256,10 @@ class Install(object):
         """
         selected_clients = []
         selected_client_groups = []
-
+        schedule_pattern = kwargs.get('schedule_pattern', None)
+        if schedule_pattern:
+            if not isinstance(schedule_pattern, dict):
+                raise SDKException("Install", "101")
         if not any([all_client_computers,
                     all_client_computer_groups,
                     client_computers,
@@ -323,6 +334,10 @@ class Install(object):
                 ]
             }
         }
+
+        if schedule_pattern:
+            request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['CREATE_TASK'], request_json
         )
@@ -331,6 +346,9 @@ class Install(object):
             if response.json():
                 if "jobIds" in response.json():
                     return Job(self.commcell_object, response.json()['jobIds'][0])
+
+                elif schedule_pattern and "taskId" in response.json():
+                    return Schedules(self.commcell_object).get(task_id=response.json()['taskId'])
 
                 else:
                     raise SDKException('Install', '107')
@@ -409,9 +427,52 @@ class Install(object):
                                     "db2RetrievePath": "/opt/Retrieve/",
                                     "db2AuditErrorPath": "/opt/Audit/"
                             }
-            
             index_cache_location (str) - Set index cache location for MA package
             Ex: index_cache_location = "/opt/IndexCache/"
+            firewall_inputs (dict) - dictionary for firewall configuration
+            Ex: firewall_inputs = {
+                                  "enableFirewallConfig": True,
+                                  "firewallConnectionType": 1,
+                                  "httpProxyConfigurationType": 0,
+                                  "proxyClientName": "Proxy_client_name",
+                                  "proxyHostName": "Proxy_host_name",
+                                  "portNumber": "port_number",
+                                  "encryptedTunnel": "encrypted_tunnel"
+                            }
+
+            firewall_inputs can take the following values
+
+            Ex 1: Client can open connection to CS
+             firewall_inputs = {
+                                  "enableFirewallConfig": True,
+                                  "firewallConnectionType": 0,
+                                  "proxyClientName": "",
+                                  "proxyHostName": "",
+                                  "portNumber": "port_number",
+                                  "httpProxyConfigurationType": 0,
+                                  "encryptedTunnel": True/False
+                            }
+            Ex 2: CS can open connection to Client
+                 firewall_inputs = {
+                                  "enableFirewallConfig": True,
+                                  "firewallConnectionType": 1,
+                                  "proxyClientName": "",
+                                  "proxyHostName": "",
+                                  "portNumber": "port_number",
+                                  "httpProxyConfigurationType": 0,
+                                  "encryptedTunnel": True/False
+                            }
+
+            Ex 3: Client can communicate to CS using Proxy
+                 firewall_inputs = {
+                                  "enableFirewallConfig": True,
+                                  "firewallConnectionType": 2,
+                                  "httpProxyConfigurationType": 0,
+                                  "proxyClientName": "Proxy_client_name",
+                                  "proxyHostName": "Proxy_host_name",
+                                  "portNumber": "port_number",
+                                  "encryptedTunnel": True/False
+                            }
 
         Returns:
                 object - instance of the Job class for this install_software job
@@ -481,6 +542,7 @@ class Install(object):
                 client_details.append(
                     {
                         "clientEntity": {
+                            "clientId": 0,
                             "clientName": client_name,
                             "commCellName": commcell_name
                         }
@@ -499,6 +561,7 @@ class Install(object):
         install_flags = kwargs.get('install_flags')
         db2_logs = kwargs.get('db2_logs_location', {})
         index_cache_location = kwargs.get('index_cache_location', None)
+        firewall_inputs = kwargs.get('firewall_inputs', {})
 
         request_json = {
             "taskInfo": {
@@ -530,10 +593,10 @@ class Install(object):
                                         "requestType": 0,
                                         "Operationtype": 0,
                                         "CommServeHostName":
-                                            self.commcell_object.commserv_hostname,
+                                            self.commcell_object.commserv_name,
                                         "RemoteClient": False,
                                         "installFlags": {
-                                            "allowMultipleInstances": True,
+                                            "allowMultipleInstances": kwargs.get('allowMultipleInstances', False),
                                             "restoreOnlyAgents": False,
                                             "killBrowserProcesses": True,
                                             "install32Base": install_flags.get('install32Base',
@@ -559,6 +622,7 @@ class Install(object):
                                         },
                                         "clientComposition": [
                                             {
+                                                "activateClient": True,
                                                 "overrideSoftwareCache": True if sw_cache_client else False,
                                                 "softwareCacheOrSrmProxyClient": {
                                                     "clientName": sw_cache_client if sw_cache_client else ""
@@ -618,6 +682,11 @@ class Install(object):
             }
             request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"]["installerOption"][
                 "clientComposition"][0]["components"]["mediaAgent"] = index_cache_dict
+
+        if firewall_inputs:
+            request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"]["installerOption"][
+                "installFlags"]["firewallInstall"] = firewall_inputs
+
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['CREATE_TASK'], request_json

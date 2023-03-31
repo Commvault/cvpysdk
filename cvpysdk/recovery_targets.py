@@ -252,6 +252,7 @@ class RecoveryTarget:
         self._application_type = None
         self._destination_hypervisor = None
         self._access_node = None
+        self._access_node_client_group = None
         self._users = []
         self._user_groups = []
         self._vm_prefix = ''
@@ -324,6 +325,8 @@ class RecoveryTarget:
                 elif vm_name_edit_string and vm_name_edit_type == 1:
                     self._vm_prefix = self._recovery_target_properties.get('vmNameEditString')
                 self._access_node = self._recovery_target_properties.get('proxyClientEntity', {}).get('clientName')
+                self._access_node_client_group = (self._recovery_target_properties.get('proxyClientGroupEntity', {})
+                                                  .get('clientGroupName'))
                 self._users = self._recovery_target_properties.get('securityAssociations', {}).get('users')
                 self._user_groups = self._recovery_target_properties.get('securityAssociations', {}).get('userGroups')
                 self._policy_type = self._recovery_target_properties.get("entity", {}).get("policyType")
@@ -441,6 +444,11 @@ class RecoveryTarget:
     def access_node(self):
         """Returns: (str) the client name of the access node/proxy of the recovery target"""
         return self._access_node
+
+    @property
+    def access_node_client_group(self):
+        """Returns: (str) The client group name set on the access node field of recovery target"""
+        return self._access_node_client_group
 
     @property
     def security_user_names(self):

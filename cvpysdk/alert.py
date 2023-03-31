@@ -119,6 +119,10 @@ Alert Attributes
 
     **description**             --  returns the description of an alert
 
+    **users_list**              --  returns the list of users associated with the alert
+
+    **user_group_list**         --  returns the list of user groups associated with the alert
+
     **entities**                --  returns the list of entities associated with an alert
 
     **email_recipients**        --  returns the list of email recipients associated to the alert
@@ -334,20 +338,32 @@ class Alerts(object):
         associations = []
 
         for entity, values in entities.items():
-            entity_obj = getattr(self._commcell_object, entity)
+            if entity == "entity_type_names":
+                for value in values:
+                    if value == "ALL_CLIENT_GROUPS_ENTITY":
+                        entity_type = 27
+                    else:
+                        entity_type = 2
+                    temp_dict = {
+                        "entityTypeName": value,
+                        "_type_": entity_type
+                    }
+                    associations.append(temp_dict)
+            else:
+                entity_obj = getattr(self._commcell_object, entity)
 
-            # this will allows us to loop through even for single item
-            values = values.split() if not isinstance(values, list) else values
+                # this will allows us to loop through even for single item
+                values = values.split() if not isinstance(values, list) else values
 
-            for value in values:
-                temp_dict = entity_dict[entity].copy()
-                for name, entity_attr in temp_dict.items():
-                    if name != "_type_":
-                        try: # to convert the string values to int types
-                            temp_dict[name] = int(getattr(entity_obj.get(value), entity_attr))
-                        except ValueError:
-                            temp_dict[name] = getattr(entity_obj.get(value), entity_attr)
-                associations.append(temp_dict)
+                for value in values:
+                    temp_dict = entity_dict[entity].copy()
+                    for name, entity_attr in temp_dict.items():
+                        if name != "_type_":
+                            try: # to convert the string values to int types
+                                temp_dict[name] = int(getattr(entity_obj.get(value), entity_attr))
+                            except ValueError:
+                                temp_dict[name] = getattr(entity_obj.get(value), entity_attr)
+                    associations.append(temp_dict)
 
         return associations
 
@@ -858,9 +874,13 @@ class Alert(object):
 
                 if 'userList' in self._alert_detail:
                     self._users_list = [user['name'] for user in self._alert_detail['userList']]
+                else:
+                    self._users_list = []
 
                 if 'userGroupList' in self._alert_detail:
                     self._user_group_list = [grp['name'] for grp in self._alert_detail['userGroupList']]
+                else:
+                    self._user_group_list = []
 
                 self._email_recipients = []
                 if 'nonGalaxyUserList' in self._alert_detail:
@@ -892,7 +912,12 @@ class Alert(object):
                         "criteria": int(self._criteria[0]['criteria_id'])
                     },
                     "userList": {
+                        "userListOperationType": 1,
                         "userList": [{"userName": user} for user in self._users_list]
+                    },
+                    "userGroupList": {
+                        "userGroupListOperationType": 1,
+                        "userGroupList": [{"userGroupName": user} for user in self._user_group_list]
                     },
                     "nonGalaxyList": {
                         "nonGalaxyUserList": [{"nonGalaxyUser": email} for email in self._email_recipients]
@@ -1039,6 +1064,28 @@ class Alert(object):
     def description(self, description):
         """Modifies the Alert description"""
         self._description = description
+        self._modify_alert_properties()
+    
+    @property
+    def users_list(self):
+        """Treats the users list as a read-only attribute."""
+        return self._users_list
+
+    @users_list.setter
+    def users_list(self, users_list):
+        """Modifies the users list"""
+        self._users_list = users_list
+        self._modify_alert_properties()
+    
+    @property
+    def user_group_list(self):
+        """Treats the user group list as a read-only attribute."""
+        return self._user_group_list
+
+    @user_group_list.setter
+    def user_group_list(self, user_group_list):
+        """Modifies the user group list"""
+        self._user_group_list = user_group_list
         self._modify_alert_properties()
 
     def enable_notification_type(self, alert_notification_type):

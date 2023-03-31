@@ -482,6 +482,31 @@ class FSBackupset(Backupset):
         }
         return bmr_restore_json
 
+    def _restore_bmr_firewallopts_json(self, hostname, direction, port):
+        """Get the JSON for firewall configuration options
+
+        Args:
+            hostname    (String)   -- The hostname of the machine.
+
+            direction   (Integer)  -- The direction of the connection.
+
+            port        (Integer)  -- The port at which the machine will communicate.
+
+        Returns :
+                    The firewall configuration options JSON required for Virtualize Me restores
+
+        """
+        bmr_firewall_restore_json = {
+            "direction": direction,
+            "connectionInfoList": [
+                {
+                    "hostname": hostname,
+                    "port": port
+                }
+            ]
+        }
+        return bmr_firewall_restore_json
+
     def _azure_advancedrestoreopts_json(self):
         """Get the JSON for Advanced restore options for azure
 
@@ -615,7 +640,17 @@ class FSBackupset(Backupset):
         restore_json_system_state = self._restore_bmr_admin_json(ipconfig, hwconfig)
         restore_json_virtualserver = self._restore_bmr_virtualserveropts_json()
 
-        # get instance Id of the virtual client
+        #Checking for Firewall rules
+        if restore_options.get("FirewallClientGroup", "").strip():
+            fwconfigtocs = self._restore_bmr_firewallopts_json(restore_options.get("FirewallHostname"),
+                                                               restore_options.get("FirewallDirection"),
+                                                               restore_options.get("FirewallPort"))
+            restore_json_system_state['vmProvisioningOption']['virtualMachineOption'][0][
+                'oneTouchResponse']['clients'][0]['fwconfigtocs'] = fwconfigtocs
+            restore_json_system_state['vmProvisioningOption']['virtualMachineOption'][0]['oneTouchResponse']['csinfo'][
+                'fwClientGroupName'] = restore_options.get("FirewallClientGroup")
+
+        #Get instance Id of the virtual client
         virtual_client_object = self._commcell_object.clients.get(restore_options.get('VirtualizationClient'))
         virtual_agent_object = virtual_client_object.agents.get('Virtual Server')
         instances_list = virtual_agent_object.instances._instances
@@ -636,10 +671,8 @@ class FSBackupset(Backupset):
         vm_option = response_json['taskInfo']['subTasks'][0]['options']['adminOpts'][
             'vmProvisioningOption']['virtualMachineOption'][0]
 
-
         vm_option['vmInfo']['vmLocation']['instanceEntity']['clientName'] = restore_options.get('VirtualizationClient')
         vm_option['vmInfo']['vmLocation']['instanceEntity']['instanceId'] = instance_id
-
 
         if(response_json['taskInfo']['subTasks'][0]['options']['adminOpts'][
             'vmProvisioningOption']['virtualMachineOption'][0]['oneTouchResponse'][
@@ -684,6 +717,9 @@ class FSBackupset(Backupset):
             vm_option['isoPath'] = restore_options.get('IsoPath')
 
             vm_option['vmInfo']['vmLocation']['pathName'] = restore_options.get('IsoPath', None)
+
+            vm_option['oneTouchResponse']['clients'][0]['netconfig']['ipinfo']['interfaces'][0][
+                'protocols'][0]['useDhcp'] = True
 
             vm_option['oneTouchResponse']['clients'][0]['netconfig']['ipinfo']['interfaces'][0][
                 'networkLabel'] = restore_options.get('NetworkLabel', None)

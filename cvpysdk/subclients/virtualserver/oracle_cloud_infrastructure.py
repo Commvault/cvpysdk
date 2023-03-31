@@ -6,7 +6,8 @@
 # license information.
 # --------------------------------------------------------------------------
 
-"""File for operating on a Virtual Server OracleCloud Subclient.
+"""
+File for operating on a Virtual Server OracleCloud Subclient.
 
 OracleCloudeVirtualServerSubclient is the only class defined in this file.
 
@@ -22,20 +23,22 @@ OracleCloudVirtualServerSubclient:
     full_vm_restore_in_place()  --  restores the VM specified in to the source client,
 
 """
+
 import time
 from ..vssubclient import VirtualServerSubclient
 from ...exception import SDKException
 
 
 class OCIVirtualServerSubclient(VirtualServerSubclient):
-    """Derived class from VirtualServerSubclient Base class.
+    """
+       Derived class from VirtualServerSubclient Base class.
        This represents a OracleCloud virtual server subclient,
        and can perform restore operations on only that subclient.
-
     """
 
     def __init__(self, backupset_object, subclient_name, subclient_id=None):
-        """Initialize the Instance object for the given Virtual Server instance.
+        """
+        Initialize the Instance object for the given Virtual Server instance.
         Args
         class_object (backupset_object, subclient_name, subclient_id)  --  instance of the
                                          backupset class, subclient name, subclient id
@@ -60,37 +63,29 @@ class OCIVirtualServerSubclient(VirtualServerSubclient):
             restore_option=None,
             indexing_v2=True,
             **kwargs):
-        """Restores the FULL Virtual machine specified in the input list
-            to the provided vcenter client along with the ESX and the datastores.
-            If the provided client name is none then it restores the Full Virtual
-            Machine to the source client and corresponding ESX and datastore.
-
-            Args:
-                vm_to_restore           (list)  --  list of all VMs to restore
-
-                destination_client      (str)   --  name of the pseudo client where VM should be
+        """
+        Restores the FULL Virtual machine specified in the input list
+        to the provided vcenter client along with the ESX and the datastores.
+        If the provided client name is none then it restores the Full Virtual
+        Machine to the source client and corresponding ESX and datastore.
+        Args:
+            vm_to_restore           (list)  --  list of all VMs to restore
+             destination_client      (str)   --  name of the pseudo client where VM should be
                                                         restored
-
-                proxy_client            (str)   --  the proxy to be used for restore
-
-                new_name                (str)   --  new name to be given to the restored VM
-
-                power_on                (bool)  --  power on the restored VM
+             proxy_client            (str)   --  the proxy to be used for restore
+             new_name                (str)   --  new name to be given to the restored VM
+             power_on                (bool)  --  power on the restored VM
                                                         default: True
-
-                copy_precedence         (int)   --  copy precedence to restored from
+             copy_precedence         (int)   --  copy precedence to restored from
                                                         default: 0
-
-                restore_option          (dict)  --  dictionary with all the advanced restore
+             restore_option          (dict)  --  dictionary with all the advanced restore
                                                         options.
-
-                **kwargs                         : Arbitrary keyword arguments Properties as of
-                                                     full_vm_restore_out_of_place
-                    eg:
-                    v2_details          (dict)       -- details for v2 subclient
-                                                    eg: check clients.vmclient.VMClient._child_job_subclient_details
-
-            Returns:
+             **kwargs                         : Arbitrary keyword arguments Properties as of
+                                                 full_vm_restore_out_of_place
+                eg:
+                v2_details          (dict)       -- details for v2 subclient
+                                                eg: check clients.vmclient.VMClient._child_job_subclient_details
+         Returns:
                 object - instance of the Job class for this restore job
 
             Raises:
@@ -104,17 +99,12 @@ class OCIVirtualServerSubclient(VirtualServerSubclient):
                     if response is not success
 
         """
-        #self.hvobj = hvobj
-        #self.vm_obj = self.hvobj.get_vm_property(vm_to_restore)
-        #vm_ip = self.hvobj['oci_vm_ip'],
-        #vm_guid = self.hvobj['oci_vm_guid'],
-        #vm_guidip = self.hvobj['oci_vm_ip'],
         copy_precedence = 0
         self.source_vm_details = source_vm_details
         if not restore_option:
             restore_option = {}
         restore_option["v2_details"] = kwargs.get("v2_details", None)
-    # set attr for all the option in restore xml from user inputs
+        # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
             restore_option,
             vm_to_restore=self._set_vm_to_restore(),
@@ -180,15 +170,12 @@ class OCIVirtualServerSubclient(VirtualServerSubclient):
 
         """
         self.source_vm_details = source_vm_details
-        #self.hvobj = hvobj
-        #self.vm_obj = self.hvobj.get_vm_property(vm_to_restore)
         restore_option = {"v2_details": kwargs.get("v2_details", None)}
-    # check mandatory input parameters are correct
+        # check mandatory input parameters are correct
         if not (isinstance(overwrite, bool) and
                 isinstance(power_on, bool)):
             raise SDKException('Subclient', '101')
         # set attr for all the option in restore xml from user inputs
-        #copy_precedence = 0
         self._set_restore_inputs(
             restore_option,
             vm_to_restore=self._set_vm_to_restore(),
@@ -247,7 +234,6 @@ class OCIVirtualServerSubclient(VirtualServerSubclient):
         # populate restore disk and datastore
         vm_disks = []
         disk_list, disk_info_dict = self.disk_level_browse("\\\\" + vm_ids[vm_to_restore])
-
         for disk, data in disk_info_dict.items():
             if ((restore_option["in_place"]) or ("datastore" not in restore_option)):
                 restore_option["datastore"] = data["advanced_data"]["browseMetaData"][
@@ -261,7 +247,6 @@ class OCIVirtualServerSubclient(VirtualServerSubclient):
 
         # prepare nics info json
         nics_list = self._json_nics_advancedRestoreOptions(vm_to_restore, restore_option)
-
         restore_option["nics"] = nics_list
         if restore_option["source_ip"] and restore_option["destination_ip"]:
             vm_ip = self._json_vmip_advanced_restore_options(restore_option)
@@ -291,13 +276,8 @@ class OCIVirtualServerSubclient(VirtualServerSubclient):
     def _json_nics_advancedRestoreOptions(self, vm_to_restore, value):
         """
             Setter for nics list for advanced restore option json
-
         """
-
-        #nics_dict_from_browse = self.get_nics_from_browse()
         nics_list = []
-        #vm_nics_list = nics_dict_from_browse[vm_to_restore]
-
         for key, val in self.source_vm_details['vcn'].items():
             nics = {
                 "subnetId": val['subnet_id'],
@@ -330,7 +310,6 @@ class OCIVirtualServerSubclient(VirtualServerSubclient):
 
         if not isinstance(value, dict):
             raise SDKException('Subclient', '101')
-
 
         self._vcenter_instance_json = {
             "clientName": value.get("destination_client_name", ""),

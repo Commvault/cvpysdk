@@ -61,6 +61,8 @@ Domain:
 
     _get_domain_properties      --  get the properties of the domain
 
+    set_sso                     --  Enables/Disables single sign on a domain
+
 
 """
 
@@ -424,52 +426,52 @@ class Domains(object):
 
         if kwargs:
             custom_provider = {
-                    "providerTypeId": 0,
-                    "attributes": [
-                        {
-                            "attrId": 6,
-                            "attributeName": "User group filter",
-                            "staticAttributeString": "(objectClass=group)",
-                            "customAttributeString": kwargs.get('group_filter', ''),
-                            "attrTypeFlags": 1
-                        },
-                        {
-                            "attrId": 7,
-                            "attributeName": "User filter",
-                            "staticAttributeString": "(&(objectCategory=User)(sAMAccountName=*))",
-                            "customAttributeString": kwargs.get('user_filter', ''),
-                            "attrTypeFlags": 1
-                        },
-                        {
-                          "attrId": 9,
-                          "attributeName": "Unique identifier",
-                          "staticAttributeString": "sAMAccountName",
-                          "customAttributeString": kwargs.get('unique_identifier', ''),
-                          "attrTypeFlags": 1
-                        },
-                        {
-                          "attrId": 10,
-                          "attributeName": "base DN",
-                          "staticAttributeString": "baseDN",
-                          "customAttributeString": kwargs.get('base_dn', ''),
-                          "attrTypeFlags": 1
-                        },
-                        {
-                            "attrTypeFlags": 6,
-                            "customAttributeString": kwargs.get('email_attribute', 'mail'),
-                            "attrId": 3,
-                            "attributeName": "Email",
-                            "staticAttributeString": "mail"
-                        },
-                        {
-                            "attrTypeFlags": 6,
-                            "customAttributeString": kwargs.get('guid_attribute', 'objectGUID'),
-                            "attrId": 4,
-                            "attributeName": "GUID",
-                            "staticAttributeString": "objectGUID"
-                        }
-                    ]
-                }
+                "providerTypeId": 0,
+                "attributes": [
+                    {
+                        "attrId": 6,
+                        "attributeName": "User group filter",
+                        "staticAttributeString": "(objectClass=group)",
+                        "customAttributeString": kwargs.get('group_filter', ''),
+                        "attrTypeFlags": 1
+                    },
+                    {
+                        "attrId": 7,
+                        "attributeName": "User filter",
+                        "staticAttributeString": "(&(objectCategory=User)(sAMAccountName=*))",
+                        "customAttributeString": kwargs.get('user_filter', ''),
+                        "attrTypeFlags": 1
+                    },
+                    {
+                        "attrId": 9,
+                        "attributeName": "Unique identifier",
+                        "staticAttributeString": "sAMAccountName",
+                        "customAttributeString": kwargs.get('unique_identifier', ''),
+                        "attrTypeFlags": 1
+                    },
+                    {
+                        "attrId": 10,
+                        "attributeName": "base DN",
+                        "staticAttributeString": "baseDN",
+                        "customAttributeString": kwargs.get('base_dn', ''),
+                        "attrTypeFlags": 1
+                    },
+                    {
+                        "attrTypeFlags": 6,
+                        "customAttributeString": kwargs.get('email_attribute', 'mail'),
+                        "attrId": 3,
+                        "attributeName": "Email",
+                        "staticAttributeString": "mail"
+                    },
+                    {
+                        "attrTypeFlags": 6,
+                        "customAttributeString": kwargs.get('guid_attribute', 'objectGUID'),
+                        "attrId": 4,
+                        "attributeName": "GUID",
+                        "staticAttributeString": "objectGUID"
+                    }
+                ]
+            }
             domain_create_request["provider"]["customProvider"] = custom_provider
 
         if kwargs.get('additional_settings'):
@@ -570,6 +572,50 @@ class Domain(object):
     def refresh(self):
         """Refresh the properties of the domain."""
         self._get_domain_properties()
+
+    def set_sso(self, flag=True, **kwargs):
+        """Enables/Disables single sign on the domain
+            Args:
+                flag(bool)      --  True    - enables SSO
+                                    False   - disables SSO
+                ** kwargs(dict) --  Key value pairs for supported arguments
+                Supported argument values:
+                username(str)       --  Username to be used
+                password(str)       --  Password to be used
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if arguments passed are of incorrect types
+                    if failed to enable SSO
+                    if response is empty
+                    if response is not success
+        """
+
+        if not isinstance(flag, bool):
+            raise SDKException('Domain', '101')
+        request_json = {"enableSSO": flag}
+        username = kwargs.get("username", None)
+        password = kwargs.get("password", None)
+        if username and password:
+            if not (isinstance(username, str) and isinstance(password, str)):
+                raise SDKException('Domain', '101')
+            request_json["username"] = username
+            request_json["password"] = b64encode(password.encode()).decode()
+        url = self._commcell_object._services['DOMAIN_SSO'] % self.domain_id
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'PUT', url, request_json
+        )
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', 0)
+                if error_code != 0:
+                    raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+                return
+            raise SDKException('Response', '102')
+        raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
 
     @property
     def domain_name(self):

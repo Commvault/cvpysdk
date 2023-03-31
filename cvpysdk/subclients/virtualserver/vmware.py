@@ -81,6 +81,24 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             'NBD SSL': 4
         }
 
+    def add_revert_option(self, request_json, revert):
+        """
+        Add revert in restore json
+
+        Args:
+
+            request_json            (dict)  :       restore dict
+
+            revert                  (bool)  :       revert option
+
+        Returns:
+            request_json            (dict)  :       restore dict
+
+        """
+        if revert:
+            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['commonOptions']['revert'] = True
+        return request_json
+
     def full_vm_restore_in_place(
             self,
             vm_to_restore=None,
@@ -134,6 +152,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                     v2_details          (dict)       -- details for v2 subclient
                                                     eg: check clients.vmclient.VMClient._child_job_subclient_details
 
+                    revert              (bool)      --  Revert option
+
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -150,7 +170,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
 
         """
 
-        restore_option = {"media_agent": kwargs.get("media_agent", None), "v2_details": kwargs.get("v2_details", None)}
+        restore_option = {"media_agent": kwargs.get("media_agent", None), "v2_details": kwargs.get("v2_details", None),
+                          "revert": kwargs.get("revert", False)}
 
         # check input parameters are correct
         if vm_to_restore and not isinstance(vm_to_restore, str):
@@ -185,6 +206,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
+        request_json = self.add_revert_option(request_json, restore_option.get('revert', False))
         return self._process_restore_response(request_json)
 
     def full_vm_restore_out_of_place(
@@ -273,6 +295,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                     v2_details          (dict)       -- details for v2 jobs
                                                     eg: check clients.vmclient.VMClient._child_job_subclient_details
 
+                    revert              (bool)      --  Revert option
+
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -292,7 +316,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         restore_option = {}
         extra_options = ['source_ip', 'destination_ip', 'network', 'destComputerName',
                          'source_subnet', 'source_gateway', 'destination_subnet',
-                         'destination_gateway', 'folder_path', 'media_agent', 'v2_details']
+                         'destination_gateway', 'folder_path', 'media_agent', 'v2_details', 'revert']
         for key in extra_options:
             if key in kwargs:
                 restore_option[key] = kwargs[key]
@@ -340,6 +364,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
+        request_json = self.add_revert_option(request_json, restore_option.get('revert', False))
         return self._process_restore_response(request_json)
 
     def disk_restore(self,
@@ -547,7 +572,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
 
         if not disk_name:  # if disk names are not provided, restore all vmdk disks
             for each_disk_path in disk_list:
-                disk_name.append(each_disk_path.split('\\')[-1])
+                disk_name.append(disk_info_dict[each_disk_path]['snap_display_name'])
 
         else:  # else, check if the given VM has a disk with the list of disks in disk_name.
             for each_disk in disk_name:

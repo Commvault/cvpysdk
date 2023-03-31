@@ -109,6 +109,8 @@ Example for modifying a rule:
 
 from __future__ import absolute_import
 import time
+import datetime
+import calendar
 from datetime import timedelta
 from .exception import SDKException
 from .clientgroup import ClientGroup
@@ -322,9 +324,9 @@ class OperationWindow:
         """
 
         if start_date is None:
-            start_date = int(time.time())
+            start_date = int(calendar.timegm(datetime.date.today().timetuple()))
         if end_date is None:
-            end_date = int(time.time()) + int(timedelta(days=365).total_seconds())
+            end_date = start_date
         if start_time is None:
             start_time = int(timedelta(hours=8).total_seconds())
         if end_time is None:

@@ -223,7 +223,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
 
                 destination_path      (str)        --  full path of the restore location on client
 
-                vm_to_restore         (list)       --  provide the VM name to restore
+                vm_to_restore         (list)       --  provide the list of VM name(s) to restore
 
                 overwrite
                         default:False   (bool)      --  overwrite the existing VM
@@ -364,7 +364,7 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             to the location same as source .
 
             Args:
-                vm_to_restore         (list)       --  provide the VM name to restore
+                vm_to_restore         (list)       --  provide the list of VM name(s) to restore
 
                 overwrite
                         default:true   (bool)      --  overwrite the existing VM
@@ -587,10 +587,11 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
         """
                 This converts the Hyperv VM to AzureRM
                 Args:
-                        vm_to_restore          (dict):     dict containing the VM name(s) to restore as
-                                                           keys and the new VM name(s) as their values.
-                                                           Input empty string for default VM name for
-                                                           restored VM.
+                        vm_to_restore          (dict):     dict containing the VM name(s)
+                                                           to restore as keys and the new
+                                                           VM name(s) as their values.
+                                                           Input empty string for default
+                                                           VM name for restored VM.
                                                            default: {}
 
                         azure_client    (str):      name of the AzureRM client

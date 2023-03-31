@@ -106,6 +106,9 @@ User
 
     user_company_name()                 -- returns company name if user is a company user else returns empty str
 
+    get_account_lock_info()             -- returns account lock information
+
+    unlock()                            --  Unlocks user account
 """
 
 from base64 import b64encode
@@ -271,8 +274,10 @@ class Users(object):
                                                             created
                     default: None
 
-                local_usergroups              (str)     --  user can be member of
+                local_usergroups              (list)     --  user can be member of
                                                             these user groups
+                                                            Ex:1. ["master"],
+                                                               2. ["group1", "group2"]
 
                 system_generated_password     (bool)    --  if set to true system
                                                             defined password will be used
@@ -371,6 +376,7 @@ class Users(object):
             }]
         }
         response_json = self._add_user(create_user_request)
+
 
         created_user_username = response_json.get("response", [{}])[0].get("entity", {}).get("userName")
 
@@ -630,7 +636,7 @@ class User(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _update_user_props(self, properties_dict):
+    def _update_user_props(self, properties_dict, **kwargs):
         """Updates the properties of this user
 
             Args:
@@ -638,8 +644,16 @@ class User(object):
                     e.g.: {
                             "description": "My description"
                         }
+                ** kwargs(dict)         --  Key value pairs for supported arguments
+                Supported arguments values:
+                    new_username (str)  -- New login name for the user
             Returns:
                 User Properties update dict
+            Raises:
+                SDKException:
+                    If invalid type arguments are passed
+                    Response was not success.
+                    Response was empty.
         """
         request_json = {
             "users": [{
@@ -648,7 +662,11 @@ class User(object):
                 }
             }]
         }
-
+        new_username = kwargs.get("new_username", None)
+        if new_username is not None:
+            if not isinstance(new_username, str):
+                raise SDKException("USER", "101")
+            request_json["users"][0]["userEntity"]["userName"] = new_username
         request_json['users'][0].update(properties_dict)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -727,6 +745,11 @@ class User(object):
         return self._properties['userEntity']['userName']
 
     @property
+    def full_name(self):
+        """Returns the full name of this commcell user"""
+        return self._properties.get('fullName','')
+
+    @property
     def user_name(self):
         """Returns the user name of this commcell user"""
         return self._user_name
@@ -745,6 +768,11 @@ class User(object):
     def email(self):
         """Returns the email associated with this commcell user"""
         return self._email
+
+    @user_name.setter
+    def user_name(self, value):
+        """Sets the new username for this commcell user"""
+        self._update_user_props("", new_username=value)
 
     @email.setter
     def email(self, value):
@@ -1028,3 +1056,52 @@ class User(object):
         bool    --  tfa status
         """
         return self._tfa_status
+
+    @property
+    def get_account_lock_info(self):
+        """
+        Returns user account lock status
+        dict     --  account lock info
+        example:
+            {
+                "isAccountLocked" : True,
+                "lockStartTime" : 1646640752,
+                "lockEndTime" : 1646727152
+            }
+        """
+        lock_info = dict()
+        lock_info['isAccountLocked'] = self._properties.get('isAccountLocked', False)
+        lock_info['lockStartTime'] = self._properties.get('lockStartTime', 0)
+        lock_info['lockEndTime'] = self._properties.get('lockEndTime', 0)
+        return lock_info
+
+    def unlock(self):
+        """
+        Unlocks user account.
+        Returns:
+            status      (str)   --      unlock operation status
+                Example:-
+                "Unlock successful for user account"
+                "Logged in user cannot unlock their own account"
+                "Unlock failed for user account"
+                "User account is not locked"
+                "Logged in user does not have rights to unlock this user account"
+            statusCode
+        Raises:
+            SDKException:
+                if response is empty
+                if response is not success
+        """
+        payload = {"lockedAccounts": [{"user": {"userName": self._user_name, "userId": self._user_id}}]}
+        service = self._commcell_object._services['UNLOCK']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', service, payload
+        )
+        if flag:
+            if response and response.json() and 'lockedAccounts' in response.json():
+                return response.json().get('lockedAccounts')[0].get('status'), response.json().get('lockedAccounts')[0].get('statusCode')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
