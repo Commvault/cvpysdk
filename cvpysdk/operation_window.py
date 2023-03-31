@@ -303,10 +303,32 @@ class OperationWindow:
                 start_time  (int)     -- The start time for the "do not run" interval.
                     Valid values are UNIX-style timestamps (seconds since January 1, 1970).
                     default - 28800 (8 AM)
+                    Must specify one timestamp for start time for all the weekdays, otherwise
+                    make a list for each weekday mentioned in the day_of_week list.
+
+                start_time (list)    -- The list of start timestamps for each weekday mentioned
+                    in the day_of_week list.
 
                 end_time    (int)     -- The end time for the "do not run" interval.
                     Valid values are UNIX-style timestamps (seconds since January 1, 1970).
                     default - 86400 (6 PM)
+                    Must specify one timestamp for end time for all the weekdays, otherwise
+                    make a list for each weekday mentioned in the day_of_week list.
+
+                end_time   (list)    -- The list of end timestamps for each weekday mentioned
+                    in the day_of_week list.
+
+                Example:
+                    1. day_of_week : ["sunday", "thursday", "saturday"]
+                       start_time  : 28800
+                       end_time    : 86400
+                       The above inputs specify that for all the three days mentioned, start_time and end_time of
+                       operation window would be same
+                    2. day_of_week : ["monday","friday"]
+                       start_time  : [3600, 28800]
+                       end_time    : [18000, 86400]
+                       The above input specify that on monday operation window starts at 3600 and ends at 18000 whereas
+                       on friday, the operation window starts at 28800 and ends at 86400
 
                 do_not_submit_job   (bool) -- doNotSubmitJob of the operation rule
 
@@ -360,6 +382,28 @@ class OperationWindow:
                     raise SDKException('OperationWindow', '102', response_string)
                 week_of_the_month_list.append(WEEK_OF_THE_MONTH_MAPPING[week.lower()])
 
+        daytime_list = []
+        num_of_days = len(day_of_week_list)
+        if isinstance(start_time, int) and isinstance(end_time, int):
+            start_time = [start_time] * num_of_days
+            end_time = [end_time] * num_of_days
+        if isinstance(start_time, list) and isinstance(end_time, list):
+            if not(num_of_days == len(start_time) == len(end_time)):
+                response_string = "did not specify start time and end time for all the given week days"
+                raise SDKException('OperationWindow', '102', response_string)
+            for week_day in range(num_of_days):
+                daytime_list.append(
+                    {
+                        "startTime": start_time[week_day],
+                        "endTime": end_time[week_day],
+                        "weekOfTheMonth": week_of_the_month_list,
+                        "dayOfWeek": [day_of_week_list[week_day]]
+                    }
+                )
+        else:
+            response_string = "Both start_time and end_time should be of same type."
+            raise SDKException('OperationWindow', '102', response_string)
+
         payload = {
             "operationWindow": {
                 "ruleEnabled": True,
@@ -368,12 +412,7 @@ class OperationWindow:
                 "endDate": end_date,
                 "name": name,
                 "operations": operations_list,
-                "dayTime": [{
-                    "startTime": start_time,
-                    "endTime": end_time,
-                    "weekOfTheMonth": week_of_the_month_list,
-                    "dayOfWeek": day_of_week_list
-                }]
+                "dayTime": daytime_list
             },
             "entity": {
                 "clientGroupId": int(self.clientgroup_id),
