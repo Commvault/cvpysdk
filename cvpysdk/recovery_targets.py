@@ -285,8 +285,11 @@ class RecoveryTarget:
         self._test_security_group = None
         self._test_vm_size = None
 
+        # AWS
         self._volume_type = None
         self._encryption_key = None
+        self._iam_role_id = None
+        self._iam_role_name = None
         self._instance_type = None
 
         self.refresh()
@@ -335,6 +338,8 @@ class RecoveryTarget:
                     self._availability_zone = (self._recovery_target_properties.get('amazonPolicy',{}).get('availabilityZones', [{}])[0].get('availabilityZoneName', None))
                     self._volume_type = self._recovery_target_properties.get('amazonPolicy', {}).get('volumeType', None)
                     self._encryption_key = self._recovery_target_properties.get('amazonPolicy', {}).get('encryptionOption',{}).get('encryptionKeyName', 'Auto')
+                    self._iam_role_name = self._recovery_target_properties.get('roleInfo', {}).get('name')
+                    self._iam_role_id = self._recovery_target_properties.get('roleInfo', {}).get('id')
                     self._destination_network = self._recovery_target_properties.get('networkList', [{}])[0].get('name', None)
                     self._security_group = self._recovery_target_properties.get('securityGroups', [{}])[0].get('name', '')
                     self._instance_type = (self._recovery_target_properties.get('amazonPolicy', {}).get('instanceType', [{}])[0].get('instanceType', {}).get('vmInstanceTypeName',''))
@@ -604,8 +609,18 @@ class RecoveryTarget:
 
     @property
     def encryption_key(self):
-        """Returns: (str) AWS: the encryption key of the destination VM. Not implemented"""
+        """Returns: (str) AWS: the encryption key of the destination VM"""
         return self._encryption_key
+
+    @property
+    def iam_role_id(self):
+        """Returns: (str) AWS: the AWS IAM Role ID associated with the destination VM"""
+        return self._iam_role_id
+
+    @property
+    def iam_role_name(self):
+        """Returns: (str) AWS: the AWS IAM Role name associated with the destination VM"""
+        return self._iam_role_name
 
     @property
     def instance_type(self):
