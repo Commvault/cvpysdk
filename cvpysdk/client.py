@@ -226,6 +226,8 @@ Client
 
     delete_additional_setting()  --  deletes registry key from the client property
 
+    get_configured_additional_setting() --  To get configured additional settings from the client property
+
     release_license()            --  releases a license from a client
 
     retire()                     --  perform retire operation on the client
@@ -5995,6 +5997,26 @@ class Client(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+        
+    def get_configured_additional_settings(self) -> list:
+        """Method to get configured additional settings name"""
+        url = self._services['GET_ADDITIIONAL_SETTINGS'] % self.client_id
+        flag, response = self._cvpysdk_object.make_request('GET', url)
+        if flag:
+            if response.json():
+                response = response.json()
+
+                if response.get('errorMsg'):
+                    error_message = response.json()['errorMsg']
+                    o_str = 'Failed to fetch additional settings.\nError: "{0}"'.format(error_message)
+                    raise SDKException('Client', '102', o_str)
+
+                return response.get('regKeys', [])
+
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
 
     def release_license(self, license_name=None):
         """Releases a license from a client

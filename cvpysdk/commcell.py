@@ -68,6 +68,8 @@ Commcell:
 
     delete_additional_setting() --  deletes registry key from the commserve property
 
+    get_configured_additional_setting() --  To get configured additional settings from the commserve property
+
     download_software()         --  triggers the Download Software job with the given options
 
     copy_software()             --  triggers the Copy Software job with the given options
@@ -2076,6 +2078,10 @@ class Commcell(object):
 
         """
         self.commserv_client.delete_additional_setting(category, key_name)
+
+    def get_configured_additional_setting(self) -> list:
+        """Method to get configured additional settings name"""
+        return self.commserv_client.get_configured_additional_settings()
 
     def protected_vms(self, days, limit=100):
         """

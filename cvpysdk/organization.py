@@ -970,11 +970,12 @@ class Organizations:
             )
         raise SDKException('RemoteOrganization', '110')
 
-    def delete(self, name):
+    def delete(self, name, deactivate=True):
         """Deletes the organization with the given name from the Commcell.
 
             Args:
                 name            (str)   --  name of the organization to delete
+                deactivate      (bool)   -- Whether to deactivate organization before deleting, By default organization will be deactivated
 
             Returns:
                 None    -   if the organization was removed successfully
@@ -1000,7 +1001,7 @@ class Organizations:
             org = self.get(name)
             target = None
             
-        org.deactivate()
+        if deactivate: org.deactivate()
 
         organization_id = self._organizations[name.lower()]
 

@@ -65,6 +65,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_FILE_SERVER_CLIENTS': '{0}/v4/FileServers',
     'CLIENTFORCEDELETE':'{0}Client/%s?forceDelete=1',
     'CLIENT': '{0}Client/%s',
+    'GET_ADDITIIONAL_SETTINGS': '{0}Client/%s/AdditionalSettings',
     'FILTER_CLIENTS':'{0}Client?%s',
     'GET_ALL_CLIENTS_PLUS_HIDDEN': '{0}Client?hiddenclients=true',
     'GET_ALL_PSEUDO_CLIENTS': '{0}Client?PseudoClientType',
@@ -310,6 +311,7 @@ SERVICES_DICT_TEMPLATE = {
     'APPLICABLE_SOLNS_ENABLE': '{0}V4/ServerPlan/%s/ApplicableSolutions/Restrict/Enable',
     'APPLICABLE_SOLNS_DISABLE': '{0}V4/ServerPlan/%s/ApplicableSolutions/Restrict/Disable',
     'PLAN_SUPPORTED_SOLUTIONS': '{0}V4/Solutions?filter=PLAN_SUPPORTED_SOLUTIONS',
+    'V4_SERVER_PLAN': '{0}V4/ServerPlan/%s',
 
     'DOMAIN_CONTROLER': '{0}CommCell/DomainController',
     'DELETE_DOMAIN_CONTROLER': '{0}CommCell/DomainController/%s',

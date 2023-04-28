@@ -2353,6 +2353,48 @@ class Plan(object):
             
         return result
     
+    def update_content_policy(self, content):
+        """
+        Args:
+            content (dict)  :  dictionary with backup content details. 
+            
+            example:
+                content = {
+                    "windowsIncludedPaths": ["Desktop"],
+                    "windowsExcludedPaths": ["Music"],
+                    "windowsFilterToExcludePaths": ["Videos"],
+                    "unixIncludedPaths": ["Desktop"],
+                    "unixExcludedPaths": ["Music"],
+                    "unixFilterToExcludePaths": ["Videos"],
+                    "macIncludedPaths": ["Desktop"],
+                    "macExcludedPaths": ["Music"],
+                    "macFilterToExcludePaths": ["Videos"],
+                    "backupSystemState": True,
+                    "useVSSForSystemState": True,
+                    "backupSystemStateOnlyWithFullBackup": False
+                }
+
+            For unix and mac, replace key name with respective os name, **IncludedPaths, **ExcludedPaths, **FilterToExcludePaths
+
+        """
+        
+        request_json = {
+            'backupContent' : content
+        }
+
+        request_url = self._commcell_object._services['V4_SERVER_PLAN'] % self.plan_id
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('PUT', request_url, request_json)
+
+        if flag:
+            if response.json():
+                if response.json()['errorCode']:
+                    raise SDKException('Plan', 102, response.json()['errorMessage'])
+            else:
+                raise SDKException('Plan', 102, 'Failed to update backup content')
+        else:
+            raise SDKException('Plan', 102, response.text)
+
     def update_backup_content(self, content, request_type = 'OVERWRITE'):
         """
         Args:
@@ -2373,9 +2415,22 @@ class Plan(object):
                         'Content' : ['/%Pictures%'],
                         'Exclude' : ['/%Documents%']
                     }
+                }
                     
             request_type (str)      :  Supported values 'OVERWRITE' (default), 'UPDATE', 'DELETE'. 
-        }
+
+            For plans created from SP32, Please use below format of content
+            example:
+                content = {
+                    "windowsIncludedPaths": ["Desktop"],
+                    "windowsExcludedPaths": ["Music"],
+                    "windowsFilterToExcludePaths": ["Videos"],
+                    "backupSystemState": True,
+                    "useVSSForSystemState": True,
+                    "backupSystemStateOnlyWithFullBackup": False
+                }
+
+            For unix and mac, replace key name with respective os name, **IncludedPaths, **ExcludedPaths, **FilterToExcludePaths
         """
         
         update_request_type = {
@@ -2385,6 +2440,10 @@ class Plan(object):
         }
         
         subclients = self.policy_subclient_ids()
+
+        if not subclients:
+            self.update_content_policy(content)
+            return
         
         for os, value in content.items():
             request_json = {
