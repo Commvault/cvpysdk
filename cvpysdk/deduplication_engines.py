@@ -152,7 +152,6 @@ from .exception import SDKException
 from .job import Job
 
 
-
 class StoreFlags(Enum):
     IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED = 536870912
     IDX_SIDBSTORE_FLAGS_DDB_NEEDS_AUTO_RESYNC = 33554432
@@ -292,7 +291,7 @@ class DeduplicationEngines(object):
 
                 if no engine exists with given storage policy and copy name
         """
-        if not isinstance(storage_policy_name, str) and  not isinstance(copy_name, str):
+        if not isinstance(storage_policy_name, str) and not isinstance(copy_name, str):
             raise SDKException('Storage', '101')
 
         storage_policy_name = storage_policy_name.lower()
@@ -892,7 +891,7 @@ class Store(object):
         response_string = self._commcell_object._update_response_(response.text)
         raise SDKException('Response', '101', response_string)
 
-    def run_space_reclaimation(self, level=3, clean_orphan_data=False, use_scalable_resource=True):
+    def run_space_reclaimation(self, level=3, clean_orphan_data=False, use_scalable_resource=True, num_streams="max"):
         """
         runs DDB Space reclaimation job with provided level
 
@@ -906,6 +905,7 @@ class Store(object):
             use_scalable_resource (bool)    - Use Scalable Resource Allocation while running DDB Space Reclamation Job
                         Default: True
 
+            num_streams (str)   -- Number of streams with which job will run.
         Returns:
              object - instance of Job class for DDB Verification job
 
@@ -924,6 +924,12 @@ class Store(object):
 
         if not isinstance(use_scalable_resource, bool):
             raise SDKException('Storage', '101')
+
+        use_max_streams = "true"
+        max_num_of_streams = 0
+        if str(num_streams) != "max":
+            max_num_of_streams = int(num_streams)
+            use_max_streams = "false"
 
         level_map = {
             1: 80,
@@ -957,8 +963,8 @@ class Store(object):
                             "backupOpts": {
                                 "mediaOpt": {
                                     "auxcopyJobOption": {
-                                        "useMaximumStreams": "true",
-                                        "maxNumberOfStreams": 0,
+                                        "useMaximumStreams": use_max_streams,
+                                        "maxNumberOfStreams": max_num_of_streams,
                                         "allCopies": "true",
                                         "mediaAgent": {
                                             "mediaAgentName": ""
@@ -972,7 +978,8 @@ class Store(object):
                                     "ddbVerificationLevel": "DDB_DEFRAGMENTATION",
                                     "backupLevel": "FULL",
                                     "defragmentationPercentage": level_map.get(level),
-                                    "ocl": clean_orphan_data
+                                    "ocl": clean_orphan_data,
+                                    "runDefrag": "true"
                                 }
                             }
                         },
@@ -999,7 +1006,7 @@ class Store(object):
         raise SDKException('Response', '101', response_string)
 
     def run_ddb_verification(self, incremental_verification=True, quick_verification=True,
-                             use_scalable_resource=True):
+                             use_scalable_resource=True, max_streams=0):
         """
         runs deduplication data verification(dv2) job with verification type and dv2 option
 
@@ -1012,6 +1019,8 @@ class Store(object):
 
             use_scalable_resource (bool)    - Use Scalable Resource Allocation while running DDB Verification Job
                                             Default: True
+
+            max_streams (int)           - DV2 job option, maximum number of streams to use. By default, job uses max streams.
 
         Returns:
              object - instance of Job class for DDB Verification job
@@ -1032,6 +1041,10 @@ class Store(object):
         verification_option = 'QUICK_DDB_VERIFICATION'
         if not quick_verification:
             verification_option = 'DDB_AND_DATA_VERIFICATION'
+
+        use_max_streams = True
+        if max_streams != 0:
+            use_max_streams = False
 
         if not isinstance(use_scalable_resource, bool):
             raise SDKException('Storage', '101')
@@ -1061,8 +1074,8 @@ class Store(object):
                             "backupOpts": {
                                 "mediaOpt": {
                                     "auxcopyJobOption": {
-                                        "useMaximumStreams": "true",
-                                        "maxNumberOfStreams": 0,
+                                        "useMaximumStreams": f"{use_max_streams}",
+                                        "maxNumberOfStreams": f"{max_streams}",
                                         "allCopies": "true",
                                         "mediaAgent": {
                                             "mediaAgentName": ""

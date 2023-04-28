@@ -543,22 +543,11 @@ class EdiscoveryClientOperations():
         self._API_DOC_TASK = self._services['EDISCOVERY_REQUEST_DOCUMENT_MARKER']
         self._API_CONFIGURE_TASK = self._services['EDISCOVERY_CONFIGURE_TASK']
         self._API_TASK_WORKFLOW = self._services['EDICOVERY_TASK_WORKFLOW']
-        from .inventory_manager import Inventory, Asset
         from .file_storage_optimization import FsoServer, FsoServerGroup
         from .sensitive_data_governance import Project
         from .request_manager import Request
 
-        if isinstance(class_object, Inventory):
-            self._type = 0  # Inventory
-            self._operation = 0
-            self._client_id = class_object.inventory_id
-            self._data_source_id = 0
-        elif isinstance(class_object, Asset):
-            self._type = 0  # Inventory
-            self._operation = 0
-            self._client_id = class_object.inventory_id
-            self._data_source_id = class_object.asset_id
-        elif isinstance(class_object, FsoServer):
+        if isinstance(class_object, FsoServer):
             self._client_id = class_object.server_id
             self._include_doc_count = 1
             self._limit = self._offset = 0

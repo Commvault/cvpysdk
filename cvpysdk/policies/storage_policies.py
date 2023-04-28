@@ -167,6 +167,8 @@ StoragePolicyCopy:
 
     set_inline_copy()                       --  Sets the inline copy setting on storage policy copy
 
+    get_jobs_on_copy()                      --  Fetches the Details of jobs on Storage Policy Copy
+
     delete_job()                            --  delete a job from storage policy copy node
 
     _mark_jobs_on_copy()                    --  marks job(s) for given operation on a secondary copy
@@ -181,6 +183,8 @@ StoragePolicyCopy:
 
     do_not_verify_data()                    --  marks job(s) on a copy to not be Picked for Data Verification
 
+    pick_jobs_for_backupcopy                --  marks job(skipped/unpicked) on a copy to be picked for backup copy
+
     mark_jobs_bad()                         --  marks job(s) on a copy as Bad
 
     is_dedupe_enabled()                     --  checks whether deduplication is enabled for the copy
@@ -189,14 +193,19 @@ StoragePolicyCopy:
 
     set_key_management_server()             --  sets the Key Management Server to this copy
 
+    set_multiplexing_factor()               --  sets/unset the multiplexing factor for the storage policy copy 
+
 Attributes
 ----------
+    **override_pool_retention**                 --  Returns if Override Pool Retention flag is set or not
+
+    **override_pool_retention.setter**          --  Sets/Unsets the override Pool Retention Flag
 
     **space_optimized_auxillary_copy**          --  Returns the value of space optimized auxillary copy setting
 
     **space_optimized_auxillary_copy.setter**   --  Sets the value of space optimized auxillary copy setting
 
-	**source_copy**                             --  Returns the source copy associated with the copy
+    **source_copy**                             --  Returns the source copy associated with the copy
 
     **source_copy.setter**                      --  Sets the source copy for the copy
 
@@ -234,7 +243,7 @@ class StoragePolicies(object):
         """
         self._commcell_object = commcell_object
         self._POLICY = self._commcell_object._services['STORAGE_POLICY']
-
+        self._DELETE_POLICY =  self._commcell_object._services['DELETE_STORAGE_POLICY']
         self._policies = None
         self.refresh()
 
@@ -891,7 +900,8 @@ class StoragePolicies(object):
             raise SDKException('Storage', '101')
 
         if self.has_policy(storage_policy_name):
-            policy_delete_service = self._POLICY + '/{0}'.format(storage_policy_name)
+            storagepolicy_id = self.all_storage_policies[storage_policy_name.lower()]
+            policy_delete_service = self._DELETE_POLICY + '/{0}'.format(storagepolicy_id)
 
             flag, response = self._commcell_object._cvpysdk_object.make_request(
                 'DELETE', policy_delete_service
@@ -900,11 +910,15 @@ class StoragePolicies(object):
             if flag:
                 try:
                     if response.json():
-                        if 'errorCode' in response.json() and 'errorMessage' in response.json():
-                            error_message = response.json()['errorMessage']
-                            o_str = 'Failed to delete storage policy\nError: "{0}"'
+                        if 'error' in response.json():
+                            if 'errorCode' in response.json()['error'] and 'errorMessage' in response.json()['error']:
+                                error_message = response.json()['error']['errorMessage']
+                                o_str = 'Failed to delete storage policy\nError: "{0}"'
 
-                            raise SDKException('Storage', '102', o_str.format(error_message))
+                                raise SDKException('Storage', '102', o_str.format(error_message))
+                            elif 'errorCode' in response.json()['error'] and response.json()['error']['errorCode'] == 0:
+                                self.refresh()
+                                return response.text.strip()
                 except ValueError:
                     if response.text:
                         if 'errorCode' in response.text and 'errorMessage' in response.text:
@@ -1465,6 +1479,9 @@ class StoragePolicy(object):
                 is_replica_copy     (bool)   --  if true then Replica Copy will be created
                 default : None
 
+                is_c2c_target       (bool)   -- if true then NetApp Cloud target copy will be created 
+                default : False
+
                 job_retention       (bool)  -- if true job based retention will be set
                 default : False
 
@@ -1507,13 +1524,16 @@ class StoragePolicy(object):
             provisioning_policy = ""
             resource_pool = ""
 
+        is_c2c_target = kwargs.get('is_c2c_target', False)
+        isNetAppSnapCloudTargetCopy = 1 if is_c2c_target else 0
+
         job_based_retention = kwargs.get('job_based_retention', False)
         job_retention = 1 if job_based_retention else 0
         request_xml = """
                     <App_CreateStoragePolicyCopyReq copyName="{0}">
                         <storagePolicyCopyInfo active="1" isMirrorCopy="{1}" isSnapCopy="{2}" provisioningPolicyName="{3}">
                             <StoragePolicyCopy _type_="18" copyName="{0}" storagePolicyName="{4}" />
-                            <extendedFlags arrayReplicaCopy="{5}" useOfflineArrayReplication="{6}" />
+                            <extendedFlags arrayReplicaCopy="{5}" isNetAppSnapCloudTargetCopy="{12}" useOfflineArrayReplication="{6}" />
                             <library _type_="9" libraryName="{7}" />
                             <mediaAgent _type_="11" mediaAgentName="{8}" />
                             <spareMediaGroup _type_="67" libraryName="{7}" />
@@ -1526,7 +1546,7 @@ class StoragePolicy(object):
                     </App_CreateStoragePolicyCopyReq>
                     """.format(copy_name, is_mirror_copy, is_snap_copy, provisioning_policy,
                                self.storage_policy_name, arrayReplicaCopy, useOfflineReplication,
-                               library_name, media_agent_name, source_copy, resource_pool, job_retention)
+                               library_name, media_agent_name, source_copy, resource_pool, job_retention, isNetAppSnapCloudTargetCopy)
 
         create_copy_service = self._commcell_object._services['CREATE_STORAGE_POLICY_COPY']
 
@@ -1810,6 +1830,7 @@ class StoragePolicy(object):
 
             is_ocum                          (bool)   --  True if Storage policy is enabled with
                                                           ocum server
+            enable_selective_copy                 (int)   -- Enable selective copy option based on input value
 
         """
         enable_backup_copy = options['enable_backup_copy']
@@ -1837,6 +1858,8 @@ class StoragePolicy(object):
         else:
             source_copy_for_snapshot_catalog_id = 0
 
+        selective_type = options.get('enable_selective_copy', 0)
+
         update_snapshot_tab_service = self._commcell_object._services['EXECUTE_QCOMMAND']
 
         request_xml = """
@@ -1844,14 +1867,14 @@ class StoragePolicy(object):
                         <header localeId="0" userId="0" />
                         <snapshotToTapeProps archGroupId="{2}" calendarId="1" dayNumber="0" deferredDays="0"
                             enable="{3}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
-                            sourceCopyId="{4}" startTime="0" type="0" />
+                            sourceCopyId="{4}" startTime="0" type="{7}" />
                         <deferredCatalogProps archGroupId="{2}" calendarId="1" dayNumber="0" deferredDays="0"
                             enable="{5}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
                             sourceCopyId="{6}" startTime="0" type="0" />
                     </EVGui_SetSnapOpPropsReq>
         """.format(defferred_catalog_value, backup_copy_value, self.storage_policy_id,
                    int(enable_backup_copy), source_copy_for_snap_to_tape_id,
-                   int(enable_snapshot_catalog), source_copy_for_snapshot_catalog_id)
+                   int(enable_snapshot_catalog), source_copy_for_snapshot_catalog_id, selective_type)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', update_snapshot_tab_service, request_xml
@@ -2437,7 +2460,8 @@ class StoragePolicy(object):
                              copy_name,
                              ver_type,
                              ddb_ver_level,
-                             use_scalable=True):
+                             use_scalable=True,
+                             orphan_chunk_listing=False):
         """
         Runs DDB verification job
 
@@ -2452,6 +2476,8 @@ class StoragePolicy(object):
 
                 use_scalable    (bool)  --  True/False to use Scalable Resource Allocation
                                             Default: True
+
+                orphan_chunk_listing (bool) --  True/False to run orphan chunk listing phase during DDB Defragmentation
 
             Returns:
                 object - instance of the Job class for this DDB verification job
@@ -2470,7 +2496,9 @@ class StoragePolicy(object):
                 isinstance(ver_type, str) and
                 isinstance(ddb_ver_level, str)):
             raise SDKException('Storage', '101')
-
+        run_defrag = False
+        if ddb_ver_level == 'DDB_DEFRAGMENTATION':
+            run_defrag = True
         request = {
             "taskInfo": {
                 "associations": [
@@ -2508,7 +2536,9 @@ class StoragePolicy(object):
                                     "ddbVerificationLevel": ddb_ver_level,
                                     "jobsToVerify": 0,
                                     "allCopies": True,
-                                    "backupLevel": ver_type
+                                    "backupLevel": ver_type,
+                                    "ocl": orphan_chunk_listing,
+                                    "runDefrag": run_defrag
                                 }
                             }
                         }
@@ -3326,6 +3356,21 @@ class StoragePolicyCopy(object):
         return self._copy_name
 
     @property
+    def override_pool_retention(self):
+        """Returns if Override Pool Retention flag is set or not"""
+        return bool(self._extended_flags.get('overRideGACPRetention', 0))
+
+    @override_pool_retention.setter
+    def override_pool_retention(self, override):
+        """Sets/Unsets the override Pool Retention Flag. Not Applicable for Storage Pool Copies
+
+        Args:
+            override(bool)  :   Override the pool Retention (True/False)
+        """
+        self._extended_flags['overRideGACPRetention'] = int(override)
+        self._set_copy_properties()
+
+    @property
     def copy_retention(self):
         """Treats the copy retention as a read-only attribute."""
         retention_values = {}
@@ -3728,6 +3773,68 @@ class StoragePolicyCopy(object):
         """Gets the media agent name of the copy"""
         return self._media_agent.get('mediaAgentName')
 
+    def get_jobs_on_copy(self, from_date=None, to_date=None, backup_type=None, retained_by=0,
+                         include_to_be_copied_jobs=False, list_partial_jobs_only=False):
+        """Fetches the Details of jobs on Storage Policy Copy
+
+        Args:
+            from_date      (str): Start Date Range for the Jobs
+                                    [format-'yyyy/mm/dd'] [default: from start]
+
+            to_date        (str): End Date Range for the Jobs
+                                    [format-'yyyy/mm/dd'] [default: till date]
+
+            backup_type    (str): Filter by backup type [default: None(all backup types)]
+                                    Valid values: 'full'/'incr'
+
+            retained_by    (int): Filter by retention type of jobs [default: 0]
+                                    Valid values:
+                                    1: basic retention
+                                    2: extended retention
+                                    4: manual retention
+
+            include_to_be_copied_jobs   (bool): Include details on jobs that are in to be copied state [default: False]
+
+            list_partial_jobs_only      (bool): Get details of jobs that are in partially copied state only
+                                                  [default: False]
+
+        Returns:
+            (list)  :   List of dict's with each dict containing details of a job
+        Raises:
+            SDKException:   if the response/fetch operation failed
+        """
+        command = f"qoperation execscript -sn QS_JobsinSPCopy -si @i_policyName='{self._storage_policy_name}'" \
+                  f" -si @i_copyName='{self.copy_name}'"
+        if from_date:
+            command = f"{command} -si @i_fromTime='{from_date}'"
+        if to_date:
+            command = f"{command} -si @i_toTime='{to_date}'"
+        if backup_type:
+            command = f"{command} -si @i_backupType='{backup_type.lower()}'"
+        if retained_by:
+            command = f"{command} -si @i_retention='{retained_by}'"
+        if include_to_be_copied_jobs:
+            command = f"{command} -si @i_includeToBeCopiedJobs='1'"
+        if list_partial_jobs_only:
+            command = f"{command} -si @i_includePartialJobsOnly='1'"
+
+        response = self._commcell_object.execute_qcommand(command)
+        if response.json():
+            json_response = response.json()
+            if json_response.get("ExecScriptOutput"):
+                if isinstance(json_response.get("ExecScriptOutput").get("FieldValue"), list):
+                    return json_response.get("ExecScriptOutput").get("FieldValue")
+                if isinstance(json_response.get("ExecScriptOutput").get("FieldValue"), dict):
+                    if json_response.get("ExecScriptOutput").get("FieldValue").get("@JobID"):
+                        return [json_response.get("ExecScriptOutput").get("FieldValue")]
+                return []
+            else:
+                response_string = self._commcell_object._update_response_(response.text)
+                raise SDKException('Response', '102', response_string)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     def delete_job(self, job_id):
         """
         Deletes a job on Storage Policy
@@ -3841,6 +3948,14 @@ class StoragePolicyCopy(object):
             job_id      (int or str or list):   Job Id(s) that needs to be marked
         """
         self._mark_jobs_on_copy(job_id, 'markJobsBad')
+
+    def pick_jobs_for_backupcopy(self, job_id):
+        """This method is used to re-pick the job from backup which are unpick manually
+
+        Args:
+            job_id      (int or str or list):   Job Id(s) that needs to be marked
+        """
+        self._mark_jobs_on_copy(job_id, 'pickforbackupcopy')
 
     @property
     def extended_retention_rules(self):
@@ -4084,7 +4199,8 @@ class StoragePolicyCopy(object):
         self._copy_properties['throttleNetworkBandWidthMBHR'] = value
         self._set_copy_properties()
 
-    def add_svm_association(self, src_array_id, source_array, tgt_array_id, target_array):
+    def add_svm_association(self, src_array_id, source_array, tgt_array_id,
+                            target_array, **kwargs):
         """ Method to add SVM association on Replica/vault and Mirror Copy
 
             Agrs:
@@ -4096,7 +4212,13 @@ class StoragePolicyCopy(object):
 
                 target_array    (str)   --  Name of the Target Array
 
+                target_vendor   (str)   --  Target Vendor Name
+                
+                tgt_vendor_id   (int)   --  Target Vendor id
+
         """
+        target_vendor = kwargs.get('target_vendor', "")
+        tgt_vendor_id = kwargs.get('tgt_vendor_id', 0)
 
         request_json = {
             "EVGui_MMSMArrayReplicaPairReq": {
@@ -4132,6 +4254,14 @@ class StoragePolicyCopy(object):
                         "srcArray": {
                             "name": source_array,
                             "id": src_array_id
+                        },
+                        "vendor": {
+                            "name": "",
+                            "id": 0
+                        },
+                        "tgtVendor": {
+                            "name": target_vendor,
+                            "id": tgt_vendor_id
                         },
                         "tgtArray": {
                             "name": target_array,
@@ -4184,5 +4314,24 @@ class StoragePolicyCopy(object):
         self._copy_properties["dataEncryption"] = {
             "keyProviderName": kms_name,
             "rotateMasterKey": True
+        }
+        self._set_copy_properties()
+    
+    def set_multiplexing_factor(self, mux_factor):
+        """Sets/Unset the multiplexing factor for the storage policy copy
+
+            Args:
+                mux_factor  (int) -- The value for multiplexing factor
+
+            Raises SDKException:
+                If input is not valid
+
+                If API response is not successful
+        """
+        if not isinstance(mux_factor, int):
+            raise SDKException('Storage', '101')
+
+        self._copy_properties['mediaProperties'] = {
+            "multiplexingFactor" : mux_factor
         }
         self._set_copy_properties()

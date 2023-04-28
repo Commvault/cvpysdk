@@ -111,6 +111,10 @@ FileSystemSubclient Instance Attributes:
 
     **system_state_option**               --  Enable/Disable System state option for the subclient
 
+    **_dc_options_dict**                  --   Data Classification plan  Options
+
+    **enable_dc_content_indexing**        -- Enable Dataclassification Indexing option.
+
     **onetouch_option**                   --  Enable/Disable One-Touch option for the subclient
 
     **onetouch_server**                   --  Provides the 1-touch server name
@@ -235,7 +239,8 @@ class FileSystemSubclient(Subclient):
                     "content": self._content,
                     "commonProperties": self._commonProperties,
                     "fsContentOperationType": "OVERWRITE",
-                    "fsExcludeFilterOperationType": "OVERWRITE" if not hasattr(self, '_fsExcludeFilterOperationType') else self._fsExcludeFilterOperationType
+                    "fsExcludeFilterOperationType": "OVERWRITE" if not hasattr(self, '_fsExcludeFilterOperationType') else self._fsExcludeFilterOperationType,
+                    "fsIncludeFilterOperationType": "OVERWRITE" if not hasattr(self, '_fsIncludeFilterOperationType') else self._fsIncludeFilterOperationType
                 }
         }
 
@@ -316,6 +321,7 @@ class FileSystemSubclient(Subclient):
 
         self._set_subclient_properties("_content", update_content)
         self._fsExcludeFilterOperationType = "OVERWRITE"  # RESET THE OPERATION TYPE TO ITS DEFAULT
+        self._fsIncludeFilterOperationType = "OVERWRITE"  # RESET THE OPERATION TYPE TO ITS DEFAULT
 
 
     def _common_backup_options(self, options):
@@ -536,7 +542,10 @@ class FileSystemSubclient(Subclient):
 
                     if value list is empty
         """
-        if isinstance(value, list) and value != []:
+        if isinstance(value, list):
+            if value == []:
+                value = self.exception_content
+                self._fsIncludeFilterOperationType = "DELETE"
             self._set_content(exception_content=value)
         else:
             raise SDKException(
@@ -749,6 +758,25 @@ class FileSystemSubclient(Subclient):
         self._set_subclient_properties(
             "_fsSubClientProp['blockLevelBackup']",
             block_level_backup_value)
+
+
+    @property
+    def _dc_options_dict(self):
+        """ Constructs Data classification Property"""
+        dc_options = {'dcPlanEntity': {'planType': 7, 'planSubtype': 117506053, 'planName': ''}}
+        return dc_options
+
+    def enable_dc_content_indexing(self, dcplan_name):
+        """Creates the JSON with the specified dataclassification plan to pass to API to
+            update  file system Subclient
+
+            Args:
+                dcplan_name (String)  --  DC plan name
+
+        """
+        temp_dc = self._dc_options_dict
+        temp_dc['dcPlanEntity']['planName'] = dcplan_name
+        self.update_properties(temp_dc)
 
     @property
     def create_file_level_index_option(self):

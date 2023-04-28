@@ -931,6 +931,20 @@ class Agent(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def enable_ews_support_for_exchange_on_prem(self, ews_service_url : str):
+        """
+            Method to enable EWS backup support for an Exchange on-prem client.
+            Args:
+                ews_service_url (string) -- EWS Connection URL for your exchange server
+        """
+        if int(self.agent_id) != 137:
+            raise SDKException('Agent', '102', f'Invalid operation for {self.agent_name}')
+
+        _agent_properties = self.properties
+        _agent_properties["onePassProperties"]["onePassProp"]["ewsDetails"]["bUseEWS"] = True
+        _agent_properties["onePassProperties"]["onePassProp"]["ewsDetails"]["ewsConnectionUrl"] = ews_service_url
+        self.update_properties(_agent_properties)
+
     def refresh(self):
         """Refresh the properties of the Agent."""
         self._get_agent_properties()

@@ -568,23 +568,27 @@ class WorkFlows(object):
                 'Getting Pacakge id for workflow failed. {0}'.format(response.text)
             )
 
-        if response.json():
-            if "packageId" in response.json():
-                package_id = response.json()["packageId"]
-            else:
-                raise SDKException(
-                    'Workflow', '102', response.json()['errorDetail']['errorMessage']
-                )
-        else:
+        if not response.json():
             raise SDKException('Response', '102')
+
+        if "packageId" not in response.json():
+            raise SDKException(
+                'Workflow', '102', response.json()['errorDetail']['errorMessage']
+            )
+        package_id = response.json()["packageId"]
+        platform_id = 1
+        if "platforms" in response.json():
+            platforms = response.json()["platforms"]
+            if isinstance(platforms, list) and platforms:
+                platform_id = platforms[0]["id"]
 
         download_xml = """
         <DM2ContentIndexing_OpenFileReq>
             <fileParams id="3" name="Package"/>
             <fileParams id="2" name="{0}"/>
-            <fileParams id="9" name="1"/>
+            <fileParams id="9" name="{1}"/>
         </DM2ContentIndexing_OpenFileReq>
-        """.format(package_id)
+        """.format(package_id, platform_id)
 
         flag, response = cvpysdk_object.make_request(
             'POST', services['SOFTWARESTORE_DOWNLOADITEM'], download_xml
@@ -603,7 +607,7 @@ class WorkFlows(object):
 
                 download_path = os.path.join(download_location, workflow_name + ".xml")
 
-                with open(download_path, "w") as file_pointer:
+                with open(download_path, "w", encoding="utf-8") as file_pointer:
                     file_pointer.write(file_content)
 
                 return download_path
@@ -614,12 +618,18 @@ class WorkFlows(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def get(self, workflow_name):
+    def get(self, workflow_name, **kwargs):
         """Returns a workflow object if workflow name matches specified name
             We check if specified name matches any of the existing workflow names.
 
             Args:
                 workflow_name (str)  --  name of the workflow
+
+            \*\*kwargs  (dict)  --  Optional arguments.
+
+                Available kwargs Options:
+
+                    get_properties      (bool)      -- Fetches workflow properties based on value passed
 
             Returns:
                 object - instance of the Workflow class for the given workflow name
@@ -636,9 +646,9 @@ class WorkFlows(object):
             workflow_name = workflow_name.lower()
 
         workflow_id = self._workflows[workflow_name].get('id')
-
         if self.has_workflow(workflow_name):
-            return WorkFlow(self._commcell_object, workflow_name, workflow_id)
+            return WorkFlow(self._commcell_object, workflow_name, workflow_id,
+                            get_properties = kwargs.get('get_properties',True))
         else:
             raise SDKException(
                 'Workflow',
@@ -831,7 +841,7 @@ class WorkFlows(object):
 class WorkFlow(object):
     """Class for representing a workflow on a commcell."""
 
-    def __init__(self, commcell_object, workflow_name, workflow_id=None):
+    def __init__(self, commcell_object, workflow_name, workflow_id=None, **kwargs):
         """Initialize the WorkFlow class instance for performing workflow related operations.
 
             Args:
@@ -841,6 +851,12 @@ class WorkFlow(object):
 
                 workflow_id          (str)      --  id of the workflow
                     default: None
+
+            \*\*kwargs  (dict)  --  Optional arguments.
+
+                Available kwargs Options:
+
+                    get_properties      (bool)      -- Fetches workflow properties based on value passed
 
             Returns:
                 object  -   instance of the WorkFlow class
@@ -866,7 +882,8 @@ class WorkFlow(object):
 
         self._properties = None
         self._description = None
-        self.refresh()
+        if kwargs.get('get_properties',True):
+            self.refresh()
 
     def _get_workflow_id(self):
         """Gets the workflow id associated with this Workflow.
@@ -1255,7 +1272,7 @@ class WorkFlow(object):
                     else:
                         return output, Job(self._commcell_object, response.json()['jobId'])
                 elif "errorCode" in response.json():
-                    if response.json()['errorCode'] == 0:
+                    if int(response.json()['errorCode']) == 0:
                         return output, 'Workflow Execution Finished Successfully'
                     else:
                         error_message = response.json()['errorMessage']
