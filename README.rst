@@ -194,6 +194,11 @@ Coding Considerations
 - All changes and any new methods/classes should be properly documented.
 - The doc strings should be of the same format as existing docs.
 
+Questions/Comments/Suggestions
+--------------
+If you have any questions or comments, please contact us `here <https://ma.commvault.com/>`_.
+Also Check out our community for `Automation <https://community.commvault.com/developer-tools-integration-and-automation-workflow-rest-powershell-etc-50>`_ incase of queries.
+
 Code of Conduct
 ***************
 
