@@ -854,8 +854,9 @@ class DROrchestrationOperations(object):
                 replicationId, str):
             raise SDKException('DROrchestrationOperations', '101')
 
-        _DR_JOB_STATS = self._commcell_object._services['DR_GROUP_JOB_STATS'] % (
-            jobId, self.dr_group_id, replicationId)
+        _DR_JOB_STATS = (self._services['FAILOVER_GROUP_JOB_STATS']
+                         if self._commcell_object.commserv_version > 30
+                         else self._services['DR_GROUP_JOB_STATS']) % (jobId, self.dr_group_id, replicationId)
 
         # passing the built json to get DR orchestration job phases
         (flag, response) = self._commcell_object._cvpysdk_object.make_request(

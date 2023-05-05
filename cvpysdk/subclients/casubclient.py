@@ -53,7 +53,7 @@ class CloudAppsSubclient(Subclient):
             1: GoogleSubclient,
             2: GoogleSubclient,
             3: SalesforceSubclient,
-            4: CloudDatabaseSubclient, # Amazon RDS Subclient
+            4: CloudDatabaseSubclient,  # Amazon RDS Subclient
             5: CloudStorageSubclient,  # AmazonS3 Subclient
             6: CloudStorageSubclient,  # AzureBlob Subclient
             7: GoogleSubclient,  # OneDrive Subclient. GoogleSuclient class is used for OneDrive too
@@ -61,13 +61,13 @@ class CloudAppsSubclient(Subclient):
             15: CloudStorageSubclient,  # Openstack Subclient
             20: CloudStorageSubclient,  # Google Cloud Instance
             21: CloudStorageSubclient,  # azure data lake gen2
-            26: CloudDatabaseSubclient, # Amazon Redshift subclient
-            27: CloudDatabaseSubclient, # Amazon Document DB subclient
+            26: CloudDatabaseSubclient,  # Amazon Redshift subclient
+            27: CloudDatabaseSubclient,  # Amazon Document DB subclient
             25: CloudStorageSubclient,  # AliBaba
-            24: CloudStorageSubclient,  #IBM
+            24: CloudStorageSubclient,  # IBM
             22: CloudDatabaseSubclient,  # Amazon DynamoDB subclient
-            35: MSDynamics365Subclient,  # MS Dynamics 365 Subclient
-            36: TeamsSubclient, # Office 365 Teams
+            35: MSDynamics365Subclient,  # Office 365 Apps -> MS Dynamics 365 Subclient
+            36: TeamsSubclient,  # Office 365 Apps -> MS Teams
             37: GoogleSpannerSubclient  # Google Cloud Spanner Subclient
         }
 

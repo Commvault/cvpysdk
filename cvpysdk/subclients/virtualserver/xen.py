@@ -128,7 +128,8 @@ class Xen(VirtualServerSubclient):
             storage=None,
             overwrite=True,
             power_on=True,
-            copy_precedence=0):
+            copy_precedence=0,
+            **kwargs):
         """Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
             If the provided client name is none then it restores the Full Virtual
@@ -184,6 +185,10 @@ class Xen(VirtualServerSubclient):
 
         """
         restore_option = {}
+        extra_options = ['v2_details']
+
+        for key in extra_options:
+            restore_option[key] = kwargs[key] if key in kwargs else None
 
         if vm_to_restore:
             vm_to_restore = [vm_to_restore]

@@ -50,6 +50,8 @@ Instances:
 
     _process_add_response()         --  to process the add instance request using API call
 
+    add_sap_hana_instance()         --  method to add new sap hana instance
+
     add_informix_instance()         --  adds new Informix Instance to given Client
 
     delete()                        --  deletes the instance specified by the instance_name
@@ -280,7 +282,7 @@ class Instances(object):
 
                         agent = dictionary['instance']['appName'].lower()
 
-                        if self._agent_object.agent_name in agent:
+                        if (self._agent_object.agent_name in agent) or ('mariadb' in agent and 'mysql' in self._agent_object.agent_name):
                             temp_name = dictionary['instance']['instanceName'].lower()
                             temp_id = str(dictionary['instance']['instanceId']).lower()
                             return_dict[temp_name] = temp_id
@@ -531,6 +533,68 @@ class Instances(object):
                 response.text)
             raise SDKException('Response', '101', response_string)
 
+    def add_sap_hana_instance(self, **kwargs):
+        """Adds new sap hana instance to given client
+            Args:
+                sid             (str)   -- Database SID
+                hana_client_name(str)   --  Client where the hana server exists
+                db_user_name   (str)    -- postgres user name
+                db_password    (str)    -- DB password
+                storage_policy  (str)   --  Storage Policy name
+            Returns:
+                object - instance of the Instance class
+
+            Raises:
+                SDKException:
+                    if None value in sap hana options
+
+                    if sap hana instance with same name already exists
+
+                    if given storage policy does not exists in commcell
+        """
+
+        if self.has_instance(kwargs.get('sid', '')):
+            raise SDKException(
+                'Instance', '102', 'Instance "{0}" already exists.'.format(
+                    kwargs.get('sid', ''))
+            )
+        password = b64encode(kwargs.get("db_password", "").encode()).decode()
+        request_json = {
+            "instanceProperties": {
+                "instance": {
+                    "clientName": self._client_object.client_name,
+                    "instanceName": kwargs.get('sid', ''),
+                    "applicationId": 135,
+                },
+                "saphanaInstance": {
+                    "dbInstanceNumber": "00",
+                    "hdbsqlLocationDirectory": f"/usr/sap/{kwargs.get('sid', '')}/HDB00/exe",
+                    "SAPHANAUser": {
+                        "userName": f"{kwargs.get('sid', '').lower()}adm"
+                    },
+                    "dbUser": {
+                        "userName": kwargs.get("db_user_name", ""),
+                        "password": password
+                    },
+                    "saphanaStorageDevice": {
+                        "logBackupStoragePolicy": {
+                            "storagePolicyName": kwargs.get("storage_policy", "")
+                        },
+                        "commandLineStoragePolicy": {
+                            "storagePolicyName": kwargs.get("storage_policy", "")
+                        }
+                    },
+                    "DBInstances": [
+                        {
+                            "clientName": kwargs.get("hana_client_name", "")
+                        }
+                    ]
+
+                }
+            }
+        }
+        self._process_add_response(request_json)
+
     def delete(self, instance_name):
         """Deletes the instance specified by the instance_name from the agent.
 
@@ -649,7 +713,6 @@ class Instances(object):
 
         # encodes the plain text password using base64 encoding
         sa_password = b64encode(sybase_options["sa_password"].encode()).decode()
-        localadmin_password = b64encode(sybase_options["localadmin_password"].encode()).decode()
 
         enable_auto_discovery = sybase_options["enable_auto_discovery"]
 
@@ -664,6 +727,7 @@ class Instances(object):
                 },
                 "sybaseInstance": {
                     "sybaseOCS": sybase_options["sybase_ocs"],
+                    "sybaseBlockSize": 65536,
                     "backupServer": sybase_options["backup_server"],
                     "sybaseHome": sybase_options["sybase_home"],
                     "sybaseASE": sybase_options["sybase_ase"],
@@ -681,6 +745,9 @@ class Instances(object):
                 }
             }
         }
+        if "localadmin_password" in sybase_options.keys():
+            localadmin_password = b64encode(sybase_options["localadmin_password"].encode()).decode()
+            request_json['instanceProperties']['sybaseInstance']['localAdministrator']['password'] = localadmin_password
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['ADD_INSTANCE'], request_json
@@ -703,6 +770,7 @@ class Instances(object):
                     instance_id = response.json(
                     )['response']['entity']['instanceId']
                     agent_name = self._agent_object.agent_name
+                    self.refresh()
                     return self.get(instance_name)
             else:
                 raise SDKException('Response', '102')
@@ -959,7 +1027,7 @@ class Instances(object):
         cloud_options = {
                             'instance_name': 'google_test',
                             'description': 'instance for google',
-                            'storage_policy':'cs_sp',
+                            'storage_plan':'cs_sp',
                             'number_of_streams': 2,
                             'access_node': 'CS',
                             'cloudapps_type': 'google_cloud'
@@ -971,9 +1039,9 @@ class Instances(object):
         cloud_options = {
 
                             'instance_name': 'TestAzureDL',
+                            'storage_plan':'cs_sp',
                             'access_node': 'CS',
                             'description': None,
-                            'storage_policy': 'cs_sp',
                             'accountname': 'xxxxxx',
                             'accesskey': 'xxxxxx',
                             'number_of_streams': 1,
@@ -983,7 +1051,6 @@ class Instances(object):
         cloud_options = {
                             'instance_name': 'RDS',
                             'storage_plan': 'cs_sp',
-                            'storage_policy': 'cs_sp',
                             'access_node': 'CS',
                             'access_key': 'xxxxx',
                             'secret_key': 'xxxxx',
@@ -994,7 +1061,6 @@ class Instances(object):
 
                             'instance_name': 'Redshift',
                             'storage_plan': 'cs_sp',
-                            'storage_policy': 'cs_sp',
                             'access_node': 'CS',
                             'access_key': 'xxxxx',
                             'secret_key': 'xxxxx',
@@ -1004,7 +1070,6 @@ class Instances(object):
         cloud_options = {
                             'instance_name': 'DocumentDB',
                             'storage_plan': 'cs_sp',
-                            'storage_policy': 'cs_sp',
                             'access_node': 'CS',
                             'access_key': 'xxxxxx',
                             'secret_key': 'xxxxxx',
@@ -1023,7 +1088,6 @@ class Instances(object):
         cloud_options = {
                             'instance_name': 'DynamoDB',
                             'storage_plan': 'cs_sp',
-                            'storage_policy': 'cs_sp',
                             'access_node': 'CS',
                             'access_key': 'xxxxxx',
                             'secret_key': 'xxxxxx',
@@ -1049,18 +1113,14 @@ class Instances(object):
             raise SDKException(
                 'Instance', '102', 'Empty instance name provided')
 
-        if cloud_options.get("storage_policy"):
-            if not self._commcell_object.storage_policies.has_policy(
-                    cloud_options.get("storage_policy")):
-                raise SDKException(
-                    'Instance',
-                    '102',
-                    'Storage Policy: "{0}" does not exist in the Commcell'.format(
-                        cloud_options.get("storage_policy"))
-                )
-        else:
-            raise SDKException(
-                'Instance', '102', 'Empty storage policy provided')
+        # setting the storage_policy for the general_properties setter method
+        if cloud_options.get('storage_plan') and not cloud_options.get('storage_policy'):
+            cloud_options['storage_policy'] = cloud_options.get('storage_plan')
+
+        # setting storage_plan if not passed and storage_policy is passed instead
+        if cloud_options.get('storage_policy') and not cloud_options.get('storage_plan'):
+            cloud_options['storage_plan'] = cloud_options.get('storage_policy')
+
         if cloud_options.get('description'):
             description = cloud_options.get('description')
         else:
@@ -1080,9 +1140,18 @@ class Instances(object):
         }
 
         if cloud_options.get("storage_plan"):
-            request_json["instanceProperties"]["planEntity"] = {
-                "planName": cloud_options.get("storage_plan")
-            }
+            if not self._commcell_object.storage_policies.has_policy(
+                    cloud_options.get("storage_plan")):
+                raise SDKException(
+                    'Instance',
+                    '102',
+                    'Storage plan: "{0}" does not exist in the Commcell'.format(
+                        cloud_options.get("storage_plan"))
+                )
+            request_json["instanceProperties"]["planEntity"] = {"planName": cloud_options.get("storage_plan")}
+        else:
+            raise SDKException(
+                'Instance', '102', 'Empty storage plan provided')
 
         add_instance = self._commcell_object._services['ADD_INSTANCE']
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -1104,6 +1173,7 @@ class Instances(object):
                     instance_name = response.json()['response']['entity']['instanceName']
                     instance_id = response.json()['response']['entity']['instanceId']
                     agent_name = self._agent_object.agent_name
+                    self.refresh()
                     return self.get(instance_name)
 
             else:
@@ -2757,6 +2827,9 @@ class Instance(object):
         # Add this option to enable restoring of troubleshooting folder
         if value.get("include_metadata", False):
             self._browse_restore_json["includeMetaData"] = True
+
+        if value.get('cvcBrowse'):
+            self._browse_restore_json["cvcBrowse"] = True
 
     def _restore_common_opts_json(self, value):
         """ Method to set commonOpts for restore

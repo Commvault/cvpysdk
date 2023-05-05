@@ -89,7 +89,12 @@ IndexServer
 
     modify()                            --  to modify the index server node details
 
+    change_plan()                       --  changes the plan of a given index server
+
     update_role()                       --  to update the roles assigned to cloud
+
+    delete_docs_from_core()             --  Deletes the docs from the given core name on index server depending
+                                            on the select dict passed
 
     hard_commit                         --  do hard commit on specified index server solr core
 
@@ -102,6 +107,10 @@ IndexServer
     get_index_node()                    --  returns an Index server node object for given node name
 
     get_os_info()                       --  returns the OS type for the Index server
+
+    get_plan_info()                     --  Returns the plan information of the index server
+
+    __form_field_query()                --  returns the query with the key and value passed
 
 IndexServer Attributes
 ----------------------
@@ -142,6 +151,8 @@ IndexServer Attributes
     **node_count**                      --  returns the number of Index server nodes
 
     **os_info**                         --  returns the OS type for the Index server
+
+    **plan_name**                       --  Returns the plan name associated with index server
 
 
 IndexNode
@@ -191,7 +202,9 @@ _Roles Attributes
 
     **roles_data**                      --  returns the list of details of all cloud roles
     """
+import json
 
+import http.client as httplib
 from copy import deepcopy
 import enum
 from .exception import SDKException
@@ -649,6 +662,7 @@ class IndexServer(object):
             self._cloud_id = self._get_cloud_id()
         self._properties = None
         self._roles_obj = None
+        self.plan_info = None
         self.os_type = None
         self.refresh()
 
@@ -678,6 +692,8 @@ class IndexServer(object):
             self.os_type = self.get_os_info()
         if not self._roles_obj:
             self._roles_obj = _Roles(self._commcell_obj)
+        if self.plan_info is None:
+            self.plan_info = self.get_plan_info()
 
     def update_roles_data(self):
         """Synchronize the cloud roles data with the commcell"""
@@ -728,6 +744,40 @@ class IndexServer(object):
             raise SDKException('Response', '102')
         raise SDKException('Response', '101')
 
+    def change_plan(self, plan_name):
+        """Modifies the plan used by an index server
+
+            Args:
+                plan_name      (str)       --  Name of the plan to be used for the index server
+            Raises:
+                SDKException:
+                    Response was not success.
+                    Response was empty.
+                    if plan with given name doesn't exist
+        """
+        if not self._commcell_obj.plans.has_plan(plan_name):
+            raise SDKException(
+                'Plan', '102', f"Plan with name [{plan_name}] doesn't exist")
+        request_json = {
+            "opType": IndexServerConstants.OPERATION_EDIT,
+            "type": 1,
+            "planInfo": {
+                "planId": int(self._commcell_obj.plans.get(plan_name).plan_id)
+            },
+            "cloudInfoEntity": {
+                "cloudId": self.cloud_id
+            }
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            "POST", self._services['CLOUD_MODIFY'], request_json)
+        if flag:
+            if response.json():
+                if 'cloudId' in response.json():
+                    self.refresh()
+                    return
+            raise SDKException('Response', '102')
+        raise SDKException('Response', '101')
+
     def update_role(self, props=None):
         """Updates a role of an Index Server
 
@@ -767,6 +817,48 @@ class IndexServer(object):
                     return
             raise SDKException('Response', '102')
         raise SDKException('Response', '101')
+
+    def delete_docs_from_core(self, core_name, select_dict = None):
+        """Deletes the docs from the given core name on index server depending on the select dict passed
+
+                Args:
+
+                        core_name               (str)  --  name of the solr core
+                        select_dict             (dict) --  dict with query to delete specific documents
+                                                    default query - "*:*" (Deletes all the docs)
+
+                    Returns:
+                        None
+
+                    Raises:
+                        SDKException:
+
+                            if input data is not valid
+
+                            if index server is cloud, not implemented error
+
+                            if response is empty
+
+                            if response is not success
+        """
+        if not isinstance(core_name, str):
+            raise SDKException('IndexServers', '101')
+        if self.is_cloud:
+            raise SDKException('IndexServers', '104', "Not implemented for solr cloud")
+        json_req = {"delete": {"query": self._create_solr_query(select_dict).replace("q=", "").replace("&wt=json", "")}}
+        baseurl = f"{self.server_url[0]}/solr/{core_name}/update?commitWithin=1000&overwrite=true&wt=json"
+        flag, response = self._cvpysdk_object.make_request("POST", baseurl, json_req)
+        if flag and response.json():
+            if 'error' in response.json():
+                raise SDKException('IndexServers', '104', f' Failed with error message - '
+                                                          f'{response.json().get("error").get("msg")}')
+            if 'responseHeader' in response.json():
+                commitstatus = str(response.json().get("responseHeader").get("status"))
+                if int(commitstatus) != 0:
+                    raise SDKException('IndexServers', '104',
+                                       f"Deleting docs from the core returned bad status - {commitstatus}")
+                return
+        raise SDKException('IndexServers', '111')
 
     def hard_commit(self, core_name):
         """do hard commit for the given core name on index server
@@ -918,11 +1010,12 @@ class IndexServer(object):
                 op_params = {'wt': "json"}
             else:
                 op_params['wt'] = "json"
-            for key, value in op_params.items():
-                if value is None:
-                    ex_query += f'&{key}'
+            for key, values in op_params.items():
+                if isinstance(values, list):
+                    for value in values:
+                        ex_query += self.__form_field_query(key, value)
                 else:
-                    ex_query += f'&{key}={str(value)}'
+                    ex_query += self.__form_field_query(key, values)
             final_url = f'{search_query}{field_query}{ex_query}'
             return final_url
         except Exception as excp:
@@ -990,6 +1083,30 @@ class IndexServer(object):
         flag, response = self._cvpysdk_object.make_request("GET", solr_url)
         if flag and response.json():
             return response.json()
+        elif response.status_code == httplib.FORBIDDEN:
+            cmd = f"(Invoke-WebRequest -UseBasicParsing -uri \"{solr_url}\").content"
+            client_obj = None
+            if solr_client:
+                client_obj = self._commcell_obj.clients.get(solr_client)
+            else:
+                # if no client is passed, then take first client in index server cloud
+                client_obj = self._commcell_obj.clients.get(self.client_name[0])
+            exit_code, output, error_message = client_obj.execute_script(script_type="PowerShell",
+                                                                         script=cmd)
+            if exit_code != 0:
+                raise SDKException(
+                    'IndexServers',
+                    '104',
+                    f"Something went wrong while querying solr - {exit_code}")
+            elif error_message:
+                raise SDKException(
+                    'IndexServers',
+                    '104',
+                    f"Something went wrong while querying solr - {error_message}")
+            try:
+                return json.loads(output.strip())
+            except Exception:
+                raise SDKException('IndexServers', '104', f"Something went wrong while querying solr - {output}")
         raise SDKException('IndexServers', '104', "Something went wrong while querying solr")
 
     def get_index_node(self, node_name):
@@ -1011,6 +1128,13 @@ class IndexServer(object):
             return IndexNode(self._commcell_obj, self.engine_name, node_name)
         raise SDKException("IndexServers", '104', 'Index server node not found')
 
+    def get_plan_info(self):
+        """Returns the plan information of the index server"""
+        client = self._commcell_obj.clients.get(self.index_server_client_id)
+        instance_props = client.properties.get("pseudoClientInfo", {}).get("distributedClusterInstanceProperties", {})
+        plan_details = instance_props.get("clusterConfig",{}).get("cloudInfo", {}).get("planInfo", {})
+        return plan_details
+
     def get_os_info(self):
         """Returns the OS type for the Index server"""
 
@@ -1027,6 +1151,27 @@ class IndexServer(object):
                 if IndexServerOSType.WINDOWS.value.lower() in node.lower():
                     return IndexServerOSType.MIXED.value
             return IndexServerOSType.UNIX.value
+
+    def __form_field_query(self, key, value):
+        """
+        Returns the query with the key and value passed
+        Args:
+                key(str)    -- key for forming the query
+                value(str)  -- value for forming the query
+            Returns:
+                query to be executed against solr
+        """
+        query = None
+        if value is None:
+            query = f'&{key}'
+        else:
+            query = f'&{key}={str(value)}'
+        return query
+
+    @property
+    def plan_name(self):
+        """Returns the plan name associated with index server"""
+        return self.plan_info.get("planName")
 
     @property
     def os_info(self):

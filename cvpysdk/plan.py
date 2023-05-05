@@ -56,6 +56,8 @@ Plans
 
     add_data_classification_plan()-  Adds data classification plan to the commcell
 
+    get_supported_solutions()   --  returns the supported solutions for plans
+    
 Attributes
 ----------
 
@@ -98,7 +100,8 @@ Plan
     schedule()                  --  create/delete schedule on DC Plan
 
     edit_plan()                 --  edit plan options
-
+    
+    update_security_associations() -- to update security associations of a plan
 
 Plan Attributes
 ----------------
@@ -129,6 +132,8 @@ Plan Attributes
     **associated_entities**     --  returns all the entities associated with the plan
 
     **content_indexing_props**  --  returns the DC plan related properties from the plan
+    
+    **applicable_solutions**    --  returns applicable solutions configured on server plan
 """
 from __future__ import unicode_literals
 
@@ -136,7 +141,7 @@ import copy
 from enum import Enum
 
 from .exception import SDKException
-
+from .security.security_association import SecurityAssociation
 from .activateapps.constants import TargetApps, PlanConstants
 from functools import reduce
 
@@ -584,17 +589,21 @@ class Plans(object):
         request_json['plan']['summary']['rpoInMinutes'] = sla_in_minutes
         request_json['plan']['summary']['description'] = "Created from CvPySDK."
         request_json['plan']['summary']['plan']['planName'] = plan_name
-        request_json['plan']['schedule']['subTasks'][1]['options']['commonOpts'][
-            'automaticSchedulePattern'].update({
-                'minBackupInterval': 0,
-                'maxBackupIntervalMinutes': 0,
-                'minSyncInterval': 0,
-                'minSyncIntervalMinutes': 0
-            })
-        request_json['plan']['schedule']['subTasks'][1]['options']['commonOpts'][
-            'automaticSchedulePattern']['ignoreOpWindowPastMaxInterval'] = True
+
+        template_schedules = [schedule['subTask']['subTaskName'] for schedule in request_json['plan']['schedule']['subTasks']]
+        if 'Synthetic Fulls' in template_schedules:
+            synth_full_index = template_schedules.index('Synthetic Fulls')
+            request_json['plan']['schedule']['subTasks'][synth_full_index]['options']['commonOpts'][
+                'automaticSchedulePattern'].update({
+                    'minBackupInterval': 0,
+                    'maxBackupIntervalMinutes': 0,
+                    'minSyncInterval': 0,
+                    'minSyncIntervalMinutes': 0
+                })
+            request_json['plan']['schedule']['subTasks'][synth_full_index]['options']['commonOpts'][
+                'automaticSchedulePattern']['ignoreOpWindowPastMaxInterval'] = True
         del request_json['plan']['schedule']['task']['taskName']
-        if not plan_sub_type == 'ExchangeUser':
+        if plan_sub_type != 'ExchangeUser':
             request_json['plan']['storage']['copy'][0]['useGlobalPolicy'] = {
                 "storagePolicyId": int(storage_pool_obj.storage_pool_id)
             }
@@ -757,6 +766,21 @@ class Plans(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def get_supported_solutions(self):
+        """Method to get supported solutions for plans"""
+        flag, response = self._cvpysdk_object.make_request(
+            'GET',
+            self._services['PLAN_SUPPORTED_SOLUTIONS']
+        )
+
+        if not flag:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+        
+        if response.json() and 'id' in response.json():
+            return {solution['name']: solution['id'] for solution in response.json()['id']}
+        else:
+            raise SDKException('Response', '102')
+        
     def refresh(self):
         """Refresh the plans associated with the Commcell."""
         self._plans = self._get_plans()
@@ -778,7 +802,7 @@ class Plans(object):
 
                     index_content       (bool)      --  Speifies whether to index content or not to index server
 
-                    content_analyzer    (list)      --  list of Content analyzer cloud name
+                    content_analyzer    (list)      --  list of Content analyzer client name
 
                     entity_list         (list)      --  list of entities which needs to be extracted
 
@@ -846,11 +870,11 @@ class Plans(object):
                 raise SDKException('Plan', '103')
             ca_list = []
             for ca in kwargs.get('content_analyzer', []):
-                ca_cloud_id = self._commcell_object.content_analyzers.get(ca).cloud_id
+                ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
                 ca_list.append({
-                    'cloudId': ca_cloud_id
+                    'clientId': ca_client_id
                 })
-            request_json['plan']['eDiscoveryInfo']['contentAnalyzerCloud'] = ca_list
+            request_json['plan']['eDiscoveryInfo']['contentAnalyzerClient'] = ca_list
             if 'entity_list' not in kwargs and 'classifier_list' not in kwargs:
                 raise SDKException('Plan', '104')
             activate_obj = self._commcell_object.activate
@@ -999,6 +1023,8 @@ class Plan(object):
         self._associated_entities = {}
         self._dc_plan_props = {}
         self._plan_entity_type = 158
+        self._region_id = []
+        self._applicable_solutions = []
         self.refresh()
 
     def __repr__(self):
@@ -1128,9 +1154,10 @@ class Plan(object):
                     if 'backupContent' in self._plan_properties['laptop']['content']:
                         self._child_policies['subclientPolicyIds'].clear()
                         for ida in self._plan_properties['laptop']['content']['backupContent']:
-                            self._child_policies['subclientPolicyIds'].append(
-                                ida['subClientPolicy']['backupSetEntity']['backupsetId']
-                            )
+                            if ida['subClientPolicy'].get('backupSetEntity'):
+                                self._child_policies['subclientPolicyIds'].append(
+                                    ida['subClientPolicy']['backupSetEntity']['backupsetId']
+                                )
 
                 if ('inheritance' in self._plan_properties and
                         not self._plan_properties['inheritance']['isSealed']):
@@ -1168,7 +1195,11 @@ class Plan(object):
                     if 'targetApps' in plan_options:
                         self._dc_plan_props['targetApps'] = plan_options['targetApps']
 
+                    if 'supportedWorkloads' in plan_options:
+                        self._applicable_solutions = [soln['solutionName'] for soln in plan_options['supportedWorkloads'].get('solutions', [])]
+
                 if 'securityAssociations' in self._plan_properties:
+                    self._security_associations = {}
                     for association in self._plan_properties['securityAssociations'].get('associations', []):
                         temp_key = None
                         if 'externalGroupName' in association['userOrGroup'][0]:
@@ -1187,6 +1218,9 @@ class Plan(object):
                                 )
                             else:
                                 self._security_associations[temp_key] = [association['properties']['role']['roleName']]
+
+                if "storageRules" in self._plan_properties:
+                    self._region_id = [x["regions"]["region"][0]["regionId"] for x in self._plan_properties["storageRules"]["rules"]]
 
                 self._get_associated_entities()
 
@@ -1928,6 +1962,38 @@ class Plan(object):
         """
         return self._security_associations
 
+    def update_security_associations(self, associations_list, is_user = True, request_type = None, external_group = False):
+        """
+        Adds the security association on the plan object
+
+        Args:
+            associations_list   (list)  --  list of users to be associated
+                Example:
+                    associations_list = [
+                        {
+                            'user_name': user1,
+                            'role_name': role1
+                        },
+                        {
+                            'user_name': user2,
+                            'role_name': role2
+                        }
+                    ]
+ 
+            is_user (bool)           --    True or False. set is_user = False, If associations_list made up of user groups
+            request_type (str)      --    eg : 'OVERWRITE' or 'UPDATE' or 'DELETE', Default will be OVERWRITE operation
+            external_group (bool)    --    True or False, set external_group = True. If Security associations is being done on External User Groups
+
+        Raises:
+            SDKException:
+                if association is not of List type
+        """
+        if not isinstance(associations_list, list):
+            raise SDKException('Plan', '102')
+
+        SecurityAssociation(self._commcell_object, self)._add_security_association(associations_list, 
+                                        is_user, request_type, external_group)
+
     @property
     def content_indexing_props(self):
         """returns the DC plan related CI properties from Plan"""
@@ -1937,6 +2003,11 @@ class Plan(object):
     def properties(self):
         """Returns the configured properties for the Plan"""
         return self._plan_properties
+
+    @property
+    def region_id(self):
+        """Returns the Backup destination region id"""
+        return self._region_id
 
     def refresh(self):
         """Refresh the properties of the Plan."""
@@ -2150,6 +2221,8 @@ class Plan(object):
             'subTaskName'] = schedule_name
         request_json['schedule']['subTasks'][0]['pattern'] = pattern_json
         request_json['schedule']['subTasks'][0]['options']['adminOpts']['contentIndexingOption']['operationType'] = ops_type
+        if self._dc_plan_props['targetApps'][0] == TargetApps.FS.value:
+            request_json['schedule']['subTasks'][0]['subTask']['operationType'] = 5022
         self._update_plan_props(request_json)
 
     def edit_plan(self, **kwargs):
@@ -2161,7 +2234,7 @@ class Plan(object):
 
                     index_content       (bool)      --  Speifies whether to index content or not to index server
 
-                    content_analyzer    (list)      --  list of Content analyzer cloud name
+                    content_analyzer    (list)      --  list of Content analyzer client name
 
                     entity_list         (list)      --  list of entities which needs to be extracted
 
@@ -2203,12 +2276,12 @@ class Plan(object):
                 if 'content_analyzer' in kwargs:
                     ca_list = []
                     for ca in kwargs.get('content_analyzer', []):
-                        ca_cloud_id = self._commcell_object.content_analyzers.get(ca).cloud_id
+                        ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
                         ca_list.append({
-                            'cloudId': ca_cloud_id
+                            'clientId': ca_client_id
                         })
                     request_json['eDiscoveryInfo'] = {
-                        'contentAnalyzerCloud': ca_list}
+                        'contentAnalyzerClient': ca_list}
                 if 'entity_list' in kwargs or 'classifier_list' in kwargs:
                     entity_mgr_obj = activate_obj.entity_manager()
                     # classifier is also an activate entity with type alone different so
@@ -2280,6 +2353,48 @@ class Plan(object):
             
         return result
     
+    def update_content_policy(self, content):
+        """
+        Args:
+            content (dict)  :  dictionary with backup content details. 
+            
+            example:
+                content = {
+                    "windowsIncludedPaths": ["Desktop"],
+                    "windowsExcludedPaths": ["Music"],
+                    "windowsFilterToExcludePaths": ["Videos"],
+                    "unixIncludedPaths": ["Desktop"],
+                    "unixExcludedPaths": ["Music"],
+                    "unixFilterToExcludePaths": ["Videos"],
+                    "macIncludedPaths": ["Desktop"],
+                    "macExcludedPaths": ["Music"],
+                    "macFilterToExcludePaths": ["Videos"],
+                    "backupSystemState": True,
+                    "useVSSForSystemState": True,
+                    "backupSystemStateOnlyWithFullBackup": False
+                }
+
+            For unix and mac, replace key name with respective os name, **IncludedPaths, **ExcludedPaths, **FilterToExcludePaths
+
+        """
+        
+        request_json = {
+            'backupContent' : content
+        }
+
+        request_url = self._commcell_object._services['V4_SERVER_PLAN'] % self.plan_id
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('PUT', request_url, request_json)
+
+        if flag:
+            if response.json():
+                if response.json()['errorCode']:
+                    raise SDKException('Plan', 102, response.json()['errorMessage'])
+            else:
+                raise SDKException('Plan', 102, 'Failed to update backup content')
+        else:
+            raise SDKException('Plan', 102, response.text)
+
     def update_backup_content(self, content, request_type = 'OVERWRITE'):
         """
         Args:
@@ -2300,9 +2415,22 @@ class Plan(object):
                         'Content' : ['/%Pictures%'],
                         'Exclude' : ['/%Documents%']
                     }
+                }
                     
             request_type (str)      :  Supported values 'OVERWRITE' (default), 'UPDATE', 'DELETE'. 
-        }
+
+            For plans created from SP32, Please use below format of content
+            example:
+                content = {
+                    "windowsIncludedPaths": ["Desktop"],
+                    "windowsExcludedPaths": ["Music"],
+                    "windowsFilterToExcludePaths": ["Videos"],
+                    "backupSystemState": True,
+                    "useVSSForSystemState": True,
+                    "backupSystemStateOnlyWithFullBackup": False
+                }
+
+            For unix and mac, replace key name with respective os name, **IncludedPaths, **ExcludedPaths, **FilterToExcludePaths
         """
         
         update_request_type = {
@@ -2312,6 +2440,10 @@ class Plan(object):
         }
         
         subclients = self.policy_subclient_ids()
+
+        if not subclients:
+            self.update_content_policy(content)
+            return
         
         for os, value in content.items():
             request_json = {
@@ -2346,3 +2478,39 @@ class Plan(object):
                     raise SDKException('Plan', 102, 'Failed to get subclient Ids.')
             else:
                 raise SDKException('Plan', 102, response.text)
+
+    @property
+    def applicable_solutions(self):
+        """Method to read applicable solutions"""
+        return self._applicable_solutions
+
+    @applicable_solutions.setter
+    def applicable_solutions(self, solutions: list = list()):
+        """Method to update applicable solutions of plan
+        
+        Args:
+            solutions (list) : List of Applicable Solutions
+            
+            example: 
+                ["File Servers", "Databases"] : FS and DB will be set as a applicable solutions
+                [] : Passing empty list will reset applicable solutions to ALL
+            
+        """
+        request_url  = self._commcell_object._services['APPLICABLE_SOLNS_ENABLE' if solutions else 'APPLICABLE_SOLNS_DISABLE'] % self.plan_id
+        
+        if solutions:
+            supported_solutions =  self._commcell_object.plans.get_supported_solutions()
+            request_json = {"solutions": [{"id": supported_solutions[soln_name], "name": soln_name} for soln_name in solutions]}
+        else:
+            request_json = None
+                    
+        flag, response = self._commcell_object._cvpysdk_object.make_request('PUT', request_url, request_json)
+        
+        if not flag:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+        
+        if not response.json() or response.json()['errorCode']:
+            raise SDKException('Plan', 102, 'Failed to update Applicable Solutions for Plan')
+                
+        self.refresh()
+                        

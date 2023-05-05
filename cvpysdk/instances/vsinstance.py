@@ -134,7 +134,9 @@ class VirtualServerInstance(Instance):
         for member in instance_members:
             if self._commcell_object.client_groups.has_clientgroup(member):
                 client_group = self._commcell_object.client_groups.get(member)
-                instance_proxies.extend(client_group.associated_clients)
+                clients_obj = self._commcell_object.clients
+                instance_proxies.extend(list(set(clients_obj.virtualization_access_nodes).intersection(
+                    set(clients.lower() for clients in client_group.associated_clients))))
             else:
                 instance_proxies.append(member)
 

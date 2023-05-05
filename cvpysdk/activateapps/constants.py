@@ -554,54 +554,31 @@ class InventoryConstants:
     CRAWL_JOB_COMPLETE_ERROR_STATE = 13
 
     INVENTORY_ADD_REQUEST_JSON = {
-        "inventoryName": "",
-        "assets": [],
-        "analyticsEngineCloud": {
+        "name": "",
+        "identityServers": [],
+        "indexServer": {
             "cloudId": 0,
-            "cloudDisplayName": ""
+            "displayName": ""
         }
-    }
-
-    ASSET_ADD_REQUEST_JSON = {
-        "name": "",
-        "type": 0
-    }
-
-    ASSET_PROPERTY_JSON = {
-        "propertyValues": {
-            "nameValues": [
-
-            ]
-        }
-    }
-    ASSET_PROPERTY_NAME_VALUE_PAIR_JSON = {
-        "name": "",
-        "value": ""
     }
 
     FIELD_PROPERTY_NAME = 'name'
-    FIELD_PROPERTY_DNSHOST = 'dNSHostName'
+    FIELD_PROPERTY_DNSHOST = 'hostName'
     FIELD_PROPERTY_OS = 'operatingSystem'
-    FIELD_PROPERTY_IP = 'ipAddresses'
+    FIELD_PROPERTY_IP = 'ipAddress'
     FIELD_PROPERTY_COUNTRYCODE = 'countryCode'
-    FIELD_PROPERTY_CO = 'co'
-    FIELD_PROPERTY_DOMAIN = 'domainName'
 
     KWARGS_NAME = 'name'
     KWARGS_IP = 'ip'
     KWARGS_OS = 'os'
-    KWARGS_DOMAIN = 'domain'
     KWARGS_FQDN = 'fqdn'
-    KWARGS_COUNTRY_NAME = 'country_name'
     KWARGS_COUNTRY_CODE = 'country_code'
 
     FIELD_PROPS_MAPPING = {
         FIELD_PROPERTY_NAME: KWARGS_NAME,
         FIELD_PROPERTY_IP: KWARGS_IP,
         FIELD_PROPERTY_OS: KWARGS_OS,
-        FIELD_PROPERTY_DOMAIN: KWARGS_DOMAIN,
         FIELD_PROPERTY_DNSHOST: KWARGS_FQDN,
-        FIELD_PROPERTY_CO: KWARGS_COUNTRY_NAME,
         FIELD_PROPERTY_COUNTRYCODE: KWARGS_COUNTRY_CODE
     }
 
@@ -610,19 +587,10 @@ class InventoryConstants:
         FIELD_PROPERTY_DNSHOST,
         FIELD_PROPERTY_OS,
         FIELD_PROPERTY_IP,
-        FIELD_PROPERTY_COUNTRYCODE,
-        FIELD_PROPERTY_CO,
-        FIELD_PROPERTY_DOMAIN]
+        FIELD_PROPERTY_COUNTRYCODE
+    ]
 
-    ASSET_ADD_TO_INVENTORY_JSON = {
-        "inventoryId": 0,
-        "assets": []
-    }
-
-    ASSET_DELETE_FROM_INVENTORY_JSON = {
-        "inventoryId": 0,
-        "assets": []
-    }
+    IDENTITY_SERVER_ASSET_ADD_TO_INVENTORY_JSON = {"identityServers": [], "startDataCollection": True}
 
     VIEW_CATEGORY_PERMISSION = {
         "permissionId": 31,
@@ -670,7 +638,7 @@ class InventoryConstants:
 
     class AssetType(Enum):
         """Asset type for inventory"""
-        NAME_SERVER = 61
+        IDENTITY_SERVER = 61
         FILE_SERVER = 132
 
 

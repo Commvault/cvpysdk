@@ -160,7 +160,7 @@ Subclient operations are currently supported for the following Agents:
 Documentation
 -------------
 
-To get started, please see the `full documentation for this library <https://commvault.github.io/cvpysdk/cvpysdk/index.html>`_
+To get started, please see the `full documentation for this library <https://commvault.github.io/cvpysdk/>`_
 
 
 Contribution Guidelines
@@ -216,7 +216,7 @@ License
 
 About Commvault
 ---------------
-.. image:: https://commvault.github.io/cvpysdk/logo.png
+.. image:: https://upload.wikimedia.org/wikipedia/en/thumb/2/2f/Commvault_logo.svg/320px-Commvault_logo.svg.png
     :align: center
 
 |

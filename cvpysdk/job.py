@@ -255,6 +255,8 @@ Job instance Attributes
 
 **job.summary**                     --  returns the dictionary consisting of the full summary of the job
 
+**job.attempts**                    --  returns the dictionary consisting of the attempt details of the job
+
 **job.username**                    --  returns the username with which the job started
 
 **job.userid**                      --  returns the userid with which the job started
@@ -376,6 +378,11 @@ class JobController(object):
                     the result or not
 
                             default: False
+                    
+                    hide_admin_jobs (bool)  --  boolean specifying whether to exclude admin jobs from
+                    the result or not
+
+                            default: False
 
                     clients_list    (list)  --  list of clients to return the jobs for
 
@@ -428,6 +435,7 @@ class JobController(object):
             "jobFilter": {
                 "completedJobLookupTime": int(options.get('lookup_time', 5) * 60 * 60),
                 "showAgedJobs": options.get('show_aged_jobs', False),
+                "hideAdminJobs": options.get('hide_admin_jobs', False),
                 "clientList": client_list,
                 "jobTypeList": [
                     job_type for job_type in options.get('job_type_list', [])
@@ -488,6 +496,8 @@ class JobController(object):
                                     job_type = ''
                                     pending_reason = ''
                                     subclient_id = ''
+                                    client_id = ''
+                                    client_name = ''
                                     job_elapsed_time = 0
                                     job_start_time = 0
 
@@ -510,6 +520,10 @@ class JobController(object):
                                         job_subclient = job_summary['subclient']
                                         if 'subclientId' in job_subclient:
                                             subclient_id = job_subclient['subclientId']
+                                        if 'clientId' in job_subclient:
+                                            client_id = job_subclient['clientId']
+                                        if 'clientName' in job_subclient:
+                                            client_name = job_subclient['clientName']
 
                                     jobs_dict[job_id] = {
                                         'operation': operation,
@@ -518,6 +532,8 @@ class JobController(object):
                                         'job_type': job_type,
                                         'percent_complete': percent_complete,
                                         'pending_reason': pending_reason,
+                                        'client_id': client_id,
+                                        'client_name': client_name,
                                         'subclient_id': subclient_id,
                                         'backup_level': backup_level,
                                         'job_start_time': job_start_time,
@@ -646,6 +662,11 @@ class JobController(object):
 
                         default: False
 
+                    hide_admin_jobs (bool)  --  boolean specifying whether to exclude admin jobs from
+                    the result or not
+
+                        default: False
+
                     clients_list    (list)  --  list of clients to return the jobs for
 
                         default: []
@@ -725,6 +746,11 @@ class JobController(object):
                         default: 20
 
                     show_aged_job   (bool)  --  boolean specifying whether to include aged jobs in
+                    the result or not
+
+                        default: False
+
+                    hide_admin_jobs (bool)  --  boolean specifying whether to exclude admin jobs from
                     the result or not
 
                         default: False
@@ -817,6 +843,11 @@ class JobController(object):
                         default: 20
 
                     show_aged_job   (bool)  --  boolean specifying whether to include aged jobs in
+                    the result or not
+
+                        default: False
+
+                    hide_admin_jobs (bool)  --  boolean specifying whether to exclude admin jobs from
                     the result or not
 
                         default: False
@@ -2040,7 +2071,7 @@ class Job(object):
             if flag:
                 if response.json():
                     if response.json().get('totalRecordsWithoutPaging', 0) == 0:
-                        time.sleep(3)
+                        time.sleep(2**attempts)
                         continue
 
                     if 'jobs' in response.json():
@@ -2075,7 +2106,8 @@ class Job(object):
 
         """
         payload = {
-            "jobId": int(self.job_id)
+            "jobId": int(self.job_id),
+            "showAttempt": True
         }
 
         retry_count = 0
@@ -2381,6 +2413,12 @@ class Job(object):
             return self._summary['currentPhaseName']
 
     @property
+    def attempts(self):
+        """Returns job attempts data as read-only attribute"""
+        self.is_finished
+        return self._details.get('jobDetail', {}).get('attemptsInfo', {})
+
+    @property
     def summary(self):
         """Treats the job full summary as a read-only attribute."""
         self.is_finished
@@ -2456,10 +2494,14 @@ class Job(object):
         self.is_finished
 
         if flag:
-            if response.json() and 'errors' in response.json():
-                error_list = response.json()['errors'][0]['errList'][0]
-                error_code = error_list['errorCode']
-                error_message = error_list['errLogMessage'].strip()
+            if response.json():
+                if 'errors' in response.json():
+                    error_list = response.json()['errors'][0]['errList'][0]
+                    error_code = error_list['errorCode']
+                    error_message = error_list['errLogMessage'].strip()
+                else:
+                    error_code = response.json().get('errorCode', 0)
+                    error_message = response.json().get('errorMessage', 'nil')
 
                 if error_code != 0:
                     raise SDKException(
@@ -2492,10 +2534,14 @@ class Job(object):
         self.is_finished
 
         if flag:
-            if response.json() and 'errors' in response.json():
-                error_list = response.json()['errors'][0]['errList'][0]
-                error_code = error_list['errorCode']
-                error_message = error_list['errLogMessage'].strip()
+            if response.json():
+                if 'errors' in response.json():
+                    error_list = response.json()['errors'][0]['errList'][0]
+                    error_code = error_list['errorCode']
+                    error_message = error_list['errLogMessage'].strip()
+                else:
+                    error_code = response.json().get('errorCode', 0)
+                    error_message = response.json().get('errorMessage', 'nil')
 
                 if error_code != 0:
                     raise SDKException(
@@ -2527,10 +2573,14 @@ class Job(object):
         flag, response = self._cvpysdk_object.make_request('POST', self._RESUBMIT)
 
         if flag:
-            if response.json() and 'errors' in response.json():
-                error_list = response.json()['errors'][0]['errList'][0]
-                error_code = error_list['errorCode']
-                error_message = error_list['errLogMessage'].strip()
+            if response.json():
+                if 'errors' in response.json():
+                    error_list = response.json()['errors'][0]['errList'][0]
+                    error_code = error_list['errorCode']
+                    error_message = error_list['errLogMessage'].strip()
+                else:
+                    error_code = response.json().get('errorCode', 0)
+                    error_message = response.json().get('errorMessage', 'nil')
 
                 if error_code != 0:
                     raise SDKException(
@@ -2561,10 +2611,14 @@ class Job(object):
         self.is_finished
 
         if flag:
-            if response.json() and 'errors' in response.json():
-                error_list = response.json()['errors'][0]['errList'][0]
-                error_code = error_list['errorCode']
-                error_message = error_list['errLogMessage'].strip()
+            if response.json():
+                if 'errors' in response.json():
+                    error_list = response.json()['errors'][0]['errList'][0]
+                    error_code = error_list['errorCode']
+                    error_message = error_list['errLogMessage'].strip()
+                else:
+                    error_code = response.json().get('errorCode', 0)
+                    error_message = response.json().get('errorMessage', 'nil')
 
                 if error_code != 0:
                     raise SDKException(

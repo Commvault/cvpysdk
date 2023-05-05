@@ -154,18 +154,35 @@ class SecurityAssociation(object):
             for each_entity_key in entity_value:
                 for element in entity_value[each_entity_key]:
                     if each_entity_key != "role":
-                        association_blob = {
-                            "entities": {
-                                "entity": [{
-                                    each_entity_key: element
-                                }]
-                            },
-                            "properties": {
-                                "role": {
-                                    "roleName": entity_value['role'][0]
+                        if each_entity_key == "_type_":
+                            association_blob = {
+                                "entities": {
+                                    "entity": [{
+                                        each_entity_key: element,
+                                        "flags": {
+                                            "includeAll": True
+                                        }
+                                    }]
+                                },
+                                "properties": {
+                                    "role": {
+                                        "roleName": entity_value['role'][0]
+                                    }
                                 }
                             }
-                        }
+                        else:
+                            association_blob = {
+                                "entities": {
+                                    "entity": [{
+                                        each_entity_key: element
+                                    }]
+                                },
+                                "properties": {
+                                    "role": {
+                                        "roleName": entity_value['role'][0]
+                                    }
+                                }
+                            }
                         complete_association.append(association_blob)
         return complete_association
 
