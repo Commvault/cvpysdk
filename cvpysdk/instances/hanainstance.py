@@ -145,7 +145,8 @@ class SAPHANAInstance(Instance):
             clone_env=False,
             check_access=False,
             destination_instance_dir=None,
-            ignore_delta_backups=False):
+            ignore_delta_backups=False,
+            no_of_streams=2):
         """Returns the JSON request to pass to the API as per the options selected by the user.
 
             Args:
@@ -187,6 +188,10 @@ class SAPHANAInstance(Instance):
                 ignore_delta_backups        (bool)  --  whether to ignore delta backups during
                                                             restore or not
                     default: True
+
+                no_of_streams               (int)   --  number of streams to be used for restore
+
+                    default: 2
 
             Returns:
                 dict    -   JSON request to pass to the API
@@ -269,7 +274,8 @@ class SAPHANAInstance(Instance):
                                 },
                                 "destClient": {
                                     "clientName": destination_hana_client
-                                }
+                                },
+                                "noOfStreams": no_of_streams
                             },
                             "browseOption": {
                                 "backupset": {
@@ -388,7 +394,8 @@ class SAPHANAInstance(Instance):
             clone_env=False,
             check_access=True,
             destination_instance_dir=None,
-            ignore_delta_backups=True):
+            ignore_delta_backups=True,
+            no_of_streams=2):
         """Restores the databases specified in the input paths list.
 
             Args:
@@ -431,6 +438,10 @@ class SAPHANAInstance(Instance):
                                                             restore or not
                     default: True
 
+                no_of_streams               (int)   --  number of streams to be used for restore
+
+                    default: 2
+
             Returns:
                 object  -   instance of the Job class for this restore job
 
@@ -457,7 +468,8 @@ class SAPHANAInstance(Instance):
             clone_env,
             check_access,
             destination_instance_dir,
-            ignore_delta_backups
+            ignore_delta_backups,
+            no_of_streams
         )
 
         return self._process_restore_response(request_json)

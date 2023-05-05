@@ -210,6 +210,9 @@ class Agents(object):
                     agent_dict[temp_name] = temp_id
 
                 return agent_dict
+            elif self._client_object.vm_guid is not None and not self._client_object.properties.get('clientProps', {}).\
+                    get('isIndexingV2VSA', False):
+                return {}
             else:
                 raise SDKException('Response', '102')
         else:

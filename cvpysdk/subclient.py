@@ -1029,9 +1029,9 @@ class Subclients(object):
                     },
                 },
                 "mySqlSubclientProp": {
-                    "numberOfBackupStreams": kwargs.get('no_of_backup_streams'),
-                    "numberOfTransactionLogStreams": kwargs.get('no_of_log_backup_streams'),
-                    "fullInstanceXtraBackup": kwargs.get('full_instance_xtrabackup')
+                    "numberOfBackupStreams": kwargs.get('no_of_backup_streams', 1),
+                    "numberOfTransactionLogStreams": kwargs.get('no_of_log_backup_streams', 1),
+                    "fullInstanceXtraBackup": kwargs.get('full_instance_xtrabackup', False)
                 },
                 "content": content_list
             }
