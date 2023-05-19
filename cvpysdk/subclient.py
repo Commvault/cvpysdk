@@ -1209,6 +1209,10 @@ class Subclients(object):
             }
         }
 
+        if kwargs.get("customSnapshotResourceGroup"):
+            request_json["subClientProperties"]["vsaSubclientProp"] = \
+                {"customSnapshotResourceGroup": kwargs.get("customSnapshotResourceGroup")}
+
         if kwargs.get('plan_name'):
             if not self._commcell_object.plans.has_plan(kwargs['plan_name']):
                 raise SDKException(

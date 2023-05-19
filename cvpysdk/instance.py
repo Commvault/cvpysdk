@@ -2151,7 +2151,7 @@ class Instance(object):
             versions = restore_option['versions']
             if not isinstance(versions, list):
                 raise SDKException('Instance', '101')
-            if 'win' in self._agent_object._client_object.os_info.lower():
+            if 'win' in self._agent_object._client_object.os_info.lower() or self._agent_object._agent_name == "virtual server":
                 version_string = "|\\|#15!vErSiOnS|#15!\\{0}"
             else:
                 version_string = "|/|#15!vErSiOnS|#15!/{0}"
