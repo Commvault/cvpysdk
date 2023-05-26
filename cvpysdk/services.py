@@ -501,6 +501,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'REGISTRATION': '{0}/RegFrgnCell',
     'UNREGISTRATION': '{0}/UnRegisterCommCell',
+    'GET_REGISTERED_COMMCELLS': '{0}/CommCell/registered',
     'GET_REGISTERED_ROUTER_COMMCELLS': '{0}/CommCell/registered?getOnlyServiceCommcells=true',
     'GET_USERSPACE_SERVICE': '{0}/ServiceCommcell/UserSpace',
     'POLL_USER_SERVICE': '{0}/ServiceCommcell/IsUserPresent?userName=%s',

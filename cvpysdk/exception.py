@@ -489,6 +489,12 @@ EXCEPTION_DICT = {
         '105': 'Both Clients list and Other Entities list cannot be none',
         '106': 'Incorrect SQL credentials provied'
     },
+    'GlobalRepositoryCell': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Podcell ID and Podcell name both cannot be None',
+        '104': 'Unable to lookup Podcell ID'
+    },
     'NetworkTopology': {
         '101': 'Data type of the input(s) is not valid',
         '102': ''

@@ -3013,7 +3013,14 @@ class Clients(object):
 
         access_nodes_list = kwargs.get('access_nodes_list')
         index_server = kwargs.get('index_server')
-        is_resource_pool_enabled = False if server_plan_resources is None else True
+
+        # use resource pool only if resource pool type is Office365 or OneDrive
+        is_resource_pool_enabled = False
+        if server_plan_resources is not None:
+            for resourse in server_plan_resources:
+                if resourse.get('appType', 0) in (1, 5):  # ResourcePoolAppType.O365 or ResourcePoolAppType.OneDrive
+                    is_resource_pool_enabled = True
+
         number_of_backup_streams = kwargs.get('number_of_backup_streams', 10)
         user_name = kwargs.get('user_name')
         user_password = kwargs.get('user_password')
