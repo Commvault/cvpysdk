@@ -50,6 +50,8 @@ Instances:
 
     _process_add_response()         --  to process the add instance request using API call
 
+    add_sap_hana_instance()         --  method to add new sap hana instance
+
     add_informix_instance()         --  adds new Informix Instance to given Client
 
     delete()                        --  deletes the instance specified by the instance_name
@@ -531,6 +533,68 @@ class Instances(object):
                 response.text)
             raise SDKException('Response', '101', response_string)
 
+    def add_sap_hana_instance(self, **kwargs):
+        """Adds new sap hana instance to given client
+            Args:
+                sid             (str)   -- Database SID
+                hana_client_name(str)   --  Client where the hana server exists
+                db_user_name   (str)    -- postgres user name
+                db_password    (str)    -- DB password
+                storage_policy  (str)   --  Storage Policy name
+            Returns:
+                object - instance of the Instance class
+
+            Raises:
+                SDKException:
+                    if None value in sap hana options
+
+                    if sap hana instance with same name already exists
+
+                    if given storage policy does not exists in commcell
+        """
+
+        if self.has_instance(kwargs.get('sid', '')):
+            raise SDKException(
+                'Instance', '102', 'Instance "{0}" already exists.'.format(
+                    kwargs.get('sid', ''))
+            )
+        password = b64encode(kwargs.get("db_password", "").encode()).decode()
+        request_json = {
+            "instanceProperties": {
+                "instance": {
+                    "clientName": self._client_object.client_name,
+                    "instanceName": kwargs.get('sid', ''),
+                    "applicationId": 135,
+                },
+                "saphanaInstance": {
+                    "dbInstanceNumber": "00",
+                    "hdbsqlLocationDirectory": f"/usr/sap/{kwargs.get('sid', '')}/HDB00/exe",
+                    "SAPHANAUser": {
+                        "userName": f"{kwargs.get('sid', '').lower()}adm"
+                    },
+                    "dbUser": {
+                        "userName": kwargs.get("db_user_name", ""),
+                        "password": password
+                    },
+                    "saphanaStorageDevice": {
+                        "logBackupStoragePolicy": {
+                            "storagePolicyName": kwargs.get("storage_policy", "")
+                        },
+                        "commandLineStoragePolicy": {
+                            "storagePolicyName": kwargs.get("storage_policy", "")
+                        }
+                    },
+                    "DBInstances": [
+                        {
+                            "clientName": kwargs.get("hana_client_name", "")
+                        }
+                    ]
+
+                }
+            }
+        }
+        self._process_add_response(request_json)
+
     def delete(self, instance_name):
         """Deletes the instance specified by the instance_name from the agent.
 
@@ -649,7 +713,6 @@ class Instances(object):
 
         # encodes the plain text password using base64 encoding
         sa_password = b64encode(sybase_options["sa_password"].encode()).decode()
-        localadmin_password = b64encode(sybase_options["localadmin_password"].encode()).decode()
 
         enable_auto_discovery = sybase_options["enable_auto_discovery"]
 
@@ -664,6 +727,7 @@ class Instances(object):
                 },
                 "sybaseInstance": {
                     "sybaseOCS": sybase_options["sybase_ocs"],
+                    "sybaseBlockSize": 65536,
                     "backupServer": sybase_options["backup_server"],
                     "sybaseHome": sybase_options["sybase_home"],
                     "sybaseASE": sybase_options["sybase_ase"],
@@ -681,6 +745,9 @@ class Instances(object):
                 }
             }
         }
+        if "localadmin_password" in sybase_options.keys():
+            localadmin_password = b64encode(sybase_options["localadmin_password"].encode()).decode()
+            request_json['instanceProperties']['sybaseInstance']['localAdministrator']['password'] = localadmin_password
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['ADD_INSTANCE'], request_json
@@ -703,6 +770,7 @@ class Instances(object):
                     instance_id = response.json(
                     )['response']['entity']['instanceId']
                     agent_name = self._agent_object.agent_name
+                    self.refresh()
                     return self.get(instance_name)
             else:
                 raise SDKException('Response', '102')
@@ -2081,7 +2149,7 @@ class Instance(object):
             versions = restore_option['versions']
             if not isinstance(versions, list):
                 raise SDKException('Instance', '101')
-            if 'win' in self._agent_object._client_object.os_info.lower():
+            if 'win' in self._agent_object._client_object.os_info.lower() or self._agent_object._agent_name == "virtual server":
                 version_string = "|\\|#15!vErSiOnS|#15!\\{0}"
             else:
                 version_string = "|/|#15!vErSiOnS|#15!/{0}"
@@ -2757,6 +2825,9 @@ class Instance(object):
         # Add this option to enable restoring of troubleshooting folder
         if value.get("include_metadata", False):
             self._browse_restore_json["includeMetaData"] = True
+
+        if value.get('cvcBrowse'):
+            self._browse_restore_json["cvcBrowse"] = True
 
     def _restore_common_opts_json(self, value):
         """ Method to set commonOpts for restore

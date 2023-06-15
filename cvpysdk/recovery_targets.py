@@ -252,6 +252,7 @@ class RecoveryTarget:
         self._application_type = None
         self._destination_hypervisor = None
         self._access_node = None
+        self._access_node_client_group = None
         self._users = []
         self._user_groups = []
         self._vm_prefix = ''
@@ -284,8 +285,11 @@ class RecoveryTarget:
         self._test_security_group = None
         self._test_vm_size = None
 
+        # AWS
         self._volume_type = None
         self._encryption_key = None
+        self._iam_role_id = None
+        self._iam_role_name = None
         self._instance_type = None
 
         self.refresh()
@@ -324,6 +328,8 @@ class RecoveryTarget:
                 elif vm_name_edit_string and vm_name_edit_type == 1:
                     self._vm_prefix = self._recovery_target_properties.get('vmNameEditString')
                 self._access_node = self._recovery_target_properties.get('proxyClientEntity', {}).get('clientName')
+                self._access_node_client_group = (self._recovery_target_properties.get('proxyClientGroupEntity', {})
+                                                  .get('clientGroupName'))
                 self._users = self._recovery_target_properties.get('securityAssociations', {}).get('users')
                 self._user_groups = self._recovery_target_properties.get('securityAssociations', {}).get('userGroups')
                 self._policy_type = self._recovery_target_properties.get("entity", {}).get("policyType")
@@ -332,6 +338,8 @@ class RecoveryTarget:
                     self._availability_zone = (self._recovery_target_properties.get('amazonPolicy',{}).get('availabilityZones', [{}])[0].get('availabilityZoneName', None))
                     self._volume_type = self._recovery_target_properties.get('amazonPolicy', {}).get('volumeType', None)
                     self._encryption_key = self._recovery_target_properties.get('amazonPolicy', {}).get('encryptionOption',{}).get('encryptionKeyName', 'Auto')
+                    self._iam_role_name = self._recovery_target_properties.get('roleInfo', {}).get('name')
+                    self._iam_role_id = self._recovery_target_properties.get('roleInfo', {}).get('id')
                     self._destination_network = self._recovery_target_properties.get('networkList', [{}])[0].get('name', None)
                     self._security_group = self._recovery_target_properties.get('securityGroups', [{}])[0].get('name', '')
                     self._instance_type = (self._recovery_target_properties.get('amazonPolicy', {}).get('instanceType', [{}])[0].get('instanceType', {}).get('vmInstanceTypeName',''))
@@ -441,6 +449,11 @@ class RecoveryTarget:
     def access_node(self):
         """Returns: (str) the client name of the access node/proxy of the recovery target"""
         return self._access_node
+
+    @property
+    def access_node_client_group(self):
+        """Returns: (str) The client group name set on the access node field of recovery target"""
+        return self._access_node_client_group
 
     @property
     def security_user_names(self):
@@ -596,8 +609,18 @@ class RecoveryTarget:
 
     @property
     def encryption_key(self):
-        """Returns: (str) AWS: the encryption key of the destination VM. Not implemented"""
+        """Returns: (str) AWS: the encryption key of the destination VM"""
         return self._encryption_key
+
+    @property
+    def iam_role_id(self):
+        """Returns: (str) AWS: the AWS IAM Role ID associated with the destination VM"""
+        return self._iam_role_id
+
+    @property
+    def iam_role_name(self):
+        """Returns: (str) AWS: the AWS IAM Role name associated with the destination VM"""
+        return self._iam_role_name
 
     @property
     def instance_type(self):

@@ -653,3 +653,38 @@ class CloudMetrics(_Metrics):
         )
         if not flag:
             raise SDKException('Response', '101', response.text)
+
+
+class LocalMetrics:
+    """class for operation in localmetrics"""
+
+    def __init__(self, commcell_object, islocalmetrics= True):
+        self._commcell_object = commcell_object
+        self._islocalmetrics = islocalmetrics
+        self._LOCAL_METRICS = self._commcell_object._services['LOCAL_METRICS'] % self._islocalmetrics
+        self._get_metrics_config()
+
+    def _get_metrics_config(self):
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._LOCAL_METRICS
+        )
+        if flag:
+            self._metrics_config = response.json()
+            config_value = self._metrics_config['config']
+            return config_value
+        else:
+            raise SDKException('Response', '101', response.text)
+
+    def refresh(self):
+        """updates metrics object with the latest configuration"""
+        self._get_metrics_config()
+
+    @property
+    def last_upload_time(self):
+        """ get last upload time"""
+        return self._metrics_config['config']['lastCollectionTime']
+
+    @property
+    def nextup_load_time(self):
+        """get the next upload time"""
+        return self._metrics_config['config']['nextUploadTime']

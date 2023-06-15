@@ -892,7 +892,7 @@ class Store(object):
         response_string = self._commcell_object._update_response_(response.text)
         raise SDKException('Response', '101', response_string)
 
-    def run_space_reclaimation(self, level=3, clean_orphan_data=False, use_scalable_resource=True):
+    def run_space_reclaimation(self, level=3, clean_orphan_data=False, use_scalable_resource=True, num_streams="max"):
         """
         runs DDB Space reclaimation job with provided level
 
@@ -906,6 +906,7 @@ class Store(object):
             use_scalable_resource (bool)    - Use Scalable Resource Allocation while running DDB Space Reclamation Job
                         Default: True
 
+            num_streams (str)   -- Number of streams with which job will run.
         Returns:
              object - instance of Job class for DDB Verification job
 
@@ -924,6 +925,12 @@ class Store(object):
 
         if not isinstance(use_scalable_resource, bool):
             raise SDKException('Storage', '101')
+
+        use_max_streams = "true"
+        max_num_of_streams = 0
+        if str(num_streams) != "max":
+            max_num_of_streams = int(num_streams)
+            use_max_streams = "false"
 
         level_map = {
             1: 80,
@@ -957,8 +964,8 @@ class Store(object):
                             "backupOpts": {
                                 "mediaOpt": {
                                     "auxcopyJobOption": {
-                                        "useMaximumStreams": "true",
-                                        "maxNumberOfStreams": 0,
+                                        "useMaximumStreams": use_max_streams,
+                                        "maxNumberOfStreams": max_num_of_streams,
                                         "allCopies": "true",
                                         "mediaAgent": {
                                             "mediaAgentName": ""
@@ -972,7 +979,8 @@ class Store(object):
                                     "ddbVerificationLevel": "DDB_DEFRAGMENTATION",
                                     "backupLevel": "FULL",
                                     "defragmentationPercentage": level_map.get(level),
-                                    "ocl": clean_orphan_data
+                                    "ocl": clean_orphan_data,
+                                    "runDefrag": "true"
                                 }
                             }
                         },

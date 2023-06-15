@@ -49,6 +49,11 @@ TeamsSubclient:
     exclude_teams_from_backup()                 -- Excludes user association from a teams client
     _process_restore_posts_to_html()            -- Helper method to restore a team posts as HTML to another location
     _process_remove_association()               -- Helper method to change association of a teams client
+     restore_out_of_place_to_file_location()     -- Restore a team to file location
+    _json_restoreoptions_searchprocessinginfo_with_extra_queryparameters() -- Get searchprocessinginfo with extra query
+                                                                           parameters json for teams restore operation.
+    _json_restore_destinationTeamInfo()         -- Get destinationTeamInfo json for teams restore operation.
+    restore_files_to_out_of_place()             -- Restore  files to another team
 """
 
 from __future__ import unicode_literals
@@ -60,6 +65,7 @@ from copy import copy, deepcopy
 
 from cvpysdk.job import Job
 from ..cloudapps.teams_constants import TeamsConstants as const
+import json
 
 
 class TeamsSubclient(CloudAppsSubclient):
@@ -144,7 +150,7 @@ class TeamsSubclient(CloudAppsSubclient):
                 response_string = self._commcell_object._update_response_(response.text)
                 raise SDKException('Response', '101', response_string)
 
-    def backup(self, teams):
+    def backup(self, teams=None):
         """Run an Incremental backup.
             Args:
                 teams               (list)  --  List of team Email IDs.
@@ -160,59 +166,47 @@ class TeamsSubclient(CloudAppsSubclient):
                     If response is not success.
 
         """
-        discovered_teams = self.discover()
-        teams = [discovered_teams[team] for team in teams]
-
         url = self._services['CREATE_TASK']
-
-        team_json_list = []
-
-        for team in teams:
-            team_json = copy(const.BACKUP_TEAM_JSON)
-            team_json['displayName'] = team['displayName']
-            team_json['smtpAddress'] = team['smtpAddress']
-            team_json['msTeamsInfo']['teamsCreatedTime'] = team['msTeamsInfo']['teamsCreatedTime']
-            team_json['user'] = {"userGUID": team['user']['userGUID']}
-            team_json_list.append(team_json)
-
-        associations = copy(const.ASSOCIATIONS)
-        associations["subclientId"] = int(self._subclient_id)
-        associations["applicationId"] = int(self._subClientEntity['applicationId'])
-        associations["clientName"] = self._subClientEntity['clientName']
-        associations["displayName"] = self._subClientEntity['displayName']
-        associations["backupsetId"] = self._subClientEntity['backupsetId']
-        associations["instanceId"] = self._subClientEntity['instanceId']
-        associations["subclientGUID"] = self.subclient_guid
-        associations["clientId"] = int(self._client_object.client_id)
-        associations["clientGUID"] = self._client_object.client_guid
-        associations["subclientName"] = self.subclient_name
-        associations["backupsetName"] = self._subClientEntity['backupsetName']
-        associations["instanceName"] = self._subClientEntity['instanceName']
-        associations["_type_"] = self._subClientEntity['_type_']
-
         backup_subtask_json = copy(const.BACKUP_SUBTASK_JSON)
-        backup_subtask_json['options']['backupOpts']['cloudAppOptions']['userAccounts'] = team_json_list
-
         request_json = deepcopy(const.BACKUP_REQUEST_JSON)
-        request_json['taskInfo']['associations'].append(associations)
-        request_json['taskInfo']['subTasks'].append(backup_subtask_json)
+        request_json['taskInfo']['associations'] = [self._json_association()]
 
+        if teams:
+            discovered_teams = self.discover()
+            teams = [discovered_teams[team] for team in teams]
+            team_json_list = []
+            selected_items_json = []
+            for team in teams:
+                team_json = copy(const.BACKUP_TEAM_JSON)
+                team_json['displayName'] = team['displayName']
+                team_json['smtpAddress'] = team['smtpAddress']
+                team_json['msTeamsInfo']['teamsCreatedTime'] = team['msTeamsInfo']['teamsCreatedTime']
+                team_json['user'] = {"userGUID": team['user']['userGUID']}
+                team_json_list.append(team_json)
+                selected_items_json.append({
+                    'selectedItems': {
+                        "itemName": team['displayName'], "itemType": "Team"
+                    }
+                })
+            backup_subtask_json['options']['commonOpts']['selectedItems'] = selected_items_json
+            backup_subtask_json['options']['backupOpts']['cloudAppOptions']['userAccounts'] = team_json_list
+        else:
+            backup_subtask_json['options']['commonOpts']['selectedItems']= [{
+                "itemName": "All%20teams", "itemType": "All teams"
+            }]
+            backup_subtask_json['options']['backupOpts'].pop('cloudAppOptions', None)
+        request_json['taskInfo']['subTasks'].append(backup_subtask_json)
         flag, response = self._cvpysdk_object.make_request('POST', url, request_json)
 
         if flag:
-
             if response.json():
-
                 if 'jobIds' in response.json():
                     return Job(self._commcell_object, response.json()['jobIds'][0])
-
                 elif "errorCode" in response.json():
                     error_message = response.json()['errorMessage']
                     raise SDKException('Subclient', '102', f"Backup failed, error message : {error_message}")
-
             else:
                 raise SDKException('Response', '102')
-
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
@@ -222,6 +216,8 @@ class TeamsSubclient(CloudAppsSubclient):
             Args:
                 team                (str)   --  The email ID of the team that needs to be restored.
                 destination_team    (str)   --  The email ID of the team to be restored to.
+                kwargs              (dict)
+                    dest_subclient_object --    The subclient object of the destination client
 
             Returns:
                 obj   --  Instance of job.
@@ -239,7 +235,11 @@ class TeamsSubclient(CloudAppsSubclient):
                 "Subclient", "101", "Destination team value cannot be none")
         discovered_teams = self.discover()
         team = [discovered_teams[team]]
-        destination_team = discovered_teams[destination_team]
+        if not kwargs.get("dest_subclient_obj"):
+            destination_team = discovered_teams[destination_team]
+        else:
+            dest_discovered_teams = kwargs.get("dest_subclient_obj").discover()
+            destination_team = dest_discovered_teams[destination_team]
         request_json = {
             "taskInfo": {
                 "task": const.RESTORE_TASK_JSON,
@@ -250,7 +250,8 @@ class TeamsSubclient(CloudAppsSubclient):
                     {
                         "subTask": const.RESTORE_SUBTASK_JSON,
                         "options": self._json_restore_options(
-                            team, **dict(kwargs, destination_team=destination_team))
+                            team, **dict(kwargs, destination_team=destination_team,
+                                         dest_subclient_obj=kwargs.get("dest_subclient_obj")))
                     }
                 ]
             }
@@ -366,10 +367,12 @@ class TeamsSubclient(CloudAppsSubclient):
         }
         return _findQuery
 
-    def _json_restoreoptions_destination(self, destination_team):
+    def _json_restoreoptions_destination(self, destination_team, destination_channel=None):
         """Get destination json for teams restore operation.
                 Args:
                     destination_team  (str) -- Name of destination team
+                    destination_channel (str) -- Instance of channel object
+                         Default : None
                 Returns:
                     destination json for teams restore operation
         """
@@ -382,6 +385,8 @@ class TeamsSubclient(CloudAppsSubclient):
                 "clientName": self._subClientEntity['clientName']
             }
         }
+        if destination_channel:
+            _destination_team_json['destPath'] = [destination_team["displayName"] + destination_channel.name]
         return _destination_team_json
 
     def _json_restoreoptions_msteamsrestoreoptions(self, teams, **kwargs):
@@ -402,15 +407,15 @@ class TeamsSubclient(CloudAppsSubclient):
 
         _msTeamsRestoreOptions = {
             "restoreAllMatching": False,
-            "overWriteItems": kwargs.get("unconditionalOverwrite") if "unconditionalOverwrite" in kwargs else False,
+            "overWriteItems": kwargs.get("unconditionalOverwrite", False),
             "restoreToTeams": True,
             "destLocation": kwargs.get("destination_team").get("displayName") if kwargs.get("destination_team", {}).get("displayName") else "",
-            "restorePostsAsHtml": kwargs.get("restorePostsAsHtml") if "restorePostsAsHtml" in kwargs else False,
+            "restorePostsAsHtml": kwargs.get("restorePostsAsHtml", False),
             "restoreUsingFindQuery": False,
             "selectedItemsToRestore": selectedItemsToRestore,
             "findQuery": self._json_restoreoptions_findquery(teams)
         }
-        if "destination_team" in kwargs and kwargs.get("destination_team"):
+        if kwargs.get("destination_team", None):
             _msTeamsRestoreOptions["destinationTeamInfo"] = {
                 "tabId": "",
                 "teamName": kwargs.get("destination_team")['displayName'],
@@ -444,8 +449,7 @@ class TeamsSubclient(CloudAppsSubclient):
                     restoreOptions json for teams restore operation
         """
 
-        if "skip" in kwargs and kwargs.get("skip") and "unconditionalOverwrite" in kwargs and kwargs.get(
-                "unconditionalOverwrite"):
+        if kwargs.get("skip", False) and kwargs.get("unconditionalOverwrite", False):
             raise SDKException('Subclient', '102', "Both skip and unconditionalOverwrite cannot be True")
         selectedItems = []
         for team in teams:
@@ -454,19 +458,24 @@ class TeamsSubclient(CloudAppsSubclient):
                 "itemType": "Team"
             })
 
+        if kwargs.get("dest_subclient_obj"):
+            dest_subclient_obj = kwargs.get("dest_subclient_obj")
+            if isinstance(dest_subclient_obj, TeamsSubclient):
+                dest_details = dest_subclient_obj._json_restoreoptions_destination(kwargs.get("destination_team", None))
+            else:
+                raise SDKException('Subclient', '102', "Wrongly supplied subclient object")
+        else:
+            dest_details = self._json_restoreoptions_destination(kwargs.get("destination_team", None))
         _restore_options = {
             "browseOption": {
                 "timeRange": {}
             },
             "commonOptions": {
-                "skip": kwargs.get("skip") if "skip" in kwargs else True,
-                "overwriteFiles": kwargs.get("unconditionalOverwrite") if "unconditionalOverwrite" in kwargs else False,
-                "unconditionalOverwrite": kwargs.get(
-                    "unconditionalOverwrite") if "unconditionalOverwrite" in kwargs else False
+                "skip": kwargs.get("skip", True),
+                "overwriteFiles": kwargs.get("unconditionalOverwrite", False),
+                "unconditionalOverwrite": kwargs.get("unconditionalOverwrite", False)
             },
-            "destination": self._json_restoreoptions_destination(
-                kwargs.get("destination_team") if "destination_team" in kwargs else None
-            ),
+            "destination": dest_details,
             "fileOption": {
                 "sourceItem": [
                     ""
@@ -516,7 +525,10 @@ class TeamsSubclient(CloudAppsSubclient):
         """
         discovered_teams = self.discover()
         teams = [discovered_teams[team] for team in teams]
-        destination_team = None if len(teams) > 1 else destination_team
+        if len(teams) == 1 and destination_team:
+            destination_team = discovered_teams[destination_team]
+        else:
+            destination_team = None
         request_json = {
             "taskInfo": {
                 "task": const.RESTORE_TASK_JSON,
@@ -621,7 +633,7 @@ class TeamsSubclient(CloudAppsSubclient):
                 "subclientEntity": {"subclientId": int(self._subclient_id)}
             },
             "bIncludeDeleted": False,
-            "discoverByType": 5 if 'AllContentType' in kwargs and kwargs.get('AllContentType') else 12,
+            "discoverByType": 5 if kwargs.get('AllContentType', False) else 12,
             "searchInfo": {"isSearch": 0, "searchKey": ""},
             "sortInfo": {
                 "sortColumn": "O365Field_AUTO_DISCOVER", "sortOrder": 0
@@ -661,7 +673,7 @@ class TeamsSubclient(CloudAppsSubclient):
     def remove_team_association(self, user_assoc):
         """Removes user association from a teams client
                 Args:
-                    user_assoc   (list): List of input users whose association is to be removed
+                    user_assoc   (list): List of input users assoication object whose association is to be removed
                 Returns
                     Boolean if the association was removed successfully
 
@@ -786,3 +798,253 @@ class TeamsSubclient(CloudAppsSubclient):
                 raise SDKException('Subclient', '102', o_str)
         else:
             raise SDKException('Response', '102', self._update_response_(response.text))
+
+    def restore_out_of_place_to_file_location(self, source_team_mail, dest_client, dest_path, selected_items, values):
+        """Restore a team to file location.
+
+                    Args:
+                        source_team_mail      (str)      --  The email ID of the team that needs to be restored.
+                        dest_client           (str)      --  The name of the client to be restored to.
+                        dest_path             (str)      --  The path of the client to be restored to.
+                        selected_items        (list)     --  List of dictonary of properties of selected items.
+                        values                (list)     --  Content id's of a selected items.
+                    Returns:
+                        obj   --  Instance of Restore job.
+
+                    Raises:
+                        SDKException:
+                            If restore failed to run.
+                            If response is empty.
+                            If response is not success.
+
+                """
+
+        self._instance_object._restore_association = self._subClientEntity
+        discovered_teams = self.discover()
+        source_team = discovered_teams[source_team_mail]
+        request_json = self._instance_object._restore_json()
+
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'cloudAppsRestoreOptions'] = self._instance_object._cloud_apps_restore_json(source_team=source_team,
+                                                                                        destination_team=source_team)
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'cloudAppsRestoreOptions']["msTeamsRestoreOptions"]["findQuery"]["advSearchGrp"]["commonFilter"][0][
+            "filter"]["filters"].append({
+            "field": "IS_VISIBLE",
+            "fieldValues": {
+                "isMoniker": False,
+                "isRange": False,
+                "values": [
+                    "true"
+                ]
+            },
+            "intraFieldOp": 0,
+            "intraFieldOpStr": "None"
+        })
+
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'cloudAppsRestoreOptions']["msTeamsRestoreOptions"]["findQuery"]["advSearchGrp"]["fileFilter"][0][
+            "filter"]["filters"][0]["field"] = "CONTENTID"
+
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'cloudAppsRestoreOptions']["msTeamsRestoreOptions"]["findQuery"]["searchProcessingInfo"] = \
+            self._json_restoreoptions_searchprocessinginfo_with_extra_queryparameters(source_team)
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'cloudAppsRestoreOptions']["msTeamsRestoreOptions"]["restoreToTeams"] = False
+        request_json["taskInfo"]["subTasks"][0]['options']["restoreOptions"]["destination"] = {
+            "destAppId": 33,
+            "destClient": {
+                "clientName": dest_client
+            },
+            "destPath": [
+                dest_path
+            ],
+            "inPlace": False
+        }
+
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'cloudAppsRestoreOptions']["msTeamsRestoreOptions"]['selectedItemsToRestore'] = selected_items
+
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'cloudAppsRestoreOptions']["msTeamsRestoreOptions"]["findQuery"]["advSearchGrp"]["fileFilter"][0][
+            "filter"][
+            "filters"][0]["fieldValues"]["values"] = values
+
+        request_json['taskInfo']['subTasks'][0]['options']['commonOpts'] = {
+            "notifyUserOnJobCompletion": False,
+            "selectedItems": [
+                {
+                    "itemName": "Files",
+                    "itemType": "Files"
+                },
+                {
+                    "itemName": "Posts",
+                    "itemType": "Posts",
+                }
+            ]
+        }
+
+        url = self._services['CREATE_TASK']
+
+        flag, response = self._cvpysdk_object.make_request('POST', url, request_json)
+
+        if flag:
+
+            if response.json():
+
+                if 'jobIds' in response.json():
+                    return Job(self._commcell_object, response.json()['jobIds'][0])
+
+                elif "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+                    raise SDKException('Subclient', '102', f"Restore failed, error message : {error_message}")
+
+                raise SDKException('Response', '102')
+
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def _json_restoreoptions_searchprocessinginfo_with_extra_queryparameters(self, source_team):
+        """
+               Args:
+                    source_team         (dict)   --  Dictionary of properties from discover() for team that is to be
+                    restored.
+               Returns:
+                   queryparameters json for teams restore operation
+               """
+
+        _searchprocessinginfo = self._json_restoreoptions_searchprocessinginfo()
+        _searchprocessinginfo["queryParams"].extend([
+            {
+                "param": "COLLAPSE_FIELD",
+                "value": "CV_OBJECT_GUID"
+            },
+            {
+                "param": "COLLAPSE_SORT",
+                "value": "BACKUPTIME DESC"
+            },
+            {
+                "param": "INDEX_ROUTING_KEY",
+                "value": source_team['user']['userGUID'].lower()
+            }
+        ]
+        )
+        _searchprocessinginfo["pageSize"] = 20
+        return _searchprocessinginfo
+
+    def _json_restore_destinationTeamInfo(self, destination_team, channel):
+        """Get destinationTeamInfo json for teams restore operation.
+               Args:
+                    destination_team      (dict)   --  Dictionary of properties from discover() for team that is to be
+                    channel               (obj)    --  Instance of channel object.
+               Returns:
+                   destinationTeamInfo json for teams restore operation
+               """
+        _destinationteaminfo = {
+            "tabId": "",
+            "teamName": destination_team['displayName'],
+            "tabName": "",
+            "folder": "/" if channel else "",
+            "teamId": destination_team['user']['userGUID'].lower(),
+            "destination": 5 if channel else 1,
+            "channelName": channel.name if channel else "",
+            "channelId": channel.channel_id if channel else ""
+        }
+        return _destinationteaminfo
+
+    def restore_files_to_out_of_place(self, source_team_mail, destination_team_mail, destination_channel,
+                                      selected_files_ids, values, selected_files):
+        """Restore  files to another team
+
+                   Args:
+                       source_team_mail         (str)      --  The email ID of the team that needs to be restored.
+                       destination_team_mail    (str)      --  The name of the client to be restored to.
+                       channel                  (obj)      --  The object of the channel to be restored.
+                       selected_files_ids       (list)     --  List of dictonaries of properties of selected files with
+                                                               contentids.
+                       values                   (list)     --  Content id's of a selected files.
+                       selected_files           (list)     --  List of dictonaries of files name and their type.
+                   Returns:
+                       obj   --  Instance of Restore job.
+
+                   Raises:
+                       SDKException:
+                           If restore failed to run.
+                           If response is empty.
+                           If response is not success.
+
+               """
+        self._instance_object._restore_association = self._subClientEntity
+        discovered_teams = self.discover()
+        source_team = discovered_teams[source_team_mail]
+        destination_team = discovered_teams[destination_team_mail]
+
+        request_json = self._instance_object._restore_json()
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'cloudAppsRestoreOptions'] = self._instance_object._cloud_apps_restore_json(source_team=source_team,
+                                                                                        destination_team=
+                                                                                        destination_team)
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'cloudAppsRestoreOptions']["msTeamsRestoreOptions"]["findQuery"]["advSearchGrp"]["commonFilter"][0][
+            "filter"]["filters"].append({
+            "field": "IS_VISIBLE",
+            "fieldValues": {
+                "isMoniker": False,
+                "isRange": False,
+                "values": [
+                    "true"
+                ]
+            },
+            "intraFieldOp": 0,
+            "intraFieldOpStr": "None"
+        })
+
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'cloudAppsRestoreOptions']["msTeamsRestoreOptions"]["findQuery"]["advSearchGrp"]["fileFilter"][0][
+            "filter"]["filters"][0]["field"] = "CONTENTID"
+
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'cloudAppsRestoreOptions']["msTeamsRestoreOptions"]["findQuery"]["searchProcessingInfo"] = \
+            self._json_restoreoptions_searchprocessinginfo_with_extra_queryparameters(source_team)
+
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'cloudAppsRestoreOptions']["msTeamsRestoreOptions"]['selectedItemsToRestore'] = selected_files_ids
+
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'cloudAppsRestoreOptions']["msTeamsRestoreOptions"]["findQuery"]["advSearchGrp"]["fileFilter"][0][
+            "filter"][
+            "filters"][0]["fieldValues"]["values"] = values
+        request_json['taskInfo']['subTasks'][0]['options']['commonOpts'] = {
+            "notifyUserOnJobCompletion": False,
+            "selectedItems": selected_files
+        }
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'cloudAppsRestoreOptions']["msTeamsRestoreOptions"]['destinationTeamInfo'] = \
+            self._json_restore_destinationTeamInfo(destination_team, destination_channel)
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination'] = \
+            self._json_restoreoptions_destination(destination_team, destination_channel)
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'cloudAppsRestoreOptions']["msTeamsRestoreOptions"]['destLocation'] = destination_team['displayName'] + \
+                                                                                  destination_channel.name
+
+        url = self._services['CREATE_TASK']
+
+        flag, response = self._cvpysdk_object.make_request('POST', url, request_json)
+
+        if flag:
+
+            if response.json():
+
+                if 'jobIds' in response.json():
+                    return Job(self._commcell_object, response.json()['jobIds'][0])
+
+                elif "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+                    raise SDKException('Subclient', '102', f"Restore failed, error message : {error_message}")
+
+                raise SDKException('Response', '102')
+
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+

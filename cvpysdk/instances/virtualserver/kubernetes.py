@@ -86,7 +86,7 @@ class KubernetesInstance(VirtualServerInstance):
 
             self._server_name.append(self._instance['clientName'])
 
-            self._server_host_name.append(self._vmwarvendor["domainName"])
+            self._server_host_name.append(self._vmwarvendor.get("domainName", ''))
 
     def _get_instance_properties_json(self):
         """get the all instance related properties of this subclient.
