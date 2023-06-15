@@ -42,7 +42,7 @@ run a backup job for the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vminstancesubclient.py#L1-L199" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vminstancesubclient.py#L1-L321" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -112,6 +112,17 @@ class VMInstanceSubclient(Subclient):
         self._parent_backupset = None
         self._parent_subclient = None
         self._vm_guid = None
+        self._vm_settings = {}
+        self.filter_types = {
+            &#39;1&#39;: &#39;Datastore&#39;,
+            &#39;2&#39;: &#39;Virtual Disk Name/Pattern&#39;,
+            &#39;3&#39;: &#39;Virtual Device Node&#39;,
+            &#39;4&#39;: &#39;Container&#39;,
+            &#39;5&#39;: &#39;Disk Label&#39;,
+            &#39;6&#39;: &#39;Disk Type&#39;,
+            &#39;9&#39;: &#39;Disk Tag Name/Value&#39;,
+            &#39;10&#39;: &#39;Repository&#39;
+        }
 
     @property
     def parent_client(self):
@@ -242,7 +253,118 @@ class VMInstanceSubclient(Subclient):
             flag, response = self._commcell_object._cvpysdk_object.make_request(
                 &#39;POST&#39;, vm_backup_service
             )
-        return self._process_backup_response(flag, response)</code></pre>
+        return self._process_backup_response(flag, response)
+
+    def _get_subclient_properties(self):
+        &#34;&#34;&#34;Gets the subclient related properties of Virtual server subclient&#34;&#34;&#34;
+
+        self._vmDiskFilter = None
+        super(VMInstanceSubclient, self)._get_subclient_properties()
+
+        if &#39;vmDiskFilter&#39; in self._subclient_properties:
+            self._vmDiskFilter = self._subclient_properties[&#39;vmDiskFilter&#39;]
+        if &#39;vmBackupInfo&#39; in self._subclient_properties:
+            self._vmBackupInfo = self._subclient_properties[&#39;vmBackupInfo&#39;]
+        if &#39;vsaSubclientProp&#39; in self._subclient_properties:
+            self._vsaSubclientProp = self._subclient_properties[&#39;vsaSubclientProp&#39;]
+
+    @property
+    def quiesce_file_system(self):
+        &#34;&#34;&#34;
+            Gets the quiesce value set for the vsa subclient
+
+        Returns:
+            (Boolean)    True/False
+        &#34;&#34;&#34;
+        quiesce_file_system = r&#39;quiesceGuestFileSystemAndApplications&#39;
+        return self._vsaSubclientProp.get(quiesce_file_system)
+
+    @property
+    def vm_diskfilter(self):
+        &#34;&#34;&#34;Gets the appropriate Diskfilter from the VM instance subclient relevant to the user.
+
+            Returns:
+                list - list of Diskfilter associated with the subclient
+
+        &#34;&#34;&#34;
+        vm_diskfilter = []
+        if self._vmDiskFilter is not None:
+            subclient_diskfilter = self._vmDiskFilter
+
+            if &#39;filters&#39; in subclient_diskfilter:
+                filters = subclient_diskfilter[&#39;filters&#39;]
+
+                for child in filters:
+                    filter_type_id = str(child[&#39;filterType&#39;])
+                    filter_type = self.filter_types[str(child[&#39;filterType&#39;])]
+                    vm_id = child[&#39;vmGuid&#39;] if &#39;vmGuid&#39; in child else None
+                    filter_name = child[&#39;filter&#39;]
+                    value = child[&#39;value&#39;]
+                    vm_name = child[&#39;vmName&#39;]
+
+                    temp_dict = {
+                        &#39;filter&#39;: filter_name,
+                        &#39;filterType&#39;: filter_type,
+                        &#39;vmGuid&#39;: vm_id,
+                        &#39;filterTypeId&#39;: filter_type_id,
+                        &#39;value&#39;: value,
+                        &#39;vmName&#39;: vm_name
+                    }
+
+                    vm_diskfilter.append(temp_dict)
+        else:
+            vm_diskfilter = self._vmDiskFilter
+
+        if len(vm_diskfilter) == 0:
+            vm_diskfilter = None
+        return vm_diskfilter
+
+    def _get_vm_settings(self):
+        &#34;&#34;&#34;
+            Gets the VM Instance Subclient settings
+
+        Returns:
+            (Dict)    VM Subclient settings
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._commcell_object._services[&#39;VM_GROUP&#39;] % (
+            self.subclient_id))
+
+        if flag:
+            if response.json() and &#39;settings&#39; in response.json():
+                return response.json()[&#39;settings&#39;]
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(
+                &#39;Response&#39;,
+                &#39;101&#39;,
+                self._update_response_(
+                    response.text))
+
+    @property
+    def vm_settings(self):
+        &#34;&#34;&#34;
+            Gets the VM Instance Subclient settings
+
+        Returns:
+            (Dict)    VM Subclient settings
+
+        &#34;&#34;&#34;
+        if not self._vm_settings:
+            self._vm_settings = self._get_vm_settings()
+        return self._vm_settings
+
+    @property
+    def include_vm_group_disk_filters(self):
+        &#34;&#34;&#34;
+            Gets the value set for the option - Include VM Group disk filters
+
+        Returns:
+            (Boolean)    True/False
+
+        &#34;&#34;&#34;
+        return self.vm_settings.get(&#39;isVMGroupDiskFiltersIncluded&#39;)</code></pre>
 </details>
 </section>
 <section>
@@ -274,7 +396,7 @@ instance of the Backupset class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vminstancesubclient.py#L42-L199" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vminstancesubclient.py#L42-L321" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VMInstanceSubclient(Subclient):
     &#34;&#34;&#34;
@@ -303,6 +425,17 @@ instance of the Backupset class</p>
         self._parent_backupset = None
         self._parent_subclient = None
         self._vm_guid = None
+        self._vm_settings = {}
+        self.filter_types = {
+            &#39;1&#39;: &#39;Datastore&#39;,
+            &#39;2&#39;: &#39;Virtual Disk Name/Pattern&#39;,
+            &#39;3&#39;: &#39;Virtual Device Node&#39;,
+            &#39;4&#39;: &#39;Container&#39;,
+            &#39;5&#39;: &#39;Disk Label&#39;,
+            &#39;6&#39;: &#39;Disk Type&#39;,
+            &#39;9&#39;: &#39;Disk Tag Name/Value&#39;,
+            &#39;10&#39;: &#39;Repository&#39;
+        }
 
     @property
     def parent_client(self):
@@ -433,7 +566,118 @@ instance of the Backupset class</p>
             flag, response = self._commcell_object._cvpysdk_object.make_request(
                 &#39;POST&#39;, vm_backup_service
             )
-        return self._process_backup_response(flag, response)</code></pre>
+        return self._process_backup_response(flag, response)
+
+    def _get_subclient_properties(self):
+        &#34;&#34;&#34;Gets the subclient related properties of Virtual server subclient&#34;&#34;&#34;
+
+        self._vmDiskFilter = None
+        super(VMInstanceSubclient, self)._get_subclient_properties()
+
+        if &#39;vmDiskFilter&#39; in self._subclient_properties:
+            self._vmDiskFilter = self._subclient_properties[&#39;vmDiskFilter&#39;]
+        if &#39;vmBackupInfo&#39; in self._subclient_properties:
+            self._vmBackupInfo = self._subclient_properties[&#39;vmBackupInfo&#39;]
+        if &#39;vsaSubclientProp&#39; in self._subclient_properties:
+            self._vsaSubclientProp = self._subclient_properties[&#39;vsaSubclientProp&#39;]
+
+    @property
+    def quiesce_file_system(self):
+        &#34;&#34;&#34;
+            Gets the quiesce value set for the vsa subclient
+
+        Returns:
+            (Boolean)    True/False
+        &#34;&#34;&#34;
+        quiesce_file_system = r&#39;quiesceGuestFileSystemAndApplications&#39;
+        return self._vsaSubclientProp.get(quiesce_file_system)
+
+    @property
+    def vm_diskfilter(self):
+        &#34;&#34;&#34;Gets the appropriate Diskfilter from the VM instance subclient relevant to the user.
+
+            Returns:
+                list - list of Diskfilter associated with the subclient
+
+        &#34;&#34;&#34;
+        vm_diskfilter = []
+        if self._vmDiskFilter is not None:
+            subclient_diskfilter = self._vmDiskFilter
+
+            if &#39;filters&#39; in subclient_diskfilter:
+                filters = subclient_diskfilter[&#39;filters&#39;]
+
+                for child in filters:
+                    filter_type_id = str(child[&#39;filterType&#39;])
+                    filter_type = self.filter_types[str(child[&#39;filterType&#39;])]
+                    vm_id = child[&#39;vmGuid&#39;] if &#39;vmGuid&#39; in child else None
+                    filter_name = child[&#39;filter&#39;]
+                    value = child[&#39;value&#39;]
+                    vm_name = child[&#39;vmName&#39;]
+
+                    temp_dict = {
+                        &#39;filter&#39;: filter_name,
+                        &#39;filterType&#39;: filter_type,
+                        &#39;vmGuid&#39;: vm_id,
+                        &#39;filterTypeId&#39;: filter_type_id,
+                        &#39;value&#39;: value,
+                        &#39;vmName&#39;: vm_name
+                    }
+
+                    vm_diskfilter.append(temp_dict)
+        else:
+            vm_diskfilter = self._vmDiskFilter
+
+        if len(vm_diskfilter) == 0:
+            vm_diskfilter = None
+        return vm_diskfilter
+
+    def _get_vm_settings(self):
+        &#34;&#34;&#34;
+            Gets the VM Instance Subclient settings
+
+        Returns:
+            (Dict)    VM Subclient settings
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._commcell_object._services[&#39;VM_GROUP&#39;] % (
+            self.subclient_id))
+
+        if flag:
+            if response.json() and &#39;settings&#39; in response.json():
+                return response.json()[&#39;settings&#39;]
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(
+                &#39;Response&#39;,
+                &#39;101&#39;,
+                self._update_response_(
+                    response.text))
+
+    @property
+    def vm_settings(self):
+        &#34;&#34;&#34;
+            Gets the VM Instance Subclient settings
+
+        Returns:
+            (Dict)    VM Subclient settings
+
+        &#34;&#34;&#34;
+        if not self._vm_settings:
+            self._vm_settings = self._get_vm_settings()
+        return self._vm_settings
+
+    @property
+    def include_vm_group_disk_filters(self):
+        &#34;&#34;&#34;
+            Gets the value set for the option - Include VM Group disk filters
+
+        Returns:
+            (Boolean)    True/False
+
+        &#34;&#34;&#34;
+        return self.vm_settings.get(&#39;isVMGroupDiskFiltersIncluded&#39;)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -441,6 +685,29 @@ instance of the Backupset class</p>
 </ul>
 <h3>Instance variables</h3>
 <dl>
+<dt id="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.include_vm_group_disk_filters"><code class="name">var <span class="ident">include_vm_group_disk_filters</span></code></dt>
+<dd>
+<div class="desc"><p>Gets the value set for the option - Include VM Group disk filters</p>
+<h2 id="returns">Returns</h2>
+<p>(Boolean)
+True/False</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vminstancesubclient.py#L312-L321" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def include_vm_group_disk_filters(self):
+    &#34;&#34;&#34;
+        Gets the value set for the option - Include VM Group disk filters
+
+    Returns:
+        (Boolean)    True/False
+
+    &#34;&#34;&#34;
+    return self.vm_settings.get(&#39;isVMGroupDiskFiltersIncluded&#39;)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_agent"><code class="name">var <span class="ident">parent_agent</span></code></dt>
 <dd>
 <div class="desc"><p>Returns parent agent object</p>
@@ -451,7 +718,7 @@ Parent agent object</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vminstancesubclient.py#L81-L90" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vminstancesubclient.py#L92-L101" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def parent_agent(self):
@@ -475,7 +742,7 @@ Parent backupset object</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vminstancesubclient.py#L103-L112" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vminstancesubclient.py#L114-L123" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def parent_backupset(self):
@@ -499,7 +766,7 @@ Parent client object</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vminstancesubclient.py#L70-L79" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vminstancesubclient.py#L81-L90" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def parent_client(self):
@@ -523,7 +790,7 @@ Parent instance object</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vminstancesubclient.py#L92-L101" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vminstancesubclient.py#L103-L112" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def parent_instance(self):
@@ -547,7 +814,7 @@ Parent subclient object</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vminstancesubclient.py#L114-L123" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vminstancesubclient.py#L125-L134" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def parent_subclient(self):
@@ -561,6 +828,80 @@ def parent_subclient(self):
     return self._parent_subclient</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.quiesce_file_system"><code class="name">var <span class="ident">quiesce_file_system</span></code></dt>
+<dd>
+<div class="desc"><p>Gets the quiesce value set for the vsa subclient</p>
+<h2 id="returns">Returns</h2>
+<p>(Boolean)
+True/False</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vminstancesubclient.py#L225-L234" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def quiesce_file_system(self):
+    &#34;&#34;&#34;
+        Gets the quiesce value set for the vsa subclient
+
+    Returns:
+        (Boolean)    True/False
+    &#34;&#34;&#34;
+    quiesce_file_system = r&#39;quiesceGuestFileSystemAndApplications&#39;
+    return self._vsaSubclientProp.get(quiesce_file_system)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.vm_diskfilter"><code class="name">var <span class="ident">vm_diskfilter</span></code></dt>
+<dd>
+<div class="desc"><p>Gets the appropriate Diskfilter from the VM instance subclient relevant to the user.</p>
+<h2 id="returns">Returns</h2>
+<p>list - list of Diskfilter associated with the subclient</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vminstancesubclient.py#L236-L274" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def vm_diskfilter(self):
+    &#34;&#34;&#34;Gets the appropriate Diskfilter from the VM instance subclient relevant to the user.
+
+        Returns:
+            list - list of Diskfilter associated with the subclient
+
+    &#34;&#34;&#34;
+    vm_diskfilter = []
+    if self._vmDiskFilter is not None:
+        subclient_diskfilter = self._vmDiskFilter
+
+        if &#39;filters&#39; in subclient_diskfilter:
+            filters = subclient_diskfilter[&#39;filters&#39;]
+
+            for child in filters:
+                filter_type_id = str(child[&#39;filterType&#39;])
+                filter_type = self.filter_types[str(child[&#39;filterType&#39;])]
+                vm_id = child[&#39;vmGuid&#39;] if &#39;vmGuid&#39; in child else None
+                filter_name = child[&#39;filter&#39;]
+                value = child[&#39;value&#39;]
+                vm_name = child[&#39;vmName&#39;]
+
+                temp_dict = {
+                    &#39;filter&#39;: filter_name,
+                    &#39;filterType&#39;: filter_type,
+                    &#39;vmGuid&#39;: vm_id,
+                    &#39;filterTypeId&#39;: filter_type_id,
+                    &#39;value&#39;: value,
+                    &#39;vmName&#39;: vm_name
+                }
+
+                vm_diskfilter.append(temp_dict)
+    else:
+        vm_diskfilter = self._vmDiskFilter
+
+    if len(vm_diskfilter) == 0:
+        vm_diskfilter = None
+    return vm_diskfilter</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.vm_guid"><code class="name">var <span class="ident">vm_guid</span></code></dt>
 <dd>
 <div class="desc"><p>Returns vm guid</p>
@@ -571,7 +912,7 @@ vm guid of the client</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vminstancesubclient.py#L125-L132" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vminstancesubclient.py#L136-L143" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_guid(self):
@@ -581,6 +922,31 @@ def vm_guid(self):
     if not self._vm_guid:
         self._vm_guid = self._client_vm_status.get(&#39;strGUID&#39;)
     return self._vm_guid</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.vm_settings"><code class="name">var <span class="ident">vm_settings</span></code></dt>
+<dd>
+<div class="desc"><p>Gets the VM Instance Subclient settings</p>
+<h2 id="returns">Returns</h2>
+<p>(Dict)
+VM Subclient settings</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vminstancesubclient.py#L299-L310" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def vm_settings(self):
+    &#34;&#34;&#34;
+        Gets the VM Instance Subclient settings
+
+    Returns:
+        (Dict)    VM Subclient settings
+
+    &#34;&#34;&#34;
+    if not self._vm_settings:
+        self._vm_settings = self._get_vm_settings()
+    return self._vm_settings</code></pre>
 </details>
 </dd>
 </dl>
@@ -627,7 +993,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vminstancesubclient.py#L134-L199" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vminstancesubclient.py#L145-L210" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(self,
            backup_level=&#34;Incremental&#34;,
@@ -823,14 +1189,18 @@ setTimeout(() => input.focus(), 100);
 <ul>
 <li>
 <h4><code><a title="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient" href="#cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient">VMInstanceSubclient</a></code></h4>
-<ul class="two-column">
+<ul class="">
 <li><code><a title="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.backup" href="#cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.backup">backup</a></code></li>
+<li><code><a title="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.include_vm_group_disk_filters" href="#cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.include_vm_group_disk_filters">include_vm_group_disk_filters</a></code></li>
 <li><code><a title="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_agent" href="#cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_agent">parent_agent</a></code></li>
 <li><code><a title="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_backupset" href="#cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_backupset">parent_backupset</a></code></li>
 <li><code><a title="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_client" href="#cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_client">parent_client</a></code></li>
 <li><code><a title="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_instance" href="#cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_instance">parent_instance</a></code></li>
 <li><code><a title="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_subclient" href="#cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.parent_subclient">parent_subclient</a></code></li>
+<li><code><a title="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.quiesce_file_system" href="#cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.quiesce_file_system">quiesce_file_system</a></code></li>
+<li><code><a title="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.vm_diskfilter" href="#cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.vm_diskfilter">vm_diskfilter</a></code></li>
 <li><code><a title="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.vm_guid" href="#cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.vm_guid">vm_guid</a></code></li>
+<li><code><a title="cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.vm_settings" href="#cvpysdk.subclients.vminstancesubclient.VMInstanceSubclient.vm_settings">vm_settings</a></code></li>
 </ul>
 </li>
 </ul>

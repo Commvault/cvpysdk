@@ -118,7 +118,7 @@ refresh the object properties</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L1-L940" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L1-L955" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -323,15 +323,16 @@ class Agents(object):
 
         if flag:
             if response.json() and &#39;agentProperties&#39; in response.json():
-
                 agent_dict = {}
-
                 for dictionary in response.json()[&#39;agentProperties&#39;]:
                     temp_name = dictionary[&#39;idaEntity&#39;][&#39;appName&#39;].lower()
                     temp_id = str(dictionary[&#39;idaEntity&#39;][&#39;applicationId&#39;]).lower()
                     agent_dict[temp_name] = temp_id
 
                 return agent_dict
+            elif self._client_object.vm_guid is not None and not self._client_object.properties.get(&#39;clientProps&#39;, {}).\
+                    get(&#39;isIndexingV2VSA&#39;, False):
+                return {}
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
@@ -1053,6 +1054,20 @@ class Agent(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
+    def enable_ews_support_for_exchange_on_prem(self, ews_service_url : str):
+        &#34;&#34;&#34;
+            Method to enable EWS backup support for an Exchange on-prem client.
+            Args:
+                ews_service_url (string) -- EWS Connection URL for your exchange server
+        &#34;&#34;&#34;
+        if int(self.agent_id) != 137:
+            raise SDKException(&#39;Agent&#39;, &#39;102&#39;, f&#39;Invalid operation for {self.agent_name}&#39;)
+
+        _agent_properties = self.properties
+        _agent_properties[&#34;onePassProperties&#34;][&#34;onePassProp&#34;][&#34;ewsDetails&#34;][&#34;bUseEWS&#34;] = True
+        _agent_properties[&#34;onePassProperties&#34;][&#34;onePassProp&#34;][&#34;ewsDetails&#34;][&#34;ewsConnectionUrl&#34;] = ews_service_url
+        self.update_properties(_agent_properties)
+
     def refresh(self):
         &#34;&#34;&#34;Refresh the properties of the Agent.&#34;&#34;&#34;
         self._get_agent_properties()
@@ -1102,7 +1117,7 @@ instance of the Agent class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L402-L940" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L403-L955" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Agent(object):
     &#34;&#34;&#34;Class for performing agent operations of an agent for a specific client.&#34;&#34;&#34;
@@ -1636,6 +1651,20 @@ instance of the Agent class</p></div>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
+    def enable_ews_support_for_exchange_on_prem(self, ews_service_url : str):
+        &#34;&#34;&#34;
+            Method to enable EWS backup support for an Exchange on-prem client.
+            Args:
+                ews_service_url (string) -- EWS Connection URL for your exchange server
+        &#34;&#34;&#34;
+        if int(self.agent_id) != 137:
+            raise SDKException(&#39;Agent&#39;, &#39;102&#39;, f&#39;Invalid operation for {self.agent_name}&#39;)
+
+        _agent_properties = self.properties
+        _agent_properties[&#34;onePassProperties&#34;][&#34;onePassProp&#34;][&#34;ewsDetails&#34;][&#34;bUseEWS&#34;] = True
+        _agent_properties[&#34;onePassProperties&#34;][&#34;onePassProp&#34;][&#34;ewsDetails&#34;][&#34;ewsConnectionUrl&#34;] = ews_service_url
+        self.update_properties(_agent_properties)
+
     def refresh(self):
         &#34;&#34;&#34;Refresh the properties of the Agent.&#34;&#34;&#34;
         self._get_agent_properties()
@@ -1656,7 +1685,7 @@ instance of the Agent class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L659-L662" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L660-L663" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def agent_id(self):
@@ -1670,7 +1699,7 @@ def agent_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L664-L667" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L665-L668" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def agent_name(self):
@@ -1685,7 +1714,7 @@ installed / configured on the Client for the selected Agent.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L697-L705" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L698-L706" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backupsets(self):
@@ -1704,7 +1733,7 @@ def backupsets(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L642-L645" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L643-L646" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -1719,7 +1748,7 @@ installed / configured on the Client for the selected Agent.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L687-L695" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L688-L696" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instances(self):
@@ -1738,7 +1767,7 @@ def instances(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L669-L676" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L670-L677" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_backup_enabled(self):
@@ -1756,7 +1785,7 @@ def is_backup_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L678-L685" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L679-L686" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_restore_enabled(self):
@@ -1774,7 +1803,7 @@ def is_restore_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L637-L640" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L638-L641" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -1788,7 +1817,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L632-L635" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L633-L636" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -1803,7 +1832,7 @@ installed / configured on the Client for the selected Agent.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L707-L715" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L708-L716" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def schedules(self):
@@ -1834,7 +1863,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L796-L825" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L797-L826" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_backup(self):
     &#34;&#34;&#34;Disables Backup for this Agent.
@@ -1883,7 +1912,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L904-L932" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L905-L933" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_restore(self):
     &#34;&#34;&#34;Disables Restore for this Agent.
@@ -1931,7 +1960,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L717-L746" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L718-L747" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_backup(self):
     &#34;&#34;&#34;Enable Backup for this Agent.
@@ -1990,7 +2019,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L748-L794" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L749-L795" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_backup_at_time(self, enable_time):
     &#34;&#34;&#34;Disables Backup if not already disabled, and enables at the time specified.
@@ -2041,6 +2070,33 @@ if response is not success
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.agent.Agent.enable_ews_support_for_exchange_on_prem"><code class="name flex">
+<span>def <span class="ident">enable_ews_support_for_exchange_on_prem</span></span>(<span>self, ews_service_url: str)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to enable EWS backup support for an Exchange on-prem client.</p>
+<h2 id="args">Args</h2>
+<p>ews_service_url (string) &ndash; EWS Connection URL for your exchange server</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L935-L947" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def enable_ews_support_for_exchange_on_prem(self, ews_service_url : str):
+    &#34;&#34;&#34;
+        Method to enable EWS backup support for an Exchange on-prem client.
+        Args:
+            ews_service_url (string) -- EWS Connection URL for your exchange server
+    &#34;&#34;&#34;
+    if int(self.agent_id) != 137:
+        raise SDKException(&#39;Agent&#39;, &#39;102&#39;, f&#39;Invalid operation for {self.agent_name}&#39;)
+
+    _agent_properties = self.properties
+    _agent_properties[&#34;onePassProperties&#34;][&#34;onePassProp&#34;][&#34;ewsDetails&#34;][&#34;bUseEWS&#34;] = True
+    _agent_properties[&#34;onePassProperties&#34;][&#34;onePassProp&#34;][&#34;ewsDetails&#34;][&#34;ewsConnectionUrl&#34;] = ews_service_url
+    self.update_properties(_agent_properties)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.agent.Agent.enable_restore"><code class="name flex">
 <span>def <span class="ident">enable_restore</span></span>(<span>self)</span>
 </code></dt>
@@ -2056,7 +2112,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L827-L856" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L828-L857" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_restore(self):
     &#34;&#34;&#34;Enable Restore for this Agent.
@@ -2114,7 +2170,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L858-L902" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L859-L903" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_restore_at_time(self, enable_time):
     &#34;&#34;&#34;Disables Restore if not already disabled, and enables at the time specified.
@@ -2171,7 +2227,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L934-L940" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L949-L955" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Agent.&#34;&#34;&#34;
@@ -2206,7 +2262,7 @@ need to change and use the update_properties method to set the properties</p></d
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L595-L630" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L596-L631" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;Updates the agent properties
@@ -2264,7 +2320,7 @@ instance of the Client class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L106-L399" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L106-L400" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Agents(object):
     &#34;&#34;&#34;Class for getting all the agents associated with a client.&#34;&#34;&#34;
@@ -2364,15 +2420,16 @@ instance of the Client class</p>
 
         if flag:
             if response.json() and &#39;agentProperties&#39; in response.json():
-
                 agent_dict = {}
-
                 for dictionary in response.json()[&#39;agentProperties&#39;]:
                     temp_name = dictionary[&#39;idaEntity&#39;][&#39;appName&#39;].lower()
                     temp_id = str(dictionary[&#39;idaEntity&#39;][&#39;applicationId&#39;]).lower()
                     agent_dict[temp_name] = temp_id
 
                 return agent_dict
+            elif self._client_object.vm_guid is not None and not self._client_object.properties.get(&#39;clientProps&#39;, {}).\
+                    get(&#39;isIndexingV2VSA&#39;, False):
+                return {}
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
@@ -2578,7 +2635,7 @@ consists of all agents in the client</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L218-L231" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L219-L232" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_agents(self):
@@ -2639,7 +2696,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L328-L399" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L329-L400" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_database_agent(self, agent_name, access_node, **kwargs):
     &#34;&#34;&#34;Adds database agent to cloud client
@@ -2734,7 +2791,7 @@ if type of the agent name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L251-L274" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L252-L275" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, agent_name):
     &#34;&#34;&#34;Returns a agent object of the specified client.
@@ -2779,7 +2836,7 @@ if type of the agent name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L233-L249" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L234-L250" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_agent(self, agent_name):
     &#34;&#34;&#34;Checks if an agent is installed for the client with the input agent name.
@@ -2808,7 +2865,7 @@ if type of the agent name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/agent.py#L276-L278" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/agent.py#L277-L279" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the agents installed on the Client.&#34;&#34;&#34;
@@ -2896,6 +2953,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.agent.Agent.disable_restore" href="#cvpysdk.agent.Agent.disable_restore">disable_restore</a></code></li>
 <li><code><a title="cvpysdk.agent.Agent.enable_backup" href="#cvpysdk.agent.Agent.enable_backup">enable_backup</a></code></li>
 <li><code><a title="cvpysdk.agent.Agent.enable_backup_at_time" href="#cvpysdk.agent.Agent.enable_backup_at_time">enable_backup_at_time</a></code></li>
+<li><code><a title="cvpysdk.agent.Agent.enable_ews_support_for_exchange_on_prem" href="#cvpysdk.agent.Agent.enable_ews_support_for_exchange_on_prem">enable_ews_support_for_exchange_on_prem</a></code></li>
 <li><code><a title="cvpysdk.agent.Agent.enable_restore" href="#cvpysdk.agent.Agent.enable_restore">enable_restore</a></code></li>
 <li><code><a title="cvpysdk.agent.Agent.enable_restore_at_time" href="#cvpysdk.agent.Agent.enable_restore_at_time">enable_restore_at_time</a></code></li>
 <li><code><a title="cvpysdk.agent.Agent.instances" href="#cvpysdk.agent.Agent.instances">instances</a></code></li>

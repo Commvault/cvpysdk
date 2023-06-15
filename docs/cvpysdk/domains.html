@@ -76,10 +76,13 @@ Gets the domain id associated with this domain</p>
 <p>_get_domain_properties
 &ndash;
 get the properties of the domain</p>
+<p>set_sso
+&ndash;
+Enables/Disables single sign on a domain</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L1-L583" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/domains.py#L1-L629" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -143,6 +146,8 @@ Domain:
     _get_domain_id()            --  Gets the domain id associated with this domain
 
     _get_domain_properties      --  get the properties of the domain
+
+    set_sso                     --  Enables/Disables single sign on a domain
 
 
 &#34;&#34;&#34;
@@ -507,52 +512,52 @@ class Domains(object):
 
         if kwargs:
             custom_provider = {
-                    &#34;providerTypeId&#34;: 0,
-                    &#34;attributes&#34;: [
-                        {
-                            &#34;attrId&#34;: 6,
-                            &#34;attributeName&#34;: &#34;User group filter&#34;,
-                            &#34;staticAttributeString&#34;: &#34;(objectClass=group)&#34;,
-                            &#34;customAttributeString&#34;: kwargs.get(&#39;group_filter&#39;, &#39;&#39;),
-                            &#34;attrTypeFlags&#34;: 1
-                        },
-                        {
-                            &#34;attrId&#34;: 7,
-                            &#34;attributeName&#34;: &#34;User filter&#34;,
-                            &#34;staticAttributeString&#34;: &#34;(&amp;(objectCategory=User)(sAMAccountName=*))&#34;,
-                            &#34;customAttributeString&#34;: kwargs.get(&#39;user_filter&#39;, &#39;&#39;),
-                            &#34;attrTypeFlags&#34;: 1
-                        },
-                        {
-                          &#34;attrId&#34;: 9,
-                          &#34;attributeName&#34;: &#34;Unique identifier&#34;,
-                          &#34;staticAttributeString&#34;: &#34;sAMAccountName&#34;,
-                          &#34;customAttributeString&#34;: kwargs.get(&#39;unique_identifier&#39;, &#39;&#39;),
-                          &#34;attrTypeFlags&#34;: 1
-                        },
-                        {
-                          &#34;attrId&#34;: 10,
-                          &#34;attributeName&#34;: &#34;base DN&#34;,
-                          &#34;staticAttributeString&#34;: &#34;baseDN&#34;,
-                          &#34;customAttributeString&#34;: kwargs.get(&#39;base_dn&#39;, &#39;&#39;),
-                          &#34;attrTypeFlags&#34;: 1
-                        },
-                        {
-                            &#34;attrTypeFlags&#34;: 6,
-                            &#34;customAttributeString&#34;: kwargs.get(&#39;email_attribute&#39;, &#39;mail&#39;),
-                            &#34;attrId&#34;: 3,
-                            &#34;attributeName&#34;: &#34;Email&#34;,
-                            &#34;staticAttributeString&#34;: &#34;mail&#34;
-                        },
-                        {
-                            &#34;attrTypeFlags&#34;: 6,
-                            &#34;customAttributeString&#34;: kwargs.get(&#39;guid_attribute&#39;, &#39;objectGUID&#39;),
-                            &#34;attrId&#34;: 4,
-                            &#34;attributeName&#34;: &#34;GUID&#34;,
-                            &#34;staticAttributeString&#34;: &#34;objectGUID&#34;
-                        }
-                    ]
-                }
+                &#34;providerTypeId&#34;: 0,
+                &#34;attributes&#34;: [
+                    {
+                        &#34;attrId&#34;: 6,
+                        &#34;attributeName&#34;: &#34;User group filter&#34;,
+                        &#34;staticAttributeString&#34;: &#34;(objectClass=group)&#34;,
+                        &#34;customAttributeString&#34;: kwargs.get(&#39;group_filter&#39;, &#39;&#39;),
+                        &#34;attrTypeFlags&#34;: 1
+                    },
+                    {
+                        &#34;attrId&#34;: 7,
+                        &#34;attributeName&#34;: &#34;User filter&#34;,
+                        &#34;staticAttributeString&#34;: &#34;(&amp;(objectCategory=User)(sAMAccountName=*))&#34;,
+                        &#34;customAttributeString&#34;: kwargs.get(&#39;user_filter&#39;, &#39;&#39;),
+                        &#34;attrTypeFlags&#34;: 1
+                    },
+                    {
+                        &#34;attrId&#34;: 9,
+                        &#34;attributeName&#34;: &#34;Unique identifier&#34;,
+                        &#34;staticAttributeString&#34;: &#34;sAMAccountName&#34;,
+                        &#34;customAttributeString&#34;: kwargs.get(&#39;unique_identifier&#39;, &#39;&#39;),
+                        &#34;attrTypeFlags&#34;: 1
+                    },
+                    {
+                        &#34;attrId&#34;: 10,
+                        &#34;attributeName&#34;: &#34;base DN&#34;,
+                        &#34;staticAttributeString&#34;: &#34;baseDN&#34;,
+                        &#34;customAttributeString&#34;: kwargs.get(&#39;base_dn&#39;, &#39;&#39;),
+                        &#34;attrTypeFlags&#34;: 1
+                    },
+                    {
+                        &#34;attrTypeFlags&#34;: 6,
+                        &#34;customAttributeString&#34;: kwargs.get(&#39;email_attribute&#39;, &#39;mail&#39;),
+                        &#34;attrId&#34;: 3,
+                        &#34;attributeName&#34;: &#34;Email&#34;,
+                        &#34;staticAttributeString&#34;: &#34;mail&#34;
+                    },
+                    {
+                        &#34;attrTypeFlags&#34;: 6,
+                        &#34;customAttributeString&#34;: kwargs.get(&#39;guid_attribute&#39;, &#39;objectGUID&#39;),
+                        &#34;attrId&#34;: 4,
+                        &#34;attributeName&#34;: &#34;GUID&#34;,
+                        &#34;staticAttributeString&#34;: &#34;objectGUID&#34;
+                    }
+                ]
+            }
             domain_create_request[&#34;provider&#34;][&#34;customProvider&#34;] = custom_provider
 
         if kwargs.get(&#39;additional_settings&#39;):
@@ -654,6 +659,50 @@ class Domain(object):
         &#34;&#34;&#34;Refresh the properties of the domain.&#34;&#34;&#34;
         self._get_domain_properties()
 
+    def set_sso(self, flag=True, **kwargs):
+        &#34;&#34;&#34;Enables/Disables single sign on the domain
+            Args:
+                flag(bool)      --  True    - enables SSO
+                                    False   - disables SSO
+                ** kwargs(dict) --  Key value pairs for supported arguments
+                Supported argument values:
+                username(str)       --  Username to be used
+                password(str)       --  Password to be used
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if arguments passed are of incorrect types
+                    if failed to enable SSO
+                    if response is empty
+                    if response is not success
+        &#34;&#34;&#34;
+
+        if not isinstance(flag, bool):
+            raise SDKException(&#39;Domain&#39;, &#39;101&#39;)
+        request_json = {&#34;enableSSO&#34;: flag}
+        username = kwargs.get(&#34;username&#34;, None)
+        password = kwargs.get(&#34;password&#34;, None)
+        if username and password:
+            if not (isinstance(username, str) and isinstance(password, str)):
+                raise SDKException(&#39;Domain&#39;, &#39;101&#39;)
+            request_json[&#34;username&#34;] = username
+            request_json[&#34;password&#34;] = b64encode(password.encode()).decode()
+        url = self._commcell_object._services[&#39;DOMAIN_SSO&#39;] % self.domain_id
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;PUT&#39;, url, request_json
+        )
+        if flag:
+            if response.json():
+                error_code = response.json().get(&#39;errorCode&#39;, 0)
+                if error_code != 0:
+                    raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+                return
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+
     @property
     def domain_name(self):
         &#34;&#34;&#34;Returns the User display name&#34;&#34;&#34;
@@ -696,7 +745,7 @@ id of the domain</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L503-L582" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/domains.py#L505-L628" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Domain(object):
     &#34;&#34;&#34;Class for representing a particular domain configured on a commcell&#34;&#34;&#34;
@@ -769,6 +818,50 @@ id of the domain</p></div>
         &#34;&#34;&#34;Refresh the properties of the domain.&#34;&#34;&#34;
         self._get_domain_properties()
 
+    def set_sso(self, flag=True, **kwargs):
+        &#34;&#34;&#34;Enables/Disables single sign on the domain
+            Args:
+                flag(bool)      --  True    - enables SSO
+                                    False   - disables SSO
+                ** kwargs(dict) --  Key value pairs for supported arguments
+                Supported argument values:
+                username(str)       --  Username to be used
+                password(str)       --  Password to be used
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if arguments passed are of incorrect types
+                    if failed to enable SSO
+                    if response is empty
+                    if response is not success
+        &#34;&#34;&#34;
+
+        if not isinstance(flag, bool):
+            raise SDKException(&#39;Domain&#39;, &#39;101&#39;)
+        request_json = {&#34;enableSSO&#34;: flag}
+        username = kwargs.get(&#34;username&#34;, None)
+        password = kwargs.get(&#34;password&#34;, None)
+        if username and password:
+            if not (isinstance(username, str) and isinstance(password, str)):
+                raise SDKException(&#39;Domain&#39;, &#39;101&#39;)
+            request_json[&#34;username&#34;] = username
+            request_json[&#34;password&#34;] = b64encode(password.encode()).decode()
+        url = self._commcell_object._services[&#39;DOMAIN_SSO&#39;] % self.domain_id
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;PUT&#39;, url, request_json
+        )
+        if flag:
+            if response.json():
+                error_code = response.json().get(&#39;errorCode&#39;, 0)
+                if error_code != 0:
+                    raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+                return
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+
     @property
     def domain_name(self):
         &#34;&#34;&#34;Returns the User display name&#34;&#34;&#34;
@@ -787,7 +880,7 @@ id of the domain</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L579-L582" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/domains.py#L625-L628" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def domain_id(self):
@@ -801,7 +894,7 @@ def domain_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L574-L577" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/domains.py#L620-L623" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def domain_name(self):
@@ -820,11 +913,90 @@ def domain_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L570-L572" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/domains.py#L572-L574" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the domain.&#34;&#34;&#34;
     self._get_domain_properties()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.domains.Domain.set_sso"><code class="name flex">
+<span>def <span class="ident">set_sso</span></span>(<span>self, flag=True, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Enables/Disables single sign on the domain</p>
+<h2 id="args">Args</h2>
+<p>flag(bool)
+&ndash;
+True
+- enables SSO
+False
+- disables SSO
+** kwargs(dict) &ndash;
+Key value pairs for supported arguments
+Supported argument values:
+username(str)
+&ndash;
+Username to be used
+password(str)
+&ndash;
+Password to be used</p>
+<h2 id="returns">Returns</h2>
+<p>None</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if arguments passed are of incorrect types
+if failed to enable SSO
+if response is empty
+if response is not success</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/domains.py#L576-L618" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def set_sso(self, flag=True, **kwargs):
+    &#34;&#34;&#34;Enables/Disables single sign on the domain
+        Args:
+            flag(bool)      --  True    - enables SSO
+                                False   - disables SSO
+            ** kwargs(dict) --  Key value pairs for supported arguments
+            Supported argument values:
+            username(str)       --  Username to be used
+            password(str)       --  Password to be used
+
+        Returns:
+            None
+
+        Raises:
+            SDKException:
+                if arguments passed are of incorrect types
+                if failed to enable SSO
+                if response is empty
+                if response is not success
+    &#34;&#34;&#34;
+
+    if not isinstance(flag, bool):
+        raise SDKException(&#39;Domain&#39;, &#39;101&#39;)
+    request_json = {&#34;enableSSO&#34;: flag}
+    username = kwargs.get(&#34;username&#34;, None)
+    password = kwargs.get(&#34;password&#34;, None)
+    if username and password:
+        if not (isinstance(username, str) and isinstance(password, str)):
+            raise SDKException(&#39;Domain&#39;, &#39;101&#39;)
+        request_json[&#34;username&#34;] = username
+        request_json[&#34;password&#34;] = b64encode(password.encode()).decode()
+    url = self._commcell_object._services[&#39;DOMAIN_SSO&#39;] % self.domain_id
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;PUT&#39;, url, request_json
+    )
+    if flag:
+        if response.json():
+            error_code = response.json().get(&#39;errorCode&#39;, 0)
+            if error_code != 0:
+                raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+            return
+        raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))</code></pre>
 </details>
 </dd>
 </dl>
@@ -846,7 +1018,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L75-L501" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/domains.py#L77-L503" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Domains(object):
     &#34;&#34;&#34;Class for getting all the domains associated with a commcell.&#34;&#34;&#34;
@@ -1200,52 +1372,52 @@ instance of the Commcell class</p>
 
         if kwargs:
             custom_provider = {
-                    &#34;providerTypeId&#34;: 0,
-                    &#34;attributes&#34;: [
-                        {
-                            &#34;attrId&#34;: 6,
-                            &#34;attributeName&#34;: &#34;User group filter&#34;,
-                            &#34;staticAttributeString&#34;: &#34;(objectClass=group)&#34;,
-                            &#34;customAttributeString&#34;: kwargs.get(&#39;group_filter&#39;, &#39;&#39;),
-                            &#34;attrTypeFlags&#34;: 1
-                        },
-                        {
-                            &#34;attrId&#34;: 7,
-                            &#34;attributeName&#34;: &#34;User filter&#34;,
-                            &#34;staticAttributeString&#34;: &#34;(&amp;(objectCategory=User)(sAMAccountName=*))&#34;,
-                            &#34;customAttributeString&#34;: kwargs.get(&#39;user_filter&#39;, &#39;&#39;),
-                            &#34;attrTypeFlags&#34;: 1
-                        },
-                        {
-                          &#34;attrId&#34;: 9,
-                          &#34;attributeName&#34;: &#34;Unique identifier&#34;,
-                          &#34;staticAttributeString&#34;: &#34;sAMAccountName&#34;,
-                          &#34;customAttributeString&#34;: kwargs.get(&#39;unique_identifier&#39;, &#39;&#39;),
-                          &#34;attrTypeFlags&#34;: 1
-                        },
-                        {
-                          &#34;attrId&#34;: 10,
-                          &#34;attributeName&#34;: &#34;base DN&#34;,
-                          &#34;staticAttributeString&#34;: &#34;baseDN&#34;,
-                          &#34;customAttributeString&#34;: kwargs.get(&#39;base_dn&#39;, &#39;&#39;),
-                          &#34;attrTypeFlags&#34;: 1
-                        },
-                        {
-                            &#34;attrTypeFlags&#34;: 6,
-                            &#34;customAttributeString&#34;: kwargs.get(&#39;email_attribute&#39;, &#39;mail&#39;),
-                            &#34;attrId&#34;: 3,
-                            &#34;attributeName&#34;: &#34;Email&#34;,
-                            &#34;staticAttributeString&#34;: &#34;mail&#34;
-                        },
-                        {
-                            &#34;attrTypeFlags&#34;: 6,
-                            &#34;customAttributeString&#34;: kwargs.get(&#39;guid_attribute&#39;, &#39;objectGUID&#39;),
-                            &#34;attrId&#34;: 4,
-                            &#34;attributeName&#34;: &#34;GUID&#34;,
-                            &#34;staticAttributeString&#34;: &#34;objectGUID&#34;
-                        }
-                    ]
-                }
+                &#34;providerTypeId&#34;: 0,
+                &#34;attributes&#34;: [
+                    {
+                        &#34;attrId&#34;: 6,
+                        &#34;attributeName&#34;: &#34;User group filter&#34;,
+                        &#34;staticAttributeString&#34;: &#34;(objectClass=group)&#34;,
+                        &#34;customAttributeString&#34;: kwargs.get(&#39;group_filter&#39;, &#39;&#39;),
+                        &#34;attrTypeFlags&#34;: 1
+                    },
+                    {
+                        &#34;attrId&#34;: 7,
+                        &#34;attributeName&#34;: &#34;User filter&#34;,
+                        &#34;staticAttributeString&#34;: &#34;(&amp;(objectCategory=User)(sAMAccountName=*))&#34;,
+                        &#34;customAttributeString&#34;: kwargs.get(&#39;user_filter&#39;, &#39;&#39;),
+                        &#34;attrTypeFlags&#34;: 1
+                    },
+                    {
+                        &#34;attrId&#34;: 9,
+                        &#34;attributeName&#34;: &#34;Unique identifier&#34;,
+                        &#34;staticAttributeString&#34;: &#34;sAMAccountName&#34;,
+                        &#34;customAttributeString&#34;: kwargs.get(&#39;unique_identifier&#39;, &#39;&#39;),
+                        &#34;attrTypeFlags&#34;: 1
+                    },
+                    {
+                        &#34;attrId&#34;: 10,
+                        &#34;attributeName&#34;: &#34;base DN&#34;,
+                        &#34;staticAttributeString&#34;: &#34;baseDN&#34;,
+                        &#34;customAttributeString&#34;: kwargs.get(&#39;base_dn&#39;, &#39;&#39;),
+                        &#34;attrTypeFlags&#34;: 1
+                    },
+                    {
+                        &#34;attrTypeFlags&#34;: 6,
+                        &#34;customAttributeString&#34;: kwargs.get(&#39;email_attribute&#39;, &#39;mail&#39;),
+                        &#34;attrId&#34;: 3,
+                        &#34;attributeName&#34;: &#34;Email&#34;,
+                        &#34;staticAttributeString&#34;: &#34;mail&#34;
+                    },
+                    {
+                        &#34;attrTypeFlags&#34;: 6,
+                        &#34;customAttributeString&#34;: kwargs.get(&#39;guid_attribute&#39;, &#39;objectGUID&#39;),
+                        &#34;attrId&#34;: 4,
+                        &#34;attributeName&#34;: &#34;GUID&#34;,
+                        &#34;staticAttributeString&#34;: &#34;objectGUID&#34;
+                    }
+                ]
+            }
             domain_create_request[&#34;provider&#34;][&#34;customProvider&#34;] = custom_provider
 
         if kwargs.get(&#39;additional_settings&#39;):
@@ -1291,7 +1463,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L188-L200" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/domains.py#L190-L202" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_domains(self):
@@ -1391,7 +1563,7 @@ if type of the domain name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L308-L501" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/domains.py#L310-L503" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self,
         domain_name,
@@ -1512,52 +1684,52 @@ if type of the domain name argument is not string</p>
 
     if kwargs:
         custom_provider = {
-                &#34;providerTypeId&#34;: 0,
-                &#34;attributes&#34;: [
-                    {
-                        &#34;attrId&#34;: 6,
-                        &#34;attributeName&#34;: &#34;User group filter&#34;,
-                        &#34;staticAttributeString&#34;: &#34;(objectClass=group)&#34;,
-                        &#34;customAttributeString&#34;: kwargs.get(&#39;group_filter&#39;, &#39;&#39;),
-                        &#34;attrTypeFlags&#34;: 1
-                    },
-                    {
-                        &#34;attrId&#34;: 7,
-                        &#34;attributeName&#34;: &#34;User filter&#34;,
-                        &#34;staticAttributeString&#34;: &#34;(&amp;(objectCategory=User)(sAMAccountName=*))&#34;,
-                        &#34;customAttributeString&#34;: kwargs.get(&#39;user_filter&#39;, &#39;&#39;),
-                        &#34;attrTypeFlags&#34;: 1
-                    },
-                    {
-                      &#34;attrId&#34;: 9,
-                      &#34;attributeName&#34;: &#34;Unique identifier&#34;,
-                      &#34;staticAttributeString&#34;: &#34;sAMAccountName&#34;,
-                      &#34;customAttributeString&#34;: kwargs.get(&#39;unique_identifier&#39;, &#39;&#39;),
-                      &#34;attrTypeFlags&#34;: 1
-                    },
-                    {
-                      &#34;attrId&#34;: 10,
-                      &#34;attributeName&#34;: &#34;base DN&#34;,
-                      &#34;staticAttributeString&#34;: &#34;baseDN&#34;,
-                      &#34;customAttributeString&#34;: kwargs.get(&#39;base_dn&#39;, &#39;&#39;),
-                      &#34;attrTypeFlags&#34;: 1
-                    },
-                    {
-                        &#34;attrTypeFlags&#34;: 6,
-                        &#34;customAttributeString&#34;: kwargs.get(&#39;email_attribute&#39;, &#39;mail&#39;),
-                        &#34;attrId&#34;: 3,
-                        &#34;attributeName&#34;: &#34;Email&#34;,
-                        &#34;staticAttributeString&#34;: &#34;mail&#34;
-                    },
-                    {
-                        &#34;attrTypeFlags&#34;: 6,
-                        &#34;customAttributeString&#34;: kwargs.get(&#39;guid_attribute&#39;, &#39;objectGUID&#39;),
-                        &#34;attrId&#34;: 4,
-                        &#34;attributeName&#34;: &#34;GUID&#34;,
-                        &#34;staticAttributeString&#34;: &#34;objectGUID&#34;
-                    }
-                ]
-            }
+            &#34;providerTypeId&#34;: 0,
+            &#34;attributes&#34;: [
+                {
+                    &#34;attrId&#34;: 6,
+                    &#34;attributeName&#34;: &#34;User group filter&#34;,
+                    &#34;staticAttributeString&#34;: &#34;(objectClass=group)&#34;,
+                    &#34;customAttributeString&#34;: kwargs.get(&#39;group_filter&#39;, &#39;&#39;),
+                    &#34;attrTypeFlags&#34;: 1
+                },
+                {
+                    &#34;attrId&#34;: 7,
+                    &#34;attributeName&#34;: &#34;User filter&#34;,
+                    &#34;staticAttributeString&#34;: &#34;(&amp;(objectCategory=User)(sAMAccountName=*))&#34;,
+                    &#34;customAttributeString&#34;: kwargs.get(&#39;user_filter&#39;, &#39;&#39;),
+                    &#34;attrTypeFlags&#34;: 1
+                },
+                {
+                    &#34;attrId&#34;: 9,
+                    &#34;attributeName&#34;: &#34;Unique identifier&#34;,
+                    &#34;staticAttributeString&#34;: &#34;sAMAccountName&#34;,
+                    &#34;customAttributeString&#34;: kwargs.get(&#39;unique_identifier&#39;, &#39;&#39;),
+                    &#34;attrTypeFlags&#34;: 1
+                },
+                {
+                    &#34;attrId&#34;: 10,
+                    &#34;attributeName&#34;: &#34;base DN&#34;,
+                    &#34;staticAttributeString&#34;: &#34;baseDN&#34;,
+                    &#34;customAttributeString&#34;: kwargs.get(&#39;base_dn&#39;, &#39;&#39;),
+                    &#34;attrTypeFlags&#34;: 1
+                },
+                {
+                    &#34;attrTypeFlags&#34;: 6,
+                    &#34;customAttributeString&#34;: kwargs.get(&#39;email_attribute&#39;, &#39;mail&#39;),
+                    &#34;attrId&#34;: 3,
+                    &#34;attributeName&#34;: &#34;Email&#34;,
+                    &#34;staticAttributeString&#34;: &#34;mail&#34;
+                },
+                {
+                    &#34;attrTypeFlags&#34;: 6,
+                    &#34;customAttributeString&#34;: kwargs.get(&#39;guid_attribute&#39;, &#39;objectGUID&#39;),
+                    &#34;attrId&#34;: 4,
+                    &#34;attributeName&#34;: &#34;GUID&#34;,
+                    &#34;staticAttributeString&#34;: &#34;objectGUID&#34;
+                }
+            ]
+        }
         domain_create_request[&#34;provider&#34;][&#34;customProvider&#34;] = custom_provider
 
     if kwargs.get(&#39;additional_settings&#39;):
@@ -1613,7 +1785,7 @@ if no domain exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L248-L302" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/domains.py#L250-L304" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, domain_name):
     &#34;&#34;&#34;Deletes the domain from the commcell.
@@ -1692,7 +1864,7 @@ name of the domain</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L221-L246" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/domains.py#L223-L248" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, domain_name):
     &#34;&#34;&#34;Returns a domain object of the specified domain name.
@@ -1742,7 +1914,7 @@ if type of the domain name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L202-L219" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/domains.py#L204-L221" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_domain(self, domain_name):
     &#34;&#34;&#34;Checks if a domain exists in the commcell with the input domain name.
@@ -1772,7 +1944,7 @@ if type of the domain name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/domains.py#L304-L306" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/domains.py#L306-L308" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the domains associated with the Commcell.&#34;&#34;&#34;
@@ -1855,6 +2027,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.domains.Domain.domain_id" href="#cvpysdk.domains.Domain.domain_id">domain_id</a></code></li>
 <li><code><a title="cvpysdk.domains.Domain.domain_name" href="#cvpysdk.domains.Domain.domain_name">domain_name</a></code></li>
 <li><code><a title="cvpysdk.domains.Domain.refresh" href="#cvpysdk.domains.Domain.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.domains.Domain.set_sso" href="#cvpysdk.domains.Domain.set_sso">set_sso</a></code></li>
 </ul>
 </li>
 <li>

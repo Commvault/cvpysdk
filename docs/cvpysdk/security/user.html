@@ -122,11 +122,15 @@ user_guid()                         --  returns user GUID
 age_password_days()                 --  returns age password days for user
 
 user_company_name()                 -- returns company name if user is a company user else returns empty str
+
+get_account_lock_info()             -- returns account lock information
+
+unlock()                            --  Unlocks user account
 </code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L1-L1030" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L1-L1105" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -236,6 +240,9 @@ User
 
     user_company_name()                 -- returns company name if user is a company user else returns empty str
 
+    get_account_lock_info()             -- returns account lock information
+
+    unlock()                            --  Unlocks user account
 &#34;&#34;&#34;
 
 from base64 import b64encode
@@ -502,6 +509,7 @@ class Users(object):
         }
         response_json = self._add_user(create_user_request)
 
+
         created_user_username = response_json.get(&#34;response&#34;, [{}])[0].get(&#34;entity&#34;, {}).get(&#34;userName&#34;)
 
         return self.get(created_user_username)
@@ -760,7 +768,7 @@ class User(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def _update_user_props(self, properties_dict):
+    def _update_user_props(self, properties_dict, **kwargs):
         &#34;&#34;&#34;Updates the properties of this user
 
             Args:
@@ -768,8 +776,16 @@ class User(object):
                     e.g.: {
                             &#34;description&#34;: &#34;My description&#34;
                         }
+                ** kwargs(dict)         --  Key value pairs for supported arguments
+                Supported arguments values:
+                    new_username (str)  -- New login name for the user
             Returns:
                 User Properties update dict
+            Raises:
+                SDKException:
+                    If invalid type arguments are passed
+                    Response was not success.
+                    Response was empty.
         &#34;&#34;&#34;
         request_json = {
             &#34;users&#34;: [{
@@ -778,7 +794,11 @@ class User(object):
                 }
             }]
         }
-
+        new_username = kwargs.get(&#34;new_username&#34;, None)
+        if new_username is not None:
+            if not isinstance(new_username, str):
+                raise SDKException(&#34;USER&#34;, &#34;101&#34;)
+            request_json[&#34;users&#34;][0][&#34;userEntity&#34;][&#34;userName&#34;] = new_username
         request_json[&#39;users&#39;][0].update(properties_dict)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -857,6 +877,11 @@ class User(object):
         return self._properties[&#39;userEntity&#39;][&#39;userName&#39;]
 
     @property
+    def full_name(self):
+        &#34;&#34;&#34;Returns the full name of this commcell user&#34;&#34;&#34;
+        return self._properties.get(&#39;fullName&#39;,&#39;&#39;)
+
+    @property
     def user_name(self):
         &#34;&#34;&#34;Returns the user name of this commcell user&#34;&#34;&#34;
         return self._user_name
@@ -875,6 +900,11 @@ class User(object):
     def email(self):
         &#34;&#34;&#34;Returns the email associated with this commcell user&#34;&#34;&#34;
         return self._email
+
+    @user_name.setter
+    def user_name(self, value):
+        &#34;&#34;&#34;Sets the new username for this commcell user&#34;&#34;&#34;
+        self._update_user_props(&#34;&#34;, new_username=value)
 
     @email.setter
     def email(self, value):
@@ -1157,7 +1187,56 @@ class User(object):
 
         bool    --  tfa status
         &#34;&#34;&#34;
-        return self._tfa_status</code></pre>
+        return self._tfa_status
+
+    @property
+    def get_account_lock_info(self):
+        &#34;&#34;&#34;
+        Returns user account lock status
+        dict     --  account lock info
+        example:
+            {
+                &#34;isAccountLocked&#34; : True,
+                &#34;lockStartTime&#34; : 1646640752,
+                &#34;lockEndTime&#34; : 1646727152
+            }
+        &#34;&#34;&#34;
+        lock_info = dict()
+        lock_info[&#39;isAccountLocked&#39;] = self._properties.get(&#39;isAccountLocked&#39;, False)
+        lock_info[&#39;lockStartTime&#39;] = self._properties.get(&#39;lockStartTime&#39;, 0)
+        lock_info[&#39;lockEndTime&#39;] = self._properties.get(&#39;lockEndTime&#39;, 0)
+        return lock_info
+
+    def unlock(self):
+        &#34;&#34;&#34;
+        Unlocks user account.
+        Returns:
+            status      (str)   --      unlock operation status
+                Example:-
+                &#34;Unlock successful for user account&#34;
+                &#34;Logged in user cannot unlock their own account&#34;
+                &#34;Unlock failed for user account&#34;
+                &#34;User account is not locked&#34;
+                &#34;Logged in user does not have rights to unlock this user account&#34;
+            statusCode
+        Raises:
+            SDKException:
+                if response is empty
+                if response is not success
+        &#34;&#34;&#34;
+        payload = {&#34;lockedAccounts&#34;: [{&#34;user&#34;: {&#34;userName&#34;: self._user_name, &#34;userId&#34;: self._user_id}}]}
+        service = self._commcell_object._services[&#39;UNLOCK&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, service, payload
+        )
+        if flag:
+            if response and response.json() and &#39;lockedAccounts&#39; in response.json():
+                return response.json().get(&#39;lockedAccounts&#39;)[0].get(&#39;status&#39;), response.json().get(&#39;lockedAccounts&#39;)[0].get(&#39;statusCode&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </section>
 <section>
@@ -1192,7 +1271,7 @@ default: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L549-L1030" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L553-L1105" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class User(object):
     &#34;&#34;&#34;Class for representing a particular user configured on this commcell&#34;&#34;&#34;
@@ -1278,7 +1357,7 @@ default: None</p></div>
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def _update_user_props(self, properties_dict):
+    def _update_user_props(self, properties_dict, **kwargs):
         &#34;&#34;&#34;Updates the properties of this user
 
             Args:
@@ -1286,8 +1365,16 @@ default: None</p></div>
                     e.g.: {
                             &#34;description&#34;: &#34;My description&#34;
                         }
+                ** kwargs(dict)         --  Key value pairs for supported arguments
+                Supported arguments values:
+                    new_username (str)  -- New login name for the user
             Returns:
                 User Properties update dict
+            Raises:
+                SDKException:
+                    If invalid type arguments are passed
+                    Response was not success.
+                    Response was empty.
         &#34;&#34;&#34;
         request_json = {
             &#34;users&#34;: [{
@@ -1296,7 +1383,11 @@ default: None</p></div>
                 }
             }]
         }
-
+        new_username = kwargs.get(&#34;new_username&#34;, None)
+        if new_username is not None:
+            if not isinstance(new_username, str):
+                raise SDKException(&#34;USER&#34;, &#34;101&#34;)
+            request_json[&#34;users&#34;][0][&#34;userEntity&#34;][&#34;userName&#34;] = new_username
         request_json[&#39;users&#39;][0].update(properties_dict)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -1375,6 +1466,11 @@ default: None</p></div>
         return self._properties[&#39;userEntity&#39;][&#39;userName&#39;]
 
     @property
+    def full_name(self):
+        &#34;&#34;&#34;Returns the full name of this commcell user&#34;&#34;&#34;
+        return self._properties.get(&#39;fullName&#39;,&#39;&#39;)
+
+    @property
     def user_name(self):
         &#34;&#34;&#34;Returns the user name of this commcell user&#34;&#34;&#34;
         return self._user_name
@@ -1393,6 +1489,11 @@ default: None</p></div>
     def email(self):
         &#34;&#34;&#34;Returns the email associated with this commcell user&#34;&#34;&#34;
         return self._email
+
+    @user_name.setter
+    def user_name(self, value):
+        &#34;&#34;&#34;Sets the new username for this commcell user&#34;&#34;&#34;
+        self._update_user_props(&#34;&#34;, new_username=value)
 
     @email.setter
     def email(self, value):
@@ -1675,7 +1776,56 @@ default: None</p></div>
 
         bool    --  tfa status
         &#34;&#34;&#34;
-        return self._tfa_status</code></pre>
+        return self._tfa_status
+
+    @property
+    def get_account_lock_info(self):
+        &#34;&#34;&#34;
+        Returns user account lock status
+        dict     --  account lock info
+        example:
+            {
+                &#34;isAccountLocked&#34; : True,
+                &#34;lockStartTime&#34; : 1646640752,
+                &#34;lockEndTime&#34; : 1646727152
+            }
+        &#34;&#34;&#34;
+        lock_info = dict()
+        lock_info[&#39;isAccountLocked&#39;] = self._properties.get(&#39;isAccountLocked&#39;, False)
+        lock_info[&#39;lockStartTime&#39;] = self._properties.get(&#39;lockStartTime&#39;, 0)
+        lock_info[&#39;lockEndTime&#39;] = self._properties.get(&#39;lockEndTime&#39;, 0)
+        return lock_info
+
+    def unlock(self):
+        &#34;&#34;&#34;
+        Unlocks user account.
+        Returns:
+            status      (str)   --      unlock operation status
+                Example:-
+                &#34;Unlock successful for user account&#34;
+                &#34;Logged in user cannot unlock their own account&#34;
+                &#34;Unlock failed for user account&#34;
+                &#34;User account is not locked&#34;
+                &#34;Logged in user does not have rights to unlock this user account&#34;
+            statusCode
+        Raises:
+            SDKException:
+                if response is empty
+                if response is not success
+        &#34;&#34;&#34;
+        payload = {&#34;lockedAccounts&#34;: [{&#34;user&#34;: {&#34;userName&#34;: self._user_name, &#34;userId&#34;: self._user_id}}]}
+        service = self._commcell_object._services[&#39;UNLOCK&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, service, payload
+        )
+        if flag:
+            if response and response.json() and &#39;lockedAccounts&#39; in response.json():
+                return response.json().get(&#39;lockedAccounts&#39;)[0].get(&#39;status&#39;), response.json().get(&#39;lockedAccounts&#39;)[0].get(&#39;statusCode&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
@@ -1685,7 +1835,7 @@ default: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L826-L831" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L852-L857" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def age_password_days(self):
@@ -1701,7 +1851,7 @@ def age_password_days(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L774-L781" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L800-L807" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def associated_external_usergroups(self):
@@ -1719,7 +1869,7 @@ def associated_external_usergroups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L765-L772" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L791-L798" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def associated_usergroups(self):
@@ -1737,7 +1887,7 @@ def associated_usergroups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L739-L742" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L760-L763" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -1751,12 +1901,62 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L744-L747" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L765-L768" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def email(self):
     &#34;&#34;&#34;Returns the email associated with this commcell user&#34;&#34;&#34;
     return self._email</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.User.full_name"><code class="name">var <span class="ident">full_name</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the full name of this commcell user</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L745-L748" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def full_name(self):
+    &#34;&#34;&#34;Returns the full name of this commcell user&#34;&#34;&#34;
+    return self._properties.get(&#39;fullName&#39;,&#39;&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.User.get_account_lock_info"><code class="name">var <span class="ident">get_account_lock_info</span></code></dt>
+<dd>
+<div class="desc"><p>Returns user account lock status
+dict
+&ndash;
+account lock info
+example:
+{
+"isAccountLocked" : True,
+"lockStartTime" : 1646640752,
+"lockEndTime" : 1646727152
+}</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L1058-L1074" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def get_account_lock_info(self):
+    &#34;&#34;&#34;
+    Returns user account lock status
+    dict     --  account lock info
+    example:
+        {
+            &#34;isAccountLocked&#34; : True,
+            &#34;lockStartTime&#34; : 1646640752,
+            &#34;lockEndTime&#34; : 1646727152
+        }
+    &#34;&#34;&#34;
+    lock_info = dict()
+    lock_info[&#39;isAccountLocked&#39;] = self._properties.get(&#39;isAccountLocked&#39;, False)
+    lock_info[&#39;lockStartTime&#39;] = self._properties.get(&#39;lockStartTime&#39;, 0)
+    lock_info[&#39;lockEndTime&#39;] = self._properties.get(&#39;lockEndTime&#39;, 0)
+    return lock_info</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.security.user.User.is_tfa_enabled"><code class="name">var <span class="ident">is_tfa_enabled</span></code></dt>
@@ -1768,7 +1968,7 @@ tfa status</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L1023-L1030" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L1049-L1056" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_tfa_enabled(self):
@@ -1786,7 +1986,7 @@ def is_tfa_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L724-L727" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L740-L743" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -1800,7 +2000,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L788-L791" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L814-L817" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def status(self):
@@ -1814,7 +2014,7 @@ def status(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L833-L838" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L859-L864" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_company_name(self):
@@ -1830,7 +2030,7 @@ def user_company_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L819-L824" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L845-L850" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_guid(self):
@@ -1846,7 +2046,7 @@ def user_guid(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L734-L737" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L755-L758" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_id(self):
@@ -1860,7 +2060,7 @@ def user_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L729-L732" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L750-L753" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_name(self):
@@ -1874,7 +2074,7 @@ def user_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L783-L786" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L809-L812" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_security_associations(self):
@@ -1898,7 +2098,7 @@ list of usergroups to be added</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L876-L882" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L902-L908" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_usergroups(self, usergroups_list):
     &#34;&#34;&#34;UPDATE the specified usergroups to this commcell user
@@ -1922,7 +2122,7 @@ list of usergroups to be overwritten</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L892-L899" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L918-L925" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def overwrite_usergroups(self, usergroups_list):
     &#34;&#34;&#34;OVERWRITE the specified usergroups to this commcell user
@@ -1942,7 +2142,7 @@ list of usergroups to be overwritten</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L901-L904" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L927-L930" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the User.&#34;&#34;&#34;
@@ -1963,7 +2163,7 @@ list of usergroups to be deleted</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L884-L890" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L910-L916" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def remove_usergroups(self, usergroups_list):
     &#34;&#34;&#34;DELETE the specified usergroups to this commcell user
@@ -1987,7 +2187,7 @@ if response is not successful</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L973-L996" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L999-L1022" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def request_otp(self):
     &#34;&#34;&#34;fetches OTP for user
@@ -2008,6 +2208,64 @@ if response is not successful</p></div>
         if response.json():
             if &#39;value&#39; in response.json():
                 return response.json()[&#39;value&#39;]
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.User.unlock"><code class="name flex">
+<span>def <span class="ident">unlock</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Unlocks user account.</p>
+<h2 id="returns">Returns</h2>
+<p>status
+(str)
+&ndash;
+unlock operation status
+Example:-
+"Unlock successful for user account"
+"Logged in user cannot unlock their own account"
+"Unlock failed for user account"
+"User account is not locked"
+"Logged in user does not have rights to unlock this user account"
+statusCode</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if response is empty
+if response is not success</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L1076-L1105" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def unlock(self):
+    &#34;&#34;&#34;
+    Unlocks user account.
+    Returns:
+        status      (str)   --      unlock operation status
+            Example:-
+            &#34;Unlock successful for user account&#34;
+            &#34;Logged in user cannot unlock their own account&#34;
+            &#34;Unlock failed for user account&#34;
+            &#34;User account is not locked&#34;
+            &#34;Logged in user does not have rights to unlock this user account&#34;
+        statusCode
+    Raises:
+        SDKException:
+            if response is empty
+            if response is not success
+    &#34;&#34;&#34;
+    payload = {&#34;lockedAccounts&#34;: [{&#34;user&#34;: {&#34;userName&#34;: self._user_name, &#34;userId&#34;: self._user_id}}]}
+    service = self._commcell_object._services[&#39;UNLOCK&#39;]
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;POST&#39;, service, payload
+    )
+    if flag:
+        if response and response.json() and &#39;lockedAccounts&#39; in response.json():
+            return response.json().get(&#39;lockedAccounts&#39;)[0].get(&#39;status&#39;), response.json().get(&#39;lockedAccounts&#39;)[0].get(&#39;statusCode&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
     else:
@@ -2074,7 +2332,7 @@ OVERWRITE user security association.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L906-L971" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L932-L997" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_security_associations(self, entity_dictionary, request_type):
     &#34;&#34;&#34;handles three way associations (role-user-entities)
@@ -2161,7 +2419,7 @@ the password) for validation.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L856-L874" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L882-L900" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_user_password(self, new_password, logged_in_user_password):
     &#34;&#34;&#34;updates new passwords of user
@@ -2202,7 +2460,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L116-L546" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L119-L550" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Users(object):
     &#34;&#34;&#34;Class for maintaining all the configured users on this commcell&#34;&#34;&#34;
@@ -2463,6 +2721,7 @@ instance of the Commcell class</p>
         }
         response_json = self._add_user(create_user_request)
 
+
         created_user_username = response_json.get(&#34;response&#34;, [{}])[0].get(&#34;entity&#34;, {}).get(&#34;userName&#34;)
 
         return self.get(created_user_username)
@@ -2648,7 +2907,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L537-L546" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L541-L550" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_users(self):
@@ -2670,7 +2929,7 @@ def all_users(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L520-L529" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L524-L533" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def service_commcell_users_space(self):
@@ -2782,7 +3041,7 @@ if failed to add user to commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L246-L377" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L249-L381" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self,
         user_name,
@@ -2913,6 +3172,7 @@ if failed to add user to commcell
     }
     response_json = self._add_user(create_user_request)
 
+
     created_user_username = response_json.get(&#34;response&#34;, [{}])[0].get(&#34;entity&#34;, {}).get(&#34;userName&#34;)
 
     return self.get(created_user_username)</code></pre>
@@ -2959,7 +3219,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L414-L487" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L418-L491" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, user_name, new_user=None, new_usergroup=None):
     &#34;&#34;&#34;Deletes the specified user from the existing commcell users
@@ -3054,7 +3314,7 @@ if user doesn't exist with specified name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L395-L412" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L399-L416" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, user_name):
     &#34;&#34;&#34;Returns the user object for the specified user name
@@ -3093,7 +3353,7 @@ if data type of input is invalid</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L379-L393" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L383-L397" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_user(self, user_name):
     &#34;&#34;&#34;Checks if any user with specified name exists on this commcell
@@ -3120,7 +3380,7 @@ if data type of input is invalid</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/user.py#L532-L535" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/user.py#L536-L539" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the list of Users on this commcell.&#34;&#34;&#34;
@@ -3207,6 +3467,8 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.security.user.User.associated_usergroups" href="#cvpysdk.security.user.User.associated_usergroups">associated_usergroups</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.description" href="#cvpysdk.security.user.User.description">description</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.email" href="#cvpysdk.security.user.User.email">email</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.full_name" href="#cvpysdk.security.user.User.full_name">full_name</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.get_account_lock_info" href="#cvpysdk.security.user.User.get_account_lock_info">get_account_lock_info</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.is_tfa_enabled" href="#cvpysdk.security.user.User.is_tfa_enabled">is_tfa_enabled</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.name" href="#cvpysdk.security.user.User.name">name</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.overwrite_usergroups" href="#cvpysdk.security.user.User.overwrite_usergroups">overwrite_usergroups</a></code></li>
@@ -3214,6 +3476,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.security.user.User.remove_usergroups" href="#cvpysdk.security.user.User.remove_usergroups">remove_usergroups</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.request_otp" href="#cvpysdk.security.user.User.request_otp">request_otp</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.status" href="#cvpysdk.security.user.User.status">status</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.unlock" href="#cvpysdk.security.user.User.unlock">unlock</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.update_security_associations" href="#cvpysdk.security.user.User.update_security_associations">update_security_associations</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.update_user_password" href="#cvpysdk.security.user.User.update_user_password">update_user_password</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.user_company_name" href="#cvpysdk.security.user.User.user_company_name">user_company_name</a></code></li>

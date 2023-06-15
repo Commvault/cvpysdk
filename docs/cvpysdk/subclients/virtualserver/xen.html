@@ -48,7 +48,7 @@ user to the same location</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/xen.py#L1-L214" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/xen.py#L1-L219" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -180,7 +180,8 @@ class Xen(VirtualServerSubclient):
             storage=None,
             overwrite=True,
             power_on=True,
-            copy_precedence=0):
+            copy_precedence=0,
+            **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
             If the provided client name is none then it restores the Full Virtual
@@ -236,6 +237,10 @@ class Xen(VirtualServerSubclient):
 
         &#34;&#34;&#34;
         restore_option = {}
+        extra_options = [&#39;v2_details&#39;]
+
+        for key in extra_options:
+            restore_option[key] = kwargs[key] if key in kwargs else None
 
         if vm_to_restore:
             vm_to_restore = [vm_to_restore]
@@ -292,7 +297,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/xen.py#L45-L214" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/xen.py#L45-L219" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Xen(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient Base class.
@@ -380,7 +385,8 @@ backupset class, subclient name, subclient id</p></div>
             storage=None,
             overwrite=True,
             power_on=True,
-            copy_precedence=0):
+            copy_precedence=0,
+            **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
             If the provided client name is none then it restores the Full Virtual
@@ -436,6 +442,10 @@ backupset class, subclient name, subclient id</p></div>
 
         &#34;&#34;&#34;
         restore_option = {}
+        extra_options = [&#39;v2_details&#39;]
+
+        for key in extra_options:
+            restore_option[key] = kwargs[key] if key in kwargs else None
 
         if vm_to_restore:
             vm_to_restore = [vm_to_restore]
@@ -520,7 +530,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/xen.py#L62-L119" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/xen.py#L62-L119" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(
         self,
@@ -583,7 +593,7 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.subclients.virtualserver.xen.Xen.full_vm_restore_out_of_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, destination_client=None, proxy_client=None, new_name=None, xen_server=None, storage=None, overwrite=True, power_on=True, copy_precedence=0)</span>
+<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, destination_client=None, proxy_client=None, new_name=None, xen_server=None, storage=None, overwrite=True, power_on=True, copy_precedence=0, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified in the input list
@@ -647,7 +657,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/xen.py#L121-L214" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/xen.py#L121-L219" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(
         self,
@@ -659,7 +669,8 @@ if response is not success
         storage=None,
         overwrite=True,
         power_on=True,
-        copy_precedence=0):
+        copy_precedence=0,
+        **kwargs):
     &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
         to the provided vcenter client along with the ESX and the datastores.
         If the provided client name is none then it restores the Full Virtual
@@ -715,6 +726,10 @@ if response is not success
 
     &#34;&#34;&#34;
     restore_option = {}
+    extra_options = [&#39;v2_details&#39;]
+
+    for key in extra_options:
+        restore_option[key] = kwargs[key] if key in kwargs else None
 
     if vm_to_restore:
         vm_to_restore = [vm_to_restore]
@@ -796,6 +811,7 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.plan" href="../../subclient.html#cvpysdk.subclient.Subclient.plan">plan</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.preview_content" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.preview_content">preview_content</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.properties" href="../../subclient.html#cvpysdk.subclient.Subclient.properties">properties</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.quiesce_file_system" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.quiesce_file_system">quiesce_file_system</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.read_buffer_size" href="../../subclient.html#cvpysdk.subclient.Subclient.read_buffer_size">read_buffer_size</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.refresh" href="../../subclient.html#cvpysdk.subclient.Subclient.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.restore_in_place" href="../../subclient.html#cvpysdk.subclient.Subclient.restore_in_place">restore_in_place</a></code></li>

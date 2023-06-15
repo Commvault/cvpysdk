@@ -147,6 +147,10 @@ refresh the properties of the Alert</p>
 
 **description**             --  returns the description of an alert
 
+**users_list**              --  returns the list of users associated with the alert
+
+**user_group_list**         --  returns the list of user groups associated with the alert
+
 **entities**                --  returns the list of entities associated with an alert
 
 **email_recipients**        --  returns the list of email recipients associated to the alert
@@ -154,7 +158,7 @@ refresh the properties of the Alert</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L1-L1234" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L1-L1281" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -276,6 +280,10 @@ Alert Attributes
     **notification_types**      --  returns the notification types of an alert
 
     **description**             --  returns the description of an alert
+
+    **users_list**              --  returns the list of users associated with the alert
+
+    **user_group_list**         --  returns the list of user groups associated with the alert
 
     **entities**                --  returns the list of entities associated with an alert
 
@@ -492,20 +500,32 @@ class Alerts(object):
         associations = []
 
         for entity, values in entities.items():
-            entity_obj = getattr(self._commcell_object, entity)
+            if entity == &#34;entity_type_names&#34;:
+                for value in values:
+                    if value == &#34;ALL_CLIENT_GROUPS_ENTITY&#34;:
+                        entity_type = 27
+                    else:
+                        entity_type = 2
+                    temp_dict = {
+                        &#34;entityTypeName&#34;: value,
+                        &#34;_type_&#34;: entity_type
+                    }
+                    associations.append(temp_dict)
+            else:
+                entity_obj = getattr(self._commcell_object, entity)
 
-            # this will allows us to loop through even for single item
-            values = values.split() if not isinstance(values, list) else values
+                # this will allows us to loop through even for single item
+                values = values.split() if not isinstance(values, list) else values
 
-            for value in values:
-                temp_dict = entity_dict[entity].copy()
-                for name, entity_attr in temp_dict.items():
-                    if name != &#34;_type_&#34;:
-                        try: # to convert the string values to int types
-                            temp_dict[name] = int(getattr(entity_obj.get(value), entity_attr))
-                        except ValueError:
-                            temp_dict[name] = getattr(entity_obj.get(value), entity_attr)
-                associations.append(temp_dict)
+                for value in values:
+                    temp_dict = entity_dict[entity].copy()
+                    for name, entity_attr in temp_dict.items():
+                        if name != &#34;_type_&#34;:
+                            try: # to convert the string values to int types
+                                temp_dict[name] = int(getattr(entity_obj.get(value), entity_attr))
+                            except ValueError:
+                                temp_dict[name] = getattr(entity_obj.get(value), entity_attr)
+                    associations.append(temp_dict)
 
         return associations
 
@@ -1016,9 +1036,13 @@ class Alert(object):
 
                 if &#39;userList&#39; in self._alert_detail:
                     self._users_list = [user[&#39;name&#39;] for user in self._alert_detail[&#39;userList&#39;]]
+                else:
+                    self._users_list = []
 
                 if &#39;userGroupList&#39; in self._alert_detail:
                     self._user_group_list = [grp[&#39;name&#39;] for grp in self._alert_detail[&#39;userGroupList&#39;]]
+                else:
+                    self._user_group_list = []
 
                 self._email_recipients = []
                 if &#39;nonGalaxyUserList&#39; in self._alert_detail:
@@ -1050,7 +1074,12 @@ class Alert(object):
                         &#34;criteria&#34;: int(self._criteria[0][&#39;criteria_id&#39;])
                     },
                     &#34;userList&#34;: {
+                        &#34;userListOperationType&#34;: 1,
                         &#34;userList&#34;: [{&#34;userName&#34;: user} for user in self._users_list]
+                    },
+                    &#34;userGroupList&#34;: {
+                        &#34;userGroupListOperationType&#34;: 1,
+                        &#34;userGroupList&#34;: [{&#34;userGroupName&#34;: user} for user in self._user_group_list]
                     },
                     &#34;nonGalaxyList&#34;: {
                         &#34;nonGalaxyUserList&#34;: [{&#34;nonGalaxyUser&#34;: email} for email in self._email_recipients]
@@ -1197,6 +1226,28 @@ class Alert(object):
     def description(self, description):
         &#34;&#34;&#34;Modifies the Alert description&#34;&#34;&#34;
         self._description = description
+        self._modify_alert_properties()
+    
+    @property
+    def users_list(self):
+        &#34;&#34;&#34;Treats the users list as a read-only attribute.&#34;&#34;&#34;
+        return self._users_list
+
+    @users_list.setter
+    def users_list(self, users_list):
+        &#34;&#34;&#34;Modifies the users list&#34;&#34;&#34;
+        self._users_list = users_list
+        self._modify_alert_properties()
+    
+    @property
+    def user_group_list(self):
+        &#34;&#34;&#34;Treats the user group list as a read-only attribute.&#34;&#34;&#34;
+        return self._user_group_list
+
+    @user_group_list.setter
+    def user_group_list(self, user_group_list):
+        &#34;&#34;&#34;Modifies the user group list&#34;&#34;&#34;
+        self._user_group_list = user_group_list
         self._modify_alert_properties()
 
     def enable_notification_type(self, alert_notification_type):
@@ -1431,7 +1482,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L712-L1234" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L728-L1281" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Alert(object):
     &#34;&#34;&#34;Class for performing operations for a specific alert.&#34;&#34;&#34;
@@ -1582,9 +1633,13 @@ default: None</p>
 
                 if &#39;userList&#39; in self._alert_detail:
                     self._users_list = [user[&#39;name&#39;] for user in self._alert_detail[&#39;userList&#39;]]
+                else:
+                    self._users_list = []
 
                 if &#39;userGroupList&#39; in self._alert_detail:
                     self._user_group_list = [grp[&#39;name&#39;] for grp in self._alert_detail[&#39;userGroupList&#39;]]
+                else:
+                    self._user_group_list = []
 
                 self._email_recipients = []
                 if &#39;nonGalaxyUserList&#39; in self._alert_detail:
@@ -1616,7 +1671,12 @@ default: None</p>
                         &#34;criteria&#34;: int(self._criteria[0][&#39;criteria_id&#39;])
                     },
                     &#34;userList&#34;: {
+                        &#34;userListOperationType&#34;: 1,
                         &#34;userList&#34;: [{&#34;userName&#34;: user} for user in self._users_list]
+                    },
+                    &#34;userGroupList&#34;: {
+                        &#34;userGroupListOperationType&#34;: 1,
+                        &#34;userGroupList&#34;: [{&#34;userGroupName&#34;: user} for user in self._user_group_list]
                     },
                     &#34;nonGalaxyList&#34;: {
                         &#34;nonGalaxyUserList&#34;: [{&#34;nonGalaxyUser&#34;: email} for email in self._email_recipients]
@@ -1763,6 +1823,28 @@ default: None</p>
     def description(self, description):
         &#34;&#34;&#34;Modifies the Alert description&#34;&#34;&#34;
         self._description = description
+        self._modify_alert_properties()
+    
+    @property
+    def users_list(self):
+        &#34;&#34;&#34;Treats the users list as a read-only attribute.&#34;&#34;&#34;
+        return self._users_list
+
+    @users_list.setter
+    def users_list(self, users_list):
+        &#34;&#34;&#34;Modifies the users list&#34;&#34;&#34;
+        self._users_list = users_list
+        self._modify_alert_properties()
+    
+    @property
+    def user_group_list(self):
+        &#34;&#34;&#34;Treats the user group list as a read-only attribute.&#34;&#34;&#34;
+        return self._user_group_list
+
+    @user_group_list.setter
+    def user_group_list(self, user_group_list):
+        &#34;&#34;&#34;Modifies the user group list&#34;&#34;&#34;
+        self._user_group_list = user_group_list
         self._modify_alert_properties()
 
     def enable_notification_type(self, alert_notification_type):
@@ -1965,7 +2047,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L959-L962" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L984-L987" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def alert_category(self):
@@ -1979,7 +2061,7 @@ def alert_category(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L978-L981" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L1003-L1006" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def alert_criteria(self):
@@ -1993,7 +2075,7 @@ def alert_criteria(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L949-L952" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L974-L977" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def alert_id(self):
@@ -2007,7 +2089,7 @@ def alert_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L935-L938" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L960-L963" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def alert_name(self):
@@ -2021,7 +2103,7 @@ def alert_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L964-L967" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L989-L992" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def alert_severity(self):
@@ -2035,7 +2117,7 @@ def alert_severity(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L954-L957" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L979-L982" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def alert_type(self):
@@ -2049,7 +2131,7 @@ def alert_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L1033-L1036" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L1058-L1061" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -2063,7 +2145,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L1022-L1025" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L1047-L1050" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def email_recipients(self):
@@ -2077,7 +2159,7 @@ def email_recipients(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L1008-L1011" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L1033-L1036" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def entities(self):
@@ -2091,7 +2173,7 @@ def entities(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L930-L933" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L955-L958" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -2105,7 +2187,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L983-L990" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L1008-L1015" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def notification_types(self):
@@ -2115,6 +2197,34 @@ def notification_types(self):
         if notif_id in self._notification_types:
             notif_types.append((notif_id, notif.title()))
     return notif_types</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.alert.Alert.user_group_list"><code class="name">var <span class="ident">user_group_list</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the user group list as a read-only attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L1080-L1083" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def user_group_list(self):
+    &#34;&#34;&#34;Treats the user group list as a read-only attribute.&#34;&#34;&#34;
+    return self._user_group_list</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.alert.Alert.users_list"><code class="name">var <span class="ident">users_list</span></code></dt>
+<dd>
+<div class="desc"><p>Treats the users list as a read-only attribute.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L1069-L1072" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def users_list(self):
+    &#34;&#34;&#34;Treats the users list as a read-only attribute.&#34;&#34;&#34;
+    return self._users_list</code></pre>
 </details>
 </dd>
 </dl>
@@ -2135,7 +2245,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L1189-L1230" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L1236-L1277" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable(self):
     &#34;&#34;&#34;Disable an alert.
@@ -2204,7 +2314,7 @@ if no notification type exists with the name provided
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L1096-L1146" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L1143-L1193" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_notification_type(self, alert_notification_type):
     &#34;&#34;&#34;Disable the notification type.
@@ -2274,7 +2384,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L1148-L1187" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L1195-L1234" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable(self):
     &#34;&#34;&#34;Enable an alert.
@@ -2341,7 +2451,7 @@ if no notification type exists with the name provided
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L1044-L1094" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L1091-L1141" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_notification_type(self, alert_notification_type):
     &#34;&#34;&#34;Enable the notification type.
@@ -2404,7 +2514,7 @@ if no notification type exists with the name provided
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L1232-L1234" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L1279-L1281" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Alert.&#34;&#34;&#34;
@@ -2429,7 +2539,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L133-L709" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L137-L725" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Alerts(object):
     &#34;&#34;&#34;Class for getting all the Alerts associated with the commcell.&#34;&#34;&#34;
@@ -2635,20 +2745,32 @@ instance of the Commcell class</p>
         associations = []
 
         for entity, values in entities.items():
-            entity_obj = getattr(self._commcell_object, entity)
+            if entity == &#34;entity_type_names&#34;:
+                for value in values:
+                    if value == &#34;ALL_CLIENT_GROUPS_ENTITY&#34;:
+                        entity_type = 27
+                    else:
+                        entity_type = 2
+                    temp_dict = {
+                        &#34;entityTypeName&#34;: value,
+                        &#34;_type_&#34;: entity_type
+                    }
+                    associations.append(temp_dict)
+            else:
+                entity_obj = getattr(self._commcell_object, entity)
 
-            # this will allows us to loop through even for single item
-            values = values.split() if not isinstance(values, list) else values
+                # this will allows us to loop through even for single item
+                values = values.split() if not isinstance(values, list) else values
 
-            for value in values:
-                temp_dict = entity_dict[entity].copy()
-                for name, entity_attr in temp_dict.items():
-                    if name != &#34;_type_&#34;:
-                        try: # to convert the string values to int types
-                            temp_dict[name] = int(getattr(entity_obj.get(value), entity_attr))
-                        except ValueError:
-                            temp_dict[name] = getattr(entity_obj.get(value), entity_attr)
-                associations.append(temp_dict)
+                for value in values:
+                    temp_dict = entity_dict[entity].copy()
+                    for name, entity_attr in temp_dict.items():
+                        if name != &#34;_type_&#34;:
+                            try: # to convert the string values to int types
+                                temp_dict[name] = int(getattr(entity_obj.get(value), entity_attr))
+                            except ValueError:
+                                temp_dict[name] = getattr(entity_obj.get(value), entity_attr)
+                    associations.append(temp_dict)
 
         return associations
 
@@ -3028,7 +3150,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L503-L519" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L519-L535" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_alerts(self):
@@ -3073,7 +3195,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L624-L656" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L640-L672" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def console_alert(self, live_feed_id):
     &#34;&#34;&#34;Returns the console console alert with given live_feed_id
@@ -3136,7 +3258,7 @@ object - json response object for console alerts if version greater than or equa
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L568-L622" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L584-L638" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def console_alerts(self, page_number=1, page_count=1):
     &#34;&#34;&#34;Returns the console alerts from page_number to the number of pages asked for page_count
@@ -3223,7 +3345,7 @@ if response is empty
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L438-L500" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L454-L516" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_alert(self, alert_dict):
     &#34;&#34;&#34;Creates a new Alert for CommCell
@@ -3309,7 +3431,7 @@ if no alert exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L658-L705" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L674-L721" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, alert_name):
     &#34;&#34;&#34;Deletes the alert from the commcell.
@@ -3380,7 +3502,7 @@ if type of the alert name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L539-L566" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L555-L582" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, alert_name):
     &#34;&#34;&#34;Returns a alert object of the specified alert name.
@@ -3420,7 +3542,7 @@ if type of the alert name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L419-L435" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L435-L451" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_alert_sender(self):
     &#34;&#34;&#34;
@@ -3458,7 +3580,7 @@ if type of the alert name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L521-L537" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L537-L553" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_alert(self, alert_name):
     &#34;&#34;&#34;Checks if a alert exists for the commcell with the input alert name.
@@ -3487,7 +3609,7 @@ if type of the alert name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/alert.py#L707-L709" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/alert.py#L723-L725" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the alerts associated with the Commcell.&#34;&#34;&#34;
@@ -3586,6 +3708,8 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.alert.Alert.name" href="#cvpysdk.alert.Alert.name">name</a></code></li>
 <li><code><a title="cvpysdk.alert.Alert.notification_types" href="#cvpysdk.alert.Alert.notification_types">notification_types</a></code></li>
 <li><code><a title="cvpysdk.alert.Alert.refresh" href="#cvpysdk.alert.Alert.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.alert.Alert.user_group_list" href="#cvpysdk.alert.Alert.user_group_list">user_group_list</a></code></li>
+<li><code><a title="cvpysdk.alert.Alert.users_list" href="#cvpysdk.alert.Alert.users_list">users_list</a></code></li>
 </ul>
 </li>
 <li>

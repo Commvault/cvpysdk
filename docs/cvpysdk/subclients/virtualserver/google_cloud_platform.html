@@ -48,7 +48,7 @@ user to the same location</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L1-L227" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L1-L233" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -119,12 +119,13 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
             power_on=True,
             proxy_client=None,
             copy_precedence=0,
+            zone=None,
             **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
             to the location same as the actual location of the VM in VCenter.
 
             Args:
-                vm_to_restore       (list)     --  provide the VM name to
+                vm_to_restore       (list)     --  provide the list of VM name to
                                                    restore
                                                    default: None
 
@@ -160,7 +161,7 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
                     if response is not success
 
         &#34;&#34;&#34;
-        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None), &#34;datacenter&#34;: zone[:-2]}
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
@@ -197,7 +198,7 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
 
 
             Args:
-                vm_to_restore     (list):       provide the VM name to restore
+                vm_to_restore     (list):       provide the list of VM name to restore
                                                 default: None
 
                 proxy_client     (str):         proxy client to be used for restore
@@ -256,6 +257,11 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
             if not (isinstance(overwrite, bool) and
                     isinstance(power_on, bool)):
                 raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
+        restore_option[&#34;datacenter&#34;] = zone[:-2]
+        if kwargs.get(&#34;replica_zone&#34;):
+            restore_option[&#34;replicaZones&#34;] = []
+            restore_option[&#34;replicaZones&#34;].append(zone)
+            restore_option[&#34;replicaZones&#34;].append(kwargs.get(&#34;replica_zone&#34;))
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
@@ -305,7 +311,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L46-L227" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L46-L233" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient Base class.
@@ -331,12 +337,13 @@ backupset class, subclient name, subclient id</p></div>
             power_on=True,
             proxy_client=None,
             copy_precedence=0,
+            zone=None,
             **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
             to the location same as the actual location of the VM in VCenter.
 
             Args:
-                vm_to_restore       (list)     --  provide the VM name to
+                vm_to_restore       (list)     --  provide the list of VM name to
                                                    restore
                                                    default: None
 
@@ -372,7 +379,7 @@ backupset class, subclient name, subclient id</p></div>
                     if response is not success
 
         &#34;&#34;&#34;
-        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
+        restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None), &#34;datacenter&#34;: zone[:-2]}
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
@@ -409,7 +416,7 @@ backupset class, subclient name, subclient id</p></div>
 
 
             Args:
-                vm_to_restore     (list):       provide the VM name to restore
+                vm_to_restore     (list):       provide the list of VM name to restore
                                                 default: None
 
                 proxy_client     (str):         proxy client to be used for restore
@@ -468,6 +475,11 @@ backupset class, subclient name, subclient id</p></div>
             if not (isinstance(overwrite, bool) and
                     isinstance(power_on, bool)):
                 raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
+        restore_option[&#34;datacenter&#34;] = zone[:-2]
+        if kwargs.get(&#34;replica_zone&#34;):
+            restore_option[&#34;replicaZones&#34;] = []
+            restore_option[&#34;replicaZones&#34;].append(zone)
+            restore_option[&#34;replicaZones&#34;].append(kwargs.get(&#34;replica_zone&#34;))
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
@@ -498,7 +510,7 @@ backupset class, subclient name, subclient id</p></div>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.subclients.virtualserver.google_cloud_platform.GooglecloudVirtualServerSubclient.full_vm_restore_in_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_in_place</span></span>(<span>self, vm_to_restore=None, overwrite=True, power_on=True, proxy_client=None, copy_precedence=0, **kwargs)</span>
+<span>def <span class="ident">full_vm_restore_in_place</span></span>(<span>self, vm_to_restore=None, overwrite=True, power_on=True, proxy_client=None, copy_precedence=0, zone=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified in the input list
@@ -507,7 +519,7 @@ to the location same as the actual location of the VM in VCenter.</p>
 <p>vm_to_restore
 (list)
 &ndash;
-provide the VM name to
+provide the list of VM name to
 restore
 default: None</p>
 <p>overwrite
@@ -553,7 +565,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L63-L126" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L63-L127" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(
         self,
@@ -562,12 +574,13 @@ if response is not success
         power_on=True,
         proxy_client=None,
         copy_precedence=0,
+        zone=None,
         **kwargs):
     &#34;&#34;&#34;Restores the FULL Virtual machine specified in the input list
         to the location same as the actual location of the VM in VCenter.
 
         Args:
-            vm_to_restore       (list)     --  provide the VM name to
+            vm_to_restore       (list)     --  provide the list of VM name to
                                                restore
                                                default: None
 
@@ -603,7 +616,7 @@ if response is not success
                 if response is not success
 
     &#34;&#34;&#34;
-    restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
+    restore_option = {&#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None), &#34;datacenter&#34;: zone[:-2]}
 
     # set attr for all the option in restore xml from user inputs
     self._set_restore_inputs(
@@ -632,7 +645,7 @@ at the specified destination location.</p>
 <h2 id="args">Args</h2>
 <p>vm_to_restore
 (list):
-provide the VM name to restore
+provide the list of VM name to restore
 default: None</p>
 <p>proxy_client
 (str):
@@ -685,7 +698,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L128-L227" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L129-L233" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(
         self,
@@ -707,7 +720,7 @@ if response is not success
 
 
         Args:
-            vm_to_restore     (list):       provide the VM name to restore
+            vm_to_restore     (list):       provide the list of VM name to restore
                                             default: None
 
             proxy_client     (str):         proxy client to be used for restore
@@ -766,6 +779,11 @@ if response is not success
         if not (isinstance(overwrite, bool) and
                 isinstance(power_on, bool)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
+    restore_option[&#34;datacenter&#34;] = zone[:-2]
+    if kwargs.get(&#34;replica_zone&#34;):
+        restore_option[&#34;replicaZones&#34;] = []
+        restore_option[&#34;replicaZones&#34;].append(zone)
+        restore_option[&#34;replicaZones&#34;].append(kwargs.get(&#34;replica_zone&#34;))
 
     # set attr for all the option in restore xml from user inputs
     self._set_restore_inputs(
@@ -840,6 +858,7 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.plan" href="../../subclient.html#cvpysdk.subclient.Subclient.plan">plan</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.preview_content" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.preview_content">preview_content</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.properties" href="../../subclient.html#cvpysdk.subclient.Subclient.properties">properties</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.quiesce_file_system" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.quiesce_file_system">quiesce_file_system</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.read_buffer_size" href="../../subclient.html#cvpysdk.subclient.Subclient.read_buffer_size">read_buffer_size</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.refresh" href="../../subclient.html#cvpysdk.subclient.Subclient.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.restore_in_place" href="../../subclient.html#cvpysdk.subclient.Subclient.restore_in_place">restore_in_place</a></code></li>

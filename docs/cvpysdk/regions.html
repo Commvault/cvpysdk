@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.10.0" />
 <title>cvpysdk.regions API documentation</title>
-<meta name="description" content="File for associating Workload and Backup destination regions for various entites …" />
+<meta name="description" content="File for associating Workload and Backup destination regions for various entites
+class: Regions. Region …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -23,21 +24,28 @@
 <h1 class="title">Module <code>cvpysdk.regions</code></h1>
 </header>
 <section id="section-intro">
-<p>File for associating Workload and Backup destination regions for various entites</p>
-<p>AssociatedEntityRegion: Class for representing all Region associations with entites</p>
-<h1 id="associatedentityregion">AssociatedEntityRegion</h1>
-<pre><code>__init__()                  --  initialize instance of the AssociatedEntityRegion class
-
-set_region()                --  Associates a region to an entity
-
-get_region()                --  Get teh region associated to an entity
-
-calculate_region()          --  Calculates the Region to be associated to an Entity
+<p>File for associating Workload and Backup destination regions for various entites
+class: Regions. Region</p>
+<h1 id="regions">Regions:</h1>
+<pre><code>_get_regions()                  --  Gets all the regions created in commcell
+refresh()                       --  Refresh the list of Regions associated to commcell
+has_region()                    --  Checks if region with given name exists
+get()                           --  returns Region class object for the specified input name
+set_region()                    --  Associate a region to an entity
+get_region()                    --  Gets the Region associated to an Entity
+calculate_region()              --  Calculates the Region to be associated to an Entity
 </code></pre>
+<h1 id="region">Region:</h1>
+<pre><code>_get_region_id()                --  Returns the region id
+</code></pre>
+<h2 id="attributes">Attributes</h2>
+<p><strong><em>region_id</em></strong>
+&ndash;
+Id of the given Region</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/regions.py#L1-L169" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/regions.py#L1-L285" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -58,32 +66,105 @@ calculate_region()          --  Calculates the Region to be associated to an Ent
 # --------------------------------------------------------------------------
 
 &#34;&#34;&#34; File for associating Workload and Backup destination regions for various entites
+class: Regions. Region
 
-AssociatedEntityRegion: Class for representing all Region associations with entites
+Regions:
+========
+    _get_regions()                  --  Gets all the regions created in commcell
+    refresh()                       --  Refresh the list of Regions associated to commcell
+    has_region()                    --  Checks if region with given name exists
+    get()                           --  returns Region class object for the specified input name
+    set_region()                    --  Associate a region to an entity
+    get_region()                    --  Gets the Region associated to an Entity
+    calculate_region()              --  Calculates the Region to be associated to an Entity
 
-AssociatedEntityRegion
-======================
+Region:
+=======
+    _get_region_id()                --  Returns the region id
 
-    __init__()                  --  initialize instance of the AssociatedEntityRegion class
-
-    set_region()                --  Associates a region to an entity
-
-    get_region()                --  Get teh region associated to an entity
-
-    calculate_region()          --  Calculates the Region to be associated to an Entity
+Attributes:
+    ***region_id***                 --  Id of the given Region
 
 &#34;&#34;&#34;
 from .exception import SDKException
 
-class AssociatedEntityRegion:
-    &#34;&#34;&#34; Class for associating Regions to all entities&#34;&#34;&#34;
 
+class Regions:
+    &#34;&#34;&#34;
+    Class for representing all the Regions created in the commcell
+    &#34;&#34;&#34;
     def __init__(self, commcell_object):
-        &#34;&#34;&#34; Initialize object of the Regions class &#34;&#34;&#34;
+        &#34;&#34;&#34;Initialises the object of Regions class&#34;&#34;&#34;
         self._commcell_object = commcell_object
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._regions_api = self._commcell_object._services[&#39;REGIONS&#39;]
         self._EDIT_REGION = self._commcell_object._services[&#39;EDIT_REGION&#39;]
         self._GET_REGION = self._commcell_object._services[&#39;GET_REGION&#39;]
         self._CALCULATE_REGION = self._commcell_object._services[&#39;CALCULATE_REGION&#39;]
+        self._regions = {}
+        self.refresh()
+
+    def _get_regions(self):
+        &#34;&#34;&#34;Gets all the regions created in commcell&#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._regions_api)
+        if flag:
+            if response.json() and &#39;regions&#39; in response.json():
+                for region in response.json()[&#39;regions&#39;]:
+                    name = region[&#39;name&#39;]
+                    id = region[&#39;id&#39;]
+                    self._regions[name] = id
+
+                return self._regions
+
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+
+        response_string = self._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the list of Regions associated to commcell&#34;&#34;&#34;
+        self._regions = self._get_regions()
+
+    def has_region(self, name):
+        &#34;&#34;&#34;Checks if the given Region exists in the Commcell.
+
+            Args:
+                name    (str)   --  name of the Region
+
+            Returns:
+                bool    -   boolean output whether the Region exists in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the Region name argument is not string
+
+        &#34;&#34;&#34;
+        if not isinstance(name, str):
+            raise SDKException(&#39;Region&#39;, &#39;103&#39;)
+
+        return self._regions and (name in self._regions)
+
+    def get(self, name):
+        &#34;&#34;&#34;
+        Returns the instance of Region class for the given Region name
+        Args:
+            name    (str)   --  name of the Region
+
+        Returns:
+            object  -- Instance of Region class for the given Region name
+
+        Raises:
+            SDKException:
+                - If the Region name argument is not a string
+
+                - If No Region found in commcell with the given region name
+        &#34;&#34;&#34;
+        if not isinstance(name, str):
+            raise SDKException(&#39;Region&#39;, &#39;102&#39;,&#34;Invalid input received&#34;)
+
+        if self.has_region(name):
+            return Region(self._commcell_object, name, self._regions[name])
+        raise SDKException(&#39;Region&#39;, &#39;103&#39;,&#34;Region not present in commcell&#34;)
 
     def set_region(self, entity_type, entity_id, entity_region_type, region_id):
         &#34;&#34;&#34;
@@ -142,6 +223,8 @@ class AssociatedEntityRegion:
             entity_type         (str)   :   Type of the entity
                                             (eg:    COMMCELL,
                                                     COMPANY,
+
+
                                                     CLIENT,
                                                     CLIENT_GROUP,
                                                     MEDIAAGENT,
@@ -164,7 +247,9 @@ class AssociatedEntityRegion:
                         raise SDKException(&#39;Regions&#39;, &#39;102&#39;, &#39;{0}&#39;.format(error_string))
 
                 except:
-                    return response.json()[&#39;regionId&#39;]
+                    if response.json().get(&#39;regionId&#39;):
+                        return response.json().get(&#39;regionId&#39;)
+                    return 0
 
             else:
                 return None
@@ -207,7 +292,46 @@ class AssociatedEntityRegion:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+
+
+class Region:
+    &#34;&#34;&#34; Class for performing operations on a given Region &#34;&#34;&#34;
+    def __init__(self, commcell_object, region_name, region_id=None):
+        &#34;&#34;&#34; Initialise the Region class instance.
+            Args:
+                commcell_object     (object)    --  instance of the Commcell class
+
+                region_name         (str)       --  name of the region
+
+                region_id           (int)       --  ID of the REgion
+                                                    Default : None
+
+            Returns:
+                object  -   instance of the Region class
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._region_name = region_name
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._update_response_ = commcell_object._update_response_
+
+        self._region_name = region_name
+
+        if region_id:
+            self._region_id = str(region_id)
+        else:
+            self._region_id = self._get_region_id()
+
+    def _get_region_id(self):
+        &#34;&#34;&#34; Returns the ID of the Region &#34;&#34;&#34;
+        regions = Regions(self._commcell_object)
+        id = regions.get(self._region_name).region_id
+
+    @property
+    def region_id(self):
+        &#34;&#34;&#34; Get Region ID &#34;&#34;&#34;
+        return self._region_id</code></pre>
 </details>
 </section>
 <section>
@@ -219,27 +343,179 @@ class AssociatedEntityRegion:
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="cvpysdk.regions.AssociatedEntityRegion"><code class="flex name class">
-<span>class <span class="ident">AssociatedEntityRegion</span></span>
-<span>(</span><span>commcell_object)</span>
+<dt id="cvpysdk.regions.Region"><code class="flex name class">
+<span>class <span class="ident">Region</span></span>
+<span>(</span><span>commcell_object, region_name, region_id=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for associating Regions to all entities</p>
-<p>Initialize object of the Regions class</p></div>
+<div class="desc"><p>Class for performing operations on a given Region </p>
+<p>Initialise the Region class instance.</p>
+<h2 id="args">Args</h2>
+<p>commcell_object
+(object)
+&ndash;
+instance of the Commcell class</p>
+<p>region_name
+(str)
+&ndash;
+name of the region</p>
+<p>region_id
+(int)
+&ndash;
+ID of the REgion
+Default : None</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+instance of the Region class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/regions.py#L37-L169" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/regions.py#L250-L285" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">class AssociatedEntityRegion:
-    &#34;&#34;&#34; Class for associating Regions to all entities&#34;&#34;&#34;
+<pre><code class="python">class Region:
+    &#34;&#34;&#34; Class for performing operations on a given Region &#34;&#34;&#34;
+    def __init__(self, commcell_object, region_name, region_id=None):
+        &#34;&#34;&#34; Initialise the Region class instance.
+            Args:
+                commcell_object     (object)    --  instance of the Commcell class
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34; Initialize object of the Regions class &#34;&#34;&#34;
+                region_name         (str)       --  name of the region
+
+                region_id           (int)       --  ID of the REgion
+                                                    Default : None
+
+            Returns:
+                object  -   instance of the Region class
+        &#34;&#34;&#34;
         self._commcell_object = commcell_object
+        self._region_name = region_name
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._update_response_ = commcell_object._update_response_
+
+        self._region_name = region_name
+
+        if region_id:
+            self._region_id = str(region_id)
+        else:
+            self._region_id = self._get_region_id()
+
+    def _get_region_id(self):
+        &#34;&#34;&#34; Returns the ID of the Region &#34;&#34;&#34;
+        regions = Regions(self._commcell_object)
+        id = regions.get(self._region_name).region_id
+
+    @property
+    def region_id(self):
+        &#34;&#34;&#34; Get Region ID &#34;&#34;&#34;
+        return self._region_id</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.regions.Region.region_id"><code class="name">var <span class="ident">region_id</span></code></dt>
+<dd>
+<div class="desc"><p>Get Region ID</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/regions.py#L282-L285" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def region_id(self):
+    &#34;&#34;&#34; Get Region ID &#34;&#34;&#34;
+    return self._region_id</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.regions.Regions"><code class="flex name class">
+<span>class <span class="ident">Regions</span></span>
+<span>(</span><span>commcell_object)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for representing all the Regions created in the commcell</p>
+<p>Initialises the object of Regions class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/regions.py#L43-L246" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class Regions:
+    &#34;&#34;&#34;
+    Class for representing all the Regions created in the commcell
+    &#34;&#34;&#34;
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initialises the object of Regions class&#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._regions_api = self._commcell_object._services[&#39;REGIONS&#39;]
         self._EDIT_REGION = self._commcell_object._services[&#39;EDIT_REGION&#39;]
         self._GET_REGION = self._commcell_object._services[&#39;GET_REGION&#39;]
         self._CALCULATE_REGION = self._commcell_object._services[&#39;CALCULATE_REGION&#39;]
+        self._regions = {}
+        self.refresh()
+
+    def _get_regions(self):
+        &#34;&#34;&#34;Gets all the regions created in commcell&#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._regions_api)
+        if flag:
+            if response.json() and &#39;regions&#39; in response.json():
+                for region in response.json()[&#39;regions&#39;]:
+                    name = region[&#39;name&#39;]
+                    id = region[&#39;id&#39;]
+                    self._regions[name] = id
+
+                return self._regions
+
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+
+        response_string = self._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the list of Regions associated to commcell&#34;&#34;&#34;
+        self._regions = self._get_regions()
+
+    def has_region(self, name):
+        &#34;&#34;&#34;Checks if the given Region exists in the Commcell.
+
+            Args:
+                name    (str)   --  name of the Region
+
+            Returns:
+                bool    -   boolean output whether the Region exists in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the Region name argument is not string
+
+        &#34;&#34;&#34;
+        if not isinstance(name, str):
+            raise SDKException(&#39;Region&#39;, &#39;103&#39;)
+
+        return self._regions and (name in self._regions)
+
+    def get(self, name):
+        &#34;&#34;&#34;
+        Returns the instance of Region class for the given Region name
+        Args:
+            name    (str)   --  name of the Region
+
+        Returns:
+            object  -- Instance of Region class for the given Region name
+
+        Raises:
+            SDKException:
+                - If the Region name argument is not a string
+
+                - If No Region found in commcell with the given region name
+        &#34;&#34;&#34;
+        if not isinstance(name, str):
+            raise SDKException(&#39;Region&#39;, &#39;102&#39;,&#34;Invalid input received&#34;)
+
+        if self.has_region(name):
+            return Region(self._commcell_object, name, self._regions[name])
+        raise SDKException(&#39;Region&#39;, &#39;103&#39;,&#34;Region not present in commcell&#34;)
 
     def set_region(self, entity_type, entity_id, entity_region_type, region_id):
         &#34;&#34;&#34;
@@ -298,6 +574,8 @@ class AssociatedEntityRegion:
             entity_type         (str)   :   Type of the entity
                                             (eg:    COMMCELL,
                                                     COMPANY,
+
+
                                                     CLIENT,
                                                     CLIENT_GROUP,
                                                     MEDIAAGENT,
@@ -320,7 +598,9 @@ class AssociatedEntityRegion:
                         raise SDKException(&#39;Regions&#39;, &#39;102&#39;, &#39;{0}&#39;.format(error_string))
 
                 except:
-                    return response.json()[&#39;regionId&#39;]
+                    if response.json().get(&#39;regionId&#39;):
+                        return response.json().get(&#39;regionId&#39;)
+                    return 0
 
             else:
                 return None
@@ -367,7 +647,7 @@ class AssociatedEntityRegion:
 </details>
 <h3>Methods</h3>
 <dl>
-<dt id="cvpysdk.regions.AssociatedEntityRegion.calculate_region"><code class="name flex">
+<dt id="cvpysdk.regions.Regions.calculate_region"><code class="name flex">
 <span>def <span class="ident">calculate_region</span></span>(<span>self, entity_type, entity_id, entity_region_type)</span>
 </code></dt>
 <dd>
@@ -397,7 +677,7 @@ Type of the region
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/regions.py#L134-L169" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/regions.py#L211-L246" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def calculate_region(self, entity_type, entity_id, entity_region_type):
     &#34;&#34;&#34;
@@ -437,7 +717,53 @@ Type of the region
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.regions.AssociatedEntityRegion.get_region"><code class="name flex">
+<dt id="cvpysdk.regions.Regions.get"><code class="name flex">
+<span>def <span class="ident">get</span></span>(<span>self, name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the instance of Region class for the given Region name</p>
+<h2 id="args">Args</h2>
+<p>name
+(str)
+&ndash;
+name of the Region</p>
+<h2 id="returns">Returns</h2>
+<p>object
+&ndash; Instance of Region class for the given Region name</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+- If the Region name argument is not a string</p>
+<pre><code>- If No Region found in commcell with the given region name
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/regions.py#L98-L118" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get(self, name):
+    &#34;&#34;&#34;
+    Returns the instance of Region class for the given Region name
+    Args:
+        name    (str)   --  name of the Region
+
+    Returns:
+        object  -- Instance of Region class for the given Region name
+
+    Raises:
+        SDKException:
+            - If the Region name argument is not a string
+
+            - If No Region found in commcell with the given region name
+    &#34;&#34;&#34;
+    if not isinstance(name, str):
+        raise SDKException(&#39;Region&#39;, &#39;102&#39;,&#34;Invalid input received&#34;)
+
+    if self.has_region(name):
+        return Region(self._commcell_object, name, self._regions[name])
+    raise SDKException(&#39;Region&#39;, &#39;103&#39;,&#34;Region not present in commcell&#34;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.regions.Regions.get_region"><code class="name flex">
 <span>def <span class="ident">get_region</span></span>(<span>self, entity_type, entity_id, entity_region_type)</span>
 </code></dt>
 <dd>
@@ -449,13 +775,14 @@ Type of the region
 Type of the entity
 (eg:
 COMMCELL,
-COMPANY,
-CLIENT,
-CLIENT_GROUP,
-MEDIAAGENT,
-STORAGE_POOL, etc
-)
-entity_id
+COMPANY,</p>
+<pre><code>                                    CLIENT,
+                                    CLIENT_GROUP,
+                                    MEDIAAGENT,
+                                    STORAGE_POOL, etc
+                            )
+</code></pre>
+<p>entity_id
 (int)
 :
 unique id of the entity</p>
@@ -467,7 +794,7 @@ Type of the region
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/regions.py#L97-L132" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/regions.py#L170-L209" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_region(self, entity_type, entity_id, entity_region_type):
     &#34;&#34;&#34;
@@ -476,6 +803,8 @@ Type of the region
         entity_type         (str)   :   Type of the entity
                                         (eg:    COMMCELL,
                                                 COMPANY,
+
+
                                                 CLIENT,
                                                 CLIENT_GROUP,
                                                 MEDIAAGENT,
@@ -498,7 +827,9 @@ Type of the region
                     raise SDKException(&#39;Regions&#39;, &#39;102&#39;, &#39;{0}&#39;.format(error_string))
 
             except:
-                return response.json()[&#39;regionId&#39;]
+                if response.json().get(&#39;regionId&#39;):
+                    return response.json().get(&#39;regionId&#39;)
+                return 0
 
         else:
             return None
@@ -507,7 +838,64 @@ Type of the region
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.regions.AssociatedEntityRegion.set_region"><code class="name flex">
+<dt id="cvpysdk.regions.Regions.has_region"><code class="name flex">
+<span>def <span class="ident">has_region</span></span>(<span>self, name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks if the given Region exists in the Commcell.</p>
+<h2 id="args">Args</h2>
+<p>name
+(str)
+&ndash;
+name of the Region</p>
+<h2 id="returns">Returns</h2>
+<p>bool
+-
+boolean output whether the Region exists in the commcell or not</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if type of the Region name argument is not string</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/regions.py#L79-L96" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def has_region(self, name):
+    &#34;&#34;&#34;Checks if the given Region exists in the Commcell.
+
+        Args:
+            name    (str)   --  name of the Region
+
+        Returns:
+            bool    -   boolean output whether the Region exists in the commcell or not
+
+        Raises:
+            SDKException:
+                if type of the Region name argument is not string
+
+    &#34;&#34;&#34;
+    if not isinstance(name, str):
+        raise SDKException(&#39;Region&#39;, &#39;103&#39;)
+
+    return self._regions and (name in self._regions)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.regions.Regions.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the list of Regions associated to commcell</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/regions.py#L75-L77" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refresh the list of Regions associated to commcell&#34;&#34;&#34;
+    self._regions = self._get_regions()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.regions.Regions.set_region"><code class="name flex">
 <span>def <span class="ident">set_region</span></span>(<span>self, entity_type, entity_id, entity_region_type, region_id)</span>
 </code></dt>
 <dd>
@@ -541,7 +929,7 @@ ID of the region from app_regions</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/regions.py#L47-L95" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/regions.py#L120-L168" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_region(self, entity_type, entity_id, entity_region_type, region_id):
     &#34;&#34;&#34;
@@ -655,7 +1043,8 @@ setTimeout(() => input.focus(), 100);
 <h1>Index</h1>
 <div class="toc">
 <ul>
-<li><a href="#associatedentityregion">AssociatedEntityRegion</a></li>
+<li><a href="#regions">Regions:</a></li>
+<li><a href="#region">Region:</a></li>
 </ul>
 </div>
 <ul id="index">
@@ -667,11 +1056,20 @@ setTimeout(() => input.focus(), 100);
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="cvpysdk.regions.AssociatedEntityRegion" href="#cvpysdk.regions.AssociatedEntityRegion">AssociatedEntityRegion</a></code></h4>
+<h4><code><a title="cvpysdk.regions.Region" href="#cvpysdk.regions.Region">Region</a></code></h4>
 <ul class="">
-<li><code><a title="cvpysdk.regions.AssociatedEntityRegion.calculate_region" href="#cvpysdk.regions.AssociatedEntityRegion.calculate_region">calculate_region</a></code></li>
-<li><code><a title="cvpysdk.regions.AssociatedEntityRegion.get_region" href="#cvpysdk.regions.AssociatedEntityRegion.get_region">get_region</a></code></li>
-<li><code><a title="cvpysdk.regions.AssociatedEntityRegion.set_region" href="#cvpysdk.regions.AssociatedEntityRegion.set_region">set_region</a></code></li>
+<li><code><a title="cvpysdk.regions.Region.region_id" href="#cvpysdk.regions.Region.region_id">region_id</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.regions.Regions" href="#cvpysdk.regions.Regions">Regions</a></code></h4>
+<ul class="two-column">
+<li><code><a title="cvpysdk.regions.Regions.calculate_region" href="#cvpysdk.regions.Regions.calculate_region">calculate_region</a></code></li>
+<li><code><a title="cvpysdk.regions.Regions.get" href="#cvpysdk.regions.Regions.get">get</a></code></li>
+<li><code><a title="cvpysdk.regions.Regions.get_region" href="#cvpysdk.regions.Regions.get_region">get_region</a></code></li>
+<li><code><a title="cvpysdk.regions.Regions.has_region" href="#cvpysdk.regions.Regions.has_region">has_region</a></code></li>
+<li><code><a title="cvpysdk.regions.Regions.refresh" href="#cvpysdk.regions.Regions.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.regions.Regions.set_region" href="#cvpysdk.regions.Regions.set_region">set_region</a></code></li>
 </ul>
 </li>
 </ul>

@@ -46,7 +46,7 @@ _get_path_for_restore               --  forms path argument for restore based on
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/index_server_subclient.py#L1-L379" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/index_server_subclient.py#L1-L381" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # --------------------------------------------------------------------------
@@ -388,6 +388,8 @@ class IndexServerSubclient(BigDataAppsSubclient):
             find_options[&#39;job_id&#39;] = job_id
         if include_files:
             find_options[&#39;include_meta_data&#39;] = True
+        else:
+            find_options[&#39;hide_user_hidden&#39;] = True
 
         return self.find(find_options)
 
@@ -459,7 +461,7 @@ and to perform operations on that subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/index_server_subclient.py#L50-L379" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/index_server_subclient.py#L50-L381" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class IndexServerSubclient(BigDataAppsSubclient):
     &#34;&#34;&#34;
@@ -752,6 +754,8 @@ and to perform operations on that subclient</p>
             find_options[&#39;job_id&#39;] = job_id
         if include_files:
             find_options[&#39;include_meta_data&#39;] = True
+        else:
+            find_options[&#39;hide_user_hidden&#39;] = True
 
         return self.find(find_options)
 
@@ -827,7 +831,7 @@ list of role names which needs to be backed up</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/index_server_subclient.py#L344-L379" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/index_server_subclient.py#L346-L381" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def configure_backup(self, storage_policy, role_content):
     &#34;&#34;&#34;Edit the default subclient for modifying role content or storage policy.
@@ -924,7 +928,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/index_server_subclient.py#L133-L192" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/index_server_subclient.py#L133-L192" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def do_restore_in_place(
         self,
@@ -1049,7 +1053,7 @@ if failed to initialize job
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/index_server_subclient.py#L194-L257" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/index_server_subclient.py#L194-L257" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def do_restore_out_of_place(
         self,
@@ -1155,7 +1159,7 @@ dict    -   Dictionary of all the paths with additional metadata retrieved
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/index_server_subclient.py#L287-L342" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/index_server_subclient.py#L287-L344" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_file_details_from_backup(self, roles=None, include_files=True, job_id=0, index_server_node=None):
     &#34;&#34;&#34;Gets files/folders details from index server backup job.
@@ -1211,6 +1215,8 @@ dict    -   Dictionary of all the paths with additional metadata retrieved
         find_options[&#39;job_id&#39;] = job_id
     if include_files:
         find_options[&#39;include_meta_data&#39;] = True
+    else:
+        find_options[&#39;hide_user_hidden&#39;] = True
 
     return self.find(find_options)</code></pre>
 </details>
@@ -1236,7 +1242,7 @@ if backup level specified is not correct</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/index_server_subclient.py#L259-L285" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/index_server_subclient.py#L259-L285" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_backup(self, backup_level=&#34;Full&#34;):
     &#34;&#34;&#34;Runs a backup job for the default subclient.
@@ -1302,6 +1308,7 @@ if backup level specified is not correct</p>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.enable_backup" href="../subclient.html#cvpysdk.subclient.Subclient.enable_backup">enable_backup</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.enable_backup_at_time" href="../subclient.html#cvpysdk.subclient.Subclient.enable_backup_at_time">enable_backup_at_time</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.enable_content_indexing" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.enable_content_indexing">enable_content_indexing</a></code></li>
+<li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.enable_dc_content_indexing" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.enable_dc_content_indexing">enable_dc_content_indexing</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.enable_intelli_snap" href="../subclient.html#cvpysdk.subclient.Subclient.enable_intelli_snap">enable_intelli_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.enable_synclib" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.enable_synclib">enable_synclib</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.enable_trueup" href="../subclient.html#cvpysdk.subclient.Subclient.enable_trueup">enable_trueup</a></code></li>
@@ -1347,7 +1354,7 @@ if backup level specified is not correct</p>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.properties" href="../subclient.html#cvpysdk.subclient.Subclient.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.read_buffer_size" href="../subclient.html#cvpysdk.subclient.Subclient.read_buffer_size">read_buffer_size</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.refresh" href="../subclient.html#cvpysdk.subclient.Subclient.refresh">refresh</a></code></li>
-<li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.restore_in_place" href="../subclient.html#cvpysdk.subclient.Subclient.restore_in_place">restore_in_place</a></code></li>
+<li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.restore_in_place" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.restore_in_place">restore_in_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.restore_out_of_place" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.restore_out_of_place">restore_out_of_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.run_backup_copy" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.run_backup_copy">run_backup_copy</a></code></li>
 <li><code><a title="cvpysdk.subclients.bigdataappssubclient.BigDataAppsSubclient.save_access_path" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.save_access_path">save_access_path</a></code></li>

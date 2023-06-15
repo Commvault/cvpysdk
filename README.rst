@@ -24,7 +24,7 @@ CVPySDK can be installed directly from PyPI using pip:
     >>> pip install cvpysdk
 
 
-CVPySDK is available on GitHub `here <https://github.com/Commvault/cvpysdk>`_
+CVPySDK is available on GitHub `here <https://github.com/Commvault/cvpysdk>`__
 
 It can also be installed from source.
 
@@ -195,8 +195,8 @@ Coding Considerations
 - The doc strings should be of the same format as existing docs.
 
 Questions/Comments/Suggestions
---------------
-If you have any questions or comments, please contact us `here <https://ma.commvault.com/>`_.
+------------------------------
+If you have any questions or comments, please contact us `here <https://ma.commvault.com/>`__.
 Also Check out our community for `Automation <https://community.commvault.com/developer-tools-integration-and-automation-workflow-rest-powershell-etc-50>`_ incase of queries.
 
 Code of Conduct

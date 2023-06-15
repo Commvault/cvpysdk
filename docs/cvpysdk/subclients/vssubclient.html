@@ -152,7 +152,7 @@ The Virtual Server 'Hyper-V' is named as 'hyperv.py'
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L1-L2879" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L1-L2940" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -312,7 +312,7 @@ import xmltodict
 from cvpysdk.plan import Plans
 from ..exception import SDKException
 from ..subclient import Subclient
-from ..constants import VSAObjects
+from ..constants import VSAObjects, HypervisorType
 
 
 class VirtualServerSubclient(Subclient):
@@ -569,7 +569,7 @@ class VirtualServerSubclient(Subclient):
                         &#39;name&#39;: item.get(&#39;name&#39;,&#34;&#34;),
                         &#39;displayName&#39;: item.get(&#39;display_name&#39;,&#39;&#39;),
                         &#39;path&#39;: &#39;&#39;,
-                        &#39;type&#39;: item[&#39;type&#39;] if isinstance(item[&#39;type&#39;], int) else item[&#39;type&#39;].value
+                        &#39;type&#39;: item[&#39;type&#39;] if (isinstance(item[&#39;type&#39;], int) or isinstance(item[&#39;type&#39;], str)) else item[&#39;type&#39;].value
                     }
                     if item[&#39;type&#39;] == VSAObjects.VMNotes:
                         temp[&#39;value&#39;] = item[&#39;display_name&#39;]
@@ -882,7 +882,7 @@ class VirtualServerSubclient(Subclient):
                                                 and corresponding
         &#34;&#34;&#34;
 
-        if not new_name and not self._instance_object.instance_name == &#39;google cloud platform&#39;:
+        if not new_name and not self._instance_object.instance_name == HypervisorType.GOOGLE_CLOUD.value.lower():
             new_name = name
         temp_disk_dict = {}
         temp_disk_dict[self.disk_pattern.name.value] = name
@@ -963,7 +963,7 @@ class VirtualServerSubclient(Subclient):
         nics_list = []
         vm_nics_list = nics_dict_from_browse[vm_to_restore]
         for network_card_dict in vm_nics_list:
-            if self._instance_object.instance_name == &#39;google cloud platform&#39;:
+            if self._instance_object.instance_name == HypervisorType.GOOGLE_CLOUD.value.lower():
                 current_project = network_card_dict.get(&#39;subnetId&#39;).split(&#39;/&#39;)[6]
                 if value.get(&#39;project_id&#39;) is not None:
                     network_card_dict[&#39;subnetId&#39;] = value.get(&#39;subnetwork_nic&#39;)
@@ -977,8 +977,10 @@ class VirtualServerSubclient(Subclient):
                 &#34;subnetId&#34;: network_card_dict.get(&#39;subnetId&#39;, &#34;&#34;),
                 &#34;sourceNetwork&#34;: network_card_dict[&#39;name&#39;],
                 &#34;sourceNetworkId&#34;: network_card_dict.get(&#39;sourceNetwork&#39;, &#34;&#34;),
-                &#34;name&#34;: network_card_dict.get(&#39;sourceNetwork&#39;, &#34;&#34;)+_destnetwork if self._instance_object.instance_name
-                == &#39;google cloud platform&#39; else &#39;&#39; ,
+                &#34;name&#34;: (network_card_dict.get(&#39;sourceNetwork&#39;,
+                                               &#34;&#34;) + _destnetwork) if self._instance_object.instance_name ==
+                                                                      HypervisorType.GOOGLE_CLOUD.value.lower() and _destnetwork else
+                network_card_dict[&#39;label&#39;],
                 &#34;networkName&#34;: _destnetwork if _destnetwork else &#39;&#39;,
                 &#34;destinationNetwork&#34;: _destnetwork if _destnetwork else network_card_dict[&#39;name&#39;]
             }
@@ -1117,7 +1119,8 @@ class VirtualServerSubclient(Subclient):
             self._advanced_option_restore_json[&#34;vmSize&#34;] = value.get(val1, val2)
         if &#34;ami&#34; in value and value[&#34;ami&#34;] is not None:
             self._advanced_option_restore_json[&#34;templateId&#34;] = value[&#34;ami&#34;][&#34;templateId&#34;]
-            self._advanced_option_restore_json[&#34;templateName&#34;] = value[&#34;ami&#34;][&#34;templateName&#34;]
+            if value.get(&#39;ami&#39;, {}).get(&#39;templateName&#39;):
+                self._advanced_option_restore_json[&#34;templateName&#34;] = value[&#34;ami&#34;][&#34;templateName&#34;]
         if &#34;iamRole&#34; in value and value[&#34;iamRole&#34;] is not None:
             self._advanced_option_restore_json[&#34;roleInfo&#34;] = {
                 &#34;name&#34;: value[&#34;iamRole&#34;]
@@ -2060,6 +2063,8 @@ class VirtualServerSubclient(Subclient):
 
         else:
             _temp_res_list = []
+            if not isinstance(vm_to_restore, list):
+                vm_to_restore = [vm_to_restore]
             for each_vm in vm_to_restore:
                 _temp_res_list.append(each_vm)
 
@@ -2277,8 +2282,10 @@ class VirtualServerSubclient(Subclient):
             new_name_prefix = restore_option.get(&#34;disk_name_prefix&#34;)
             new_name = data[&#34;name&#34;] if new_name_prefix is None \
                 else new_name_prefix + &#34;_&#34; + data[&#34;name&#34;]
-            if self._instance_object.instance_name == &#39;google cloud platform&#39;:
+            if self._instance_object.instance_name == HypervisorType.GOOGLE_CLOUD.value.lower():
                 new_name = &#34;&#34;
+                if data[&#34;advanced_data&#34;][&#34;browseMetaData&#34;][&#34;virtualServerMetaData&#34;].get(&#39;replicaZones&#39;, False):
+                    replicaZones = restore_option.get(&#34;replicaZones&#34;)
             if restore_option[&#39;destination_instance&#39;].lower() == &#39;vmware&#39;:
                 _disk_dict = self._disk_dict_pattern(data[&#39;snap_display_name&#39;], ds, new_name)
             else:
@@ -2291,7 +2298,7 @@ class VirtualServerSubclient(Subclient):
         restore_option[&#34;disks&#34;] = vm_disks
 
         # prepare nics info json
-        if &#34;nics&#34; not in restore_option or self._instance_object.instance_name == &#39;google cloud platform&#39;:
+        if &#34;nics&#34; not in restore_option or self._instance_object.instance_name == HypervisorType.GOOGLE_CLOUD.value.lower():
             nics_list = self._json_nics_advancedRestoreOptions(vm_to_restore, restore_option)
             restore_option[&#34;nics&#34;] = nics_list
             if restore_option.get(&#39;source_ip&#39;) and restore_option.get(&#39;destination_ip&#39;):
@@ -2366,7 +2373,7 @@ class VirtualServerSubclient(Subclient):
                 ds = restore_option[&#34;datastore&#34;]
             new_name_prefix = restore_option.get(&#34;disk_name_prefix&#34;)
             if self._instance_object.instance_name != &#39;openstack&#39;:
-                new_name = data[&#34;name&#34;].replace(&#34;/&#34;, &#34;_&#34;).replace(&#34; &#34;, &#34;_&#34;)
+                new_name = data[&#34;snap_display_name&#34;].replace(&#34;/&#34;, &#34;_&#34;).replace(&#34; &#34;, &#34;_&#34;)
                 new_name = &#34;del_&#34; + new_name if new_name_prefix is None \
                     else new_name_prefix + &#34;_&#34; + new_name
             else:
@@ -2588,8 +2595,38 @@ class VirtualServerSubclient(Subclient):
             &#34;virtualServerRstOption&#34;] = self._virtualserver_option_restore_json
         request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][
             &#34;restoreOptions&#34;][&#34;volumeRstOption&#34;] = self._json_restore_volumeRstOption(_disk_restore_option)
-
+        if _disk_restore_option.get(&#39;new_instance&#39;):
+            request_json = self._update_attach_disk_restore_new_instance(request_json, _disk_restore_option)
         return request_json
+
+    @staticmethod
+    def _update_attach_disk_restore_new_instance(json_to_be_edited, _disk_restore_option):
+        &#34;&#34;&#34;
+        Updates teh Json for attach disk restore as a new instance
+
+        Args:
+            json_to_be_edited               (dict): Request json to be edited
+
+            _disk_restore_option:           (dict): Attach dsik restore options
+
+        Returns:
+            json_to_be_edited               (dict): Dictionary after its edited
+
+        &#34;&#34;&#34;
+        json_to_be_edited[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
+            &#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;][&#39;powerOnVmAfterRestore&#39;] = True
+        adv_options = json_to_be_edited[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
+            &#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;][&#39;advancedRestoreOptions&#39;][0]
+        del adv_options[&#39;newGuid&#39;]
+        del adv_options[&#39;nics&#39;][0][&#39;destinationNetwork&#39;]
+        _nic2 = adv_options[&#39;nics&#39;][0].copy()
+        adv_options[&#39;nics&#39;].append(_nic2)
+        adv_options[&#39;nics&#39;][1][&#39;networkName&#39;] = &#39;New Network Interface&#39;
+        _region = adv_options[&#39;esxHost&#39;]
+        for disks in adv_options[&#39;disks&#39;]:
+            disks[&#39;availabilityZone&#39;] = _region
+        adv_options[&#39;guestOperatingSystemId&#39;] = _disk_restore_option.get(&#39;os_id&#39;, 0)
+        return json_to_be_edited
 
     def _prepare_fullvm_restore_json(self, restore_option=None):
         &#34;&#34;&#34;
@@ -3032,7 +3069,31 @@ class VirtualServerSubclient(Subclient):
                 &#39;Subclient&#39;,
                 &#39;102&#39;,
                 self._update_response_(
-                    response.text))</code></pre>
+                    response.text))
+
+    @property
+    def quiesce_file_system(self):
+        &#34;&#34;&#34;
+            Gets the quiesce value set for the vsa subclient
+
+        Returns:
+            (Boolean)    True/False
+        &#34;&#34;&#34;
+        quiesce_file_system = r&#39;quiesceGuestFileSystemAndApplications&#39;
+        return self._vsaSubclientProp.get(quiesce_file_system)
+
+    @quiesce_file_system.setter
+    def quiesce_file_system(self, value):
+        &#34;&#34;&#34;
+        Sets the quiesce value for the vsa subclient
+
+        Args:
+            value   (Boolean)   True/False
+
+        &#34;&#34;&#34;
+        update_properties = self.properties
+        update_properties[&#39;vsaSubclientProp&#39;][&#39;quiesceGuestFileSystemAndApplications&#39;] = value
+        self.update_properties(update_properties)</code></pre>
 </details>
 </section>
 <section>
@@ -3068,7 +3129,7 @@ subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L162-L2879" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L162-L2940" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VirtualServerSubclient(Subclient):
     &#34;&#34;&#34;Derived class from Subclient Base class, representing a virtual server subclient,
@@ -3324,7 +3385,7 @@ subclient id</p></div>
                         &#39;name&#39;: item.get(&#39;name&#39;,&#34;&#34;),
                         &#39;displayName&#39;: item.get(&#39;display_name&#39;,&#39;&#39;),
                         &#39;path&#39;: &#39;&#39;,
-                        &#39;type&#39;: item[&#39;type&#39;] if isinstance(item[&#39;type&#39;], int) else item[&#39;type&#39;].value
+                        &#39;type&#39;: item[&#39;type&#39;] if (isinstance(item[&#39;type&#39;], int) or isinstance(item[&#39;type&#39;], str)) else item[&#39;type&#39;].value
                     }
                     if item[&#39;type&#39;] == VSAObjects.VMNotes:
                         temp[&#39;value&#39;] = item[&#39;display_name&#39;]
@@ -3637,7 +3698,7 @@ subclient id</p></div>
                                                 and corresponding
         &#34;&#34;&#34;
 
-        if not new_name and not self._instance_object.instance_name == &#39;google cloud platform&#39;:
+        if not new_name and not self._instance_object.instance_name == HypervisorType.GOOGLE_CLOUD.value.lower():
             new_name = name
         temp_disk_dict = {}
         temp_disk_dict[self.disk_pattern.name.value] = name
@@ -3718,7 +3779,7 @@ subclient id</p></div>
         nics_list = []
         vm_nics_list = nics_dict_from_browse[vm_to_restore]
         for network_card_dict in vm_nics_list:
-            if self._instance_object.instance_name == &#39;google cloud platform&#39;:
+            if self._instance_object.instance_name == HypervisorType.GOOGLE_CLOUD.value.lower():
                 current_project = network_card_dict.get(&#39;subnetId&#39;).split(&#39;/&#39;)[6]
                 if value.get(&#39;project_id&#39;) is not None:
                     network_card_dict[&#39;subnetId&#39;] = value.get(&#39;subnetwork_nic&#39;)
@@ -3732,8 +3793,10 @@ subclient id</p></div>
                 &#34;subnetId&#34;: network_card_dict.get(&#39;subnetId&#39;, &#34;&#34;),
                 &#34;sourceNetwork&#34;: network_card_dict[&#39;name&#39;],
                 &#34;sourceNetworkId&#34;: network_card_dict.get(&#39;sourceNetwork&#39;, &#34;&#34;),
-                &#34;name&#34;: network_card_dict.get(&#39;sourceNetwork&#39;, &#34;&#34;)+_destnetwork if self._instance_object.instance_name
-                == &#39;google cloud platform&#39; else &#39;&#39; ,
+                &#34;name&#34;: (network_card_dict.get(&#39;sourceNetwork&#39;,
+                                               &#34;&#34;) + _destnetwork) if self._instance_object.instance_name ==
+                                                                      HypervisorType.GOOGLE_CLOUD.value.lower() and _destnetwork else
+                network_card_dict[&#39;label&#39;],
                 &#34;networkName&#34;: _destnetwork if _destnetwork else &#39;&#39;,
                 &#34;destinationNetwork&#34;: _destnetwork if _destnetwork else network_card_dict[&#39;name&#39;]
             }
@@ -3872,7 +3935,8 @@ subclient id</p></div>
             self._advanced_option_restore_json[&#34;vmSize&#34;] = value.get(val1, val2)
         if &#34;ami&#34; in value and value[&#34;ami&#34;] is not None:
             self._advanced_option_restore_json[&#34;templateId&#34;] = value[&#34;ami&#34;][&#34;templateId&#34;]
-            self._advanced_option_restore_json[&#34;templateName&#34;] = value[&#34;ami&#34;][&#34;templateName&#34;]
+            if value.get(&#39;ami&#39;, {}).get(&#39;templateName&#39;):
+                self._advanced_option_restore_json[&#34;templateName&#34;] = value[&#34;ami&#34;][&#34;templateName&#34;]
         if &#34;iamRole&#34; in value and value[&#34;iamRole&#34;] is not None:
             self._advanced_option_restore_json[&#34;roleInfo&#34;] = {
                 &#34;name&#34;: value[&#34;iamRole&#34;]
@@ -4815,6 +4879,8 @@ subclient id</p></div>
 
         else:
             _temp_res_list = []
+            if not isinstance(vm_to_restore, list):
+                vm_to_restore = [vm_to_restore]
             for each_vm in vm_to_restore:
                 _temp_res_list.append(each_vm)
 
@@ -5032,8 +5098,10 @@ subclient id</p></div>
             new_name_prefix = restore_option.get(&#34;disk_name_prefix&#34;)
             new_name = data[&#34;name&#34;] if new_name_prefix is None \
                 else new_name_prefix + &#34;_&#34; + data[&#34;name&#34;]
-            if self._instance_object.instance_name == &#39;google cloud platform&#39;:
+            if self._instance_object.instance_name == HypervisorType.GOOGLE_CLOUD.value.lower():
                 new_name = &#34;&#34;
+                if data[&#34;advanced_data&#34;][&#34;browseMetaData&#34;][&#34;virtualServerMetaData&#34;].get(&#39;replicaZones&#39;, False):
+                    replicaZones = restore_option.get(&#34;replicaZones&#34;)
             if restore_option[&#39;destination_instance&#39;].lower() == &#39;vmware&#39;:
                 _disk_dict = self._disk_dict_pattern(data[&#39;snap_display_name&#39;], ds, new_name)
             else:
@@ -5046,7 +5114,7 @@ subclient id</p></div>
         restore_option[&#34;disks&#34;] = vm_disks
 
         # prepare nics info json
-        if &#34;nics&#34; not in restore_option or self._instance_object.instance_name == &#39;google cloud platform&#39;:
+        if &#34;nics&#34; not in restore_option or self._instance_object.instance_name == HypervisorType.GOOGLE_CLOUD.value.lower():
             nics_list = self._json_nics_advancedRestoreOptions(vm_to_restore, restore_option)
             restore_option[&#34;nics&#34;] = nics_list
             if restore_option.get(&#39;source_ip&#39;) and restore_option.get(&#39;destination_ip&#39;):
@@ -5121,7 +5189,7 @@ subclient id</p></div>
                 ds = restore_option[&#34;datastore&#34;]
             new_name_prefix = restore_option.get(&#34;disk_name_prefix&#34;)
             if self._instance_object.instance_name != &#39;openstack&#39;:
-                new_name = data[&#34;name&#34;].replace(&#34;/&#34;, &#34;_&#34;).replace(&#34; &#34;, &#34;_&#34;)
+                new_name = data[&#34;snap_display_name&#34;].replace(&#34;/&#34;, &#34;_&#34;).replace(&#34; &#34;, &#34;_&#34;)
                 new_name = &#34;del_&#34; + new_name if new_name_prefix is None \
                     else new_name_prefix + &#34;_&#34; + new_name
             else:
@@ -5343,8 +5411,38 @@ subclient id</p></div>
             &#34;virtualServerRstOption&#34;] = self._virtualserver_option_restore_json
         request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][
             &#34;restoreOptions&#34;][&#34;volumeRstOption&#34;] = self._json_restore_volumeRstOption(_disk_restore_option)
-
+        if _disk_restore_option.get(&#39;new_instance&#39;):
+            request_json = self._update_attach_disk_restore_new_instance(request_json, _disk_restore_option)
         return request_json
+
+    @staticmethod
+    def _update_attach_disk_restore_new_instance(json_to_be_edited, _disk_restore_option):
+        &#34;&#34;&#34;
+        Updates teh Json for attach disk restore as a new instance
+
+        Args:
+            json_to_be_edited               (dict): Request json to be edited
+
+            _disk_restore_option:           (dict): Attach dsik restore options
+
+        Returns:
+            json_to_be_edited               (dict): Dictionary after its edited
+
+        &#34;&#34;&#34;
+        json_to_be_edited[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
+            &#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;][&#39;powerOnVmAfterRestore&#39;] = True
+        adv_options = json_to_be_edited[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
+            &#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;][&#39;advancedRestoreOptions&#39;][0]
+        del adv_options[&#39;newGuid&#39;]
+        del adv_options[&#39;nics&#39;][0][&#39;destinationNetwork&#39;]
+        _nic2 = adv_options[&#39;nics&#39;][0].copy()
+        adv_options[&#39;nics&#39;].append(_nic2)
+        adv_options[&#39;nics&#39;][1][&#39;networkName&#39;] = &#39;New Network Interface&#39;
+        _region = adv_options[&#39;esxHost&#39;]
+        for disks in adv_options[&#39;disks&#39;]:
+            disks[&#39;availabilityZone&#39;] = _region
+        adv_options[&#39;guestOperatingSystemId&#39;] = _disk_restore_option.get(&#39;os_id&#39;, 0)
+        return json_to_be_edited
 
     def _prepare_fullvm_restore_json(self, restore_option=None):
         &#34;&#34;&#34;
@@ -5787,7 +5885,31 @@ subclient id</p></div>
                 &#39;Subclient&#39;,
                 &#39;102&#39;,
                 self._update_response_(
-                    response.text))</code></pre>
+                    response.text))
+
+    @property
+    def quiesce_file_system(self):
+        &#34;&#34;&#34;
+            Gets the quiesce value set for the vsa subclient
+
+        Returns:
+            (Boolean)    True/False
+        &#34;&#34;&#34;
+        quiesce_file_system = r&#39;quiesceGuestFileSystemAndApplications&#39;
+        return self._vsaSubclientProp.get(quiesce_file_system)
+
+    @quiesce_file_system.setter
+    def quiesce_file_system(self, value):
+        &#34;&#34;&#34;
+        Sets the quiesce value for the vsa subclient
+
+        Args:
+            value   (Boolean)   True/False
+
+        &#34;&#34;&#34;
+        update_properties = self.properties
+        update_properties[&#39;vsaSubclientProp&#39;][&#39;quiesceGuestFileSystemAndApplications&#39;] = value
+        self.update_properties(update_properties)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -5834,7 +5956,7 @@ True/False</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L568-L577" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L568-L577" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def cbtvalue(self):
@@ -5856,7 +5978,7 @@ def cbtvalue(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L247-L261" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L247-L261" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def content(self):
@@ -5885,7 +6007,7 @@ Proxy at instane</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L273-L281" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L273-L281" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_proxy(self):
@@ -5904,7 +6026,7 @@ def instance_proxy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L529-L536" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L529-L536" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def live_sync(self):
@@ -5924,7 +6046,7 @@ Default: False for subclient which doesnt have the property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L336-L348" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L336-L348" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def metadata(self):
@@ -5941,6 +6063,29 @@ def metadata(self):
     return vsasubclient_collect_details</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.subclients.vssubclient.VirtualServerSubclient.quiesce_file_system"><code class="name">var <span class="ident">quiesce_file_system</span></code></dt>
+<dd>
+<div class="desc"><p>Gets the quiesce value set for the vsa subclient</p>
+<h2 id="returns">Returns</h2>
+<p>(Boolean)
+True/False</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L2918-L2927" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def quiesce_file_system(self):
+    &#34;&#34;&#34;
+        Gets the quiesce value set for the vsa subclient
+
+    Returns:
+        (Boolean)    True/False
+    &#34;&#34;&#34;
+    quiesce_file_system = r&#39;quiesceGuestFileSystemAndApplications&#39;
+    return self._vsaSubclientProp.get(quiesce_file_system)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_proxy"><code class="name">var <span class="ident">subclient_proxy</span></code></dt>
 <dd>
 <div class="desc"><p>Gets the List of proxies at the Subclient</p>
@@ -5951,7 +6096,7 @@ Proxies at the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L263-L271" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L263-L271" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_proxy(self):
@@ -5972,7 +6117,7 @@ def subclient_proxy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L298-L334" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L298-L334" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_diskfilter(self):
@@ -6021,7 +6166,7 @@ def vm_diskfilter(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L283-L296" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L283-L296" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_filter(self):
@@ -6058,7 +6203,7 @@ dictionary with all VM restore options</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L2274-L2309" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L2281-L2316" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def amazon_defaults(self, vm_to_restore, restore_option):
     &#34;&#34;&#34;
@@ -6156,7 +6301,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L2596-L2671" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L2633-L2708" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(self,
            backup_level=&#34;Incremental&#34;,
@@ -6283,7 +6428,7 @@ if failed to browse content</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L1152-L1230" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L1155-L1233" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, vm_path=&#39;\\&#39;,
            show_deleted_files=False,
@@ -6447,7 +6592,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L1322-L1405" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L1325-L1408" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse_in_time(
         self,
@@ -6592,7 +6737,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L1407-L1479" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L1410-L1482" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_level_browse(self, vm_path=&#39;\\&#39;,
                       show_deleted_files=False,
@@ -6690,7 +6835,7 @@ nics info for that vm</dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L1275-L1320" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L1278-L1323" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_nics_from_browse(self, copy_precedence=0):
     &#34;&#34;&#34;
@@ -6753,7 +6898,7 @@ dictionary of guest file restores options</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L1616-L1730" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L1619-L1733" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def guest_file_restore(self, *args, **kwargs):
     &#34;&#34;&#34;perform Guest file restore of the provided path
@@ -6935,7 +7080,7 @@ if from date value is incorrect</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L1481-L1549" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L1484-L1552" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def guest_files_browse(
         self,
@@ -7030,7 +7175,7 @@ if input parameter is not proper</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L1232-L1273" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L1235-L1276" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def parse_nics_xml(self, input_xml):
     &#34;&#34;&#34;
@@ -7087,7 +7232,7 @@ if input parameter is not proper</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L2858-L2879" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L2895-L2916" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def preview_content(self):
     &#34;&#34;&#34;
@@ -7141,7 +7286,7 @@ name                        - name of the VM to be restored
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L2165-L2234" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L2172-L2241" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_advanced_attach_disk_restore_options(self, vm_to_restore, restore_option):
     &#34;&#34;&#34;
@@ -7191,7 +7336,7 @@ name                        - name of the VM to be restored
             ds = restore_option[&#34;datastore&#34;]
         new_name_prefix = restore_option.get(&#34;disk_name_prefix&#34;)
         if self._instance_object.instance_name != &#39;openstack&#39;:
-            new_name = data[&#34;name&#34;].replace(&#34;/&#34;, &#34;_&#34;).replace(&#34; &#34;, &#34;_&#34;)
+            new_name = data[&#34;snap_display_name&#34;].replace(&#34;/&#34;, &#34;_&#34;).replace(&#34; &#34;, &#34;_&#34;)
             new_name = &#34;del_&#34; + new_name if new_name_prefix is None \
                 else new_name_prefix + &#34;_&#34; + new_name
         else:
@@ -7245,7 +7390,7 @@ name                        - name of the VM to be restored
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L2025-L2163" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L2030-L2170" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_advanced_vm_restore_options(self, vm_to_restore, restore_option):
     &#34;&#34;&#34;
@@ -7346,8 +7491,10 @@ name                        - name of the VM to be restored
         new_name_prefix = restore_option.get(&#34;disk_name_prefix&#34;)
         new_name = data[&#34;name&#34;] if new_name_prefix is None \
             else new_name_prefix + &#34;_&#34; + data[&#34;name&#34;]
-        if self._instance_object.instance_name == &#39;google cloud platform&#39;:
+        if self._instance_object.instance_name == HypervisorType.GOOGLE_CLOUD.value.lower():
             new_name = &#34;&#34;
+            if data[&#34;advanced_data&#34;][&#34;browseMetaData&#34;][&#34;virtualServerMetaData&#34;].get(&#39;replicaZones&#39;, False):
+                replicaZones = restore_option.get(&#34;replicaZones&#34;)
         if restore_option[&#39;destination_instance&#39;].lower() == &#39;vmware&#39;:
             _disk_dict = self._disk_dict_pattern(data[&#39;snap_display_name&#39;], ds, new_name)
         else:
@@ -7360,7 +7507,7 @@ name                        - name of the VM to be restored
     restore_option[&#34;disks&#34;] = vm_disks
 
     # prepare nics info json
-    if &#34;nics&#34; not in restore_option or self._instance_object.instance_name == &#39;google cloud platform&#39;:
+    if &#34;nics&#34; not in restore_option or self._instance_object.instance_name == HypervisorType.GOOGLE_CLOUD.value.lower():
         nics_list = self._json_nics_advancedRestoreOptions(vm_to_restore, restore_option)
         restore_option[&#34;nics&#34;] = nics_list
         if restore_option.get(&#39;source_ip&#39;) and restore_option.get(&#39;destination_ip&#39;):
@@ -7400,7 +7547,7 @@ dict of all propterties of subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L593-L604" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L593-L604" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;
@@ -7458,7 +7605,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L1732-L1764" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L1735-L1767" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def vm_files_browse(self, vm_path=&#39;\\&#39;, show_deleted_files=False, operation=&#39;browse&#39;, copy_precedence=0):
     &#34;&#34;&#34;Browses the Files and Folders of a Virtual Machine.
@@ -7551,7 +7698,7 @@ if from date value is incorrect</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/vssubclient.py#L1766-L1825" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L1769-L1828" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def vm_files_browse_in_time(
         self,
@@ -7756,6 +7903,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.metadata" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.metadata">metadata</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.parse_nics_xml" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.parse_nics_xml">parse_nics_xml</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.preview_content" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.preview_content">preview_content</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.quiesce_file_system" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.quiesce_file_system">quiesce_file_system</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_attach_disk_restore_options" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_attach_disk_restore_options">set_advanced_attach_disk_restore_options</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_vm_restore_options" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_vm_restore_options">set_advanced_vm_restore_options</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_proxy" href="#cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_proxy">subclient_proxy</a></code></li>

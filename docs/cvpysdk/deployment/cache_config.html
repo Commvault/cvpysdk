@@ -59,7 +59,7 @@ delete_remote_cache_contents()        --  deletes remote cache contents
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/cache_config.py#L1-L428" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/cache_config.py#L1-L438" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -164,7 +164,16 @@ class CommServeCache(object):
 
             - Response is incorrect/empty
         &#34;&#34;&#34;
-        response = self.commcell_object.get_gxglobalparam_value()
+        try:
+            response = self.commcell_object.get_gxglobalparam_value()
+        except Exception:
+            try:
+                response = self.commcell_object.get_gxglobalparam_value(&#39;Patch Directory&#39;)
+            except Exception:
+                raise SDKException(&#39;Response&#39;, &#39;101&#39;, &#39;Failed to execute api for get_cs_cache_path&#39;)
+            if response == &#39;&#39;:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            return response
         if response[&#39;error&#39;][&#39;errorCode&#39;] != 0:
             error_message = &#34;Failed with error: [{0}]&#34;.format(
                 response[&#39;error&#39;][&#39;errorMessage&#39;]
@@ -460,7 +469,8 @@ class RemoteCache(object):
                 &#34;uaList&#34;: {
                     &#34;addedList&#34;: {
                         &#34;id&#34;: entity_id,
-                        &#34;name&#34;: entity_name
+                        &#34;name&#34;: entity_name,
+                        &#34;type&#34;: entity_type
                     }
                 }
             }
@@ -516,7 +526,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/cache_config.py#L61-L172" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/cache_config.py#L61-L181" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CommServeCache(object):
     &#34;&#34;&#34;&#34;class for downloading software packages&#34;&#34;&#34;
@@ -561,7 +571,16 @@ instance of the Commcell class</p>
 
             - Response is incorrect/empty
         &#34;&#34;&#34;
-        response = self.commcell_object.get_gxglobalparam_value()
+        try:
+            response = self.commcell_object.get_gxglobalparam_value()
+        except Exception:
+            try:
+                response = self.commcell_object.get_gxglobalparam_value(&#39;Patch Directory&#39;)
+            except Exception:
+                raise SDKException(&#39;Response&#39;, &#39;101&#39;, &#39;Failed to execute api for get_cs_cache_path&#39;)
+            if response == &#39;&#39;:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            return response
         if response[&#39;error&#39;][&#39;errorCode&#39;] != 0:
             error_message = &#34;Failed with error: [{0}]&#34;.format(
                 response[&#39;error&#39;][&#39;errorMessage&#39;]
@@ -641,7 +660,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/cache_config.py#L78-L89" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/cache_config.py#L78-L89" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@staticmethod
 def get_request_xml():
@@ -674,7 +693,7 @@ def get_request_xml():
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/cache_config.py#L146-L172" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/cache_config.py#L155-L181" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def commit_cache(self):
     &#34;&#34;&#34;
@@ -719,7 +738,7 @@ def get_request_xml():
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/cache_config.py#L119-L144" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/cache_config.py#L128-L153" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_cache(self):
     &#34;&#34;&#34;
@@ -765,7 +784,7 @@ def get_request_xml():
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/cache_config.py#L91-L117" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/cache_config.py#L91-L126" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_cs_cache_path(self):
     &#34;&#34;&#34;
@@ -780,7 +799,16 @@ def get_request_xml():
 
         - Response is incorrect/empty
     &#34;&#34;&#34;
-    response = self.commcell_object.get_gxglobalparam_value()
+    try:
+        response = self.commcell_object.get_gxglobalparam_value()
+    except Exception:
+        try:
+            response = self.commcell_object.get_gxglobalparam_value(&#39;Patch Directory&#39;)
+        except Exception:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, &#39;Failed to execute api for get_cs_cache_path&#39;)
+        if response == &#39;&#39;:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        return response
     if response[&#39;error&#39;][&#39;errorCode&#39;] != 0:
         error_message = &#34;Failed with error: [{0}]&#34;.format(
             response[&#39;error&#39;][&#39;errorMessage&#39;]
@@ -817,7 +845,7 @@ client name</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/cache_config.py#L175-L428" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/cache_config.py#L184-L438" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class RemoteCache(object):
     &#34;&#34;&#34;&#34;class for downloading software packages&#34;&#34;&#34;
@@ -1044,7 +1072,8 @@ client name</p>
                 &#34;uaList&#34;: {
                     &#34;addedList&#34;: {
                         &#34;id&#34;: entity_id,
-                        &#34;name&#34;: entity_name
+                        &#34;name&#34;: entity_name,
+                        &#34;type&#34;: entity_type
                     }
                 }
             }
@@ -1095,7 +1124,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/cache_config.py#L353-L428" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/cache_config.py#L362-L438" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def assoc_entity_to_remote_cache(self, client_name=None, client_group_name=None):
     &#34;&#34;&#34;
@@ -1144,7 +1173,8 @@ Raises:
             &#34;uaList&#34;: {
                 &#34;addedList&#34;: {
                     &#34;id&#34;: entity_id,
-                    &#34;name&#34;: entity_name
+                    &#34;name&#34;: entity_name,
+                    &#34;type&#34;: entity_type
                 }
             }
         }
@@ -1215,7 +1245,7 @@ providing input to the configure_packages_to_sync method, it can be imported by<
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/cache_config.py#L256-L322" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/cache_config.py#L265-L331" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def configure_packages_to_sync(self, win_os=None, win_package_list=None, unix_os=None,
                                unix_package_list=None):
@@ -1303,7 +1333,7 @@ providing input to the configure_packages_to_sync method, it can be imported by<
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/cache_config.py#L223-L254" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/cache_config.py#L232-L263" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def configure_remotecache(self, cache_path):
     &#34;&#34;&#34;
@@ -1353,7 +1383,7 @@ providing input to the configure_packages_to_sync method, it can be imported by<
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/cache_config.py#L324-L351" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/cache_config.py#L333-L360" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_remote_cache_contents(self):
     &#34;&#34;&#34;
@@ -1403,7 +1433,7 @@ None
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/cache_config.py#L195-L221" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/cache_config.py#L204-L230" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_remote_cache_path(self):
     &#34;&#34;&#34;

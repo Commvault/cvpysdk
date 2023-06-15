@@ -47,7 +47,7 @@ vcenter_client</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/vmware.py#L1-L991" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/vmware.py#L1-L1016" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -132,6 +132,24 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             &#39;NBD SSL&#39;: 4
         }
 
+    def add_revert_option(self, request_json, revert):
+        &#34;&#34;&#34;
+        Add revert in restore json
+
+        Args:
+
+            request_json            (dict)  :       restore dict
+
+            revert                  (bool)  :       revert option
+
+        Returns:
+            request_json            (dict)  :       restore dict
+
+        &#34;&#34;&#34;
+        if revert:
+            request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;commonOptions&#39;][&#39;revert&#39;] = True
+        return request_json
+
     def full_vm_restore_in_place(
             self,
             vm_to_restore=None,
@@ -185,6 +203,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                     v2_details          (dict)       -- details for v2 subclient
                                                     eg: check clients.vmclient.VMClient._child_job_subclient_details
 
+                    revert              (bool)      --  Revert option
+
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -201,7 +221,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
 
         &#34;&#34;&#34;
 
-        restore_option = {&#34;media_agent&#34;: kwargs.get(&#34;media_agent&#34;, None), &#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
+        restore_option = {&#34;media_agent&#34;: kwargs.get(&#34;media_agent&#34;, None), &#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None),
+                          &#34;revert&#34;: kwargs.get(&#34;revert&#34;, False)}
 
         # check input parameters are correct
         if vm_to_restore and not isinstance(vm_to_restore, str):
@@ -236,6 +257,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
+        request_json = self.add_revert_option(request_json, restore_option.get(&#39;revert&#39;, False))
         return self._process_restore_response(request_json)
 
     def full_vm_restore_out_of_place(
@@ -324,6 +346,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                     v2_details          (dict)       -- details for v2 jobs
                                                     eg: check clients.vmclient.VMClient._child_job_subclient_details
 
+                    revert              (bool)      --  Revert option
+
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -343,7 +367,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         restore_option = {}
         extra_options = [&#39;source_ip&#39;, &#39;destination_ip&#39;, &#39;network&#39;, &#39;destComputerName&#39;,
                          &#39;source_subnet&#39;, &#39;source_gateway&#39;, &#39;destination_subnet&#39;,
-                         &#39;destination_gateway&#39;, &#39;folder_path&#39;, &#39;media_agent&#39;, &#39;v2_details&#39;]
+                         &#39;destination_gateway&#39;, &#39;folder_path&#39;, &#39;media_agent&#39;, &#39;v2_details&#39;, &#39;revert&#39;]
         for key in extra_options:
             if key in kwargs:
                 restore_option[key] = kwargs[key]
@@ -391,6 +415,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
+        request_json = self.add_revert_option(request_json, restore_option.get(&#39;revert&#39;, False))
         return self._process_restore_response(request_json)
 
     def disk_restore(self,
@@ -598,7 +623,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
 
         if not disk_name:  # if disk names are not provided, restore all vmdk disks
             for each_disk_path in disk_list:
-                disk_name.append(each_disk_path.split(&#39;\\&#39;)[-1])
+                disk_name.append(disk_info_dict[each_disk_path][&#39;snap_display_name&#39;])
 
         else:  # else, check if the given VM has a disk with the list of disks in disk_name.
             for each_disk in disk_name:
@@ -1068,7 +1093,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/vmware.py#L50-L991" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/vmware.py#L50-L1016" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VMWareVirtualServerSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient Base class.
@@ -1103,6 +1128,24 @@ backupset class, subclient name, subclient id</p></div>
             &#39;NBD&#39;: 5,
             &#39;NBD SSL&#39;: 4
         }
+
+    def add_revert_option(self, request_json, revert):
+        &#34;&#34;&#34;
+        Add revert in restore json
+
+        Args:
+
+            request_json            (dict)  :       restore dict
+
+            revert                  (bool)  :       revert option
+
+        Returns:
+            request_json            (dict)  :       restore dict
+
+        &#34;&#34;&#34;
+        if revert:
+            request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;commonOptions&#39;][&#39;revert&#39;] = True
+        return request_json
 
     def full_vm_restore_in_place(
             self,
@@ -1157,6 +1200,8 @@ backupset class, subclient name, subclient id</p></div>
                     v2_details          (dict)       -- details for v2 subclient
                                                     eg: check clients.vmclient.VMClient._child_job_subclient_details
 
+                    revert              (bool)      --  Revert option
+
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -1173,7 +1218,8 @@ backupset class, subclient name, subclient id</p></div>
 
         &#34;&#34;&#34;
 
-        restore_option = {&#34;media_agent&#34;: kwargs.get(&#34;media_agent&#34;, None), &#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
+        restore_option = {&#34;media_agent&#34;: kwargs.get(&#34;media_agent&#34;, None), &#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None),
+                          &#34;revert&#34;: kwargs.get(&#34;revert&#34;, False)}
 
         # check input parameters are correct
         if vm_to_restore and not isinstance(vm_to_restore, str):
@@ -1208,6 +1254,7 @@ backupset class, subclient name, subclient id</p></div>
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
+        request_json = self.add_revert_option(request_json, restore_option.get(&#39;revert&#39;, False))
         return self._process_restore_response(request_json)
 
     def full_vm_restore_out_of_place(
@@ -1296,6 +1343,8 @@ backupset class, subclient name, subclient id</p></div>
                     v2_details          (dict)       -- details for v2 jobs
                                                     eg: check clients.vmclient.VMClient._child_job_subclient_details
 
+                    revert              (bool)      --  Revert option
+
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -1315,7 +1364,7 @@ backupset class, subclient name, subclient id</p></div>
         restore_option = {}
         extra_options = [&#39;source_ip&#39;, &#39;destination_ip&#39;, &#39;network&#39;, &#39;destComputerName&#39;,
                          &#39;source_subnet&#39;, &#39;source_gateway&#39;, &#39;destination_subnet&#39;,
-                         &#39;destination_gateway&#39;, &#39;folder_path&#39;, &#39;media_agent&#39;, &#39;v2_details&#39;]
+                         &#39;destination_gateway&#39;, &#39;folder_path&#39;, &#39;media_agent&#39;, &#39;v2_details&#39;, &#39;revert&#39;]
         for key in extra_options:
             if key in kwargs:
                 restore_option[key] = kwargs[key]
@@ -1363,6 +1412,7 @@ backupset class, subclient name, subclient id</p></div>
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
+        request_json = self.add_revert_option(request_json, restore_option.get(&#39;revert&#39;, False))
         return self._process_restore_response(request_json)
 
     def disk_restore(self,
@@ -1570,7 +1620,7 @@ backupset class, subclient name, subclient id</p></div>
 
         if not disk_name:  # if disk names are not provided, restore all vmdk disks
             for each_disk_path in disk_list:
-                disk_name.append(each_disk_path.split(&#39;\\&#39;)[-1])
+                disk_name.append(disk_info_dict[each_disk_path][&#39;snap_display_name&#39;])
 
         else:  # else, check if the given VM has a disk with the list of disks in disk_name.
             for each_disk in disk_name:
@@ -2020,6 +2070,49 @@ backupset class, subclient name, subclient id</p></div>
 </ul>
 <h3>Methods</h3>
 <dl>
+<dt id="cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.add_revert_option"><code class="name flex">
+<span>def <span class="ident">add_revert_option</span></span>(<span>self, request_json, revert)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Add revert in restore json</p>
+<h2 id="args">Args</h2>
+<p>request_json
+(dict)
+:
+restore dict</p>
+<p>revert
+(bool)
+:
+revert option</p>
+<h2 id="returns">Returns</h2>
+<p>request_json
+(dict)
+:
+restore dict</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/vmware.py#L84-L100" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def add_revert_option(self, request_json, revert):
+    &#34;&#34;&#34;
+    Add revert in restore json
+
+    Args:
+
+        request_json            (dict)  :       restore dict
+
+        revert                  (bool)  :       revert option
+
+    Returns:
+        request_json            (dict)  :       restore dict
+
+    &#34;&#34;&#34;
+    if revert:
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;commonOptions&#39;][&#39;revert&#39;] = True
+    return request_json</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.attach_disk_restore"><code class="name flex">
 <span>def <span class="ident">attach_disk_restore</span></span>(<span>self, vm_name, vcenter, esx=None, datastore=None, proxy_client=None, copy_precedence=0, media_agent=None, snap_proxy=None, disk_name=None)</span>
 </code></dt>
@@ -2081,7 +2174,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/vmware.py#L474-L585" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/vmware.py#L499-L610" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def attach_disk_restore(self,
                         vm_name,
@@ -2159,7 +2252,7 @@ if response is not success
 
     if not disk_name:  # if disk names are not provided, restore all vmdk disks
         for each_disk_path in disk_list:
-            disk_name.append(each_disk_path.split(&#39;\\&#39;)[-1])
+            disk_name.append(disk_info_dict[each_disk_path][&#39;snap_display_name&#39;])
 
     else:  # else, check if the given VM has a disk with the list of disks in disk_name.
         for each_disk in disk_name:
@@ -2229,7 +2322,7 @@ default : None. If name of the RPStore is given, granular mode is chosen else Li
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/vmware.py#L809-L877" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/vmware.py#L834-L902" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_blr_replication_pair(self, *, target, vms, plan_name, rpstore=None, granular_options=None):
     &#34;&#34;&#34;
@@ -2365,7 +2458,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/vmware.py#L345-L472" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/vmware.py#L370-L497" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_restore(self,
                  vm_name,
@@ -2560,7 +2653,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/vmware.py#L587-L711" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/vmware.py#L612-L736" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_azurerm(
         self,
@@ -2741,7 +2834,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/vmware.py#L879-L991" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/vmware.py#L904-L1016" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_googlecloud(
         self,
@@ -2909,7 +3002,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/vmware.py#L714-L807" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/vmware.py#L739-L832" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_hyperv(
         self,
@@ -3069,6 +3162,8 @@ media_agent
 &ndash; media agent</p>
 <pre><code>v2_details          (dict)       -- details for v2 subclient
                                 eg: check clients.vmclient.VMClient._child_job_subclient_details
+
+revert              (bool)      --  Revert option
 </code></pre>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
@@ -3084,7 +3179,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/vmware.py#L84-L188" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/vmware.py#L102-L210" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(
         self,
@@ -3139,6 +3234,8 @@ if response is not success
                 v2_details          (dict)       -- details for v2 subclient
                                                 eg: check clients.vmclient.VMClient._child_job_subclient_details
 
+                revert              (bool)      --  Revert option
+
 
         Returns:
             object - instance of the Job class for this restore job
@@ -3155,7 +3252,8 @@ if response is not success
 
     &#34;&#34;&#34;
 
-    restore_option = {&#34;media_agent&#34;: kwargs.get(&#34;media_agent&#34;, None), &#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None)}
+    restore_option = {&#34;media_agent&#34;: kwargs.get(&#34;media_agent&#34;, None), &#34;v2_details&#34;: kwargs.get(&#34;v2_details&#34;, None),
+                      &#34;revert&#34;: kwargs.get(&#34;revert&#34;, False)}
 
     # check input parameters are correct
     if vm_to_restore and not isinstance(vm_to_restore, str):
@@ -3190,6 +3288,7 @@ if response is not success
     )
 
     request_json = self._prepare_fullvm_restore_json(restore_option)
+    request_json = self.add_revert_option(request_json, restore_option.get(&#39;revert&#39;, False))
     return self._process_restore_response(request_json)</code></pre>
 </details>
 </dd>
@@ -3294,6 +3393,8 @@ restore_option      (dict)     --  complete dictionary with all advanced options
 
 v2_details          (dict)       -- details for v2 jobs
                                 eg: check clients.vmclient.VMClient._child_job_subclient_details
+
+revert              (bool)      --  Revert option
 </code></pre>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
@@ -3309,7 +3410,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/vmware.py#L190-L343" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/vmware.py#L212-L368" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(
         self,
@@ -3397,6 +3498,8 @@ if response is not success
                 v2_details          (dict)       -- details for v2 jobs
                                                 eg: check clients.vmclient.VMClient._child_job_subclient_details
 
+                revert              (bool)      --  Revert option
+
 
         Returns:
             object - instance of the Job class for this restore job
@@ -3416,7 +3519,7 @@ if response is not success
     restore_option = {}
     extra_options = [&#39;source_ip&#39;, &#39;destination_ip&#39;, &#39;network&#39;, &#39;destComputerName&#39;,
                      &#39;source_subnet&#39;, &#39;source_gateway&#39;, &#39;destination_subnet&#39;,
-                     &#39;destination_gateway&#39;, &#39;folder_path&#39;, &#39;media_agent&#39;, &#39;v2_details&#39;]
+                     &#39;destination_gateway&#39;, &#39;folder_path&#39;, &#39;media_agent&#39;, &#39;v2_details&#39;, &#39;revert&#39;]
     for key in extra_options:
         if key in kwargs:
             restore_option[key] = kwargs[key]
@@ -3464,6 +3567,7 @@ if response is not success
     )
 
     request_json = self._prepare_fullvm_restore_json(restore_option)
+    request_json = self.add_revert_option(request_json, restore_option.get(&#39;revert&#39;, False))
     return self._process_restore_response(request_json)</code></pre>
 </details>
 </dd>
@@ -3518,6 +3622,7 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.plan" href="../../subclient.html#cvpysdk.subclient.Subclient.plan">plan</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.preview_content" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.preview_content">preview_content</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.properties" href="../../subclient.html#cvpysdk.subclient.Subclient.properties">properties</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.quiesce_file_system" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.quiesce_file_system">quiesce_file_system</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.read_buffer_size" href="../../subclient.html#cvpysdk.subclient.Subclient.read_buffer_size">read_buffer_size</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.refresh" href="../../subclient.html#cvpysdk.subclient.Subclient.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.restore_in_place" href="../../subclient.html#cvpysdk.subclient.Subclient.restore_in_place">restore_in_place</a></code></li>
@@ -3616,6 +3721,7 @@ setTimeout(() => input.focus(), 100);
 <li>
 <h4><code><a title="cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient" href="#cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient">VMWareVirtualServerSubclient</a></code></h4>
 <ul class="">
+<li><code><a title="cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.add_revert_option" href="#cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.add_revert_option">add_revert_option</a></code></li>
 <li><code><a title="cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.attach_disk_restore" href="#cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.attach_disk_restore">attach_disk_restore</a></code></li>
 <li><code><a title="cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.create_blr_replication_pair" href="#cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.create_blr_replication_pair">create_blr_replication_pair</a></code></li>
 <li><code><a title="cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.disk_restore" href="#cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.disk_restore">disk_restore</a></code></li>

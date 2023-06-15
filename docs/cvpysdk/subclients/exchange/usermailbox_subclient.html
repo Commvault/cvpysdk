@@ -28,73 +28,64 @@
 <p>UsermailboxSubclient:
 Derived class from ExchangeMailboxSubclient Base class, representing a
 UserMailbox subclient, and to perform operations on that subclient</p>
-<h2 id="usermailboxsubclient">Usermailboxsubclient</h2>
-<p>_get_subclient_properties()
-&ndash;
-gets the properties of UserMailbox Subclient</p>
-<p>_get_subclient_properties_json()
-&ndash;
-gets the properties JSON of UserMailbox Subclient</p>
-<p>users()
-&ndash;
-creates users association for subclient</p>
-<p>Databases()
-&ndash;
-creates Db association for
-the subclient</p>
-<p>Adgroups()
-&ndash;
-creates Adgroup association for subclient</p>
-<p>restore_in_place()
-&ndash;
-runs in-place restore for the subclient</p>
-<p>set_pst_association()
-&ndash;
-Create PST association for UserMailboxSubclient</p>
-<p>set_fs_association_for_pst()
-&ndash;
-Helper method to create pst association for
-PST Ingestion by FS association</p>
-<p>_association_json_with_plan()
-&ndash;
-Create the Association JSON for
-associations using Exchange Plan</p>
-<p>_association_mailboxes_json()
-&ndash;
-Association for particular mailboxes</p>
-<p>backup_mailboxes()
-&ndash;
-Backup specific mailboxes</p>
-<p>_backup_generic_items_json()
-&ndash;
-JSON to backup generic items</p>
-<p>backup_generic_items()
-&ndash;
-Backup Generic Items
-viz. All Public Folders/
-All User Mailboxes/
-All Group Mailboxes</p>
-<p>set_adgroup_associations()
-&ndash;
-Create Association for ADGroups</p>
-<p>_get_discover_adgroups()
-&ndash;
-Get the discovered AD Groups</p>
-<p>_get_discover_users()
-&ndash;
-Get the discovered users</p>
-<p>set_o365group_asscoiations()
-&ndash;
-Create O365 group association for UsermailboxSubclient</p>
-<p>delete_o365group_association()
-&ndash;
-delete O365 group association for UsermailboxSubclient</p>
-<p>enable_ews_support()
-&ndash; Enables EWS Support for backup for ON_PREM Mailboxes</p>
+<h1 id="usermailboxsubclient">UsermailboxSubclient:</h1>
+<pre><code>_get_subclient_properties()         --  gets the properties of UserMailbox Subclient
+_get_subclient_properties_json()    --  gets the properties JSON of UserMailbox Subclient
+_get_discover_adgroups()            --  Get the discovered AD Groups
+_get_discover_users()               --  Get the discovered users
+_association_json_with_plan()       --  Create the Association JSON for
+                                        associations using Exchange Plan
+_association_mailboxes_json()       --  Association for particular mailboxes
+_task_json_for_backup()             --  JSON for backup task for Exchange User mailbox Subclient
+_backup_generic_items_json()        --  JSON to backup generic items
+</code></pre>
+<h1 id="content-association-methods">Content Association Methods:</h1>
+<pre><code>set_user_assocaition()              --  Set exchange users association
+set_pst_association()               --  Create PST association for UserMailboxSubclient
+set_fs_association_for_pst()        --  Helper method to create pst association for
+                                        PST Ingestion by FS association
+set_adgroup_associations()          --  Create Association for ADGroups
+set_o365group_asscoiations()        --  Create O365 group association
+
+delete_user_assocaition()           --  Delete User Association from content
+delete_o365group_association()      --  Delete Office 365 Group Association
+delete_database_assocaition()       --  Delete Exchange DB Association
+delete_adgroup_assocaition          --  Delete association for an AD Group
+
+
+enable_allusers_association()       --  Enable association for all mailboxes
+disable_allusers_association()      --  Disable All Users Association
+
+enable_auto_discover_association    --  Enable Association for Auto Discovered Content
+                                        viz. All Public Folders/
+                                            All Mailboxes/
+                                            All Group Mailboxes
+delete_auto_discover_association    --  Delete Association for Auto Discovered Content
+                                       `viz. All Public Folders/
+                                            All Mailboxes/
+                                            All Group Mailboxes
+enable_ews_support()                --  Enables EWS Support for backup for ON_PREM Mailboxes
+</code></pre>
+<h1 id="browse-restore-backup-methods">Browse/ Restore/ Backup Methods:</h1>
+<pre><code>browse_mailboxes()                  --  Backup specific mailboxes
+backup_generic_items()              --  Backup Generic Items
+                                        viz. All Public Folders/
+                                            All User Mailboxes/
+                                            All Group Mailboxes
+backup_mailboxes()                  --  Backup selected mailboxes
+restore_in_place()                  --  runs in-place restore for the subclient
+create_recovery_point()             --  Create a recovery point for a mailbox
+</code></pre>
+<h1 id="user-mailbox-subclient-instance-attributes">User Mailbox Subclient Instance Attributes:</h1>
+<pre><code>discover_users                          --  Dictionary of users discovered
+discover_databases                      --  Dictionary of databases discovered
+adgroups                                --  Dictionary of discovered AD Groups
+o365groups                              --  Dictionary of discovered Office 365 Groups
+</code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1-L1694" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1-L1713" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -118,54 +109,72 @@ delete O365 group association for UsermailboxSubclient</p>
 
 UsermailboxSubclient is the only class defined in this file.
 
-UsermailboxSubclient:   Derived class from ExchangeMailboxSubclient Base class, representing a
+UsermailboxSubclient:       Derived class from ExchangeMailboxSubclient Base class, representing a
                             UserMailbox subclient, and to perform operations on that subclient
 
 UsermailboxSubclient:
+======================
 
     _get_subclient_properties()         --  gets the properties of UserMailbox Subclient
-
     _get_subclient_properties_json()    --  gets the properties JSON of UserMailbox Subclient
-
-    users()                             --  creates users association for subclient
-
-    Databases()                         --  creates Db association for  the subclient
-
-    Adgroups()                          --  creates Adgroup association for subclient
-
-    restore_in_place()                  --  runs in-place restore for the subclient
-
-    set_pst_association()               --  Create PST association for UserMailboxSubclient
-
-    set_fs_association_for_pst()        --  Helper method to create pst association for
-                                            PST Ingestion by FS association
-
+    _get_discover_adgroups()            --  Get the discovered AD Groups
+    _get_discover_users()               --  Get the discovered users
     _association_json_with_plan()       --  Create the Association JSON for
                                             associations using Exchange Plan
-
     _association_mailboxes_json()       --  Association for particular mailboxes
-
-    backup_mailboxes()                  --  Backup specific mailboxes
-
+    _task_json_for_backup()             --  JSON for backup task for Exchange User mailbox Subclient
     _backup_generic_items_json()        --  JSON to backup generic items
 
+Content Association Methods:
+==============================
+
+    set_user_assocaition()              --  Set exchange users association
+    set_pst_association()               --  Create PST association for UserMailboxSubclient
+    set_fs_association_for_pst()        --  Helper method to create pst association for
+                                            PST Ingestion by FS association
+    set_adgroup_associations()          --  Create Association for ADGroups
+    set_o365group_asscoiations()        --  Create O365 group association
+
+    delete_user_assocaition()           --  Delete User Association from content
+    delete_o365group_association()      --  Delete Office 365 Group Association
+    delete_database_assocaition()       --  Delete Exchange DB Association
+    delete_adgroup_assocaition          --  Delete association for an AD Group
+
+
+    enable_allusers_association()       --  Enable association for all mailboxes
+    disable_allusers_association()      --  Disable All Users Association
+
+    enable_auto_discover_association    --  Enable Association for Auto Discovered Content
+                                            viz. All Public Folders/
+                                                All Mailboxes/
+                                                All Group Mailboxes
+    delete_auto_discover_association    --  Delete Association for Auto Discovered Content
+                                           `viz. All Public Folders/
+                                                All Mailboxes/
+                                                All Group Mailboxes
+    enable_ews_support()                --  Enables EWS Support for backup for ON_PREM Mailboxes
+
+Browse/ Restore/ Backup Methods:
+==============================
+
+    browse_mailboxes()                  --  Backup specific mailboxes
     backup_generic_items()              --  Backup Generic Items
                                             viz. All Public Folders/
                                                 All User Mailboxes/
                                                 All Group Mailboxes
+    backup_mailboxes()                  --  Backup selected mailboxes
+    restore_in_place()                  --  runs in-place restore for the subclient
+    create_recovery_point()             --  Create a recovery point for a mailbox
 
-    set_adgroup_associations()          --  Create Association for ADGroups
 
-    _get_discover_adgroups()            --  Get the discovered AD Groups
 
-    _get_discover_users()               --  Get the discovered users
+User Mailbox Subclient Instance Attributes:
+==============================
 
-    set_o365group_asscoiations()        --  Create O365 group association for UsermailboxSubclient
-
-    delete_o365group_association()      --  delete O365 group association for UsermailboxSubclient
-
-    enable_ews_support()                -- Enables EWS Support for backup for ON_PREM Mailboxes
-
+    discover_users                          --  Dictionary of users discovered
+    discover_databases                      --  Dictionary of databases discovered
+    adgroups                                --  Dictionary of discovered AD Groups
+    o365groups                              --  Dictionary of discovered Office 365 Groups
 &#34;&#34;&#34;
 
 from __future__ import unicode_literals
@@ -256,7 +265,7 @@ class UsermailboxSubclient(ExchangeSubclient):
 
             Args:
                 subclient_content (dict)  --  dict of the Users to add to the subclient
-                                             (dict of only policies in case of office 365 groups)
+                                             (dict of only policies in case of Office 365 groups)
                 subclient_content = {
 
                         &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
@@ -401,7 +410,8 @@ class UsermailboxSubclient(ExchangeSubclient):
         return task_json
 
     def _set_association_request(self, associations_json):
-        &#34;&#34;&#34;Runs the emailAssociation ass API to set association
+        &#34;&#34;&#34;
+            Runs the emailAssociation POST API to set association
 
             Args:
                 associations_json    (dict)  -- request json sent as payload
@@ -751,6 +761,60 @@ class UsermailboxSubclient(ExchangeSubclient):
 
         return adgroups
 
+    def _backup_generic_items_json(self, subclient_content):
+        &#34;&#34;&#34;
+            Create the JSON for Backing Up the Generic Items of any Exchange Online Client
+
+            Args:
+                subclient_content   (list)  List having dictionary of items to be backed up
+
+                subclient_content = [
+                    {
+                    &#34;associationName&#34; : &#34;All Public Folders&#34;,
+                    &#34;associationType&#34;:12
+                    },
+                    {
+                    &#34;associationName&#34; : &#34;All Users&#34;,
+                    &#34;associationType&#34;:12
+                    }
+                ]
+
+            Returns:
+                The JSON to create a backup task
+        &#34;&#34;&#34;
+
+        task_dict = {
+            &#34;taskInfo&#34;: {
+                &#34;associations&#34;: [
+                    self._subClientEntity
+                ],
+                &#34;task&#34;: {
+                    &#34;taskType&#34;: 1
+                },
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTask&#34;: {
+                            &#34;subTaskType&#34;: 2,
+                            &#34;operationType&#34;: 2
+                        },
+                        &#34;options&#34;: {
+                            &#34;backupOpts&#34;: {
+                                &#34;backupLevel&#34;: 1,
+                                &#34;incLevel&#34;: 1,
+                                &#34;exchOnePassOptions&#34;: {
+                                    &#34;genericAssociations&#34;: [
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+        task_dict[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;backupOpts&#34;][&#34;exchOnePassOptions&#34;][
+            &#34;genericAssociations&#34;] = subclient_content
+        return task_dict
+
     @property
     def discover_users(self):
         &#34;&#34;&#34;&#34;Returns the list of discovered users for the UserMailbox subclient.&#34;&#34;&#34;
@@ -839,7 +903,7 @@ class UsermailboxSubclient(ExchangeSubclient):
                             &#34;associated&#34;: False,
                             &#39;databaseName&#39;: mb_item[&#39;databaseName&#39;],
                             &#34;exchangeVersion&#34;: mb_item[&#39;exchangeVersion&#39;],
-                            &#34;msExchRecipientTypeDetails&#34;: mb_item[&#39;msExchRecipientTypeDetails&#39;],
+                            # &#34;msExchRecipientTypeDetails&#34;: mb_item[&#39;msExchRecipientTypeDetails&#39;],
                             &#39;user&#39;: {
                                 &#39;_type_&#39;: 13,
                                 &#39;userGUID&#39;: mb_item[&#39;user&#39;][&#39;userGUID&#39;]
@@ -1110,126 +1174,6 @@ class UsermailboxSubclient(ExchangeSubclient):
         _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
         self._set_association_request(_assocaition_json_)
 
-    def _backup_generic_items_json(self, subclient_content):
-        &#34;&#34;&#34;
-            Create the JSON for Backing Up the Generic Items of any Exchange Online Client
-
-            Args:
-                subclient_content   (list)  List having dictionary of items to be backed up
-
-                subclient_content = [
-                    {
-                    &#34;associationName&#34; : &#34;All Public Folders&#34;,
-                    &#34;associationType&#34;:12
-                    },
-                    {
-                    &#34;associationName&#34; : &#34;All Users&#34;,
-                    &#34;associationType&#34;:12
-                    }
-                ]
-
-            Returns:
-                The JSON to create a backup task
-        &#34;&#34;&#34;
-
-        task_dict = {
-            &#34;taskInfo&#34;: {
-                &#34;associations&#34;: [
-                    self._subClientEntity
-                ],
-                &#34;task&#34;: {
-                    &#34;taskType&#34;: 1
-                },
-                &#34;subTasks&#34;: [
-                    {
-                        &#34;subTask&#34;: {
-                            &#34;subTaskType&#34;: 2,
-                            &#34;operationType&#34;: 2
-                        },
-                        &#34;options&#34;: {
-                            &#34;backupOpts&#34;: {
-                                &#34;backupLevel&#34;: 1,
-                                &#34;incLevel&#34;: 1,
-                                &#34;exchOnePassOptions&#34;: {
-                                    &#34;genericAssociations&#34;: [
-                                    ]
-                                }
-                            }
-                        }
-                    }
-                ]
-            }
-        }
-        task_dict[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;backupOpts&#34;][&#34;exchOnePassOptions&#34;][
-            &#34;genericAssociations&#34;] = subclient_content
-        return task_dict
-
-    def enable_ews_support(self, service_url):
-        &#34;&#34;&#34;This function provides support for EWS protocol to backup on-prem mailboxes
-            Args:
-                service_url (string) -- EWS Connection URL for your exchange server
-            Returns: None
-        &#34;&#34;&#34;
-        self.agentproperties = self._agent_object.properties
-        self.agentproperties[&#34;onePassProperties&#34;][&#34;onePassProp&#34;][&#34;ewsDetails&#34;][&#34;bUseEWS&#34;] = True
-        self.agentproperties[&#34;onePassProperties&#34;][&#34;onePassProp&#34;][&#34;ewsDetails&#34;][&#34;ewsConnectionUrl&#34;] = service_url
-        self._agent_object.update_properties(self.agentproperties)
-
-    def browse_mailboxes(self, retry_attempts=0):
-        &#34;&#34;&#34;
-        This function returns the mailboxes available for OOP restore
-        return: dictionary containing mailbox info
-        &#34;&#34;&#34;
-        BROWSE_MAILBOXES = self._commcell_object._services[&#39;EMAIL_DISCOVERY_WITHOUT_REFRESH&#39;] % (
-            int(self._backupset_object.backupset_id), &#39;User&#39;
-        )
-        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, BROWSE_MAILBOXES)
-        if flag:
-            if response and response.json():
-                discover_content = response.json()
-                if discover_content.get(&#39;resp&#39;, {}).get(&#39;errorCode&#39;, 0) == 469762468:
-                    time.sleep(10)
-                    if retry_attempts &gt; 10:
-                        raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Failed to perform browse operation.&#39;)
-                    return self.browse_mailboxes(retry_attempts + 1)
-                if &#39;discoverInfo&#39; in discover_content.keys():
-                    if &#39;mailBoxes&#39; in discover_content[&#39;discoverInfo&#39;]:
-                        mailboxes = discover_content[&#34;discoverInfo&#34;][&#34;mailBoxes&#34;]
-                        return mailboxes
-            else:
-                raise SDKException(&#34;Response&#34;, &#34;102&#34;)
-        else:
-            response_string = self.commcell._update_response_(response.text)
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
-
-    def backup_generic_items(self, subclient_content):
-        &#34;&#34;&#34;
-            Backups the Generic Items for any Exchange Online Client
-            GGeneric Items:
-                All Public Folders/ All O365 Group ailboxes/ All Users
-
-            Args:
-                subclient_content   (list)  List having dictionary of items to be backed up
-
-                subclient_content = [
-                    {
-                    &#34;associationName&#34; : &#34;All Public Folders&#34;,
-                    &#34;associationType&#34;:12
-                    },
-                    {
-                    &#34;associationName&#34; : &#34;All Users&#34;,
-                    &#34;associationType&#34;:12
-                    }
-                ]
-        &#34;&#34;&#34;
-        task_dict = self._backup_generic_items_json(subclient_content=subclient_content)
-
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], task_dict
-        )
-
-        return self._process_backup_response(flag, response)
-
     def set_o365group_asscoiations(self, subclient_content):
         &#34;&#34;&#34;Create O365 Group association for UserMailboxSubclient.
             Args:
@@ -1303,7 +1247,7 @@ class UsermailboxSubclient(ExchangeSubclient):
                             &#34;associated&#34;: False,
                             &#39;databaseName&#39;: mb_item[&#39;databaseName&#39;],
                             &#34;exchangeVersion&#34;: mb_item[&#39;exchangeVersion&#39;],
-                            &#34;msExchRecipientTypeDetails&#34;: mb_item[&#39;msExchRecipientTypeDetails&#39;],
+                            # &#34;msExchRecipientTypeDetails&#34;: mb_item[&#39;msExchRecipientTypeDetails&#39;],
                             &#34;exchangeServer&#34;: mb_item[&#39;exchangeServer&#39;],
                             &#39;user&#39;: {
                                 &#39;_type_&#39;: 13,
@@ -1649,6 +1593,72 @@ class UsermailboxSubclient(ExchangeSubclient):
         _association_json_[&#34;emailAssociation&#34;][&#34;emailStatus&#34;] = 1
         _association_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
         self._set_association_request(_association_json_)
+
+    def enable_ews_support(self, service_url):
+        &#34;&#34;&#34;This function provides support for EWS protocol to backup on-prem mailboxes
+            Args:
+                service_url (string) -- EWS Connection URL for your exchange server
+            Returns: None
+        &#34;&#34;&#34;
+        self.agentproperties = self._agent_object.properties
+        self.agentproperties[&#34;onePassProperties&#34;][&#34;onePassProp&#34;][&#34;ewsDetails&#34;][&#34;bUseEWS&#34;] = True
+        self.agentproperties[&#34;onePassProperties&#34;][&#34;onePassProp&#34;][&#34;ewsDetails&#34;][&#34;ewsConnectionUrl&#34;] = service_url
+        self._agent_object.update_properties(self.agentproperties)
+
+    def browse_mailboxes(self, retry_attempts=0):
+        &#34;&#34;&#34;
+        This function returns the mailboxes available for OOP restore
+        return: dictionary containing mailbox info
+        &#34;&#34;&#34;
+        BROWSE_MAILBOXES = self._commcell_object._services[&#39;EMAIL_DISCOVERY_WITHOUT_REFRESH&#39;] % (
+            int(self._backupset_object.backupset_id), &#39;User&#39;
+        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, BROWSE_MAILBOXES)
+        if flag:
+            if response and response.json():
+                discover_content = response.json()
+                if discover_content.get(&#39;resp&#39;, {}).get(&#39;errorCode&#39;, 0) == 469762468:
+                    time.sleep(10)
+                    if retry_attempts &gt; 10:
+                        raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Failed to perform browse operation.&#39;)
+                    return self.browse_mailboxes(retry_attempts + 1)
+                if &#39;discoverInfo&#39; in discover_content.keys():
+                    if &#39;mailBoxes&#39; in discover_content[&#39;discoverInfo&#39;]:
+                        mailboxes = discover_content[&#34;discoverInfo&#34;][&#34;mailBoxes&#34;]
+                        return mailboxes
+            else:
+                raise SDKException(&#34;Response&#34;, &#34;102&#34;)
+        else:
+            response_string = self.commcell._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def backup_generic_items(self, subclient_content):
+        &#34;&#34;&#34;
+            Backups the Generic Items for any Exchange Online Client
+            GGeneric Items:
+                All Public Folders/ All O365 Group ailboxes/ All Users
+
+            Args:
+                subclient_content   (list)  List having dictionary of items to be backed up
+
+                subclient_content = [
+                    {
+                    &#34;associationName&#34; : &#34;All Public Folders&#34;,
+                    &#34;associationType&#34;:12
+                    },
+                    {
+                    &#34;associationName&#34; : &#34;All Users&#34;,
+                    &#34;associationType&#34;:12
+                    }
+                ]
+        &#34;&#34;&#34;
+        task_dict = self._backup_generic_items_json(subclient_content=subclient_content)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], task_dict
+        )
+
+        return self._process_backup_response(flag, response)
 
     def backup_mailboxes(self, mailbox_alias_names):
         &#34;&#34;&#34;
@@ -1826,7 +1836,7 @@ subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L86-L1694" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L104-L1713" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class UsermailboxSubclient(ExchangeSubclient):
     &#34;&#34;&#34;Derived class from ExchangeSubclient Base class.
@@ -1903,7 +1913,7 @@ subclient id</p></div>
 
             Args:
                 subclient_content (dict)  --  dict of the Users to add to the subclient
-                                             (dict of only policies in case of office 365 groups)
+                                             (dict of only policies in case of Office 365 groups)
                 subclient_content = {
 
                         &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
@@ -2048,7 +2058,8 @@ subclient id</p></div>
         return task_json
 
     def _set_association_request(self, associations_json):
-        &#34;&#34;&#34;Runs the emailAssociation ass API to set association
+        &#34;&#34;&#34;
+            Runs the emailAssociation POST API to set association
 
             Args:
                 associations_json    (dict)  -- request json sent as payload
@@ -2398,6 +2409,60 @@ subclient id</p></div>
 
         return adgroups
 
+    def _backup_generic_items_json(self, subclient_content):
+        &#34;&#34;&#34;
+            Create the JSON for Backing Up the Generic Items of any Exchange Online Client
+
+            Args:
+                subclient_content   (list)  List having dictionary of items to be backed up
+
+                subclient_content = [
+                    {
+                    &#34;associationName&#34; : &#34;All Public Folders&#34;,
+                    &#34;associationType&#34;:12
+                    },
+                    {
+                    &#34;associationName&#34; : &#34;All Users&#34;,
+                    &#34;associationType&#34;:12
+                    }
+                ]
+
+            Returns:
+                The JSON to create a backup task
+        &#34;&#34;&#34;
+
+        task_dict = {
+            &#34;taskInfo&#34;: {
+                &#34;associations&#34;: [
+                    self._subClientEntity
+                ],
+                &#34;task&#34;: {
+                    &#34;taskType&#34;: 1
+                },
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTask&#34;: {
+                            &#34;subTaskType&#34;: 2,
+                            &#34;operationType&#34;: 2
+                        },
+                        &#34;options&#34;: {
+                            &#34;backupOpts&#34;: {
+                                &#34;backupLevel&#34;: 1,
+                                &#34;incLevel&#34;: 1,
+                                &#34;exchOnePassOptions&#34;: {
+                                    &#34;genericAssociations&#34;: [
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+        task_dict[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;backupOpts&#34;][&#34;exchOnePassOptions&#34;][
+            &#34;genericAssociations&#34;] = subclient_content
+        return task_dict
+
     @property
     def discover_users(self):
         &#34;&#34;&#34;&#34;Returns the list of discovered users for the UserMailbox subclient.&#34;&#34;&#34;
@@ -2486,7 +2551,7 @@ subclient id</p></div>
                             &#34;associated&#34;: False,
                             &#39;databaseName&#39;: mb_item[&#39;databaseName&#39;],
                             &#34;exchangeVersion&#34;: mb_item[&#39;exchangeVersion&#39;],
-                            &#34;msExchRecipientTypeDetails&#34;: mb_item[&#39;msExchRecipientTypeDetails&#39;],
+                            # &#34;msExchRecipientTypeDetails&#34;: mb_item[&#39;msExchRecipientTypeDetails&#39;],
                             &#39;user&#39;: {
                                 &#39;_type_&#39;: 13,
                                 &#39;userGUID&#39;: mb_item[&#39;user&#39;][&#39;userGUID&#39;]
@@ -2757,126 +2822,6 @@ subclient id</p></div>
         _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
         self._set_association_request(_assocaition_json_)
 
-    def _backup_generic_items_json(self, subclient_content):
-        &#34;&#34;&#34;
-            Create the JSON for Backing Up the Generic Items of any Exchange Online Client
-
-            Args:
-                subclient_content   (list)  List having dictionary of items to be backed up
-
-                subclient_content = [
-                    {
-                    &#34;associationName&#34; : &#34;All Public Folders&#34;,
-                    &#34;associationType&#34;:12
-                    },
-                    {
-                    &#34;associationName&#34; : &#34;All Users&#34;,
-                    &#34;associationType&#34;:12
-                    }
-                ]
-
-            Returns:
-                The JSON to create a backup task
-        &#34;&#34;&#34;
-
-        task_dict = {
-            &#34;taskInfo&#34;: {
-                &#34;associations&#34;: [
-                    self._subClientEntity
-                ],
-                &#34;task&#34;: {
-                    &#34;taskType&#34;: 1
-                },
-                &#34;subTasks&#34;: [
-                    {
-                        &#34;subTask&#34;: {
-                            &#34;subTaskType&#34;: 2,
-                            &#34;operationType&#34;: 2
-                        },
-                        &#34;options&#34;: {
-                            &#34;backupOpts&#34;: {
-                                &#34;backupLevel&#34;: 1,
-                                &#34;incLevel&#34;: 1,
-                                &#34;exchOnePassOptions&#34;: {
-                                    &#34;genericAssociations&#34;: [
-                                    ]
-                                }
-                            }
-                        }
-                    }
-                ]
-            }
-        }
-        task_dict[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;backupOpts&#34;][&#34;exchOnePassOptions&#34;][
-            &#34;genericAssociations&#34;] = subclient_content
-        return task_dict
-
-    def enable_ews_support(self, service_url):
-        &#34;&#34;&#34;This function provides support for EWS protocol to backup on-prem mailboxes
-            Args:
-                service_url (string) -- EWS Connection URL for your exchange server
-            Returns: None
-        &#34;&#34;&#34;
-        self.agentproperties = self._agent_object.properties
-        self.agentproperties[&#34;onePassProperties&#34;][&#34;onePassProp&#34;][&#34;ewsDetails&#34;][&#34;bUseEWS&#34;] = True
-        self.agentproperties[&#34;onePassProperties&#34;][&#34;onePassProp&#34;][&#34;ewsDetails&#34;][&#34;ewsConnectionUrl&#34;] = service_url
-        self._agent_object.update_properties(self.agentproperties)
-
-    def browse_mailboxes(self, retry_attempts=0):
-        &#34;&#34;&#34;
-        This function returns the mailboxes available for OOP restore
-        return: dictionary containing mailbox info
-        &#34;&#34;&#34;
-        BROWSE_MAILBOXES = self._commcell_object._services[&#39;EMAIL_DISCOVERY_WITHOUT_REFRESH&#39;] % (
-            int(self._backupset_object.backupset_id), &#39;User&#39;
-        )
-        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, BROWSE_MAILBOXES)
-        if flag:
-            if response and response.json():
-                discover_content = response.json()
-                if discover_content.get(&#39;resp&#39;, {}).get(&#39;errorCode&#39;, 0) == 469762468:
-                    time.sleep(10)
-                    if retry_attempts &gt; 10:
-                        raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Failed to perform browse operation.&#39;)
-                    return self.browse_mailboxes(retry_attempts + 1)
-                if &#39;discoverInfo&#39; in discover_content.keys():
-                    if &#39;mailBoxes&#39; in discover_content[&#39;discoverInfo&#39;]:
-                        mailboxes = discover_content[&#34;discoverInfo&#34;][&#34;mailBoxes&#34;]
-                        return mailboxes
-            else:
-                raise SDKException(&#34;Response&#34;, &#34;102&#34;)
-        else:
-            response_string = self.commcell._update_response_(response.text)
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
-
-    def backup_generic_items(self, subclient_content):
-        &#34;&#34;&#34;
-            Backups the Generic Items for any Exchange Online Client
-            GGeneric Items:
-                All Public Folders/ All O365 Group ailboxes/ All Users
-
-            Args:
-                subclient_content   (list)  List having dictionary of items to be backed up
-
-                subclient_content = [
-                    {
-                    &#34;associationName&#34; : &#34;All Public Folders&#34;,
-                    &#34;associationType&#34;:12
-                    },
-                    {
-                    &#34;associationName&#34; : &#34;All Users&#34;,
-                    &#34;associationType&#34;:12
-                    }
-                ]
-        &#34;&#34;&#34;
-        task_dict = self._backup_generic_items_json(subclient_content=subclient_content)
-
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], task_dict
-        )
-
-        return self._process_backup_response(flag, response)
-
     def set_o365group_asscoiations(self, subclient_content):
         &#34;&#34;&#34;Create O365 Group association for UserMailboxSubclient.
             Args:
@@ -2950,7 +2895,7 @@ subclient id</p></div>
                             &#34;associated&#34;: False,
                             &#39;databaseName&#39;: mb_item[&#39;databaseName&#39;],
                             &#34;exchangeVersion&#34;: mb_item[&#39;exchangeVersion&#39;],
-                            &#34;msExchRecipientTypeDetails&#34;: mb_item[&#39;msExchRecipientTypeDetails&#39;],
+                            # &#34;msExchRecipientTypeDetails&#34;: mb_item[&#39;msExchRecipientTypeDetails&#39;],
                             &#34;exchangeServer&#34;: mb_item[&#39;exchangeServer&#39;],
                             &#39;user&#39;: {
                                 &#39;_type_&#39;: 13,
@@ -3297,6 +3242,72 @@ subclient id</p></div>
         _association_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
         self._set_association_request(_association_json_)
 
+    def enable_ews_support(self, service_url):
+        &#34;&#34;&#34;This function provides support for EWS protocol to backup on-prem mailboxes
+            Args:
+                service_url (string) -- EWS Connection URL for your exchange server
+            Returns: None
+        &#34;&#34;&#34;
+        self.agentproperties = self._agent_object.properties
+        self.agentproperties[&#34;onePassProperties&#34;][&#34;onePassProp&#34;][&#34;ewsDetails&#34;][&#34;bUseEWS&#34;] = True
+        self.agentproperties[&#34;onePassProperties&#34;][&#34;onePassProp&#34;][&#34;ewsDetails&#34;][&#34;ewsConnectionUrl&#34;] = service_url
+        self._agent_object.update_properties(self.agentproperties)
+
+    def browse_mailboxes(self, retry_attempts=0):
+        &#34;&#34;&#34;
+        This function returns the mailboxes available for OOP restore
+        return: dictionary containing mailbox info
+        &#34;&#34;&#34;
+        BROWSE_MAILBOXES = self._commcell_object._services[&#39;EMAIL_DISCOVERY_WITHOUT_REFRESH&#39;] % (
+            int(self._backupset_object.backupset_id), &#39;User&#39;
+        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, BROWSE_MAILBOXES)
+        if flag:
+            if response and response.json():
+                discover_content = response.json()
+                if discover_content.get(&#39;resp&#39;, {}).get(&#39;errorCode&#39;, 0) == 469762468:
+                    time.sleep(10)
+                    if retry_attempts &gt; 10:
+                        raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Failed to perform browse operation.&#39;)
+                    return self.browse_mailboxes(retry_attempts + 1)
+                if &#39;discoverInfo&#39; in discover_content.keys():
+                    if &#39;mailBoxes&#39; in discover_content[&#39;discoverInfo&#39;]:
+                        mailboxes = discover_content[&#34;discoverInfo&#34;][&#34;mailBoxes&#34;]
+                        return mailboxes
+            else:
+                raise SDKException(&#34;Response&#34;, &#34;102&#34;)
+        else:
+            response_string = self.commcell._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def backup_generic_items(self, subclient_content):
+        &#34;&#34;&#34;
+            Backups the Generic Items for any Exchange Online Client
+            GGeneric Items:
+                All Public Folders/ All O365 Group ailboxes/ All Users
+
+            Args:
+                subclient_content   (list)  List having dictionary of items to be backed up
+
+                subclient_content = [
+                    {
+                    &#34;associationName&#34; : &#34;All Public Folders&#34;,
+                    &#34;associationType&#34;:12
+                    },
+                    {
+                    &#34;associationName&#34; : &#34;All Users&#34;,
+                    &#34;associationType&#34;:12
+                    }
+                ]
+        &#34;&#34;&#34;
+        task_dict = self._backup_generic_items_json(subclient_content=subclient_content)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], task_dict
+        )
+
+        return self._process_backup_response(flag, response)
+
     def backup_mailboxes(self, mailbox_alias_names):
         &#34;&#34;&#34;
         Backup specific mailboxes.
@@ -3451,7 +3462,7 @@ subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L681-L684" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L754-L757" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def adgroups(self):
@@ -3465,7 +3476,7 @@ def adgroups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L676-L679" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L749-L752" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def databases(self):
@@ -3479,7 +3490,7 @@ def databases(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L666-L669" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L739-L742" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def discover_adgroups(self):
@@ -3493,7 +3504,7 @@ def discover_adgroups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L661-L664" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L734-L737" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def discover_databases(self):
@@ -3507,7 +3518,7 @@ def discover_databases(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L656-L659" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L729-L732" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def discover_users(self):
@@ -3521,7 +3532,7 @@ def discover_users(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L686-L689" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L759-L762" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def o365groups(self):
@@ -3535,7 +3546,7 @@ def o365groups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L671-L674" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L744-L747" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def users(self):
@@ -3570,7 +3581,7 @@ List having dictionary of items to be backed up</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1107-L1133" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1546-L1572" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup_generic_items(self, subclient_content):
     &#34;&#34;&#34;
@@ -3615,7 +3626,7 @@ Sample Values:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1555-L1570" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1574-L1589" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup_mailboxes(self, mailbox_alias_names):
     &#34;&#34;&#34;
@@ -3644,7 +3655,7 @@ return: dictionary containing mailbox info</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1080-L1105" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1519-L1544" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse_mailboxes(self, retry_attempts=0):
     &#34;&#34;&#34;
@@ -3708,7 +3719,7 @@ Format:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1572-L1684" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1591-L1703" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_recovery_point(self, mailbox_prop, job=None, job_id=None):
     &#34;&#34;&#34;
@@ -3851,7 +3862,7 @@ dict of the adgroups to delete from subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1337-L1392" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1290-L1345" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_adgroup_assocaition(self, subclient_content):
     &#34;&#34;&#34;Deletes Ad groups assocaition for UserMailboxSubclient.
@@ -3944,7 +3955,7 @@ dict of the adgroups to delete from subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1493-L1553" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1446-L1506" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_auto_discover_association(self, association_name, subclient_content, use_policies=True):
     &#34;&#34;&#34;
@@ -4035,7 +4046,7 @@ dict of the databases to delete from subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1282-L1335" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1235-L1288" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_database_assocaition(self, subclient_content):
     &#34;&#34;&#34;Deletes Database assocaition for UserMailboxSubclient.
@@ -4117,7 +4128,7 @@ dict of the Users to delete from subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1232-L1280" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1185-L1233" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_o365group_association(self, subclient_content):
     &#34;&#34;&#34;delete O365 group association for UserMailboxSubclient.
@@ -4198,7 +4209,7 @@ subclient_content = {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1162-L1230" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1115-L1183" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_user_assocaition(self, subclient_content, use_policies=True):
     &#34;&#34;&#34;delete User assocaition for UserMailboxSubclient.
@@ -4246,7 +4257,7 @@ subclient_content = {
                         &#34;associated&#34;: False,
                         &#39;databaseName&#39;: mb_item[&#39;databaseName&#39;],
                         &#34;exchangeVersion&#34;: mb_item[&#39;exchangeVersion&#39;],
-                        &#34;msExchRecipientTypeDetails&#34;: mb_item[&#39;msExchRecipientTypeDetails&#39;],
+                        # &#34;msExchRecipientTypeDetails&#34;: mb_item[&#39;msExchRecipientTypeDetails&#39;],
                         &#34;exchangeServer&#34;: mb_item[&#39;exchangeServer&#39;],
                         &#39;user&#39;: {
                             &#39;_type_&#39;: 13,
@@ -4279,7 +4290,7 @@ subclient_content = {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1430-L1447" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1383-L1400" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_allusers_associations(self):
     &#34;&#34;&#34;Disables alluser assocaition for UserMailboxSubclient.&#34;&#34;&#34;
@@ -4326,7 +4337,7 @@ assigned to all user assocaitions</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1394-L1428" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1347-L1381" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_allusers_associations(self, subclient_content):
     &#34;&#34;&#34;Enable all users assocaition for UserMailboxSubclient.
@@ -4386,7 +4397,7 @@ Name of the plan to associate with users/groups</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1449-L1491" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1402-L1444" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_auto_discover_association(self, association_name, plan_name):
     &#34;&#34;&#34;Enable all users assocaition for UserMailboxSubclient.
@@ -4444,7 +4455,7 @@ Returns: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1069-L1078" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1508-L1517" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_ews_support(self, service_url):
     &#34;&#34;&#34;This function provides support for EWS protocol to backup on-prem mailboxes
@@ -4466,7 +4477,7 @@ Returns: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1686-L1694" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1705-L1713" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the User Mailbox Subclient.&#34;&#34;&#34;
@@ -4505,7 +4516,7 @@ dict of the adgroups to add to the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L961-L1013" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1034-L1086" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_adgroup_associations(self, subclient_content):
     &#34;&#34;&#34;Create Ad groups assocaition for UserMailboxSubclient.
@@ -4588,7 +4599,7 @@ dict of the databases to add to the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L907-L959" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L980-L1032" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_database_assocaition(self, subclient_content):
     &#34;&#34;&#34;Create Database assocaition for UserMailboxSubclient.
@@ -4659,7 +4670,7 @@ all backupsets under client2 to the association</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L851-L905" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L924-L978" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_fs_association_for_pst(self, association):
     &#34;&#34;&#34;Helper method to create pst association for PST Ingestion by FS
@@ -4740,7 +4751,7 @@ dict of the policies to associate</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1135-L1160" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1088-L1113" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_o365group_asscoiations(self, subclient_content):
     &#34;&#34;&#34;Create O365 Group association for UserMailboxSubclient.
@@ -4804,7 +4815,7 @@ dict of the pst to add to the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L767-L849" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L840-L922" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_pst_association(self, subclient_content):
     &#34;&#34;&#34;Create PST assocaition for UserMailboxSubclient.
@@ -4924,7 +4935,7 @@ dict of the Users to add to the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L691-L765" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/exchange/usermailbox_subclient.py#L764-L838" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_user_assocaition(self, subclient_content, use_policies=True):
     &#34;&#34;&#34;Create User assocaition for UserMailboxSubclient.
@@ -4979,7 +4990,7 @@ dict of the Users to add to the subclient</p>
                         &#34;associated&#34;: False,
                         &#39;databaseName&#39;: mb_item[&#39;databaseName&#39;],
                         &#34;exchangeVersion&#34;: mb_item[&#39;exchangeVersion&#39;],
-                        &#34;msExchRecipientTypeDetails&#34;: mb_item[&#39;msExchRecipientTypeDetails&#39;],
+                        # &#34;msExchRecipientTypeDetails&#34;: mb_item[&#39;msExchRecipientTypeDetails&#39;],
                         &#39;user&#39;: {
                             &#39;_type_&#39;: 13,
                             &#39;userGUID&#39;: mb_item[&#39;user&#39;][&#39;userGUID&#39;]
@@ -5126,7 +5137,12 @@ setTimeout(() => input.focus(), 100);
 </script>
 <h1>Index</h1>
 <div class="toc">
-<ul></ul>
+<ul>
+<li><a href="#usermailboxsubclient">UsermailboxSubclient:</a></li>
+<li><a href="#content-association-methods">Content Association Methods:</a></li>
+<li><a href="#browse-restore-backup-methods">Browse/ Restore/ Backup Methods:</a></li>
+<li><a href="#user-mailbox-subclient-instance-attributes">User Mailbox Subclient Instance Attributes:</a></li>
+</ul>
 </div>
 <ul id="index">
 <li><h3>Super-module</h3>

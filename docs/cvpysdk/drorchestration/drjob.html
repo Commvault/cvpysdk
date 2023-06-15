@@ -38,7 +38,7 @@ get_vm_list()
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/drjob.py#L1-L155" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/drjob.py#L1-L159" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -77,11 +77,15 @@ from cvpysdk.drorchestration.dr_orchestration_job_phase import DRJobPhases, DRJo
 
 class DRJob(Job):
     &#34;&#34;&#34;Class for performing DR orchestration operations on ReplicationMonitor.&#34;&#34;&#34;
+
     def __init__(self, commcell_object, job_id):
         &#34;&#34;&#34;Initialise the DR job&#34;&#34;&#34;
         self._replication_job_stats = None
 
-        self._REPLICATION_STATS = commcell_object._services[&#39;DR_JOB_STATS&#39;] % job_id
+        service_url = (commcell_object._services[&#39;DRORCHESTRATION_JOB_STATS&#39;]
+                       if commcell_object.commserv_version &gt; 30
+                       else commcell_object._services[&#39;DR_JOB_STATS&#39;])
+        self._REPLICATION_STATS = service_url % job_id
 
         Job.__init__(self, commcell_object, job_id)
 
@@ -216,15 +220,19 @@ class DRJob(Job):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/drjob.py#L36-L155" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/drjob.py#L36-L159" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class DRJob(Job):
     &#34;&#34;&#34;Class for performing DR orchestration operations on ReplicationMonitor.&#34;&#34;&#34;
+
     def __init__(self, commcell_object, job_id):
         &#34;&#34;&#34;Initialise the DR job&#34;&#34;&#34;
         self._replication_job_stats = None
 
-        self._REPLICATION_STATS = commcell_object._services[&#39;DR_JOB_STATS&#39;] % job_id
+        service_url = (commcell_object._services[&#39;DRORCHESTRATION_JOB_STATS&#39;]
+                       if commcell_object.commserv_version &gt; 30
+                       else commcell_object._services[&#39;DR_JOB_STATS&#39;])
+        self._REPLICATION_STATS = service_url % job_id
 
         Job.__init__(self, commcell_object, job_id)
 
@@ -363,7 +371,7 @@ Returns: dictionaries of phases for each source and destination VM pair
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/drjob.py#L123-L155" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/drjob.py#L127-L159" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_phases(self):
     &#34;&#34;&#34;

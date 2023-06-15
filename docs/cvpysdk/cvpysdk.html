@@ -68,7 +68,7 @@ and return the flag specifying success/fail, and response</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/cvpysdk.py#L1-L464" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/cvpysdk.py#L1-L466" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -520,7 +520,9 @@ class CVPySDK(object):
             except Exception as e:
                 pass
 
-            if response.status_code == httplib.UNAUTHORIZED and headers[&#39;Authtoken&#39;] is not None:
+            if response.status_code == httplib.UNAUTHORIZED and headers.get(&#39;Authtoken&#39;) is not None:
+                if headers[&#39;Authtoken&#39;].startswith(&#39;Bearer &#39;):
+                    raise SDKException(&#39;CVPySDK&#39;, &#39;106&#39;)
                 if attempts &lt; 3:
                     self._commcell_object._headers[&#39;Authtoken&#39;] = self._renew_login_token()
                     return self.make_request(method, url, payload, attempts + 1)
@@ -572,7 +574,7 @@ instance of the CVPySDK class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/cvpysdk.py#L79-L464" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/cvpysdk.py#L79-L466" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CVPySDK(object):
     &#34;&#34;&#34;Helper class for login, and logout operations.
@@ -946,7 +948,9 @@ instance of the CVPySDK class</p></div>
             except Exception as e:
                 pass
 
-            if response.status_code == httplib.UNAUTHORIZED and headers[&#39;Authtoken&#39;] is not None:
+            if response.status_code == httplib.UNAUTHORIZED and headers.get(&#39;Authtoken&#39;) is not None:
+                if headers[&#39;Authtoken&#39;].startswith(&#39;Bearer &#39;):
+                    raise SDKException(&#39;CVPySDK&#39;, &#39;106&#39;)
                 if attempts &lt; 3:
                     self._commcell_object._headers[&#39;Authtoken&#39;] = self._renew_login_token()
                     return self.make_request(method, url, payload, attempts + 1)
@@ -1044,7 +1048,7 @@ requests.exceptions.ConnectionError</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/cvpysdk.py#L322-L464" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/cvpysdk.py#L322-L466" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def make_request(
         self,
@@ -1175,7 +1179,9 @@ requests.exceptions.ConnectionError</p></div>
         except Exception as e:
             pass
 
-        if response.status_code == httplib.UNAUTHORIZED and headers[&#39;Authtoken&#39;] is not None:
+        if response.status_code == httplib.UNAUTHORIZED and headers.get(&#39;Authtoken&#39;) is not None:
+            if headers[&#39;Authtoken&#39;].startswith(&#39;Bearer &#39;):
+                raise SDKException(&#39;CVPySDK&#39;, &#39;106&#39;)
             if attempts &lt; 3:
                 self._commcell_object._headers[&#39;Authtoken&#39;] = self._renew_login_token()
                 return self.make_request(method, url, payload, attempts + 1)
@@ -1211,7 +1217,7 @@ if no user mapping found</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/cvpysdk.py#L282-L320" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/cvpysdk.py#L282-L320" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def who_am_i(self, authtoken=None):
     &#34;&#34;&#34;Get the username of the user, to whom the Authtoken belongs to.

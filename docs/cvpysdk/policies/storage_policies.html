@@ -226,6 +226,9 @@ Gets the inline copy setting on storage policy copy</p>
 <p>set_inline_copy()
 &ndash;
 Sets the inline copy setting on storage policy copy</p>
+<p>get_jobs_on_copy()
+&ndash;
+Fetches the Details of jobs on Storage Policy Copy</p>
 <p>delete_job()
 &ndash;
 delete a job from storage policy copy node</p>
@@ -247,6 +250,9 @@ marks job(s) on a copy to be Picked for Data Verification</p>
 <p>do_not_verify_data()
 &ndash;
 marks job(s) on a copy to not be Picked for Data Verification</p>
+<p>pick_jobs_for_backupcopy
+&ndash;
+marks job(skipped/unpicked) on a copy to be picked for backup copy</p>
 <p>mark_jobs_bad()
 &ndash;
 marks job(s) on a copy as Bad</p>
@@ -259,12 +265,19 @@ configures copy encryption settings as per user input</p>
 <p>set_key_management_server()
 &ndash;
 sets the Key Management Server to this copy</p>
+<p>set_multiplexing_factor()
+&ndash;
+sets/unset the multiplexing factor for the storage policy copy </p>
 <h2 id="attributes">Attributes</h2>
-<pre><code>**space_optimized_auxillary_copy**          --  Returns the value of space optimized auxillary copy setting
+<pre><code>**override_pool_retention**                 --  Returns if Override Pool Retention flag is set or not
+
+**override_pool_retention.setter**          --  Sets/Unsets the override Pool Retention Flag
+
+**space_optimized_auxillary_copy**          --  Returns the value of space optimized auxillary copy setting
 
 **space_optimized_auxillary_copy.setter**   --  Sets the value of space optimized auxillary copy setting
 
-    **source_copy**                             --  Returns the source copy associated with the copy
+**source_copy**                             --  Returns the source copy associated with the copy
 
 **source_copy.setter**                      --  Sets the source copy for the copy
 
@@ -277,7 +290,7 @@ sets the Key Management Server to this copy</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1-L4188" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L1-L4337" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -448,6 +461,8 @@ StoragePolicyCopy:
 
     set_inline_copy()                       --  Sets the inline copy setting on storage policy copy
 
+    get_jobs_on_copy()                      --  Fetches the Details of jobs on Storage Policy Copy
+
     delete_job()                            --  delete a job from storage policy copy node
 
     _mark_jobs_on_copy()                    --  marks job(s) for given operation on a secondary copy
@@ -462,6 +477,8 @@ StoragePolicyCopy:
 
     do_not_verify_data()                    --  marks job(s) on a copy to not be Picked for Data Verification
 
+    pick_jobs_for_backupcopy                --  marks job(skipped/unpicked) on a copy to be picked for backup copy
+
     mark_jobs_bad()                         --  marks job(s) on a copy as Bad
 
     is_dedupe_enabled()                     --  checks whether deduplication is enabled for the copy
@@ -470,14 +487,19 @@ StoragePolicyCopy:
 
     set_key_management_server()             --  sets the Key Management Server to this copy
 
+    set_multiplexing_factor()               --  sets/unset the multiplexing factor for the storage policy copy 
+
 Attributes
 ----------
+    **override_pool_retention**                 --  Returns if Override Pool Retention flag is set or not
+
+    **override_pool_retention.setter**          --  Sets/Unsets the override Pool Retention Flag
 
     **space_optimized_auxillary_copy**          --  Returns the value of space optimized auxillary copy setting
 
     **space_optimized_auxillary_copy.setter**   --  Sets the value of space optimized auxillary copy setting
 
-        **source_copy**                             --  Returns the source copy associated with the copy
+    **source_copy**                             --  Returns the source copy associated with the copy
 
     **source_copy.setter**                      --  Sets the source copy for the copy
 
@@ -515,7 +537,7 @@ class StoragePolicies(object):
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._POLICY = self._commcell_object._services[&#39;STORAGE_POLICY&#39;]
-
+        self._DELETE_POLICY =  self._commcell_object._services[&#39;DELETE_STORAGE_POLICY&#39;]
         self._policies = None
         self.refresh()
 
@@ -1172,7 +1194,8 @@ class StoragePolicies(object):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         if self.has_policy(storage_policy_name):
-            policy_delete_service = self._POLICY + &#39;/{0}&#39;.format(storage_policy_name)
+            storagepolicy_id = self.all_storage_policies[storage_policy_name.lower()]
+            policy_delete_service = self._DELETE_POLICY + &#39;/{0}&#39;.format(storagepolicy_id)
 
             flag, response = self._commcell_object._cvpysdk_object.make_request(
                 &#39;DELETE&#39;, policy_delete_service
@@ -1181,11 +1204,15 @@ class StoragePolicies(object):
             if flag:
                 try:
                     if response.json():
-                        if &#39;errorCode&#39; in response.json() and &#39;errorMessage&#39; in response.json():
-                            error_message = response.json()[&#39;errorMessage&#39;]
-                            o_str = &#39;Failed to delete storage policy\nError: &#34;{0}&#34;&#39;
+                        if &#39;error&#39; in response.json():
+                            if &#39;errorCode&#39; in response.json()[&#39;error&#39;] and &#39;errorMessage&#39; in response.json()[&#39;error&#39;]:
+                                error_message = response.json()[&#39;error&#39;][&#39;errorMessage&#39;]
+                                o_str = &#39;Failed to delete storage policy\nError: &#34;{0}&#34;&#39;
 
-                            raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str.format(error_message))
+                                raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str.format(error_message))
+                            elif &#39;errorCode&#39; in response.json()[&#39;error&#39;] and response.json()[&#39;error&#39;][&#39;errorCode&#39;] == 0:
+                                self.refresh()
+                                return response.text.strip()
                 except ValueError:
                     if response.text:
                         if &#39;errorCode&#39; in response.text and &#39;errorMessage&#39; in response.text:
@@ -1746,6 +1773,9 @@ class StoragePolicy(object):
                 is_replica_copy     (bool)   --  if true then Replica Copy will be created
                 default : None
 
+                is_c2c_target       (bool)   -- if true then NetApp Cloud target copy will be created 
+                default : False
+
                 job_retention       (bool)  -- if true job based retention will be set
                 default : False
 
@@ -1788,13 +1818,16 @@ class StoragePolicy(object):
             provisioning_policy = &#34;&#34;
             resource_pool = &#34;&#34;
 
+        is_c2c_target = kwargs.get(&#39;is_c2c_target&#39;, False)
+        isNetAppSnapCloudTargetCopy = 1 if is_c2c_target else 0
+
         job_based_retention = kwargs.get(&#39;job_based_retention&#39;, False)
         job_retention = 1 if job_based_retention else 0
         request_xml = &#34;&#34;&#34;
                     &lt;App_CreateStoragePolicyCopyReq copyName=&#34;{0}&#34;&gt;
                         &lt;storagePolicyCopyInfo active=&#34;1&#34; isMirrorCopy=&#34;{1}&#34; isSnapCopy=&#34;{2}&#34; provisioningPolicyName=&#34;{3}&#34;&gt;
                             &lt;StoragePolicyCopy _type_=&#34;18&#34; copyName=&#34;{0}&#34; storagePolicyName=&#34;{4}&#34; /&gt;
-                            &lt;extendedFlags arrayReplicaCopy=&#34;{5}&#34; useOfflineArrayReplication=&#34;{6}&#34; /&gt;
+                            &lt;extendedFlags arrayReplicaCopy=&#34;{5}&#34; isNetAppSnapCloudTargetCopy=&#34;{12}&#34; useOfflineArrayReplication=&#34;{6}&#34; /&gt;
                             &lt;library _type_=&#34;9&#34; libraryName=&#34;{7}&#34; /&gt;
                             &lt;mediaAgent _type_=&#34;11&#34; mediaAgentName=&#34;{8}&#34; /&gt;
                             &lt;spareMediaGroup _type_=&#34;67&#34; libraryName=&#34;{7}&#34; /&gt;
@@ -1807,7 +1840,7 @@ class StoragePolicy(object):
                     &lt;/App_CreateStoragePolicyCopyReq&gt;
                     &#34;&#34;&#34;.format(copy_name, is_mirror_copy, is_snap_copy, provisioning_policy,
                                self.storage_policy_name, arrayReplicaCopy, useOfflineReplication,
-                               library_name, media_agent_name, source_copy, resource_pool, job_retention)
+                               library_name, media_agent_name, source_copy, resource_pool, job_retention, isNetAppSnapCloudTargetCopy)
 
         create_copy_service = self._commcell_object._services[&#39;CREATE_STORAGE_POLICY_COPY&#39;]
 
@@ -2091,6 +2124,7 @@ class StoragePolicy(object):
 
             is_ocum                          (bool)   --  True if Storage policy is enabled with
                                                           ocum server
+            enable_selective_copy                 (int)   -- Enable selective copy option based on input value
 
         &#34;&#34;&#34;
         enable_backup_copy = options[&#39;enable_backup_copy&#39;]
@@ -2118,6 +2152,8 @@ class StoragePolicy(object):
         else:
             source_copy_for_snapshot_catalog_id = 0
 
+        selective_type = options.get(&#39;enable_selective_copy&#39;, 0)
+
         update_snapshot_tab_service = self._commcell_object._services[&#39;EXECUTE_QCOMMAND&#39;]
 
         request_xml = &#34;&#34;&#34;
@@ -2125,14 +2161,14 @@ class StoragePolicy(object):
                         &lt;header localeId=&#34;0&#34; userId=&#34;0&#34; /&gt;
                         &lt;snapshotToTapeProps archGroupId=&#34;{2}&#34; calendarId=&#34;1&#34; dayNumber=&#34;0&#34; deferredDays=&#34;0&#34;
                             enable=&#34;{3}&#34; flags=&#34;0&#34; infoFlags=&#34;0&#34; numOfReaders=&#34;0&#34; numPeriod=&#34;1&#34;
-                            sourceCopyId=&#34;{4}&#34; startTime=&#34;0&#34; type=&#34;0&#34; /&gt;
+                            sourceCopyId=&#34;{4}&#34; startTime=&#34;0&#34; type=&#34;{7}&#34; /&gt;
                         &lt;deferredCatalogProps archGroupId=&#34;{2}&#34; calendarId=&#34;1&#34; dayNumber=&#34;0&#34; deferredDays=&#34;0&#34;
                             enable=&#34;{5}&#34; flags=&#34;0&#34; infoFlags=&#34;0&#34; numOfReaders=&#34;0&#34; numPeriod=&#34;1&#34;
                             sourceCopyId=&#34;{6}&#34; startTime=&#34;0&#34; type=&#34;0&#34; /&gt;
                     &lt;/EVGui_SetSnapOpPropsReq&gt;
         &#34;&#34;&#34;.format(defferred_catalog_value, backup_copy_value, self.storage_policy_id,
                    int(enable_backup_copy), source_copy_for_snap_to_tape_id,
-                   int(enable_snapshot_catalog), source_copy_for_snapshot_catalog_id)
+                   int(enable_snapshot_catalog), source_copy_for_snapshot_catalog_id, selective_type)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;POST&#39;, update_snapshot_tab_service, request_xml
@@ -2718,7 +2754,8 @@ class StoragePolicy(object):
                              copy_name,
                              ver_type,
                              ddb_ver_level,
-                             use_scalable=True):
+                             use_scalable=True,
+                             orphan_chunk_listing=False):
         &#34;&#34;&#34;
         Runs DDB verification job
 
@@ -2733,6 +2770,8 @@ class StoragePolicy(object):
 
                 use_scalable    (bool)  --  True/False to use Scalable Resource Allocation
                                             Default: True
+
+                orphan_chunk_listing (bool) --  True/False to run orphan chunk listing phase during DDB Defragmentation
 
             Returns:
                 object - instance of the Job class for this DDB verification job
@@ -2751,7 +2790,9 @@ class StoragePolicy(object):
                 isinstance(ver_type, str) and
                 isinstance(ddb_ver_level, str)):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
-
+        run_defrag = False
+        if ddb_ver_level == &#39;DDB_DEFRAGMENTATION&#39;:
+            run_defrag = True
         request = {
             &#34;taskInfo&#34;: {
                 &#34;associations&#34;: [
@@ -2789,7 +2830,9 @@ class StoragePolicy(object):
                                     &#34;ddbVerificationLevel&#34;: ddb_ver_level,
                                     &#34;jobsToVerify&#34;: 0,
                                     &#34;allCopies&#34;: True,
-                                    &#34;backupLevel&#34;: ver_type
+                                    &#34;backupLevel&#34;: ver_type,
+                                    &#34;ocl&#34;: orphan_chunk_listing,
+                                    &#34;runDefrag&#34;: run_defrag
                                 }
                             }
                         }
@@ -3607,6 +3650,21 @@ class StoragePolicyCopy(object):
         return self._copy_name
 
     @property
+    def override_pool_retention(self):
+        &#34;&#34;&#34;Returns if Override Pool Retention flag is set or not&#34;&#34;&#34;
+        return bool(self._extended_flags.get(&#39;overRideGACPRetention&#39;, 0))
+
+    @override_pool_retention.setter
+    def override_pool_retention(self, override):
+        &#34;&#34;&#34;Sets/Unsets the override Pool Retention Flag. Not Applicable for Storage Pool Copies
+
+        Args:
+            override(bool)  :   Override the pool Retention (True/False)
+        &#34;&#34;&#34;
+        self._extended_flags[&#39;overRideGACPRetention&#39;] = int(override)
+        self._set_copy_properties()
+
+    @property
     def copy_retention(self):
         &#34;&#34;&#34;Treats the copy retention as a read-only attribute.&#34;&#34;&#34;
         retention_values = {}
@@ -4009,6 +4067,68 @@ class StoragePolicyCopy(object):
         &#34;&#34;&#34;Gets the media agent name of the copy&#34;&#34;&#34;
         return self._media_agent.get(&#39;mediaAgentName&#39;)
 
+    def get_jobs_on_copy(self, from_date=None, to_date=None, backup_type=None, retained_by=0,
+                         include_to_be_copied_jobs=False, list_partial_jobs_only=False):
+        &#34;&#34;&#34;Fetches the Details of jobs on Storage Policy Copy
+
+        Args:
+            from_date      (str): Start Date Range for the Jobs
+                                    [format-&#39;yyyy/mm/dd&#39;] [default: from start]
+
+            to_date        (str): End Date Range for the Jobs
+                                    [format-&#39;yyyy/mm/dd&#39;] [default: till date]
+
+            backup_type    (str): Filter by backup type [default: None(all backup types)]
+                                    Valid values: &#39;full&#39;/&#39;incr&#39;
+
+            retained_by    (int): Filter by retention type of jobs [default: 0]
+                                    Valid values:
+                                    1: basic retention
+                                    2: extended retention
+                                    4: manual retention
+
+            include_to_be_copied_jobs   (bool): Include details on jobs that are in to be copied state [default: False]
+
+            list_partial_jobs_only      (bool): Get details of jobs that are in partially copied state only
+                                                  [default: False]
+
+        Returns:
+            (list)  :   List of dict&#39;s with each dict containing details of a job
+        Raises:
+            SDKException:   if the response/fetch operation failed
+        &#34;&#34;&#34;
+        command = f&#34;qoperation execscript -sn QS_JobsinSPCopy -si @i_policyName=&#39;{self._storage_policy_name}&#39;&#34; \
+                  f&#34; -si @i_copyName=&#39;{self.copy_name}&#39;&#34;
+        if from_date:
+            command = f&#34;{command} -si @i_fromTime=&#39;{from_date}&#39;&#34;
+        if to_date:
+            command = f&#34;{command} -si @i_toTime=&#39;{to_date}&#39;&#34;
+        if backup_type:
+            command = f&#34;{command} -si @i_backupType=&#39;{backup_type.lower()}&#39;&#34;
+        if retained_by:
+            command = f&#34;{command} -si @i_retention=&#39;{retained_by}&#39;&#34;
+        if include_to_be_copied_jobs:
+            command = f&#34;{command} -si @i_includeToBeCopiedJobs=&#39;1&#39;&#34;
+        if list_partial_jobs_only:
+            command = f&#34;{command} -si @i_includePartialJobsOnly=&#39;1&#39;&#34;
+
+        response = self._commcell_object.execute_qcommand(command)
+        if response.json():
+            json_response = response.json()
+            if json_response.get(&#34;ExecScriptOutput&#34;):
+                if isinstance(json_response.get(&#34;ExecScriptOutput&#34;).get(&#34;FieldValue&#34;), list):
+                    return json_response.get(&#34;ExecScriptOutput&#34;).get(&#34;FieldValue&#34;)
+                if isinstance(json_response.get(&#34;ExecScriptOutput&#34;).get(&#34;FieldValue&#34;), dict):
+                    if json_response.get(&#34;ExecScriptOutput&#34;).get(&#34;FieldValue&#34;).get(&#34;@JobID&#34;):
+                        return [json_response.get(&#34;ExecScriptOutput&#34;).get(&#34;FieldValue&#34;)]
+                return []
+            else:
+                response_string = self._commcell_object._update_response_(response.text)
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, response_string)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
     def delete_job(self, job_id):
         &#34;&#34;&#34;
         Deletes a job on Storage Policy
@@ -4122,6 +4242,14 @@ class StoragePolicyCopy(object):
             job_id      (int or str or list):   Job Id(s) that needs to be marked
         &#34;&#34;&#34;
         self._mark_jobs_on_copy(job_id, &#39;markJobsBad&#39;)
+
+    def pick_jobs_for_backupcopy(self, job_id):
+        &#34;&#34;&#34;This method is used to re-pick the job from backup which are unpick manually
+
+        Args:
+            job_id      (int or str or list):   Job Id(s) that needs to be marked
+        &#34;&#34;&#34;
+        self._mark_jobs_on_copy(job_id, &#39;pickforbackupcopy&#39;)
 
     @property
     def extended_retention_rules(self):
@@ -4365,7 +4493,8 @@ class StoragePolicyCopy(object):
         self._copy_properties[&#39;throttleNetworkBandWidthMBHR&#39;] = value
         self._set_copy_properties()
 
-    def add_svm_association(self, src_array_id, source_array, tgt_array_id, target_array):
+    def add_svm_association(self, src_array_id, source_array, tgt_array_id,
+                            target_array, **kwargs):
         &#34;&#34;&#34; Method to add SVM association on Replica/vault and Mirror Copy
 
             Agrs:
@@ -4377,7 +4506,13 @@ class StoragePolicyCopy(object):
 
                 target_array    (str)   --  Name of the Target Array
 
+                target_vendor   (str)   --  Target Vendor Name
+                
+                tgt_vendor_id   (int)   --  Target Vendor id
+
         &#34;&#34;&#34;
+        target_vendor = kwargs.get(&#39;target_vendor&#39;, &#34;&#34;)
+        tgt_vendor_id = kwargs.get(&#39;tgt_vendor_id&#39;, 0)
 
         request_json = {
             &#34;EVGui_MMSMArrayReplicaPairReq&#34;: {
@@ -4413,6 +4548,14 @@ class StoragePolicyCopy(object):
                         &#34;srcArray&#34;: {
                             &#34;name&#34;: source_array,
                             &#34;id&#34;: src_array_id
+                        },
+                        &#34;vendor&#34;: {
+                            &#34;name&#34;: &#34;&#34;,
+                            &#34;id&#34;: 0
+                        },
+                        &#34;tgtVendor&#34;: {
+                            &#34;name&#34;: target_vendor,
+                            &#34;id&#34;: tgt_vendor_id
                         },
                         &#34;tgtArray&#34;: {
                             &#34;name&#34;: target_array,
@@ -4466,6 +4609,25 @@ class StoragePolicyCopy(object):
             &#34;keyProviderName&#34;: kms_name,
             &#34;rotateMasterKey&#34;: True
         }
+        self._set_copy_properties()
+    
+    def set_multiplexing_factor(self, mux_factor):
+        &#34;&#34;&#34;Sets/Unset the multiplexing factor for the storage policy copy
+
+            Args:
+                mux_factor  (int) -- The value for multiplexing factor
+
+            Raises SDKException:
+                If input is not valid
+
+                If API response is not successful
+        &#34;&#34;&#34;
+        if not isinstance(mux_factor, int):
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+        self._copy_properties[&#39;mediaProperties&#39;] = {
+            &#34;multiplexingFactor&#34; : mux_factor
+        }
         self._set_copy_properties()</code></pre>
 </details>
 </section>
@@ -4494,7 +4656,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L223-L926" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L232-L940" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class StoragePolicies(object):
     &#34;&#34;&#34;Class for getting all the storage policies associated with the commcell.&#34;&#34;&#34;
@@ -4510,7 +4672,7 @@ instance of the Commcell class</p>
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._POLICY = self._commcell_object._services[&#39;STORAGE_POLICY&#39;]
-
+        self._DELETE_POLICY =  self._commcell_object._services[&#39;DELETE_STORAGE_POLICY&#39;]
         self._policies = None
         self.refresh()
 
@@ -5167,7 +5329,8 @@ instance of the Commcell class</p>
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
         if self.has_policy(storage_policy_name):
-            policy_delete_service = self._POLICY + &#39;/{0}&#39;.format(storage_policy_name)
+            storagepolicy_id = self.all_storage_policies[storage_policy_name.lower()]
+            policy_delete_service = self._DELETE_POLICY + &#39;/{0}&#39;.format(storagepolicy_id)
 
             flag, response = self._commcell_object._cvpysdk_object.make_request(
                 &#39;DELETE&#39;, policy_delete_service
@@ -5176,11 +5339,15 @@ instance of the Commcell class</p>
             if flag:
                 try:
                     if response.json():
-                        if &#39;errorCode&#39; in response.json() and &#39;errorMessage&#39; in response.json():
-                            error_message = response.json()[&#39;errorMessage&#39;]
-                            o_str = &#39;Failed to delete storage policy\nError: &#34;{0}&#34;&#39;
+                        if &#39;error&#39; in response.json():
+                            if &#39;errorCode&#39; in response.json()[&#39;error&#39;] and &#39;errorMessage&#39; in response.json()[&#39;error&#39;]:
+                                error_message = response.json()[&#39;error&#39;][&#39;errorMessage&#39;]
+                                o_str = &#39;Failed to delete storage policy\nError: &#34;{0}&#34;&#39;
 
-                            raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str.format(error_message))
+                                raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str.format(error_message))
+                            elif &#39;errorCode&#39; in response.json()[&#39;error&#39;] and response.json()[&#39;error&#39;][&#39;errorCode&#39;] == 0:
+                                self.refresh()
+                                return response.text.strip()
                 except ValueError:
                     if response.text:
                         if &#39;errorCode&#39; in response.text and &#39;errorMessage&#39; in response.text:
@@ -5214,7 +5381,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L301-L311" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L310-L320" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_storage_policies(self):
@@ -5325,7 +5492,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L502-L760" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L511-L769" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self,
         storage_policy_name,
@@ -5636,7 +5803,7 @@ is not of type String</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L360-L500" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L369-L509" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_global_storage_policy(self,
                               global_storage_policy_name,
@@ -5824,7 +5991,7 @@ if type of the storage policy name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L762-L872" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L771-L881" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_tape_sp(self, storage_policy_name, library, media_agent, drive_pool, scratch_pool, retention_period_days=15,
                 ocum_server=None):
@@ -5960,7 +6127,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L874-L922" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L883-L936" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, storage_policy_name):
     &#34;&#34;&#34;Deletes a storage policy from the commcell.
@@ -5982,7 +6149,8 @@ if response is not success
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
     if self.has_policy(storage_policy_name):
-        policy_delete_service = self._POLICY + &#39;/{0}&#39;.format(storage_policy_name)
+        storagepolicy_id = self.all_storage_policies[storage_policy_name.lower()]
+        policy_delete_service = self._DELETE_POLICY + &#39;/{0}&#39;.format(storagepolicy_id)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;DELETE&#39;, policy_delete_service
@@ -5991,11 +6159,15 @@ if response is not success
         if flag:
             try:
                 if response.json():
-                    if &#39;errorCode&#39; in response.json() and &#39;errorMessage&#39; in response.json():
-                        error_message = response.json()[&#39;errorMessage&#39;]
-                        o_str = &#39;Failed to delete storage policy\nError: &#34;{0}&#34;&#39;
+                    if &#39;error&#39; in response.json():
+                        if &#39;errorCode&#39; in response.json()[&#39;error&#39;] and &#39;errorMessage&#39; in response.json()[&#39;error&#39;]:
+                            error_message = response.json()[&#39;error&#39;][&#39;errorMessage&#39;]
+                            o_str = &#39;Failed to delete storage policy\nError: &#34;{0}&#34;&#39;
 
-                        raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str.format(error_message))
+                            raise SDKException(&#39;Storage&#39;, &#39;102&#39;, o_str.format(error_message))
+                        elif &#39;errorCode&#39; in response.json()[&#39;error&#39;] and response.json()[&#39;error&#39;][&#39;errorCode&#39;] == 0:
+                            self.refresh()
+                            return response.text.strip()
             except ValueError:
                 if response.text:
                     if &#39;errorCode&#39; in response.text and &#39;errorMessage&#39; in response.text:
@@ -6033,7 +6205,7 @@ if type of the storage policy name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L331-L358" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L340-L367" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, storage_policy_name):
     &#34;&#34;&#34;Returns a StoragePolicy object of the specified storage policy name.
@@ -6082,7 +6254,7 @@ if type of the storage policy name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L313-L329" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L322-L338" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_policy(self, policy_name):
     &#34;&#34;&#34;Checks if a storage policy exists in the commcell with the input storage policy name.
@@ -6111,7 +6283,7 @@ if type of the storage policy name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L924-L926" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L938-L940" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the storage policies associated with the Commcell.&#34;&#34;&#34;
@@ -6130,7 +6302,7 @@ if type of the storage policy name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L929-L3140" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L943-L3170" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class StoragePolicy(object):
     &#34;&#34;&#34;Class for performing storage policy operations for a specific storage policy&#34;&#34;&#34;
@@ -6671,6 +6843,9 @@ if type of the storage policy name argument is not string</p></div>
                 is_replica_copy     (bool)   --  if true then Replica Copy will be created
                 default : None
 
+                is_c2c_target       (bool)   -- if true then NetApp Cloud target copy will be created 
+                default : False
+
                 job_retention       (bool)  -- if true job based retention will be set
                 default : False
 
@@ -6713,13 +6888,16 @@ if type of the storage policy name argument is not string</p></div>
             provisioning_policy = &#34;&#34;
             resource_pool = &#34;&#34;
 
+        is_c2c_target = kwargs.get(&#39;is_c2c_target&#39;, False)
+        isNetAppSnapCloudTargetCopy = 1 if is_c2c_target else 0
+
         job_based_retention = kwargs.get(&#39;job_based_retention&#39;, False)
         job_retention = 1 if job_based_retention else 0
         request_xml = &#34;&#34;&#34;
                     &lt;App_CreateStoragePolicyCopyReq copyName=&#34;{0}&#34;&gt;
                         &lt;storagePolicyCopyInfo active=&#34;1&#34; isMirrorCopy=&#34;{1}&#34; isSnapCopy=&#34;{2}&#34; provisioningPolicyName=&#34;{3}&#34;&gt;
                             &lt;StoragePolicyCopy _type_=&#34;18&#34; copyName=&#34;{0}&#34; storagePolicyName=&#34;{4}&#34; /&gt;
-                            &lt;extendedFlags arrayReplicaCopy=&#34;{5}&#34; useOfflineArrayReplication=&#34;{6}&#34; /&gt;
+                            &lt;extendedFlags arrayReplicaCopy=&#34;{5}&#34; isNetAppSnapCloudTargetCopy=&#34;{12}&#34; useOfflineArrayReplication=&#34;{6}&#34; /&gt;
                             &lt;library _type_=&#34;9&#34; libraryName=&#34;{7}&#34; /&gt;
                             &lt;mediaAgent _type_=&#34;11&#34; mediaAgentName=&#34;{8}&#34; /&gt;
                             &lt;spareMediaGroup _type_=&#34;67&#34; libraryName=&#34;{7}&#34; /&gt;
@@ -6732,7 +6910,7 @@ if type of the storage policy name argument is not string</p></div>
                     &lt;/App_CreateStoragePolicyCopyReq&gt;
                     &#34;&#34;&#34;.format(copy_name, is_mirror_copy, is_snap_copy, provisioning_policy,
                                self.storage_policy_name, arrayReplicaCopy, useOfflineReplication,
-                               library_name, media_agent_name, source_copy, resource_pool, job_retention)
+                               library_name, media_agent_name, source_copy, resource_pool, job_retention, isNetAppSnapCloudTargetCopy)
 
         create_copy_service = self._commcell_object._services[&#39;CREATE_STORAGE_POLICY_COPY&#39;]
 
@@ -7016,6 +7194,7 @@ if type of the storage policy name argument is not string</p></div>
 
             is_ocum                          (bool)   --  True if Storage policy is enabled with
                                                           ocum server
+            enable_selective_copy                 (int)   -- Enable selective copy option based on input value
 
         &#34;&#34;&#34;
         enable_backup_copy = options[&#39;enable_backup_copy&#39;]
@@ -7043,6 +7222,8 @@ if type of the storage policy name argument is not string</p></div>
         else:
             source_copy_for_snapshot_catalog_id = 0
 
+        selective_type = options.get(&#39;enable_selective_copy&#39;, 0)
+
         update_snapshot_tab_service = self._commcell_object._services[&#39;EXECUTE_QCOMMAND&#39;]
 
         request_xml = &#34;&#34;&#34;
@@ -7050,14 +7231,14 @@ if type of the storage policy name argument is not string</p></div>
                         &lt;header localeId=&#34;0&#34; userId=&#34;0&#34; /&gt;
                         &lt;snapshotToTapeProps archGroupId=&#34;{2}&#34; calendarId=&#34;1&#34; dayNumber=&#34;0&#34; deferredDays=&#34;0&#34;
                             enable=&#34;{3}&#34; flags=&#34;0&#34; infoFlags=&#34;0&#34; numOfReaders=&#34;0&#34; numPeriod=&#34;1&#34;
-                            sourceCopyId=&#34;{4}&#34; startTime=&#34;0&#34; type=&#34;0&#34; /&gt;
+                            sourceCopyId=&#34;{4}&#34; startTime=&#34;0&#34; type=&#34;{7}&#34; /&gt;
                         &lt;deferredCatalogProps archGroupId=&#34;{2}&#34; calendarId=&#34;1&#34; dayNumber=&#34;0&#34; deferredDays=&#34;0&#34;
                             enable=&#34;{5}&#34; flags=&#34;0&#34; infoFlags=&#34;0&#34; numOfReaders=&#34;0&#34; numPeriod=&#34;1&#34;
                             sourceCopyId=&#34;{6}&#34; startTime=&#34;0&#34; type=&#34;0&#34; /&gt;
                     &lt;/EVGui_SetSnapOpPropsReq&gt;
         &#34;&#34;&#34;.format(defferred_catalog_value, backup_copy_value, self.storage_policy_id,
                    int(enable_backup_copy), source_copy_for_snap_to_tape_id,
-                   int(enable_snapshot_catalog), source_copy_for_snapshot_catalog_id)
+                   int(enable_snapshot_catalog), source_copy_for_snapshot_catalog_id, selective_type)
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;POST&#39;, update_snapshot_tab_service, request_xml
@@ -7643,7 +7824,8 @@ if type of the storage policy name argument is not string</p></div>
                              copy_name,
                              ver_type,
                              ddb_ver_level,
-                             use_scalable=True):
+                             use_scalable=True,
+                             orphan_chunk_listing=False):
         &#34;&#34;&#34;
         Runs DDB verification job
 
@@ -7658,6 +7840,8 @@ if type of the storage policy name argument is not string</p></div>
 
                 use_scalable    (bool)  --  True/False to use Scalable Resource Allocation
                                             Default: True
+
+                orphan_chunk_listing (bool) --  True/False to run orphan chunk listing phase during DDB Defragmentation
 
             Returns:
                 object - instance of the Job class for this DDB verification job
@@ -7676,7 +7860,9 @@ if type of the storage policy name argument is not string</p></div>
                 isinstance(ver_type, str) and
                 isinstance(ddb_ver_level, str)):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
-
+        run_defrag = False
+        if ddb_ver_level == &#39;DDB_DEFRAGMENTATION&#39;:
+            run_defrag = True
         request = {
             &#34;taskInfo&#34;: {
                 &#34;associations&#34;: [
@@ -7714,7 +7900,9 @@ if type of the storage policy name argument is not string</p></div>
                                     &#34;ddbVerificationLevel&#34;: ddb_ver_level,
                                     &#34;jobsToVerify&#34;: 0,
                                     &#34;allCopies&#34;: True,
-                                    &#34;backupLevel&#34;: ver_type
+                                    &#34;backupLevel&#34;: ver_type,
+                                    &#34;ocl&#34;: orphan_chunk_listing,
+                                    &#34;runDefrag&#34;: run_defrag
                                 }
                             }
                         }
@@ -8355,7 +8543,7 @@ if type of the storage policy name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2085-L2096" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L2108-L2119" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def aux_copies(self):
@@ -8377,7 +8565,7 @@ def aux_copies(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1745-L1748" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L1765-L1768" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copies(self):
@@ -8391,7 +8579,7 @@ def copies(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1765-L1770" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L1785-L1790" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -8407,7 +8595,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2077-L2083" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L2100-L2106" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def library_id(self):
@@ -8424,7 +8612,7 @@ def library_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2069-L2075" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L2092-L2098" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def library_name(self):
@@ -8441,7 +8629,7 @@ def library_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1755-L1758" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L1775-L1778" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -8457,7 +8645,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2098-L2109" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L2121-L2132" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def snap_copy(self):
@@ -8481,7 +8669,7 @@ storage policy advanced properties</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2059-L2067" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L2082-L2090" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy_advanced_properties(self):
@@ -8500,7 +8688,7 @@ def storage_policy_advanced_properties(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1750-L1753" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L1770-L1773" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy_id(self):
@@ -8514,7 +8702,7 @@ def storage_policy_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1760-L1763" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L1780-L1783" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy_name(self):
@@ -8529,7 +8717,7 @@ def storage_policy_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2051-L2057" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L2074-L2080" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy_properties(self):
@@ -8565,7 +8753,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2757-L2799" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L2787-L2829" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_ddb_partition(self,
                       copy_id,
@@ -8666,7 +8854,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2312-L2434" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L2335-L2457" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_dedupe_secondary_copy(self, copy_name, library_name,
                                  media_agent_name, path, ddb_media_agent,
@@ -8837,7 +9025,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1062-L1216" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L1076-L1230" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_secondary_copy(self,
                           copy_name,
@@ -9035,7 +9223,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1620-L1743" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L1640-L1763" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_selective_copy(self,
                           copy_name,
@@ -9207,6 +9395,10 @@ default : None</p>
 &ndash;
 if true then Replica Copy will be created
 default : None</p>
+<p>is_c2c_target
+(bool)
+&ndash; if true then NetApp Cloud target copy will be created
+default : False</p>
 <p>job_retention
 (bool)
 &ndash; if true job based retention will be set
@@ -9225,7 +9417,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1433-L1559" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L1447-L1579" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_snap_copy(self,
                      copy_name,
@@ -9261,6 +9453,9 @@ if response is not success
 
             is_replica_copy     (bool)   --  if true then Replica Copy will be created
             default : None
+
+            is_c2c_target       (bool)   -- if true then NetApp Cloud target copy will be created 
+            default : False
 
             job_retention       (bool)  -- if true job based retention will be set
             default : False
@@ -9304,13 +9499,16 @@ if response is not success
         provisioning_policy = &#34;&#34;
         resource_pool = &#34;&#34;
 
+    is_c2c_target = kwargs.get(&#39;is_c2c_target&#39;, False)
+    isNetAppSnapCloudTargetCopy = 1 if is_c2c_target else 0
+
     job_based_retention = kwargs.get(&#39;job_based_retention&#39;, False)
     job_retention = 1 if job_based_retention else 0
     request_xml = &#34;&#34;&#34;
                 &lt;App_CreateStoragePolicyCopyReq copyName=&#34;{0}&#34;&gt;
                     &lt;storagePolicyCopyInfo active=&#34;1&#34; isMirrorCopy=&#34;{1}&#34; isSnapCopy=&#34;{2}&#34; provisioningPolicyName=&#34;{3}&#34;&gt;
                         &lt;StoragePolicyCopy _type_=&#34;18&#34; copyName=&#34;{0}&#34; storagePolicyName=&#34;{4}&#34; /&gt;
-                        &lt;extendedFlags arrayReplicaCopy=&#34;{5}&#34; useOfflineArrayReplication=&#34;{6}&#34; /&gt;
+                        &lt;extendedFlags arrayReplicaCopy=&#34;{5}&#34; isNetAppSnapCloudTargetCopy=&#34;{12}&#34; useOfflineArrayReplication=&#34;{6}&#34; /&gt;
                         &lt;library _type_=&#34;9&#34; libraryName=&#34;{7}&#34; /&gt;
                         &lt;mediaAgent _type_=&#34;11&#34; mediaAgentName=&#34;{8}&#34; /&gt;
                         &lt;spareMediaGroup _type_=&#34;67&#34; libraryName=&#34;{7}&#34; /&gt;
@@ -9323,7 +9521,7 @@ if response is not success
                 &lt;/App_CreateStoragePolicyCopyReq&gt;
                 &#34;&#34;&#34;.format(copy_name, is_mirror_copy, is_snap_copy, provisioning_policy,
                            self.storage_policy_name, arrayReplicaCopy, useOfflineReplication,
-                           library_name, media_agent_name, source_copy, resource_pool, job_retention)
+                           library_name, media_agent_name, source_copy, resource_pool, job_retention, isNetAppSnapCloudTargetCopy)
 
     create_copy_service = self._commcell_object._services[&#39;CREATE_STORAGE_POLICY_COPY&#39;]
 
@@ -9380,7 +9578,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1561-L1618" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L1581-L1638" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_secondary_copy(self, copy_name):
     &#34;&#34;&#34;Deletes the copy associated with this storage policy
@@ -9486,7 +9684,7 @@ if type of inputs is not valid</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1270-L1349" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L1284-L1363" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_content_indexing(
         self,
@@ -9602,7 +9800,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1351-L1431" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L1365-L1445" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_entity_extraction(self, entity_details, entity_names, ca_client_name):
     &#34;&#34;&#34;configures offline CI entity extraction for given subclient id&#39;s on this storage policy
@@ -9706,7 +9904,7 @@ if type of the copy name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2801-L2824" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L2831-L2854" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_copy(self, copy_name):
     &#34;&#34;&#34;Returns a storage policy copy object if copy exists
@@ -9756,7 +9954,7 @@ if unable to find the given copy name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1772-L1794" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L1792-L1814" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_copy_precedence(self, copy_name):
     &#34;&#34;&#34; returns the copy precedence value associated with the copy name
@@ -9798,7 +9996,7 @@ if unable to find a primary copy in the storage policy</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2826-L2842" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L2856-L2872" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_primary_copy(self):
     &#34;&#34;&#34;Returns the primary copy of the storage policy
@@ -9831,7 +10029,7 @@ A list of storage policy copy instances.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2844-L2860" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L2874-L2890" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_secondary_copies(self):
     &#34;&#34;&#34;Returns all the secondary copies in the storage policy sorted by copy precedence
@@ -9870,7 +10068,7 @@ if type of the storage policy copy name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1043-L1060" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L1057-L1074" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_copy(self, copy_name):
     &#34;&#34;&#34;Checks if a storage policy copy exists for this storage
@@ -9916,7 +10114,7 @@ SIDB store path</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2862-L2881" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L2892-L2911" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def mark_for_recovery(self, store_id, sub_store_id, media_agent_name, dedupe_path):
     &#34;&#34;&#34; Marks Deduplication store for recovery
@@ -9952,7 +10150,7 @@ Args:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1953-L1970" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L1976-L1993" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def modify_dynamic_stream_allocation(self, enable=True):
     &#34;&#34;&#34;
@@ -10009,7 +10207,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2649-L2755" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L2679-L2785" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def move_dedupe_store(self,
                       copy_name,
@@ -10140,7 +10338,7 @@ Default Value:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2938-L2979" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L2968-L3009" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def reassociate_all_subclients(self, dest_storage_policy_name=&#39;CV_DEFAULT&#39;):
     &#34;&#34;&#34;
@@ -10194,7 +10392,7 @@ Default Value:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2239-L2242" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L2262-L2265" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the StoragePolicy.&#34;&#34;&#34;
@@ -10243,7 +10441,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2111-L2237" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L2134-L2260" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_aux_copy(self, storage_policy_copy_name=None,
                  media_agent=None, use_scale=True, streams=0,
@@ -10394,7 +10592,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1879-L1951" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L1902-L1974" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_backup_copy(self):
     &#34;&#34;&#34;
@@ -10492,7 +10690,7 @@ if type of inputs is not valid</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1218-L1268" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L1232-L1282" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_content_indexing(self):
     &#34;&#34;&#34;starts the offline CI job for this storage policy
@@ -10564,7 +10762,7 @@ Returns None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3027-L3140" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3057-L3170" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_data_forecast(self, **kwargs):
     &#34;&#34;&#34;runs data forecast and retention report generation operation
@@ -10717,7 +10915,7 @@ job_description
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2541-L2647" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L2571-L2677" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_data_verification(self, media_agent_name=&#39;&#39;, copy_name=&#39;&#39;, streams=0,
                           jobs_to_verify=&#39;NEW&#39;, use_scalable=True, schedule_pattern=None, **kwargs):
@@ -10829,7 +11027,7 @@ job_description
 </details>
 </dd>
 <dt id="cvpysdk.policies.storage_policies.StoragePolicy.run_ddb_verification"><code class="name flex">
-<span>def <span class="ident">run_ddb_verification</span></span>(<span>self, copy_name, ver_type, ddb_ver_level, use_scalable=True)</span>
+<span>def <span class="ident">run_ddb_verification</span></span>(<span>self, copy_name, ver_type, ddb_ver_level, use_scalable=True, orphan_chunk_listing=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Runs DDB verification job</p>
@@ -10844,6 +11042,8 @@ job_description
 
     use_scalable    (bool)  --  True/False to use Scalable Resource Allocation
                                 Default: True
+
+    orphan_chunk_listing (bool) --  True/False to run orphan chunk listing phase during DDB Defragmentation
 
 Returns:
     object - instance of the Job class for this DDB verification job
@@ -10861,13 +11061,14 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2436-L2539" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L2459-L2569" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_ddb_verification(self,
                          copy_name,
                          ver_type,
                          ddb_ver_level,
-                         use_scalable=True):
+                         use_scalable=True,
+                         orphan_chunk_listing=False):
     &#34;&#34;&#34;
     Runs DDB verification job
 
@@ -10882,6 +11083,8 @@ Raises:
 
             use_scalable    (bool)  --  True/False to use Scalable Resource Allocation
                                         Default: True
+
+            orphan_chunk_listing (bool) --  True/False to run orphan chunk listing phase during DDB Defragmentation
 
         Returns:
             object - instance of the Job class for this DDB verification job
@@ -10900,7 +11103,9 @@ Raises:
             isinstance(ver_type, str) and
             isinstance(ddb_ver_level, str)):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
-
+    run_defrag = False
+    if ddb_ver_level == &#39;DDB_DEFRAGMENTATION&#39;:
+        run_defrag = True
     request = {
         &#34;taskInfo&#34;: {
             &#34;associations&#34;: [
@@ -10938,7 +11143,9 @@ Raises:
                                 &#34;ddbVerificationLevel&#34;: ddb_ver_level,
                                 &#34;jobsToVerify&#34;: 0,
                                 &#34;allCopies&#34;: True,
-                                &#34;backupLevel&#34;: ver_type
+                                &#34;backupLevel&#34;: ver_type,
+                                &#34;ocl&#34;: orphan_chunk_listing,
+                                &#34;runDefrag&#34;: run_defrag
                             }
                         }
                     }
@@ -11004,7 +11211,7 @@ Valid values:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2883-L2936" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L2913-L2966" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_recon(self, copy_name, sp_name, store_id, full_reconstruction=0, use_scalable_resource=&#39;false&#39;):
     &#34;&#34;&#34; Runs non-mem DB Reconstruction job
@@ -11082,7 +11289,7 @@ Valid values:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1972-L2049" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L1995-L2072" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_snapshot_cataloging(self):
     &#34;&#34;&#34;
@@ -11179,7 +11386,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2244-L2267" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L2267-L2290" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def seal_ddb(self, copy_name):
     &#34;&#34;&#34;
@@ -11221,7 +11428,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2981-L3025" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3011-L3055" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def start_over(self):
     &#34;&#34;&#34;
@@ -11296,11 +11503,14 @@ Source Copy name for Snapshot Catalog</p>
 (bool)
 &ndash;
 True if Storage policy is enabled with
-ocum server</p></div>
+ocum server
+enable_selective_copy
+(int)
+&ndash; Enable selective copy option based on input value</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L1796-L1877" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L1816-L1900" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_snapshot_options(self, **options):
     &#34;&#34;&#34;
@@ -11319,6 +11529,7 @@ ocum server</p></div>
 
         is_ocum                          (bool)   --  True if Storage policy is enabled with
                                                       ocum server
+        enable_selective_copy                 (int)   -- Enable selective copy option based on input value
 
     &#34;&#34;&#34;
     enable_backup_copy = options[&#39;enable_backup_copy&#39;]
@@ -11346,6 +11557,8 @@ ocum server</p></div>
     else:
         source_copy_for_snapshot_catalog_id = 0
 
+    selective_type = options.get(&#39;enable_selective_copy&#39;, 0)
+
     update_snapshot_tab_service = self._commcell_object._services[&#39;EXECUTE_QCOMMAND&#39;]
 
     request_xml = &#34;&#34;&#34;
@@ -11353,14 +11566,14 @@ ocum server</p></div>
                     &lt;header localeId=&#34;0&#34; userId=&#34;0&#34; /&gt;
                     &lt;snapshotToTapeProps archGroupId=&#34;{2}&#34; calendarId=&#34;1&#34; dayNumber=&#34;0&#34; deferredDays=&#34;0&#34;
                         enable=&#34;{3}&#34; flags=&#34;0&#34; infoFlags=&#34;0&#34; numOfReaders=&#34;0&#34; numPeriod=&#34;1&#34;
-                        sourceCopyId=&#34;{4}&#34; startTime=&#34;0&#34; type=&#34;0&#34; /&gt;
+                        sourceCopyId=&#34;{4}&#34; startTime=&#34;0&#34; type=&#34;{7}&#34; /&gt;
                     &lt;deferredCatalogProps archGroupId=&#34;{2}&#34; calendarId=&#34;1&#34; dayNumber=&#34;0&#34; deferredDays=&#34;0&#34;
                         enable=&#34;{5}&#34; flags=&#34;0&#34; infoFlags=&#34;0&#34; numOfReaders=&#34;0&#34; numPeriod=&#34;1&#34;
                         sourceCopyId=&#34;{6}&#34; startTime=&#34;0&#34; type=&#34;0&#34; /&gt;
                 &lt;/EVGui_SetSnapOpPropsReq&gt;
     &#34;&#34;&#34;.format(defferred_catalog_value, backup_copy_value, self.storage_policy_id,
                int(enable_backup_copy), source_copy_for_snap_to_tape_id,
-               int(enable_snapshot_catalog), source_copy_for_snapshot_catalog_id)
+               int(enable_snapshot_catalog), source_copy_for_snapshot_catalog_id, selective_type)
 
     flag, response = self._commcell_object._cvpysdk_object.make_request(
         &#39;POST&#39;, update_snapshot_tab_service, request_xml
@@ -11405,7 +11618,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L2269-L2310" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L2292-L2333" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_transactional_ddb(self, update_value, copy_name, media_agent_name):
     &#34;&#34;&#34;
@@ -11479,7 +11692,7 @@ Default : None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3142-L4188" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3172-L4337" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class StoragePolicyCopy(object):
     &#34;&#34;&#34;Class for performing storage policy copy operations for a specific storage policy copy&#34;&#34;&#34;
@@ -11666,6 +11879,21 @@ Default : None</p>
     def copy_name(self):
         &#34;&#34;&#34;Returns the name of the copy&#34;&#34;&#34;
         return self._copy_name
+
+    @property
+    def override_pool_retention(self):
+        &#34;&#34;&#34;Returns if Override Pool Retention flag is set or not&#34;&#34;&#34;
+        return bool(self._extended_flags.get(&#39;overRideGACPRetention&#39;, 0))
+
+    @override_pool_retention.setter
+    def override_pool_retention(self, override):
+        &#34;&#34;&#34;Sets/Unsets the override Pool Retention Flag. Not Applicable for Storage Pool Copies
+
+        Args:
+            override(bool)  :   Override the pool Retention (True/False)
+        &#34;&#34;&#34;
+        self._extended_flags[&#39;overRideGACPRetention&#39;] = int(override)
+        self._set_copy_properties()
 
     @property
     def copy_retention(self):
@@ -12070,6 +12298,68 @@ Default : None</p>
         &#34;&#34;&#34;Gets the media agent name of the copy&#34;&#34;&#34;
         return self._media_agent.get(&#39;mediaAgentName&#39;)
 
+    def get_jobs_on_copy(self, from_date=None, to_date=None, backup_type=None, retained_by=0,
+                         include_to_be_copied_jobs=False, list_partial_jobs_only=False):
+        &#34;&#34;&#34;Fetches the Details of jobs on Storage Policy Copy
+
+        Args:
+            from_date      (str): Start Date Range for the Jobs
+                                    [format-&#39;yyyy/mm/dd&#39;] [default: from start]
+
+            to_date        (str): End Date Range for the Jobs
+                                    [format-&#39;yyyy/mm/dd&#39;] [default: till date]
+
+            backup_type    (str): Filter by backup type [default: None(all backup types)]
+                                    Valid values: &#39;full&#39;/&#39;incr&#39;
+
+            retained_by    (int): Filter by retention type of jobs [default: 0]
+                                    Valid values:
+                                    1: basic retention
+                                    2: extended retention
+                                    4: manual retention
+
+            include_to_be_copied_jobs   (bool): Include details on jobs that are in to be copied state [default: False]
+
+            list_partial_jobs_only      (bool): Get details of jobs that are in partially copied state only
+                                                  [default: False]
+
+        Returns:
+            (list)  :   List of dict&#39;s with each dict containing details of a job
+        Raises:
+            SDKException:   if the response/fetch operation failed
+        &#34;&#34;&#34;
+        command = f&#34;qoperation execscript -sn QS_JobsinSPCopy -si @i_policyName=&#39;{self._storage_policy_name}&#39;&#34; \
+                  f&#34; -si @i_copyName=&#39;{self.copy_name}&#39;&#34;
+        if from_date:
+            command = f&#34;{command} -si @i_fromTime=&#39;{from_date}&#39;&#34;
+        if to_date:
+            command = f&#34;{command} -si @i_toTime=&#39;{to_date}&#39;&#34;
+        if backup_type:
+            command = f&#34;{command} -si @i_backupType=&#39;{backup_type.lower()}&#39;&#34;
+        if retained_by:
+            command = f&#34;{command} -si @i_retention=&#39;{retained_by}&#39;&#34;
+        if include_to_be_copied_jobs:
+            command = f&#34;{command} -si @i_includeToBeCopiedJobs=&#39;1&#39;&#34;
+        if list_partial_jobs_only:
+            command = f&#34;{command} -si @i_includePartialJobsOnly=&#39;1&#39;&#34;
+
+        response = self._commcell_object.execute_qcommand(command)
+        if response.json():
+            json_response = response.json()
+            if json_response.get(&#34;ExecScriptOutput&#34;):
+                if isinstance(json_response.get(&#34;ExecScriptOutput&#34;).get(&#34;FieldValue&#34;), list):
+                    return json_response.get(&#34;ExecScriptOutput&#34;).get(&#34;FieldValue&#34;)
+                if isinstance(json_response.get(&#34;ExecScriptOutput&#34;).get(&#34;FieldValue&#34;), dict):
+                    if json_response.get(&#34;ExecScriptOutput&#34;).get(&#34;FieldValue&#34;).get(&#34;@JobID&#34;):
+                        return [json_response.get(&#34;ExecScriptOutput&#34;).get(&#34;FieldValue&#34;)]
+                return []
+            else:
+                response_string = self._commcell_object._update_response_(response.text)
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, response_string)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
     def delete_job(self, job_id):
         &#34;&#34;&#34;
         Deletes a job on Storage Policy
@@ -12183,6 +12473,14 @@ Default : None</p>
             job_id      (int or str or list):   Job Id(s) that needs to be marked
         &#34;&#34;&#34;
         self._mark_jobs_on_copy(job_id, &#39;markJobsBad&#39;)
+
+    def pick_jobs_for_backupcopy(self, job_id):
+        &#34;&#34;&#34;This method is used to re-pick the job from backup which are unpick manually
+
+        Args:
+            job_id      (int or str or list):   Job Id(s) that needs to be marked
+        &#34;&#34;&#34;
+        self._mark_jobs_on_copy(job_id, &#39;pickforbackupcopy&#39;)
 
     @property
     def extended_retention_rules(self):
@@ -12426,7 +12724,8 @@ Default : None</p>
         self._copy_properties[&#39;throttleNetworkBandWidthMBHR&#39;] = value
         self._set_copy_properties()
 
-    def add_svm_association(self, src_array_id, source_array, tgt_array_id, target_array):
+    def add_svm_association(self, src_array_id, source_array, tgt_array_id,
+                            target_array, **kwargs):
         &#34;&#34;&#34; Method to add SVM association on Replica/vault and Mirror Copy
 
             Agrs:
@@ -12438,7 +12737,13 @@ Default : None</p>
 
                 target_array    (str)   --  Name of the Target Array
 
+                target_vendor   (str)   --  Target Vendor Name
+                
+                tgt_vendor_id   (int)   --  Target Vendor id
+
         &#34;&#34;&#34;
+        target_vendor = kwargs.get(&#39;target_vendor&#39;, &#34;&#34;)
+        tgt_vendor_id = kwargs.get(&#39;tgt_vendor_id&#39;, 0)
 
         request_json = {
             &#34;EVGui_MMSMArrayReplicaPairReq&#34;: {
@@ -12474,6 +12779,14 @@ Default : None</p>
                         &#34;srcArray&#34;: {
                             &#34;name&#34;: source_array,
                             &#34;id&#34;: src_array_id
+                        },
+                        &#34;vendor&#34;: {
+                            &#34;name&#34;: &#34;&#34;,
+                            &#34;id&#34;: 0
+                        },
+                        &#34;tgtVendor&#34;: {
+                            &#34;name&#34;: target_vendor,
+                            &#34;id&#34;: tgt_vendor_id
                         },
                         &#34;tgtArray&#34;: {
                             &#34;name&#34;: target_array,
@@ -12527,6 +12840,25 @@ Default : None</p>
             &#34;keyProviderName&#34;: kms_name,
             &#34;rotateMasterKey&#34;: True
         }
+        self._set_copy_properties()
+    
+    def set_multiplexing_factor(self, mux_factor):
+        &#34;&#34;&#34;Sets/Unset the multiplexing factor for the storage policy copy
+
+            Args:
+                mux_factor  (int) -- The value for multiplexing factor
+
+            Raises SDKException:
+                If input is not valid
+
+                If API response is not successful
+        &#34;&#34;&#34;
+        if not isinstance(mux_factor, int):
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+        self._copy_properties[&#39;mediaProperties&#39;] = {
+            &#34;multiplexingFactor&#34; : mux_factor
+        }
         self._set_copy_properties()</code></pre>
 </details>
 <h3>Instance variables</h3>
@@ -12544,7 +12876,7 @@ the storage policy copy associated with this storage policy</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3188-L3199" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3218-L3229" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_copies(self):
@@ -12566,7 +12898,7 @@ def all_copies(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3481-L3484" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3526-L3529" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_client_side_dedup(self):
@@ -12580,7 +12912,7 @@ def copy_client_side_dedup(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3404-L3407" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3449-L3452" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_dedupe_dash_full(self):
@@ -12594,7 +12926,7 @@ def copy_dedupe_dash_full(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3432-L3435" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3477-L3480" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_dedupe_disk_cache(self):
@@ -12608,7 +12940,7 @@ def copy_dedupe_disk_cache(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3323-L3326" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3353-L3356" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_name(self):
@@ -12622,7 +12954,7 @@ def copy_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3721-L3724" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3766-L3769" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_precedence(self):
@@ -12636,7 +12968,7 @@ def copy_precedence(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3646-L3657" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3691-L3702" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_reencryption(self):
@@ -12658,7 +12990,7 @@ def copy_reencryption(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3328-L3336" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3373-L3381" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_retention(self):
@@ -12677,7 +13009,7 @@ def copy_retention(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3963-L3966" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L4078-L4081" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_retention_managed_disk_space(self):
@@ -12691,7 +13023,7 @@ def copy_retention_managed_disk_space(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3377-L3380" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3422-L3425" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_software_compression(self):
@@ -12705,7 +13037,7 @@ def copy_software_compression(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3845-L3902" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3960-L4017" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def extended_retention_rules(self):
@@ -12773,7 +13105,7 @@ def extended_retention_rules(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3209-L3212" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3239-L3242" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_active(self):
@@ -12787,7 +13119,7 @@ def is_active(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L4037-L4040" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L4152-L4155" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_inline_copy(self):
@@ -12801,7 +13133,7 @@ def is_inline_copy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3990-L3993" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L4105-L4108" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_parallel_copy(self):
@@ -12815,7 +13147,7 @@ def is_parallel_copy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3726-L3729" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3771-L3774" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def media_agent(self):
@@ -12831,7 +13163,7 @@ def media_agent(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L4060-L4067" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L4175-L4182" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def network_throttle_bandwidth(self):
@@ -12843,13 +13175,27 @@ def network_throttle_bandwidth(self):
     return int(self._copy_properties.get(&#39;throttleNetworkBandWidthMBHR&#39;))</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.override_pool_retention"><code class="name">var <span class="ident">override_pool_retention</span></code></dt>
+<dd>
+<div class="desc"><p>Returns if Override Pool Retention flag is set or not</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3358-L3361" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def override_pool_retention(self):
+    &#34;&#34;&#34;Returns if Override Pool Retention flag is set or not&#34;&#34;&#34;
+    return bool(self._extended_flags.get(&#39;overRideGACPRetention&#39;, 0))</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.source_copy"><code class="name">var <span class="ident">source_copy</span></code></dt>
 <dd>
 <div class="desc"><p>Treats the copy deduplication setting as a read-only attribute.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3513-L3516" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3558-L3561" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def source_copy(self):
@@ -12863,7 +13209,7 @@ def source_copy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L4013-L4018" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L4128-L4133" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def space_optimized_auxillary_copy(self):
@@ -12879,7 +13225,7 @@ def space_optimized_auxillary_copy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3456-L3459" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3501-L3504" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def store_priming(self):
@@ -12891,7 +13237,7 @@ def store_priming(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.add_svm_association"><code class="name flex">
-<span>def <span class="ident">add_svm_association</span></span>(<span>self, src_array_id, source_array, tgt_array_id, target_array)</span>
+<span>def <span class="ident">add_svm_association</span></span>(<span>self, src_array_id, source_array, tgt_array_id, target_array, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Method to add SVM association on Replica/vault and Mirror Copy</p>
@@ -12911,13 +13257,22 @@ Controlhost id of target SVM</p>
 <p>target_array
 (str)
 &ndash;
-Name of the Target Array</p></div>
+Name of the Target Array</p>
+<p>target_vendor
+(str)
+&ndash;
+Target Vendor Name</p>
+<p>tgt_vendor_id
+(int)
+&ndash;
+Target Vendor id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L4087-L4167" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L4202-L4297" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def add_svm_association(self, src_array_id, source_array, tgt_array_id, target_array):
+<pre><code class="python">def add_svm_association(self, src_array_id, source_array, tgt_array_id,
+                        target_array, **kwargs):
     &#34;&#34;&#34; Method to add SVM association on Replica/vault and Mirror Copy
 
         Agrs:
@@ -12929,7 +13284,13 @@ Name of the Target Array</p></div>
 
             target_array    (str)   --  Name of the Target Array
 
+            target_vendor   (str)   --  Target Vendor Name
+            
+            tgt_vendor_id   (int)   --  Target Vendor id
+
     &#34;&#34;&#34;
+    target_vendor = kwargs.get(&#39;target_vendor&#39;, &#34;&#34;)
+    tgt_vendor_id = kwargs.get(&#39;tgt_vendor_id&#39;, 0)
 
     request_json = {
         &#34;EVGui_MMSMArrayReplicaPairReq&#34;: {
@@ -12965,6 +13326,14 @@ Name of the Target Array</p></div>
                     &#34;srcArray&#34;: {
                         &#34;name&#34;: source_array,
                         &#34;id&#34;: src_array_id
+                    },
+                    &#34;vendor&#34;: {
+                        &#34;name&#34;: &#34;&#34;,
+                        &#34;id&#34;: 0
+                    },
+                    &#34;tgtVendor&#34;: {
+                        &#34;name&#34;: target_vendor,
+                        &#34;id&#34;: tgt_vendor_id
                     },
                     &#34;tgtArray&#34;: {
                         &#34;name&#34;: target_array,
@@ -13016,7 +13385,7 @@ if type of input parameters is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3731-L3750" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3838-L3857" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_job(self, job_id):
     &#34;&#34;&#34;
@@ -13052,7 +13421,7 @@ Job Id(s) that needs to be marked</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3813-L3819" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3920-L3926" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def do_not_copy_jobs(self, job_id):
     &#34;&#34;&#34;Marks job(s) as Do Not Copy to a secondary copy
@@ -13075,7 +13444,7 @@ Job Id(s) that needs to be marked</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3829-L3835" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3936-L3942" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def do_not_verify_data(self, job_id):
     &#34;&#34;&#34;Marks job(s) on a copy to not be Picked for Data Verification
@@ -13094,7 +13463,7 @@ Job Id(s) that needs to be marked</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3205-L3207" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3235-L3237" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_copy_Precedence(self):
     &#34;&#34;&#34;Gets the copyprecendence asscoiated with the storage policy copy&#34;&#34;&#34;
@@ -13109,11 +13478,114 @@ Job Id(s) that needs to be marked</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3201-L3203" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3231-L3233" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_copy_id(self):
     &#34;&#34;&#34;Gets the storage policy id asscoiated with the storage policy&#34;&#34;&#34;
     return self.all_copies[&#34;copyId&#34;]</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.get_jobs_on_copy"><code class="name flex">
+<span>def <span class="ident">get_jobs_on_copy</span></span>(<span>self, from_date=None, to_date=None, backup_type=None, retained_by=0, include_to_be_copied_jobs=False, list_partial_jobs_only=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Fetches the Details of jobs on Storage Policy Copy</p>
+<h2 id="args">Args</h2>
+<p>from_date
+(str): Start Date Range for the Jobs
+[format-'yyyy/mm/dd'] [default: from start]</p>
+<p>to_date
+(str): End Date Range for the Jobs
+[format-'yyyy/mm/dd'] [default: till date]</p>
+<p>backup_type
+(str): Filter by backup type [default: None(all backup types)]
+Valid values: 'full'/'incr'</p>
+<p>retained_by
+(int): Filter by retention type of jobs [default: 0]
+Valid values:
+1: basic retention
+2: extended retention
+4: manual retention</p>
+<p>include_to_be_copied_jobs
+(bool): Include details on jobs that are in to be copied state [default: False]</p>
+<p>list_partial_jobs_only
+(bool): Get details of jobs that are in partially copied state only
+[default: False]</p>
+<h2 id="returns">Returns</h2>
+<p>(list)
+:
+List of dict's with each dict containing details of a job</p>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>SDKException</code></dt>
+<dd>if the response/fetch operation failed</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3776-L3836" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_jobs_on_copy(self, from_date=None, to_date=None, backup_type=None, retained_by=0,
+                     include_to_be_copied_jobs=False, list_partial_jobs_only=False):
+    &#34;&#34;&#34;Fetches the Details of jobs on Storage Policy Copy
+
+    Args:
+        from_date      (str): Start Date Range for the Jobs
+                                [format-&#39;yyyy/mm/dd&#39;] [default: from start]
+
+        to_date        (str): End Date Range for the Jobs
+                                [format-&#39;yyyy/mm/dd&#39;] [default: till date]
+
+        backup_type    (str): Filter by backup type [default: None(all backup types)]
+                                Valid values: &#39;full&#39;/&#39;incr&#39;
+
+        retained_by    (int): Filter by retention type of jobs [default: 0]
+                                Valid values:
+                                1: basic retention
+                                2: extended retention
+                                4: manual retention
+
+        include_to_be_copied_jobs   (bool): Include details on jobs that are in to be copied state [default: False]
+
+        list_partial_jobs_only      (bool): Get details of jobs that are in partially copied state only
+                                              [default: False]
+
+    Returns:
+        (list)  :   List of dict&#39;s with each dict containing details of a job
+    Raises:
+        SDKException:   if the response/fetch operation failed
+    &#34;&#34;&#34;
+    command = f&#34;qoperation execscript -sn QS_JobsinSPCopy -si @i_policyName=&#39;{self._storage_policy_name}&#39;&#34; \
+              f&#34; -si @i_copyName=&#39;{self.copy_name}&#39;&#34;
+    if from_date:
+        command = f&#34;{command} -si @i_fromTime=&#39;{from_date}&#39;&#34;
+    if to_date:
+        command = f&#34;{command} -si @i_toTime=&#39;{to_date}&#39;&#34;
+    if backup_type:
+        command = f&#34;{command} -si @i_backupType=&#39;{backup_type.lower()}&#39;&#34;
+    if retained_by:
+        command = f&#34;{command} -si @i_retention=&#39;{retained_by}&#39;&#34;
+    if include_to_be_copied_jobs:
+        command = f&#34;{command} -si @i_includeToBeCopiedJobs=&#39;1&#39;&#34;
+    if list_partial_jobs_only:
+        command = f&#34;{command} -si @i_includePartialJobsOnly=&#39;1&#39;&#34;
+
+    response = self._commcell_object.execute_qcommand(command)
+    if response.json():
+        json_response = response.json()
+        if json_response.get(&#34;ExecScriptOutput&#34;):
+            if isinstance(json_response.get(&#34;ExecScriptOutput&#34;).get(&#34;FieldValue&#34;), list):
+                return json_response.get(&#34;ExecScriptOutput&#34;).get(&#34;FieldValue&#34;)
+            if isinstance(json_response.get(&#34;ExecScriptOutput&#34;).get(&#34;FieldValue&#34;), dict):
+                if json_response.get(&#34;ExecScriptOutput&#34;).get(&#34;FieldValue&#34;).get(&#34;@JobID&#34;):
+                    return [json_response.get(&#34;ExecScriptOutput&#34;).get(&#34;FieldValue&#34;)]
+            return []
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;, response_string)
+    else:
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.is_dedupe_enabled"><code class="name flex">
@@ -13125,7 +13597,7 @@ returns Boolean</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3506-L3511" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3551-L3556" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def is_dedupe_enabled(self):
     &#34;&#34;&#34;
@@ -13147,7 +13619,7 @@ Job Id(s) that needs to be marked</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3837-L3843" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3944-L3950" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def mark_jobs_bad(self, job_id):
     &#34;&#34;&#34;Marks job(s) on a copy as Bad
@@ -13169,7 +13641,7 @@ Job Id(s) that needs to be marked</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3797-L3803" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3904-L3910" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def pick_for_copy(self, job_id):
     &#34;&#34;&#34;Marks job(s) to be Picked for Copy to a secondary copy
@@ -13178,6 +13650,29 @@ Job Id(s) that needs to be marked</p></div>
         job_id      (int or str or list): Job Id(s) that needs to be marked
     &#34;&#34;&#34;
     self._mark_jobs_on_copy(job_id, &#39;allowcopy&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.pick_jobs_for_backupcopy"><code class="name flex">
+<span>def <span class="ident">pick_jobs_for_backupcopy</span></span>(<span>self, job_id)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This method is used to re-pick the job from backup which are unpick manually</p>
+<h2 id="args">Args</h2>
+<p>job_id
+(int or str or list):
+Job Id(s) that needs to be marked</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3952-L3958" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def pick_jobs_for_backupcopy(self, job_id):
+    &#34;&#34;&#34;This method is used to re-pick the job from backup which are unpick manually
+
+    Args:
+        job_id      (int or str or list):   Job Id(s) that needs to be marked
+    &#34;&#34;&#34;
+    self._mark_jobs_on_copy(job_id, &#39;pickforbackupcopy&#39;)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.pick_jobs_for_data_verification"><code class="name flex">
@@ -13192,7 +13687,7 @@ Job Id(s) that needs to be marked</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3821-L3827" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3928-L3934" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def pick_jobs_for_data_verification(self, job_id):
     &#34;&#34;&#34;Marks job(s) on a copy to be Picked for Data Verification
@@ -13214,7 +13709,7 @@ Job Id(s) that needs to be marked</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3805-L3811" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3912-L3918" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def recopy_jobs(self, job_id):
     &#34;&#34;&#34;Marks job(s) to be picked for ReCopying to a secondary copy
@@ -13233,7 +13728,7 @@ Job Id(s) that needs to be marked</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3232-L3234" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3262-L3264" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the StoragePolicy.&#34;&#34;&#34;
@@ -13257,7 +13752,7 @@ if failed to update compression values on copy</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3382-L3402" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3427-L3447" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_copy_software_compression(self, value):
     &#34;&#34;&#34;Sets the copy software compression setting as the value provided as input.
@@ -13339,7 +13834,7 @@ encryption_type="BlowFish", encryption_length=128)</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3550-L3644" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L3595-L3689" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_encryption_properties(self, **props):
     &#34;&#34;&#34;sets copy encryption properties based on given inputs
@@ -13455,7 +13950,7 @@ if failed to update inline copy on storage policy copy</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L4042-L4058" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L4157-L4173" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_inline_copy(self, value):
     &#34;&#34;&#34; Sets the inline copy on storage policy copy as the value provided as input.
@@ -13491,7 +13986,7 @@ If input is not valid</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L4169-L4188" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L4299-L4318" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_key_management_server(self, kms_name):
     &#34;&#34;&#34;Sets the Key Management Server to this copy
@@ -13515,6 +14010,43 @@ If input is not valid</p>
     self._set_copy_properties()</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.set_multiplexing_factor"><code class="name flex">
+<span>def <span class="ident">set_multiplexing_factor</span></span>(<span>self, mux_factor)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Sets/Unset the multiplexing factor for the storage policy copy</p>
+<h2 id="args">Args</h2>
+<p>mux_factor
+(int) &ndash; The value for multiplexing factor
+Raises SDKException:
+If input is not valid</p>
+<pre><code>If API response is not successful
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L4320-L4337" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def set_multiplexing_factor(self, mux_factor):
+    &#34;&#34;&#34;Sets/Unset the multiplexing factor for the storage policy copy
+
+        Args:
+            mux_factor  (int) -- The value for multiplexing factor
+
+        Raises SDKException:
+            If input is not valid
+
+            If API response is not successful
+    &#34;&#34;&#34;
+    if not isinstance(mux_factor, int):
+        raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+    self._copy_properties[&#39;mediaProperties&#39;] = {
+        &#34;multiplexingFactor&#34; : mux_factor
+    }
+    self._set_copy_properties()</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.policies.storage_policies.StoragePolicyCopy.set_parallel_copy"><code class="name flex">
 <span>def <span class="ident">set_parallel_copy</span></span>(<span>self, value)</span>
 </code></dt>
@@ -13532,7 +14064,7 @@ if failed to update parallel copy on storage policy copy</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/policies/storage_policies.py#L3995-L4011" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/policies/storage_policies.py#L4110-L4126" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_parallel_copy(self, value):
     &#34;&#34;&#34; Sets the parallel copy on storage policy copy as the value provided as input.
@@ -13704,6 +14236,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.extended_retention_rules" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.extended_retention_rules">extended_retention_rules</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.get_copy_Precedence" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.get_copy_Precedence">get_copy_Precedence</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.get_copy_id" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.get_copy_id">get_copy_id</a></code></li>
+<li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.get_jobs_on_copy" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.get_jobs_on_copy">get_jobs_on_copy</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.is_active" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.is_active">is_active</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.is_dedupe_enabled" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.is_dedupe_enabled">is_dedupe_enabled</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.is_inline_copy" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.is_inline_copy">is_inline_copy</a></code></li>
@@ -13711,7 +14244,9 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.mark_jobs_bad" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.mark_jobs_bad">mark_jobs_bad</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.media_agent" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.media_agent">media_agent</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.network_throttle_bandwidth" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.network_throttle_bandwidth">network_throttle_bandwidth</a></code></li>
+<li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.override_pool_retention" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.override_pool_retention">override_pool_retention</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.pick_for_copy" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.pick_for_copy">pick_for_copy</a></code></li>
+<li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.pick_jobs_for_backupcopy" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.pick_jobs_for_backupcopy">pick_jobs_for_backupcopy</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.pick_jobs_for_data_verification" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.pick_jobs_for_data_verification">pick_jobs_for_data_verification</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.recopy_jobs" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.recopy_jobs">recopy_jobs</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.refresh" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.refresh">refresh</a></code></li>
@@ -13719,6 +14254,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.set_encryption_properties" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.set_encryption_properties">set_encryption_properties</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.set_inline_copy" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.set_inline_copy">set_inline_copy</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.set_key_management_server" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.set_key_management_server">set_key_management_server</a></code></li>
+<li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.set_multiplexing_factor" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.set_multiplexing_factor">set_multiplexing_factor</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.set_parallel_copy" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.set_parallel_copy">set_parallel_copy</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.source_copy" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.source_copy">source_copy</a></code></li>
 <li><code><a title="cvpysdk.policies.storage_policies.StoragePolicyCopy.space_optimized_auxillary_copy" href="#cvpysdk.policies.storage_policies.StoragePolicyCopy.space_optimized_auxillary_copy">space_optimized_auxillary_copy</a></code></li>

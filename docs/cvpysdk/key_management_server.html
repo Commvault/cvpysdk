@@ -25,12 +25,22 @@
 <section id="section-intro">
 <p>Main file for performing Key Management Server operations on commcell</p>
 <p>This file has all the classes related to Key Management Server operations.</p>
+<p>KeyManagementServerConstants &ndash;
+Abstract class to define the key management server related
+constancts</p>
 <p>KeyManagementServers
 &ndash;
 Class for representing all the KMS in the commcell.</p>
 <p>KeyManagementServer
 &ndash;
 Class for representing a single KMS in the commcell.</p>
+<h1 id="keymanagementserverconstants-attributes">KeyManagementServerConstants Attributes</h1>
+<pre><code>**_KMS_TYPE**           --    dictionary of key management server types
+**_KMS_AUTHENTICATION_TYPE** -- dictionary of key management server authentication
+</code></pre>
+<h1 id="keymanagementservers-attributes">KeyManagementServers Attributes</h1>
+<pre><code>**_kms_dict**           --    a name-indexed dictionary of KeyManagementServer objects
+</code></pre>
 <h1 id="keymanagementservers">KeyManagementServers:</h1>
 <pre><code>__init__()              --      initializes KeyManagementServers class object
 
@@ -46,10 +56,17 @@ delete()                --      deletes a Key Management Server
 
 has_kms()               --      checks if the Key Management Server exists or not
 
-add_aws_kms()           --      configures AWS Key Management Server
-</code></pre>
-<h1 id="keymanagementservers-attributes">KeyManagementServers Attributes</h1>
-<pre><code>**_kms_dict**           --    a name-indexed dictionary of KeyManagementServer objects
+add_aws_kms()           --      configures AWS Key Management Server with key based authentication
+
+_add_aws_kms_with_cred_file() --  configures AWS KMS with credential file based authentication
+
+_add_aws_kms_with_iam() --      configures AWS KMS with IAM based authentication
+
+_add_azure_key_vault_certificate_auth() -- Configure Azure Key Management Server with AD-app certificate based authentication
+
+_add_azure_key_vault_iam_auth() -- Configure Azure Key Management Server with IAM managed identity based authentication
+
+_kms_api_call() --              call KMS API
 </code></pre>
 <h1 id="keymanagementserver">KeyManagementServer:</h1>
 <pre><code>__init__()              --      initializes KeyManagementServer class object
@@ -65,7 +82,7 @@ _get_name_from_type()   --      returns the type name for type id
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/key_management_server.py#L1-L415" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/key_management_server.py#L1-L851" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # --------------------------------------------------------------------------
@@ -88,10 +105,24 @@ _get_name_from_type()   --      returns the type name for type id
 
 This file has all the classes related to Key Management Server operations.
 
+KeyManagementServerConstants --  Abstract class to define the key management server related  constancts
+
 KeyManagementServers        --   Class for representing all the KMS in the commcell.
 
 KeyManagementServer         --   Class for representing a single KMS in the commcell.
 
+
+KeyManagementServerConstants Attributes
+=======================================
+    **_KMS_TYPE**           --    dictionary of key management server types
+    **_KMS_AUTHENTICATION_TYPE** -- dictionary of key management server authentication
+    
+
+KeyManagementServers Attributes
+==========================
+
+    **_kms_dict**           --    a name-indexed dictionary of KeyManagementServer objects
+    
 
 KeyManagementServers:
 =================
@@ -110,13 +141,18 @@ KeyManagementServers:
 
     has_kms()               --      checks if the Key Management Server exists or not
 
-    add_aws_kms()           --      configures AWS Key Management Server
+    add_aws_kms()           --      configures AWS Key Management Server with key based authentication
+    
+    _add_aws_kms_with_cred_file() --  configures AWS KMS with credential file based authentication
+    
+    _add_aws_kms_with_iam() --      configures AWS KMS with IAM based authentication
+    
+    _add_azure_key_vault_certificate_auth() -- Configure Azure Key Management Server with AD-app certificate based authentication
 
-
-KeyManagementServers Attributes
-==========================
-
-    **_kms_dict**           --    a name-indexed dictionary of KeyManagementServer objects
+    _add_azure_key_vault_iam_auth() -- Configure Azure Key Management Server with IAM managed identity based authentication
+    
+    _kms_api_call() --              call KMS API
+    
 
 KeyManagementServer:
 =================
@@ -136,8 +172,30 @@ KeyManagementServer Attributes
 &#34;&#34;&#34;
 
 from .exception import SDKException
+from abc import ABC
 
-class KeyManagementServers(object):
+
+class KeyManagementServerConstants(ABC):
+
+    def __init__(self):
+        self._KMS_TYPE = {
+            1: &#34;KEY_PROVIDER_COMMVAULT&#34;,
+            2: &#34;KEY_PROVIDER_KMIP&#34;,
+            3: &#34;KEY_PROVIDER_AWS_KMS&#34;,
+            4: &#34;KEY_PROVIDER_AZURE_KEY_VAULT&#34;,
+            5: &#34;KEY_PROVIDER_SAFENET&#34;,
+            6: &#34;KEY_PROVIDER_PASSPHRASE&#34;,
+        }
+
+        self._KMS_AUTHENTICATION_TYPE = {
+            &#34;AWS_KEYS&#34;: 0,
+            &#34;AWS_IAM&#34;: 1,
+            &#34;AWS_CREDENTIALS_FILE&#34;: 0,
+            &#34;AZURE_KEY_VAULT_CERTIFICATE&#34;: 1,
+            &#34;AZURE_KEY_VAULT_IAM&#34;: 3,
+        }
+
+class KeyManagementServers(KeyManagementServerConstants):
     &#34;&#34;&#34;Class for representing all the KMS in the commcell.&#34;&#34;&#34;
 
     def __init__(self, commcell):
@@ -147,6 +205,7 @@ class KeyManagementServers(object):
                 commcell    (object)    --  instance of commcell
 
         &#34;&#34;&#34;
+        KeyManagementServerConstants.__init__(self)
         self._commcell = commcell
 
         self._cvpysdk_object = commcell._cvpysdk_object
@@ -325,19 +384,359 @@ class KeyManagementServers(object):
         KeyManagementServers._validate_input(kms_name, str)
         
         return kms_name.lower() in self._kms_dict
-    
-    def add_aws_kms(self, kms_name, aws_access_key, aws_secret_key, aws_region_name=None):
+ 
+
+    def _add_aws_kms_with_cred_file(self, kms_details):
+            &#34;&#34;&#34;Configure AWS Key Management Server with credential file based authentication
+
+                :arg
+                    kms_details ( dictionary ) - Dictionary with AWS KMS details
+                :return:
+                    Object of KeyManagementServer class for the newly created KMS.
+            &#34;&#34;&#34;
+
+            if &#34;ACCESS_NODE_NAME&#34; in kms_details:
+                payload = {
+                    &#34;keyProvider&#34;: {
+
+                        &#34;provider&#34;: {
+                            &#34;keyProviderName&#34;: kms_details[&#34;KMS_NAME&#34;]
+                        },
+                        &#34;encryptionType&#34;: 3,
+                        &#34;keyProviderType&#34;: 3,
+
+                        &#34;properties&#34;: {
+                            &#34;accessNodes&#34;: [
+                                {
+                                    &#34;accessNode&#34;: {
+                                        &#34;clientName&#34;: kms_details[&#34;ACCESS_NODE_NAME&#34;]
+                                    },
+                                    &#34;awsCredential&#34;: {
+                                        &#34;profile&#34;: kms_details[&#34;AWS_CREDENTIALS_FILE_PROFILE_NAME&#34;],
+                                        &#34;amazonAuthenticationType&#34;: self._KMS_AUTHENTICATION_TYPE[kms_details[&#34;KEY_PROVIDER_AUTH_TYPE&#34;]]
+                                    }
+                                }
+                            ],
+                            &#34;bringYourOwnKey&#34;: 0,
+                            &#34;regionName&#34;: kms_details[&#34;AWS_REGION_NAME&#34;]
+                        }
+
+                    }
+                }
+
+                self._kms_api_call(payload)
+                self.refresh()
+
+
+    def _add_aws_kms_with_iam(self, kms_details):
+        &#34;&#34;&#34;Configure AWS Key Management Server with IMA based authentication
+
+            :arg
+                kms_details ( dictionary ) - Dictionary with AWS KMS details
+            :return:
+                Object of KeyManagementServer class for the newly created KMS.
+        &#34;&#34;&#34;
+
+        if &#34;ACCESS_NODE_NAME&#34; in kms_details:
+
+            payload= {
+                        &#34;keyProvider&#34;: {
+                            &#34;provider&#34;: {
+                                    &#34;keyProviderName&#34;: kms_details[&#34;KMS_NAME&#34;]
+                                    },
+                                &#34;encryptionType&#34;: 3,
+                                &#34;keyProviderType&#34;: 3,
+                                &#34;properties&#34;: {
+                                        &#34;accessNodes&#34;: [
+                                                {
+                                                        &#34;accessNode&#34;: {
+                                                                &#34;clientName&#34;: kms_details[&#34;ACCESS_NODE_NAME&#34;]
+                                                        },
+                                                        &#34;awsCredential&#34;: {
+                                                            &#34;amazonAuthenticationType&#34;:1
+                                                        }
+                                                }
+                                            ],
+                                            &#34;bringYourOwnKey&#34;: 0,
+                                            &#34;regionName&#34;: kms_details[&#34;AWS_REGION_NAME&#34;]
+                                    }
+
+                            }
+                    }
+
+            self._kms_api_call(payload)
+            self.refresh()
+
+
+    def _add_azure_key_vault_certificate_auth(self, kms_details):
+        &#34;&#34;&#34;Configure Azure Key Management Server with AD-app certificate based authentication
+
+            :arg
+                kms_details ( dictionary ) - Dictionary with AWS KMS details
+            :return:
+                Object of KeyManagementServer class for the newly created KMS.
+        &#34;&#34;&#34;
+        if &#34;AZURE_KEY_VAULT_KEY_LENGTH&#34; not in kms_details:
+            kms_details[&#39;AZURE_KEY_VAULT_KEY_LENGTH&#39;] = 3072
+
+        payload = None
+
+        if &#34;ACCESS_NODE_NAME&#34; in kms_details:
+            payload = {
+                        &#34;keyProvider&#34;: {
+                            &#34;provider&#34;: {
+                            &#34;keyProviderName&#34;: kms_details[&#39;KMS_NAME&#39;]
+                            },
+                            &#34;encryptionKeyLength&#34;: kms_details[&#39;AZURE_KEY_VAULT_KEY_LENGTH&#39;],
+                            &#34;encryptionType&#34;: 1001,
+                            &#34;keyProviderType&#34;: 4,
+                            &#34;properties&#34;: {
+                                &#34;accessNodes&#34;: [
+                                {
+                                    &#34;keyVaultCredential&#34;: {
+                                    &#34;certificate&#34;: kms_details[&#39;AZURE_CERTIFICATE_PATH&#39;],
+                                    &#34;resourceName&#34;: kms_details[&#39;AZURE_KEY_VAULT_NAME&#39;],
+                                    &#34;environment&#34;: &#34;AzureCloud&#34;,
+                                    &#34;certificateThumbprint&#34;: kms_details[&#39;AZURE_CERTIFICATE_THUMBPRINT&#39;],
+                                    &#34;tenantId&#34;: kms_details[&#39;AZURE_TENANT_ID&#39;],
+                                    &#34;authType&#34;: 1,
+                                    &#34;applicationId&#34;: kms_details[&#39;AZURE_APP_ID&#39;],
+                                    &#34;endpoints&#34;: {
+                                        &#34;activeDirectoryEndpoint&#34;: &#34;https://login.microsoftonline.com/&#34;,
+                                        &#34;keyVaultEndpoint&#34;: &#34;vault.azure.net&#34;
+                                    },
+                                    &#34;certPassword&#34;: kms_details[&#39;AZURE_CERTIFICATE_PASSWORD&#39;]
+                                    },
+                                    &#34;accessNode&#34;: {
+                                        &#34;clientName&#34;: kms_details[&#39;ACCESS_NODE_NAME&#39;]
+                                    }
+                                }
+                                ],
+                            &#34;keyVaultCredential&#34;: {
+                                &#34;resourceName&#34;: kms_details[&#39;AZURE_KEY_VAULT_NAME&#39;]
+                            },
+                            &#34;bringYourOwnKey&#34;: 0
+                            }
+                        }
+                    }
+        else:
+            payload = {
+                        &#34;keyProvider&#34;: {
+                            &#34;provider&#34;: {
+                            &#34;keyProviderName&#34;: kms_details[&#39;KMS_NAME&#39;]
+                            },
+                            &#34;encryptionKeyLength&#34;: kms_details[&#39;AZURE_KEY_VAULT_KEY_LENGTH&#39;],
+                            &#34;encryptionType&#34;: 1001,
+                            &#34;keyProviderType&#34;: 4,
+                            &#34;properties&#34;: {
+                                    &#34;keyVaultCredential&#34;: {
+                                    &#34;certificate&#34;: kms_details[&#39;AZURE_CERTIFICATE_PATH&#39;],
+                                    &#34;resourceName&#34;: kms_details[&#39;AZURE_KEY_VAULT_NAME&#39;],
+                                    &#34;environment&#34;: &#34;AzureCloud&#34;,
+                                    &#34;certificateThumbprint&#34;: kms_details[&#39;AZURE_CERTIFICATE_THUMBPRINT&#39;],
+                                    &#34;tenantId&#34;: kms_details[&#39;AZURE_TENANT_ID&#39;],
+                                    &#34;authType&#34;: 1,
+                                    &#34;applicationId&#34;:kms_details[&#39;AZURE_APP_ID&#39;],
+                                    &#34;endpoints&#34;: {
+                                        &#34;activeDirectoryEndpoint&#34;: &#34;https://login.microsoftonline.com/&#34;,
+                                        &#34;keyVaultEndpoint&#34;: &#34;vault.azure.net&#34;
+                                    }
+                                    },
+                            &#34;bringYourOwnKey&#34;: 0,
+                            &#34;sslPassPhrase&#34;: kms_details[&#39;AZURE_CERTIFICATE_PASSWORD&#39;]
+                            }
+                        }
+                      }
+
+        self._kms_api_call(payload)
+        self.refresh()
+
+
+
+    def add(self, kms_details):
+        &#34;&#34;&#34;
+        Method to add Key Management Server
+
+        Args:
+                kms_details    (dictionary)   -- dictionary with KMS details
+
+        input dictionary for creating AWS KMS without access node ( key based authentication )
+            kms_details = {
+                &#34;KEY_PROVIDER_TYPE&#34;: &#34;KEY_PROVIDER_AWS_KMS&#34;,
+                &#34;KMS_NAME&#34;: &#34;KMS1&#34; ,
+                &#34;AWS_ACCESS_KEY&#34;:&#34;1234&#34;,
+                &#34;AWS_SECRET_KEY&#34;: &#34;1234&#34;,
+                &#34;AWS_REGION_NAME&#34;: &#34;Asia Pacific (Mumbai)&#34;,  -- Optional Value. Default is &#34;Asia Pacific (Mumbai)&#34;
+                &#34;KEY_PROVIDER_AUTH_TYPE&#34;: &#34;AWS_KEYS&#34;
+            }
+
+        input dictionary for creating AWS KMS with access node ( key based authentication )
+            kms_details = {
+                &#34;KEY_PROVIDER_TYPE&#34;: &#34;KEY_PROVIDER_AWS_KMS&#34;,
+                &#34;AWS_REGION_NAME&#34;: &#34;US East (Ohio)&#34;,    -- Optional Value. Default is &#34;Asia Pacific (Mumbai)&#34;
+                &#34;ACCESS_NODE_NAME&#34;: &#34;ma1&#34;,
+                &#34;KMS_NAME&#34;: &#34;kms1&#34;&#34;,
+                &#34;KEY_PROVIDER_AUTH_TYPE&#34;: &#34;AWS_KEYS&#34;,
+                &#34;AWS_ACCESS_KEY&#34;: &#34;1234&#34;,
+                &#34;AWS_SECRET_KEY&#34;: &#34;1234&#34;     -- Base64 encoded
+            }
+
+        input dictionary for creating AWS KMS with access node ( credential template file based authentication )
+            kms_details = {
+                &#34;KEY_PROVIDER_TYPE&#34;: &#34;KEY_PROVIDER_AWS_KMS&#34;,
+                &#34;AWS_REGION_NAME&#34;: &#34;US East (Ohio)&#34;,    -- Optional Value. Default is &#34;Asia Pacific (Mumbai)&#34;
+                &#34;ACCESS_NODE_NAME&#34;: &#34;client1&#34;,
+                &#34;KMS_NAME&#34;: &#34;AWS_KMS_NAME&#34;,
+                &#34;KEY_PROVIDER_AUTH_TYPE&#34;: &#34;AWS_CREDENTIALS_FILE&#34;,
+                &#34;AWS_CREDENTIALS_FILE_PROFILE_NAME&#34;: &#34;AWSProfile1&#34;
+            }
+
+        input dictionary for creating AWS KMS with access Node ( IAM based authentication )
+            kms_details = {
+                &#34;KEY_PROVIDER_TYPE&#34;: &#34;KEY_PROVIDER_AWS_KMS&#34;,
+                &#34;ACCESS_NODE_NAME&#34;: &#34;MA1&#34;,
+                &#34;KMS_NAME&#34;: &#34;aws_kms_name&#34;,
+                &#34;KEY_PROVIDER_AUTH_TYPE&#34;: &#34;AWS_IAM&#34;
+            }
+
+        input dictionary for creating Azure KMS with access Node ( certificate based authentication )
+            kms_details = {
+                &#34;KEY_PROVIDER_TYPE&#34;: &#34;KEY_PROVIDER_AZURE_KEY_VAULT&#34;,
+                &#34;ACCESS_NODE_NAME&#34;: &#34;MediaAgent1&#34;,
+                &#34;KMS_NAME&#34;: &#34;Azure_KMS_1&#34;,
+                &#34;KEY_PROVIDER_AUTH_TYPE&#34;: &#34;AZURE_KEY_VAULT_CERTIFICATE&#34;,
+                &#34;AZURE_KEY_VAULT_KEY_LENGTH&#34;:2048,     -- Optional Value. Default is 3072
+                &#34;AZURE_KEY_VAULT_NAME&#34;:&#34;MyCompanyKeyVault&#34;,
+                &#34;AZURE_TENANT_ID&#34;:&#34;123&#34;,
+                &#34;AZURE_APP_ID&#34;:&#34;456&#34;,
+                &#34;AZURE_CERTIFICATE_PATH&#34;:&#34;c:\\cert.pfx&#34;,
+                &#34;AZURE_CERTIFICATE_THUMBPRINT&#34;:&#34;789&#34;,
+                &#34;AZURE_CERTIFICATE_PASSWORD&#34;: &#34;password123&#34;,    -- Base64 encoded
+            }
+
+        input dictionary for creating Azure KMS with access Node ( IAM managed identity based authentication )
+            kms_details = {
+                &#34;KEY_PROVIDER_TYPE&#34;: &#34;KEY_PROVIDER_AZURE_KEY_VAULT&#34;,
+                &#34;ACCESS_NODE_NAME&#34;: &#34;ma1&#34;,
+                &#34;KMS_NAME&#34;: &#34;MyKMS&#34;,
+                &#34;KEY_PROVIDER_AUTH_TYPE&#34;: &#34;AZURE_KEY_VAULT_IAM&#34;,
+                &#34;AZURE_KEY_VAULT_NAME&#34;:&#34;MyKeyVaultName&#34;,
+            }
+
+        input dictionary for creating Azure KMS without access Node ( certificate based authentication )
+            kms_details = {
+                &#34;KEY_PROVIDER_TYPE&#34;: &#34;KEY_PROVIDER_AZURE_KEY_VAULT&#34;,
+                &#34;KMS_NAME&#34;: &#34;MyKMS&#34;,
+                &#34;KEY_PROVIDER_AUTH_TYPE&#34;: &#34;AZURE_KEY_VAULT_CERTIFICATE&#34;,
+                &#34;AZURE_KEY_VAULT_NAME&#34;:&#34;MyKeyVaultName&#34;,
+                &#34;AZURE_TENANT_ID&#34;: &#34;1234&#34;,
+                &#34;AZURE_APP_ID&#34;: &#34;1234&#34;&#34;,
+                &#34;AZURE_CERTIFICATE_PATH&#34;: &#34;c:\\cert.pfx&#34;,
+                &#34;AZURE_CERTIFICATE_THUMBPRINT&#34;: &#34;1234&#34;,
+                &#34;AZURE_CERTIFICATE_PASSWORD&#34;: &#34;1234XYZ==&#34;,    -- Base64 encoded
+            }
+
+        &#34;&#34;&#34;
+        KeyManagementServers._validate_input(kms_details, dict)
+
+        if kms_details[&#39;KEY_PROVIDER_TYPE&#39;] not in self._KMS_TYPE.values():
+            raise SDKException(&#34;KeyManagementServer&#34;, 103)
+
+        if kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;] not in self._KMS_AUTHENTICATION_TYPE:
+            raise SDKException(&#34;KeyManagementServer&#34;, 105)
+
+        if &#34;KMS_NAME&#34; not in kms_details:
+            raise SDKException(&#34;KeyManagementServer&#34;, 106)
+
+
+
+        if kms_details[&#39;KEY_PROVIDER_TYPE&#39;] == &#34;KEY_PROVIDER_AWS_KMS&#34;:
+            if &#34;AWS_REGION_NAME&#34; not in kms_details:
+                kms_details[&#34;AWS_REGION_NAME&#34;] = &#34;Asia Pacific (Mumbai)&#34;
+
+            if kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;] == &#34;AWS_KEYS&#34;:
+                self.add_aws_kms(kms_name=kms_details[&#39;KMS_NAME&#39;], aws_access_key=kms_details[&#39;AWS_ACCESS_KEY&#39;], aws_secret_key=kms_details[&#39;AWS_SECRET_KEY&#39;],aws_region_name=kms_details[&#34;AWS_REGION_NAME&#34;], kms_details = kms_details)
+
+            elif kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;] == &#34;AWS_CREDENTIALS_FILE&#34;:
+                self._add_aws_kms_with_cred_file(kms_details)
+
+            elif kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;] == &#34;AWS_IAM&#34;:
+                self._add_aws_kms_with_iam(kms_details)
+
+        if kms_details[&#39;KEY_PROVIDER_TYPE&#39;] == &#34;KEY_PROVIDER_AZURE_KEY_VAULT&#34;:
+            if kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;] == &#34;AZURE_KEY_VAULT_CERTIFICATE&#34;:
+                self._add_azure_key_vault_certificate_auth(kms_details)
+
+            elif kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;] == &#34;AZURE_KEY_VAULT_IAM&#34;:
+                self._add_azure_key_vault_iam_auth(kms_details)
+
+        return self.get(kms_details[&#39;KMS_NAME&#39;])
+
+
+    def _add_azure_key_vault_iam_auth(self, kms_details):
+        &#34;&#34;&#34;Configure Azure Key Management Server with IAM based authentication
+
+            :arg
+                kms_details ( dictionary ) - Dictionary with AWS KMS details
+            :return:
+                Object of KeyManagementServer class for the newly created KMS.
+        &#34;&#34;&#34;
+
+        if &#34;AZURE_KEY_VAULT_KEY_LENGTH&#34; not in kms_details:
+            kms_details[&#39;AZURE_KEY_VAULT_KEY_LENGTH&#39;] = 3072
+
+        if &#34;ACCESS_NODE_NAME&#34; in kms_details:
+            payload = {
+                        &#34;keyProvider&#34;: {
+                            &#34;provider&#34;: {
+                                &#34;keyProviderName&#34;: kms_details[&#39;KMS_NAME&#39;]
+                            },
+                            &#34;encryptionKeyLength&#34;: kms_details[&#39;AZURE_KEY_VAULT_KEY_LENGTH&#39;],
+                            &#34;encryptionType&#34;: 1001,
+                            &#34;keyProviderType&#34;: 4,
+                            &#34;properties&#34;: {
+                                &#34;accessNodes&#34;: [
+                                {
+                                    &#34;keyVaultCredential&#34;: {
+                                    &#34;environment&#34;: &#34;AzureCloud&#34;,
+                                    &#34;authType&#34;: self._KMS_AUTHENTICATION_TYPE[kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;]],
+                                    &#34;resourceName&#34;: kms_details[&#39;AZURE_KEY_VAULT_NAME&#39;],
+                                    &#34;endpoints&#34;: {
+                                        &#34;activeDirectoryEndpoint&#34;: &#34;https://login.microsoftonline.com/&#34;,
+                                        &#34;keyVaultEndpoint&#34;: &#34;vault.azure.net&#34;
+                                        }
+                                    },
+                                    &#34;accessNode&#34;: {
+                                    &#34;clientName&#34;: kms_details[&#39;ACCESS_NODE_NAME&#39;]
+                                }
+                                }
+                                ],
+                                &#34;keyVaultCredential&#34;: {
+                                    &#34;resourceName&#34;: kms_details[&#39;AZURE_KEY_VAULT_NAME&#39;]
+                                },
+                                &#34;bringYourOwnKey&#34;: 0
+                                }
+                            }
+                        }
+
+            self._kms_api_call(payload)
+            self.refresh()
+
+
+    def add_aws_kms(self, kms_name, aws_access_key, aws_secret_key, aws_region_name=None, kms_details = None):
         &#34;&#34;&#34;Configure AWS Key Management Server
-        
+
             Args:
                 kms_name        (string) -- name of the Key Management Server
-                
+
                 aws_access_key  (string) -- AWS access key
-                
+
                 aws_secret_key  (string) -- AWS secret key, base64 encoded
 
-                aws_region_name (string) -- AWS region 
+                aws_region_name (string) -- AWS region
                                             defaults to &#34;Asia Pacific (Mumbai)&#34;
+
+                kms_details ( dictionary ) - Dictionary with AWS KMS details
 
             Raises SDKException:
                 If inputs are wrong data type
@@ -348,31 +747,94 @@ class KeyManagementServers(object):
 
                 If error code on API response JSON is not 0
         &#34;&#34;&#34;
+
         KeyManagementServers._validate_input(kms_name, str)
-        KeyManagementServers._validate_input(aws_access_key, str)
-        KeyManagementServers._validate_input(aws_secret_key, str)
 
-        if aws_region_name is None:
-            aws_region_name = &#34;Asia Pacific (Mumbai)&#34;
+        payload = None
 
-        KeyManagementServers._validate_input(aws_region_name, str)
+        if kms_details == None or &#34;ACCESS_NODE_NAME&#34; not in kms_details:
 
-        payload = {
-            &#34;keyProvider&#34;: {
-                &#34;encryptionType&#34;: 3,
-                &#34;keyProviderType&#34;: 3,
-                &#34;provider&#34;: {
-                    &#34;keyProviderName&#34;: kms_name
-                },
-                &#34;properties&#34;: {
-                    &#34;regionName&#34;: aws_region_name,
-                    &#34;userAccount&#34;: {
-                        &#34;userName&#34;: aws_access_key,
-                        &#34;password&#34;: aws_secret_key
+            if aws_region_name is None:
+                aws_region_name = &#34;Asia Pacific (Mumbai)&#34;
+
+            KeyManagementServers._validate_input(aws_access_key, str)
+            KeyManagementServers._validate_input(aws_secret_key, str)
+            KeyManagementServers._validate_input(aws_region_name, str)
+
+            payload = {
+                &#34;keyProvider&#34;: {
+                    &#34;encryptionType&#34;: 3,
+                    &#34;keyProviderType&#34;: 3,
+                    &#34;provider&#34;: {
+                        &#34;keyProviderName&#34;: kms_name
+                    },
+                    &#34;properties&#34;: {
+                        &#34;regionName&#34;: aws_region_name,
+                        &#34;userAccount&#34;: {
+                            &#34;userName&#34;: aws_access_key,
+                            &#34;password&#34;: aws_secret_key
+                        }
                     }
                 }
             }
-        }
+
+        elif kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;] == &#34;AWS_KEYS&#34; and kms_details[&#39;ACCESS_NODE_NAME&#39;] != None:
+
+            if &#34;AWS_REGION_NAME&#34; not in kms_details:
+                kms_details[&#39;AWS_REGION_NAME&#39;] = &#34;Asia Pacific (Mumbai)&#34;
+
+            KeyManagementServers._validate_input(aws_access_key, str)
+            KeyManagementServers._validate_input(aws_secret_key, str)
+            KeyManagementServers._validate_input(aws_region_name, str)
+
+            payload = {
+                            &#34;keyProvider&#34;: {
+                                    &#34;properties&#34;: {
+                                            &#34;accessNodes&#34;: [
+                                                {
+                                                        &#34;accessNode&#34;: {
+                                                                &#34;clientName&#34;: kms_details[&#39;ACCESS_NODE_NAME&#39;]
+                                                        },
+                                                        &#34;awsCredential&#34;: {
+                                                                &#34;userAccount&#34;: {
+                                                                        &#34;password&#34;: aws_secret_key,
+                                                                        &#34;userName&#34;: aws_access_key
+                                                                },
+                                                            &#34;amazonAuthenticationType&#34;: self._KMS_AUTHENTICATION_TYPE[kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;]]
+                                                        }
+                                                }
+                                            ],
+                                            &#34;bringYourOwnKey&#34;: &#34;0&#34;,
+                                            &#34;regionName&#34;: aws_region_name if aws_region_name!=None else kms_details[&#39;AWS_REGION_NAME&#39;]
+                                    },
+                                    &#34;provider&#34;: {
+                                            &#34;keyProviderName&#34;: kms_name
+                                    },
+                                    &#34;encryptionType&#34;: 3,
+                                    &#34;keyProviderType&#34;: &#34;3&#34;
+                            }
+                }
+
+        self._kms_api_call(payload)
+        self.refresh()
+
+    def _kms_api_call(self, payload):
+        &#34;&#34;&#34; Calling KMS API
+
+        :param
+        kms_details ( JSON ) - prefilled JSON payload for KMS API
+
+        :exception
+        Raises SDKException:
+                    If API response code is not successful
+
+                    If response JSON is empty
+
+                    If errorCode is not part of the response JSON
+
+        &#34;&#34;&#34;
+    
+        KeyManagementServers._validate_input(payload, dict)
 
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._KMS_ADD_GET, payload)
@@ -385,11 +847,10 @@ class KeyManagementServers(object):
             raise SDKException(&#34;Response&#34;, 102)
 
         error_code = response.json().get(&#34;errorCode&#34;, -1)
+
         if error_code != 0:
             response_string = self._commcell._update_response_(response.text)
             raise SDKException(&#34;Response&#34;, 101, response_string)
-
-        self.refresh()
     
     def __str__(self):
         &#34;&#34;&#34;Representation string consisting of all KMS of the commcell.
@@ -418,15 +879,6 @@ class KeyManagementServers(object):
 class KeyManagementServer(object):
     &#34;&#34;&#34;Class for representing a single KMS in the commcell.&#34;&#34;&#34;
 
-    _TYPE = {
-        1: &#34;KEY_PROVIDER_COMMVAULT&#34;,
-        2: &#34;KEY_PROVIDER_KMIP&#34;,
-        3: &#34;KEY_PROVIDER_AWS_KMS&#34;,
-        4: &#34;KEY_PROVIDER_AZURE_KEY_VAULT&#34;,
-        5: &#34;KEY_PROVIDER_SAFENET&#34;,
-        6: &#34;KEY_PROVIDER_PASSPHRASE&#34;,
-    }
-
     def __init__(self, commcell, name, id, type_id):
         &#34;&#34;&#34;Initializes the KeyManagementServer object
 
@@ -440,6 +892,7 @@ class KeyManagementServer(object):
             If input type is invalid for any param
 
         &#34;&#34;&#34;
+        KeyManagementServerConstants.__init__(self)
         self._commcell = commcell
         self._cvpysdk_object = commcell._cvpysdk_object
         self._services = commcell._services
@@ -473,10 +926,10 @@ class KeyManagementServer(object):
         KeyManagementServers._validate_input(type_id, int, 103)
         type_id = int(type_id)
 
-        if type_id not in self._TYPE:
+        if type_id not in self._KMS_TYPE:
             raise SDKException(&#34;KeyManagementServer&#34;, 104)
         
-        return self._TYPE[type_id]
+        return self._KMS_TYPE[type_id]
     
     def __repr__(self):
         &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
@@ -522,19 +975,10 @@ If input type is invalid for any param</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/key_management_server.py#L349-L415" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/key_management_server.py#L793-L851" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class KeyManagementServer(object):
     &#34;&#34;&#34;Class for representing a single KMS in the commcell.&#34;&#34;&#34;
-
-    _TYPE = {
-        1: &#34;KEY_PROVIDER_COMMVAULT&#34;,
-        2: &#34;KEY_PROVIDER_KMIP&#34;,
-        3: &#34;KEY_PROVIDER_AWS_KMS&#34;,
-        4: &#34;KEY_PROVIDER_AZURE_KEY_VAULT&#34;,
-        5: &#34;KEY_PROVIDER_SAFENET&#34;,
-        6: &#34;KEY_PROVIDER_PASSPHRASE&#34;,
-    }
 
     def __init__(self, commcell, name, id, type_id):
         &#34;&#34;&#34;Initializes the KeyManagementServer object
@@ -549,6 +993,7 @@ If input type is invalid for any param</p></div>
             If input type is invalid for any param
 
         &#34;&#34;&#34;
+        KeyManagementServerConstants.__init__(self)
         self._commcell = commcell
         self._cvpysdk_object = commcell._cvpysdk_object
         self._services = commcell._services
@@ -582,16 +1027,56 @@ If input type is invalid for any param</p></div>
         KeyManagementServers._validate_input(type_id, int, 103)
         type_id = int(type_id)
 
-        if type_id not in self._TYPE:
+        if type_id not in self._KMS_TYPE:
             raise SDKException(&#34;KeyManagementServer&#34;, 104)
         
-        return self._TYPE[type_id]
+        return self._KMS_TYPE[type_id]
     
     def __repr__(self):
         &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
         representation_string = &#39;KeyServerManagement class instance for: &#34;{0}&#34;&#39;
         return representation_string.format(self.name)</code></pre>
 </details>
+</dd>
+<dt id="cvpysdk.key_management_server.KeyManagementServerConstants"><code class="flex name class">
+<span>class <span class="ident">KeyManagementServerConstants</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Helper class that provides a standard way to create an ABC using
+inheritance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/key_management_server.py#L92-L110" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class KeyManagementServerConstants(ABC):
+
+    def __init__(self):
+        self._KMS_TYPE = {
+            1: &#34;KEY_PROVIDER_COMMVAULT&#34;,
+            2: &#34;KEY_PROVIDER_KMIP&#34;,
+            3: &#34;KEY_PROVIDER_AWS_KMS&#34;,
+            4: &#34;KEY_PROVIDER_AZURE_KEY_VAULT&#34;,
+            5: &#34;KEY_PROVIDER_SAFENET&#34;,
+            6: &#34;KEY_PROVIDER_PASSPHRASE&#34;,
+        }
+
+        self._KMS_AUTHENTICATION_TYPE = {
+            &#34;AWS_KEYS&#34;: 0,
+            &#34;AWS_IAM&#34;: 1,
+            &#34;AWS_CREDENTIALS_FILE&#34;: 0,
+            &#34;AZURE_KEY_VAULT_CERTIFICATE&#34;: 1,
+            &#34;AZURE_KEY_VAULT_IAM&#34;: 3,
+        }</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>abc.ABC</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="cvpysdk.key_management_server.KeyManagementServers" href="#cvpysdk.key_management_server.KeyManagementServers">KeyManagementServers</a></li>
+</ul>
 </dd>
 <dt id="cvpysdk.key_management_server.KeyManagementServers"><code class="flex name class">
 <span>class <span class="ident">KeyManagementServers</span></span>
@@ -608,9 +1093,9 @@ instance of commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/key_management_server.py#L71-L347" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/key_management_server.py#L112-L791" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">class KeyManagementServers(object):
+<pre><code class="python">class KeyManagementServers(KeyManagementServerConstants):
     &#34;&#34;&#34;Class for representing all the KMS in the commcell.&#34;&#34;&#34;
 
     def __init__(self, commcell):
@@ -620,6 +1105,7 @@ instance of commcell</p></div>
                 commcell    (object)    --  instance of commcell
 
         &#34;&#34;&#34;
+        KeyManagementServerConstants.__init__(self)
         self._commcell = commcell
 
         self._cvpysdk_object = commcell._cvpysdk_object
@@ -798,19 +1284,359 @@ instance of commcell</p></div>
         KeyManagementServers._validate_input(kms_name, str)
         
         return kms_name.lower() in self._kms_dict
-    
-    def add_aws_kms(self, kms_name, aws_access_key, aws_secret_key, aws_region_name=None):
+ 
+
+    def _add_aws_kms_with_cred_file(self, kms_details):
+            &#34;&#34;&#34;Configure AWS Key Management Server with credential file based authentication
+
+                :arg
+                    kms_details ( dictionary ) - Dictionary with AWS KMS details
+                :return:
+                    Object of KeyManagementServer class for the newly created KMS.
+            &#34;&#34;&#34;
+
+            if &#34;ACCESS_NODE_NAME&#34; in kms_details:
+                payload = {
+                    &#34;keyProvider&#34;: {
+
+                        &#34;provider&#34;: {
+                            &#34;keyProviderName&#34;: kms_details[&#34;KMS_NAME&#34;]
+                        },
+                        &#34;encryptionType&#34;: 3,
+                        &#34;keyProviderType&#34;: 3,
+
+                        &#34;properties&#34;: {
+                            &#34;accessNodes&#34;: [
+                                {
+                                    &#34;accessNode&#34;: {
+                                        &#34;clientName&#34;: kms_details[&#34;ACCESS_NODE_NAME&#34;]
+                                    },
+                                    &#34;awsCredential&#34;: {
+                                        &#34;profile&#34;: kms_details[&#34;AWS_CREDENTIALS_FILE_PROFILE_NAME&#34;],
+                                        &#34;amazonAuthenticationType&#34;: self._KMS_AUTHENTICATION_TYPE[kms_details[&#34;KEY_PROVIDER_AUTH_TYPE&#34;]]
+                                    }
+                                }
+                            ],
+                            &#34;bringYourOwnKey&#34;: 0,
+                            &#34;regionName&#34;: kms_details[&#34;AWS_REGION_NAME&#34;]
+                        }
+
+                    }
+                }
+
+                self._kms_api_call(payload)
+                self.refresh()
+
+
+    def _add_aws_kms_with_iam(self, kms_details):
+        &#34;&#34;&#34;Configure AWS Key Management Server with IMA based authentication
+
+            :arg
+                kms_details ( dictionary ) - Dictionary with AWS KMS details
+            :return:
+                Object of KeyManagementServer class for the newly created KMS.
+        &#34;&#34;&#34;
+
+        if &#34;ACCESS_NODE_NAME&#34; in kms_details:
+
+            payload= {
+                        &#34;keyProvider&#34;: {
+                            &#34;provider&#34;: {
+                                    &#34;keyProviderName&#34;: kms_details[&#34;KMS_NAME&#34;]
+                                    },
+                                &#34;encryptionType&#34;: 3,
+                                &#34;keyProviderType&#34;: 3,
+                                &#34;properties&#34;: {
+                                        &#34;accessNodes&#34;: [
+                                                {
+                                                        &#34;accessNode&#34;: {
+                                                                &#34;clientName&#34;: kms_details[&#34;ACCESS_NODE_NAME&#34;]
+                                                        },
+                                                        &#34;awsCredential&#34;: {
+                                                            &#34;amazonAuthenticationType&#34;:1
+                                                        }
+                                                }
+                                            ],
+                                            &#34;bringYourOwnKey&#34;: 0,
+                                            &#34;regionName&#34;: kms_details[&#34;AWS_REGION_NAME&#34;]
+                                    }
+
+                            }
+                    }
+
+            self._kms_api_call(payload)
+            self.refresh()
+
+
+    def _add_azure_key_vault_certificate_auth(self, kms_details):
+        &#34;&#34;&#34;Configure Azure Key Management Server with AD-app certificate based authentication
+
+            :arg
+                kms_details ( dictionary ) - Dictionary with AWS KMS details
+            :return:
+                Object of KeyManagementServer class for the newly created KMS.
+        &#34;&#34;&#34;
+        if &#34;AZURE_KEY_VAULT_KEY_LENGTH&#34; not in kms_details:
+            kms_details[&#39;AZURE_KEY_VAULT_KEY_LENGTH&#39;] = 3072
+
+        payload = None
+
+        if &#34;ACCESS_NODE_NAME&#34; in kms_details:
+            payload = {
+                        &#34;keyProvider&#34;: {
+                            &#34;provider&#34;: {
+                            &#34;keyProviderName&#34;: kms_details[&#39;KMS_NAME&#39;]
+                            },
+                            &#34;encryptionKeyLength&#34;: kms_details[&#39;AZURE_KEY_VAULT_KEY_LENGTH&#39;],
+                            &#34;encryptionType&#34;: 1001,
+                            &#34;keyProviderType&#34;: 4,
+                            &#34;properties&#34;: {
+                                &#34;accessNodes&#34;: [
+                                {
+                                    &#34;keyVaultCredential&#34;: {
+                                    &#34;certificate&#34;: kms_details[&#39;AZURE_CERTIFICATE_PATH&#39;],
+                                    &#34;resourceName&#34;: kms_details[&#39;AZURE_KEY_VAULT_NAME&#39;],
+                                    &#34;environment&#34;: &#34;AzureCloud&#34;,
+                                    &#34;certificateThumbprint&#34;: kms_details[&#39;AZURE_CERTIFICATE_THUMBPRINT&#39;],
+                                    &#34;tenantId&#34;: kms_details[&#39;AZURE_TENANT_ID&#39;],
+                                    &#34;authType&#34;: 1,
+                                    &#34;applicationId&#34;: kms_details[&#39;AZURE_APP_ID&#39;],
+                                    &#34;endpoints&#34;: {
+                                        &#34;activeDirectoryEndpoint&#34;: &#34;https://login.microsoftonline.com/&#34;,
+                                        &#34;keyVaultEndpoint&#34;: &#34;vault.azure.net&#34;
+                                    },
+                                    &#34;certPassword&#34;: kms_details[&#39;AZURE_CERTIFICATE_PASSWORD&#39;]
+                                    },
+                                    &#34;accessNode&#34;: {
+                                        &#34;clientName&#34;: kms_details[&#39;ACCESS_NODE_NAME&#39;]
+                                    }
+                                }
+                                ],
+                            &#34;keyVaultCredential&#34;: {
+                                &#34;resourceName&#34;: kms_details[&#39;AZURE_KEY_VAULT_NAME&#39;]
+                            },
+                            &#34;bringYourOwnKey&#34;: 0
+                            }
+                        }
+                    }
+        else:
+            payload = {
+                        &#34;keyProvider&#34;: {
+                            &#34;provider&#34;: {
+                            &#34;keyProviderName&#34;: kms_details[&#39;KMS_NAME&#39;]
+                            },
+                            &#34;encryptionKeyLength&#34;: kms_details[&#39;AZURE_KEY_VAULT_KEY_LENGTH&#39;],
+                            &#34;encryptionType&#34;: 1001,
+                            &#34;keyProviderType&#34;: 4,
+                            &#34;properties&#34;: {
+                                    &#34;keyVaultCredential&#34;: {
+                                    &#34;certificate&#34;: kms_details[&#39;AZURE_CERTIFICATE_PATH&#39;],
+                                    &#34;resourceName&#34;: kms_details[&#39;AZURE_KEY_VAULT_NAME&#39;],
+                                    &#34;environment&#34;: &#34;AzureCloud&#34;,
+                                    &#34;certificateThumbprint&#34;: kms_details[&#39;AZURE_CERTIFICATE_THUMBPRINT&#39;],
+                                    &#34;tenantId&#34;: kms_details[&#39;AZURE_TENANT_ID&#39;],
+                                    &#34;authType&#34;: 1,
+                                    &#34;applicationId&#34;:kms_details[&#39;AZURE_APP_ID&#39;],
+                                    &#34;endpoints&#34;: {
+                                        &#34;activeDirectoryEndpoint&#34;: &#34;https://login.microsoftonline.com/&#34;,
+                                        &#34;keyVaultEndpoint&#34;: &#34;vault.azure.net&#34;
+                                    }
+                                    },
+                            &#34;bringYourOwnKey&#34;: 0,
+                            &#34;sslPassPhrase&#34;: kms_details[&#39;AZURE_CERTIFICATE_PASSWORD&#39;]
+                            }
+                        }
+                      }
+
+        self._kms_api_call(payload)
+        self.refresh()
+
+
+
+    def add(self, kms_details):
+        &#34;&#34;&#34;
+        Method to add Key Management Server
+
+        Args:
+                kms_details    (dictionary)   -- dictionary with KMS details
+
+        input dictionary for creating AWS KMS without access node ( key based authentication )
+            kms_details = {
+                &#34;KEY_PROVIDER_TYPE&#34;: &#34;KEY_PROVIDER_AWS_KMS&#34;,
+                &#34;KMS_NAME&#34;: &#34;KMS1&#34; ,
+                &#34;AWS_ACCESS_KEY&#34;:&#34;1234&#34;,
+                &#34;AWS_SECRET_KEY&#34;: &#34;1234&#34;,
+                &#34;AWS_REGION_NAME&#34;: &#34;Asia Pacific (Mumbai)&#34;,  -- Optional Value. Default is &#34;Asia Pacific (Mumbai)&#34;
+                &#34;KEY_PROVIDER_AUTH_TYPE&#34;: &#34;AWS_KEYS&#34;
+            }
+
+        input dictionary for creating AWS KMS with access node ( key based authentication )
+            kms_details = {
+                &#34;KEY_PROVIDER_TYPE&#34;: &#34;KEY_PROVIDER_AWS_KMS&#34;,
+                &#34;AWS_REGION_NAME&#34;: &#34;US East (Ohio)&#34;,    -- Optional Value. Default is &#34;Asia Pacific (Mumbai)&#34;
+                &#34;ACCESS_NODE_NAME&#34;: &#34;ma1&#34;,
+                &#34;KMS_NAME&#34;: &#34;kms1&#34;&#34;,
+                &#34;KEY_PROVIDER_AUTH_TYPE&#34;: &#34;AWS_KEYS&#34;,
+                &#34;AWS_ACCESS_KEY&#34;: &#34;1234&#34;,
+                &#34;AWS_SECRET_KEY&#34;: &#34;1234&#34;     -- Base64 encoded
+            }
+
+        input dictionary for creating AWS KMS with access node ( credential template file based authentication )
+            kms_details = {
+                &#34;KEY_PROVIDER_TYPE&#34;: &#34;KEY_PROVIDER_AWS_KMS&#34;,
+                &#34;AWS_REGION_NAME&#34;: &#34;US East (Ohio)&#34;,    -- Optional Value. Default is &#34;Asia Pacific (Mumbai)&#34;
+                &#34;ACCESS_NODE_NAME&#34;: &#34;client1&#34;,
+                &#34;KMS_NAME&#34;: &#34;AWS_KMS_NAME&#34;,
+                &#34;KEY_PROVIDER_AUTH_TYPE&#34;: &#34;AWS_CREDENTIALS_FILE&#34;,
+                &#34;AWS_CREDENTIALS_FILE_PROFILE_NAME&#34;: &#34;AWSProfile1&#34;
+            }
+
+        input dictionary for creating AWS KMS with access Node ( IAM based authentication )
+            kms_details = {
+                &#34;KEY_PROVIDER_TYPE&#34;: &#34;KEY_PROVIDER_AWS_KMS&#34;,
+                &#34;ACCESS_NODE_NAME&#34;: &#34;MA1&#34;,
+                &#34;KMS_NAME&#34;: &#34;aws_kms_name&#34;,
+                &#34;KEY_PROVIDER_AUTH_TYPE&#34;: &#34;AWS_IAM&#34;
+            }
+
+        input dictionary for creating Azure KMS with access Node ( certificate based authentication )
+            kms_details = {
+                &#34;KEY_PROVIDER_TYPE&#34;: &#34;KEY_PROVIDER_AZURE_KEY_VAULT&#34;,
+                &#34;ACCESS_NODE_NAME&#34;: &#34;MediaAgent1&#34;,
+                &#34;KMS_NAME&#34;: &#34;Azure_KMS_1&#34;,
+                &#34;KEY_PROVIDER_AUTH_TYPE&#34;: &#34;AZURE_KEY_VAULT_CERTIFICATE&#34;,
+                &#34;AZURE_KEY_VAULT_KEY_LENGTH&#34;:2048,     -- Optional Value. Default is 3072
+                &#34;AZURE_KEY_VAULT_NAME&#34;:&#34;MyCompanyKeyVault&#34;,
+                &#34;AZURE_TENANT_ID&#34;:&#34;123&#34;,
+                &#34;AZURE_APP_ID&#34;:&#34;456&#34;,
+                &#34;AZURE_CERTIFICATE_PATH&#34;:&#34;c:\\cert.pfx&#34;,
+                &#34;AZURE_CERTIFICATE_THUMBPRINT&#34;:&#34;789&#34;,
+                &#34;AZURE_CERTIFICATE_PASSWORD&#34;: &#34;password123&#34;,    -- Base64 encoded
+            }
+
+        input dictionary for creating Azure KMS with access Node ( IAM managed identity based authentication )
+            kms_details = {
+                &#34;KEY_PROVIDER_TYPE&#34;: &#34;KEY_PROVIDER_AZURE_KEY_VAULT&#34;,
+                &#34;ACCESS_NODE_NAME&#34;: &#34;ma1&#34;,
+                &#34;KMS_NAME&#34;: &#34;MyKMS&#34;,
+                &#34;KEY_PROVIDER_AUTH_TYPE&#34;: &#34;AZURE_KEY_VAULT_IAM&#34;,
+                &#34;AZURE_KEY_VAULT_NAME&#34;:&#34;MyKeyVaultName&#34;,
+            }
+
+        input dictionary for creating Azure KMS without access Node ( certificate based authentication )
+            kms_details = {
+                &#34;KEY_PROVIDER_TYPE&#34;: &#34;KEY_PROVIDER_AZURE_KEY_VAULT&#34;,
+                &#34;KMS_NAME&#34;: &#34;MyKMS&#34;,
+                &#34;KEY_PROVIDER_AUTH_TYPE&#34;: &#34;AZURE_KEY_VAULT_CERTIFICATE&#34;,
+                &#34;AZURE_KEY_VAULT_NAME&#34;:&#34;MyKeyVaultName&#34;,
+                &#34;AZURE_TENANT_ID&#34;: &#34;1234&#34;,
+                &#34;AZURE_APP_ID&#34;: &#34;1234&#34;&#34;,
+                &#34;AZURE_CERTIFICATE_PATH&#34;: &#34;c:\\cert.pfx&#34;,
+                &#34;AZURE_CERTIFICATE_THUMBPRINT&#34;: &#34;1234&#34;,
+                &#34;AZURE_CERTIFICATE_PASSWORD&#34;: &#34;1234XYZ==&#34;,    -- Base64 encoded
+            }
+
+        &#34;&#34;&#34;
+        KeyManagementServers._validate_input(kms_details, dict)
+
+        if kms_details[&#39;KEY_PROVIDER_TYPE&#39;] not in self._KMS_TYPE.values():
+            raise SDKException(&#34;KeyManagementServer&#34;, 103)
+
+        if kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;] not in self._KMS_AUTHENTICATION_TYPE:
+            raise SDKException(&#34;KeyManagementServer&#34;, 105)
+
+        if &#34;KMS_NAME&#34; not in kms_details:
+            raise SDKException(&#34;KeyManagementServer&#34;, 106)
+
+
+
+        if kms_details[&#39;KEY_PROVIDER_TYPE&#39;] == &#34;KEY_PROVIDER_AWS_KMS&#34;:
+            if &#34;AWS_REGION_NAME&#34; not in kms_details:
+                kms_details[&#34;AWS_REGION_NAME&#34;] = &#34;Asia Pacific (Mumbai)&#34;
+
+            if kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;] == &#34;AWS_KEYS&#34;:
+                self.add_aws_kms(kms_name=kms_details[&#39;KMS_NAME&#39;], aws_access_key=kms_details[&#39;AWS_ACCESS_KEY&#39;], aws_secret_key=kms_details[&#39;AWS_SECRET_KEY&#39;],aws_region_name=kms_details[&#34;AWS_REGION_NAME&#34;], kms_details = kms_details)
+
+            elif kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;] == &#34;AWS_CREDENTIALS_FILE&#34;:
+                self._add_aws_kms_with_cred_file(kms_details)
+
+            elif kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;] == &#34;AWS_IAM&#34;:
+                self._add_aws_kms_with_iam(kms_details)
+
+        if kms_details[&#39;KEY_PROVIDER_TYPE&#39;] == &#34;KEY_PROVIDER_AZURE_KEY_VAULT&#34;:
+            if kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;] == &#34;AZURE_KEY_VAULT_CERTIFICATE&#34;:
+                self._add_azure_key_vault_certificate_auth(kms_details)
+
+            elif kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;] == &#34;AZURE_KEY_VAULT_IAM&#34;:
+                self._add_azure_key_vault_iam_auth(kms_details)
+
+        return self.get(kms_details[&#39;KMS_NAME&#39;])
+
+
+    def _add_azure_key_vault_iam_auth(self, kms_details):
+        &#34;&#34;&#34;Configure Azure Key Management Server with IAM based authentication
+
+            :arg
+                kms_details ( dictionary ) - Dictionary with AWS KMS details
+            :return:
+                Object of KeyManagementServer class for the newly created KMS.
+        &#34;&#34;&#34;
+
+        if &#34;AZURE_KEY_VAULT_KEY_LENGTH&#34; not in kms_details:
+            kms_details[&#39;AZURE_KEY_VAULT_KEY_LENGTH&#39;] = 3072
+
+        if &#34;ACCESS_NODE_NAME&#34; in kms_details:
+            payload = {
+                        &#34;keyProvider&#34;: {
+                            &#34;provider&#34;: {
+                                &#34;keyProviderName&#34;: kms_details[&#39;KMS_NAME&#39;]
+                            },
+                            &#34;encryptionKeyLength&#34;: kms_details[&#39;AZURE_KEY_VAULT_KEY_LENGTH&#39;],
+                            &#34;encryptionType&#34;: 1001,
+                            &#34;keyProviderType&#34;: 4,
+                            &#34;properties&#34;: {
+                                &#34;accessNodes&#34;: [
+                                {
+                                    &#34;keyVaultCredential&#34;: {
+                                    &#34;environment&#34;: &#34;AzureCloud&#34;,
+                                    &#34;authType&#34;: self._KMS_AUTHENTICATION_TYPE[kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;]],
+                                    &#34;resourceName&#34;: kms_details[&#39;AZURE_KEY_VAULT_NAME&#39;],
+                                    &#34;endpoints&#34;: {
+                                        &#34;activeDirectoryEndpoint&#34;: &#34;https://login.microsoftonline.com/&#34;,
+                                        &#34;keyVaultEndpoint&#34;: &#34;vault.azure.net&#34;
+                                        }
+                                    },
+                                    &#34;accessNode&#34;: {
+                                    &#34;clientName&#34;: kms_details[&#39;ACCESS_NODE_NAME&#39;]
+                                }
+                                }
+                                ],
+                                &#34;keyVaultCredential&#34;: {
+                                    &#34;resourceName&#34;: kms_details[&#39;AZURE_KEY_VAULT_NAME&#39;]
+                                },
+                                &#34;bringYourOwnKey&#34;: 0
+                                }
+                            }
+                        }
+
+            self._kms_api_call(payload)
+            self.refresh()
+
+
+    def add_aws_kms(self, kms_name, aws_access_key, aws_secret_key, aws_region_name=None, kms_details = None):
         &#34;&#34;&#34;Configure AWS Key Management Server
-        
+
             Args:
                 kms_name        (string) -- name of the Key Management Server
-                
+
                 aws_access_key  (string) -- AWS access key
-                
+
                 aws_secret_key  (string) -- AWS secret key, base64 encoded
 
-                aws_region_name (string) -- AWS region 
+                aws_region_name (string) -- AWS region
                                             defaults to &#34;Asia Pacific (Mumbai)&#34;
+
+                kms_details ( dictionary ) - Dictionary with AWS KMS details
 
             Raises SDKException:
                 If inputs are wrong data type
@@ -821,31 +1647,94 @@ instance of commcell</p></div>
 
                 If error code on API response JSON is not 0
         &#34;&#34;&#34;
+
         KeyManagementServers._validate_input(kms_name, str)
-        KeyManagementServers._validate_input(aws_access_key, str)
-        KeyManagementServers._validate_input(aws_secret_key, str)
 
-        if aws_region_name is None:
-            aws_region_name = &#34;Asia Pacific (Mumbai)&#34;
+        payload = None
 
-        KeyManagementServers._validate_input(aws_region_name, str)
+        if kms_details == None or &#34;ACCESS_NODE_NAME&#34; not in kms_details:
 
-        payload = {
-            &#34;keyProvider&#34;: {
-                &#34;encryptionType&#34;: 3,
-                &#34;keyProviderType&#34;: 3,
-                &#34;provider&#34;: {
-                    &#34;keyProviderName&#34;: kms_name
-                },
-                &#34;properties&#34;: {
-                    &#34;regionName&#34;: aws_region_name,
-                    &#34;userAccount&#34;: {
-                        &#34;userName&#34;: aws_access_key,
-                        &#34;password&#34;: aws_secret_key
+            if aws_region_name is None:
+                aws_region_name = &#34;Asia Pacific (Mumbai)&#34;
+
+            KeyManagementServers._validate_input(aws_access_key, str)
+            KeyManagementServers._validate_input(aws_secret_key, str)
+            KeyManagementServers._validate_input(aws_region_name, str)
+
+            payload = {
+                &#34;keyProvider&#34;: {
+                    &#34;encryptionType&#34;: 3,
+                    &#34;keyProviderType&#34;: 3,
+                    &#34;provider&#34;: {
+                        &#34;keyProviderName&#34;: kms_name
+                    },
+                    &#34;properties&#34;: {
+                        &#34;regionName&#34;: aws_region_name,
+                        &#34;userAccount&#34;: {
+                            &#34;userName&#34;: aws_access_key,
+                            &#34;password&#34;: aws_secret_key
+                        }
                     }
                 }
             }
-        }
+
+        elif kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;] == &#34;AWS_KEYS&#34; and kms_details[&#39;ACCESS_NODE_NAME&#39;] != None:
+
+            if &#34;AWS_REGION_NAME&#34; not in kms_details:
+                kms_details[&#39;AWS_REGION_NAME&#39;] = &#34;Asia Pacific (Mumbai)&#34;
+
+            KeyManagementServers._validate_input(aws_access_key, str)
+            KeyManagementServers._validate_input(aws_secret_key, str)
+            KeyManagementServers._validate_input(aws_region_name, str)
+
+            payload = {
+                            &#34;keyProvider&#34;: {
+                                    &#34;properties&#34;: {
+                                            &#34;accessNodes&#34;: [
+                                                {
+                                                        &#34;accessNode&#34;: {
+                                                                &#34;clientName&#34;: kms_details[&#39;ACCESS_NODE_NAME&#39;]
+                                                        },
+                                                        &#34;awsCredential&#34;: {
+                                                                &#34;userAccount&#34;: {
+                                                                        &#34;password&#34;: aws_secret_key,
+                                                                        &#34;userName&#34;: aws_access_key
+                                                                },
+                                                            &#34;amazonAuthenticationType&#34;: self._KMS_AUTHENTICATION_TYPE[kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;]]
+                                                        }
+                                                }
+                                            ],
+                                            &#34;bringYourOwnKey&#34;: &#34;0&#34;,
+                                            &#34;regionName&#34;: aws_region_name if aws_region_name!=None else kms_details[&#39;AWS_REGION_NAME&#39;]
+                                    },
+                                    &#34;provider&#34;: {
+                                            &#34;keyProviderName&#34;: kms_name
+                                    },
+                                    &#34;encryptionType&#34;: 3,
+                                    &#34;keyProviderType&#34;: &#34;3&#34;
+                            }
+                }
+
+        self._kms_api_call(payload)
+        self.refresh()
+
+    def _kms_api_call(self, payload):
+        &#34;&#34;&#34; Calling KMS API
+
+        :param
+        kms_details ( JSON ) - prefilled JSON payload for KMS API
+
+        :exception
+        Raises SDKException:
+                    If API response code is not successful
+
+                    If response JSON is empty
+
+                    If errorCode is not part of the response JSON
+
+        &#34;&#34;&#34;
+    
+        KeyManagementServers._validate_input(payload, dict)
 
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._KMS_ADD_GET, payload)
@@ -858,11 +1747,10 @@ instance of commcell</p></div>
             raise SDKException(&#34;Response&#34;, 102)
 
         error_code = response.json().get(&#34;errorCode&#34;, -1)
+
         if error_code != 0:
             response_string = self._commcell._update_response_(response.text)
             raise SDKException(&#34;Response&#34;, 101, response_string)
-
-        self.refresh()
     
     def __str__(self):
         &#34;&#34;&#34;Representation string consisting of all KMS of the commcell.
@@ -888,10 +1776,225 @@ instance of commcell</p></div>
             self._commcell.commserv_name
         )</code></pre>
 </details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="cvpysdk.key_management_server.KeyManagementServerConstants" href="#cvpysdk.key_management_server.KeyManagementServerConstants">KeyManagementServerConstants</a></li>
+<li>abc.ABC</li>
+</ul>
 <h3>Methods</h3>
 <dl>
+<dt id="cvpysdk.key_management_server.KeyManagementServers.add"><code class="name flex">
+<span>def <span class="ident">add</span></span>(<span>self, kms_details)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to add Key Management Server</p>
+<h2 id="args">Args</h2>
+<p>kms_details
+(dictionary)
+&ndash; dictionary with KMS details
+input dictionary for creating AWS KMS without access node ( key based authentication )
+kms_details = {
+"KEY_PROVIDER_TYPE": "KEY_PROVIDER_AWS_KMS",
+"KMS_NAME": "KMS1" ,
+"AWS_ACCESS_KEY":"1234",
+"AWS_SECRET_KEY": "1234",
+"AWS_REGION_NAME": "Asia Pacific (Mumbai)",
+&ndash; Optional Value. Default is "Asia Pacific (Mumbai)"
+"KEY_PROVIDER_AUTH_TYPE": "AWS_KEYS"
+}</p>
+<p>input dictionary for creating AWS KMS with access node ( key based authentication )
+kms_details = {
+"KEY_PROVIDER_TYPE": "KEY_PROVIDER_AWS_KMS",
+"AWS_REGION_NAME": "US East (Ohio)",
+&ndash; Optional Value. Default is "Asia Pacific (Mumbai)"
+"ACCESS_NODE_NAME": "ma1",
+"KMS_NAME": "kms1"",
+"KEY_PROVIDER_AUTH_TYPE": "AWS_KEYS",
+"AWS_ACCESS_KEY": "1234",
+"AWS_SECRET_KEY": "1234"
+&ndash; Base64 encoded
+}</p>
+<p>input dictionary for creating AWS KMS with access node ( credential template file based authentication )
+kms_details = {
+"KEY_PROVIDER_TYPE": "KEY_PROVIDER_AWS_KMS",
+"AWS_REGION_NAME": "US East (Ohio)",
+&ndash; Optional Value. Default is "Asia Pacific (Mumbai)"
+"ACCESS_NODE_NAME": "client1",
+"KMS_NAME": "AWS_KMS_NAME",
+"KEY_PROVIDER_AUTH_TYPE": "AWS_CREDENTIALS_FILE",
+"AWS_CREDENTIALS_FILE_PROFILE_NAME": "AWSProfile1"
+}</p>
+<p>input dictionary for creating AWS KMS with access Node ( IAM based authentication )
+kms_details = {
+"KEY_PROVIDER_TYPE": "KEY_PROVIDER_AWS_KMS",
+"ACCESS_NODE_NAME": "MA1",
+"KMS_NAME": "aws_kms_name",
+"KEY_PROVIDER_AUTH_TYPE": "AWS_IAM"
+}</p>
+<p>input dictionary for creating Azure KMS with access Node ( certificate based authentication )
+kms_details = {
+"KEY_PROVIDER_TYPE": "KEY_PROVIDER_AZURE_KEY_VAULT",
+"ACCESS_NODE_NAME": "MediaAgent1",
+"KMS_NAME": "Azure_KMS_1",
+"KEY_PROVIDER_AUTH_TYPE": "AZURE_KEY_VAULT_CERTIFICATE",
+"AZURE_KEY_VAULT_KEY_LENGTH":2048,
+&ndash; Optional Value. Default is 3072
+"AZURE_KEY_VAULT_NAME":"MyCompanyKeyVault",
+"AZURE_TENANT_ID":"123",
+"AZURE_APP_ID":"456",
+"AZURE_CERTIFICATE_PATH":"c:\cert.pfx",
+"AZURE_CERTIFICATE_THUMBPRINT":"789",
+"AZURE_CERTIFICATE_PASSWORD": "password123",
+&ndash; Base64 encoded
+}</p>
+<p>input dictionary for creating Azure KMS with access Node ( IAM managed identity based authentication )
+kms_details = {
+"KEY_PROVIDER_TYPE": "KEY_PROVIDER_AZURE_KEY_VAULT",
+"ACCESS_NODE_NAME": "ma1",
+"KMS_NAME": "MyKMS",
+"KEY_PROVIDER_AUTH_TYPE": "AZURE_KEY_VAULT_IAM",
+"AZURE_KEY_VAULT_NAME":"MyKeyVaultName",
+}</p>
+<p>input dictionary for creating Azure KMS without access Node ( certificate based authentication )
+kms_details = {
+"KEY_PROVIDER_TYPE": "KEY_PROVIDER_AZURE_KEY_VAULT",
+"KMS_NAME": "MyKMS",
+"KEY_PROVIDER_AUTH_TYPE": "AZURE_KEY_VAULT_CERTIFICATE",
+"AZURE_KEY_VAULT_NAME":"MyKeyVaultName",
+"AZURE_TENANT_ID": "1234",
+"AZURE_APP_ID": "1234"",
+"AZURE_CERTIFICATE_PATH": "c:\cert.pfx",
+"AZURE_CERTIFICATE_THUMBPRINT": "1234",
+"AZURE_CERTIFICATE_PASSWORD": "1234XYZ==",
+&ndash; Base64 encoded
+}</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/key_management_server.py#L470-L587" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def add(self, kms_details):
+    &#34;&#34;&#34;
+    Method to add Key Management Server
+
+    Args:
+            kms_details    (dictionary)   -- dictionary with KMS details
+
+    input dictionary for creating AWS KMS without access node ( key based authentication )
+        kms_details = {
+            &#34;KEY_PROVIDER_TYPE&#34;: &#34;KEY_PROVIDER_AWS_KMS&#34;,
+            &#34;KMS_NAME&#34;: &#34;KMS1&#34; ,
+            &#34;AWS_ACCESS_KEY&#34;:&#34;1234&#34;,
+            &#34;AWS_SECRET_KEY&#34;: &#34;1234&#34;,
+            &#34;AWS_REGION_NAME&#34;: &#34;Asia Pacific (Mumbai)&#34;,  -- Optional Value. Default is &#34;Asia Pacific (Mumbai)&#34;
+            &#34;KEY_PROVIDER_AUTH_TYPE&#34;: &#34;AWS_KEYS&#34;
+        }
+
+    input dictionary for creating AWS KMS with access node ( key based authentication )
+        kms_details = {
+            &#34;KEY_PROVIDER_TYPE&#34;: &#34;KEY_PROVIDER_AWS_KMS&#34;,
+            &#34;AWS_REGION_NAME&#34;: &#34;US East (Ohio)&#34;,    -- Optional Value. Default is &#34;Asia Pacific (Mumbai)&#34;
+            &#34;ACCESS_NODE_NAME&#34;: &#34;ma1&#34;,
+            &#34;KMS_NAME&#34;: &#34;kms1&#34;&#34;,
+            &#34;KEY_PROVIDER_AUTH_TYPE&#34;: &#34;AWS_KEYS&#34;,
+            &#34;AWS_ACCESS_KEY&#34;: &#34;1234&#34;,
+            &#34;AWS_SECRET_KEY&#34;: &#34;1234&#34;     -- Base64 encoded
+        }
+
+    input dictionary for creating AWS KMS with access node ( credential template file based authentication )
+        kms_details = {
+            &#34;KEY_PROVIDER_TYPE&#34;: &#34;KEY_PROVIDER_AWS_KMS&#34;,
+            &#34;AWS_REGION_NAME&#34;: &#34;US East (Ohio)&#34;,    -- Optional Value. Default is &#34;Asia Pacific (Mumbai)&#34;
+            &#34;ACCESS_NODE_NAME&#34;: &#34;client1&#34;,
+            &#34;KMS_NAME&#34;: &#34;AWS_KMS_NAME&#34;,
+            &#34;KEY_PROVIDER_AUTH_TYPE&#34;: &#34;AWS_CREDENTIALS_FILE&#34;,
+            &#34;AWS_CREDENTIALS_FILE_PROFILE_NAME&#34;: &#34;AWSProfile1&#34;
+        }
+
+    input dictionary for creating AWS KMS with access Node ( IAM based authentication )
+        kms_details = {
+            &#34;KEY_PROVIDER_TYPE&#34;: &#34;KEY_PROVIDER_AWS_KMS&#34;,
+            &#34;ACCESS_NODE_NAME&#34;: &#34;MA1&#34;,
+            &#34;KMS_NAME&#34;: &#34;aws_kms_name&#34;,
+            &#34;KEY_PROVIDER_AUTH_TYPE&#34;: &#34;AWS_IAM&#34;
+        }
+
+    input dictionary for creating Azure KMS with access Node ( certificate based authentication )
+        kms_details = {
+            &#34;KEY_PROVIDER_TYPE&#34;: &#34;KEY_PROVIDER_AZURE_KEY_VAULT&#34;,
+            &#34;ACCESS_NODE_NAME&#34;: &#34;MediaAgent1&#34;,
+            &#34;KMS_NAME&#34;: &#34;Azure_KMS_1&#34;,
+            &#34;KEY_PROVIDER_AUTH_TYPE&#34;: &#34;AZURE_KEY_VAULT_CERTIFICATE&#34;,
+            &#34;AZURE_KEY_VAULT_KEY_LENGTH&#34;:2048,     -- Optional Value. Default is 3072
+            &#34;AZURE_KEY_VAULT_NAME&#34;:&#34;MyCompanyKeyVault&#34;,
+            &#34;AZURE_TENANT_ID&#34;:&#34;123&#34;,
+            &#34;AZURE_APP_ID&#34;:&#34;456&#34;,
+            &#34;AZURE_CERTIFICATE_PATH&#34;:&#34;c:\\cert.pfx&#34;,
+            &#34;AZURE_CERTIFICATE_THUMBPRINT&#34;:&#34;789&#34;,
+            &#34;AZURE_CERTIFICATE_PASSWORD&#34;: &#34;password123&#34;,    -- Base64 encoded
+        }
+
+    input dictionary for creating Azure KMS with access Node ( IAM managed identity based authentication )
+        kms_details = {
+            &#34;KEY_PROVIDER_TYPE&#34;: &#34;KEY_PROVIDER_AZURE_KEY_VAULT&#34;,
+            &#34;ACCESS_NODE_NAME&#34;: &#34;ma1&#34;,
+            &#34;KMS_NAME&#34;: &#34;MyKMS&#34;,
+            &#34;KEY_PROVIDER_AUTH_TYPE&#34;: &#34;AZURE_KEY_VAULT_IAM&#34;,
+            &#34;AZURE_KEY_VAULT_NAME&#34;:&#34;MyKeyVaultName&#34;,
+        }
+
+    input dictionary for creating Azure KMS without access Node ( certificate based authentication )
+        kms_details = {
+            &#34;KEY_PROVIDER_TYPE&#34;: &#34;KEY_PROVIDER_AZURE_KEY_VAULT&#34;,
+            &#34;KMS_NAME&#34;: &#34;MyKMS&#34;,
+            &#34;KEY_PROVIDER_AUTH_TYPE&#34;: &#34;AZURE_KEY_VAULT_CERTIFICATE&#34;,
+            &#34;AZURE_KEY_VAULT_NAME&#34;:&#34;MyKeyVaultName&#34;,
+            &#34;AZURE_TENANT_ID&#34;: &#34;1234&#34;,
+            &#34;AZURE_APP_ID&#34;: &#34;1234&#34;&#34;,
+            &#34;AZURE_CERTIFICATE_PATH&#34;: &#34;c:\\cert.pfx&#34;,
+            &#34;AZURE_CERTIFICATE_THUMBPRINT&#34;: &#34;1234&#34;,
+            &#34;AZURE_CERTIFICATE_PASSWORD&#34;: &#34;1234XYZ==&#34;,    -- Base64 encoded
+        }
+
+    &#34;&#34;&#34;
+    KeyManagementServers._validate_input(kms_details, dict)
+
+    if kms_details[&#39;KEY_PROVIDER_TYPE&#39;] not in self._KMS_TYPE.values():
+        raise SDKException(&#34;KeyManagementServer&#34;, 103)
+
+    if kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;] not in self._KMS_AUTHENTICATION_TYPE:
+        raise SDKException(&#34;KeyManagementServer&#34;, 105)
+
+    if &#34;KMS_NAME&#34; not in kms_details:
+        raise SDKException(&#34;KeyManagementServer&#34;, 106)
+
+
+
+    if kms_details[&#39;KEY_PROVIDER_TYPE&#39;] == &#34;KEY_PROVIDER_AWS_KMS&#34;:
+        if &#34;AWS_REGION_NAME&#34; not in kms_details:
+            kms_details[&#34;AWS_REGION_NAME&#34;] = &#34;Asia Pacific (Mumbai)&#34;
+
+        if kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;] == &#34;AWS_KEYS&#34;:
+            self.add_aws_kms(kms_name=kms_details[&#39;KMS_NAME&#39;], aws_access_key=kms_details[&#39;AWS_ACCESS_KEY&#39;], aws_secret_key=kms_details[&#39;AWS_SECRET_KEY&#39;],aws_region_name=kms_details[&#34;AWS_REGION_NAME&#34;], kms_details = kms_details)
+
+        elif kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;] == &#34;AWS_CREDENTIALS_FILE&#34;:
+            self._add_aws_kms_with_cred_file(kms_details)
+
+        elif kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;] == &#34;AWS_IAM&#34;:
+            self._add_aws_kms_with_iam(kms_details)
+
+    if kms_details[&#39;KEY_PROVIDER_TYPE&#39;] == &#34;KEY_PROVIDER_AZURE_KEY_VAULT&#34;:
+        if kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;] == &#34;AZURE_KEY_VAULT_CERTIFICATE&#34;:
+            self._add_azure_key_vault_certificate_auth(kms_details)
+
+        elif kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;] == &#34;AZURE_KEY_VAULT_IAM&#34;:
+            self._add_azure_key_vault_iam_auth(kms_details)
+
+    return self.get(kms_details[&#39;KMS_NAME&#39;])</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.key_management_server.KeyManagementServers.add_aws_kms"><code class="name flex">
-<span>def <span class="ident">add_aws_kms</span></span>(<span>self, kms_name, aws_access_key, aws_secret_key, aws_region_name=None)</span>
+<span>def <span class="ident">add_aws_kms</span></span>(<span>self, kms_name, aws_access_key, aws_secret_key, aws_region_name=None, kms_details=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Configure AWS Key Management Server</p>
@@ -903,7 +2006,8 @@ instance of commcell</p></div>
 <p>aws_secret_key
 (string) &ndash; AWS secret key, base64 encoded</p>
 <p>aws_region_name (string) &ndash; AWS region
-defaults to "Asia Pacific (Mumbai)"
+defaults to "Asia Pacific (Mumbai)"</p>
+<p>kms_details ( dictionary ) - Dictionary with AWS KMS details
 Raises SDKException:
 If inputs are wrong data type</p>
 <pre><code>If API response is not successful
@@ -915,20 +2019,22 @@ If error code on API response JSON is not 0
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/key_management_server.py#L260-L323" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/key_management_server.py#L640-L733" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def add_aws_kms(self, kms_name, aws_access_key, aws_secret_key, aws_region_name=None):
+<pre><code class="python">def add_aws_kms(self, kms_name, aws_access_key, aws_secret_key, aws_region_name=None, kms_details = None):
     &#34;&#34;&#34;Configure AWS Key Management Server
-    
+
         Args:
             kms_name        (string) -- name of the Key Management Server
-            
+
             aws_access_key  (string) -- AWS access key
-            
+
             aws_secret_key  (string) -- AWS secret key, base64 encoded
 
-            aws_region_name (string) -- AWS region 
+            aws_region_name (string) -- AWS region
                                         defaults to &#34;Asia Pacific (Mumbai)&#34;
+
+            kms_details ( dictionary ) - Dictionary with AWS KMS details
 
         Raises SDKException:
             If inputs are wrong data type
@@ -939,47 +2045,75 @@ If error code on API response JSON is not 0
 
             If error code on API response JSON is not 0
     &#34;&#34;&#34;
+
     KeyManagementServers._validate_input(kms_name, str)
-    KeyManagementServers._validate_input(aws_access_key, str)
-    KeyManagementServers._validate_input(aws_secret_key, str)
 
-    if aws_region_name is None:
-        aws_region_name = &#34;Asia Pacific (Mumbai)&#34;
+    payload = None
 
-    KeyManagementServers._validate_input(aws_region_name, str)
+    if kms_details == None or &#34;ACCESS_NODE_NAME&#34; not in kms_details:
 
-    payload = {
-        &#34;keyProvider&#34;: {
-            &#34;encryptionType&#34;: 3,
-            &#34;keyProviderType&#34;: 3,
-            &#34;provider&#34;: {
-                &#34;keyProviderName&#34;: kms_name
-            },
-            &#34;properties&#34;: {
-                &#34;regionName&#34;: aws_region_name,
-                &#34;userAccount&#34;: {
-                    &#34;userName&#34;: aws_access_key,
-                    &#34;password&#34;: aws_secret_key
+        if aws_region_name is None:
+            aws_region_name = &#34;Asia Pacific (Mumbai)&#34;
+
+        KeyManagementServers._validate_input(aws_access_key, str)
+        KeyManagementServers._validate_input(aws_secret_key, str)
+        KeyManagementServers._validate_input(aws_region_name, str)
+
+        payload = {
+            &#34;keyProvider&#34;: {
+                &#34;encryptionType&#34;: 3,
+                &#34;keyProviderType&#34;: 3,
+                &#34;provider&#34;: {
+                    &#34;keyProviderName&#34;: kms_name
+                },
+                &#34;properties&#34;: {
+                    &#34;regionName&#34;: aws_region_name,
+                    &#34;userAccount&#34;: {
+                        &#34;userName&#34;: aws_access_key,
+                        &#34;password&#34;: aws_secret_key
+                    }
                 }
             }
         }
-    }
 
-    flag, response = self._cvpysdk_object.make_request(
-        &#39;POST&#39;, self._KMS_ADD_GET, payload)
+    elif kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;] == &#34;AWS_KEYS&#34; and kms_details[&#39;ACCESS_NODE_NAME&#39;] != None:
 
-    if not flag:
-        response_string = self._commcell._update_response_(response.text)
-        raise SDKException(&#34;Response&#34;, 101, response_string)
+        if &#34;AWS_REGION_NAME&#34; not in kms_details:
+            kms_details[&#39;AWS_REGION_NAME&#39;] = &#34;Asia Pacific (Mumbai)&#34;
 
-    if not response.json():
-        raise SDKException(&#34;Response&#34;, 102)
+        KeyManagementServers._validate_input(aws_access_key, str)
+        KeyManagementServers._validate_input(aws_secret_key, str)
+        KeyManagementServers._validate_input(aws_region_name, str)
 
-    error_code = response.json().get(&#34;errorCode&#34;, -1)
-    if error_code != 0:
-        response_string = self._commcell._update_response_(response.text)
-        raise SDKException(&#34;Response&#34;, 101, response_string)
+        payload = {
+                        &#34;keyProvider&#34;: {
+                                &#34;properties&#34;: {
+                                        &#34;accessNodes&#34;: [
+                                            {
+                                                    &#34;accessNode&#34;: {
+                                                            &#34;clientName&#34;: kms_details[&#39;ACCESS_NODE_NAME&#39;]
+                                                    },
+                                                    &#34;awsCredential&#34;: {
+                                                            &#34;userAccount&#34;: {
+                                                                    &#34;password&#34;: aws_secret_key,
+                                                                    &#34;userName&#34;: aws_access_key
+                                                            },
+                                                        &#34;amazonAuthenticationType&#34;: self._KMS_AUTHENTICATION_TYPE[kms_details[&#39;KEY_PROVIDER_AUTH_TYPE&#39;]]
+                                                    }
+                                            }
+                                        ],
+                                        &#34;bringYourOwnKey&#34;: &#34;0&#34;,
+                                        &#34;regionName&#34;: aws_region_name if aws_region_name!=None else kms_details[&#39;AWS_REGION_NAME&#39;]
+                                },
+                                &#34;provider&#34;: {
+                                        &#34;keyProviderName&#34;: kms_name
+                                },
+                                &#34;encryptionType&#34;: 3,
+                                &#34;keyProviderType&#34;: &#34;3&#34;
+                        }
+            }
 
+    self._kms_api_call(payload)
     self.refresh()</code></pre>
 </details>
 </dd>
@@ -999,7 +2133,7 @@ If API response code is not successfull</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/key_management_server.py#L204-L242" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/key_management_server.py#L246-L284" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, kms_name):
     &#34;&#34;&#34;Deletes a Key Management Server
@@ -1063,7 +2197,7 @@ If kms_name is not str</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/key_management_server.py#L161-L180" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/key_management_server.py#L203-L222" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, kms_name):
     &#34;&#34;&#34;Gets a specific Key Management Server object
@@ -1109,7 +2243,7 @@ type_id: type_id1,
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/key_management_server.py#L183-L198" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/key_management_server.py#L225-L240" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_all_kms(self):
     &#34;&#34;&#34;Gets the name-indexed dictionary of all Key Management Servers
@@ -1147,7 +2281,7 @@ If kms_name is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/key_management_server.py#L244-L258" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/key_management_server.py#L286-L300" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_kms(self, kms_name):
     &#34;&#34;&#34;Check if the Key Management Server exist or not
@@ -1174,7 +2308,7 @@ If kms_name is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/key_management_server.py#L200-L202" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/key_management_server.py#L242-L244" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refreshes the dictionary of Key Management Servers&#34;&#34;&#34;
@@ -1242,8 +2376,9 @@ setTimeout(() => input.focus(), 100);
 <h1>Index</h1>
 <div class="toc">
 <ul>
-<li><a href="#keymanagementservers">KeyManagementServers:</a></li>
+<li><a href="#keymanagementserverconstants-attributes">KeyManagementServerConstants Attributes</a></li>
 <li><a href="#keymanagementservers-attributes">KeyManagementServers Attributes</a></li>
+<li><a href="#keymanagementservers">KeyManagementServers:</a></li>
 <li><a href="#keymanagementserver">KeyManagementServer:</a></li>
 <li><a href="#keymanagementserver-attributes">KeyManagementServer Attributes</a></li>
 </ul>
@@ -1260,8 +2395,12 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="cvpysdk.key_management_server.KeyManagementServer" href="#cvpysdk.key_management_server.KeyManagementServer">KeyManagementServer</a></code></h4>
 </li>
 <li>
+<h4><code><a title="cvpysdk.key_management_server.KeyManagementServerConstants" href="#cvpysdk.key_management_server.KeyManagementServerConstants">KeyManagementServerConstants</a></code></h4>
+</li>
+<li>
 <h4><code><a title="cvpysdk.key_management_server.KeyManagementServers" href="#cvpysdk.key_management_server.KeyManagementServers">KeyManagementServers</a></code></h4>
 <ul class="two-column">
+<li><code><a title="cvpysdk.key_management_server.KeyManagementServers.add" href="#cvpysdk.key_management_server.KeyManagementServers.add">add</a></code></li>
 <li><code><a title="cvpysdk.key_management_server.KeyManagementServers.add_aws_kms" href="#cvpysdk.key_management_server.KeyManagementServers.add_aws_kms">add_aws_kms</a></code></li>
 <li><code><a title="cvpysdk.key_management_server.KeyManagementServers.delete" href="#cvpysdk.key_management_server.KeyManagementServers.delete">delete</a></code></li>
 <li><code><a title="cvpysdk.key_management_server.KeyManagementServers.get" href="#cvpysdk.key_management_server.KeyManagementServers.get">get</a></code></li>

@@ -58,7 +58,7 @@ restore_table_level()           --      Table level restore function
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/db2instance.py#L1-L599" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/db2instance.py#L1-L604" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -650,13 +650,18 @@ class DB2Instance(Instance):
             &#34;databaseTableRstOptions&#34;] = table_json
 
         request_json[&#39;taskInfo&#39;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
+            &#34;browseOption&#34;][&#34;backupset&#34;][&#34;backupsetId&#34;] = int(self.backupsets.get(aux_backupset_name).backupset_id)
+
+        request_json[&#39;taskInfo&#39;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
             &#34;browseOption&#34;][&#34;backupset&#34;][&#34;backupsetName&#34;] = aux_backupset_name
+
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;db2Option&#34;][
+            &#34;restoreArchiveLogs&#34;] = False
 
         request_json[&#39;taskInfo&#39;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
             &#34;fileOption&#34;][&#34;filterItem&#34;] = tables_path
         request_json[&#39;taskInfo&#39;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
             &#34;fileOption&#34;][&#34;sourceItem&#34;] = tables_path
-
         return self._process_restore_response(request_json)</code></pre>
 </details>
 </section>
@@ -696,7 +701,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/db2instance.py#L64-L598" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/db2instance.py#L64-L603" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class DB2Instance(Instance):
     &#34;&#34;&#34; Derived class from Instance Base class, representing a DB2 instance,
@@ -1225,13 +1230,18 @@ default: None</p>
             &#34;databaseTableRstOptions&#34;] = table_json
 
         request_json[&#39;taskInfo&#39;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
+            &#34;browseOption&#34;][&#34;backupset&#34;][&#34;backupsetId&#34;] = int(self.backupsets.get(aux_backupset_name).backupset_id)
+
+        request_json[&#39;taskInfo&#39;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
             &#34;browseOption&#34;][&#34;backupset&#34;][&#34;backupsetName&#34;] = aux_backupset_name
+
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;db2Option&#34;][
+            &#34;restoreArchiveLogs&#34;] = False
 
         request_json[&#39;taskInfo&#39;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
             &#34;fileOption&#34;][&#34;filterItem&#34;] = tables_path
         request_json[&#39;taskInfo&#39;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
             &#34;fileOption&#34;][&#34;sourceItem&#34;] = tables_path
-
         return self._process_restore_response(request_json)</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -1250,7 +1260,7 @@ Command line sp name from db2 instance level</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/db2instance.py#L112-L121" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/db2instance.py#L112-L121" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def command_line_storage_policy(self):
@@ -1272,7 +1282,7 @@ def command_line_storage_policy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/db2instance.py#L101-L110" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/db2instance.py#L101-L110" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def data_backup_storage_policy(self):
@@ -1294,7 +1304,7 @@ def data_backup_storage_policy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/db2instance.py#L78-L87" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/db2instance.py#L78-L87" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def home_directory(self):
@@ -1317,7 +1327,7 @@ def home_directory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/db2instance.py#L123-L133" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/db2instance.py#L123-L133" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def log_backup_storage_policy(self):
@@ -1341,7 +1351,7 @@ def log_backup_storage_policy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/db2instance.py#L89-L99" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/db2instance.py#L89-L99" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_name(self):
@@ -1364,7 +1374,7 @@ def user_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/db2instance.py#L68-L76" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/db2instance.py#L68-L76" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def version(self):
@@ -1445,7 +1455,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/db2instance.py#L224-L307" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/db2instance.py#L224-L307" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_entire_database(
         self,
@@ -1600,7 +1610,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/db2instance.py#L309-L452" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/db2instance.py#L309-L452" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -1842,7 +1852,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/db2instance.py#L454-L598" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/db2instance.py#L454-L603" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_table_level(
         self,
@@ -1981,13 +1991,18 @@ Raises:
         &#34;databaseTableRstOptions&#34;] = table_json
 
     request_json[&#39;taskInfo&#39;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
+        &#34;browseOption&#34;][&#34;backupset&#34;][&#34;backupsetId&#34;] = int(self.backupsets.get(aux_backupset_name).backupset_id)
+
+    request_json[&#39;taskInfo&#39;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
         &#34;browseOption&#34;][&#34;backupset&#34;][&#34;backupsetName&#34;] = aux_backupset_name
+
+    request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;db2Option&#34;][
+        &#34;restoreArchiveLogs&#34;] = False
 
     request_json[&#39;taskInfo&#39;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
         &#34;fileOption&#34;][&#34;filterItem&#34;] = tables_path
     request_json[&#39;taskInfo&#39;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
         &#34;fileOption&#34;][&#34;sourceItem&#34;] = tables_path
-
     return self._process_restore_response(request_json)</code></pre>
 </details>
 </dd>

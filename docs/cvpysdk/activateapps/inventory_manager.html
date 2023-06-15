@@ -73,6 +73,9 @@ returns the schedule class object associated to this inventory</p>
 <p>_get_data_source_handler_object()
 &ndash;
 returns the datasource and default handler object for this inventory</p>
+<p>_get_permission()
+&ndash;
+returns the security associations for this inventory</p>
 <p>refresh()
 &ndash;
 refresh the properties of the inventory</p>
@@ -142,18 +145,18 @@ initialise object of the Asset class</p>
 <p>_get_properties()
 &ndash;
 returns the properties of the asset</p>
+<p>_response_not_success()
+&ndash;
+parses through the exception response, and raises SDKException</p>
 <p>refresh()
 &ndash;
 refresh the asset associated with inventory</p>
-<p>start_collection()
-&ndash;
-starts collection job on this asset</p>
 <p>get_job_history()
 &ndash;
 returns the job history details of this asset</p>
 <p>get_job_status()
 &ndash;
-returns the job status details of this asset</p>
+returns the latest job status details of this asset</p>
 <p>get_asset_prop()
 &ndash;
 returns the asset property value for the given property name</p>
@@ -175,7 +178,7 @@ returns the asset property value for the given property name</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L1-L1176" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L1-L1190" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -240,6 +243,8 @@ Inventory:
 
             _get_data_source_handler_object()   --  returns the datasource and default handler object for this inventory
 
+            _get_permission()                   --  returns the security associations for this inventory
+
             refresh()                           --  refresh the properties of the inventory
 
             get_assets()                        --  returns the Assets class object for this inventory
@@ -300,13 +305,13 @@ Asset:
 
         _get_properties()                   --  returns the properties of the asset
 
-        refresh()                           --  refresh the asset associated with inventory
+        _response_not_success()             --  parses through the exception response, and raises SDKException
 
-        start_collection()                  --  starts collection job on this asset
+        refresh()                           --  refresh the asset associated with inventory
 
         get_job_history()                   --  returns the job history details of this asset
 
-        get_job_status()                    --  returns the job status details of this asset
+        get_job_status()                    --  returns the latest job status details of this asset
 
         get_asset_prop()                    --  returns the asset property value for the given property name
 
@@ -331,8 +336,6 @@ Asset Attributes:
 
 &#34;&#34;&#34;
 import copy
-
-from ..activateapps.ediscovery_utils import EdiscoveryClientOperations
 
 from ..activateapps.constants import InventoryConstants
 from ..schedules import Schedules
@@ -397,10 +400,10 @@ class Inventories():
             &#39;GET&#39;, self._API_INVENTORIES
         )
         if flag:
-            if response.json() and &#39;inventoryList&#39; in response.json():
-                inventories = response.json()[&#39;inventoryList&#39;]
+            if response.json() and &#39;inventories&#39; in response.json():
+                inventories = response.json()[&#39;inventories&#39;]
                 for inventory in inventories:
-                    output[inventory[&#39;inventoryName&#39;].lower()] = inventory
+                    output[inventory[&#39;displayName&#39;].lower()] = inventory
                 return output
             raise SDKException(&#39;Inventory&#39;, &#39;103&#39;)
         self._response_not_success(response)
@@ -435,30 +438,26 @@ class Inventories():
             raise SDKException(&#39;Inventory&#39;, &#39;101&#39;)
         req_json = copy.deepcopy(InventoryConstants.INVENTORY_ADD_REQUEST_JSON)
         if name_server:
-            asset_json = copy.deepcopy(InventoryConstants.ASSET_ADD_REQUEST_JSON)
-            for server in name_server:
-                asset_json[&#39;name&#39;] = server
-                req_json[&#39;assets&#39;].append(asset_json)
-        req_json[&#39;inventoryName&#39;] = inventory_name
+            req_json[&#39;identityServers&#39;] = name_server
+        req_json[&#39;name&#39;] = inventory_name
         if not self._commcell_object.index_servers.has(index_server):
             raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Given index server name not exists on this commcell&#34;)
         index_server_obj = self._commcell_object.index_servers.get(index_server)
-        req_json[&#39;analyticsEngineCloud&#39;][&#39;cloudId&#39;] = index_server_obj.cloud_id
-        req_json[&#39;analyticsEngineCloud&#39;][&#39;cloudDisplayName&#39;] = index_server_obj.cloud_name
+        req_json[&#39;indexServer&#39;][&#39;cloudId&#39;] = index_server_obj.cloud_id
+        req_json[&#39;indexServer&#39;][&#39;displayName&#39;] = index_server_obj.cloud_name
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._API_INVENTORIES, req_json
         )
         if flag:
-            if response.json() and &#39;errorResp&#39; in response.json():
-                err_resp = response.json()[&#39;errorResp&#39;]
-                if &#39;errorCode&#39; in err_resp and err_resp[&#39;errorCode&#39;] != 0:
+            if response.json():
+                if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
                     raise SDKException(
                         &#39;Inventory&#39;,
                         &#39;102&#39;,
-                        f&#34;Failed to create inventory with error [{err_resp[&#39;errorMessage&#39;]}]&#34;)
-                elif &#39;inventoryList&#39; in response.json():
-                    inventory = response.json()[&#39;inventoryList&#39;][0]
-                    inventory_id = inventory[&#39;inventoryId&#39;]
+                        f&#34;Failed to create inventory with error [{response.json()[&#39;errorMessage&#39;]}]&#34;)
+                elif &#39;name&#39; in response.json():
+                    inventory = response.json()[&#39;name&#39;]
+                    inventory_id = response.json()[&#39;id&#39;]
                     self.refresh()
                     return Inventory(self._commcell_object, inventory_name, inventory_id)
                 raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, f&#34;Failed to create inventory with response - {response.json()}&#34;)
@@ -491,16 +490,15 @@ class Inventories():
         if not self.has_inventory(inventory_name):
             raise SDKException(&#39;Inventory&#39;, &#39;106&#39;)
         flag, response = self._cvpysdk_object.make_request(
-            &#39;DELETE&#39;, self._API_DELETE_INVENTORY % self._inventories[inventory_name.lower()][&#39;inventoryId&#39;]
+            &#39;DELETE&#39;, self._API_DELETE_INVENTORY % self._inventories[inventory_name.lower()][&#39;id&#39;]
         )
         if flag:
-            if response.json() and &#39;errorResp&#39; in response.json():
-                err_resp = response.json()[&#39;errorResp&#39;]
-                if &#39;errorCode&#39; in err_resp and err_resp[&#39;errorCode&#39;] != 0:
+            if response.json():
+                if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
                     raise SDKException(
                         &#39;Inventory&#39;,
                         &#39;102&#39;,
-                        f&#34;Failed to Delete inventory with error [{err_resp[&#39;errorMessage&#39;]}]&#34;)
+                        f&#34;Failed to Delete inventory with error [{response.json()[&#39;errorMessage&#39;]}]&#34;)
                 self.refresh()
             else:
                 raise SDKException(&#39;Inventory&#39;, &#39;107&#39;)
@@ -567,7 +565,7 @@ class Inventories():
             raise SDKException(&#39;Inventory&#39;, &#39;101&#39;)
 
         if self.has_inventory(inventory_name):
-            inventory_id = self._inventories[inventory_name.lower()][&#39;inventoryId&#39;]
+            inventory_id = self._inventories[inventory_name.lower()][&#39;id&#39;]
             return Inventory(self._commcell_object, inventory_name, inventory_id)
         raise SDKException(&#39;Inventory&#39;, &#39;106&#39;)
 
@@ -603,16 +601,16 @@ class Inventory():
         self._data_source = None
         self._handler = None
         self._API_GET_INVENTORY_DETAILS = self._services[&#39;EDISCOVERY_INVENTORY&#39;]
-        self._API_SECURITY = self._services[&#39;SECURITY_ASSOCIATION&#39;]
         self._API_SECURITY_ENTITY = self._services[&#39;ENTITY_SECURITY_ASSOCIATION&#39;]
         self._API_GET_DEFAULT_HANDLER = self._services[&#39;EDISCOVERY_GET_DEFAULT_HANDLER&#39;]
+        self._API_PERMISSION = self._services[&#39;V4_ACTIVATE_DS_PERMISSION&#39;]
+        self._API_CRAWL = self._services[&#39;V4_INVENTORY_CRAWL&#39;]
 
         if not inventory_id:
             self._inventory_id = self._commcell_object.activate.inventory_manager().get(inventory_name).inventory_id
         else:
             self._inventory_id = inventory_id
         self.refresh()
-        self._ediscovery_client_obj = EdiscoveryClientOperations(class_object=self, commcell_object=commcell_object)
 
     def _response_not_success(self, response):
         &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
@@ -624,6 +622,27 @@ class Inventory():
 
         &#34;&#34;&#34;
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def _get_permission(self):
+        &#34;&#34;&#34;returns security association blob for this inventory
+
+                Args:
+
+                    None
+
+                Returns:
+
+                    dict    --  Security association blob
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_obj.make_request(
+            &#39;GET&#39;, self._API_PERMISSION % self._inventory_id
+        )
+        if flag:
+            if response.json() and &#39;securityAssociations&#39; in response.json():
+                return response.json()[&#39;securityAssociations&#39;]
+            raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Inventory permission fetch failed&#34;)
+        self._response_not_success(response)
 
     def _get_inventory_properties(self):
         &#34;&#34;&#34; Get inventory properties from the commcell
@@ -640,12 +659,11 @@ class Inventory():
             &#39;GET&#39;, self._API_GET_INVENTORY_DETAILS % self._inventory_id
         )
         if flag:
-            if response.json() and &#39;inventoryList&#39; in response.json():
-                inventory_props = response.json()[&#39;inventoryList&#39;][0]
-                self._index_server_name = inventory_props[&#39;analyticsEngineCloud&#39;][&#39;cloudDisplayName&#39;]
-                self._index_server_cloud_id = inventory_props[&#39;analyticsEngineCloud&#39;][&#39;cloudId&#39;]
-                self._inventory_name = inventory_props[&#39;inventoryName&#39;]
-                self._security_associations = inventory_props[&#39;securityAssociation&#39;][&#39;associations&#39;]
+            if response.json():
+                inventory_props = response.json()
+                self._index_server_name = inventory_props[&#39;indexServer&#39;][&#39;displayName&#39;]
+                self._index_server_cloud_id = inventory_props[&#39;indexServer&#39;][&#39;cloudId&#39;]
+                self._inventory_name = inventory_props[&#39;displayName&#39;]
                 return inventory_props
             raise SDKException(&#39;Inventory&#39;, &#39;104&#39;)
         self._response_not_success(response)
@@ -655,6 +673,7 @@ class Inventory():
         self._inventory_props = self._get_inventory_properties()
         self._schedule = self._get_schedule_object()
         self._data_source, self._handler = self._get_data_source_handler_object()
+        self._security_associations = self._get_permission()
 
     def get_assets(self):
         &#34;&#34;&#34;Returns the Assets class instance for this inventory
@@ -688,7 +707,21 @@ class Inventory():
                             if failed to start collection job
 
         &#34;&#34;&#34;
-        return self._ediscovery_client_obj.start_job()
+        flag, response = self._cvpysdk_obj.make_request(
+            &#39;PUT&#39;, self._API_CRAWL % self._inventory_id
+        )
+        if flag:
+            if response.json():
+                if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
+                    raise SDKException(
+                        &#39;Inventory&#39;,
+                        &#39;102&#39;,
+                        f&#34;Failed to start crawl on inventory with error [{response.json()[&#39;errorMessage&#39;]}]&#34;)
+                return
+            else:
+                raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Unknown response while starting collection job on inventory&#34;)
+        else:
+            self._response_not_success(response)
 
     def share(self, user_or_group_name, allow_edit_permission=False, is_user=True, ops_type=1):
         &#34;&#34;&#34;Shares inventory with given user or user group in commcell
@@ -777,14 +810,13 @@ class Inventory():
             request_json[&#39;securityAssociations&#39;][&#39;associations&#39;].extend(association_response)
 
         flag, response = self._cvpysdk_obj.make_request(
-            &#39;POST&#39;, self._API_SECURITY, request_json
+            &#39;PUT&#39;, self._API_PERMISSION % self._inventory_id, request_json
         )
         if flag:
-            if response.json() and &#39;response&#39; in response.json():
-                response_json = response.json()[&#39;response&#39;][0]
-                error_code = response_json[&#39;errorCode&#39;]
+            if response.json():
+                error_code = response.json()[&#39;errorCode&#39;]
                 if error_code != 0:
-                    error_message = response_json[&#39;errorString&#39;]
+                    error_message = response.json()[&#39;errorString&#39;]
                     raise SDKException(
                         &#39;Inventory&#39;,
                         &#39;102&#39;, error_message)
@@ -945,8 +977,8 @@ class Assets():
         else:
             self._inventory_id = inventory_id
         self._assets = None
-        self._API_INVENTORIES = self._services[&#39;EDISCOVERY_INVENTORIES&#39;]
         self._API_ASSETS = self._services[&#39;EDISCOVERY_ASSETS&#39;]
+        self._API_ASSET = self._services[&#39;EDISCOVERY_ASSET&#39;]
         self.refresh()
 
     def _get_assets_properties(self):
@@ -960,14 +992,19 @@ class Assets():
                         dict    --  containing asset properties
 
         &#34;&#34;&#34;
-        inv_mgr = self._commcell_object.activate.inventory_manager()
-        inv_obj = inv_mgr.get(self._inventory_name)
-        inv_obj.refresh()
-        assets = {}
-        for asset in inv_obj.properties[&#39;assets&#39;]:
-            name = asset[&#39;name&#39;].lower()
-            assets[name] = asset
-        return assets
+        flag, response = self._cvpysdk_obj.make_request(
+            &#39;GET&#39;, self._API_ASSETS % self._inventory_id)
+        if flag:
+            if response.json() and &#39;assets&#39; in response.json():
+                assets = {}
+                for asset in response.json()[&#39;assets&#39;]:
+                    name = asset[&#39;name&#39;].lower()
+                    assets[name] = asset
+                return assets
+            else:
+                raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Unknown response while fetching assets on inventory&#34;)
+        else:
+            self._response_not_success(response)
 
     def refresh(self):
         &#34;&#34;&#34;Refresh the assets details associated with this inventory&#34;&#34;&#34;
@@ -1022,7 +1059,7 @@ class Assets():
             raise SDKException(&#39;Inventory&#39;, &#39;109&#39;)
         return Asset(self._commcell_object, self._inventory_name, asset_name, self._inventory_id)
 
-    def add(self, asset_name, asset_type=InventoryConstants.AssetType.NAME_SERVER, **kwargs):
+    def add(self, asset_name, asset_type=InventoryConstants.AssetType.IDENTITY_SERVER, **kwargs):
         &#34;&#34;&#34;Adds asset to the inventory
 
                 Args:
@@ -1036,14 +1073,11 @@ class Assets():
                             fqdn                --  File server FQDN
 
                             os                  --  File Server OS type
+                                                        (Default:Windows)
 
                             ip                  --  File server IP
 
                             country_code        --  Country code (ISO 3166 2-letter code)
-
-                            country_name        --  Country name
-
-                            domain              --  File Server Domain name(optional)
 
                 Returns:
 
@@ -1060,40 +1094,31 @@ class Assets():
         &#34;&#34;&#34;
         if not isinstance(asset_name, str) or not isinstance(asset_type, InventoryConstants.AssetType):
             raise SDKException(&#39;Inventory&#39;, &#39;101&#39;)
-        request_json = copy.deepcopy(InventoryConstants.ASSET_ADD_TO_INVENTORY_JSON)
-        request_json[&#39;inventoryId&#39;] = int(self._inventory_id)
-        asset_json = copy.deepcopy(InventoryConstants.ASSET_ADD_REQUEST_JSON)
-        asset_json[&#39;name&#39;] = asset_name
-        asset_json[&#39;type&#39;] = asset_type.value
-        property_json = copy.deepcopy(InventoryConstants.ASSET_PROPERTY_JSON)
+        request_json = {}
         if asset_type.value == InventoryConstants.AssetType.FILE_SERVER.value:
             for prop in InventoryConstants.ASSET_FILE_SERVER_PROPERTY:
                 prop_name = InventoryConstants.FIELD_PROPS_MAPPING[prop]
                 default_value = &#34;&#34;
                 if prop_name not in kwargs:
-                    # if domain is not passed, then form domain from fqdn
-                    if prop == InventoryConstants.FIELD_PROPERTY_DOMAIN:
-                        default_value = kwargs.get(InventoryConstants.KWARGS_FQDN)
-                        default_value = default_value.split(&#34;.&#34;, 1)[1]
                     # always use asset name as file server name
                     if prop == InventoryConstants.FIELD_PROPERTY_NAME:
                         default_value = asset_name
-                prop_json = copy.deepcopy(InventoryConstants.ASSET_PROPERTY_NAME_VALUE_PAIR_JSON)
-                prop_json[&#39;name&#39;] = prop
-                prop_json[&#39;value&#39;] = kwargs.get(prop_name, default_value)
-                property_json[&#39;propertyValues&#39;][&#39;nameValues&#39;].append(prop_json)
-            asset_json.update(property_json)
-        request_json[&#39;assets&#39;].append(asset_json)
+                    if prop == InventoryConstants.FIELD_PROPERTY_OS:
+                        default_value = &#34;Windows&#34;
+                request_json[prop] = kwargs.get(prop_name, default_value)
+        else:
+            request_json = copy.deepcopy(InventoryConstants.IDENTITY_SERVER_ASSET_ADD_TO_INVENTORY_JSON)
+            request_json[&#39;identityServers&#39;] = [asset_name]
+
         flag, response = self._cvpysdk_obj.make_request(
-            &#39;PUT&#39;, self._API_INVENTORIES, request_json)
+            &#39;PUT&#39;, self._API_ASSETS % self._inventory_id, request_json)
         if flag:
-            if response.json() and &#39;errorResp&#39; in response.json():
-                err_resp = response.json()[&#39;errorResp&#39;]
-                if &#39;errorCode&#39; in err_resp and err_resp[&#39;errorCode&#39;] != 0:
+            if response.json():
+                if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
                     raise SDKException(
                         &#39;Inventory&#39;,
                         &#39;102&#39;,
-                        f&#34;Failed to add asset to inventory with error [{err_resp[&#39;errorMessage&#39;]}]&#34;)
+                        f&#34;Failed to add asset to inventory with error [{response.json()[&#39;errorMessage&#39;]}]&#34;)
                 self.refresh()
                 return Asset(self._commcell_object, self._inventory_name, asset_name, self._inventory_id)
             raise SDKException(&#39;Inventory&#39;, &#39;108&#39;)
@@ -1120,32 +1145,20 @@ class Assets():
 
                             if unable to find this asset in inventory
         &#34;&#34;&#34;
+
         if not isinstance(asset_name, str):
             raise SDKException(&#39;Inventory&#39;, &#39;101&#39;)
         if not self.has_asset(asset_name):
             raise SDKException(&#39;Inventory&#39;, &#39;109&#39;)
-        request_json = copy.deepcopy(InventoryConstants.ASSET_DELETE_FROM_INVENTORY_JSON)
-        request_json[&#39;inventoryId&#39;] = int(self._inventory_id)
-        if &#39;assetId&#39; in self._assets[asset_name.lower()]:
-            request_json[&#39;assets&#39;].append({&#39;assetId&#39;: self._assets[asset_name.lower()][&#39;assetId&#39;]})
-        else:
-            req = copy.deepcopy(InventoryConstants.ASSET_ADD_REQUEST_JSON)
-            asset_obj = self.get(asset_name)
-            asset_type = asset_obj.asset_type
-            # for file server asset, asset name will not be display name in backend delete request. so fetch fqdn
-            req[&#39;name&#39;] = asset_obj.get_asset_prop(prop_name=InventoryConstants.FIELD_PROPERTY_DNSHOST)
-            req[&#39;type&#39;] = asset_type
-            request_json[&#39;assets&#39;].append(req)
         flag, response = self._cvpysdk_obj.make_request(
-            &#39;PUT&#39;, self._API_ASSETS % self._inventory_id, request_json)
+            &#39;DELETE&#39;, self._API_ASSET % (self._inventory_id, self._assets[asset_name.lower()][&#39;id&#39;]))
         if flag:
             if response.json():
-                err_resp = response.json()[&#39;errorResp&#39;]
-                if &#39;errorCode&#39; in err_resp and err_resp[&#39;errorCode&#39;] != 0:
+                if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
                     raise SDKException(
                         &#39;Inventory&#39;,
                         &#39;102&#39;,
-                        f&#34;Failed to delete asset from inventory with error [{err_resp[&#39;errorMessage&#39;]}]&#34;)
+                        f&#34;Failed to delete asset from inventory with error [{response.json()[&#39;errorMessage&#39;]}]&#34;)
                 self.refresh()
                 return
             raise SDKException(&#39;Inventory&#39;, &#39;110&#39;)
@@ -1193,8 +1206,21 @@ class Asset():
         self._asset_type = None
         self._asset_status = None
         self._asset_name_values_props = None
+        self._API_ASSETS = self._services[&#39;EDISCOVERY_ASSETS&#39;]
+        self._API_ASSET = self._services[&#39;EDISCOVERY_ASSET&#39;]
+        self._API_ASSET_JOBS = self._services[&#39;EDISCOVERY_ASSET_JOBS&#39;]
         self.refresh()
-        self._ediscovery_client_obj = EdiscoveryClientOperations(class_object=self, commcell_object=commcell_object)
+
+    def _response_not_success(self, response):
+        &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
+
+            Args:
+                response    (object)    --  response class object,
+
+                received upon running an API request, using the `requests` python package
+
+        &#34;&#34;&#34;
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
     def _get_properties(self):
         &#34;&#34;&#34;Returns the properties of this asset
@@ -1208,20 +1234,30 @@ class Asset():
                     dict        -- Containing properties of asset
 
         &#34;&#34;&#34;
-        inv_mgr = self._commcell_object.activate.inventory_manager()
-        inv_obj = inv_mgr.get(self._inventory_name)
-        inv_obj.get_assets().refresh()
-        for asset in inv_obj.properties[&#39;assets&#39;]:
-            if asset[&#39;name&#39;].lower() == self._asset_name.lower():
-                # for file server, we will not have asset id &amp; crawl times
-                self._asset_id = asset.get(&#39;assetId&#39;, 0)
-                self._crawl_start_time = asset.get(&#39;crawlStartTime&#39;, 0)
-                self._asset_type = asset.get(&#39;type&#39;, 0)
-                self._asset_status = asset[&#39;status&#39;]
-                self._asset_name = asset[&#39;name&#39;]
-                self._asset_name_values_props = asset[&#39;propertyValues&#39;][&#39;nameValues&#39;]
-                return asset
-        return {}
+
+        flag, response = self._cvpysdk_obj.make_request(
+            &#39;GET&#39;, self._API_ASSETS % self._inventory_id)
+        if flag:
+            if response.json() and &#39;assets&#39; in response.json():
+                for asset in response.json()[&#39;assets&#39;]:
+                    if asset[&#39;name&#39;].lower() == self._asset_name.lower():
+                        self._asset_id = asset.get(&#39;id&#39;, &#34;&#34;)
+                        self._crawl_start_time = asset.get(&#39;lastCollectionTime&#39;, 0)
+                        self._asset_type = asset.get(&#39;type&#39;, &#34;&#34;)
+                        self._asset_status = asset.get(&#39;status&#39;, &#34;NA&#34;)
+                        self._asset_name = asset[&#39;name&#39;]
+                        if self._asset_type == InventoryConstants.AssetType.FILE_SERVER.name:
+                            flag, response = self._cvpysdk_obj.make_request(
+                                &#39;GET&#39;, self._API_ASSET % (self._inventory_id, self._asset_id))
+                            if flag:
+                                if response.json() and &#39;properties&#39; in response.json():
+                                    self._asset_name_values_props = response.json()[&#39;properties&#39;]
+                        return asset
+                return {}
+            else:
+                raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Unknown response while fetching assets on inventory&#34;)
+        else:
+            self._response_not_success(response)
 
     def refresh(self):
         &#34;&#34;&#34;Refresh the asset details associated with this&#34;&#34;&#34;
@@ -1246,19 +1282,26 @@ class Asset():
                             if asset is not supported for this operation
 
         &#34;&#34;&#34;
-        if self.asset_type != InventoryConstants.AssetType.NAME_SERVER.value:
+        if self.asset_type != InventoryConstants.AssetType.IDENTITY_SERVER.name:
             raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Not supported other than Name Server asset type&#34;)
-        return self._ediscovery_client_obj.get_job_history()
+        flag, response = self._cvpysdk_obj.make_request(
+            &#39;GET&#39;, self._API_ASSET_JOBS % (self._inventory_id, self._asset_id))
+        if flag:
+            if response.json() and &#39;jobs&#39; in response.json():
+                return response.json()[&#39;jobs&#39;]
+            raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Unknown response while fetching job history on inventory&#34;)
+        else:
+            self._response_not_success(response)
 
     def get_job_status(self):
-        &#34;&#34;&#34;Returns the job status details of this asset
+        &#34;&#34;&#34;Returns the latest job status details of this asset
 
                 Args:
                     None
 
                 Returns:
 
-                    dict    --  containing job status details
+                    str    --  last job status (Eg:- RUNNING / IDLE)
 
                 Raises:
 
@@ -1269,36 +1312,10 @@ class Asset():
                              if asset is not supported for this operation
 
         &#34;&#34;&#34;
-        if self.asset_type != InventoryConstants.AssetType.NAME_SERVER.value:
+        if self.asset_type != InventoryConstants.AssetType.IDENTITY_SERVER.name:
             raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Not supported other than Name Server asset type&#34;)
-        return self._ediscovery_client_obj.get_job_status()
-
-    def start_collection(self, wait_for_job=False, wait_time=60):
-        &#34;&#34;&#34;Starts collection job on this asset
-
-                Args:
-
-                    wait_for_job        (bool)      --  specifies whether to wait for job to complete or not
-
-                    wait_time           (int)       --  time interval to wait for job completion in Mins
-                                                            Default : 60Mins
-
-                Return:
-
-                    None
-
-                Raises:
-
-                    SDKException:
-
-                            if failed to start collection job
-
-                            if asset is not supported for this operation
-
-        &#34;&#34;&#34;
-        if self.asset_type != InventoryConstants.AssetType.NAME_SERVER.value:
-            raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Not supported other than Name Server asset type&#34;)
-        return self._ediscovery_client_obj.start_job(wait_for_job=wait_for_job, wait_time=wait_time)
+        self.refresh()  # do refresh before getting current status
+        return self.asset_status
 
     def get_asset_prop(self, prop_name):
         &#34;&#34;&#34;returns the property value for given property name for this asset
@@ -1396,7 +1413,7 @@ instance of the Asset class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L981-L1176" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L991-L1190" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Asset():
     &#34;&#34;&#34;Class to represent single asset in an inventory&#34;&#34;&#34;
@@ -1434,8 +1451,21 @@ instance of the Asset class</p></div>
         self._asset_type = None
         self._asset_status = None
         self._asset_name_values_props = None
+        self._API_ASSETS = self._services[&#39;EDISCOVERY_ASSETS&#39;]
+        self._API_ASSET = self._services[&#39;EDISCOVERY_ASSET&#39;]
+        self._API_ASSET_JOBS = self._services[&#39;EDISCOVERY_ASSET_JOBS&#39;]
         self.refresh()
-        self._ediscovery_client_obj = EdiscoveryClientOperations(class_object=self, commcell_object=commcell_object)
+
+    def _response_not_success(self, response):
+        &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
+
+            Args:
+                response    (object)    --  response class object,
+
+                received upon running an API request, using the `requests` python package
+
+        &#34;&#34;&#34;
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
     def _get_properties(self):
         &#34;&#34;&#34;Returns the properties of this asset
@@ -1449,20 +1479,30 @@ instance of the Asset class</p></div>
                     dict        -- Containing properties of asset
 
         &#34;&#34;&#34;
-        inv_mgr = self._commcell_object.activate.inventory_manager()
-        inv_obj = inv_mgr.get(self._inventory_name)
-        inv_obj.get_assets().refresh()
-        for asset in inv_obj.properties[&#39;assets&#39;]:
-            if asset[&#39;name&#39;].lower() == self._asset_name.lower():
-                # for file server, we will not have asset id &amp; crawl times
-                self._asset_id = asset.get(&#39;assetId&#39;, 0)
-                self._crawl_start_time = asset.get(&#39;crawlStartTime&#39;, 0)
-                self._asset_type = asset.get(&#39;type&#39;, 0)
-                self._asset_status = asset[&#39;status&#39;]
-                self._asset_name = asset[&#39;name&#39;]
-                self._asset_name_values_props = asset[&#39;propertyValues&#39;][&#39;nameValues&#39;]
-                return asset
-        return {}
+
+        flag, response = self._cvpysdk_obj.make_request(
+            &#39;GET&#39;, self._API_ASSETS % self._inventory_id)
+        if flag:
+            if response.json() and &#39;assets&#39; in response.json():
+                for asset in response.json()[&#39;assets&#39;]:
+                    if asset[&#39;name&#39;].lower() == self._asset_name.lower():
+                        self._asset_id = asset.get(&#39;id&#39;, &#34;&#34;)
+                        self._crawl_start_time = asset.get(&#39;lastCollectionTime&#39;, 0)
+                        self._asset_type = asset.get(&#39;type&#39;, &#34;&#34;)
+                        self._asset_status = asset.get(&#39;status&#39;, &#34;NA&#34;)
+                        self._asset_name = asset[&#39;name&#39;]
+                        if self._asset_type == InventoryConstants.AssetType.FILE_SERVER.name:
+                            flag, response = self._cvpysdk_obj.make_request(
+                                &#39;GET&#39;, self._API_ASSET % (self._inventory_id, self._asset_id))
+                            if flag:
+                                if response.json() and &#39;properties&#39; in response.json():
+                                    self._asset_name_values_props = response.json()[&#39;properties&#39;]
+                        return asset
+                return {}
+            else:
+                raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Unknown response while fetching assets on inventory&#34;)
+        else:
+            self._response_not_success(response)
 
     def refresh(self):
         &#34;&#34;&#34;Refresh the asset details associated with this&#34;&#34;&#34;
@@ -1487,19 +1527,26 @@ instance of the Asset class</p></div>
                             if asset is not supported for this operation
 
         &#34;&#34;&#34;
-        if self.asset_type != InventoryConstants.AssetType.NAME_SERVER.value:
+        if self.asset_type != InventoryConstants.AssetType.IDENTITY_SERVER.name:
             raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Not supported other than Name Server asset type&#34;)
-        return self._ediscovery_client_obj.get_job_history()
+        flag, response = self._cvpysdk_obj.make_request(
+            &#39;GET&#39;, self._API_ASSET_JOBS % (self._inventory_id, self._asset_id))
+        if flag:
+            if response.json() and &#39;jobs&#39; in response.json():
+                return response.json()[&#39;jobs&#39;]
+            raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Unknown response while fetching job history on inventory&#34;)
+        else:
+            self._response_not_success(response)
 
     def get_job_status(self):
-        &#34;&#34;&#34;Returns the job status details of this asset
+        &#34;&#34;&#34;Returns the latest job status details of this asset
 
                 Args:
                     None
 
                 Returns:
 
-                    dict    --  containing job status details
+                    str    --  last job status (Eg:- RUNNING / IDLE)
 
                 Raises:
 
@@ -1510,36 +1557,10 @@ instance of the Asset class</p></div>
                              if asset is not supported for this operation
 
         &#34;&#34;&#34;
-        if self.asset_type != InventoryConstants.AssetType.NAME_SERVER.value:
+        if self.asset_type != InventoryConstants.AssetType.IDENTITY_SERVER.name:
             raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Not supported other than Name Server asset type&#34;)
-        return self._ediscovery_client_obj.get_job_status()
-
-    def start_collection(self, wait_for_job=False, wait_time=60):
-        &#34;&#34;&#34;Starts collection job on this asset
-
-                Args:
-
-                    wait_for_job        (bool)      --  specifies whether to wait for job to complete or not
-
-                    wait_time           (int)       --  time interval to wait for job completion in Mins
-                                                            Default : 60Mins
-
-                Return:
-
-                    None
-
-                Raises:
-
-                    SDKException:
-
-                            if failed to start collection job
-
-                            if asset is not supported for this operation
-
-        &#34;&#34;&#34;
-        if self.asset_type != InventoryConstants.AssetType.NAME_SERVER.value:
-            raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Not supported other than Name Server asset type&#34;)
-        return self._ediscovery_client_obj.start_job(wait_for_job=wait_for_job, wait_time=wait_time)
+        self.refresh()  # do refresh before getting current status
+        return self.asset_status
 
     def get_asset_prop(self, prop_name):
         &#34;&#34;&#34;returns the property value for given property name for this asset
@@ -1603,7 +1624,7 @@ instance of the Asset class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L1143-L1146" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L1157-L1160" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def asset_id(self):
@@ -1617,7 +1638,7 @@ def asset_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L1148-L1151" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L1162-L1165" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def asset_name(self):
@@ -1631,7 +1652,7 @@ def asset_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L1168-L1171" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L1182-L1185" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def asset_props(self):
@@ -1645,7 +1666,7 @@ def asset_props(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L1163-L1166" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L1177-L1180" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def asset_status(self):
@@ -1659,7 +1680,7 @@ def asset_status(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L1158-L1161" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L1172-L1175" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def asset_type(self):
@@ -1673,7 +1694,7 @@ def asset_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L1153-L1156" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L1167-L1170" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def crawl_start_time(self):
@@ -1687,7 +1708,7 @@ def crawl_start_time(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L1173-L1176" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L1187-L1190" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def inventory_id(self):
@@ -1715,7 +1736,7 @@ Value of the property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L1124-L1141" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L1138-L1155" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_asset_prop(self, prop_name):
     &#34;&#34;&#34;returns the property value for given property name for this asset
@@ -1757,7 +1778,7 @@ containing job history details</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L1051-L1072" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L1084-L1112" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_job_history(self):
     &#34;&#34;&#34;Returns the job history details of this asset
@@ -1778,22 +1799,29 @@ containing job history details</p>
                         if asset is not supported for this operation
 
     &#34;&#34;&#34;
-    if self.asset_type != InventoryConstants.AssetType.NAME_SERVER.value:
+    if self.asset_type != InventoryConstants.AssetType.IDENTITY_SERVER.name:
         raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Not supported other than Name Server asset type&#34;)
-    return self._ediscovery_client_obj.get_job_history()</code></pre>
+    flag, response = self._cvpysdk_obj.make_request(
+        &#39;GET&#39;, self._API_ASSET_JOBS % (self._inventory_id, self._asset_id))
+    if flag:
+        if response.json() and &#39;jobs&#39; in response.json():
+            return response.json()[&#39;jobs&#39;]
+        raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Unknown response while fetching job history on inventory&#34;)
+    else:
+        self._response_not_success(response)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.activateapps.inventory_manager.Asset.get_job_status"><code class="name flex">
 <span>def <span class="ident">get_job_status</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns the job status details of this asset</p>
+<div class="desc"><p>Returns the latest job status details of this asset</p>
 <h2 id="args">Args</h2>
 <p>None</p>
 <h2 id="returns">Returns</h2>
-<p>dict
+<p>str
 &ndash;
-containing job status details</p>
+last job status (Eg:- RUNNING / IDLE)</p>
 <h2 id="raises">Raises</h2>
 <p>SDKException:</p>
 <pre><code>    if failed to get job status
@@ -1803,17 +1831,17 @@ containing job status details</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L1074-L1095" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L1114-L1136" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_job_status(self):
-    &#34;&#34;&#34;Returns the job status details of this asset
+    &#34;&#34;&#34;Returns the latest job status details of this asset
 
             Args:
                 None
 
             Returns:
 
-                dict    --  containing job status details
+                str    --  last job status (Eg:- RUNNING / IDLE)
 
             Raises:
 
@@ -1824,9 +1852,10 @@ containing job status details</p>
                          if asset is not supported for this operation
 
     &#34;&#34;&#34;
-    if self.asset_type != InventoryConstants.AssetType.NAME_SERVER.value:
+    if self.asset_type != InventoryConstants.AssetType.IDENTITY_SERVER.name:
         raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Not supported other than Name Server asset type&#34;)
-    return self._ediscovery_client_obj.get_job_status()</code></pre>
+    self.refresh()  # do refresh before getting current status
+    return self.asset_status</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.activateapps.inventory_manager.Asset.refresh"><code class="name flex">
@@ -1837,67 +1866,11 @@ containing job status details</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L1047-L1049" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L1080-L1082" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the asset details associated with this&#34;&#34;&#34;
     self._asset_props = self._get_properties()</code></pre>
-</details>
-</dd>
-<dt id="cvpysdk.activateapps.inventory_manager.Asset.start_collection"><code class="name flex">
-<span>def <span class="ident">start_collection</span></span>(<span>self, wait_for_job=False, wait_time=60)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Starts collection job on this asset</p>
-<h2 id="args">Args</h2>
-<p>wait_for_job
-(bool)
-&ndash;
-specifies whether to wait for job to complete or not</p>
-<p>wait_time
-(int)
-&ndash;
-time interval to wait for job completion in Mins
-Default : 60Mins</p>
-<h2 id="return">Return</h2>
-<p>None</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
-<pre><code>    if failed to start collection job
-
-    if asset is not supported for this operation
-</code></pre></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L1097-L1122" class="git-link">Browse git</a>
-</summary>
-<pre><code class="python">def start_collection(self, wait_for_job=False, wait_time=60):
-    &#34;&#34;&#34;Starts collection job on this asset
-
-            Args:
-
-                wait_for_job        (bool)      --  specifies whether to wait for job to complete or not
-
-                wait_time           (int)       --  time interval to wait for job completion in Mins
-                                                        Default : 60Mins
-
-            Return:
-
-                None
-
-            Raises:
-
-                SDKException:
-
-                        if failed to start collection job
-
-                        if asset is not supported for this operation
-
-    &#34;&#34;&#34;
-    if self.asset_type != InventoryConstants.AssetType.NAME_SERVER.value:
-        raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Not supported other than Name Server asset type&#34;)
-    return self._ediscovery_client_obj.start_job(wait_for_job=wait_for_job, wait_time=wait_time)</code></pre>
 </details>
 </dd>
 </dl>
@@ -1930,7 +1903,7 @@ instance of the Assets class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L741-L978" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L770-L988" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Assets():
     &#34;&#34;&#34;Class to represent all assets in an inventory&#34;&#34;&#34;
@@ -1960,8 +1933,8 @@ instance of the Assets class</p></div>
         else:
             self._inventory_id = inventory_id
         self._assets = None
-        self._API_INVENTORIES = self._services[&#39;EDISCOVERY_INVENTORIES&#39;]
         self._API_ASSETS = self._services[&#39;EDISCOVERY_ASSETS&#39;]
+        self._API_ASSET = self._services[&#39;EDISCOVERY_ASSET&#39;]
         self.refresh()
 
     def _get_assets_properties(self):
@@ -1975,14 +1948,19 @@ instance of the Assets class</p></div>
                         dict    --  containing asset properties
 
         &#34;&#34;&#34;
-        inv_mgr = self._commcell_object.activate.inventory_manager()
-        inv_obj = inv_mgr.get(self._inventory_name)
-        inv_obj.refresh()
-        assets = {}
-        for asset in inv_obj.properties[&#39;assets&#39;]:
-            name = asset[&#39;name&#39;].lower()
-            assets[name] = asset
-        return assets
+        flag, response = self._cvpysdk_obj.make_request(
+            &#39;GET&#39;, self._API_ASSETS % self._inventory_id)
+        if flag:
+            if response.json() and &#39;assets&#39; in response.json():
+                assets = {}
+                for asset in response.json()[&#39;assets&#39;]:
+                    name = asset[&#39;name&#39;].lower()
+                    assets[name] = asset
+                return assets
+            else:
+                raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Unknown response while fetching assets on inventory&#34;)
+        else:
+            self._response_not_success(response)
 
     def refresh(self):
         &#34;&#34;&#34;Refresh the assets details associated with this inventory&#34;&#34;&#34;
@@ -2037,7 +2015,7 @@ instance of the Assets class</p></div>
             raise SDKException(&#39;Inventory&#39;, &#39;109&#39;)
         return Asset(self._commcell_object, self._inventory_name, asset_name, self._inventory_id)
 
-    def add(self, asset_name, asset_type=InventoryConstants.AssetType.NAME_SERVER, **kwargs):
+    def add(self, asset_name, asset_type=InventoryConstants.AssetType.IDENTITY_SERVER, **kwargs):
         &#34;&#34;&#34;Adds asset to the inventory
 
                 Args:
@@ -2051,14 +2029,11 @@ instance of the Assets class</p></div>
                             fqdn                --  File server FQDN
 
                             os                  --  File Server OS type
+                                                        (Default:Windows)
 
                             ip                  --  File server IP
 
                             country_code        --  Country code (ISO 3166 2-letter code)
-
-                            country_name        --  Country name
-
-                            domain              --  File Server Domain name(optional)
 
                 Returns:
 
@@ -2075,40 +2050,31 @@ instance of the Assets class</p></div>
         &#34;&#34;&#34;
         if not isinstance(asset_name, str) or not isinstance(asset_type, InventoryConstants.AssetType):
             raise SDKException(&#39;Inventory&#39;, &#39;101&#39;)
-        request_json = copy.deepcopy(InventoryConstants.ASSET_ADD_TO_INVENTORY_JSON)
-        request_json[&#39;inventoryId&#39;] = int(self._inventory_id)
-        asset_json = copy.deepcopy(InventoryConstants.ASSET_ADD_REQUEST_JSON)
-        asset_json[&#39;name&#39;] = asset_name
-        asset_json[&#39;type&#39;] = asset_type.value
-        property_json = copy.deepcopy(InventoryConstants.ASSET_PROPERTY_JSON)
+        request_json = {}
         if asset_type.value == InventoryConstants.AssetType.FILE_SERVER.value:
             for prop in InventoryConstants.ASSET_FILE_SERVER_PROPERTY:
                 prop_name = InventoryConstants.FIELD_PROPS_MAPPING[prop]
                 default_value = &#34;&#34;
                 if prop_name not in kwargs:
-                    # if domain is not passed, then form domain from fqdn
-                    if prop == InventoryConstants.FIELD_PROPERTY_DOMAIN:
-                        default_value = kwargs.get(InventoryConstants.KWARGS_FQDN)
-                        default_value = default_value.split(&#34;.&#34;, 1)[1]
                     # always use asset name as file server name
                     if prop == InventoryConstants.FIELD_PROPERTY_NAME:
                         default_value = asset_name
-                prop_json = copy.deepcopy(InventoryConstants.ASSET_PROPERTY_NAME_VALUE_PAIR_JSON)
-                prop_json[&#39;name&#39;] = prop
-                prop_json[&#39;value&#39;] = kwargs.get(prop_name, default_value)
-                property_json[&#39;propertyValues&#39;][&#39;nameValues&#39;].append(prop_json)
-            asset_json.update(property_json)
-        request_json[&#39;assets&#39;].append(asset_json)
+                    if prop == InventoryConstants.FIELD_PROPERTY_OS:
+                        default_value = &#34;Windows&#34;
+                request_json[prop] = kwargs.get(prop_name, default_value)
+        else:
+            request_json = copy.deepcopy(InventoryConstants.IDENTITY_SERVER_ASSET_ADD_TO_INVENTORY_JSON)
+            request_json[&#39;identityServers&#39;] = [asset_name]
+
         flag, response = self._cvpysdk_obj.make_request(
-            &#39;PUT&#39;, self._API_INVENTORIES, request_json)
+            &#39;PUT&#39;, self._API_ASSETS % self._inventory_id, request_json)
         if flag:
-            if response.json() and &#39;errorResp&#39; in response.json():
-                err_resp = response.json()[&#39;errorResp&#39;]
-                if &#39;errorCode&#39; in err_resp and err_resp[&#39;errorCode&#39;] != 0:
+            if response.json():
+                if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
                     raise SDKException(
                         &#39;Inventory&#39;,
                         &#39;102&#39;,
-                        f&#34;Failed to add asset to inventory with error [{err_resp[&#39;errorMessage&#39;]}]&#34;)
+                        f&#34;Failed to add asset to inventory with error [{response.json()[&#39;errorMessage&#39;]}]&#34;)
                 self.refresh()
                 return Asset(self._commcell_object, self._inventory_name, asset_name, self._inventory_id)
             raise SDKException(&#39;Inventory&#39;, &#39;108&#39;)
@@ -2135,32 +2101,20 @@ instance of the Assets class</p></div>
 
                             if unable to find this asset in inventory
         &#34;&#34;&#34;
+
         if not isinstance(asset_name, str):
             raise SDKException(&#39;Inventory&#39;, &#39;101&#39;)
         if not self.has_asset(asset_name):
             raise SDKException(&#39;Inventory&#39;, &#39;109&#39;)
-        request_json = copy.deepcopy(InventoryConstants.ASSET_DELETE_FROM_INVENTORY_JSON)
-        request_json[&#39;inventoryId&#39;] = int(self._inventory_id)
-        if &#39;assetId&#39; in self._assets[asset_name.lower()]:
-            request_json[&#39;assets&#39;].append({&#39;assetId&#39;: self._assets[asset_name.lower()][&#39;assetId&#39;]})
-        else:
-            req = copy.deepcopy(InventoryConstants.ASSET_ADD_REQUEST_JSON)
-            asset_obj = self.get(asset_name)
-            asset_type = asset_obj.asset_type
-            # for file server asset, asset name will not be display name in backend delete request. so fetch fqdn
-            req[&#39;name&#39;] = asset_obj.get_asset_prop(prop_name=InventoryConstants.FIELD_PROPERTY_DNSHOST)
-            req[&#39;type&#39;] = asset_type
-            request_json[&#39;assets&#39;].append(req)
         flag, response = self._cvpysdk_obj.make_request(
-            &#39;PUT&#39;, self._API_ASSETS % self._inventory_id, request_json)
+            &#39;DELETE&#39;, self._API_ASSET % (self._inventory_id, self._assets[asset_name.lower()][&#39;id&#39;]))
         if flag:
             if response.json():
-                err_resp = response.json()[&#39;errorResp&#39;]
-                if &#39;errorCode&#39; in err_resp and err_resp[&#39;errorCode&#39;] != 0:
+                if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
                     raise SDKException(
                         &#39;Inventory&#39;,
                         &#39;102&#39;,
-                        f&#34;Failed to delete asset from inventory with error [{err_resp[&#39;errorMessage&#39;]}]&#34;)
+                        f&#34;Failed to delete asset from inventory with error [{response.json()[&#39;errorMessage&#39;]}]&#34;)
                 self.refresh()
                 return
             raise SDKException(&#39;Inventory&#39;, &#39;110&#39;)
@@ -2179,7 +2133,7 @@ instance of the Assets class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L975-L978" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L985-L988" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def assets(self):
@@ -2191,7 +2145,7 @@ def assets(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.activateapps.inventory_manager.Assets.add"><code class="name flex">
-<span>def <span class="ident">add</span></span>(<span>self, asset_name, asset_type=AssetType.NAME_SERVER, **kwargs)</span>
+<span>def <span class="ident">add</span></span>(<span>self, asset_name, asset_type=AssetType.IDENTITY_SERVER, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Adds asset to the inventory</p>
@@ -2208,14 +2162,11 @@ type of asset (Refer to InventoryConstants.AssetType class)</p>
 <pre><code>    fqdn                --  File server FQDN
 
     os                  --  File Server OS type
+                                (Default:Windows)
 
     ip                  --  File server IP
 
     country_code        --  Country code (ISO 3166 2-letter code)
-
-    country_name        --  Country name
-
-    domain              --  File Server Domain name(optional)
 </code></pre>
 <h2 id="returns">Returns</h2>
 <p>object
@@ -2230,9 +2181,9 @@ Instance of Asset class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L846-L921" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L880-L943" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def add(self, asset_name, asset_type=InventoryConstants.AssetType.NAME_SERVER, **kwargs):
+<pre><code class="python">def add(self, asset_name, asset_type=InventoryConstants.AssetType.IDENTITY_SERVER, **kwargs):
     &#34;&#34;&#34;Adds asset to the inventory
 
             Args:
@@ -2246,14 +2197,11 @@ Instance of Asset class</p>
                         fqdn                --  File server FQDN
 
                         os                  --  File Server OS type
+                                                    (Default:Windows)
 
                         ip                  --  File server IP
 
                         country_code        --  Country code (ISO 3166 2-letter code)
-
-                        country_name        --  Country name
-
-                        domain              --  File Server Domain name(optional)
 
             Returns:
 
@@ -2270,40 +2218,31 @@ Instance of Asset class</p>
     &#34;&#34;&#34;
     if not isinstance(asset_name, str) or not isinstance(asset_type, InventoryConstants.AssetType):
         raise SDKException(&#39;Inventory&#39;, &#39;101&#39;)
-    request_json = copy.deepcopy(InventoryConstants.ASSET_ADD_TO_INVENTORY_JSON)
-    request_json[&#39;inventoryId&#39;] = int(self._inventory_id)
-    asset_json = copy.deepcopy(InventoryConstants.ASSET_ADD_REQUEST_JSON)
-    asset_json[&#39;name&#39;] = asset_name
-    asset_json[&#39;type&#39;] = asset_type.value
-    property_json = copy.deepcopy(InventoryConstants.ASSET_PROPERTY_JSON)
+    request_json = {}
     if asset_type.value == InventoryConstants.AssetType.FILE_SERVER.value:
         for prop in InventoryConstants.ASSET_FILE_SERVER_PROPERTY:
             prop_name = InventoryConstants.FIELD_PROPS_MAPPING[prop]
             default_value = &#34;&#34;
             if prop_name not in kwargs:
-                # if domain is not passed, then form domain from fqdn
-                if prop == InventoryConstants.FIELD_PROPERTY_DOMAIN:
-                    default_value = kwargs.get(InventoryConstants.KWARGS_FQDN)
-                    default_value = default_value.split(&#34;.&#34;, 1)[1]
                 # always use asset name as file server name
                 if prop == InventoryConstants.FIELD_PROPERTY_NAME:
                     default_value = asset_name
-            prop_json = copy.deepcopy(InventoryConstants.ASSET_PROPERTY_NAME_VALUE_PAIR_JSON)
-            prop_json[&#39;name&#39;] = prop
-            prop_json[&#39;value&#39;] = kwargs.get(prop_name, default_value)
-            property_json[&#39;propertyValues&#39;][&#39;nameValues&#39;].append(prop_json)
-        asset_json.update(property_json)
-    request_json[&#39;assets&#39;].append(asset_json)
+                if prop == InventoryConstants.FIELD_PROPERTY_OS:
+                    default_value = &#34;Windows&#34;
+            request_json[prop] = kwargs.get(prop_name, default_value)
+    else:
+        request_json = copy.deepcopy(InventoryConstants.IDENTITY_SERVER_ASSET_ADD_TO_INVENTORY_JSON)
+        request_json[&#39;identityServers&#39;] = [asset_name]
+
     flag, response = self._cvpysdk_obj.make_request(
-        &#39;PUT&#39;, self._API_INVENTORIES, request_json)
+        &#39;PUT&#39;, self._API_ASSETS % self._inventory_id, request_json)
     if flag:
-        if response.json() and &#39;errorResp&#39; in response.json():
-            err_resp = response.json()[&#39;errorResp&#39;]
-            if &#39;errorCode&#39; in err_resp and err_resp[&#39;errorCode&#39;] != 0:
+        if response.json():
+            if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
                 raise SDKException(
                     &#39;Inventory&#39;,
                     &#39;102&#39;,
-                    f&#34;Failed to add asset to inventory with error [{err_resp[&#39;errorMessage&#39;]}]&#34;)
+                    f&#34;Failed to add asset to inventory with error [{response.json()[&#39;errorMessage&#39;]}]&#34;)
             self.refresh()
             return Asset(self._commcell_object, self._inventory_name, asset_name, self._inventory_id)
         raise SDKException(&#39;Inventory&#39;, &#39;108&#39;)
@@ -2333,7 +2272,7 @@ Name of the asset</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L923-L973" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L945-L983" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, asset_name):
     &#34;&#34;&#34;Delete the asset from the inventory
@@ -2356,32 +2295,20 @@ Name of the asset</p>
 
                         if unable to find this asset in inventory
     &#34;&#34;&#34;
+
     if not isinstance(asset_name, str):
         raise SDKException(&#39;Inventory&#39;, &#39;101&#39;)
     if not self.has_asset(asset_name):
         raise SDKException(&#39;Inventory&#39;, &#39;109&#39;)
-    request_json = copy.deepcopy(InventoryConstants.ASSET_DELETE_FROM_INVENTORY_JSON)
-    request_json[&#39;inventoryId&#39;] = int(self._inventory_id)
-    if &#39;assetId&#39; in self._assets[asset_name.lower()]:
-        request_json[&#39;assets&#39;].append({&#39;assetId&#39;: self._assets[asset_name.lower()][&#39;assetId&#39;]})
-    else:
-        req = copy.deepcopy(InventoryConstants.ASSET_ADD_REQUEST_JSON)
-        asset_obj = self.get(asset_name)
-        asset_type = asset_obj.asset_type
-        # for file server asset, asset name will not be display name in backend delete request. so fetch fqdn
-        req[&#39;name&#39;] = asset_obj.get_asset_prop(prop_name=InventoryConstants.FIELD_PROPERTY_DNSHOST)
-        req[&#39;type&#39;] = asset_type
-        request_json[&#39;assets&#39;].append(req)
     flag, response = self._cvpysdk_obj.make_request(
-        &#39;PUT&#39;, self._API_ASSETS % self._inventory_id, request_json)
+        &#39;DELETE&#39;, self._API_ASSET % (self._inventory_id, self._assets[asset_name.lower()][&#39;id&#39;]))
     if flag:
         if response.json():
-            err_resp = response.json()[&#39;errorResp&#39;]
-            if &#39;errorCode&#39; in err_resp and err_resp[&#39;errorCode&#39;] != 0:
+            if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
                 raise SDKException(
                     &#39;Inventory&#39;,
                     &#39;102&#39;,
-                    f&#34;Failed to delete asset from inventory with error [{err_resp[&#39;errorMessage&#39;]}]&#34;)
+                    f&#34;Failed to delete asset from inventory with error [{response.json()[&#39;errorMessage&#39;]}]&#34;)
             self.refresh()
             return
         raise SDKException(&#39;Inventory&#39;, &#39;110&#39;)
@@ -2410,7 +2337,7 @@ Name of the asset</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L821-L844" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L855-L878" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, asset_name):
     &#34;&#34;&#34;Returns the asset object
@@ -2455,7 +2382,7 @@ true if asset exists else false</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L808-L819" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L842-L853" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_asset(self, asset_name):
     &#34;&#34;&#34;Checks whether given asset exists in inventory or not
@@ -2479,7 +2406,7 @@ true if asset exists else false</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L793-L795" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L827-L829" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the assets details associated with this inventory&#34;&#34;&#34;
@@ -2507,7 +2434,7 @@ instance of the Inventories class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L163-L393" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L163-L388" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Inventories():
     &#34;&#34;&#34;Class for representing all inventories in the commcell.&#34;&#34;&#34;
@@ -2567,10 +2494,10 @@ instance of the Inventories class</p></div>
             &#39;GET&#39;, self._API_INVENTORIES
         )
         if flag:
-            if response.json() and &#39;inventoryList&#39; in response.json():
-                inventories = response.json()[&#39;inventoryList&#39;]
+            if response.json() and &#39;inventories&#39; in response.json():
+                inventories = response.json()[&#39;inventories&#39;]
                 for inventory in inventories:
-                    output[inventory[&#39;inventoryName&#39;].lower()] = inventory
+                    output[inventory[&#39;displayName&#39;].lower()] = inventory
                 return output
             raise SDKException(&#39;Inventory&#39;, &#39;103&#39;)
         self._response_not_success(response)
@@ -2605,30 +2532,26 @@ instance of the Inventories class</p></div>
             raise SDKException(&#39;Inventory&#39;, &#39;101&#39;)
         req_json = copy.deepcopy(InventoryConstants.INVENTORY_ADD_REQUEST_JSON)
         if name_server:
-            asset_json = copy.deepcopy(InventoryConstants.ASSET_ADD_REQUEST_JSON)
-            for server in name_server:
-                asset_json[&#39;name&#39;] = server
-                req_json[&#39;assets&#39;].append(asset_json)
-        req_json[&#39;inventoryName&#39;] = inventory_name
+            req_json[&#39;identityServers&#39;] = name_server
+        req_json[&#39;name&#39;] = inventory_name
         if not self._commcell_object.index_servers.has(index_server):
             raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Given index server name not exists on this commcell&#34;)
         index_server_obj = self._commcell_object.index_servers.get(index_server)
-        req_json[&#39;analyticsEngineCloud&#39;][&#39;cloudId&#39;] = index_server_obj.cloud_id
-        req_json[&#39;analyticsEngineCloud&#39;][&#39;cloudDisplayName&#39;] = index_server_obj.cloud_name
+        req_json[&#39;indexServer&#39;][&#39;cloudId&#39;] = index_server_obj.cloud_id
+        req_json[&#39;indexServer&#39;][&#39;displayName&#39;] = index_server_obj.cloud_name
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._API_INVENTORIES, req_json
         )
         if flag:
-            if response.json() and &#39;errorResp&#39; in response.json():
-                err_resp = response.json()[&#39;errorResp&#39;]
-                if &#39;errorCode&#39; in err_resp and err_resp[&#39;errorCode&#39;] != 0:
+            if response.json():
+                if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
                     raise SDKException(
                         &#39;Inventory&#39;,
                         &#39;102&#39;,
-                        f&#34;Failed to create inventory with error [{err_resp[&#39;errorMessage&#39;]}]&#34;)
-                elif &#39;inventoryList&#39; in response.json():
-                    inventory = response.json()[&#39;inventoryList&#39;][0]
-                    inventory_id = inventory[&#39;inventoryId&#39;]
+                        f&#34;Failed to create inventory with error [{response.json()[&#39;errorMessage&#39;]}]&#34;)
+                elif &#39;name&#39; in response.json():
+                    inventory = response.json()[&#39;name&#39;]
+                    inventory_id = response.json()[&#39;id&#39;]
                     self.refresh()
                     return Inventory(self._commcell_object, inventory_name, inventory_id)
                 raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, f&#34;Failed to create inventory with response - {response.json()}&#34;)
@@ -2661,16 +2584,15 @@ instance of the Inventories class</p></div>
         if not self.has_inventory(inventory_name):
             raise SDKException(&#39;Inventory&#39;, &#39;106&#39;)
         flag, response = self._cvpysdk_object.make_request(
-            &#39;DELETE&#39;, self._API_DELETE_INVENTORY % self._inventories[inventory_name.lower()][&#39;inventoryId&#39;]
+            &#39;DELETE&#39;, self._API_DELETE_INVENTORY % self._inventories[inventory_name.lower()][&#39;id&#39;]
         )
         if flag:
-            if response.json() and &#39;errorResp&#39; in response.json():
-                err_resp = response.json()[&#39;errorResp&#39;]
-                if &#39;errorCode&#39; in err_resp and err_resp[&#39;errorCode&#39;] != 0:
+            if response.json():
+                if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
                     raise SDKException(
                         &#39;Inventory&#39;,
                         &#39;102&#39;,
-                        f&#34;Failed to Delete inventory with error [{err_resp[&#39;errorMessage&#39;]}]&#34;)
+                        f&#34;Failed to Delete inventory with error [{response.json()[&#39;errorMessage&#39;]}]&#34;)
                 self.refresh()
             else:
                 raise SDKException(&#39;Inventory&#39;, &#39;107&#39;)
@@ -2737,7 +2659,7 @@ instance of the Inventories class</p></div>
             raise SDKException(&#39;Inventory&#39;, &#39;101&#39;)
 
         if self.has_inventory(inventory_name):
-            inventory_id = self._inventories[inventory_name.lower()][&#39;inventoryId&#39;]
+            inventory_id = self._inventories[inventory_name.lower()][&#39;id&#39;]
             return Inventory(self._commcell_object, inventory_name, inventory_id)
         raise SDKException(&#39;Inventory&#39;, &#39;106&#39;)</code></pre>
 </details>
@@ -2776,7 +2698,7 @@ Instance of Inventory Class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L229-L287" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L229-L283" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, inventory_name, index_server, name_server=None):
     &#34;&#34;&#34;Adds inventory to the commcell with given inputs
@@ -2808,30 +2730,26 @@ Instance of Inventory Class</p>
         raise SDKException(&#39;Inventory&#39;, &#39;101&#39;)
     req_json = copy.deepcopy(InventoryConstants.INVENTORY_ADD_REQUEST_JSON)
     if name_server:
-        asset_json = copy.deepcopy(InventoryConstants.ASSET_ADD_REQUEST_JSON)
-        for server in name_server:
-            asset_json[&#39;name&#39;] = server
-            req_json[&#39;assets&#39;].append(asset_json)
-    req_json[&#39;inventoryName&#39;] = inventory_name
+        req_json[&#39;identityServers&#39;] = name_server
+    req_json[&#39;name&#39;] = inventory_name
     if not self._commcell_object.index_servers.has(index_server):
         raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Given index server name not exists on this commcell&#34;)
     index_server_obj = self._commcell_object.index_servers.get(index_server)
-    req_json[&#39;analyticsEngineCloud&#39;][&#39;cloudId&#39;] = index_server_obj.cloud_id
-    req_json[&#39;analyticsEngineCloud&#39;][&#39;cloudDisplayName&#39;] = index_server_obj.cloud_name
+    req_json[&#39;indexServer&#39;][&#39;cloudId&#39;] = index_server_obj.cloud_id
+    req_json[&#39;indexServer&#39;][&#39;displayName&#39;] = index_server_obj.cloud_name
     flag, response = self._cvpysdk_object.make_request(
         &#39;POST&#39;, self._API_INVENTORIES, req_json
     )
     if flag:
-        if response.json() and &#39;errorResp&#39; in response.json():
-            err_resp = response.json()[&#39;errorResp&#39;]
-            if &#39;errorCode&#39; in err_resp and err_resp[&#39;errorCode&#39;] != 0:
+        if response.json():
+            if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
                 raise SDKException(
                     &#39;Inventory&#39;,
                     &#39;102&#39;,
-                    f&#34;Failed to create inventory with error [{err_resp[&#39;errorMessage&#39;]}]&#34;)
-            elif &#39;inventoryList&#39; in response.json():
-                inventory = response.json()[&#39;inventoryList&#39;][0]
-                inventory_id = inventory[&#39;inventoryId&#39;]
+                    f&#34;Failed to create inventory with error [{response.json()[&#39;errorMessage&#39;]}]&#34;)
+            elif &#39;name&#39; in response.json():
+                inventory = response.json()[&#39;name&#39;]
+                inventory_id = response.json()[&#39;id&#39;]
                 self.refresh()
                 return Inventory(self._commcell_object, inventory_name, inventory_id)
             raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, f&#34;Failed to create inventory with response - {response.json()}&#34;)
@@ -2862,7 +2780,7 @@ Inventory name to be deleted</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L289-L329" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L285-L324" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, inventory_name):
     &#34;&#34;&#34;Deletes the inventory from the commcell
@@ -2890,16 +2808,15 @@ Inventory name to be deleted</p>
     if not self.has_inventory(inventory_name):
         raise SDKException(&#39;Inventory&#39;, &#39;106&#39;)
     flag, response = self._cvpysdk_object.make_request(
-        &#39;DELETE&#39;, self._API_DELETE_INVENTORY % self._inventories[inventory_name.lower()][&#39;inventoryId&#39;]
+        &#39;DELETE&#39;, self._API_DELETE_INVENTORY % self._inventories[inventory_name.lower()][&#39;id&#39;]
     )
     if flag:
-        if response.json() and &#39;errorResp&#39; in response.json():
-            err_resp = response.json()[&#39;errorResp&#39;]
-            if &#39;errorCode&#39; in err_resp and err_resp[&#39;errorCode&#39;] != 0:
+        if response.json():
+            if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
                 raise SDKException(
                     &#39;Inventory&#39;,
                     &#39;102&#39;,
-                    f&#34;Failed to Delete inventory with error [{err_resp[&#39;errorMessage&#39;]}]&#34;)
+                    f&#34;Failed to Delete inventory with error [{response.json()[&#39;errorMessage&#39;]}]&#34;)
             self.refresh()
         else:
             raise SDKException(&#39;Inventory&#39;, &#39;107&#39;)
@@ -2928,7 +2845,7 @@ if inventory_name is not of type string
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L367-L393" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L362-L388" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, inventory_name):
     &#34;&#34;&#34;Returns a Inventory object for the given inventory name.
@@ -2954,7 +2871,7 @@ if inventory_name is not of type string
         raise SDKException(&#39;Inventory&#39;, &#39;101&#39;)
 
     if self.has_inventory(inventory_name):
-        inventory_id = self._inventories[inventory_name.lower()][&#39;inventoryId&#39;]
+        inventory_id = self._inventories[inventory_name.lower()][&#39;id&#39;]
         return Inventory(self._commcell_object, inventory_name, inventory_id)
     raise SDKException(&#39;Inventory&#39;, &#39;106&#39;)</code></pre>
 </details>
@@ -2974,7 +2891,7 @@ properties for the given inventory name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L335-L346" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L330-L341" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_properties(self, inventory_name):
     &#34;&#34;&#34;Returns a properties of the specified Inventory
@@ -3007,7 +2924,7 @@ if type of the inventory name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L348-L365" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L343-L360" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_inventory(self, inventory_name):
     &#34;&#34;&#34;Checks if a inventory exists in the commcell with the input name.
@@ -3037,7 +2954,7 @@ if type of the inventory name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L331-L333" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L326-L328" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the inventories associated with the commcell.&#34;&#34;&#34;
@@ -3074,7 +2991,7 @@ instance of the Inventory class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L396-L738" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L391-L767" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Inventory():
     &#34;&#34;&#34;Class for performing operations on a single inventory&#34;&#34;&#34;
@@ -3107,16 +3024,16 @@ instance of the Inventory class</p></div>
         self._data_source = None
         self._handler = None
         self._API_GET_INVENTORY_DETAILS = self._services[&#39;EDISCOVERY_INVENTORY&#39;]
-        self._API_SECURITY = self._services[&#39;SECURITY_ASSOCIATION&#39;]
         self._API_SECURITY_ENTITY = self._services[&#39;ENTITY_SECURITY_ASSOCIATION&#39;]
         self._API_GET_DEFAULT_HANDLER = self._services[&#39;EDISCOVERY_GET_DEFAULT_HANDLER&#39;]
+        self._API_PERMISSION = self._services[&#39;V4_ACTIVATE_DS_PERMISSION&#39;]
+        self._API_CRAWL = self._services[&#39;V4_INVENTORY_CRAWL&#39;]
 
         if not inventory_id:
             self._inventory_id = self._commcell_object.activate.inventory_manager().get(inventory_name).inventory_id
         else:
             self._inventory_id = inventory_id
         self.refresh()
-        self._ediscovery_client_obj = EdiscoveryClientOperations(class_object=self, commcell_object=commcell_object)
 
     def _response_not_success(self, response):
         &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
@@ -3128,6 +3045,27 @@ instance of the Inventory class</p></div>
 
         &#34;&#34;&#34;
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def _get_permission(self):
+        &#34;&#34;&#34;returns security association blob for this inventory
+
+                Args:
+
+                    None
+
+                Returns:
+
+                    dict    --  Security association blob
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_obj.make_request(
+            &#39;GET&#39;, self._API_PERMISSION % self._inventory_id
+        )
+        if flag:
+            if response.json() and &#39;securityAssociations&#39; in response.json():
+                return response.json()[&#39;securityAssociations&#39;]
+            raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Inventory permission fetch failed&#34;)
+        self._response_not_success(response)
 
     def _get_inventory_properties(self):
         &#34;&#34;&#34; Get inventory properties from the commcell
@@ -3144,12 +3082,11 @@ instance of the Inventory class</p></div>
             &#39;GET&#39;, self._API_GET_INVENTORY_DETAILS % self._inventory_id
         )
         if flag:
-            if response.json() and &#39;inventoryList&#39; in response.json():
-                inventory_props = response.json()[&#39;inventoryList&#39;][0]
-                self._index_server_name = inventory_props[&#39;analyticsEngineCloud&#39;][&#39;cloudDisplayName&#39;]
-                self._index_server_cloud_id = inventory_props[&#39;analyticsEngineCloud&#39;][&#39;cloudId&#39;]
-                self._inventory_name = inventory_props[&#39;inventoryName&#39;]
-                self._security_associations = inventory_props[&#39;securityAssociation&#39;][&#39;associations&#39;]
+            if response.json():
+                inventory_props = response.json()
+                self._index_server_name = inventory_props[&#39;indexServer&#39;][&#39;displayName&#39;]
+                self._index_server_cloud_id = inventory_props[&#39;indexServer&#39;][&#39;cloudId&#39;]
+                self._inventory_name = inventory_props[&#39;displayName&#39;]
                 return inventory_props
             raise SDKException(&#39;Inventory&#39;, &#39;104&#39;)
         self._response_not_success(response)
@@ -3159,6 +3096,7 @@ instance of the Inventory class</p></div>
         self._inventory_props = self._get_inventory_properties()
         self._schedule = self._get_schedule_object()
         self._data_source, self._handler = self._get_data_source_handler_object()
+        self._security_associations = self._get_permission()
 
     def get_assets(self):
         &#34;&#34;&#34;Returns the Assets class instance for this inventory
@@ -3192,7 +3130,21 @@ instance of the Inventory class</p></div>
                             if failed to start collection job
 
         &#34;&#34;&#34;
-        return self._ediscovery_client_obj.start_job()
+        flag, response = self._cvpysdk_obj.make_request(
+            &#39;PUT&#39;, self._API_CRAWL % self._inventory_id
+        )
+        if flag:
+            if response.json():
+                if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
+                    raise SDKException(
+                        &#39;Inventory&#39;,
+                        &#39;102&#39;,
+                        f&#34;Failed to start crawl on inventory with error [{response.json()[&#39;errorMessage&#39;]}]&#34;)
+                return
+            else:
+                raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Unknown response while starting collection job on inventory&#34;)
+        else:
+            self._response_not_success(response)
 
     def share(self, user_or_group_name, allow_edit_permission=False, is_user=True, ops_type=1):
         &#34;&#34;&#34;Shares inventory with given user or user group in commcell
@@ -3281,14 +3233,13 @@ instance of the Inventory class</p></div>
             request_json[&#39;securityAssociations&#39;][&#39;associations&#39;].extend(association_response)
 
         flag, response = self._cvpysdk_obj.make_request(
-            &#39;POST&#39;, self._API_SECURITY, request_json
+            &#39;PUT&#39;, self._API_PERMISSION % self._inventory_id, request_json
         )
         if flag:
-            if response.json() and &#39;response&#39; in response.json():
-                response_json = response.json()[&#39;response&#39;][0]
-                error_code = response_json[&#39;errorCode&#39;]
+            if response.json():
+                error_code = response.json()[&#39;errorCode&#39;]
                 if error_code != 0:
-                    error_message = response_json[&#39;errorString&#39;]
+                    error_message = response.json()[&#39;errorString&#39;]
                     raise SDKException(
                         &#39;Inventory&#39;,
                         &#39;102&#39;, error_message)
@@ -3428,7 +3379,7 @@ instance of the Inventory class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L730-L733" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L759-L762" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def data_source(self):
@@ -3442,7 +3393,7 @@ def data_source(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L735-L738" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L764-L767" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def handler(self):
@@ -3456,7 +3407,7 @@ def handler(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L705-L708" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L734-L737" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_server_cloud_id(self):
@@ -3470,7 +3421,7 @@ def index_server_cloud_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L700-L703" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L729-L732" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_server_name(self):
@@ -3484,7 +3435,7 @@ def index_server_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L710-L713" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L739-L742" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def inventory_id(self):
@@ -3498,7 +3449,7 @@ def inventory_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L715-L718" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L744-L747" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def inventory_name(self):
@@ -3512,7 +3463,7 @@ def inventory_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L695-L698" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L724-L727" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -3526,7 +3477,7 @@ def properties(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L725-L728" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L754-L757" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def schedule(self):
@@ -3540,7 +3491,7 @@ def schedule(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L720-L723" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L749-L752" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def security_associations(self):
@@ -3565,7 +3516,7 @@ Instance of Assets class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L480-L492" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L496-L508" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_assets(self):
     &#34;&#34;&#34;Returns the Assets class instance for this inventory
@@ -3604,7 +3555,7 @@ if input is not valid
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L671-L693" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L700-L722" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_inventory_data(self, handler_filter=&#34;&#34;):
     &#34;&#34;&#34; Executes handler for fetching data from inventory
@@ -3639,13 +3590,14 @@ if input is not valid
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L474-L478" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L489-L494" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the inventory details for associated object&#34;&#34;&#34;
     self._inventory_props = self._get_inventory_properties()
     self._schedule = self._get_schedule_object()
-    self._data_source, self._handler = self._get_data_source_handler_object()</code></pre>
+    self._data_source, self._handler = self._get_data_source_handler_object()
+    self._security_associations = self._get_permission()</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.activateapps.inventory_manager.Inventory.share"><code class="name flex">
@@ -3687,7 +3639,7 @@ Operation type</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L514-L618" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L544-L647" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def share(self, user_or_group_name, allow_edit_permission=False, is_user=True, ops_type=1):
     &#34;&#34;&#34;Shares inventory with given user or user group in commcell
@@ -3776,14 +3728,13 @@ Operation type</p>
         request_json[&#39;securityAssociations&#39;][&#39;associations&#39;].extend(association_response)
 
     flag, response = self._cvpysdk_obj.make_request(
-        &#39;POST&#39;, self._API_SECURITY, request_json
+        &#39;PUT&#39;, self._API_PERMISSION % self._inventory_id, request_json
     )
     if flag:
-        if response.json() and &#39;response&#39; in response.json():
-            response_json = response.json()[&#39;response&#39;][0]
-            error_code = response_json[&#39;errorCode&#39;]
+        if response.json():
+            error_code = response.json()[&#39;errorCode&#39;]
             if error_code != 0:
-                error_message = response_json[&#39;errorString&#39;]
+                error_message = response.json()[&#39;errorString&#39;]
                 raise SDKException(
                     &#39;Inventory&#39;,
                     &#39;102&#39;, error_message)
@@ -3812,7 +3763,7 @@ Operation type</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/activateapps/inventory_manager.py#L494-L512" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/activateapps/inventory_manager.py#L510-L542" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def start_collection(self):
     &#34;&#34;&#34;Starts collection job on this inventory
@@ -3832,7 +3783,21 @@ Operation type</p>
                         if failed to start collection job
 
     &#34;&#34;&#34;
-    return self._ediscovery_client_obj.start_job()</code></pre>
+    flag, response = self._cvpysdk_obj.make_request(
+        &#39;PUT&#39;, self._API_CRAWL % self._inventory_id
+    )
+    if flag:
+        if response.json():
+            if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
+                raise SDKException(
+                    &#39;Inventory&#39;,
+                    &#39;102&#39;,
+                    f&#34;Failed to start crawl on inventory with error [{response.json()[&#39;errorMessage&#39;]}]&#34;)
+            return
+        else:
+            raise SDKException(&#39;Inventory&#39;, &#39;102&#39;, &#34;Unknown response while starting collection job on inventory&#34;)
+    else:
+        self._response_not_success(response)</code></pre>
 </details>
 </dd>
 </dl>
@@ -3923,7 +3888,6 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.activateapps.inventory_manager.Asset.get_job_status" href="#cvpysdk.activateapps.inventory_manager.Asset.get_job_status">get_job_status</a></code></li>
 <li><code><a title="cvpysdk.activateapps.inventory_manager.Asset.inventory_id" href="#cvpysdk.activateapps.inventory_manager.Asset.inventory_id">inventory_id</a></code></li>
 <li><code><a title="cvpysdk.activateapps.inventory_manager.Asset.refresh" href="#cvpysdk.activateapps.inventory_manager.Asset.refresh">refresh</a></code></li>
-<li><code><a title="cvpysdk.activateapps.inventory_manager.Asset.start_collection" href="#cvpysdk.activateapps.inventory_manager.Asset.start_collection">start_collection</a></code></li>
 </ul>
 </li>
 <li>

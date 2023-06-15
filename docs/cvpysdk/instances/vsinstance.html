@@ -60,7 +60,7 @@ The Virtual Server 'Hyper-V' is named as 'hyperv.py'
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/vsinstance.py#L1-L310" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/vsinstance.py#L1-L312" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -198,7 +198,9 @@ class VirtualServerInstance(Instance):
         for member in instance_members:
             if self._commcell_object.client_groups.has_clientgroup(member):
                 client_group = self._commcell_object.client_groups.get(member)
-                instance_proxies.extend(client_group.associated_clients)
+                clients_obj = self._commcell_object.clients
+                instance_proxies.extend(list(set(clients_obj.virtualization_access_nodes).intersection(
+                    set(clients.lower() for clients in client_group.associated_clients))))
             else:
                 instance_proxies.append(member)
 
@@ -409,7 +411,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/vsinstance.py#L86-L310" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/vsinstance.py#L86-L312" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VirtualServerInstance(Instance):
     &#34;&#34;&#34;Class for representing an Instance of the Virtual Server agent.&#34;&#34;&#34;
@@ -462,7 +464,9 @@ default: None</p>
         for member in instance_members:
             if self._commcell_object.client_groups.has_clientgroup(member):
                 client_group = self._commcell_object.client_groups.get(member)
-                instance_proxies.extend(client_group.associated_clients)
+                clients_obj = self._commcell_object.clients
+                instance_proxies.extend(list(set(clients_obj.virtualization_access_nodes).intersection(
+                    set(clients.lower() for clients in client_group.associated_clients))))
             else:
                 instance_proxies.append(member)
 
@@ -671,7 +675,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/vsinstance.py#L148-L161" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/vsinstance.py#L150-L163" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def associated_clients(self):
@@ -695,7 +699,7 @@ def associated_clients(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/vsinstance.py#L225-L234" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/vsinstance.py#L227-L236" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def co_ordinator(self):
@@ -725,7 +729,7 @@ string : frel client name</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/vsinstance.py#L236-L260" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/vsinstance.py#L238-L262" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def frel(self):
@@ -760,7 +764,7 @@ def frel(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/vsinstance.py#L143-L146" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/vsinstance.py#L145-L148" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def server_name(self):

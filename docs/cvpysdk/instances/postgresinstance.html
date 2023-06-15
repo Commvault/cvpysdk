@@ -78,11 +78,19 @@ with postgres server
 **use_master_for_data_backup**       --  Returns True if master is used for data backup
 
 **archive_delete**                   --  Returns True if archive delete is enabled for instance
+
+**postgres_ssl_status**              --  Returns True/False based on if ssl is enabled or not
+
+**postgres_ssl_ca_file**             --  Returns SSL CA file path
+
+**postgres_ssl_key_file**            --  Returns SSL key file path
+
+**postgres_ssl_cert_file**           --  Returns SSL cert file path
 </code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L1-L691" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/postgresinstance.py#L1-L723" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -165,6 +173,14 @@ PostgreSQLInstance instance Attributes
 
     **archive_delete**                   --  Returns True if archive delete is enabled for instance
 
+    **postgres_ssl_status**              --  Returns True/False based on if ssl is enabled or not
+
+    **postgres_ssl_ca_file**             --  Returns SSL CA file path
+
+    **postgres_ssl_key_file**            --  Returns SSL key file path
+
+    **postgres_ssl_cert_file**           --  Returns SSL cert file path
+
 &#34;&#34;&#34;
 
 from __future__ import absolute_import
@@ -192,16 +208,15 @@ class PostgreSQLInstance(Instance):
         super(
             PostgreSQLInstance,
             self).__init__(
-                agent_object,
-                instance_name,
-                instance_id)
+            agent_object,
+            instance_name,
+            instance_id)
         self.backup_object = None
         self.backupset_object = None
         self.sub_client_object = None
         self.postgres_restore_json = None
         self._postgres_restore_options = None
         self._destination_restore_json = None
-
 
     @property
     def postgres_bin_directory(self):
@@ -358,7 +373,9 @@ class PostgreSQLInstance(Instance):
 
         &#34;&#34;&#34;
         if self.is_standby_enabled:
-            return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;, {}).get(&#39;instanceName&#39;, {})
+            return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;,
+                                                                                                {}).get(&#39;instanceName&#39;,
+                                                                                                        &#34;&#34;)
         return None
 
     @property
@@ -369,7 +386,9 @@ class PostgreSQLInstance(Instance):
 
         &#34;&#34;&#34;
         if self.is_standby_enabled:
-            return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;, {}).get(&#39;instanceId&#39;, {})
+            return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;,
+                                                                                                {}).get(&#39;instanceId&#39;,
+                                                                                                        &#34;&#34;)
         return None
 
     @property
@@ -412,7 +431,8 @@ class PostgreSQLInstance(Instance):
             Return Type: bool
 
         &#34;&#34;&#34;
-        return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;useMasterForDataBkp&#39;, False)
+        return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;useMasterForDataBkp&#39;,
+                                                                                            False)
 
     @use_master_for_data_backup.setter
     def use_master_for_data_backup(self, value):
@@ -428,6 +448,26 @@ class PostgreSQLInstance(Instance):
         properties = self._properties
         properties[&#39;postGreSQLInstance&#39;][&#39;standbyOptions&#39;][&#39;useMasterForDataBkp&#39;] = value
         self.update_properties(properties)
+
+    @property
+    def postgres_ssl_status(self):
+        &#34;&#34;&#34;Returns True/False based on if ssl is enabled or not&#34;&#34;&#34;
+        return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslEnabled&#34;, False)
+
+    @property
+    def postgres_ssl_ca_file(self):
+        &#34;&#34;&#34;Returns: str - ssl ca file path&#34;&#34;&#34;
+        return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslCa&#34;, &#34;&#34;)
+
+    @property
+    def postgres_ssl_key_file(self):
+        &#34;&#34;&#34;Returns: str - ssl key file path&#34;&#34;&#34;
+        return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslKey&#34;, &#34;&#34;)
+
+    @property
+    def postgres_ssl_cert_file(self):
+        &#34;&#34;&#34;Returns:str - ssl cert file path&#34;&#34;&#34;
+        return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslCert&#34;, &#34;&#34;)
 
     def change_sa_password(self, value):
         &#34;&#34;&#34; Changes postgresql user password
@@ -803,7 +843,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L92-L691" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/postgresinstance.py#L100-L723" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class PostgreSQLInstance(Instance):
     &#34;&#34;&#34;Derived class from Instance Base class, representing a POSTGRESQL instance,
@@ -822,16 +862,15 @@ instance of the Agent class</p>
         super(
             PostgreSQLInstance,
             self).__init__(
-                agent_object,
-                instance_name,
-                instance_id)
+            agent_object,
+            instance_name,
+            instance_id)
         self.backup_object = None
         self.backupset_object = None
         self.sub_client_object = None
         self.postgres_restore_json = None
         self._postgres_restore_options = None
         self._destination_restore_json = None
-
 
     @property
     def postgres_bin_directory(self):
@@ -988,7 +1027,9 @@ instance of the Agent class</p>
 
         &#34;&#34;&#34;
         if self.is_standby_enabled:
-            return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;, {}).get(&#39;instanceName&#39;, {})
+            return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;,
+                                                                                                {}).get(&#39;instanceName&#39;,
+                                                                                                        &#34;&#34;)
         return None
 
     @property
@@ -999,7 +1040,9 @@ instance of the Agent class</p>
 
         &#34;&#34;&#34;
         if self.is_standby_enabled:
-            return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;, {}).get(&#39;instanceId&#39;, {})
+            return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;,
+                                                                                                {}).get(&#39;instanceId&#39;,
+                                                                                                        &#34;&#34;)
         return None
 
     @property
@@ -1042,7 +1085,8 @@ instance of the Agent class</p>
             Return Type: bool
 
         &#34;&#34;&#34;
-        return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;useMasterForDataBkp&#39;, False)
+        return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;useMasterForDataBkp&#39;,
+                                                                                            False)
 
     @use_master_for_data_backup.setter
     def use_master_for_data_backup(self, value):
@@ -1058,6 +1102,26 @@ instance of the Agent class</p>
         properties = self._properties
         properties[&#39;postGreSQLInstance&#39;][&#39;standbyOptions&#39;][&#39;useMasterForDataBkp&#39;] = value
         self.update_properties(properties)
+
+    @property
+    def postgres_ssl_status(self):
+        &#34;&#34;&#34;Returns True/False based on if ssl is enabled or not&#34;&#34;&#34;
+        return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslEnabled&#34;, False)
+
+    @property
+    def postgres_ssl_ca_file(self):
+        &#34;&#34;&#34;Returns: str - ssl ca file path&#34;&#34;&#34;
+        return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslCa&#34;, &#34;&#34;)
+
+    @property
+    def postgres_ssl_key_file(self):
+        &#34;&#34;&#34;Returns: str - ssl key file path&#34;&#34;&#34;
+        return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslKey&#34;, &#34;&#34;)
+
+    @property
+    def postgres_ssl_cert_file(self):
+        &#34;&#34;&#34;Returns:str - ssl cert file path&#34;&#34;&#34;
+        return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslCert&#34;, &#34;&#34;)
 
     def change_sa_password(self, value):
         &#34;&#34;&#34; Changes postgresql user password
@@ -1419,7 +1483,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L243-L250" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/postgresinstance.py#L250-L257" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def archive_delete(self):
@@ -1438,7 +1502,7 @@ def archive_delete(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L289-L296" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/postgresinstance.py#L300-L307" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_standby_enabled(self):
@@ -1458,7 +1522,7 @@ Default: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L162-L169" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/postgresinstance.py#L169-L176" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def log_storage_policy(self):
@@ -1477,7 +1541,7 @@ def log_storage_policy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L215-L227" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/postgresinstance.py#L222-L234" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def maintenance_database(self):
@@ -1501,7 +1565,7 @@ def maintenance_database(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L148-L160" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/postgresinstance.py#L155-L167" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_archive_log_directory(self):
@@ -1525,7 +1589,7 @@ def postgres_archive_log_directory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L120-L132" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/postgresinstance.py#L127-L139" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_bin_directory(self):
@@ -1549,7 +1613,7 @@ def postgres_bin_directory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L134-L146" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/postgresinstance.py#L141-L153" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_lib_directory(self):
@@ -1573,7 +1637,7 @@ def postgres_lib_directory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L201-L213" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/postgresinstance.py#L208-L220" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_server_port_number(self):
@@ -1597,7 +1661,7 @@ def postgres_server_port_number(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L187-L199" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/postgresinstance.py#L194-L206" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_server_user_name(self):
@@ -1614,6 +1678,62 @@ def postgres_server_user_name(self):
         &#34;Could not fetch the Server name.&#34;)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_ssl_ca_file"><code class="name">var <span class="ident">postgres_ssl_ca_file</span></code></dt>
+<dd>
+<div class="desc"><p>Returns: str - ssl ca file path</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/postgresinstance.py#L363-L366" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def postgres_ssl_ca_file(self):
+    &#34;&#34;&#34;Returns: str - ssl ca file path&#34;&#34;&#34;
+    return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslCa&#34;, &#34;&#34;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_ssl_cert_file"><code class="name">var <span class="ident">postgres_ssl_cert_file</span></code></dt>
+<dd>
+<div class="desc"><p>Returns:str - ssl cert file path</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/postgresinstance.py#L373-L376" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def postgres_ssl_cert_file(self):
+    &#34;&#34;&#34;Returns:str - ssl cert file path&#34;&#34;&#34;
+    return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslCert&#34;, &#34;&#34;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_ssl_key_file"><code class="name">var <span class="ident">postgres_ssl_key_file</span></code></dt>
+<dd>
+<div class="desc"><p>Returns: str - ssl key file path</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/postgresinstance.py#L368-L371" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def postgres_ssl_key_file(self):
+    &#34;&#34;&#34;Returns: str - ssl key file path&#34;&#34;&#34;
+    return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslKey&#34;, &#34;&#34;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_ssl_status"><code class="name">var <span class="ident">postgres_ssl_status</span></code></dt>
+<dd>
+<div class="desc"><p>Returns True/False based on if ssl is enabled or not</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/postgresinstance.py#L358-L361" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def postgres_ssl_status(self):
+    &#34;&#34;&#34;Returns True/False based on if ssl is enabled or not&#34;&#34;&#34;
+    return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslEnabled&#34;, False)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_version"><code class="name">var <span class="ident">postgres_version</span></code></dt>
 <dd>
 <div class="desc"><p>Returns the postgres server version</p>
@@ -1621,7 +1741,7 @@ def postgres_server_user_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L229-L241" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/postgresinstance.py#L236-L248" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_version(self):
@@ -1645,7 +1765,7 @@ def postgres_version(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L278-L287" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/postgresinstance.py#L287-L298" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def standby_instance_id(self):
@@ -1655,7 +1775,9 @@ def standby_instance_id(self):
 
     &#34;&#34;&#34;
     if self.is_standby_enabled:
-        return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;, {}).get(&#39;instanceId&#39;, {})
+        return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;,
+                                                                                            {}).get(&#39;instanceId&#39;,
+                                                                                                    &#34;&#34;)
     return None</code></pre>
 </details>
 </dd>
@@ -1666,7 +1788,7 @@ def standby_instance_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L267-L276" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/postgresinstance.py#L274-L285" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def standby_instance_name(self):
@@ -1676,7 +1798,9 @@ def standby_instance_name(self):
 
     &#34;&#34;&#34;
     if self.is_standby_enabled:
-        return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;, {}).get(&#39;instanceName&#39;, {})
+        return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;,
+                                                                                            {}).get(&#39;instanceName&#39;,
+                                                                                                    &#34;&#34;)
     return None</code></pre>
 </details>
 </dd>
@@ -1687,7 +1811,7 @@ def standby_instance_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L322-L329" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/postgresinstance.py#L333-L341" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def use_master_for_data_backup(self):
@@ -1696,7 +1820,8 @@ def use_master_for_data_backup(self):
         Return Type: bool
 
     &#34;&#34;&#34;
-    return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;useMasterForDataBkp&#39;, False)</code></pre>
+    return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;useMasterForDataBkp&#39;,
+                                                                                        False)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.use_master_for_log_backup"><code class="name">var <span class="ident">use_master_for_log_backup</span></code></dt>
@@ -1706,7 +1831,7 @@ def use_master_for_data_backup(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L298-L305" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/postgresinstance.py#L309-L316" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def use_master_for_log_backup(self):
@@ -1732,7 +1857,7 @@ def use_master_for_log_backup(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L346-L358" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/postgresinstance.py#L378-L390" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def change_sa_password(self, value):
     &#34;&#34;&#34; Changes postgresql user password
@@ -1869,7 +1994,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/postgresinstance.py#L503-L691" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/postgresinstance.py#L535-L723" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -2163,6 +2288,10 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_lib_directory" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_lib_directory">postgres_lib_directory</a></code></li>
 <li><code><a title="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_server_port_number" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_server_port_number">postgres_server_port_number</a></code></li>
 <li><code><a title="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_server_user_name" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_server_user_name">postgres_server_user_name</a></code></li>
+<li><code><a title="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_ssl_ca_file" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_ssl_ca_file">postgres_ssl_ca_file</a></code></li>
+<li><code><a title="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_ssl_cert_file" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_ssl_cert_file">postgres_ssl_cert_file</a></code></li>
+<li><code><a title="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_ssl_key_file" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_ssl_key_file">postgres_ssl_key_file</a></code></li>
+<li><code><a title="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_ssl_status" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_ssl_status">postgres_ssl_status</a></code></li>
 <li><code><a title="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_version" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_version">postgres_version</a></code></li>
 <li><code><a title="cvpysdk.instances.postgresinstance.PostgreSQLInstance.restore_in_place" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.restore_in_place">restore_in_place</a></code></li>
 <li><code><a title="cvpysdk.instances.postgresinstance.PostgreSQLInstance.standby_instance_id" href="#cvpysdk.instances.postgresinstance.PostgreSQLInstance.standby_instance_id">standby_instance_id</a></code></li>

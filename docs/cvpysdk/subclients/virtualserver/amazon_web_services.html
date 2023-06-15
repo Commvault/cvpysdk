@@ -47,7 +47,7 @@ vcenter_client</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/amazon_web_services.py#L1-L565" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/amazon_web_services.py#L1-L576" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -372,7 +372,8 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
             disk_prefix=None,
             availability_zone=None,
             media_agent=None,
-            disk_name=None
+            disk_name=None,
+            **kwargs,
     ):
         &#34;&#34;&#34;Restores the Attach Disk restore with  specified in the input list
             to the provided instance.
@@ -462,9 +463,17 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
         if proxy_client is not None:
             _attach_disk_restore_option[&#39;client&#39;] = proxy_client
         if not destination_vm:
-            destination_vm = vm_to_restore
+            destination_vm = &#39;del&#39; + vm_to_restore
         instance_dict = self._backupset_object._instance_object._properties[&#39;instance&#39;]
         _attach_disk_restore_option = self.amazon_defaults(vm_to_restore, _attach_disk_restore_option)
+
+        if kwargs.get(&#39;new_instance&#39;, False):
+            _attach_disk_restore_option[&#39;keyPairList&#39;][0] = {}
+            _attach_disk_restore_option[&#39;keyPairList&#39;][0][&#39;KeyId&#39;] = kwargs.get(&#39;key_pair&#39;, None)
+            _attach_disk_restore_option[&#39;keyPairList&#39;][0][&#39;KeyName&#39;] = kwargs.get(&#39;key_pair&#39;, None)
+            _attach_disk_restore_option[&#39;new_instance&#39;] = True
+            _attach_disk_restore_option[&#39;ami&#39;] = {&#39;templateId&#39;: kwargs.get(&#39;ami_id&#39;, None)}
+            _attach_disk_restore_option[&#39;os_id&#39;] = kwargs[&#39;os_id&#39;]
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
@@ -483,7 +492,9 @@ class AmazonVirtualServerSubclient(VirtualServerSubclient):
             newGUID=destination_vm_guid,
             disk_name_prefix=disk_prefix,
             ami=_attach_disk_restore_option.get(&#39;ami&#39;, None),
-            vmSize=_attach_disk_restore_option.get(&#39;instance_type&#39;, None)
+            vmSize=_attach_disk_restore_option.get(&#39;instance_type&#39;, None),
+            new_instance=_attach_disk_restore_option.get(&#39;new_instance&#39;, None),
+            os_id=_attach_disk_restore_option.get(&#39;os_id&#39;, None)
         )
 
         request_json = self._prepare_attach_disk_restore_json(_attach_disk_restore_option)
@@ -642,7 +653,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/amazon_web_services.py#L49-L565" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/amazon_web_services.py#L49-L576" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AmazonVirtualServerSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient Base class.
@@ -919,7 +930,8 @@ backupset class, subclient name, subclient id</p></div>
             disk_prefix=None,
             availability_zone=None,
             media_agent=None,
-            disk_name=None
+            disk_name=None,
+            **kwargs,
     ):
         &#34;&#34;&#34;Restores the Attach Disk restore with  specified in the input list
             to the provided instance.
@@ -1009,9 +1021,17 @@ backupset class, subclient name, subclient id</p></div>
         if proxy_client is not None:
             _attach_disk_restore_option[&#39;client&#39;] = proxy_client
         if not destination_vm:
-            destination_vm = vm_to_restore
+            destination_vm = &#39;del&#39; + vm_to_restore
         instance_dict = self._backupset_object._instance_object._properties[&#39;instance&#39;]
         _attach_disk_restore_option = self.amazon_defaults(vm_to_restore, _attach_disk_restore_option)
+
+        if kwargs.get(&#39;new_instance&#39;, False):
+            _attach_disk_restore_option[&#39;keyPairList&#39;][0] = {}
+            _attach_disk_restore_option[&#39;keyPairList&#39;][0][&#39;KeyId&#39;] = kwargs.get(&#39;key_pair&#39;, None)
+            _attach_disk_restore_option[&#39;keyPairList&#39;][0][&#39;KeyName&#39;] = kwargs.get(&#39;key_pair&#39;, None)
+            _attach_disk_restore_option[&#39;new_instance&#39;] = True
+            _attach_disk_restore_option[&#39;ami&#39;] = {&#39;templateId&#39;: kwargs.get(&#39;ami_id&#39;, None)}
+            _attach_disk_restore_option[&#39;os_id&#39;] = kwargs[&#39;os_id&#39;]
 
         # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
@@ -1030,7 +1050,9 @@ backupset class, subclient name, subclient id</p></div>
             newGUID=destination_vm_guid,
             disk_name_prefix=disk_prefix,
             ami=_attach_disk_restore_option.get(&#39;ami&#39;, None),
-            vmSize=_attach_disk_restore_option.get(&#39;instance_type&#39;, None)
+            vmSize=_attach_disk_restore_option.get(&#39;instance_type&#39;, None),
+            new_instance=_attach_disk_restore_option.get(&#39;new_instance&#39;, None),
+            os_id=_attach_disk_restore_option.get(&#39;os_id&#39;, None)
         )
 
         request_json = self._prepare_attach_disk_restore_json(_attach_disk_restore_option)
@@ -1170,7 +1192,7 @@ backupset class, subclient name, subclient id</p></div>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.subclients.virtualserver.amazon_web_services.AmazonVirtualServerSubclient.attach_disk_restore"><code class="name flex">
-<span>def <span class="ident">attach_disk_restore</span></span>(<span>self, vm_to_restore, destination_vm, proxy_client=None, amazon_options=None, overwrite=True, copy_precedence=0, destination_vm_guid=None, disk_prefix=None, availability_zone=None, media_agent=None, disk_name=None)</span>
+<span>def <span class="ident">attach_disk_restore</span></span>(<span>self, vm_to_restore, destination_vm, proxy_client=None, amazon_options=None, overwrite=True, copy_precedence=0, destination_vm_guid=None, disk_prefix=None, availability_zone=None, media_agent=None, disk_name=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the Attach Disk restore with
@@ -1244,7 +1266,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/amazon_web_services.py#L312-L439" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/amazon_web_services.py#L312-L450" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def attach_disk_restore(
         self,
@@ -1258,7 +1280,8 @@ if response is not success
         disk_prefix=None,
         availability_zone=None,
         media_agent=None,
-        disk_name=None
+        disk_name=None,
+        **kwargs,
 ):
     &#34;&#34;&#34;Restores the Attach Disk restore with  specified in the input list
         to the provided instance.
@@ -1348,9 +1371,17 @@ if response is not success
     if proxy_client is not None:
         _attach_disk_restore_option[&#39;client&#39;] = proxy_client
     if not destination_vm:
-        destination_vm = vm_to_restore
+        destination_vm = &#39;del&#39; + vm_to_restore
     instance_dict = self._backupset_object._instance_object._properties[&#39;instance&#39;]
     _attach_disk_restore_option = self.amazon_defaults(vm_to_restore, _attach_disk_restore_option)
+
+    if kwargs.get(&#39;new_instance&#39;, False):
+        _attach_disk_restore_option[&#39;keyPairList&#39;][0] = {}
+        _attach_disk_restore_option[&#39;keyPairList&#39;][0][&#39;KeyId&#39;] = kwargs.get(&#39;key_pair&#39;, None)
+        _attach_disk_restore_option[&#39;keyPairList&#39;][0][&#39;KeyName&#39;] = kwargs.get(&#39;key_pair&#39;, None)
+        _attach_disk_restore_option[&#39;new_instance&#39;] = True
+        _attach_disk_restore_option[&#39;ami&#39;] = {&#39;templateId&#39;: kwargs.get(&#39;ami_id&#39;, None)}
+        _attach_disk_restore_option[&#39;os_id&#39;] = kwargs[&#39;os_id&#39;]
 
     # set attr for all the option in restore xml from user inputs
     self._set_restore_inputs(
@@ -1369,7 +1400,9 @@ if response is not success
         newGUID=destination_vm_guid,
         disk_name_prefix=disk_prefix,
         ami=_attach_disk_restore_option.get(&#39;ami&#39;, None),
-        vmSize=_attach_disk_restore_option.get(&#39;instance_type&#39;, None)
+        vmSize=_attach_disk_restore_option.get(&#39;instance_type&#39;, None),
+        new_instance=_attach_disk_restore_option.get(&#39;new_instance&#39;, None),
+        os_id=_attach_disk_restore_option.get(&#39;os_id&#39;, None)
     )
 
     request_json = self._prepare_attach_disk_restore_json(_attach_disk_restore_option)
@@ -1439,7 +1472,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/amazon_web_services.py#L441-L565" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/amazon_web_services.py#L452-L576" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_azurerm(
         self,
@@ -1634,7 +1667,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/amazon_web_services.py#L76-L174" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/amazon_web_services.py#L76-L174" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(
         self,
@@ -1825,7 +1858,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/amazon_web_services.py#L176-L310" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/amazon_web_services.py#L176-L310" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(
         self,
@@ -2015,6 +2048,7 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.plan" href="../../subclient.html#cvpysdk.subclient.Subclient.plan">plan</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.preview_content" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.preview_content">preview_content</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.properties" href="../../subclient.html#cvpysdk.subclient.Subclient.properties">properties</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.quiesce_file_system" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.quiesce_file_system">quiesce_file_system</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.read_buffer_size" href="../../subclient.html#cvpysdk.subclient.Subclient.read_buffer_size">read_buffer_size</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.refresh" href="../../subclient.html#cvpysdk.subclient.Subclient.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.restore_in_place" href="../../subclient.html#cvpysdk.subclient.Subclient.restore_in_place">restore_in_place</a></code></li>

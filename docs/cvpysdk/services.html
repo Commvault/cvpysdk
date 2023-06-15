@@ -37,7 +37,7 @@ dictionary, for their usage, and the value will be in the format:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/services.py#L1-L545" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/services.py#L1-L586" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -94,6 +94,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;TFA_DISABLE&#39;: &#39;{0}Commcell/Properties/TwoFactorAuth/Action/Disable&#39;,
     &#39;PRIVACY_ENABLE&#39;: &#39;{0}Commcell/Properties/Privacy/Action/Enable&#39;,
     &#39;PRIVACY_DISABLE&#39;: &#39;{0}Commcell/Properties/Privacy/Action/Disable&#39;,
+    &#39;ACCOUNT_lOCK_SETTINGS&#39;: &#39;{0}Commcell/Properties/AccountLockSettings&#39;,
     &#39;ORG_TFA&#39;: &#39;{0}Organization/%s/TwoFactorAuth&#39;,
     &#39;ORG_TFA_ENABLE&#39;: &#39;{0}Organization/%s/TwoFactorAuth/Action/Enable&#39;,
     &#39;ORG_TFA_DISABLE&#39;: &#39;{0}Organization/%s/TwoFactorAuth/Action/Disable&#39;,
@@ -101,6 +102,7 @@ SERVICES_DICT_TEMPLATE = {
 
     &#39;GET_ALL_CLIENTS&#39;: &#39;{0}Client&#39;,
     &#39;GET_VIRTUAL_CLIENTS&#39;: &#39;{0}Client?PseudoClientType=VSPseudo&#39;,
+    &#39;GET_VIRTUALIZATION_ACCESS_NODES&#39;: &#39;{0}VSAClientAndClientGroupList&#39;,
     &#39;GET_FILE_SERVER_CLIENTS&#39;: &#39;{0}/v4/FileServers&#39;,
     &#39;CLIENTFORCEDELETE&#39;:&#39;{0}Client/%s?forceDelete=1&#39;,
     &#39;CLIENT&#39;: &#39;{0}Client/%s&#39;,
@@ -151,11 +153,15 @@ SERVICES_DICT_TEMPLATE = {
     &#39;GET_LIBRARY_PROPERTIES&#39;: &#39;{0}Library/%s&#39;,
     &#39;DETECT_TAPE_LIBRARY&#39;: &#39;{0}Library?Action=detect&#39;,
     &#39;CONFIGURE_TAPE_LIBRARY&#39;: &#39;{0}Library?Action=configureTape&#39;,
-    
+
+    &#39;GET_MOVE_MOUNTPATH_DETAILS&#39;: &#39;{0}MountPath/%s/Move&#39;,
+    &#39;MOVE_MOUNTPATH&#39;: &#39;{0}MountPath/Move&#39;,
+
     &#39;LOCK_MM_CONFIGURATION&#39;: &#39;{0}LockMMConfiguration&#39;,
 
     &#39;STORAGE_POLICY&#39;: &#39;{0}StoragePolicy&#39;,
     &#39;GET_STORAGE_POLICY&#39;: &#39;{0}StoragePolicy/%s&#39;,
+    &#39;DELETE_STORAGE_POLICY&#39;: &#39;{0}V2/StoragePolicy&#39;,
     &#39;GET_STORAGE_POLICY_ADVANCED&#39;: &#39;{0}v2/StoragePolicy/%s?propertyLevel=10&#39;,
     &#39;CREATE_STORAGE_POLICY_COPY&#39;: &#39;{0}StoragePolicy?Action=createCopy&#39;,
     &#39;DELETE_STORAGE_POLICY_COPY&#39;: &#39;{0}StoragePolicy?Action=deleteCopy&#39;,
@@ -291,9 +297,13 @@ SERVICES_DICT_TEMPLATE = {
     &#39;START_TRAINING&#39;: &#39;{0}ContentAnalyzer/%s/%s/ml/action/train&#39;,
     &#39;CANCEL_TRAINING&#39;: &#39;{0}ContentAnalyzer/%s/%s/training/cancel&#39;,
 
-    &#39;EDISCOVERY_INVENTORIES&#39;: &#39;{0}EDiscoveryClients/Inventories&#39;,
-    &#39;EDISCOVERY_INVENTORY&#39;: &#39;{0}EDiscoveryClients/Inventories/%s&#39;,
-    &#39;EDISCOVERY_ASSETS&#39;: &#39;{0}EDiscoveryClients/Inventories/%s/Assets&#39;,
+    &#39;V4_ACTIVATE_DS_PERMISSION&#39;: &#39;{0}V4/Activate/SEA_DATASOURCE_ENTITY/%s/Permissions&#39;,
+    &#39;V4_INVENTORY_CRAWL&#39;: &#39;{0}V4/InventoryManager/Inventory/%s/Crawl&#39;,
+    &#39;EDISCOVERY_INVENTORIES&#39;: &#39;{0}V4/InventoryManager/Inventory&#39;,
+    &#39;EDISCOVERY_INVENTORY&#39;: &#39;{0}V4/InventoryManager/Inventory/%s&#39;,
+    &#39;EDISCOVERY_ASSETS&#39;: &#39;{0}V4/InventoryManager/Inventory/%s/Assets&#39;,
+    &#39;EDISCOVERY_ASSET&#39;: &#39;{0}V4/InventoryManager/Inventory/%s/Assets/%s&#39;,
+    &#39;EDISCOVERY_ASSET_JOBS&#39;: &#39;{0}V4/InventoryManager/Inventory/%s/Assets/%s/jobs&#39;,
     &#39;EDISCOVERY_CRAWL&#39;: &#39;{0}EDiscoveryClients/Clients/%s/Jobs?datasourceId=%s&amp;type=%s&amp;operation=%s&#39;,
     &#39;EDISCOVERY_JOBS_HISTORY&#39;: &#39;{0}EDiscoveryClients/Clients/%s/Jobs/History?type=%s&amp;datasourceId=%s&#39;,
     &#39;EDISCOVERY_JOB_STATUS&#39;: &#39;{0}EDiscoveryClients/Clients/%s/Jobs/Status?type=%s&amp;datasourceId=%s&#39;,
@@ -338,6 +348,9 @@ SERVICES_DICT_TEMPLATE = {
     &#39;ELIGIBLE_PLANS&#39;: &#39;{0}V2/Plan/Eligible?%s&#39;,
     &#39;ASSOCIATED_ENTITIES&#39;: &#39;{0}V2/Plan/%s/AssociatedEntities&#39;,
     &#39;GET_PLANS&#39;: &#39;{0}V2/Plan?type=%s&amp;subType=%s&#39;,
+    &#39;APPLICABLE_SOLNS_ENABLE&#39;: &#39;{0}V4/ServerPlan/%s/ApplicableSolutions/Restrict/Enable&#39;,
+    &#39;APPLICABLE_SOLNS_DISABLE&#39;: &#39;{0}V4/ServerPlan/%s/ApplicableSolutions/Restrict/Disable&#39;,
+    &#39;PLAN_SUPPORTED_SOLUTIONS&#39;: &#39;{0}V4/Solutions?filter=PLAN_SUPPORTED_SOLUTIONS&#39;,
 
     &#39;DOMAIN_CONTROLER&#39;: &#39;{0}CommCell/DomainController&#39;,
     &#39;DELETE_DOMAIN_CONTROLER&#39;: &#39;{0}CommCell/DomainController/%s&#39;,
@@ -348,12 +361,14 @@ SERVICES_DICT_TEMPLATE = {
     &#39;CVDRBACKUP_STATUS&#39;: &#39;{0}/cvdrbackup/status?commcellid=%s&#39;,
     &#39;CVDRBACKUP_INFO&#39;: &#39;{0}/cvdrbackup/info&#39;,
     &#39;CVDRBACKUP_DOWNLOAD&#39;: &#39;{0}/cvdrbackup/download&#39;,
-    &#39;CVDRBACKUP_REQUEST&#39;: &#39;{0}cvdrbackup/requests&#39;,
+    &#39;CVDRBACKUP_REQUEST&#39;: &#39;{0}/cvdrbackup/requests&#39;,
+    &#39;CVDRBACKUP_REQUEST_HISTORY&#39;: &#39;{0}/cr/reportsplusengine/datasets/%s/data/?parameter.duration=%s&#39;,
 
     &#39;ORACLE_INSTANCE_BROWSE&#39;: &#39;{0}Instance/DBBrowse/%s&#39;,
 
     &#39;METRICS&#39;: &#39;{0}CommServ/MetricsReporting&#39;,
     &#39;GET_METRICS&#39;: &#39;{0}CommServ/MetricsReporting?isPrivateCloud=%s&#39;,
+    &#39;LOCAL_METRICS&#39;: &#39;{0}CommServ/MetricsReporting?isLocalMetrics=%s&#39;,
 
     &#39;INTERNET_PROXY&#39;: &#39;{0}/Commcell/InternetOptions/Proxy&#39;,
 
@@ -368,6 +383,8 @@ SERVICES_DICT_TEMPLATE = {
     &#39;USER&#39;: &#39;{0}User/%s?Level=50&#39;,
     &#39;DELETE_USER&#39;: &#39;{0}User/%s?newUserId=%s&amp;newUserGroupId=%s&#39;,
     &#39;OTP&#39;: &#39;{0}User/%s/preferences/OTP&#39;,
+
+    &#39;UNLOCK&#39;: &#39;{0}User/Unlock&#39;,
 
     &#39;ROLES&#39;: &#39;{0}Role&#39;,
     &#39;ROLE&#39;: &#39;{0}Role/%s&#39;,
@@ -400,12 +417,14 @@ SERVICES_DICT_TEMPLATE = {
     &#39;ORGANIZATION_ASSOCIATION&#39;: &#39;{0}company/%s/company-association&#39;,
     &#39;ENABLE_PRIVACY_COMPANY_DATA&#39;: &#39;{0}V2/Organization/%s/Privacy/Action/Lock&#39;,
     &#39;DISABLE_PRIVACY_COMPANY_DATA&#39;: &#39;{0}V2/Organization/%s/Privacy/Action/Unlock&#39;,
+    &#39;ORGANIZATION_THEME&#39;: &#39;{0}V2/Organization/%s/Customization&#39;,
     &#39;ORGANIZATION_TAGS&#39; : &#39;{0}Tags&#39;,
     &#39;GET_ORGANIZATION_TAGS&#39; : &#39;{0}Tags/PROVIDER_ENTITY/%s&#39;,
     &#39;COMPANY_PASSKEY&#39; : &#39;{0}Company/%s/Passkey&#39;,
     &#39;COMPANY_AUTH_RESTORE&#39; : &#39;{0}Company/%s/AuthRestore&#39;,
     &#39;EDIT_COMPANY_DETAILS&#39;: &#39;{0}v4/company/%s&#39;,
     &#39;CHECK_ELIGIBILITY_MIGRATION&#39; : &#39;{0}Company/%s/migration-entities&#39;,
+    &#39;COMPANY_ENTITIES&#39;: &#39;{0}Company/%s/AssociatedEntities&#39;,
     &#39;MIGRATE_CLIENTS&#39; : &#39;{0}Company/%s/company-association&#39;,
 
     &#39;STORAGE_POOL&#39;: &#39;{0}StoragePool&#39;,
@@ -436,6 +455,12 @@ SERVICES_DICT_TEMPLATE = {
     &#39;DR_GROUP_MACHINES&#39;: &#39;{0}DRGroups/ClientList?source=1&amp;entityType=3&amp;entityId=%s&#39;,
     &#39;DR_GROUP_JOB_STATS&#39;: &#39;{0}DRGroups/JobStats?jobId=%s&amp;drGroupId=%s&amp;replicationId=%s&amp;clientId=0&#39;,
     &#39;DR_JOB_STATS&#39;: &#39;{0}DRGroups/JobStats?jobId=%s&#39;,
+
+    &#39;FAILOVER_GROUPS&#39;: &#39;{0}FailoverGroups&#39;,
+    &#39;GET_FAILOVER_GROUP&#39;: &#39;{0}FailoverGroups/%s&#39;,
+    &#39;FAILOVER_GROUP_MACHINES&#39;: &#39;{0}FailoverGroups/ClientList?source=1&amp;entityType=3&amp;entityId=%s&#39;,
+    &#39;FAILOVER_GROUP_JOB_STATS&#39;: &#39;{0}DR/JobStats?jobId=%s&amp;failoverGroupId=%s&amp;replicationId=%s&amp;clientId=0&#39;,
+    &#39;DRORCHESTRATION_JOB_STATS&#39;: &#39;{0}DR/JobStats?jobId=%s&#39;,
 
     &#39;REVERSE_REPLICATION_TASK&#39;: &#39;{0}Replications/Monitors/streaming/Operation&#39;,
     &#39;REPLICATION_MONITOR&#39;: &#39;{0}Replications/Monitors/streaming?subclientId=0&#39;,
@@ -493,8 +518,8 @@ SERVICES_DICT_TEMPLATE = {
 
     &#39;IDENTITY_APPS&#39;: &#39;{0}ThirdParty/App&#39;,
 
-    &#39;GLOBAL_PARAM&#39;: &#39;{0}/setGlobalParam&#39;,
-    &#39;GET_GLOBAL_PARAM&#39;: &#39;{0}/CommServ/AddRemoveSoftware/CommServeSoftwareCache&#39;,
+    &#39;SET_GLOBAL_PARAM&#39;: &#39;{0}/setGlobalParam&#39;,
+    &#39;GET_GLOBAL_PARAM&#39;: &#39;{0}/CommServ/GlobalParams&#39;,
 
     &#39;SNAP_OPERATIONS&#39;: &#39;{0}/Snaps/Operations&#39;,
     &#39;STORAGE_ARRAYS&#39;: &#39;{0}/StorageArrays&#39;,
@@ -531,6 +556,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;GET_ALL_LIVE_SYNC_VM_PAIRS&#39;: &#39;{0}Replications/Monitors/streaming?subclientId=%s&amp;taskId=%s&#39;,
     &#39;GET_LIVE_SYNC_VM_PAIR&#39;: &#39;{0}Replications/Monitors/streaming?subclientId=%s&amp;replicationPairId=%s&#39;,
     &#39;GET_REPLICATION_PAIR&#39;: &#39;{0}Replications/Monitors/streaming?replicationPairId=%s&#39;,
+    &#39;GET_REPLICATION_PAIRS&#39;: &#39;{0}Replications/Monitors/streaming?&#39;,
 
     &#39;BACKUP_NETWORK_PAIRS&#39;: &#39;{0}CommServ/DataInterfacePairs?ClientId=%s&#39;,
     &#39;BACKUP_NETWORK_PAIR&#39;: &#39;{0}CommServ/DataInterfacePairs&#39;,
@@ -561,11 +587,26 @@ SERVICES_DICT_TEMPLATE = {
     &#39;ADD_OR_GET_SAML&#39;: &#39;{0}/v4/SAML&#39;,
     &#39;EDIT_SAML&#39;: &#39;{0}/v4/SAML/%s&#39;,
 
+    &#39;REGIONS&#39;: &#39;{0}/v4/Regions&#39;,
     &#39;EDIT_REGION&#39;: &#39;{0}/entity/%s/%s/region&#39;,
     &#39;GET_REGION&#39;: &#39;{0}/entity/%s/%s/region?entityRegionType=%s&#39;,
     &#39;CALCULATE_REGION&#39;: &#39;{0}/entity/%s/%s/region?calculate=True&amp;entityRegionType=%s&#39;,
     
-    &#39;GET_OEM_ID&#39;: &#39;{0}/GetOemId&#39;
+    &#39;GET_OEM_ID&#39;: &#39;{0}/GetOemId&#39;,
+
+    &#39;DO_WEB_SEARCH&#39;: &#39;{0}/Search&#39;,
+
+    
+    &#39;GET_SLA&#39;: &#39;{0}GetSLAConfiguration&#39;,
+    &#39;WORKLOAD_REGION&#39;: &#39;{0}entity/COMMCELL/%s/region?entityRegionType=WORKLOAD&#39;,
+
+    &#39;GET_USER_SUGGESTIONS&#39;: &#39;{0}getADUserSuggestions?namePattern=%s&amp;getDomainUsers=true&amp;getCommcellUsers=true&amp;&#39;
+                            &#39;getDomainGroups=true&amp;returnDomain=true&amp;getCommCellGroups=true&amp;searchOnDisplayName=true&#39;
+                            &#39;&amp;searchOnAliasName=true&amp;searchOnSmtp=1&amp;ignoreSmtpRule=1&amp;getOrganizationUsers=false&amp;&#39;
+                            &#39;getOrganizationGroups=false&#39;,
+    &#39;DOMAIN_SSO&#39;: &#39;{0}V4/LDAP/%s&#39;,
+
+    &#39;VM_GROUP&#39;: &#39;{0}V4/VmGroup/%s&#39;
 }
 
 
@@ -610,7 +651,7 @@ services dict consisting of all APIs</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/services.py#L531-L545" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/services.py#L572-L586" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_services(web_service):
     &#34;&#34;&#34;Initializes the SERVICES DICT with the web service for APIs.

@@ -57,6 +57,8 @@ add_oracle_logical_dump_subclient()  --  add subclient for oracle logical dump
 
 add_postgresql_subclient()  --  Adds a new postgresql subclient to the backupset.
 
+ add_mysql_subclient()  --  Adds a new mysql subclient to the instance.
+
 add_virtual_server_subclient()  -- adds a new virtual server subclient to the backupset
 
 add_onedrive_subclient()   --  adds a new onedrive subclient to the instance
@@ -161,7 +163,7 @@ subclient else returns False
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1-L3189" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L1-L3304" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -220,6 +222,8 @@ Subclients:
     add_oracle_logical_dump_subclient()  --  add subclient for oracle logical dump
 
     add_postgresql_subclient()  --  Adds a new postgresql subclient to the backupset.
+
+     add_mysql_subclient()  --  Adds a new mysql subclient to the instance.
 
     add_virtual_server_subclient()  -- adds a new virtual server subclient to the backupset
 
@@ -706,7 +710,7 @@ class Subclients(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def add(self, subclient_name, storage_policy,
+    def add(self, subclient_name, storage_policy=None,
             subclient_type=None, description=&#39;&#39;, advanced_options=None,
             pre_scan_cmd=None):
         &#34;&#34;&#34;Adds a new subclient to the backupset.
@@ -716,6 +720,8 @@ class Subclients(object):
 
                 storage_policy      (str)   --  name of the storage policy to be associated
                 with the subclient
+
+                    default: None
 
                 subclient_type      (str)   --  type of subclient for sql server
 
@@ -764,7 +770,6 @@ class Subclients(object):
 
         &#34;&#34;&#34;
         if not (isinstance(subclient_name, str) and
-                isinstance(storage_policy, str) and
                 isinstance(description, str)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
@@ -784,7 +789,7 @@ class Subclients(object):
                     sorted(self._instance_object.backupsets.all_backupsets)[0]
                 )
 
-        if not self._commcell_object.storage_policies.has_policy(
+        if storage_policy and not self._commcell_object.storage_policies.has_policy(
                 storage_policy):
             raise SDKException(
                 &#39;Subclient&#39;,
@@ -823,6 +828,10 @@ class Subclients(object):
                 }
             }
         }
+
+        if storage_policy is None:
+            del request_json[&#34;subClientProperties&#34;][&#34;commonProperties&#34;][&#34;storageDevice&#34;]
+
         if pre_scan_cmd is not None:
             request_json[&#34;subClientProperties&#34;][&#34;commonProperties&#34;][&#34;prepostProcess&#34;] = {
                 &#34;runAs&#34;: 1,
@@ -837,15 +846,15 @@ class Subclients(object):
         return self._process_add_request(request_json)
 
     def add_oracle_logical_dump_subclient(
-                                 self,
-                                 subclient_name,
-                                 storage_policy,
-                                 dump_dir,
-                                 user_name,
-                                 domain_name,
-                                 password,
-                                 full_mode,
-                                 schema_value = None):
+            self,
+            subclient_name,
+            storage_policy,
+            dump_dir,
+            user_name,
+            domain_name,
+            password,
+            full_mode,
+            schema_value=None):
         &#34;&#34;&#34;
         Method to add subclient for oracle logical dump.
         This method add two type of subclient full mode
@@ -889,15 +898,14 @@ class Subclients(object):
         if not (isinstance(subclient_name, str) and
                 isinstance(storage_policy, str) and
                 isinstance(dump_dir, str) and
-                isinstance(user_name,str) and
+                isinstance(user_name, str) and
                 isinstance(domain_name, str) and
                 isinstance(password, str) and
                 isinstance(full_mode, bool)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
         if (full_mode == False and not
-                isinstance(schema_value, list)):
-            raise SDKException(&#39;Subclient&#39;,&#39;101&#39;)
-
+        isinstance(schema_value, list)):
+            raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         if self.has_subclient(subclient_name):
             raise SDKException(
@@ -925,61 +933,60 @@ class Subclients(object):
             )
 
         request_json = {
-                &#34;subClientProperties&#34;: {
-                    &#34;subClientEntity&#34;: {
-                        &#34;clientName&#34;: self._client_object.client_name,
-                        &#34;instanceName&#34;: self._instance_object.instance_name,
-                        &#34;appName&#34;: self._agent_object.agent_name,
-                        &#34;backupsetName&#34;: self._backupset_object.backupset_name,
-                        &#34;subclientName&#34;: subclient_name
+            &#34;subClientProperties&#34;: {
+                &#34;subClientEntity&#34;: {
+                    &#34;clientName&#34;: self._client_object.client_name,
+                    &#34;instanceName&#34;: self._instance_object.instance_name,
+                    &#34;appName&#34;: self._agent_object.agent_name,
+                    &#34;backupsetName&#34;: self._backupset_object.backupset_name,
+                    &#34;subclientName&#34;: subclient_name
+                },
+                &#34;oracleSubclientProp&#34;: {
+                    &#34;data&#34;: False,
+                    &#34;archiveDelete&#34;: False,
+                    &#34;useSQLConntect&#34;: False,
+                    &#34;dbSubclientType&#34;: 2,
+                    &#34;mergeIncImageCopies&#34;: False,
+                    &#34;selectiveOnlineFull&#34;: False,
+                    &#34;protectBackupRecoveryArea&#34;: False,
+                    &#34;selectArchiveLogDestForBackup&#34;: False,
+                    &#34;backupSPFile&#34;: False,
+                    &#34;backupControlFile&#34;: False,
+                    &#34;backupArchiveLog&#34;: False,
+                    &#34;validate&#34;: False,
+                },
+                &#34;commonProperties&#34;: {
+                    &#34;snapCopyInfo&#34;: {
+                        &#34;useSeparateProxyForSnapToTape&#34;: False,
+                        &#34;checkProxyForSQLIntegrity&#34;: False,
+                        &#34;snapToTapeProxyToUseSource&#34;: False,
+                        &#34;isSnapBackupEnabled&#34;: False,
+                        &#34;IsOracleSposDriverEnabled&#34;: False,
+                        &#34;isRMANEnableForTapeMovement&#34;: False
                     },
-                    &#34;oracleSubclientProp&#34;: {
-                        &#34;data&#34;: False,
-                        &#34;archiveDelete&#34;: False,
-                        &#34;useSQLConntect&#34;: False,
-                        &#34;dbSubclientType&#34;: 2,
-                        &#34;mergeIncImageCopies&#34;: False,
-                        &#34;selectiveOnlineFull&#34;: False,
-                        &#34;protectBackupRecoveryArea&#34;: False,
-                        &#34;selectArchiveLogDestForBackup&#34;: False,
-                        &#34;backupSPFile&#34;: False,
-                        &#34;backupControlFile&#34;: False,
-                        &#34;backupArchiveLog&#34;: False,
-                        &#34;validate&#34;: False,
+                    &#34;dbDumpConfig&#34;: {
+                        &#34;fullMode&#34;: True,
+                        &#34;database&#34;: &#34;&#34;,
+                        &#34;dumpDir&#34;: dump_dir,
+                        &#34;parallelism&#34;: 2,
+                        &#34;overrideInstanceUser&#34;: True,
+                        &#34;sqlConnect&#34;: {
+                            &#34;password&#34;: b64encode(password.encode()).decode(),
+                            &#34;domainName&#34;: domain_name,
+                            &#34;userName&#34;: user_name
+                        }
                     },
-                    &#34;commonProperties&#34;: {
-                        &#34;snapCopyInfo&#34;: {
-                            &#34;useSeparateProxyForSnapToTape&#34;: False,
-                            &#34;checkProxyForSQLIntegrity&#34;: False,
-                            &#34;snapToTapeProxyToUseSource&#34;: False,
-                            &#34;isSnapBackupEnabled&#34;: False,
-                            &#34;IsOracleSposDriverEnabled&#34;: False,
-                            &#34;isRMANEnableForTapeMovement&#34;: False
+                    &#34;storageDevice&#34;: {
+                        &#34;dataBackupStoragePolicy&#34;: {
+                            &#34;storagePolicyName&#34;: storage_policy
                         },
-                        &#34;dbDumpConfig&#34;: {
-                            &#34;fullMode&#34;: True,
-                            &#34;database&#34;: &#34;&#34;,
-                            &#34;dumpDir&#34;: dump_dir,
-                            &#34;parallelism&#34;: 2,
-                            &#34;overrideInstanceUser&#34;: True,
-                            &#34;sqlConnect&#34;: {
-                                &#34;password&#34;: b64encode(password.encode()).decode(),
-                                &#34;domainName&#34;: domain_name,
-                                &#34;userName&#34;: user_name
-                            }
-                        },
-                        &#34;storageDevice&#34;: {
-                            &#34;dataBackupStoragePolicy&#34;: {
-                                &#34;storagePolicyName&#34;: storage_policy
-                            },
-                            &#34;deDuplicationOptions&#34;: {
-                                &#34;enableDeduplication&#34;: True
-                            }
+                        &#34;deDuplicationOptions&#34;: {
+                            &#34;enableDeduplication&#34;: True
                         }
                     }
                 }
             }
-
+        }
 
         if (full_mode == False):
             request_json[&#34;subClientProperties&#34;][&#34;commonProperties&#34;][&#34;dbDumpConfig&#34;][&#34;fullMode&#34;] = False
@@ -1083,6 +1090,115 @@ class Subclients(object):
                 &#34;postgreSQLSubclientProp&#34;: {
                     &#34;numberOfBackupStreams&#34;: no_of_streams,
                     &#34;collectObjectListDuringBackup&#34;: collect_object_list
+                },
+                &#34;content&#34;: content_list
+            }
+        }
+
+        return self._process_add_request(request_json)
+
+    def add_mysql_subclient(
+            self,
+            subclient_name,
+            storage_policy,
+            contents,
+            **kwargs
+    ):
+        &#34;&#34;&#34;Adds a new mysql subclient to the instance.
+
+            Args:
+                subclient_name          (str)   --  name of the new subclient to add
+
+                storage_policy          (str)   --  name of the storage policy to be associated
+                with the subclient
+
+                contents                (list)  --  database list to be added as subclient content
+
+                kwargs      (dict)  -- dict of keyword arguments as follows
+
+                    no_of_backup_streams    (int)   --  No of backup streams to be used
+                    default: 1
+
+                    no_of_log_backup_streams    (int)   -- No of Transaction log backup streams
+                    default: 1
+
+                    full_instance_xtrabackup    (bool)  -- True if XtraBackup is selected for subclient
+                    default: False
+
+            Returns:
+                object  -   instance of the Subclient class
+
+            Raises:
+                SDKException:
+                    if subclient name argument is not of type string
+
+                    if storage policy argument is not of type string
+
+                    if conetnts argument is not of type list
+
+                    if contents is empty list
+
+                    if failed to create subclient
+
+                    if response is empty
+
+                    if response is not success
+
+                    if subclient already exists with the given name
+
+        &#34;&#34;&#34;
+        if not (isinstance(subclient_name, str) and
+                isinstance(storage_policy, str) and
+                isinstance(contents, list)):
+            raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
+
+        if self.has_subclient(subclient_name):
+            raise SDKException(
+                &#39;Subclient&#39;, &#39;102&#39;, &#39;Subclient &#34;{0}&#34; already exists.&#39;.format(
+                    subclient_name)
+            )
+
+        if not self._commcell_object.storage_policies.has_policy(
+                storage_policy):
+            raise SDKException(
+                &#39;Subclient&#39;,
+                &#39;102&#39;,
+                &#39;Storage Policy: &#34;{0}&#34; does not exist in the Commcell&#39;.format(
+                    storage_policy)
+            )
+
+        if not contents:
+            raise SDKException(
+                &#39;Subclient&#39;,
+                &#39;102&#39;,
+                &#39;Content list cannot be empty&#39;
+            )
+
+        content_list = []
+        for content in contents:
+            content_list.append({&#34;mySQLContent&#34;: {&#34;databaseName&#34;: content}})
+
+        request_json = {
+            &#34;subClientProperties&#34;: {
+                &#34;contentOperationType&#34;: 2,
+                &#34;subClientEntity&#34;: {
+                    &#34;clientName&#34;: self._client_object.client_name,
+                    &#34;appName&#34;: self._agent_object.agent_name,
+                    &#34;instanceName&#34;: self._instance_object.instance_name,
+                    &#34;backupsetName&#34;: &#34;defaultDummyBackupSet&#34;,
+                    &#34;subclientName&#34;: subclient_name
+                },
+                &#34;commonProperties&#34;: {
+                    &#34;storageDevice&#34;: {
+                        &#34;dataBackupStoragePolicy&#34;: {
+                            &#34;storagePolicyName&#34;: storage_policy
+                        }
+                    },
+                },
+                &#34;mySqlSubclientProp&#34;: {
+                    &#34;numberOfBackupStreams&#34;: kwargs.get(&#39;no_of_backup_streams&#39;),
+                    &#34;numberOfTransactionLogStreams&#34;: kwargs.get(&#39;no_of_log_backup_streams&#39;),
+                    &#34;fullInstanceXtraBackup&#34;: kwargs.get(&#39;full_instance_xtrabackup&#39;)
                 },
                 &#34;content&#34;: content_list
             }
@@ -1215,7 +1331,7 @@ class Subclients(object):
             Returns:
 
             &#34;&#34;&#34;
-            return{
+            return {
                 &#34;equalsOrNotEquals&#34;: item_content.get(&#39;equal_value&#39;, True),
                 &#34;name&#34;: item_content.get(&#39;id&#39;, &#39;&#39;),
                 &#34;displayName&#34;: item_content.get(&#39;display_name&#39;, &#39;&#39;),
@@ -1223,6 +1339,7 @@ class Subclients(object):
                 &#34;allOrAnyChildren&#34;: item.get(&#39;allOrAnyChildren&#39;, True),
                 &#34;type&#34;: item_content[&#39;type&#39;] if isinstance(item_content[&#39;type&#39;], int) else item_content[&#39;type&#39;].value
             }
+
         for item in subclient_content:
             _temp_list = []
             _temp_dict = {}
@@ -1278,10 +1395,10 @@ class Subclients(object):
                     &#39;Storage Policy: &#34;{0}&#34; does not exist in the Commcell&#39;.format(kwargs.get(&#39;storage_policy&#39;))
                 )
             request_json[&#39;subClientProperties&#39;][&#39;commonProperties&#39;][&#39;storageDevice&#39;] = {
-                        &#34;dataBackupStoragePolicy&#34;: {
-                            &#34;storagePolicyName&#34;: kwargs.get(&#39;storage_policy&#39;)
-                        }
-                    }
+                &#34;dataBackupStoragePolicy&#34;: {
+                    &#34;storagePolicyName&#34;: kwargs.get(&#39;storage_policy&#39;)
+                }
+            }
         else:
             raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Either Plan or Storage policy should be given as input&#39;)
 
@@ -1534,8 +1651,8 @@ class Subclient(object):
             &#39;virtual server&#39;: [VirtualServerSubclient, VMInstanceSubclient],
             &#39;cloud apps&#39;: CloudAppsSubclient,
             &#39;sql server&#39;: SQLServerSubclient,
-            &#39;nas&#39;: NASSubclient,        # SP11 or lower CS honors NAS as the Agent Name
-            &#39;ndmp&#39;: NASSubclient,       # SP12 and above honors NDMP as the Agent Name
+            &#39;nas&#39;: NASSubclient,  # SP11 or lower CS honors NAS as the Agent Name
+            &#39;ndmp&#39;: NASSubclient,  # SP12 and above honors NDMP as the Agent Name
             &#39;sap hana&#39;: SAPHANASubclient,
             &#39;oracle&#39;: OracleSubclient,
             &#39;oracle rac&#39;: OracleSubclient,
@@ -1551,7 +1668,7 @@ class Subclient(object):
             &#39;db2&#39;: DB2Subclient,
             &#39;informix&#39;: InformixSubclient,
             &#39;active directory&#39;: ADSubclient,
-            &#39;sharepoint server&#39;: [SharepointV1Subclient,SharepointSubclient],
+            &#39;sharepoint server&#39;: [SharepointV1Subclient, SharepointSubclient],
             &#34;azure ad&#34;: AzureAdSubclient
         }
 
@@ -1729,11 +1846,11 @@ class Subclient(object):
 
         &#34;&#34;&#34;
         try:
-            backup = eval(&#39;self.%s&#39; % attr_name)        # Take backup of old value
+            backup = eval(&#39;self.%s&#39; % attr_name)  # Take backup of old value
         except (AttributeError, KeyError):
             backup = None
 
-        exec(&#34;self.%s = %s&#34; % (attr_name, &#39;value&#39;))     # set new value
+        exec(&#34;self.%s = %s&#34; % (attr_name, &#39;value&#39;))  # set new value
 
         request_json = self._get_subclient_properties_json()
 
@@ -2046,7 +2163,7 @@ c
     @property
     def subclient_guid(self):
         &#34;&#34;&#34;Returns the SubclientGUID&#34;&#34;&#34;
-        return self._subclient_properties.get(&#39;subClientEntity&#39; , {}).get(&#39;subclientGUID&#39;)
+        return self._subclient_properties.get(&#39;subClientEntity&#39;, {}).get(&#39;subclientGUID&#39;)
 
     @display_name.setter
     def display_name(self, display_name):
@@ -2370,7 +2487,7 @@ c
 
     def enable_trueup(self):
         &#34;&#34;&#34;Setter for the TrueUp Option for a Subclient&#34;&#34;&#34;
-        if &#39;isTrueUpOptionEnabled&#39;in self._commonProperties:
+        if &#39;isTrueUpOptionEnabled&#39; in self._commonProperties:
             self._set_subclient_properties(&#34;_commonProperties[&#39;isTrueUpOptionEnabled&#39;]&#34;, True)
 
     def enable_trueup_days(self, days=30):
@@ -2582,7 +2699,7 @@ c
         if &#39;performanceMode&#39; in storage:
             data_backup_storage_device = storage[&#39;performanceMode&#39;][&#34;perfCRCDetails&#34;]
             malist = []
-            for each_ma in data_backup_storage_device :
+            for each_ma in data_backup_storage_device:
                 malist.append(each_ma[&#39;perfMa&#39;])
             return malist
 
@@ -2780,12 +2897,12 @@ c
                 copy_precedence         (int)   --  copy precedence value of storage policy copy
                     default: None
 
-                from_time           (str)       --  time to retore the contents after
+                from_time           (str)       --  time to restore the contents after
                         format: YYYY-MM-DD HH:MM:SS
 
                     default: None
 
-                to_time           (str)         --  time to retore the contents before
+                to_time           (str)         --  time to restore the contents before
                         format: YYYY-MM-DD HH:MM:SS
 
                     default: None
@@ -2884,12 +3001,12 @@ c
                 copy_precedence         (int)   --  copy precedence value of storage policy copy
                     default: None
 
-                from_time           (str)       --  time to retore the contents after
+                from_time           (str)       --  time to restore the contents after
                         format: YYYY-MM-DD HH:MM:SS
 
                     default: None
 
-                to_time           (str)         --  time to retore the contents before
+                to_time           (str)         --  time to restore the contents before
                         format: YYYY-MM-DD HH:MM:SS
 
                     default: None
@@ -3336,7 +3453,7 @@ c
                     }
                 })
             else:
-                raise SDKException(&#39;Subclient&#39;,&#39;102&#39;, &#39;Plan does not exist&#39;)
+                raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Plan does not exist&#39;)
         elif isinstance(value, str):
             if self._commcell_object.plans.has_plan(value):
                 self.update_properties({
@@ -3345,7 +3462,7 @@ c
                     }
                 })
             else:
-                raise SDKException(&#39;Subclient&#39;,&#39;102&#39;, &#39;Plan does not exist&#39;)
+                raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Plan does not exist&#39;)
         elif value is None:
             self.update_properties({
                 &#39;removePlanAssociation&#39;: True
@@ -3388,7 +3505,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1333-L3189" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L1448-L3304" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Subclient(object):
     &#34;&#34;&#34;Base class consisting of all the common properties and operations for a Subclient&#34;&#34;&#34;
@@ -3429,8 +3546,8 @@ default: None</p>
             &#39;virtual server&#39;: [VirtualServerSubclient, VMInstanceSubclient],
             &#39;cloud apps&#39;: CloudAppsSubclient,
             &#39;sql server&#39;: SQLServerSubclient,
-            &#39;nas&#39;: NASSubclient,        # SP11 or lower CS honors NAS as the Agent Name
-            &#39;ndmp&#39;: NASSubclient,       # SP12 and above honors NDMP as the Agent Name
+            &#39;nas&#39;: NASSubclient,  # SP11 or lower CS honors NAS as the Agent Name
+            &#39;ndmp&#39;: NASSubclient,  # SP12 and above honors NDMP as the Agent Name
             &#39;sap hana&#39;: SAPHANASubclient,
             &#39;oracle&#39;: OracleSubclient,
             &#39;oracle rac&#39;: OracleSubclient,
@@ -3446,7 +3563,7 @@ default: None</p>
             &#39;db2&#39;: DB2Subclient,
             &#39;informix&#39;: InformixSubclient,
             &#39;active directory&#39;: ADSubclient,
-            &#39;sharepoint server&#39;: [SharepointV1Subclient,SharepointSubclient],
+            &#39;sharepoint server&#39;: [SharepointV1Subclient, SharepointSubclient],
             &#34;azure ad&#34;: AzureAdSubclient
         }
 
@@ -3624,11 +3741,11 @@ default: None</p>
 
         &#34;&#34;&#34;
         try:
-            backup = eval(&#39;self.%s&#39; % attr_name)        # Take backup of old value
+            backup = eval(&#39;self.%s&#39; % attr_name)  # Take backup of old value
         except (AttributeError, KeyError):
             backup = None
 
-        exec(&#34;self.%s = %s&#34; % (attr_name, &#39;value&#39;))     # set new value
+        exec(&#34;self.%s = %s&#34; % (attr_name, &#39;value&#39;))  # set new value
 
         request_json = self._get_subclient_properties_json()
 
@@ -3941,7 +4058,7 @@ c
     @property
     def subclient_guid(self):
         &#34;&#34;&#34;Returns the SubclientGUID&#34;&#34;&#34;
-        return self._subclient_properties.get(&#39;subClientEntity&#39; , {}).get(&#39;subclientGUID&#39;)
+        return self._subclient_properties.get(&#39;subClientEntity&#39;, {}).get(&#39;subclientGUID&#39;)
 
     @display_name.setter
     def display_name(self, display_name):
@@ -4265,7 +4382,7 @@ c
 
     def enable_trueup(self):
         &#34;&#34;&#34;Setter for the TrueUp Option for a Subclient&#34;&#34;&#34;
-        if &#39;isTrueUpOptionEnabled&#39;in self._commonProperties:
+        if &#39;isTrueUpOptionEnabled&#39; in self._commonProperties:
             self._set_subclient_properties(&#34;_commonProperties[&#39;isTrueUpOptionEnabled&#39;]&#34;, True)
 
     def enable_trueup_days(self, days=30):
@@ -4477,7 +4594,7 @@ c
         if &#39;performanceMode&#39; in storage:
             data_backup_storage_device = storage[&#39;performanceMode&#39;][&#34;perfCRCDetails&#34;]
             malist = []
-            for each_ma in data_backup_storage_device :
+            for each_ma in data_backup_storage_device:
                 malist.append(each_ma[&#39;perfMa&#39;])
             return malist
 
@@ -4675,12 +4792,12 @@ c
                 copy_precedence         (int)   --  copy precedence value of storage policy copy
                     default: None
 
-                from_time           (str)       --  time to retore the contents after
+                from_time           (str)       --  time to restore the contents after
                         format: YYYY-MM-DD HH:MM:SS
 
                     default: None
 
-                to_time           (str)         --  time to retore the contents before
+                to_time           (str)         --  time to restore the contents before
                         format: YYYY-MM-DD HH:MM:SS
 
                     default: None
@@ -4779,12 +4896,12 @@ c
                 copy_precedence         (int)   --  copy precedence value of storage policy copy
                     default: None
 
-                from_time           (str)       --  time to retore the contents after
+                from_time           (str)       --  time to restore the contents after
                         format: YYYY-MM-DD HH:MM:SS
 
                     default: None
 
-                to_time           (str)         --  time to retore the contents before
+                to_time           (str)         --  time to restore the contents before
                         format: YYYY-MM-DD HH:MM:SS
 
                     default: None
@@ -5231,7 +5348,7 @@ c
                     }
                 })
             else:
-                raise SDKException(&#39;Subclient&#39;,&#39;102&#39;, &#39;Plan does not exist&#39;)
+                raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Plan does not exist&#39;)
         elif isinstance(value, str):
             if self._commcell_object.plans.has_plan(value):
                 self.update_properties({
@@ -5240,7 +5357,7 @@ c
                     }
                 })
             else:
-                raise SDKException(&#39;Subclient&#39;,&#39;102&#39;, &#39;Plan does not exist&#39;)
+                raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Plan does not exist&#39;)
         elif value is None:
             self.update_properties({
                 &#39;removePlanAssociation&#39;: True
@@ -5277,7 +5394,7 @@ c
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2068-L2074" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2183-L2189" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def allow_multiple_readers(self):
@@ -5294,7 +5411,7 @@ def allow_multiple_readers(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2042-L2048" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2157-L2163" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def data_readers(self):
@@ -5311,7 +5428,7 @@ def data_readers(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L3054-L3076" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L3169-L3191" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def deduplication_options(self):
@@ -5344,7 +5461,7 @@ def deduplication_options(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2007-L2011" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2122-L2126" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -5359,7 +5476,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1876-L1879" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L1991-L1994" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def display_name(self):
@@ -5373,7 +5490,7 @@ def display_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L3012-L3025" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L3127-L3140" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def encryption_flag(self):
@@ -5397,7 +5514,7 @@ def encryption_flag(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1962-L1966" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2077-L2081" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_backup_enabled(self):
@@ -5412,7 +5529,7 @@ def is_backup_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1975-L1979" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2090-L2094" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_blocklevel_backup_enabled(self):
@@ -5428,7 +5545,7 @@ subclient else returns False</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2110-L2114" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2225-L2229" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_default_subclient(self):
@@ -5443,7 +5560,7 @@ def is_default_subclient(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1968-L1973" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2083-L2088" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_intelli_snap_enabled(self):
@@ -5459,7 +5576,7 @@ def is_intelli_snap_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2002-L2005" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2117-L2120" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_on_demand_subclient(self):
@@ -5473,7 +5590,7 @@ def is_on_demand_subclient(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1996-L2000" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2111-L2115" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_trueup_enabled(self):
@@ -5488,7 +5605,7 @@ def is_trueup_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1941-L1950" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2056-L2065" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def last_backup_time(self):
@@ -5508,7 +5625,7 @@ def last_backup_time(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1871-L1874" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L1986-L1989" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -5522,7 +5639,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2987-L2990" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L3102-L3105" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def network_agent(self):
@@ -5536,7 +5653,7 @@ def network_agent(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1952-L1960" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2067-L2075" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def next_backup_time(self):
@@ -5556,7 +5673,7 @@ Returns None if no plan is associated</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L3131-L3145" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L3246-L3260" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan(self):
@@ -5581,7 +5698,7 @@ def plan(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1866-L1869" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L1981-L1984" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -5595,7 +5712,7 @@ def properties(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2102-L2108" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2217-L2223" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def read_buffer_size(self):
@@ -5612,7 +5729,7 @@ def read_buffer_size(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1981-L1994" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2096-L2109" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def snapshot_engine_name(self):
@@ -5636,7 +5753,7 @@ def snapshot_engine_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2944-L2957" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L3059-L3072" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def software_compression(self):
@@ -5660,7 +5777,7 @@ def software_compression(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2022-L2030" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2137-L2145" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_ma(self):
@@ -5679,7 +5796,7 @@ def storage_ma(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2032-L2040" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2147-L2155" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_ma_id(self):
@@ -5698,7 +5815,7 @@ def storage_ma_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2013-L2020" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2128-L2135" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy(self):
@@ -5716,12 +5833,12 @@ def storage_policy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1881-L1884" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L1996-L1999" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_guid(self):
     &#34;&#34;&#34;Returns the SubclientGUID&#34;&#34;&#34;
-    return self._subclient_properties.get(&#39;subClientEntity&#39; , {}).get(&#39;subclientGUID&#39;)</code></pre>
+    return self._subclient_properties.get(&#39;subClientEntity&#39;, {}).get(&#39;subclientGUID&#39;)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.subclient.Subclient.subclient_id"><code class="name">var <span class="ident">subclient_id</span></code></dt>
@@ -5730,7 +5847,7 @@ def subclient_guid(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1931-L1934" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2046-L2049" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_id(self):
@@ -5744,7 +5861,7 @@ def subclient_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1936-L1939" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2051-L2054" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_name(self):
@@ -5793,7 +5910,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2350-L2407" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2465-L2522" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(self,
            backup_level=&#34;Incremental&#34;,
@@ -5899,7 +6016,7 @@ from browse operation
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2424-L2475" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2539-L2590" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, *args, **kwargs):
     &#34;&#34;&#34;Browses the content of the Subclient.
@@ -5966,7 +6083,7 @@ if failed to disable backup of subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2253-L2261" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2368-L2376" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_backup(self):
     &#34;&#34;&#34;Disables Backup for the subclient.
@@ -5990,7 +6107,7 @@ if failed to disable intelli snap for subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2311-L2320" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2426-L2435" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_intelli_snap(self):
     &#34;&#34;&#34;Disables Intelli Snap for the subclient.
@@ -6015,7 +6132,7 @@ if failed to enable backup of subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2197-L2204" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2312-L2319" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_backup(self):
     &#34;&#34;&#34;Enables Backup for the subclient.
@@ -6052,7 +6169,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2216-L2251" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2331-L2366" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_backup_at_time(self, enable_time):
     &#34;&#34;&#34;Disables Backup if not already disabled, and enables at the time specified.
@@ -6108,7 +6225,7 @@ if failed to enable intelli snap for subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2273-L2309" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2388-L2424" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_intelli_snap(self, snap_engine_name, proxy_options=None):
     &#34;&#34;&#34;Enables Intelli Snap for the subclient.
@@ -6157,11 +6274,11 @@ if failed to enable intelli snap for subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2206-L2209" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2321-L2324" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_trueup(self):
     &#34;&#34;&#34;Setter for the TrueUp Option for a Subclient&#34;&#34;&#34;
-    if &#39;isTrueUpOptionEnabled&#39;in self._commonProperties:
+    if &#39;isTrueUpOptionEnabled&#39; in self._commonProperties:
         self._set_subclient_properties(&#34;_commonProperties[&#39;isTrueUpOptionEnabled&#39;]&#34;, True)</code></pre>
 </details>
 </dd>
@@ -6173,7 +6290,7 @@ if failed to enable intelli snap for subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2211-L2214" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2326-L2329" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_trueup_days(self, days=30):
     &#34;&#34;&#34;Setter for the TrueUp Option with reconcile after x days&#34;&#34;&#34;
@@ -6192,7 +6309,7 @@ if failed to exclude the subclient from SLA</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2263-L2271" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2378-L2386" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def exclude_from_sla(self):
     &#34;&#34;&#34;Exclude subclient from SLA.
@@ -6261,7 +6378,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2477-L2538" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2592-L2653" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find(self, *args, **kwargs):
     &#34;&#34;&#34;Searches a file/folder in the backed up content of the subclient,
@@ -6381,7 +6498,7 @@ if any error occurred while finding the latest job.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2845-L2937" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2960-L3052" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find_latest_job(
         self,
@@ -6488,7 +6605,7 @@ if unable to get MA names</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2409-L2422" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2524-L2537" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_ma_associated_storagepolicy(self):
     &#34;&#34;&#34;
@@ -6501,7 +6618,7 @@ if unable to get MA names</p></div>
     if &#39;performanceMode&#39; in storage:
         data_backup_storage_device = storage[&#39;performanceMode&#39;][&#34;perfCRCDetails&#34;]
         malist = []
-        for each_ma in data_backup_storage_device :
+        for each_ma in data_backup_storage_device:
             malist.append(each_ma[&#39;perfMa&#39;])
         return malist</code></pre>
 </details>
@@ -6546,7 +6663,7 @@ if failed to list media for content</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2540-L2589" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2655-L2704" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def list_media(self, *args, **kwargs):
     &#34;&#34;&#34;List media required to browse and restore backed up data from the subclient
@@ -6608,7 +6725,7 @@ if failed to list media for content</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2939-L2942" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L3054-L3057" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Subclient.&#34;&#34;&#34;
@@ -6644,14 +6761,14 @@ default: None</p>
 <p>from_time
 (str)
 &ndash;
-time to retore the contents after
+time to restore the contents after
 format: YYYY-MM-DD HH:MM:SS</p>
 <pre><code>default: None
 </code></pre>
 <p>to_time
 (str)
 &ndash;
-time to retore the contents before
+time to restore the contents before
 format: YYYY-MM-DD HH:MM:SS</p>
 <pre><code>default: None
 </code></pre>
@@ -6703,7 +6820,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2591-L2685" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2706-L2800" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -6732,12 +6849,12 @@ if response is not success
             copy_precedence         (int)   --  copy precedence value of storage policy copy
                 default: None
 
-            from_time           (str)       --  time to retore the contents after
+            from_time           (str)       --  time to restore the contents after
                     format: YYYY-MM-DD HH:MM:SS
 
                 default: None
 
-            to_time           (str)         --  time to retore the contents before
+            to_time           (str)         --  time to restore the contents before
                     format: YYYY-MM-DD HH:MM:SS
 
                 default: None
@@ -6840,14 +6957,14 @@ default: None</p>
 <p>from_time
 (str)
 &ndash;
-time to retore the contents after
+time to restore the contents after
 format: YYYY-MM-DD HH:MM:SS</p>
 <pre><code>default: None
 </code></pre>
 <p>to_time
 (str)
 &ndash;
-time to retore the contents before
+time to restore the contents before
 format: YYYY-MM-DD HH:MM:SS</p>
 <pre><code>default: None
 </code></pre>
@@ -6913,7 +7030,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2687-L2804" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2802-L2919" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -6950,12 +7067,12 @@ if response is not success
             copy_precedence         (int)   --  copy precedence value of storage policy copy
                 default: None
 
-            from_time           (str)       --  time to retore the contents after
+            from_time           (str)       --  time to restore the contents after
                     format: YYYY-MM-DD HH:MM:SS
 
                 default: None
 
-            to_time           (str)         --  time to retore the contents before
+            to_time           (str)         --  time to restore the contents before
                     format: YYYY-MM-DD HH:MM:SS
 
                 default: None
@@ -7056,7 +7173,7 @@ if unable to update the backup nodes for the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2806-L2843" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2921-L2958" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_backup_nodes(self, data_access_nodes):
     &#34;&#34;&#34;Sets the the backup nodes for NFS share subclient.
@@ -7108,7 +7225,7 @@ if unable to update the backup nodes for the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2322-L2338" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2437-L2453" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_proxy_for_snap(self, proxy_name):
     &#34;&#34;&#34; method to set Use proxy option for intellisnap subclient 
@@ -7137,7 +7254,7 @@ if unable to update the backup nodes for the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L2340-L2348" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L2455-L2463" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def unset_proxy_for_snap(self):
     &#34;&#34;&#34; method to unset Use proxy option for intellisnap subclient &#34;&#34;&#34;
@@ -7174,7 +7291,7 @@ need to change and use the update_properties method to set the properties</p></d
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1826-L1864" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L1941-L1979" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;Updates the subclient properties
@@ -7241,7 +7358,7 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L181-L1330" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L183-L1445" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Subclients(object):
     &#34;&#34;&#34;Class for getting all the subclients associated with a client.&#34;&#34;&#34;
@@ -7606,7 +7723,7 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def add(self, subclient_name, storage_policy,
+    def add(self, subclient_name, storage_policy=None,
             subclient_type=None, description=&#39;&#39;, advanced_options=None,
             pre_scan_cmd=None):
         &#34;&#34;&#34;Adds a new subclient to the backupset.
@@ -7616,6 +7733,8 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
 
                 storage_policy      (str)   --  name of the storage policy to be associated
                 with the subclient
+
+                    default: None
 
                 subclient_type      (str)   --  type of subclient for sql server
 
@@ -7664,7 +7783,6 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
 
         &#34;&#34;&#34;
         if not (isinstance(subclient_name, str) and
-                isinstance(storage_policy, str) and
                 isinstance(description, str)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
@@ -7684,7 +7802,7 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
                     sorted(self._instance_object.backupsets.all_backupsets)[0]
                 )
 
-        if not self._commcell_object.storage_policies.has_policy(
+        if storage_policy and not self._commcell_object.storage_policies.has_policy(
                 storage_policy):
             raise SDKException(
                 &#39;Subclient&#39;,
@@ -7723,6 +7841,10 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
                 }
             }
         }
+
+        if storage_policy is None:
+            del request_json[&#34;subClientProperties&#34;][&#34;commonProperties&#34;][&#34;storageDevice&#34;]
+
         if pre_scan_cmd is not None:
             request_json[&#34;subClientProperties&#34;][&#34;commonProperties&#34;][&#34;prepostProcess&#34;] = {
                 &#34;runAs&#34;: 1,
@@ -7737,15 +7859,15 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
         return self._process_add_request(request_json)
 
     def add_oracle_logical_dump_subclient(
-                                 self,
-                                 subclient_name,
-                                 storage_policy,
-                                 dump_dir,
-                                 user_name,
-                                 domain_name,
-                                 password,
-                                 full_mode,
-                                 schema_value = None):
+            self,
+            subclient_name,
+            storage_policy,
+            dump_dir,
+            user_name,
+            domain_name,
+            password,
+            full_mode,
+            schema_value=None):
         &#34;&#34;&#34;
         Method to add subclient for oracle logical dump.
         This method add two type of subclient full mode
@@ -7789,15 +7911,14 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
         if not (isinstance(subclient_name, str) and
                 isinstance(storage_policy, str) and
                 isinstance(dump_dir, str) and
-                isinstance(user_name,str) and
+                isinstance(user_name, str) and
                 isinstance(domain_name, str) and
                 isinstance(password, str) and
                 isinstance(full_mode, bool)):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
         if (full_mode == False and not
-                isinstance(schema_value, list)):
-            raise SDKException(&#39;Subclient&#39;,&#39;101&#39;)
-
+        isinstance(schema_value, list)):
+            raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
         if self.has_subclient(subclient_name):
             raise SDKException(
@@ -7825,61 +7946,60 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
             )
 
         request_json = {
-                &#34;subClientProperties&#34;: {
-                    &#34;subClientEntity&#34;: {
-                        &#34;clientName&#34;: self._client_object.client_name,
-                        &#34;instanceName&#34;: self._instance_object.instance_name,
-                        &#34;appName&#34;: self._agent_object.agent_name,
-                        &#34;backupsetName&#34;: self._backupset_object.backupset_name,
-                        &#34;subclientName&#34;: subclient_name
+            &#34;subClientProperties&#34;: {
+                &#34;subClientEntity&#34;: {
+                    &#34;clientName&#34;: self._client_object.client_name,
+                    &#34;instanceName&#34;: self._instance_object.instance_name,
+                    &#34;appName&#34;: self._agent_object.agent_name,
+                    &#34;backupsetName&#34;: self._backupset_object.backupset_name,
+                    &#34;subclientName&#34;: subclient_name
+                },
+                &#34;oracleSubclientProp&#34;: {
+                    &#34;data&#34;: False,
+                    &#34;archiveDelete&#34;: False,
+                    &#34;useSQLConntect&#34;: False,
+                    &#34;dbSubclientType&#34;: 2,
+                    &#34;mergeIncImageCopies&#34;: False,
+                    &#34;selectiveOnlineFull&#34;: False,
+                    &#34;protectBackupRecoveryArea&#34;: False,
+                    &#34;selectArchiveLogDestForBackup&#34;: False,
+                    &#34;backupSPFile&#34;: False,
+                    &#34;backupControlFile&#34;: False,
+                    &#34;backupArchiveLog&#34;: False,
+                    &#34;validate&#34;: False,
+                },
+                &#34;commonProperties&#34;: {
+                    &#34;snapCopyInfo&#34;: {
+                        &#34;useSeparateProxyForSnapToTape&#34;: False,
+                        &#34;checkProxyForSQLIntegrity&#34;: False,
+                        &#34;snapToTapeProxyToUseSource&#34;: False,
+                        &#34;isSnapBackupEnabled&#34;: False,
+                        &#34;IsOracleSposDriverEnabled&#34;: False,
+                        &#34;isRMANEnableForTapeMovement&#34;: False
                     },
-                    &#34;oracleSubclientProp&#34;: {
-                        &#34;data&#34;: False,
-                        &#34;archiveDelete&#34;: False,
-                        &#34;useSQLConntect&#34;: False,
-                        &#34;dbSubclientType&#34;: 2,
-                        &#34;mergeIncImageCopies&#34;: False,
-                        &#34;selectiveOnlineFull&#34;: False,
-                        &#34;protectBackupRecoveryArea&#34;: False,
-                        &#34;selectArchiveLogDestForBackup&#34;: False,
-                        &#34;backupSPFile&#34;: False,
-                        &#34;backupControlFile&#34;: False,
-                        &#34;backupArchiveLog&#34;: False,
-                        &#34;validate&#34;: False,
+                    &#34;dbDumpConfig&#34;: {
+                        &#34;fullMode&#34;: True,
+                        &#34;database&#34;: &#34;&#34;,
+                        &#34;dumpDir&#34;: dump_dir,
+                        &#34;parallelism&#34;: 2,
+                        &#34;overrideInstanceUser&#34;: True,
+                        &#34;sqlConnect&#34;: {
+                            &#34;password&#34;: b64encode(password.encode()).decode(),
+                            &#34;domainName&#34;: domain_name,
+                            &#34;userName&#34;: user_name
+                        }
                     },
-                    &#34;commonProperties&#34;: {
-                        &#34;snapCopyInfo&#34;: {
-                            &#34;useSeparateProxyForSnapToTape&#34;: False,
-                            &#34;checkProxyForSQLIntegrity&#34;: False,
-                            &#34;snapToTapeProxyToUseSource&#34;: False,
-                            &#34;isSnapBackupEnabled&#34;: False,
-                            &#34;IsOracleSposDriverEnabled&#34;: False,
-                            &#34;isRMANEnableForTapeMovement&#34;: False
+                    &#34;storageDevice&#34;: {
+                        &#34;dataBackupStoragePolicy&#34;: {
+                            &#34;storagePolicyName&#34;: storage_policy
                         },
-                        &#34;dbDumpConfig&#34;: {
-                            &#34;fullMode&#34;: True,
-                            &#34;database&#34;: &#34;&#34;,
-                            &#34;dumpDir&#34;: dump_dir,
-                            &#34;parallelism&#34;: 2,
-                            &#34;overrideInstanceUser&#34;: True,
-                            &#34;sqlConnect&#34;: {
-                                &#34;password&#34;: b64encode(password.encode()).decode(),
-                                &#34;domainName&#34;: domain_name,
-                                &#34;userName&#34;: user_name
-                            }
-                        },
-                        &#34;storageDevice&#34;: {
-                            &#34;dataBackupStoragePolicy&#34;: {
-                                &#34;storagePolicyName&#34;: storage_policy
-                            },
-                            &#34;deDuplicationOptions&#34;: {
-                                &#34;enableDeduplication&#34;: True
-                            }
+                        &#34;deDuplicationOptions&#34;: {
+                            &#34;enableDeduplication&#34;: True
                         }
                     }
                 }
             }
-
+        }
 
         if (full_mode == False):
             request_json[&#34;subClientProperties&#34;][&#34;commonProperties&#34;][&#34;dbDumpConfig&#34;][&#34;fullMode&#34;] = False
@@ -7983,6 +8103,115 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
                 &#34;postgreSQLSubclientProp&#34;: {
                     &#34;numberOfBackupStreams&#34;: no_of_streams,
                     &#34;collectObjectListDuringBackup&#34;: collect_object_list
+                },
+                &#34;content&#34;: content_list
+            }
+        }
+
+        return self._process_add_request(request_json)
+
+    def add_mysql_subclient(
+            self,
+            subclient_name,
+            storage_policy,
+            contents,
+            **kwargs
+    ):
+        &#34;&#34;&#34;Adds a new mysql subclient to the instance.
+
+            Args:
+                subclient_name          (str)   --  name of the new subclient to add
+
+                storage_policy          (str)   --  name of the storage policy to be associated
+                with the subclient
+
+                contents                (list)  --  database list to be added as subclient content
+
+                kwargs      (dict)  -- dict of keyword arguments as follows
+
+                    no_of_backup_streams    (int)   --  No of backup streams to be used
+                    default: 1
+
+                    no_of_log_backup_streams    (int)   -- No of Transaction log backup streams
+                    default: 1
+
+                    full_instance_xtrabackup    (bool)  -- True if XtraBackup is selected for subclient
+                    default: False
+
+            Returns:
+                object  -   instance of the Subclient class
+
+            Raises:
+                SDKException:
+                    if subclient name argument is not of type string
+
+                    if storage policy argument is not of type string
+
+                    if conetnts argument is not of type list
+
+                    if contents is empty list
+
+                    if failed to create subclient
+
+                    if response is empty
+
+                    if response is not success
+
+                    if subclient already exists with the given name
+
+        &#34;&#34;&#34;
+        if not (isinstance(subclient_name, str) and
+                isinstance(storage_policy, str) and
+                isinstance(contents, list)):
+            raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
+
+        if self.has_subclient(subclient_name):
+            raise SDKException(
+                &#39;Subclient&#39;, &#39;102&#39;, &#39;Subclient &#34;{0}&#34; already exists.&#39;.format(
+                    subclient_name)
+            )
+
+        if not self._commcell_object.storage_policies.has_policy(
+                storage_policy):
+            raise SDKException(
+                &#39;Subclient&#39;,
+                &#39;102&#39;,
+                &#39;Storage Policy: &#34;{0}&#34; does not exist in the Commcell&#39;.format(
+                    storage_policy)
+            )
+
+        if not contents:
+            raise SDKException(
+                &#39;Subclient&#39;,
+                &#39;102&#39;,
+                &#39;Content list cannot be empty&#39;
+            )
+
+        content_list = []
+        for content in contents:
+            content_list.append({&#34;mySQLContent&#34;: {&#34;databaseName&#34;: content}})
+
+        request_json = {
+            &#34;subClientProperties&#34;: {
+                &#34;contentOperationType&#34;: 2,
+                &#34;subClientEntity&#34;: {
+                    &#34;clientName&#34;: self._client_object.client_name,
+                    &#34;appName&#34;: self._agent_object.agent_name,
+                    &#34;instanceName&#34;: self._instance_object.instance_name,
+                    &#34;backupsetName&#34;: &#34;defaultDummyBackupSet&#34;,
+                    &#34;subclientName&#34;: subclient_name
+                },
+                &#34;commonProperties&#34;: {
+                    &#34;storageDevice&#34;: {
+                        &#34;dataBackupStoragePolicy&#34;: {
+                            &#34;storagePolicyName&#34;: storage_policy
+                        }
+                    },
+                },
+                &#34;mySqlSubclientProp&#34;: {
+                    &#34;numberOfBackupStreams&#34;: kwargs.get(&#39;no_of_backup_streams&#39;),
+                    &#34;numberOfTransactionLogStreams&#34;: kwargs.get(&#39;no_of_log_backup_streams&#39;),
+                    &#34;fullInstanceXtraBackup&#34;: kwargs.get(&#39;full_instance_xtrabackup&#39;)
                 },
                 &#34;content&#34;: content_list
             }
@@ -8115,7 +8344,7 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
             Returns:
 
             &#34;&#34;&#34;
-            return{
+            return {
                 &#34;equalsOrNotEquals&#34;: item_content.get(&#39;equal_value&#39;, True),
                 &#34;name&#34;: item_content.get(&#39;id&#39;, &#39;&#39;),
                 &#34;displayName&#34;: item_content.get(&#39;display_name&#39;, &#39;&#39;),
@@ -8123,6 +8352,7 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
                 &#34;allOrAnyChildren&#34;: item.get(&#39;allOrAnyChildren&#39;, True),
                 &#34;type&#34;: item_content[&#39;type&#39;] if isinstance(item_content[&#39;type&#39;], int) else item_content[&#39;type&#39;].value
             }
+
         for item in subclient_content:
             _temp_list = []
             _temp_dict = {}
@@ -8178,10 +8408,10 @@ if class object is not an instance of Agent / Instance / Backupset</p></div>
                     &#39;Storage Policy: &#34;{0}&#34; does not exist in the Commcell&#39;.format(kwargs.get(&#39;storage_policy&#39;))
                 )
             request_json[&#39;subClientProperties&#39;][&#39;commonProperties&#39;][&#39;storageDevice&#39;] = {
-                        &#34;dataBackupStoragePolicy&#34;: {
-                            &#34;storagePolicyName&#34;: kwargs.get(&#39;storage_policy&#39;)
-                        }
-                    }
+                &#34;dataBackupStoragePolicy&#34;: {
+                    &#34;storagePolicyName&#34;: kwargs.get(&#39;storage_policy&#39;)
+                }
+            }
         else:
             raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Either Plan or Storage policy should be given as input&#39;)
 
@@ -8423,7 +8653,7 @@ consists of all subclients in the backupset</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L465-L486" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L467-L488" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_subclients(self):
@@ -8455,7 +8685,7 @@ def all_subclients(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1327-L1330" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L1442-L1445" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def default_subclient(self):
@@ -8467,7 +8697,7 @@ def default_subclient(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.subclient.Subclients.add"><code class="name flex">
-<span>def <span class="ident">add</span></span>(<span>self, subclient_name, storage_policy, subclient_type=None, description='', advanced_options=None, pre_scan_cmd=None)</span>
+<span>def <span class="ident">add</span></span>(<span>self, subclient_name, storage_policy=None, subclient_type=None, description='', advanced_options=None, pre_scan_cmd=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Adds a new subclient to the backupset.</p>
@@ -8481,6 +8711,8 @@ name of the new subclient to add</p>
 &ndash;
 name of the storage policy to be associated
 with the subclient</p>
+<pre><code>default: None
+</code></pre>
 <p>subclient_type
 (str)
 &ndash;
@@ -8536,9 +8768,9 @@ if subclient already exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L544-L672" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L546-L679" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def add(self, subclient_name, storage_policy,
+<pre><code class="python">def add(self, subclient_name, storage_policy=None,
         subclient_type=None, description=&#39;&#39;, advanced_options=None,
         pre_scan_cmd=None):
     &#34;&#34;&#34;Adds a new subclient to the backupset.
@@ -8548,6 +8780,8 @@ if subclient already exists with the given name
 
             storage_policy      (str)   --  name of the storage policy to be associated
             with the subclient
+
+                default: None
 
             subclient_type      (str)   --  type of subclient for sql server
 
@@ -8596,7 +8830,6 @@ if subclient already exists with the given name
 
     &#34;&#34;&#34;
     if not (isinstance(subclient_name, str) and
-            isinstance(storage_policy, str) and
             isinstance(description, str)):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
@@ -8616,7 +8849,7 @@ if subclient already exists with the given name
                 sorted(self._instance_object.backupsets.all_backupsets)[0]
             )
 
-    if not self._commcell_object.storage_policies.has_policy(
+    if storage_policy and not self._commcell_object.storage_policies.has_policy(
             storage_policy):
         raise SDKException(
             &#39;Subclient&#39;,
@@ -8655,6 +8888,10 @@ if subclient already exists with the given name
             }
         }
     }
+
+    if storage_policy is None:
+        del request_json[&#34;subClientProperties&#34;][&#34;commonProperties&#34;][&#34;storageDevice&#34;]
+
     if pre_scan_cmd is not None:
         request_json[&#34;subClientProperties&#34;][&#34;commonProperties&#34;][&#34;prepostProcess&#34;] = {
             &#34;runAs&#34;: 1,
@@ -8665,6 +8902,173 @@ if subclient already exists with the given name
         request_json[&#39;subClientProperties&#39;][&#39;mssqlSubClientProp&#39;] = {
             &#39;sqlSubclientType&#39;: self._sqlsubclient_type_dict[subclient_type]
         }
+
+    return self._process_add_request(request_json)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclient.Subclients.add_mysql_subclient"><code class="name flex">
+<span>def <span class="ident">add_mysql_subclient</span></span>(<span>self, subclient_name, storage_policy, contents, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Adds a new mysql subclient to the instance.</p>
+<h2 id="args">Args</h2>
+<p>subclient_name
+(str)
+&ndash;
+name of the new subclient to add</p>
+<p>storage_policy
+(str)
+&ndash;
+name of the storage policy to be associated
+with the subclient</p>
+<p>contents
+(list)
+&ndash;
+database list to be added as subclient content</p>
+<p>kwargs
+(dict)
+&ndash; dict of keyword arguments as follows</p>
+<pre><code>no_of_backup_streams    (int)   --  No of backup streams to be used
+default: 1
+
+no_of_log_backup_streams    (int)   -- No of Transaction log backup streams
+default: 1
+
+full_instance_xtrabackup    (bool)  -- True if XtraBackup is selected for subclient
+default: False
+</code></pre>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+instance of the Subclient class</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if subclient name argument is not of type string</p>
+<pre><code>if storage policy argument is not of type string
+
+if conetnts argument is not of type list
+
+if contents is empty list
+
+if failed to create subclient
+
+if response is empty
+
+if response is not success
+
+if subclient already exists with the given name
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L933-L1040" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def add_mysql_subclient(
+        self,
+        subclient_name,
+        storage_policy,
+        contents,
+        **kwargs
+):
+    &#34;&#34;&#34;Adds a new mysql subclient to the instance.
+
+        Args:
+            subclient_name          (str)   --  name of the new subclient to add
+
+            storage_policy          (str)   --  name of the storage policy to be associated
+            with the subclient
+
+            contents                (list)  --  database list to be added as subclient content
+
+            kwargs      (dict)  -- dict of keyword arguments as follows
+
+                no_of_backup_streams    (int)   --  No of backup streams to be used
+                default: 1
+
+                no_of_log_backup_streams    (int)   -- No of Transaction log backup streams
+                default: 1
+
+                full_instance_xtrabackup    (bool)  -- True if XtraBackup is selected for subclient
+                default: False
+
+        Returns:
+            object  -   instance of the Subclient class
+
+        Raises:
+            SDKException:
+                if subclient name argument is not of type string
+
+                if storage policy argument is not of type string
+
+                if conetnts argument is not of type list
+
+                if contents is empty list
+
+                if failed to create subclient
+
+                if response is empty
+
+                if response is not success
+
+                if subclient already exists with the given name
+
+    &#34;&#34;&#34;
+    if not (isinstance(subclient_name, str) and
+            isinstance(storage_policy, str) and
+            isinstance(contents, list)):
+        raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
+
+    if self.has_subclient(subclient_name):
+        raise SDKException(
+            &#39;Subclient&#39;, &#39;102&#39;, &#39;Subclient &#34;{0}&#34; already exists.&#39;.format(
+                subclient_name)
+        )
+
+    if not self._commcell_object.storage_policies.has_policy(
+            storage_policy):
+        raise SDKException(
+            &#39;Subclient&#39;,
+            &#39;102&#39;,
+            &#39;Storage Policy: &#34;{0}&#34; does not exist in the Commcell&#39;.format(
+                storage_policy)
+        )
+
+    if not contents:
+        raise SDKException(
+            &#39;Subclient&#39;,
+            &#39;102&#39;,
+            &#39;Content list cannot be empty&#39;
+        )
+
+    content_list = []
+    for content in contents:
+        content_list.append({&#34;mySQLContent&#34;: {&#34;databaseName&#34;: content}})
+
+    request_json = {
+        &#34;subClientProperties&#34;: {
+            &#34;contentOperationType&#34;: 2,
+            &#34;subClientEntity&#34;: {
+                &#34;clientName&#34;: self._client_object.client_name,
+                &#34;appName&#34;: self._agent_object.agent_name,
+                &#34;instanceName&#34;: self._instance_object.instance_name,
+                &#34;backupsetName&#34;: &#34;defaultDummyBackupSet&#34;,
+                &#34;subclientName&#34;: subclient_name
+            },
+            &#34;commonProperties&#34;: {
+                &#34;storageDevice&#34;: {
+                    &#34;dataBackupStoragePolicy&#34;: {
+                        &#34;storagePolicyName&#34;: storage_policy
+                    }
+                },
+            },
+            &#34;mySqlSubclientProp&#34;: {
+                &#34;numberOfBackupStreams&#34;: kwargs.get(&#39;no_of_backup_streams&#39;),
+                &#34;numberOfTransactionLogStreams&#34;: kwargs.get(&#39;no_of_log_backup_streams&#39;),
+                &#34;fullInstanceXtraBackup&#34;: kwargs.get(&#39;full_instance_xtrabackup&#39;)
+            },
+            &#34;content&#34;: content_list
+        }
+    }
 
     return self._process_add_request(request_json)</code></pre>
 </details>
@@ -8708,7 +9112,7 @@ if server plan  donot exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1125-L1217" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L1240-L1332" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_onedrive_subclient(self,
                            subclient_name,
@@ -8864,18 +9268,18 @@ if subclient name argument is not of type string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L674-L823" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L681-L828" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_oracle_logical_dump_subclient(
-                             self,
-                             subclient_name,
-                             storage_policy,
-                             dump_dir,
-                             user_name,
-                             domain_name,
-                             password,
-                             full_mode,
-                             schema_value = None):
+        self,
+        subclient_name,
+        storage_policy,
+        dump_dir,
+        user_name,
+        domain_name,
+        password,
+        full_mode,
+        schema_value=None):
     &#34;&#34;&#34;
     Method to add subclient for oracle logical dump.
     This method add two type of subclient full mode
@@ -8919,15 +9323,14 @@ if subclient name argument is not of type string</p>
     if not (isinstance(subclient_name, str) and
             isinstance(storage_policy, str) and
             isinstance(dump_dir, str) and
-            isinstance(user_name,str) and
+            isinstance(user_name, str) and
             isinstance(domain_name, str) and
             isinstance(password, str) and
             isinstance(full_mode, bool)):
         raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
     if (full_mode == False and not
-            isinstance(schema_value, list)):
-        raise SDKException(&#39;Subclient&#39;,&#39;101&#39;)
-
+    isinstance(schema_value, list)):
+        raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
     if self.has_subclient(subclient_name):
         raise SDKException(
@@ -8955,61 +9358,60 @@ if subclient name argument is not of type string</p>
         )
 
     request_json = {
-            &#34;subClientProperties&#34;: {
-                &#34;subClientEntity&#34;: {
-                    &#34;clientName&#34;: self._client_object.client_name,
-                    &#34;instanceName&#34;: self._instance_object.instance_name,
-                    &#34;appName&#34;: self._agent_object.agent_name,
-                    &#34;backupsetName&#34;: self._backupset_object.backupset_name,
-                    &#34;subclientName&#34;: subclient_name
+        &#34;subClientProperties&#34;: {
+            &#34;subClientEntity&#34;: {
+                &#34;clientName&#34;: self._client_object.client_name,
+                &#34;instanceName&#34;: self._instance_object.instance_name,
+                &#34;appName&#34;: self._agent_object.agent_name,
+                &#34;backupsetName&#34;: self._backupset_object.backupset_name,
+                &#34;subclientName&#34;: subclient_name
+            },
+            &#34;oracleSubclientProp&#34;: {
+                &#34;data&#34;: False,
+                &#34;archiveDelete&#34;: False,
+                &#34;useSQLConntect&#34;: False,
+                &#34;dbSubclientType&#34;: 2,
+                &#34;mergeIncImageCopies&#34;: False,
+                &#34;selectiveOnlineFull&#34;: False,
+                &#34;protectBackupRecoveryArea&#34;: False,
+                &#34;selectArchiveLogDestForBackup&#34;: False,
+                &#34;backupSPFile&#34;: False,
+                &#34;backupControlFile&#34;: False,
+                &#34;backupArchiveLog&#34;: False,
+                &#34;validate&#34;: False,
+            },
+            &#34;commonProperties&#34;: {
+                &#34;snapCopyInfo&#34;: {
+                    &#34;useSeparateProxyForSnapToTape&#34;: False,
+                    &#34;checkProxyForSQLIntegrity&#34;: False,
+                    &#34;snapToTapeProxyToUseSource&#34;: False,
+                    &#34;isSnapBackupEnabled&#34;: False,
+                    &#34;IsOracleSposDriverEnabled&#34;: False,
+                    &#34;isRMANEnableForTapeMovement&#34;: False
                 },
-                &#34;oracleSubclientProp&#34;: {
-                    &#34;data&#34;: False,
-                    &#34;archiveDelete&#34;: False,
-                    &#34;useSQLConntect&#34;: False,
-                    &#34;dbSubclientType&#34;: 2,
-                    &#34;mergeIncImageCopies&#34;: False,
-                    &#34;selectiveOnlineFull&#34;: False,
-                    &#34;protectBackupRecoveryArea&#34;: False,
-                    &#34;selectArchiveLogDestForBackup&#34;: False,
-                    &#34;backupSPFile&#34;: False,
-                    &#34;backupControlFile&#34;: False,
-                    &#34;backupArchiveLog&#34;: False,
-                    &#34;validate&#34;: False,
+                &#34;dbDumpConfig&#34;: {
+                    &#34;fullMode&#34;: True,
+                    &#34;database&#34;: &#34;&#34;,
+                    &#34;dumpDir&#34;: dump_dir,
+                    &#34;parallelism&#34;: 2,
+                    &#34;overrideInstanceUser&#34;: True,
+                    &#34;sqlConnect&#34;: {
+                        &#34;password&#34;: b64encode(password.encode()).decode(),
+                        &#34;domainName&#34;: domain_name,
+                        &#34;userName&#34;: user_name
+                    }
                 },
-                &#34;commonProperties&#34;: {
-                    &#34;snapCopyInfo&#34;: {
-                        &#34;useSeparateProxyForSnapToTape&#34;: False,
-                        &#34;checkProxyForSQLIntegrity&#34;: False,
-                        &#34;snapToTapeProxyToUseSource&#34;: False,
-                        &#34;isSnapBackupEnabled&#34;: False,
-                        &#34;IsOracleSposDriverEnabled&#34;: False,
-                        &#34;isRMANEnableForTapeMovement&#34;: False
+                &#34;storageDevice&#34;: {
+                    &#34;dataBackupStoragePolicy&#34;: {
+                        &#34;storagePolicyName&#34;: storage_policy
                     },
-                    &#34;dbDumpConfig&#34;: {
-                        &#34;fullMode&#34;: True,
-                        &#34;database&#34;: &#34;&#34;,
-                        &#34;dumpDir&#34;: dump_dir,
-                        &#34;parallelism&#34;: 2,
-                        &#34;overrideInstanceUser&#34;: True,
-                        &#34;sqlConnect&#34;: {
-                            &#34;password&#34;: b64encode(password.encode()).decode(),
-                            &#34;domainName&#34;: domain_name,
-                            &#34;userName&#34;: user_name
-                        }
-                    },
-                    &#34;storageDevice&#34;: {
-                        &#34;dataBackupStoragePolicy&#34;: {
-                            &#34;storagePolicyName&#34;: storage_policy
-                        },
-                        &#34;deDuplicationOptions&#34;: {
-                            &#34;enableDeduplication&#34;: True
-                        }
+                    &#34;deDuplicationOptions&#34;: {
+                        &#34;enableDeduplication&#34;: True
                     }
                 }
             }
         }
-
+    }
 
     if (full_mode == False):
         request_json[&#34;subClientProperties&#34;][&#34;commonProperties&#34;][&#34;dbDumpConfig&#34;][&#34;fullMode&#34;] = False
@@ -9074,7 +9476,7 @@ if subclient already exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L825-L926" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L830-L931" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_postgresql_subclient(
         self, subclient_name, storage_policy,
@@ -9270,7 +9672,7 @@ if subclient already exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L928-L1123" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L1042-L1238" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_virtual_server_subclient(
         self,
@@ -9397,7 +9799,7 @@ if subclient already exists with the given name
         Returns:
 
         &#34;&#34;&#34;
-        return{
+        return {
             &#34;equalsOrNotEquals&#34;: item_content.get(&#39;equal_value&#39;, True),
             &#34;name&#34;: item_content.get(&#39;id&#39;, &#39;&#39;),
             &#34;displayName&#34;: item_content.get(&#39;display_name&#39;, &#39;&#39;),
@@ -9405,6 +9807,7 @@ if subclient already exists with the given name
             &#34;allOrAnyChildren&#34;: item.get(&#39;allOrAnyChildren&#39;, True),
             &#34;type&#34;: item_content[&#39;type&#39;] if isinstance(item_content[&#39;type&#39;], int) else item_content[&#39;type&#39;].value
         }
+
     for item in subclient_content:
         _temp_list = []
         _temp_dict = {}
@@ -9460,10 +9863,10 @@ if subclient already exists with the given name
                 &#39;Storage Policy: &#34;{0}&#34; does not exist in the Commcell&#39;.format(kwargs.get(&#39;storage_policy&#39;))
             )
         request_json[&#39;subClientProperties&#39;][&#39;commonProperties&#39;][&#39;storageDevice&#39;] = {
-                    &#34;dataBackupStoragePolicy&#34;: {
-                        &#34;storagePolicyName&#34;: kwargs.get(&#39;storage_policy&#39;)
-                    }
-                }
+            &#34;dataBackupStoragePolicy&#34;: {
+                &#34;storagePolicyName&#34;: kwargs.get(&#39;storage_policy&#39;)
+            }
+        }
     else:
         raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Either Plan or Storage policy should be given as input&#39;)
 
@@ -9493,7 +9896,7 @@ if no subclient exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1254-L1321" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L1369-L1436" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, subclient_name):
     &#34;&#34;&#34;Deletes the subclient specified by the subclient_name from the backupset.
@@ -9584,7 +9987,7 @@ if type of the subclient name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1219-L1252" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L1334-L1367" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, subclient_name):
     &#34;&#34;&#34;Returns a subclient object of the specified backupset name.
@@ -9639,7 +10042,7 @@ if type of the subclient name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L488-L504" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L490-L506" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_subclient(self, subclient_name):
     &#34;&#34;&#34;Checks if a subclient exists in the commcell with the input subclient name.
@@ -9668,7 +10071,7 @@ if type of the subclient name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclient.py#L1323-L1325" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclient.py#L1438-L1440" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the subclients associated with the Backupset / Instance.&#34;&#34;&#34;
@@ -9806,6 +10209,7 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="cvpysdk.subclient.Subclients" href="#cvpysdk.subclient.Subclients">Subclients</a></code></h4>
 <ul class="">
 <li><code><a title="cvpysdk.subclient.Subclients.add" href="#cvpysdk.subclient.Subclients.add">add</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclients.add_mysql_subclient" href="#cvpysdk.subclient.Subclients.add_mysql_subclient">add_mysql_subclient</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclients.add_onedrive_subclient" href="#cvpysdk.subclient.Subclients.add_onedrive_subclient">add_onedrive_subclient</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclients.add_oracle_logical_dump_subclient" href="#cvpysdk.subclient.Subclients.add_oracle_logical_dump_subclient">add_oracle_logical_dump_subclient</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclients.add_postgresql_subclient" href="#cvpysdk.subclient.Subclients.add_postgresql_subclient">add_postgresql_subclient</a></code></li>

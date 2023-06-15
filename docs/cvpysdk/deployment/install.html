@@ -38,7 +38,7 @@ install_software                 --  Installs the features selected on the machi
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/install.py#L1-L637" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/install.py#L1-L706" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -78,6 +78,7 @@ Download
 from ..job import Job
 from ..exception import SDKException
 from ..deployment.deploymentconstants import UnixDownloadFeatures, WindowsDownloadFeatures
+from ..schedules import SchedulePattern, Schedules
 
 
 class Install(object):
@@ -241,7 +242,8 @@ class Install(object):
             all_client_computer_groups=False,
             reboot_client=False,
             run_db_maintenance=True,
-            maintenance_release_only=False):
+            maintenance_release_only=False,
+            **kwargs):
         &#34;&#34;&#34;Installs the software packages on the clients
 
         Args:
@@ -272,11 +274,17 @@ class Install(object):
             maintenance_release_only (bool)       -- for clients of feature releases lesser than CS, this option
             maintenance release of that client FR, if present in cache
 
+            **kwargs: (dict) -- Key value pairs for supporting conditional initializations
+                Supported -
+                schedule_pattern (dict)           -- Request JSON for scheduling the operation
+
         Returns:
-            object - instance of the Job class for this download job
+            object - instance of the Job/Task class for this download
 
         Raises:
                 SDKException:
+                    if schedule is not of type dictionary
+
                     if Download job failed
 
                     if response is empty
@@ -290,7 +298,10 @@ class Install(object):
         &#34;&#34;&#34;
         selected_clients = []
         selected_client_groups = []
-
+        schedule_pattern = kwargs.get(&#39;schedule_pattern&#39;, None)
+        if schedule_pattern:
+            if not isinstance(schedule_pattern, dict):
+                raise SDKException(&#34;Install&#34;, &#34;101&#34;)
         if not any([all_client_computers,
                     all_client_computer_groups,
                     client_computers,
@@ -365,6 +376,10 @@ class Install(object):
                 ]
             }
         }
+
+        if schedule_pattern:
+            request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
         )
@@ -373,6 +388,9 @@ class Install(object):
             if response.json():
                 if &#34;jobIds&#34; in response.json():
                     return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+
+                elif schedule_pattern and &#34;taskId&#34; in response.json():
+                    return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
 
                 else:
                     raise SDKException(&#39;Install&#39;, &#39;107&#39;)
@@ -451,9 +469,52 @@ class Install(object):
                                     &#34;db2RetrievePath&#34;: &#34;/opt/Retrieve/&#34;,
                                     &#34;db2AuditErrorPath&#34;: &#34;/opt/Audit/&#34;
                             }
-            
             index_cache_location (str) - Set index cache location for MA package
             Ex: index_cache_location = &#34;/opt/IndexCache/&#34;
+            firewall_inputs (dict) - dictionary for firewall configuration
+            Ex: firewall_inputs = {
+                                  &#34;enableFirewallConfig&#34;: True,
+                                  &#34;firewallConnectionType&#34;: 1,
+                                  &#34;httpProxyConfigurationType&#34;: 0,
+                                  &#34;proxyClientName&#34;: &#34;Proxy_client_name&#34;,
+                                  &#34;proxyHostName&#34;: &#34;Proxy_host_name&#34;,
+                                  &#34;portNumber&#34;: &#34;port_number&#34;,
+                                  &#34;encryptedTunnel&#34;: &#34;encrypted_tunnel&#34;
+                            }
+
+            firewall_inputs can take the following values
+
+            Ex 1: Client can open connection to CS
+             firewall_inputs = {
+                                  &#34;enableFirewallConfig&#34;: True,
+                                  &#34;firewallConnectionType&#34;: 0,
+                                  &#34;proxyClientName&#34;: &#34;&#34;,
+                                  &#34;proxyHostName&#34;: &#34;&#34;,
+                                  &#34;portNumber&#34;: &#34;port_number&#34;,
+                                  &#34;httpProxyConfigurationType&#34;: 0,
+                                  &#34;encryptedTunnel&#34;: True/False
+                            }
+            Ex 2: CS can open connection to Client
+                 firewall_inputs = {
+                                  &#34;enableFirewallConfig&#34;: True,
+                                  &#34;firewallConnectionType&#34;: 1,
+                                  &#34;proxyClientName&#34;: &#34;&#34;,
+                                  &#34;proxyHostName&#34;: &#34;&#34;,
+                                  &#34;portNumber&#34;: &#34;port_number&#34;,
+                                  &#34;httpProxyConfigurationType&#34;: 0,
+                                  &#34;encryptedTunnel&#34;: True/False
+                            }
+
+            Ex 3: Client can communicate to CS using Proxy
+                 firewall_inputs = {
+                                  &#34;enableFirewallConfig&#34;: True,
+                                  &#34;firewallConnectionType&#34;: 2,
+                                  &#34;httpProxyConfigurationType&#34;: 0,
+                                  &#34;proxyClientName&#34;: &#34;Proxy_client_name&#34;,
+                                  &#34;proxyHostName&#34;: &#34;Proxy_host_name&#34;,
+                                  &#34;portNumber&#34;: &#34;port_number&#34;,
+                                  &#34;encryptedTunnel&#34;: True/False
+                            }
 
         Returns:
                 object - instance of the Job class for this install_software job
@@ -523,6 +584,7 @@ class Install(object):
                 client_details.append(
                     {
                         &#34;clientEntity&#34;: {
+                            &#34;clientId&#34;: 0,
                             &#34;clientName&#34;: client_name,
                             &#34;commCellName&#34;: commcell_name
                         }
@@ -541,6 +603,7 @@ class Install(object):
         install_flags = kwargs.get(&#39;install_flags&#39;)
         db2_logs = kwargs.get(&#39;db2_logs_location&#39;, {})
         index_cache_location = kwargs.get(&#39;index_cache_location&#39;, None)
+        firewall_inputs = kwargs.get(&#39;firewall_inputs&#39;, {})
 
         request_json = {
             &#34;taskInfo&#34;: {
@@ -572,10 +635,10 @@ class Install(object):
                                         &#34;requestType&#34;: 0,
                                         &#34;Operationtype&#34;: 0,
                                         &#34;CommServeHostName&#34;:
-                                            self.commcell_object.commserv_hostname,
+                                            self.commcell_object.commserv_name,
                                         &#34;RemoteClient&#34;: False,
                                         &#34;installFlags&#34;: {
-                                            &#34;allowMultipleInstances&#34;: True,
+                                            &#34;allowMultipleInstances&#34;: kwargs.get(&#39;allowMultipleInstances&#39;, False),
                                             &#34;restoreOnlyAgents&#34;: False,
                                             &#34;killBrowserProcesses&#34;: True,
                                             &#34;install32Base&#34;: install_flags.get(&#39;install32Base&#39;,
@@ -601,6 +664,7 @@ class Install(object):
                                         },
                                         &#34;clientComposition&#34;: [
                                             {
+                                                &#34;activateClient&#34;: True,
                                                 &#34;overrideSoftwareCache&#34;: True if sw_cache_client else False,
                                                 &#34;softwareCacheOrSrmProxyClient&#34;: {
                                                     &#34;clientName&#34;: sw_cache_client if sw_cache_client else &#34;&#34;
@@ -661,6 +725,11 @@ class Install(object):
             request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][&#34;installerOption&#34;][
                 &#34;clientComposition&#34;][0][&#34;components&#34;][&#34;mediaAgent&#34;] = index_cache_dict
 
+        if firewall_inputs:
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][&#34;installerOption&#34;][
+                &#34;installFlags&#34;][&#34;firewallInstall&#34;] = firewall_inputs
+
+
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
         )
@@ -704,7 +773,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/install.py#L41-L637" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/install.py#L42-L706" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Install(object):
     &#34;&#34;&#34;&#34;class for installing software packages&#34;&#34;&#34;
@@ -867,7 +936,8 @@ instance of the Commcell class</p>
             all_client_computer_groups=False,
             reboot_client=False,
             run_db_maintenance=True,
-            maintenance_release_only=False):
+            maintenance_release_only=False,
+            **kwargs):
         &#34;&#34;&#34;Installs the software packages on the clients
 
         Args:
@@ -898,11 +968,17 @@ instance of the Commcell class</p>
             maintenance_release_only (bool)       -- for clients of feature releases lesser than CS, this option
             maintenance release of that client FR, if present in cache
 
+            **kwargs: (dict) -- Key value pairs for supporting conditional initializations
+                Supported -
+                schedule_pattern (dict)           -- Request JSON for scheduling the operation
+
         Returns:
-            object - instance of the Job class for this download job
+            object - instance of the Job/Task class for this download
 
         Raises:
                 SDKException:
+                    if schedule is not of type dictionary
+
                     if Download job failed
 
                     if response is empty
@@ -916,7 +992,10 @@ instance of the Commcell class</p>
         &#34;&#34;&#34;
         selected_clients = []
         selected_client_groups = []
-
+        schedule_pattern = kwargs.get(&#39;schedule_pattern&#39;, None)
+        if schedule_pattern:
+            if not isinstance(schedule_pattern, dict):
+                raise SDKException(&#34;Install&#34;, &#34;101&#34;)
         if not any([all_client_computers,
                     all_client_computer_groups,
                     client_computers,
@@ -991,6 +1070,10 @@ instance of the Commcell class</p>
                 ]
             }
         }
+
+        if schedule_pattern:
+            request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
         )
@@ -999,6 +1082,9 @@ instance of the Commcell class</p>
             if response.json():
                 if &#34;jobIds&#34; in response.json():
                     return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+
+                elif schedule_pattern and &#34;taskId&#34; in response.json():
+                    return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
 
                 else:
                     raise SDKException(&#39;Install&#39;, &#39;107&#39;)
@@ -1077,9 +1163,52 @@ instance of the Commcell class</p>
                                     &#34;db2RetrievePath&#34;: &#34;/opt/Retrieve/&#34;,
                                     &#34;db2AuditErrorPath&#34;: &#34;/opt/Audit/&#34;
                             }
-            
             index_cache_location (str) - Set index cache location for MA package
             Ex: index_cache_location = &#34;/opt/IndexCache/&#34;
+            firewall_inputs (dict) - dictionary for firewall configuration
+            Ex: firewall_inputs = {
+                                  &#34;enableFirewallConfig&#34;: True,
+                                  &#34;firewallConnectionType&#34;: 1,
+                                  &#34;httpProxyConfigurationType&#34;: 0,
+                                  &#34;proxyClientName&#34;: &#34;Proxy_client_name&#34;,
+                                  &#34;proxyHostName&#34;: &#34;Proxy_host_name&#34;,
+                                  &#34;portNumber&#34;: &#34;port_number&#34;,
+                                  &#34;encryptedTunnel&#34;: &#34;encrypted_tunnel&#34;
+                            }
+
+            firewall_inputs can take the following values
+
+            Ex 1: Client can open connection to CS
+             firewall_inputs = {
+                                  &#34;enableFirewallConfig&#34;: True,
+                                  &#34;firewallConnectionType&#34;: 0,
+                                  &#34;proxyClientName&#34;: &#34;&#34;,
+                                  &#34;proxyHostName&#34;: &#34;&#34;,
+                                  &#34;portNumber&#34;: &#34;port_number&#34;,
+                                  &#34;httpProxyConfigurationType&#34;: 0,
+                                  &#34;encryptedTunnel&#34;: True/False
+                            }
+            Ex 2: CS can open connection to Client
+                 firewall_inputs = {
+                                  &#34;enableFirewallConfig&#34;: True,
+                                  &#34;firewallConnectionType&#34;: 1,
+                                  &#34;proxyClientName&#34;: &#34;&#34;,
+                                  &#34;proxyHostName&#34;: &#34;&#34;,
+                                  &#34;portNumber&#34;: &#34;port_number&#34;,
+                                  &#34;httpProxyConfigurationType&#34;: 0,
+                                  &#34;encryptedTunnel&#34;: True/False
+                            }
+
+            Ex 3: Client can communicate to CS using Proxy
+                 firewall_inputs = {
+                                  &#34;enableFirewallConfig&#34;: True,
+                                  &#34;firewallConnectionType&#34;: 2,
+                                  &#34;httpProxyConfigurationType&#34;: 0,
+                                  &#34;proxyClientName&#34;: &#34;Proxy_client_name&#34;,
+                                  &#34;proxyHostName&#34;: &#34;Proxy_host_name&#34;,
+                                  &#34;portNumber&#34;: &#34;port_number&#34;,
+                                  &#34;encryptedTunnel&#34;: True/False
+                            }
 
         Returns:
                 object - instance of the Job class for this install_software job
@@ -1149,6 +1278,7 @@ instance of the Commcell class</p>
                 client_details.append(
                     {
                         &#34;clientEntity&#34;: {
+                            &#34;clientId&#34;: 0,
                             &#34;clientName&#34;: client_name,
                             &#34;commCellName&#34;: commcell_name
                         }
@@ -1167,6 +1297,7 @@ instance of the Commcell class</p>
         install_flags = kwargs.get(&#39;install_flags&#39;)
         db2_logs = kwargs.get(&#39;db2_logs_location&#39;, {})
         index_cache_location = kwargs.get(&#39;index_cache_location&#39;, None)
+        firewall_inputs = kwargs.get(&#39;firewall_inputs&#39;, {})
 
         request_json = {
             &#34;taskInfo&#34;: {
@@ -1198,10 +1329,10 @@ instance of the Commcell class</p>
                                         &#34;requestType&#34;: 0,
                                         &#34;Operationtype&#34;: 0,
                                         &#34;CommServeHostName&#34;:
-                                            self.commcell_object.commserv_hostname,
+                                            self.commcell_object.commserv_name,
                                         &#34;RemoteClient&#34;: False,
                                         &#34;installFlags&#34;: {
-                                            &#34;allowMultipleInstances&#34;: True,
+                                            &#34;allowMultipleInstances&#34;: kwargs.get(&#39;allowMultipleInstances&#39;, False),
                                             &#34;restoreOnlyAgents&#34;: False,
                                             &#34;killBrowserProcesses&#34;: True,
                                             &#34;install32Base&#34;: install_flags.get(&#39;install32Base&#39;,
@@ -1227,6 +1358,7 @@ instance of the Commcell class</p>
                                         },
                                         &#34;clientComposition&#34;: [
                                             {
+                                                &#34;activateClient&#34;: True,
                                                 &#34;overrideSoftwareCache&#34;: True if sw_cache_client else False,
                                                 &#34;softwareCacheOrSrmProxyClient&#34;: {
                                                     &#34;clientName&#34;: sw_cache_client if sw_cache_client else &#34;&#34;
@@ -1286,6 +1418,11 @@ instance of the Commcell class</p>
             }
             request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][&#34;installerOption&#34;][
                 &#34;clientComposition&#34;][0][&#34;components&#34;][&#34;mediaAgent&#34;] = index_cache_dict
+
+        if firewall_inputs:
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][&#34;installerOption&#34;][
+                &#34;installFlags&#34;][&#34;firewallInstall&#34;] = firewall_inputs
+
 
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
@@ -1373,7 +1510,49 @@ Ex : install_flags = {"preferredIPFamily":2, "install32Base":True}</p>
 <dt>index_cache_location (str) - Set index cache location for MA package</dt>
 <dt><strong><code>Ex</code></strong></dt>
 <dd>index_cache_location = "/opt/IndexCache/"</dd>
+<dt>firewall_inputs (dict) - dictionary for firewall configuration</dt>
+<dt><strong><code>Ex</code></strong></dt>
+<dd>firewall_inputs = {
+"enableFirewallConfig": True,
+"firewallConnectionType": 1,
+"httpProxyConfigurationType": 0,
+"proxyClientName": "Proxy_client_name",
+"proxyHostName": "Proxy_host_name",
+"portNumber": "port_number",
+"encryptedTunnel": "encrypted_tunnel"
+}</dd>
 </dl>
+<p>firewall_inputs can take the following values</p>
+<p>Ex 1: Client can open connection to CS
+firewall_inputs = {
+"enableFirewallConfig": True,
+"firewallConnectionType": 0,
+"proxyClientName": "",
+"proxyHostName": "",
+"portNumber": "port_number",
+"httpProxyConfigurationType": 0,
+"encryptedTunnel": True/False
+}
+Ex 2: CS can open connection to Client
+firewall_inputs = {
+"enableFirewallConfig": True,
+"firewallConnectionType": 1,
+"proxyClientName": "",
+"proxyHostName": "",
+"portNumber": "port_number",
+"httpProxyConfigurationType": 0,
+"encryptedTunnel": True/False
+}</p>
+<p>Ex 3: Client can communicate to CS using Proxy
+firewall_inputs = {
+"enableFirewallConfig": True,
+"firewallConnectionType": 2,
+"httpProxyConfigurationType": 0,
+"proxyClientName": "Proxy_client_name",
+"proxyHostName": "Proxy_host_name",
+"portNumber": "port_number",
+"encryptedTunnel": True/False
+}</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this install_software job</p>
 <h2 id="raises">Raises</h2>
@@ -1424,7 +1603,7 @@ not both
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/install.py#L343-L637" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/install.py#L361-L706" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def install_software(
         self,
@@ -1495,9 +1674,52 @@ not both
                                 &#34;db2RetrievePath&#34;: &#34;/opt/Retrieve/&#34;,
                                 &#34;db2AuditErrorPath&#34;: &#34;/opt/Audit/&#34;
                         }
-        
         index_cache_location (str) - Set index cache location for MA package
         Ex: index_cache_location = &#34;/opt/IndexCache/&#34;
+        firewall_inputs (dict) - dictionary for firewall configuration
+        Ex: firewall_inputs = {
+                              &#34;enableFirewallConfig&#34;: True,
+                              &#34;firewallConnectionType&#34;: 1,
+                              &#34;httpProxyConfigurationType&#34;: 0,
+                              &#34;proxyClientName&#34;: &#34;Proxy_client_name&#34;,
+                              &#34;proxyHostName&#34;: &#34;Proxy_host_name&#34;,
+                              &#34;portNumber&#34;: &#34;port_number&#34;,
+                              &#34;encryptedTunnel&#34;: &#34;encrypted_tunnel&#34;
+                        }
+
+        firewall_inputs can take the following values
+
+        Ex 1: Client can open connection to CS
+         firewall_inputs = {
+                              &#34;enableFirewallConfig&#34;: True,
+                              &#34;firewallConnectionType&#34;: 0,
+                              &#34;proxyClientName&#34;: &#34;&#34;,
+                              &#34;proxyHostName&#34;: &#34;&#34;,
+                              &#34;portNumber&#34;: &#34;port_number&#34;,
+                              &#34;httpProxyConfigurationType&#34;: 0,
+                              &#34;encryptedTunnel&#34;: True/False
+                        }
+        Ex 2: CS can open connection to Client
+             firewall_inputs = {
+                              &#34;enableFirewallConfig&#34;: True,
+                              &#34;firewallConnectionType&#34;: 1,
+                              &#34;proxyClientName&#34;: &#34;&#34;,
+                              &#34;proxyHostName&#34;: &#34;&#34;,
+                              &#34;portNumber&#34;: &#34;port_number&#34;,
+                              &#34;httpProxyConfigurationType&#34;: 0,
+                              &#34;encryptedTunnel&#34;: True/False
+                        }
+
+        Ex 3: Client can communicate to CS using Proxy
+             firewall_inputs = {
+                              &#34;enableFirewallConfig&#34;: True,
+                              &#34;firewallConnectionType&#34;: 2,
+                              &#34;httpProxyConfigurationType&#34;: 0,
+                              &#34;proxyClientName&#34;: &#34;Proxy_client_name&#34;,
+                              &#34;proxyHostName&#34;: &#34;Proxy_host_name&#34;,
+                              &#34;portNumber&#34;: &#34;port_number&#34;,
+                              &#34;encryptedTunnel&#34;: True/False
+                        }
 
     Returns:
             object - instance of the Job class for this install_software job
@@ -1567,6 +1789,7 @@ not both
             client_details.append(
                 {
                     &#34;clientEntity&#34;: {
+                        &#34;clientId&#34;: 0,
                         &#34;clientName&#34;: client_name,
                         &#34;commCellName&#34;: commcell_name
                     }
@@ -1585,6 +1808,7 @@ not both
     install_flags = kwargs.get(&#39;install_flags&#39;)
     db2_logs = kwargs.get(&#39;db2_logs_location&#39;, {})
     index_cache_location = kwargs.get(&#39;index_cache_location&#39;, None)
+    firewall_inputs = kwargs.get(&#39;firewall_inputs&#39;, {})
 
     request_json = {
         &#34;taskInfo&#34;: {
@@ -1616,10 +1840,10 @@ not both
                                     &#34;requestType&#34;: 0,
                                     &#34;Operationtype&#34;: 0,
                                     &#34;CommServeHostName&#34;:
-                                        self.commcell_object.commserv_hostname,
+                                        self.commcell_object.commserv_name,
                                     &#34;RemoteClient&#34;: False,
                                     &#34;installFlags&#34;: {
-                                        &#34;allowMultipleInstances&#34;: True,
+                                        &#34;allowMultipleInstances&#34;: kwargs.get(&#39;allowMultipleInstances&#39;, False),
                                         &#34;restoreOnlyAgents&#34;: False,
                                         &#34;killBrowserProcesses&#34;: True,
                                         &#34;install32Base&#34;: install_flags.get(&#39;install32Base&#39;,
@@ -1645,6 +1869,7 @@ not both
                                     },
                                     &#34;clientComposition&#34;: [
                                         {
+                                            &#34;activateClient&#34;: True,
                                             &#34;overrideSoftwareCache&#34;: True if sw_cache_client else False,
                                             &#34;softwareCacheOrSrmProxyClient&#34;: {
                                                 &#34;clientName&#34;: sw_cache_client if sw_cache_client else &#34;&#34;
@@ -1705,6 +1930,11 @@ not both
         request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][&#34;installerOption&#34;][
             &#34;clientComposition&#34;][0][&#34;components&#34;][&#34;mediaAgent&#34;] = index_cache_dict
 
+    if firewall_inputs:
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][&#34;installerOption&#34;][
+            &#34;installFlags&#34;][&#34;firewallInstall&#34;] = firewall_inputs
+
+
     flag, response = self._cvpysdk_object.make_request(
         &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
     )
@@ -1724,7 +1954,7 @@ not both
 </details>
 </dd>
 <dt id="cvpysdk.deployment.install.Install.push_servicepack_and_hotfix"><code class="name flex">
-<span>def <span class="ident">push_servicepack_and_hotfix</span></span>(<span>self, client_computers=None, client_computer_groups=None, all_client_computers=False, all_client_computer_groups=False, reboot_client=False, run_db_maintenance=True, maintenance_release_only=False)</span>
+<span>def <span class="ident">push_servicepack_and_hotfix</span></span>(<span>self, client_computers=None, client_computer_groups=None, all_client_computers=False, all_client_computer_groups=False, reboot_client=False, run_db_maintenance=True, maintenance_release_only=False, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Installs the software packages on the clients</p>
@@ -1756,12 +1986,21 @@ maintenance not</p>
 <p>maintenance_release_only (bool)
 &ndash; for clients of feature releases lesser than CS, this option
 maintenance release of that client FR, if present in cache</p>
+<dl>
+<dt><strong><code>**kwargs</code></strong></dt>
+<dd>(dict) &ndash; Key value pairs for supporting conditional initializations
+Supported -
+schedule_pattern (dict)
+&ndash; Request JSON for scheduling the operation</dd>
+</dl>
 <h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this download job</p>
+<p>object - instance of the Job/Task class for this download</p>
 <h2 id="raises">Raises</h2>
 <p>SDKException:
-if Download job failed</p>
-<pre><code>if response is empty
+if schedule is not of type dictionary</p>
+<pre><code>if Download job failed
+
+if response is empty
 
 if response is not success
 
@@ -1771,7 +2010,7 @@ if another download job is already running
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/install.py#L194-L341" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/install.py#L195-L359" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def push_servicepack_and_hotfix(
         self,
@@ -1781,7 +2020,8 @@ if another download job is already running
         all_client_computer_groups=False,
         reboot_client=False,
         run_db_maintenance=True,
-        maintenance_release_only=False):
+        maintenance_release_only=False,
+        **kwargs):
     &#34;&#34;&#34;Installs the software packages on the clients
 
     Args:
@@ -1812,11 +2052,17 @@ if another download job is already running
         maintenance_release_only (bool)       -- for clients of feature releases lesser than CS, this option
         maintenance release of that client FR, if present in cache
 
+        **kwargs: (dict) -- Key value pairs for supporting conditional initializations
+            Supported -
+            schedule_pattern (dict)           -- Request JSON for scheduling the operation
+
     Returns:
-        object - instance of the Job class for this download job
+        object - instance of the Job/Task class for this download
 
     Raises:
             SDKException:
+                if schedule is not of type dictionary
+
                 if Download job failed
 
                 if response is empty
@@ -1830,7 +2076,10 @@ if another download job is already running
     &#34;&#34;&#34;
     selected_clients = []
     selected_client_groups = []
-
+    schedule_pattern = kwargs.get(&#39;schedule_pattern&#39;, None)
+    if schedule_pattern:
+        if not isinstance(schedule_pattern, dict):
+            raise SDKException(&#34;Install&#34;, &#34;101&#34;)
     if not any([all_client_computers,
                 all_client_computer_groups,
                 client_computers,
@@ -1905,6 +2154,10 @@ if another download job is already running
             ]
         }
     }
+
+    if schedule_pattern:
+        request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+
     flag, response = self._cvpysdk_object.make_request(
         &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
     )
@@ -1913,6 +2166,9 @@ if another download job is already running
         if response.json():
             if &#34;jobIds&#34; in response.json():
                 return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+
+            elif schedule_pattern and &#34;taskId&#34; in response.json():
+                return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
 
             else:
                 raise SDKException(&#39;Install&#39;, &#39;107&#39;)
@@ -1965,7 +2221,7 @@ client computer will be repaired</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/install.py#L59-L192" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/install.py#L60-L193" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def repair_software(self,
                     client=None,

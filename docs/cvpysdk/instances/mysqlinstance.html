@@ -77,11 +77,15 @@ _restore_mysql_option_json()    -- setter for MySQL restore option property in r
 
 **mysql_enterprise_backup_binary_path** --  Returns the MySQL Enterprise backup binary path
 details
+
+**no_lock_status**                  --  Returns the No Lock check box status for MySQL Instance
+
+**ssl_enabled**                     --  Returns(boolean) True/False based on SSL status
 </code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/mysqlinstance.py#L1-L640" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/mysqlinstance.py#L1-L675" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -165,6 +169,9 @@ MYSQLInstance instance Attributes:
     **mysql_enterprise_backup_binary_path** --  Returns the MySQL Enterprise backup binary path
     details
 
+    **no_lock_status**                  --  Returns the No Lock check box status for MySQL Instance
+
+    **ssl_enabled**                     --  Returns(boolean) True/False based on SSL status
 
 &#34;&#34;&#34;
 
@@ -393,6 +400,38 @@ class MYSQLInstance(Instance):
         }
         properties[&#39;mySqlInstance&#39;][&#39;mebSettings&#39;] = meb_bin_path_update
         self.update_properties(properties)
+
+    @property
+    def no_lock_status(self):
+        &#34;&#34;&#34; Returns the status of No Lock Checkbox in MySQL Instance
+
+            Returns:
+            (bool)  --  True if No Lock checkbox is enabled
+                        False if No Lock checkbox is disabled
+
+        &#34;&#34;&#34;
+        return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;EnableNoLocking&#39;, False)
+
+    @no_lock_status.setter
+    def no_lock_status(self, value):
+        &#34;&#34;&#34; Setter for No Lock property in MySQL Instance
+
+            Args:
+
+                value (bool)  -- True or False to enable or disable the No Lock
+                property in MySQL Instance
+
+        &#34;&#34;&#34;
+        if not isinstance(value, bool):
+            raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+        properties = self._properties
+        properties[&#39;mySqlInstance&#39;][&#39;EnableNoLocking&#39;] = value
+        self.update_properties(properties)
+
+    @property
+    def ssl_enabled(self):
+        &#34;&#34;&#34; Returns(boolean) True/False based on SSL status &#34;&#34;&#34;
+        return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;sslEnabled&#39;, False)
 
     def _get_instance_properties(self):
         &#34;&#34;&#34;Gets the properties of this instance.
@@ -761,7 +800,7 @@ id of the instance</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/mysqlinstance.py#L91-L640" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/mysqlinstance.py#L94-L675" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class MYSQLInstance(Instance):
     &#34;&#34;&#34;
@@ -983,6 +1022,38 @@ id of the instance</p>
         }
         properties[&#39;mySqlInstance&#39;][&#39;mebSettings&#39;] = meb_bin_path_update
         self.update_properties(properties)
+
+    @property
+    def no_lock_status(self):
+        &#34;&#34;&#34; Returns the status of No Lock Checkbox in MySQL Instance
+
+            Returns:
+            (bool)  --  True if No Lock checkbox is enabled
+                        False if No Lock checkbox is disabled
+
+        &#34;&#34;&#34;
+        return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;EnableNoLocking&#39;, False)
+
+    @no_lock_status.setter
+    def no_lock_status(self, value):
+        &#34;&#34;&#34; Setter for No Lock property in MySQL Instance
+
+            Args:
+
+                value (bool)  -- True or False to enable or disable the No Lock
+                property in MySQL Instance
+
+        &#34;&#34;&#34;
+        if not isinstance(value, bool):
+            raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+        properties = self._properties
+        properties[&#39;mySqlInstance&#39;][&#39;EnableNoLocking&#39;] = value
+        self.update_properties(properties)
+
+    @property
+    def ssl_enabled(self):
+        &#34;&#34;&#34; Returns(boolean) True/False based on SSL status &#34;&#34;&#34;
+        return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;sslEnabled&#39;, False)
 
     def _get_instance_properties(self):
         &#34;&#34;&#34;Gets the properties of this instance.
@@ -1331,7 +1402,7 @@ False if auto discovery not enabled</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/mysqlinstance.py#L227-L236" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/mysqlinstance.py#L230-L239" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def autodiscovery_enabled(self):
@@ -1355,7 +1426,7 @@ MySql server binary directory</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/mysqlinstance.py#L161-L169" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/mysqlinstance.py#L164-L172" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def binary_directory(self):
@@ -1378,7 +1449,7 @@ MySql server commnadline storage policy information</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/mysqlinstance.py#L208-L225" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/mysqlinstance.py#L211-L228" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def command_line_sp_details(self):
@@ -1410,7 +1481,7 @@ MySql server config file location</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/mysqlinstance.py#L151-L159" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/mysqlinstance.py#L154-L162" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def config_file(self):
@@ -1434,7 +1505,7 @@ False if xtrabackup is not enabled</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/mysqlinstance.py#L250-L261" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/mysqlinstance.py#L253-L264" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_xtrabackup_enabled(self):
@@ -1460,7 +1531,7 @@ MySql server log backup storage policy information</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/mysqlinstance.py#L191-L206" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/mysqlinstance.py#L194-L209" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def log_backup_sp_details(self):
@@ -1490,7 +1561,7 @@ MySql server log directory path</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/mysqlinstance.py#L181-L189" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/mysqlinstance.py#L184-L192" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def log_data_directory(self):
@@ -1510,7 +1581,7 @@ def log_data_directory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/mysqlinstance.py#L282-L290" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/mysqlinstance.py#L285-L293" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def mysql_enterprise_backup_binary_path(self):
@@ -1533,7 +1604,7 @@ MySql server SA username</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/mysqlinstance.py#L131-L139" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/mysqlinstance.py#L134-L142" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def mysql_username(self):
@@ -1546,6 +1617,31 @@ def mysql_username(self):
     return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;SAUser&#39;, {}).get(&#39;userName&#39;, None)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.no_lock_status"><code class="name">var <span class="ident">no_lock_status</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the status of No Lock Checkbox in MySQL Instance</p>
+<p>Returns:
+(bool)
+&ndash;
+True if No Lock checkbox is enabled
+False if No Lock checkbox is disabled</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/mysqlinstance.py#L315-L324" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def no_lock_status(self):
+    &#34;&#34;&#34; Returns the status of No Lock Checkbox in MySQL Instance
+
+        Returns:
+        (bool)  --  True if No Lock checkbox is enabled
+                    False if No Lock checkbox is disabled
+
+    &#34;&#34;&#34;
+    return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;EnableNoLocking&#39;, False)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.nt_username"><code class="name">var <span class="ident">nt_username</span></code></dt>
 <dd>
 <div class="desc"><p>Returns the MySQL Server nt username.</p>
@@ -1556,7 +1652,7 @@ MySql server NT username</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/mysqlinstance.py#L141-L149" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/mysqlinstance.py#L144-L152" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def nt_username(self):
@@ -1579,7 +1675,7 @@ MySql server port number</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/mysqlinstance.py#L121-L129" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/mysqlinstance.py#L124-L132" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def port(self):
@@ -1602,7 +1698,7 @@ MySql server proxy information</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/mysqlinstance.py#L263-L280" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/mysqlinstance.py#L266-L283" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def proxy_options(self):
@@ -1624,6 +1720,20 @@ def proxy_options(self):
     return proxy_opt</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.ssl_enabled"><code class="name">var <span class="ident">ssl_enabled</span></code></dt>
+<dd>
+<div class="desc"><p>Returns(boolean) True/False based on SSL status</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/mysqlinstance.py#L342-L345" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def ssl_enabled(self):
+    &#34;&#34;&#34; Returns(boolean) True/False based on SSL status &#34;&#34;&#34;
+    return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;sslEnabled&#39;, False)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.version"><code class="name">var <span class="ident">version</span></code></dt>
 <dd>
 <div class="desc"><p>Returns the MySQL Server version number.</p>
@@ -1634,7 +1744,7 @@ MySql server version</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/mysqlinstance.py#L171-L179" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/mysqlinstance.py#L174-L182" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def version(self):
@@ -1657,7 +1767,7 @@ MySql server xtrabackup binary path</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/mysqlinstance.py#L238-L248" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/mysqlinstance.py#L241-L251" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def xtrabackup_bin_path(self):
@@ -1816,7 +1926,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instances/mysqlinstance.py#L367-L522" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/mysqlinstance.py#L402-L557" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -2076,10 +2186,12 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.log_data_directory" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.log_data_directory">log_data_directory</a></code></li>
 <li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.mysql_enterprise_backup_binary_path" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.mysql_enterprise_backup_binary_path">mysql_enterprise_backup_binary_path</a></code></li>
 <li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.mysql_username" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.mysql_username">mysql_username</a></code></li>
+<li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.no_lock_status" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.no_lock_status">no_lock_status</a></code></li>
 <li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.nt_username" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.nt_username">nt_username</a></code></li>
 <li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.port" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.port">port</a></code></li>
 <li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.proxy_options" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.proxy_options">proxy_options</a></code></li>
 <li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.restore_in_place" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.restore_in_place">restore_in_place</a></code></li>
+<li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.ssl_enabled" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.ssl_enabled">ssl_enabled</a></code></li>
 <li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.version" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.version">version</a></code></li>
 <li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.xtrabackup_bin_path" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.xtrabackup_bin_path">xtrabackup_bin_path</a></code></li>
 </ul>

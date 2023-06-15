@@ -27,6 +27,9 @@
 <p>TIMEZONES
 &ndash;
 Dict which maintains the list of all timezones</p>
+<p>ENTITY_TYPE_MAP
+&ndash;
+Dict containing mapping of entity type codes (returned by company API) to Entity Name</p>
 <p>HypervisorType
 &ndash;
 Enum which maintains the list of all the hypervisors supported by SDK</p>
@@ -54,7 +57,7 @@ Enum to maintain Application Group Types.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/constants.py#L1-L616" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/constants.py#L1-L837" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -77,6 +80,8 @@ Enum to maintain Application Group Types.</p>
 &#34;&#34;&#34;Helper file to maintain all the constants used in the SDK
 
 TIMEZONES               --  Dict which maintains the list of all timezones
+
+ENTITY_TYPE_MAP         --  Dict containing mapping of entity type codes (returned by company API) to Entity Name
 
 HypervisorType          --  Enum which maintains the list of all the hypervisors supported by SDK
 
@@ -510,6 +515,58 @@ TIMEZONES = {
     &#34;Pacific/Kiritimati&#34;: &#34;Tonga Standard Time&#34;
 }
 
+ENTITY_TYPE_MAP = {
+    1: &#34;file server&#34;,
+    2: &#34;laptop&#34;,
+    3: &#34;hypervisor&#34;,
+    4: &#34;virtual machine&#34;,
+    5: &#34;windows cluster&#34;,
+    6: &#34;unix cluster&#34;,
+    7: &#34;archiver file server&#34;,
+    8: &#34;distributed database&#34;,
+    9: &#34;ibm iseries client&#34;,
+    10: &#34;edge drive&#34;,
+    11: &#34;distributed fs&#34;,
+    12: &#34;distributed ida&#34;,
+    13: &#34;client&#34;,
+    14: &#34;instance&#34;,
+    15: &#34;backupset&#34;,
+    16: &#34;subclient&#34;,
+    17: &#34;library&#34;,
+    18: &#34;array&#34;,
+    19: &#34;media agent&#34;,
+    20: &#34;storage pool disk&#34;,
+    21: &#34;storage policy&#34;,
+    22: &#34;schedule policy&#34;,
+    23: &#34;subclient policy&#34;,
+    24: &#34;storage pool cloud&#34;,
+    25: &#34;storage pool hyperscale&#34;,
+    26: &#34;storage pool tape&#34;,
+    27: &#34;database instance&#34;,
+    30: &#34;user&#34;,
+    31: &#34;user group&#34;,
+    32: &#34;client group&#34;,
+    33: &#34;plan&#34;,
+    34: &#34;region&#34;,
+    35: &#34;alert&#34;,
+    36: &#34;key management server&#34;,
+    37: &#34;report plus&#34;,
+    38: &#34;vm groups&#34;,
+    39: &#34;role&#34;,
+    40: &#34;epicclient&#34;,
+    41: &#34;k8 app&#34;,
+    42: &#34;k8 appgroup&#34;,
+    43: &#34;k8 cluster&#34;,
+    44: &#34;object storage&#34;,
+    46: &#34;exchange app&#34;,
+    47: &#34;o365 exchange mailboxes app&#34;,
+    48: &#34;g suite app&#34;,
+    49: &#34;active directory app&#34;,
+    50: &#34;salesforce cloud app&#34;,
+    51: &#34;o365 onedrive users app&#34;,
+    52: &#34;o365 sharepoint sites app&#34;,
+}
+
 
 class HypervisorType(Enum):
     &#34;&#34;&#34;Class to maintain all the hypervisor related constants.&#34;&#34;&#34;
@@ -671,7 +728,174 @@ class ApplicationGroup(Enum):
     OPENVMS = auto()
     CLOUDAPPS = auto()
     MSSQLSERVER = auto()
-    SHAREPOINTSERVER = auto()</code></pre>
+    SHAREPOINTSERVER = auto()
+
+
+class StoragePoolConstants:
+    &#34;&#34;&#34;Class to maintain storage policy constants&#34;&#34;&#34;
+
+    AZURE_STORAGE_REQ_JSON = {
+        &#34;type&#34;: &#34;CVA_REGULAR_SP&#34;,
+        &#34;numberOfCopies&#34;: 1,
+        &#34;storagePolicyCopyInfo&#34;: {
+            &#34;copyType&#34;: &#34;SYNCHRONOUS&#34;,
+            &#34;isDefault&#34;: &#34;SET_TRUE&#34;,
+            &#34;active&#34;: &#34;SET_TRUE&#34;,
+            &#34;storagePolicyFlags&#34;: {
+                &#34;blockLevelDedup&#34;: &#34;SET_TRUE&#34;,
+                &#34;enableGlobalDeduplication&#34;: &#34;SET_TRUE&#34;
+            },
+            &#34;library&#34;: {
+                &#34;libraryId&#34;: 0,
+                &#34;libraryName&#34;: &#34;&#34;
+            },
+            &#34;mediaAgent&#34;: {
+                &#34;mediaAgentId&#34;: 0,
+                &#34;mediaAgentName&#34;: &#34;&#34;
+            },
+            &#34;retentionRules&#34;: {
+                &#34;retentionFlags&#34;: {
+                    &#34;enableDataAging&#34;: &#34;SET_TRUE&#34;
+                }
+            },
+            &#34;isFromGui&#34;: True,
+            &#34;numberOfStreamsToCombine&#34;: 1,
+            &#34;dedupeFlags&#34;: {
+                &#34;enableDeduplication&#34;: &#34;SET_TRUE&#34;,
+                &#34;enableDASHFull&#34;: &#34;SET_TRUE&#34;,
+                &#34;hostGlobalDedupStore&#34;: &#34;SET_TRUE&#34;
+            },
+            &#34;DDBPartitionInfo&#34;: {
+                &#34;maInfoList&#34;: [
+
+                ]
+            }
+        },
+        &#34;storage&#34;: [
+            {
+                &#34;mediaAgent&#34;: {
+                    &#34;mediaAgentId&#34;: 0,
+                    &#34;mediaAgentName&#34;: &#34;&#34;
+                },
+                &#34;path&#34;: &#34;&#34;,
+                &#34;deviceType&#34;: 3,
+                &#34;metallicStorageInfo&#34;: {
+                    &#34;region&#34;: [
+                        {
+                            &#34;regionId&#34;: 0
+                        }
+                    ],
+                    &#34;storageClass&#34;: [
+                        &#34;CONTAINER_DEFAULT&#34;
+                    ],
+                    &#34;replication&#34;: [
+                        &#34;NONE&#34;
+                    ]
+                },
+                &#34;credentials&#34;: {
+                    &#34;userName&#34;: &#34;&#34;,
+                    &#34;password&#34;: &#34;&#34;
+                },
+                &#34;savedCredential&#34;: {
+                    &#34;credentialId&#34;: 0,
+                    &#34;credentialName&#34;: &#34;&#34;
+                }
+            }
+        ],
+        &#34;storagePolicyName&#34;: &#34;&#34;
+    }
+
+    MA_INFO_LIST = {
+        &#34;mediaAgent&#34;: {
+            &#34;mediaAgentId&#34;: 0,
+            &#34;mediaAgentName&#34;: &#34;&#34;
+        },
+        &#34;subStoreList&#34;: [
+            {
+                &#34;accessPath&#34;: {
+                    &#34;path&#34;: &#34;&#34;
+                }
+            }
+        ]
+    }
+
+
+class CommcellEntity(Enum):
+    &#34;&#34;&#34;Class to maintain Commcell Entity types&#34;&#34;&#34;
+
+    COMMCELL_ENTITY = 1
+    CLIENT_ENTITY = 3
+    APPTYPE_ENTITY = 4
+    INSTANCE_ENTITY = 5
+    BACKUPSET_ENTITY = 6
+    SUBCLIENT_ENTITY = 7
+    LIBRARIES_ENTITY = 8
+    LIBRARY_ENTITY = 9
+    MEDIAAGENT_ENTITY = 11
+    USER_ENTITY = 13
+    USERGROUP_ENTITY = 15
+    STORAGE_POLICIES_ENTITY = 16
+    STORAGE_POLICY_ENTITY = 17
+    STORAGE_POLICY_COPY_ENTITY = 18
+    ALL_USERS_ENTITY = 12
+    ALL_USERGROUPS_ENTITY = 14
+    TRACKING_POLICIES_ENTITY = 20
+    TRACKING_POLICY_ENTITY = 21
+    VAULTRACKER_JOBS = 22
+    DATAPROTECTION_JOBS = 23
+    AUX_COPY_JOBS = 24
+    MACHINE_ENTITIY = 26
+    CLIENT_GROUP_ENTITY = 28
+    SRM_REPORT_SET = 29
+    SRM_REPORT_ENTITY = 30
+    LEGAL_HOLD = 31
+    SRM_REPORTS_SET = 32
+    SRM_REPORTS_ENTITY = 33
+    SCHEDULE_POLICY_ENTITY = 35
+    SECURITY = 36
+    HOLIDAYS = 37
+    OPERATION_WINDOW = 38
+    CALENDAR = 39
+    GLOBALFILTERS = 40
+    MEDIA_LOCATIONS = 41
+    CALENDARS = 44
+    APPID_ENTITY = 45
+    MEDIA_ENTITY = 46
+    DRIVE_POOL_ENTITY = 47
+    SCRATCH_POOL_ENTITY = 48
+    LIBRARY_MEDIA_TYPE_ENTITY = 49
+    MEDIA_SIDE_ENTITY = 50
+    DRIVE_ENTITY = 51
+    MOUNT_PATH_ENTITY = 52
+    LOCATION_ENTITY = 53
+    TIME_RANGE = 54
+    TIME_ZONE = 55
+    DATE_TIME = 56
+    SHELF_ENTITY = 57
+    GALAXYRELEASE_ENTITY = 58
+    LICENSE_ENTITY = 59
+    COMPONENT_ENTITY = 60
+    PROVIDER_ENTITY = 61
+    EXTERNAL_GROUP_ENTITY = 62
+    CALENDAR_ENTITY = 63
+    ALERT_ENTITY = 64
+    SUBCLIENT_POLICY_ENTITY = 65
+    LOCALE_ENTITY = 66
+    SPARE_MEDIA_GROUP_ENTITY = 67
+    SUBTASK_ENTITY = 68
+    TASK_ENTITY = 69
+    MEDIA_TYPE_ENTITY = 70
+
+
+class Credential_Type(Enum):
+    &#34;&#34;&#34;Class to maintain Credential types&#34;&#34;&#34;
+
+    WINDOWSACCOUNT = 1
+    LINUXACCOUNT = 2
+    SSHACCOUNT = 3
+    AZUREACCOUNT = 4
+    VMWAREACCOUNT = 5
+    MICROSOFT_AZURE = 103</code></pre>
 </details>
 </section>
 <section>
@@ -692,7 +916,7 @@ class ApplicationGroup(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/constants.py#L565-L573" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/constants.py#L619-L627" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AdvancedJobDetailType(Enum):
     &#34;&#34;&#34;Class to maintain advanced job details info type
@@ -741,7 +965,7 @@ class ApplicationGroup(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/constants.py#L485-L488" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/constants.py#L539-L542" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AppIDAName(Enum):
     &#34;&#34;&#34;Class to maintain the app IDA names&#34;&#34;&#34;
@@ -773,7 +997,7 @@ class ApplicationGroup(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/constants.py#L477-L482" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/constants.py#L531-L536" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AppIDAType(Enum):
     &#34;&#34;&#34;Class to maintain all the app ida constants&#34;&#34;&#34;
@@ -815,7 +1039,7 @@ class ApplicationGroup(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/constants.py#L607-L616" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/constants.py#L661-L670" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ApplicationGroup(Enum):
     &#34;&#34;&#34;Class to maintain application group types.&#34;&#34;&#34;
@@ -864,6 +1088,392 @@ class ApplicationGroup(Enum):
 </dd>
 </dl>
 </dd>
+<dt id="cvpysdk.constants.CommcellEntity"><code class="flex name class">
+<span>class <span class="ident">CommcellEntity</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class to maintain Commcell Entity types</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/constants.py#L762-L826" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class CommcellEntity(Enum):
+    &#34;&#34;&#34;Class to maintain Commcell Entity types&#34;&#34;&#34;
+
+    COMMCELL_ENTITY = 1
+    CLIENT_ENTITY = 3
+    APPTYPE_ENTITY = 4
+    INSTANCE_ENTITY = 5
+    BACKUPSET_ENTITY = 6
+    SUBCLIENT_ENTITY = 7
+    LIBRARIES_ENTITY = 8
+    LIBRARY_ENTITY = 9
+    MEDIAAGENT_ENTITY = 11
+    USER_ENTITY = 13
+    USERGROUP_ENTITY = 15
+    STORAGE_POLICIES_ENTITY = 16
+    STORAGE_POLICY_ENTITY = 17
+    STORAGE_POLICY_COPY_ENTITY = 18
+    ALL_USERS_ENTITY = 12
+    ALL_USERGROUPS_ENTITY = 14
+    TRACKING_POLICIES_ENTITY = 20
+    TRACKING_POLICY_ENTITY = 21
+    VAULTRACKER_JOBS = 22
+    DATAPROTECTION_JOBS = 23
+    AUX_COPY_JOBS = 24
+    MACHINE_ENTITIY = 26
+    CLIENT_GROUP_ENTITY = 28
+    SRM_REPORT_SET = 29
+    SRM_REPORT_ENTITY = 30
+    LEGAL_HOLD = 31
+    SRM_REPORTS_SET = 32
+    SRM_REPORTS_ENTITY = 33
+    SCHEDULE_POLICY_ENTITY = 35
+    SECURITY = 36
+    HOLIDAYS = 37
+    OPERATION_WINDOW = 38
+    CALENDAR = 39
+    GLOBALFILTERS = 40
+    MEDIA_LOCATIONS = 41
+    CALENDARS = 44
+    APPID_ENTITY = 45
+    MEDIA_ENTITY = 46
+    DRIVE_POOL_ENTITY = 47
+    SCRATCH_POOL_ENTITY = 48
+    LIBRARY_MEDIA_TYPE_ENTITY = 49
+    MEDIA_SIDE_ENTITY = 50
+    DRIVE_ENTITY = 51
+    MOUNT_PATH_ENTITY = 52
+    LOCATION_ENTITY = 53
+    TIME_RANGE = 54
+    TIME_ZONE = 55
+    DATE_TIME = 56
+    SHELF_ENTITY = 57
+    GALAXYRELEASE_ENTITY = 58
+    LICENSE_ENTITY = 59
+    COMPONENT_ENTITY = 60
+    PROVIDER_ENTITY = 61
+    EXTERNAL_GROUP_ENTITY = 62
+    CALENDAR_ENTITY = 63
+    ALERT_ENTITY = 64
+    SUBCLIENT_POLICY_ENTITY = 65
+    LOCALE_ENTITY = 66
+    SPARE_MEDIA_GROUP_ENTITY = 67
+    SUBTASK_ENTITY = 68
+    TASK_ENTITY = 69
+    MEDIA_TYPE_ENTITY = 70</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="cvpysdk.constants.CommcellEntity.ALERT_ENTITY"><code class="name">var <span class="ident">ALERT_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.ALL_USERGROUPS_ENTITY"><code class="name">var <span class="ident">ALL_USERGROUPS_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.ALL_USERS_ENTITY"><code class="name">var <span class="ident">ALL_USERS_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.APPID_ENTITY"><code class="name">var <span class="ident">APPID_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.APPTYPE_ENTITY"><code class="name">var <span class="ident">APPTYPE_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.AUX_COPY_JOBS"><code class="name">var <span class="ident">AUX_COPY_JOBS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.BACKUPSET_ENTITY"><code class="name">var <span class="ident">BACKUPSET_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.CALENDAR"><code class="name">var <span class="ident">CALENDAR</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.CALENDARS"><code class="name">var <span class="ident">CALENDARS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.CALENDAR_ENTITY"><code class="name">var <span class="ident">CALENDAR_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.CLIENT_ENTITY"><code class="name">var <span class="ident">CLIENT_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.CLIENT_GROUP_ENTITY"><code class="name">var <span class="ident">CLIENT_GROUP_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.COMMCELL_ENTITY"><code class="name">var <span class="ident">COMMCELL_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.COMPONENT_ENTITY"><code class="name">var <span class="ident">COMPONENT_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.DATAPROTECTION_JOBS"><code class="name">var <span class="ident">DATAPROTECTION_JOBS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.DATE_TIME"><code class="name">var <span class="ident">DATE_TIME</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.DRIVE_ENTITY"><code class="name">var <span class="ident">DRIVE_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.DRIVE_POOL_ENTITY"><code class="name">var <span class="ident">DRIVE_POOL_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.EXTERNAL_GROUP_ENTITY"><code class="name">var <span class="ident">EXTERNAL_GROUP_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.GALAXYRELEASE_ENTITY"><code class="name">var <span class="ident">GALAXYRELEASE_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.GLOBALFILTERS"><code class="name">var <span class="ident">GLOBALFILTERS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.HOLIDAYS"><code class="name">var <span class="ident">HOLIDAYS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.INSTANCE_ENTITY"><code class="name">var <span class="ident">INSTANCE_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.LEGAL_HOLD"><code class="name">var <span class="ident">LEGAL_HOLD</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.LIBRARIES_ENTITY"><code class="name">var <span class="ident">LIBRARIES_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.LIBRARY_ENTITY"><code class="name">var <span class="ident">LIBRARY_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.LIBRARY_MEDIA_TYPE_ENTITY"><code class="name">var <span class="ident">LIBRARY_MEDIA_TYPE_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.LICENSE_ENTITY"><code class="name">var <span class="ident">LICENSE_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.LOCALE_ENTITY"><code class="name">var <span class="ident">LOCALE_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.LOCATION_ENTITY"><code class="name">var <span class="ident">LOCATION_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.MACHINE_ENTITIY"><code class="name">var <span class="ident">MACHINE_ENTITIY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.MEDIAAGENT_ENTITY"><code class="name">var <span class="ident">MEDIAAGENT_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.MEDIA_ENTITY"><code class="name">var <span class="ident">MEDIA_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.MEDIA_LOCATIONS"><code class="name">var <span class="ident">MEDIA_LOCATIONS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.MEDIA_SIDE_ENTITY"><code class="name">var <span class="ident">MEDIA_SIDE_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.MEDIA_TYPE_ENTITY"><code class="name">var <span class="ident">MEDIA_TYPE_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.MOUNT_PATH_ENTITY"><code class="name">var <span class="ident">MOUNT_PATH_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.OPERATION_WINDOW"><code class="name">var <span class="ident">OPERATION_WINDOW</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.PROVIDER_ENTITY"><code class="name">var <span class="ident">PROVIDER_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.SCHEDULE_POLICY_ENTITY"><code class="name">var <span class="ident">SCHEDULE_POLICY_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.SCRATCH_POOL_ENTITY"><code class="name">var <span class="ident">SCRATCH_POOL_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.SECURITY"><code class="name">var <span class="ident">SECURITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.SHELF_ENTITY"><code class="name">var <span class="ident">SHELF_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.SPARE_MEDIA_GROUP_ENTITY"><code class="name">var <span class="ident">SPARE_MEDIA_GROUP_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.SRM_REPORTS_ENTITY"><code class="name">var <span class="ident">SRM_REPORTS_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.SRM_REPORTS_SET"><code class="name">var <span class="ident">SRM_REPORTS_SET</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.SRM_REPORT_ENTITY"><code class="name">var <span class="ident">SRM_REPORT_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.SRM_REPORT_SET"><code class="name">var <span class="ident">SRM_REPORT_SET</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.STORAGE_POLICIES_ENTITY"><code class="name">var <span class="ident">STORAGE_POLICIES_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.STORAGE_POLICY_COPY_ENTITY"><code class="name">var <span class="ident">STORAGE_POLICY_COPY_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.STORAGE_POLICY_ENTITY"><code class="name">var <span class="ident">STORAGE_POLICY_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.SUBCLIENT_ENTITY"><code class="name">var <span class="ident">SUBCLIENT_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.SUBCLIENT_POLICY_ENTITY"><code class="name">var <span class="ident">SUBCLIENT_POLICY_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.SUBTASK_ENTITY"><code class="name">var <span class="ident">SUBTASK_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.TASK_ENTITY"><code class="name">var <span class="ident">TASK_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.TIME_RANGE"><code class="name">var <span class="ident">TIME_RANGE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.TIME_ZONE"><code class="name">var <span class="ident">TIME_ZONE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.TRACKING_POLICIES_ENTITY"><code class="name">var <span class="ident">TRACKING_POLICIES_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.TRACKING_POLICY_ENTITY"><code class="name">var <span class="ident">TRACKING_POLICY_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.USERGROUP_ENTITY"><code class="name">var <span class="ident">USERGROUP_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.USER_ENTITY"><code class="name">var <span class="ident">USER_ENTITY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.CommcellEntity.VAULTRACKER_JOBS"><code class="name">var <span class="ident">VAULTRACKER_JOBS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.constants.Credential_Type"><code class="flex name class">
+<span>class <span class="ident">Credential_Type</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class to maintain Credential types</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/constants.py#L829-L837" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class Credential_Type(Enum):
+    &#34;&#34;&#34;Class to maintain Credential types&#34;&#34;&#34;
+
+    WINDOWSACCOUNT = 1
+    LINUXACCOUNT = 2
+    SSHACCOUNT = 3
+    AZUREACCOUNT = 4
+    VMWAREACCOUNT = 5
+    MICROSOFT_AZURE = 103</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="cvpysdk.constants.Credential_Type.AZUREACCOUNT"><code class="name">var <span class="ident">AZUREACCOUNT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.Credential_Type.LINUXACCOUNT"><code class="name">var <span class="ident">LINUXACCOUNT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.Credential_Type.MICROSOFT_AZURE"><code class="name">var <span class="ident">MICROSOFT_AZURE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.Credential_Type.SSHACCOUNT"><code class="name">var <span class="ident">SSHACCOUNT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.Credential_Type.VMWAREACCOUNT"><code class="name">var <span class="ident">VMWAREACCOUNT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.Credential_Type.WINDOWSACCOUNT"><code class="name">var <span class="ident">WINDOWSACCOUNT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
 <dt id="cvpysdk.constants.HypervisorType"><code class="flex name class">
 <span>class <span class="ident">HypervisorType</span></span>
 <span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
@@ -873,7 +1483,7 @@ class ApplicationGroup(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/constants.py#L456-L474" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/constants.py#L510-L528" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class HypervisorType(Enum):
     &#34;&#34;&#34;Class to maintain all the hypervisor related constants.&#34;&#34;&#34;
@@ -980,7 +1590,7 @@ class ApplicationGroup(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/constants.py#L536-L540" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/constants.py#L590-L594" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class InstanceBackupType(Enum):
     &#34;&#34;&#34;Class to maintain type of instance backup&#34;&#34;&#34;
@@ -1016,7 +1626,7 @@ class ApplicationGroup(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/constants.py#L543-L554" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/constants.py#L597-L608" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SQLDefines:
     &#34;&#34;&#34;Class to maintain SQL Defines&#34;&#34;&#34;
@@ -1067,7 +1677,7 @@ class ApplicationGroup(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/constants.py#L557-L562" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/constants.py#L611-L616" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SharepointDefines:
     &#34;&#34;&#34;Class to maintiain Sharepoint Defines&#34;&#34;&#34;
@@ -1088,6 +1698,116 @@ class ApplicationGroup(Enum):
 </dd>
 </dl>
 </dd>
+<dt id="cvpysdk.constants.StoragePoolConstants"><code class="flex name class">
+<span>class <span class="ident">StoragePoolConstants</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class to maintain storage policy constants</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/constants.py#L673-L759" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class StoragePoolConstants:
+    &#34;&#34;&#34;Class to maintain storage policy constants&#34;&#34;&#34;
+
+    AZURE_STORAGE_REQ_JSON = {
+        &#34;type&#34;: &#34;CVA_REGULAR_SP&#34;,
+        &#34;numberOfCopies&#34;: 1,
+        &#34;storagePolicyCopyInfo&#34;: {
+            &#34;copyType&#34;: &#34;SYNCHRONOUS&#34;,
+            &#34;isDefault&#34;: &#34;SET_TRUE&#34;,
+            &#34;active&#34;: &#34;SET_TRUE&#34;,
+            &#34;storagePolicyFlags&#34;: {
+                &#34;blockLevelDedup&#34;: &#34;SET_TRUE&#34;,
+                &#34;enableGlobalDeduplication&#34;: &#34;SET_TRUE&#34;
+            },
+            &#34;library&#34;: {
+                &#34;libraryId&#34;: 0,
+                &#34;libraryName&#34;: &#34;&#34;
+            },
+            &#34;mediaAgent&#34;: {
+                &#34;mediaAgentId&#34;: 0,
+                &#34;mediaAgentName&#34;: &#34;&#34;
+            },
+            &#34;retentionRules&#34;: {
+                &#34;retentionFlags&#34;: {
+                    &#34;enableDataAging&#34;: &#34;SET_TRUE&#34;
+                }
+            },
+            &#34;isFromGui&#34;: True,
+            &#34;numberOfStreamsToCombine&#34;: 1,
+            &#34;dedupeFlags&#34;: {
+                &#34;enableDeduplication&#34;: &#34;SET_TRUE&#34;,
+                &#34;enableDASHFull&#34;: &#34;SET_TRUE&#34;,
+                &#34;hostGlobalDedupStore&#34;: &#34;SET_TRUE&#34;
+            },
+            &#34;DDBPartitionInfo&#34;: {
+                &#34;maInfoList&#34;: [
+
+                ]
+            }
+        },
+        &#34;storage&#34;: [
+            {
+                &#34;mediaAgent&#34;: {
+                    &#34;mediaAgentId&#34;: 0,
+                    &#34;mediaAgentName&#34;: &#34;&#34;
+                },
+                &#34;path&#34;: &#34;&#34;,
+                &#34;deviceType&#34;: 3,
+                &#34;metallicStorageInfo&#34;: {
+                    &#34;region&#34;: [
+                        {
+                            &#34;regionId&#34;: 0
+                        }
+                    ],
+                    &#34;storageClass&#34;: [
+                        &#34;CONTAINER_DEFAULT&#34;
+                    ],
+                    &#34;replication&#34;: [
+                        &#34;NONE&#34;
+                    ]
+                },
+                &#34;credentials&#34;: {
+                    &#34;userName&#34;: &#34;&#34;,
+                    &#34;password&#34;: &#34;&#34;
+                },
+                &#34;savedCredential&#34;: {
+                    &#34;credentialId&#34;: 0,
+                    &#34;credentialName&#34;: &#34;&#34;
+                }
+            }
+        ],
+        &#34;storagePolicyName&#34;: &#34;&#34;
+    }
+
+    MA_INFO_LIST = {
+        &#34;mediaAgent&#34;: {
+            &#34;mediaAgentId&#34;: 0,
+            &#34;mediaAgentName&#34;: &#34;&#34;
+        },
+        &#34;subStoreList&#34;: [
+            {
+                &#34;accessPath&#34;: {
+                    &#34;path&#34;: &#34;&#34;
+                }
+            }
+        ]
+    }</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="cvpysdk.constants.StoragePoolConstants.AZURE_STORAGE_REQ_JSON"><code class="name">var <span class="ident">AZURE_STORAGE_REQ_JSON</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.StoragePoolConstants.MA_INFO_LIST"><code class="name">var <span class="ident">MA_INFO_LIST</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
 <dt id="cvpysdk.constants.VSAFailOverStatus"><code class="flex name class">
 <span>class <span class="ident">VSAFailOverStatus</span></span>
 <span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
@@ -1097,7 +1817,7 @@ class ApplicationGroup(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/constants.py#L592-L604" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/constants.py#L646-L658" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VSAFailOverStatus(Enum):
     &#34;&#34;&#34;Class to maintain Failover status of the VSA Live sync&#34;&#34;&#34;
@@ -1174,7 +1894,7 @@ class ApplicationGroup(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/constants.py#L576-L589" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/constants.py#L630-L643" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VSALiveSyncStatus(Enum):
     &#34;&#34;&#34;Class to maintain status of the VSA Live sync&#34;&#34;&#34;
@@ -1256,7 +1976,7 @@ class ApplicationGroup(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/constants.py#L490-L533" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/constants.py#L544-L587" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VSAObjects(Enum):
     &#34;&#34;&#34;Mapping for VSA Objects.&#34;&#34;&#34;
@@ -1586,6 +2306,84 @@ setTimeout(() => input.focus(), 100);
 </ul>
 </li>
 <li>
+<h4><code><a title="cvpysdk.constants.CommcellEntity" href="#cvpysdk.constants.CommcellEntity">CommcellEntity</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.constants.CommcellEntity.ALERT_ENTITY" href="#cvpysdk.constants.CommcellEntity.ALERT_ENTITY">ALERT_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.ALL_USERGROUPS_ENTITY" href="#cvpysdk.constants.CommcellEntity.ALL_USERGROUPS_ENTITY">ALL_USERGROUPS_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.ALL_USERS_ENTITY" href="#cvpysdk.constants.CommcellEntity.ALL_USERS_ENTITY">ALL_USERS_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.APPID_ENTITY" href="#cvpysdk.constants.CommcellEntity.APPID_ENTITY">APPID_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.APPTYPE_ENTITY" href="#cvpysdk.constants.CommcellEntity.APPTYPE_ENTITY">APPTYPE_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.AUX_COPY_JOBS" href="#cvpysdk.constants.CommcellEntity.AUX_COPY_JOBS">AUX_COPY_JOBS</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.BACKUPSET_ENTITY" href="#cvpysdk.constants.CommcellEntity.BACKUPSET_ENTITY">BACKUPSET_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.CALENDAR" href="#cvpysdk.constants.CommcellEntity.CALENDAR">CALENDAR</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.CALENDARS" href="#cvpysdk.constants.CommcellEntity.CALENDARS">CALENDARS</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.CALENDAR_ENTITY" href="#cvpysdk.constants.CommcellEntity.CALENDAR_ENTITY">CALENDAR_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.CLIENT_ENTITY" href="#cvpysdk.constants.CommcellEntity.CLIENT_ENTITY">CLIENT_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.CLIENT_GROUP_ENTITY" href="#cvpysdk.constants.CommcellEntity.CLIENT_GROUP_ENTITY">CLIENT_GROUP_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.COMMCELL_ENTITY" href="#cvpysdk.constants.CommcellEntity.COMMCELL_ENTITY">COMMCELL_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.COMPONENT_ENTITY" href="#cvpysdk.constants.CommcellEntity.COMPONENT_ENTITY">COMPONENT_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.DATAPROTECTION_JOBS" href="#cvpysdk.constants.CommcellEntity.DATAPROTECTION_JOBS">DATAPROTECTION_JOBS</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.DATE_TIME" href="#cvpysdk.constants.CommcellEntity.DATE_TIME">DATE_TIME</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.DRIVE_ENTITY" href="#cvpysdk.constants.CommcellEntity.DRIVE_ENTITY">DRIVE_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.DRIVE_POOL_ENTITY" href="#cvpysdk.constants.CommcellEntity.DRIVE_POOL_ENTITY">DRIVE_POOL_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.EXTERNAL_GROUP_ENTITY" href="#cvpysdk.constants.CommcellEntity.EXTERNAL_GROUP_ENTITY">EXTERNAL_GROUP_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.GALAXYRELEASE_ENTITY" href="#cvpysdk.constants.CommcellEntity.GALAXYRELEASE_ENTITY">GALAXYRELEASE_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.GLOBALFILTERS" href="#cvpysdk.constants.CommcellEntity.GLOBALFILTERS">GLOBALFILTERS</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.HOLIDAYS" href="#cvpysdk.constants.CommcellEntity.HOLIDAYS">HOLIDAYS</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.INSTANCE_ENTITY" href="#cvpysdk.constants.CommcellEntity.INSTANCE_ENTITY">INSTANCE_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.LEGAL_HOLD" href="#cvpysdk.constants.CommcellEntity.LEGAL_HOLD">LEGAL_HOLD</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.LIBRARIES_ENTITY" href="#cvpysdk.constants.CommcellEntity.LIBRARIES_ENTITY">LIBRARIES_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.LIBRARY_ENTITY" href="#cvpysdk.constants.CommcellEntity.LIBRARY_ENTITY">LIBRARY_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.LIBRARY_MEDIA_TYPE_ENTITY" href="#cvpysdk.constants.CommcellEntity.LIBRARY_MEDIA_TYPE_ENTITY">LIBRARY_MEDIA_TYPE_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.LICENSE_ENTITY" href="#cvpysdk.constants.CommcellEntity.LICENSE_ENTITY">LICENSE_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.LOCALE_ENTITY" href="#cvpysdk.constants.CommcellEntity.LOCALE_ENTITY">LOCALE_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.LOCATION_ENTITY" href="#cvpysdk.constants.CommcellEntity.LOCATION_ENTITY">LOCATION_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.MACHINE_ENTITIY" href="#cvpysdk.constants.CommcellEntity.MACHINE_ENTITIY">MACHINE_ENTITIY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.MEDIAAGENT_ENTITY" href="#cvpysdk.constants.CommcellEntity.MEDIAAGENT_ENTITY">MEDIAAGENT_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.MEDIA_ENTITY" href="#cvpysdk.constants.CommcellEntity.MEDIA_ENTITY">MEDIA_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.MEDIA_LOCATIONS" href="#cvpysdk.constants.CommcellEntity.MEDIA_LOCATIONS">MEDIA_LOCATIONS</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.MEDIA_SIDE_ENTITY" href="#cvpysdk.constants.CommcellEntity.MEDIA_SIDE_ENTITY">MEDIA_SIDE_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.MEDIA_TYPE_ENTITY" href="#cvpysdk.constants.CommcellEntity.MEDIA_TYPE_ENTITY">MEDIA_TYPE_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.MOUNT_PATH_ENTITY" href="#cvpysdk.constants.CommcellEntity.MOUNT_PATH_ENTITY">MOUNT_PATH_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.OPERATION_WINDOW" href="#cvpysdk.constants.CommcellEntity.OPERATION_WINDOW">OPERATION_WINDOW</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.PROVIDER_ENTITY" href="#cvpysdk.constants.CommcellEntity.PROVIDER_ENTITY">PROVIDER_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.SCHEDULE_POLICY_ENTITY" href="#cvpysdk.constants.CommcellEntity.SCHEDULE_POLICY_ENTITY">SCHEDULE_POLICY_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.SCRATCH_POOL_ENTITY" href="#cvpysdk.constants.CommcellEntity.SCRATCH_POOL_ENTITY">SCRATCH_POOL_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.SECURITY" href="#cvpysdk.constants.CommcellEntity.SECURITY">SECURITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.SHELF_ENTITY" href="#cvpysdk.constants.CommcellEntity.SHELF_ENTITY">SHELF_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.SPARE_MEDIA_GROUP_ENTITY" href="#cvpysdk.constants.CommcellEntity.SPARE_MEDIA_GROUP_ENTITY">SPARE_MEDIA_GROUP_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.SRM_REPORTS_ENTITY" href="#cvpysdk.constants.CommcellEntity.SRM_REPORTS_ENTITY">SRM_REPORTS_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.SRM_REPORTS_SET" href="#cvpysdk.constants.CommcellEntity.SRM_REPORTS_SET">SRM_REPORTS_SET</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.SRM_REPORT_ENTITY" href="#cvpysdk.constants.CommcellEntity.SRM_REPORT_ENTITY">SRM_REPORT_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.SRM_REPORT_SET" href="#cvpysdk.constants.CommcellEntity.SRM_REPORT_SET">SRM_REPORT_SET</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.STORAGE_POLICIES_ENTITY" href="#cvpysdk.constants.CommcellEntity.STORAGE_POLICIES_ENTITY">STORAGE_POLICIES_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.STORAGE_POLICY_COPY_ENTITY" href="#cvpysdk.constants.CommcellEntity.STORAGE_POLICY_COPY_ENTITY">STORAGE_POLICY_COPY_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.STORAGE_POLICY_ENTITY" href="#cvpysdk.constants.CommcellEntity.STORAGE_POLICY_ENTITY">STORAGE_POLICY_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.SUBCLIENT_ENTITY" href="#cvpysdk.constants.CommcellEntity.SUBCLIENT_ENTITY">SUBCLIENT_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.SUBCLIENT_POLICY_ENTITY" href="#cvpysdk.constants.CommcellEntity.SUBCLIENT_POLICY_ENTITY">SUBCLIENT_POLICY_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.SUBTASK_ENTITY" href="#cvpysdk.constants.CommcellEntity.SUBTASK_ENTITY">SUBTASK_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.TASK_ENTITY" href="#cvpysdk.constants.CommcellEntity.TASK_ENTITY">TASK_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.TIME_RANGE" href="#cvpysdk.constants.CommcellEntity.TIME_RANGE">TIME_RANGE</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.TIME_ZONE" href="#cvpysdk.constants.CommcellEntity.TIME_ZONE">TIME_ZONE</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.TRACKING_POLICIES_ENTITY" href="#cvpysdk.constants.CommcellEntity.TRACKING_POLICIES_ENTITY">TRACKING_POLICIES_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.TRACKING_POLICY_ENTITY" href="#cvpysdk.constants.CommcellEntity.TRACKING_POLICY_ENTITY">TRACKING_POLICY_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.USERGROUP_ENTITY" href="#cvpysdk.constants.CommcellEntity.USERGROUP_ENTITY">USERGROUP_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.USER_ENTITY" href="#cvpysdk.constants.CommcellEntity.USER_ENTITY">USER_ENTITY</a></code></li>
+<li><code><a title="cvpysdk.constants.CommcellEntity.VAULTRACKER_JOBS" href="#cvpysdk.constants.CommcellEntity.VAULTRACKER_JOBS">VAULTRACKER_JOBS</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.constants.Credential_Type" href="#cvpysdk.constants.Credential_Type">Credential_Type</a></code></h4>
+<ul class="two-column">
+<li><code><a title="cvpysdk.constants.Credential_Type.AZUREACCOUNT" href="#cvpysdk.constants.Credential_Type.AZUREACCOUNT">AZUREACCOUNT</a></code></li>
+<li><code><a title="cvpysdk.constants.Credential_Type.LINUXACCOUNT" href="#cvpysdk.constants.Credential_Type.LINUXACCOUNT">LINUXACCOUNT</a></code></li>
+<li><code><a title="cvpysdk.constants.Credential_Type.MICROSOFT_AZURE" href="#cvpysdk.constants.Credential_Type.MICROSOFT_AZURE">MICROSOFT_AZURE</a></code></li>
+<li><code><a title="cvpysdk.constants.Credential_Type.SSHACCOUNT" href="#cvpysdk.constants.Credential_Type.SSHACCOUNT">SSHACCOUNT</a></code></li>
+<li><code><a title="cvpysdk.constants.Credential_Type.VMWAREACCOUNT" href="#cvpysdk.constants.Credential_Type.VMWAREACCOUNT">VMWAREACCOUNT</a></code></li>
+<li><code><a title="cvpysdk.constants.Credential_Type.WINDOWSACCOUNT" href="#cvpysdk.constants.Credential_Type.WINDOWSACCOUNT">WINDOWSACCOUNT</a></code></li>
+</ul>
+</li>
+<li>
 <h4><code><a title="cvpysdk.constants.HypervisorType" href="#cvpysdk.constants.HypervisorType">HypervisorType</a></code></h4>
 <ul class="">
 <li><code><a title="cvpysdk.constants.HypervisorType.ALIBABA_CLOUD" href="#cvpysdk.constants.HypervisorType.ALIBABA_CLOUD">ALIBABA_CLOUD</a></code></li>
@@ -1631,6 +2429,13 @@ setTimeout(() => input.focus(), 100);
 <ul class="">
 <li><code><a title="cvpysdk.constants.SharepointDefines.CONTENT_DB" href="#cvpysdk.constants.SharepointDefines.CONTENT_DB">CONTENT_DB</a></code></li>
 <li><code><a title="cvpysdk.constants.SharepointDefines.CONTENT_WEBAPP" href="#cvpysdk.constants.SharepointDefines.CONTENT_WEBAPP">CONTENT_WEBAPP</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.constants.StoragePoolConstants" href="#cvpysdk.constants.StoragePoolConstants">StoragePoolConstants</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.constants.StoragePoolConstants.AZURE_STORAGE_REQ_JSON" href="#cvpysdk.constants.StoragePoolConstants.AZURE_STORAGE_REQ_JSON">AZURE_STORAGE_REQ_JSON</a></code></li>
+<li><code><a title="cvpysdk.constants.StoragePoolConstants.MA_INFO_LIST" href="#cvpysdk.constants.StoragePoolConstants.MA_INFO_LIST">MA_INFO_LIST</a></code></li>
 </ul>
 </li>
 <li>

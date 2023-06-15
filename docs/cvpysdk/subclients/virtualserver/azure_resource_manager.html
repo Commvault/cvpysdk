@@ -50,7 +50,7 @@ user to the same location</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L1-L659" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L1-L662" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -136,7 +136,7 @@ class AzureRMSubclient(VirtualServerSubclient):
 
             Args:
 
-                vm_to_restore         (list)       --  provide the VM name to restore
+                vm_to_restore         (list)       --  provide the list of VM name(s) to restore
 
                 resource_group        (str)        -- provide the resource group to restore
 
@@ -232,7 +232,7 @@ class AzureRMSubclient(VirtualServerSubclient):
             to the location same as source .
 
             Args:
-                vm_to_restore         (list)       --  provide the VM name to restore
+                vm_to_restore         (list)       --  provide the list of VM name(s) to restore
 
                 createPublicIP
                         default:True   (bool)      --  creates the Public IP of the new VM
@@ -302,7 +302,7 @@ class AzureRMSubclient(VirtualServerSubclient):
         &#34;&#34;&#34;
                 This converts the AzureRM to Azurestack
                 Args:
-                        vm_to_restore          (list):     provide the VM names to restore
+                        vm_to_restore          (list):     provide the list of VM name(s) to restore
 
                         azure_client    (str):      name of the AzureRM client
                                                            where the VM should be
@@ -396,7 +396,7 @@ class AzureRMSubclient(VirtualServerSubclient):
         &#34;&#34;&#34;
                 This converts the AzureRM to Amazon
                 Args:
-                        vm_to_restore          (list):     provide the VM names to restore
+                        vm_to_restore          (list):     provide the list of VM name(s) to restore
 
                         amazon_client    (str):     name of the Amazon client
                                                            where the VM should be
@@ -581,10 +581,12 @@ class AzureRMSubclient(VirtualServerSubclient):
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
-        disk_options = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;]
+        disk_options = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
+            &#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;]
         for disk_info in disk_options[&#39;advancedRestoreOptions&#39;][0][&#39;disks&#39;]:
             disk_info[&#39;newName&#39;] = &#39;&#39;
-        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;volumeRstOption&#39;][&#39;volumeLevelRestoreType&#39;] = 1
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
+            &#39;volumeRstOption&#39;][&#39;volumeLevelRestoreType&#39;] = 1
 
         return self._process_restore_response(request_json)
 
@@ -706,7 +708,8 @@ class AzureRMSubclient(VirtualServerSubclient):
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
-        disk_options = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;]
+        disk_options = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
+            &#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;]
         for disk_info in disk_options[&#39;advancedRestoreOptions&#39;][0][&#39;disks&#39;]:
             disk_info[&#39;newName&#39;] = &#39;&#39;
 
@@ -740,7 +743,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L49-L659" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L49-L662" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AzureRMSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient  Base class, representing a
@@ -778,7 +781,7 @@ backupset class, subclient name, subclient id</p></div>
 
             Args:
 
-                vm_to_restore         (list)       --  provide the VM name to restore
+                vm_to_restore         (list)       --  provide the list of VM name(s) to restore
 
                 resource_group        (str)        -- provide the resource group to restore
 
@@ -874,7 +877,7 @@ backupset class, subclient name, subclient id</p></div>
             to the location same as source .
 
             Args:
-                vm_to_restore         (list)       --  provide the VM name to restore
+                vm_to_restore         (list)       --  provide the list of VM name(s) to restore
 
                 createPublicIP
                         default:True   (bool)      --  creates the Public IP of the new VM
@@ -944,7 +947,7 @@ backupset class, subclient name, subclient id</p></div>
         &#34;&#34;&#34;
                 This converts the AzureRM to Azurestack
                 Args:
-                        vm_to_restore          (list):     provide the VM names to restore
+                        vm_to_restore          (list):     provide the list of VM name(s) to restore
 
                         azure_client    (str):      name of the AzureRM client
                                                            where the VM should be
@@ -1038,7 +1041,7 @@ backupset class, subclient name, subclient id</p></div>
         &#34;&#34;&#34;
                 This converts the AzureRM to Amazon
                 Args:
-                        vm_to_restore          (list):     provide the VM names to restore
+                        vm_to_restore          (list):     provide the list of VM name(s) to restore
 
                         amazon_client    (str):     name of the Amazon client
                                                            where the VM should be
@@ -1223,10 +1226,12 @@ backupset class, subclient name, subclient id</p></div>
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
-        disk_options = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;]
+        disk_options = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
+            &#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;]
         for disk_info in disk_options[&#39;advancedRestoreOptions&#39;][0][&#39;disks&#39;]:
             disk_info[&#39;newName&#39;] = &#39;&#39;
-        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;volumeRstOption&#39;][&#39;volumeLevelRestoreType&#39;] = 1
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
+            &#39;volumeRstOption&#39;][&#39;volumeLevelRestoreType&#39;] = 1
 
         return self._process_restore_response(request_json)
 
@@ -1348,7 +1353,8 @@ backupset class, subclient name, subclient id</p></div>
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
-        disk_options = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;]
+        disk_options = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
+            &#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;]
         for disk_info in disk_options[&#39;advancedRestoreOptions&#39;][0][&#39;disks&#39;]:
             disk_info[&#39;newName&#39;] = &#39;&#39;
 
@@ -1367,7 +1373,7 @@ backupset class, subclient name, subclient id</p></div>
 <dd>
 <div class="desc"><p>This converts the AzureRM to Amazon</p>
 <h2 id="args">Args</h2>
-<pre><code>vm_to_restore          (list):     provide the VM names to restore
+<pre><code>vm_to_restore          (list):     provide the list of VM name(s) to restore
 
 amazon_client    (str):     name of the Amazon client
                                    where the VM should be
@@ -1407,7 +1413,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L331-L442" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L331-L442" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_amazon(
         self,
@@ -1423,7 +1429,7 @@ if inputs are not of correct type as per definition</p>
     &#34;&#34;&#34;
             This converts the AzureRM to Amazon
             Args:
-                    vm_to_restore          (list):     provide the VM names to restore
+                    vm_to_restore          (list):     provide the list of VM name(s) to restore
 
                     amazon_client    (str):     name of the Amazon client
                                                        where the VM should be
@@ -1529,7 +1535,7 @@ if inputs are not of correct type as per definition</p>
 <dd>
 <div class="desc"><p>This converts the AzureRM to Azurestack</p>
 <h2 id="args">Args</h2>
-<pre><code>vm_to_restore          (list):     provide the VM names to restore
+<pre><code>vm_to_restore          (list):     provide the list of VM name(s) to restore
 
 azure_client    (str):      name of the AzureRM client
                                    where the VM should be
@@ -1574,7 +1580,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L234-L329" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L234-L329" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_azurestack(
         self,
@@ -1593,7 +1599,7 @@ if inputs are not of correct type as per definition</p>
     &#34;&#34;&#34;
             This converts the AzureRM to Azurestack
             Args:
-                    vm_to_restore          (list):     provide the VM names to restore
+                    vm_to_restore          (list):     provide the list of VM name(s) to restore
 
                     azure_client    (str):      name of the AzureRM client
                                                        where the VM should be
@@ -1725,7 +1731,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L445-L535" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L445-L537" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_hyperv(
         self,
@@ -1812,10 +1818,12 @@ if inputs are not of correct type as per definition</p>
     )
 
     request_json = self._prepare_fullvm_restore_json(restore_option)
-    disk_options = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;]
+    disk_options = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
+        &#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;]
     for disk_info in disk_options[&#39;advancedRestoreOptions&#39;][0][&#39;disks&#39;]:
         disk_info[&#39;newName&#39;] = &#39;&#39;
-    request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;volumeRstOption&#39;][&#39;volumeLevelRestoreType&#39;] = 1
+    request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
+        &#39;volumeRstOption&#39;][&#39;volumeLevelRestoreType&#39;] = 1
 
     return self._process_restore_response(request_json)</code></pre>
 </details>
@@ -1889,7 +1897,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L538-L659" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L540-L662" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_vmware(
         self,
@@ -2008,7 +2016,8 @@ if inputs are not of correct type as per definition</p>
     )
 
     request_json = self._prepare_fullvm_restore_json(restore_option)
-    disk_options = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;]
+    disk_options = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
+        &#39;virtualServerRstOption&#39;][&#39;diskLevelVMRestoreOption&#39;]
     for disk_info in disk_options[&#39;advancedRestoreOptions&#39;][0][&#39;disks&#39;]:
         disk_info[&#39;newName&#39;] = &#39;&#39;
 
@@ -2027,7 +2036,7 @@ to the location same as source .</p>
 <p>vm_to_restore
 (list)
 &ndash;
-provide the VM name to restore</p>
+provide the list of VM name(s) to restore</p>
 <p>createPublicIP
 default:True
 (bool)
@@ -2070,7 +2079,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L169-L232" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L169-L232" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(self,
                              vm_to_restore=None,
@@ -2084,7 +2093,7 @@ if response is not success
         to the location same as source .
 
         Args:
-            vm_to_restore         (list)       --  provide the VM name to restore
+            vm_to_restore         (list)       --  provide the list of VM name(s) to restore
 
             createPublicIP
                     default:True   (bool)      --  creates the Public IP of the new VM
@@ -2150,7 +2159,7 @@ at the specified destination location.</p>
 <p>vm_to_restore
 (list)
 &ndash;
-provide the VM name to restore</p>
+provide the list of VM name(s) to restore</p>
 <p>resource_group
 (str)
 &ndash; provide the resource group to restore</p>
@@ -2215,7 +2224,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L64-L167" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L64-L167" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(self,
                                  vm_to_restore=None,
@@ -2238,7 +2247,7 @@ if response is not success
 
         Args:
 
-            vm_to_restore         (list)       --  provide the VM name to restore
+            vm_to_restore         (list)       --  provide the list of VM name(s) to restore
 
             resource_group        (str)        -- provide the resource group to restore
 
@@ -2374,6 +2383,7 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.plan" href="../../subclient.html#cvpysdk.subclient.Subclient.plan">plan</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.preview_content" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.preview_content">preview_content</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.properties" href="../../subclient.html#cvpysdk.subclient.Subclient.properties">properties</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.quiesce_file_system" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.quiesce_file_system">quiesce_file_system</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.read_buffer_size" href="../../subclient.html#cvpysdk.subclient.Subclient.read_buffer_size">read_buffer_size</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.refresh" href="../../subclient.html#cvpysdk.subclient.Subclient.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.restore_in_place" href="../../subclient.html#cvpysdk.subclient.Subclient.restore_in_place">restore_in_place</a></code></li>

@@ -91,7 +91,7 @@ It returns browse volume guid</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/fsbackupset.py#L1-L1593" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupsets/fsbackupset.py#L1-L1629" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -577,6 +577,31 @@ class FSBackupset(Backupset):
         }
         return bmr_restore_json
 
+    def _restore_bmr_firewallopts_json(self, hostname, direction, port):
+        &#34;&#34;&#34;Get the JSON for firewall configuration options
+
+        Args:
+            hostname    (String)   -- The hostname of the machine.
+
+            direction   (Integer)  -- The direction of the connection.
+
+            port        (Integer)  -- The port at which the machine will communicate.
+
+        Returns :
+                    The firewall configuration options JSON required for Virtualize Me restores
+
+        &#34;&#34;&#34;
+        bmr_firewall_restore_json = {
+            &#34;direction&#34;: direction,
+            &#34;connectionInfoList&#34;: [
+                {
+                    &#34;hostname&#34;: hostname,
+                    &#34;port&#34;: port
+                }
+            ]
+        }
+        return bmr_firewall_restore_json
+
     def _azure_advancedrestoreopts_json(self):
         &#34;&#34;&#34;Get the JSON for Advanced restore options for azure
 
@@ -710,7 +735,17 @@ class FSBackupset(Backupset):
         restore_json_system_state = self._restore_bmr_admin_json(ipconfig, hwconfig)
         restore_json_virtualserver = self._restore_bmr_virtualserveropts_json()
 
-        # get instance Id of the virtual client
+        #Checking for Firewall rules
+        if restore_options.get(&#34;FirewallClientGroup&#34;, &#34;&#34;).strip():
+            fwconfigtocs = self._restore_bmr_firewallopts_json(restore_options.get(&#34;FirewallHostname&#34;),
+                                                               restore_options.get(&#34;FirewallDirection&#34;),
+                                                               restore_options.get(&#34;FirewallPort&#34;))
+            restore_json_system_state[&#39;vmProvisioningOption&#39;][&#39;virtualMachineOption&#39;][0][
+                &#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;fwconfigtocs&#39;] = fwconfigtocs
+            restore_json_system_state[&#39;vmProvisioningOption&#39;][&#39;virtualMachineOption&#39;][0][&#39;oneTouchResponse&#39;][&#39;csinfo&#39;][
+                &#39;fwClientGroupName&#39;] = restore_options.get(&#34;FirewallClientGroup&#34;)
+
+        #Get instance Id of the virtual client
         virtual_client_object = self._commcell_object.clients.get(restore_options.get(&#39;VirtualizationClient&#39;))
         virtual_agent_object = virtual_client_object.agents.get(&#39;Virtual Server&#39;)
         instances_list = virtual_agent_object.instances._instances
@@ -731,10 +766,8 @@ class FSBackupset(Backupset):
         vm_option = response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][
             &#39;vmProvisioningOption&#39;][&#39;virtualMachineOption&#39;][0]
 
-
         vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;instanceEntity&#39;][&#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;)
         vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;instanceEntity&#39;][&#39;instanceId&#39;] = instance_id
-
 
         if(response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][
             &#39;vmProvisioningOption&#39;][&#39;virtualMachineOption&#39;][0][&#39;oneTouchResponse&#39;][
@@ -779,6 +812,9 @@ class FSBackupset(Backupset):
             vm_option[&#39;isoPath&#39;] = restore_options.get(&#39;IsoPath&#39;)
 
             vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;pathName&#39;] = restore_options.get(&#39;IsoPath&#39;, None)
+
+            vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;netconfig&#39;][&#39;ipinfo&#39;][&#39;interfaces&#39;][0][
+                &#39;protocols&#39;][0][&#39;useDhcp&#39;] = True
 
             vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;netconfig&#39;][&#39;ipinfo&#39;][&#39;interfaces&#39;][0][
                 &#39;networkLabel&#39;] = restore_options.get(&#39;NetworkLabel&#39;, None)
@@ -1724,7 +1760,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/fsbackupset.py#L80-L1593" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupsets/fsbackupset.py#L80-L1629" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class FSBackupset(Backupset):
     &#34;&#34;&#34;Derived class from Backupset Base class, representing a fs backupset,
@@ -2131,6 +2167,31 @@ default: None</p>
         }
         return bmr_restore_json
 
+    def _restore_bmr_firewallopts_json(self, hostname, direction, port):
+        &#34;&#34;&#34;Get the JSON for firewall configuration options
+
+        Args:
+            hostname    (String)   -- The hostname of the machine.
+
+            direction   (Integer)  -- The direction of the connection.
+
+            port        (Integer)  -- The port at which the machine will communicate.
+
+        Returns :
+                    The firewall configuration options JSON required for Virtualize Me restores
+
+        &#34;&#34;&#34;
+        bmr_firewall_restore_json = {
+            &#34;direction&#34;: direction,
+            &#34;connectionInfoList&#34;: [
+                {
+                    &#34;hostname&#34;: hostname,
+                    &#34;port&#34;: port
+                }
+            ]
+        }
+        return bmr_firewall_restore_json
+
     def _azure_advancedrestoreopts_json(self):
         &#34;&#34;&#34;Get the JSON for Advanced restore options for azure
 
@@ -2264,7 +2325,17 @@ default: None</p>
         restore_json_system_state = self._restore_bmr_admin_json(ipconfig, hwconfig)
         restore_json_virtualserver = self._restore_bmr_virtualserveropts_json()
 
-        # get instance Id of the virtual client
+        #Checking for Firewall rules
+        if restore_options.get(&#34;FirewallClientGroup&#34;, &#34;&#34;).strip():
+            fwconfigtocs = self._restore_bmr_firewallopts_json(restore_options.get(&#34;FirewallHostname&#34;),
+                                                               restore_options.get(&#34;FirewallDirection&#34;),
+                                                               restore_options.get(&#34;FirewallPort&#34;))
+            restore_json_system_state[&#39;vmProvisioningOption&#39;][&#39;virtualMachineOption&#39;][0][
+                &#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;fwconfigtocs&#39;] = fwconfigtocs
+            restore_json_system_state[&#39;vmProvisioningOption&#39;][&#39;virtualMachineOption&#39;][0][&#39;oneTouchResponse&#39;][&#39;csinfo&#39;][
+                &#39;fwClientGroupName&#39;] = restore_options.get(&#34;FirewallClientGroup&#34;)
+
+        #Get instance Id of the virtual client
         virtual_client_object = self._commcell_object.clients.get(restore_options.get(&#39;VirtualizationClient&#39;))
         virtual_agent_object = virtual_client_object.agents.get(&#39;Virtual Server&#39;)
         instances_list = virtual_agent_object.instances._instances
@@ -2285,10 +2356,8 @@ default: None</p>
         vm_option = response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][
             &#39;vmProvisioningOption&#39;][&#39;virtualMachineOption&#39;][0]
 
-
         vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;instanceEntity&#39;][&#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;)
         vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;instanceEntity&#39;][&#39;instanceId&#39;] = instance_id
-
 
         if(response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][
             &#39;vmProvisioningOption&#39;][&#39;virtualMachineOption&#39;][0][&#39;oneTouchResponse&#39;][
@@ -2333,6 +2402,9 @@ default: None</p>
             vm_option[&#39;isoPath&#39;] = restore_options.get(&#39;IsoPath&#39;)
 
             vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;pathName&#39;] = restore_options.get(&#39;IsoPath&#39;, None)
+
+            vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;netconfig&#39;][&#39;ipinfo&#39;][&#39;interfaces&#39;][0][
+                &#39;protocols&#39;][0][&#39;useDhcp&#39;] = True
 
             vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;netconfig&#39;][&#39;ipinfo&#39;][&#39;interfaces&#39;][0][
                 &#39;networkLabel&#39;] = restore_options.get(&#39;NetworkLabel&#39;, None)
@@ -3257,7 +3329,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/fsbackupset.py#L1119-L1123" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupsets/fsbackupset.py#L1155-L1159" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_pruning_cycles_retention(self):
@@ -3272,7 +3344,7 @@ def index_pruning_cycles_retention(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/fsbackupset.py#L1113-L1117" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupsets/fsbackupset.py#L1149-L1153" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_pruning_days_retention(self):
@@ -3287,7 +3359,7 @@ def index_pruning_days_retention(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/fsbackupset.py#L1108-L1111" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupsets/fsbackupset.py#L1144-L1147" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_pruning_type(self):
@@ -3301,7 +3373,7 @@ def index_pruning_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/fsbackupset.py#L1042-L1055" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupsets/fsbackupset.py#L1078-L1091" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_server(self):
@@ -3364,7 +3436,7 @@ arcp
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/fsbackupset.py#L1363-L1441" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupsets/fsbackupset.py#L1399-L1477" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_fsblr_replication_pair(self, srcclientid, destclientid, srcguid, destguid,
                                   rpstoreid=None, replicationtype=None, **replication_options):
@@ -3477,7 +3549,7 @@ Replication Subclient id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/fsbackupset.py#L1445-L1570" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupsets/fsbackupset.py#L1481-L1606" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_granular_replica_copy(self, srcclientid, destclientid, scid, blrid, srcguid, dstguid, restoreguid,
                                  **replication_options):
@@ -3634,7 +3706,7 @@ Replication Subclient id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/fsbackupset.py#L1207-L1313" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupsets/fsbackupset.py#L1243-L1349" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_replica_copy(self, srcclientid, destclientid, scid, blrid,
                         srcguid, dstguid, **replication_options):
@@ -3758,7 +3830,7 @@ blocklevel replication id.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/fsbackupset.py#L1316-L1324" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupsets/fsbackupset.py#L1352-L1360" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_replication_pair(self, blrid):
     &#34;&#34;&#34;&#34;Delete replication pair
@@ -3806,7 +3878,7 @@ additional metadata retrieved from browse</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/fsbackupset.py#L300-L337" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupsets/fsbackupset.py#L300-L337" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find_all_versions(self, *args, **kwargs):
     &#34;&#34;&#34;Searches the content of a Subclient, and returns all versions available for the content.
@@ -3858,7 +3930,7 @@ additional metadata retrieved from browse</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/fsbackupset.py#L1573-L1593" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupsets/fsbackupset.py#L1609-L1629" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_browse_volume_guid(self):
 
@@ -3896,7 +3968,7 @@ additional metadata retrieved from browse</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/fsbackupset.py#L1326-L1336" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupsets/fsbackupset.py#L1362-L1372" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_mount_path_guid(self, volume):
     &#34;&#34;&#34;
@@ -3931,7 +4003,7 @@ subclient_id
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/fsbackupset.py#L1338-L1360" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupsets/fsbackupset.py#L1374-L1396" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_recovery_points(self, client_id, subclient_id):
     &#34;&#34;&#34; Get all recovery points for the BLR pair from the associated RPStore.
@@ -4040,7 +4112,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/fsbackupset.py#L84-L175" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupsets/fsbackupset.py#L84-L175" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -4241,7 +4313,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/fsbackupset.py#L177-L298" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupsets/fsbackupset.py#L177-L298" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -4400,7 +4472,7 @@ returns the task object</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/fsbackupset.py#L928-L1040" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupsets/fsbackupset.py#L964-L1076" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_bmr_aix_restore(self, **restore_options):
     &#34;&#34;&#34;
@@ -4561,7 +4633,7 @@ returns the task object</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupsets/fsbackupset.py#L567-L800" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupsets/fsbackupset.py#L592-L836" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_bmr_restore(self, **restore_options):
     &#34;&#34;&#34;
@@ -4614,7 +4686,17 @@ returns the task object</p></div>
     restore_json_system_state = self._restore_bmr_admin_json(ipconfig, hwconfig)
     restore_json_virtualserver = self._restore_bmr_virtualserveropts_json()
 
-    # get instance Id of the virtual client
+    #Checking for Firewall rules
+    if restore_options.get(&#34;FirewallClientGroup&#34;, &#34;&#34;).strip():
+        fwconfigtocs = self._restore_bmr_firewallopts_json(restore_options.get(&#34;FirewallHostname&#34;),
+                                                           restore_options.get(&#34;FirewallDirection&#34;),
+                                                           restore_options.get(&#34;FirewallPort&#34;))
+        restore_json_system_state[&#39;vmProvisioningOption&#39;][&#39;virtualMachineOption&#39;][0][
+            &#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;fwconfigtocs&#39;] = fwconfigtocs
+        restore_json_system_state[&#39;vmProvisioningOption&#39;][&#39;virtualMachineOption&#39;][0][&#39;oneTouchResponse&#39;][&#39;csinfo&#39;][
+            &#39;fwClientGroupName&#39;] = restore_options.get(&#34;FirewallClientGroup&#34;)
+
+    #Get instance Id of the virtual client
     virtual_client_object = self._commcell_object.clients.get(restore_options.get(&#39;VirtualizationClient&#39;))
     virtual_agent_object = virtual_client_object.agents.get(&#39;Virtual Server&#39;)
     instances_list = virtual_agent_object.instances._instances
@@ -4635,10 +4717,8 @@ returns the task object</p></div>
     vm_option = response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][
         &#39;vmProvisioningOption&#39;][&#39;virtualMachineOption&#39;][0]
 
-
     vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;instanceEntity&#39;][&#39;clientName&#39;] = restore_options.get(&#39;VirtualizationClient&#39;)
     vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;instanceEntity&#39;][&#39;instanceId&#39;] = instance_id
-
 
     if(response_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][
         &#39;vmProvisioningOption&#39;][&#39;virtualMachineOption&#39;][0][&#39;oneTouchResponse&#39;][
@@ -4683,6 +4763,9 @@ returns the task object</p></div>
         vm_option[&#39;isoPath&#39;] = restore_options.get(&#39;IsoPath&#39;)
 
         vm_option[&#39;vmInfo&#39;][&#39;vmLocation&#39;][&#39;pathName&#39;] = restore_options.get(&#39;IsoPath&#39;, None)
+
+        vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;netconfig&#39;][&#39;ipinfo&#39;][&#39;interfaces&#39;][0][
+            &#39;protocols&#39;][0][&#39;useDhcp&#39;] = True
 
         vm_option[&#39;oneTouchResponse&#39;][&#39;clients&#39;][0][&#39;netconfig&#39;][&#39;ipinfo&#39;][&#39;interfaces&#39;][0][
             &#39;networkLabel&#39;] = restore_options.get(&#39;NetworkLabel&#39;, None)

@@ -64,6 +64,9 @@ of the input backup set name</p>
 <p>_process_add_response()
 &ndash;
 to process the add instance request using API call</p>
+<p>add_sap_hana_instance()
+&ndash;
+method to add new sap hana instance</p>
 <p>add_informix_instance()
 &ndash;
 adds new Informix Instance to given Client</p>
@@ -193,7 +196,7 @@ refresh the properties of the instance</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L1-L3020" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L1-L3091" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -246,6 +249,8 @@ Instances:
     of the input backup set name
 
     _process_add_response()         --  to process the add instance request using API call
+
+    add_sap_hana_instance()         --  method to add new sap hana instance
 
     add_informix_instance()         --  adds new Informix Instance to given Client
 
@@ -728,6 +733,68 @@ class Instances(object):
                 response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
+    def add_sap_hana_instance(self, **kwargs):
+        &#34;&#34;&#34;Adds new sap hana instance to given client
+            Args:
+                sid             (str)   -- Database SID
+                hana_client_name(str)   --  Client where the hana server exists
+                db_user_name   (str)    -- postgres user name
+                db_password    (str)    -- DB password
+                storage_policy  (str)   --  Storage Policy name
+            Returns:
+                object - instance of the Instance class
+
+            Raises:
+                SDKException:
+                    if None value in sap hana options
+
+                    if sap hana instance with same name already exists
+
+                    if given storage policy does not exists in commcell
+        &#34;&#34;&#34;
+
+        if self.has_instance(kwargs.get(&#39;sid&#39;, &#39;&#39;)):
+            raise SDKException(
+                &#39;Instance&#39;, &#39;102&#39;, &#39;Instance &#34;{0}&#34; already exists.&#39;.format(
+                    kwargs.get(&#39;sid&#39;, &#39;&#39;))
+            )
+        password = b64encode(kwargs.get(&#34;db_password&#34;, &#34;&#34;).encode()).decode()
+        request_json = {
+            &#34;instanceProperties&#34;: {
+                &#34;instance&#34;: {
+                    &#34;clientName&#34;: self._client_object.client_name,
+                    &#34;instanceName&#34;: kwargs.get(&#39;sid&#39;, &#39;&#39;),
+                    &#34;applicationId&#34;: 135,
+                },
+                &#34;saphanaInstance&#34;: {
+                    &#34;dbInstanceNumber&#34;: &#34;00&#34;,
+                    &#34;hdbsqlLocationDirectory&#34;: f&#34;/usr/sap/{kwargs.get(&#39;sid&#39;, &#39;&#39;)}/HDB00/exe&#34;,
+                    &#34;SAPHANAUser&#34;: {
+                        &#34;userName&#34;: f&#34;{kwargs.get(&#39;sid&#39;, &#39;&#39;).lower()}adm&#34;
+                    },
+                    &#34;dbUser&#34;: {
+                        &#34;userName&#34;: kwargs.get(&#34;db_user_name&#34;, &#34;&#34;),
+                        &#34;password&#34;: password
+                    },
+                    &#34;saphanaStorageDevice&#34;: {
+                        &#34;logBackupStoragePolicy&#34;: {
+                            &#34;storagePolicyName&#34;: kwargs.get(&#34;storage_policy&#34;, &#34;&#34;)
+                        },
+                        &#34;commandLineStoragePolicy&#34;: {
+                            &#34;storagePolicyName&#34;: kwargs.get(&#34;storage_policy&#34;, &#34;&#34;)
+                        }
+                    },
+                    &#34;DBInstances&#34;: [
+                        {
+                            &#34;clientName&#34;: kwargs.get(&#34;hana_client_name&#34;, &#34;&#34;)
+                        }
+                    ]
+
+                }
+            }
+        }
+        self._process_add_response(request_json)
+
     def delete(self, instance_name):
         &#34;&#34;&#34;Deletes the instance specified by the instance_name from the agent.
 
@@ -846,7 +913,6 @@ class Instances(object):
 
         # encodes the plain text password using base64 encoding
         sa_password = b64encode(sybase_options[&#34;sa_password&#34;].encode()).decode()
-        localadmin_password = b64encode(sybase_options[&#34;localadmin_password&#34;].encode()).decode()
 
         enable_auto_discovery = sybase_options[&#34;enable_auto_discovery&#34;]
 
@@ -861,6 +927,7 @@ class Instances(object):
                 },
                 &#34;sybaseInstance&#34;: {
                     &#34;sybaseOCS&#34;: sybase_options[&#34;sybase_ocs&#34;],
+                    &#34;sybaseBlockSize&#34;: 65536,
                     &#34;backupServer&#34;: sybase_options[&#34;backup_server&#34;],
                     &#34;sybaseHome&#34;: sybase_options[&#34;sybase_home&#34;],
                     &#34;sybaseASE&#34;: sybase_options[&#34;sybase_ase&#34;],
@@ -878,6 +945,9 @@ class Instances(object):
                 }
             }
         }
+        if &#34;localadmin_password&#34; in sybase_options.keys():
+            localadmin_password = b64encode(sybase_options[&#34;localadmin_password&#34;].encode()).decode()
+            request_json[&#39;instanceProperties&#39;][&#39;sybaseInstance&#39;][&#39;localAdministrator&#39;][&#39;password&#39;] = localadmin_password
 
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._services[&#39;ADD_INSTANCE&#39;], request_json
@@ -900,6 +970,7 @@ class Instances(object):
                     instance_id = response.json(
                     )[&#39;response&#39;][&#39;entity&#39;][&#39;instanceId&#39;]
                     agent_name = self._agent_object.agent_name
+                    self.refresh()
                     return self.get(instance_name)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -2278,7 +2349,7 @@ class Instance(object):
             versions = restore_option[&#39;versions&#39;]
             if not isinstance(versions, list):
                 raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
-            if &#39;win&#39; in self._agent_object._client_object.os_info.lower():
+            if &#39;win&#39; in self._agent_object._client_object.os_info.lower() or self._agent_object._agent_name == &#34;virtual server&#34;:
                 version_string = &#34;|\\|#15!vErSiOnS|#15!\\{0}&#34;
             else:
                 version_string = &#34;|/|#15!vErSiOnS|#15!/{0}&#34;
@@ -2955,6 +3026,9 @@ class Instance(object):
         if value.get(&#34;include_metadata&#34;, False):
             self._browse_restore_json[&#34;includeMetaData&#34;] = True
 
+        if value.get(&#39;cvcBrowse&#39;):
+            self._browse_restore_json[&#34;cvcBrowse&#34;] = True
+
     def _restore_common_opts_json(self, value):
         &#34;&#34;&#34; Method to set commonOpts for restore
 
@@ -3252,7 +3326,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L1650-L3020" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L1718-L3091" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Instance(object):
     &#34;&#34;&#34;Class for performing instance operations for a specific instance.&#34;&#34;&#34;
@@ -3688,7 +3762,7 @@ default: None</p>
             versions = restore_option[&#39;versions&#39;]
             if not isinstance(versions, list):
                 raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
-            if &#39;win&#39; in self._agent_object._client_object.os_info.lower():
+            if &#39;win&#39; in self._agent_object._client_object.os_info.lower() or self._agent_object._agent_name == &#34;virtual server&#34;:
                 version_string = &#34;|\\|#15!vErSiOnS|#15!\\{0}&#34;
             else:
                 version_string = &#34;|/|#15!vErSiOnS|#15!/{0}&#34;
@@ -4365,6 +4439,9 @@ default: None</p>
         if value.get(&#34;include_metadata&#34;, False):
             self._browse_restore_json[&#34;includeMetaData&#34;] = True
 
+        if value.get(&#39;cvcBrowse&#39;):
+            self._browse_restore_json[&#34;cvcBrowse&#34;] = True
+
     def _restore_common_opts_json(self, value):
         &#34;&#34;&#34; Method to set commonOpts for restore
 
@@ -4653,7 +4730,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L2546-L2549" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L2614-L2617" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_id(self):
@@ -4667,7 +4744,7 @@ def instance_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L2551-L2554" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L2619-L2622" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_name(self):
@@ -4681,7 +4758,7 @@ def instance_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L2517-L2520" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L2585-L2588" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -4695,7 +4772,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L2512-L2515" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L2580-L2583" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -4753,7 +4830,7 @@ Refer <code>default_browse_options</code>_ for all the supported options.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L2556-L2612" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L2624-L2680" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, *args, **kwargs):
     &#34;&#34;&#34;Browses the content of the Instance.
@@ -4873,7 +4950,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L2614-L2680" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L2682-L2748" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find(self, *args, **kwargs):
     &#34;&#34;&#34;Searches a file/folder in the backed up content of the instance,
@@ -4952,7 +5029,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L3014-L3020" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L3085-L3091" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Instance.&#34;&#34;&#34;
@@ -4987,7 +5064,7 @@ need to change and use the update_properties method to set the properties</p></d
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L2482-L2510" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L2550-L2578" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;Updates the instance properties
@@ -5038,7 +5115,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L158-L1647" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L160-L1715" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Instances(object):
     &#34;&#34;&#34;Class for getting all the instances associated with a client.&#34;&#34;&#34;
@@ -5416,6 +5493,68 @@ instance of the Agent class</p>
                 response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
+    def add_sap_hana_instance(self, **kwargs):
+        &#34;&#34;&#34;Adds new sap hana instance to given client
+            Args:
+                sid             (str)   -- Database SID
+                hana_client_name(str)   --  Client where the hana server exists
+                db_user_name   (str)    -- postgres user name
+                db_password    (str)    -- DB password
+                storage_policy  (str)   --  Storage Policy name
+            Returns:
+                object - instance of the Instance class
+
+            Raises:
+                SDKException:
+                    if None value in sap hana options
+
+                    if sap hana instance with same name already exists
+
+                    if given storage policy does not exists in commcell
+        &#34;&#34;&#34;
+
+        if self.has_instance(kwargs.get(&#39;sid&#39;, &#39;&#39;)):
+            raise SDKException(
+                &#39;Instance&#39;, &#39;102&#39;, &#39;Instance &#34;{0}&#34; already exists.&#39;.format(
+                    kwargs.get(&#39;sid&#39;, &#39;&#39;))
+            )
+        password = b64encode(kwargs.get(&#34;db_password&#34;, &#34;&#34;).encode()).decode()
+        request_json = {
+            &#34;instanceProperties&#34;: {
+                &#34;instance&#34;: {
+                    &#34;clientName&#34;: self._client_object.client_name,
+                    &#34;instanceName&#34;: kwargs.get(&#39;sid&#39;, &#39;&#39;),
+                    &#34;applicationId&#34;: 135,
+                },
+                &#34;saphanaInstance&#34;: {
+                    &#34;dbInstanceNumber&#34;: &#34;00&#34;,
+                    &#34;hdbsqlLocationDirectory&#34;: f&#34;/usr/sap/{kwargs.get(&#39;sid&#39;, &#39;&#39;)}/HDB00/exe&#34;,
+                    &#34;SAPHANAUser&#34;: {
+                        &#34;userName&#34;: f&#34;{kwargs.get(&#39;sid&#39;, &#39;&#39;).lower()}adm&#34;
+                    },
+                    &#34;dbUser&#34;: {
+                        &#34;userName&#34;: kwargs.get(&#34;db_user_name&#34;, &#34;&#34;),
+                        &#34;password&#34;: password
+                    },
+                    &#34;saphanaStorageDevice&#34;: {
+                        &#34;logBackupStoragePolicy&#34;: {
+                            &#34;storagePolicyName&#34;: kwargs.get(&#34;storage_policy&#34;, &#34;&#34;)
+                        },
+                        &#34;commandLineStoragePolicy&#34;: {
+                            &#34;storagePolicyName&#34;: kwargs.get(&#34;storage_policy&#34;, &#34;&#34;)
+                        }
+                    },
+                    &#34;DBInstances&#34;: [
+                        {
+                            &#34;clientName&#34;: kwargs.get(&#34;hana_client_name&#34;, &#34;&#34;)
+                        }
+                    ]
+
+                }
+            }
+        }
+        self._process_add_response(request_json)
+
     def delete(self, instance_name):
         &#34;&#34;&#34;Deletes the instance specified by the instance_name from the agent.
 
@@ -5534,7 +5673,6 @@ instance of the Agent class</p>
 
         # encodes the plain text password using base64 encoding
         sa_password = b64encode(sybase_options[&#34;sa_password&#34;].encode()).decode()
-        localadmin_password = b64encode(sybase_options[&#34;localadmin_password&#34;].encode()).decode()
 
         enable_auto_discovery = sybase_options[&#34;enable_auto_discovery&#34;]
 
@@ -5549,6 +5687,7 @@ instance of the Agent class</p>
                 },
                 &#34;sybaseInstance&#34;: {
                     &#34;sybaseOCS&#34;: sybase_options[&#34;sybase_ocs&#34;],
+                    &#34;sybaseBlockSize&#34;: 65536,
                     &#34;backupServer&#34;: sybase_options[&#34;backup_server&#34;],
                     &#34;sybaseHome&#34;: sybase_options[&#34;sybase_home&#34;],
                     &#34;sybaseASE&#34;: sybase_options[&#34;sybase_ase&#34;],
@@ -5566,6 +5705,9 @@ instance of the Agent class</p>
                 }
             }
         }
+        if &#34;localadmin_password&#34; in sybase_options.keys():
+            localadmin_password = b64encode(sybase_options[&#34;localadmin_password&#34;].encode()).decode()
+            request_json[&#39;instanceProperties&#39;][&#39;sybaseInstance&#39;][&#39;localAdministrator&#39;][&#39;password&#39;] = localadmin_password
 
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._services[&#39;ADD_INSTANCE&#39;], request_json
@@ -5588,6 +5730,7 @@ instance of the Agent class</p>
                     instance_id = response.json(
                     )[&#39;response&#39;][&#39;entity&#39;][&#39;instanceId&#39;]
                     agent_name = self._agent_object.agent_name
+                    self.refresh()
                     return self.get(instance_name)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -6544,7 +6687,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L304-L315" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L306-L317" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_instances(self):
@@ -6585,7 +6728,7 @@ if cannot retrieve cluster type from default Instance</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L830-L937" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L898-L1005" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_big_data_apps_instance(self, distributed_options):
     &#34;&#34;&#34;
@@ -6808,7 +6951,7 @@ SDKException :</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L939-L1114" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L1007-L1182" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_cloud_storage_instance(self, cloud_options):
     &#34;&#34;&#34;Returns the JSON request to pass to the API for adding a cloud storage instance
@@ -7015,7 +7158,7 @@ if None value in db2 options</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L712-L828" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L780-L896" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_db2_instance(self, db2_options):
     &#34;&#34;&#34;
@@ -7167,7 +7310,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L418-L532" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L420-L534" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_informix_instance(self, informix_options):
     &#34;&#34;&#34;Adds new Informix Instance to given Client
@@ -7324,7 +7467,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L1464-L1553" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L1532-L1621" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_mysql_instance(self, instance_name, database_options):
     &#34;&#34;&#34;Adds new mysql Instance to given Client
@@ -7486,7 +7629,7 @@ Given storage policies do not exist in Commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L1555-L1643" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L1623-L1711" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_oracle_instance(self, instance_name, **oracle_options):
     &#34;&#34;&#34;Adds new oracle instance for the given client
@@ -7631,7 +7774,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L1236-L1293" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L1304-L1361" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_postgresql_instance(self, instance_name, **kwargs):
     &#34;&#34;&#34;Adds new postgresql instance to given client
@@ -7753,7 +7896,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L1116-L1234" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L1184-L1302" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_salesforce_instance(
         self, instance_name, access_node,
@@ -7876,6 +8019,105 @@ if response is not success
     self._process_add_response(request_json)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.instance.Instances.add_sap_hana_instance"><code class="name flex">
+<span>def <span class="ident">add_sap_hana_instance</span></span>(<span>self, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Adds new sap hana instance to given client</p>
+<h2 id="args">Args</h2>
+<p>sid
+(str)
+&ndash; Database SID
+hana_client_name(str)
+&ndash;
+Client where the hana server exists
+db_user_name
+(str)
+&ndash; postgres user name
+db_password
+(str)
+&ndash; DB password
+storage_policy
+(str)
+&ndash;
+Storage Policy name</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Instance class</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if None value in sap hana options</p>
+<pre><code>if sap hana instance with same name already exists
+
+if given storage policy does not exists in commcell
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L536-L596" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def add_sap_hana_instance(self, **kwargs):
+    &#34;&#34;&#34;Adds new sap hana instance to given client
+        Args:
+            sid             (str)   -- Database SID
+            hana_client_name(str)   --  Client where the hana server exists
+            db_user_name   (str)    -- postgres user name
+            db_password    (str)    -- DB password
+            storage_policy  (str)   --  Storage Policy name
+        Returns:
+            object - instance of the Instance class
+
+        Raises:
+            SDKException:
+                if None value in sap hana options
+
+                if sap hana instance with same name already exists
+
+                if given storage policy does not exists in commcell
+    &#34;&#34;&#34;
+
+    if self.has_instance(kwargs.get(&#39;sid&#39;, &#39;&#39;)):
+        raise SDKException(
+            &#39;Instance&#39;, &#39;102&#39;, &#39;Instance &#34;{0}&#34; already exists.&#39;.format(
+                kwargs.get(&#39;sid&#39;, &#39;&#39;))
+        )
+    password = b64encode(kwargs.get(&#34;db_password&#34;, &#34;&#34;).encode()).decode()
+    request_json = {
+        &#34;instanceProperties&#34;: {
+            &#34;instance&#34;: {
+                &#34;clientName&#34;: self._client_object.client_name,
+                &#34;instanceName&#34;: kwargs.get(&#39;sid&#39;, &#39;&#39;),
+                &#34;applicationId&#34;: 135,
+            },
+            &#34;saphanaInstance&#34;: {
+                &#34;dbInstanceNumber&#34;: &#34;00&#34;,
+                &#34;hdbsqlLocationDirectory&#34;: f&#34;/usr/sap/{kwargs.get(&#39;sid&#39;, &#39;&#39;)}/HDB00/exe&#34;,
+                &#34;SAPHANAUser&#34;: {
+                    &#34;userName&#34;: f&#34;{kwargs.get(&#39;sid&#39;, &#39;&#39;).lower()}adm&#34;
+                },
+                &#34;dbUser&#34;: {
+                    &#34;userName&#34;: kwargs.get(&#34;db_user_name&#34;, &#34;&#34;),
+                    &#34;password&#34;: password
+                },
+                &#34;saphanaStorageDevice&#34;: {
+                    &#34;logBackupStoragePolicy&#34;: {
+                        &#34;storagePolicyName&#34;: kwargs.get(&#34;storage_policy&#34;, &#34;&#34;)
+                    },
+                    &#34;commandLineStoragePolicy&#34;: {
+                        &#34;storagePolicyName&#34;: kwargs.get(&#34;storage_policy&#34;, &#34;&#34;)
+                    }
+                },
+                &#34;DBInstances&#34;: [
+                    {
+                        &#34;clientName&#34;: kwargs.get(&#34;hana_client_name&#34;, &#34;&#34;)
+                    }
+                ]
+
+            }
+        }
+    }
+    self._process_add_response(request_json)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.instance.Instances.add_sybase_instance"><code class="name flex">
 <span>def <span class="ident">add_sybase_instance</span></span>(<span>self, sybase_options)</span>
 </code></dt>
@@ -7909,7 +8151,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L599-L710" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L663-L778" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_sybase_instance(self, sybase_options):
     &#34;&#34;&#34;
@@ -7964,7 +8206,6 @@ if given storage policy does not exists in commcell
 
     # encodes the plain text password using base64 encoding
     sa_password = b64encode(sybase_options[&#34;sa_password&#34;].encode()).decode()
-    localadmin_password = b64encode(sybase_options[&#34;localadmin_password&#34;].encode()).decode()
 
     enable_auto_discovery = sybase_options[&#34;enable_auto_discovery&#34;]
 
@@ -7979,6 +8220,7 @@ if given storage policy does not exists in commcell
             },
             &#34;sybaseInstance&#34;: {
                 &#34;sybaseOCS&#34;: sybase_options[&#34;sybase_ocs&#34;],
+                &#34;sybaseBlockSize&#34;: 65536,
                 &#34;backupServer&#34;: sybase_options[&#34;backup_server&#34;],
                 &#34;sybaseHome&#34;: sybase_options[&#34;sybase_home&#34;],
                 &#34;sybaseASE&#34;: sybase_options[&#34;sybase_ase&#34;],
@@ -7996,6 +8238,9 @@ if given storage policy does not exists in commcell
             }
         }
     }
+    if &#34;localadmin_password&#34; in sybase_options.keys():
+        localadmin_password = b64encode(sybase_options[&#34;localadmin_password&#34;].encode()).decode()
+        request_json[&#39;instanceProperties&#39;][&#39;sybaseInstance&#39;][&#39;localAdministrator&#39;][&#39;password&#39;] = localadmin_password
 
     flag, response = self._cvpysdk_object.make_request(
         &#39;POST&#39;, self._services[&#39;ADD_INSTANCE&#39;], request_json
@@ -8018,6 +8263,7 @@ if given storage policy does not exists in commcell
                 instance_id = response.json(
                 )[&#39;response&#39;][&#39;entity&#39;][&#39;instanceId&#39;]
                 agent_name = self._agent_object.agent_name
+                self.refresh()
                 return self.get(instance_name)
         else:
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -8048,7 +8294,7 @@ if no instance exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L534-L597" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L598-L661" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, instance_name):
     &#34;&#34;&#34;Deletes the instance specified by the instance_name from the agent.
@@ -8135,7 +8381,7 @@ if type of the instance name argument is not string or Int</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L335-L367" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L337-L369" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, instance_name):
     &#34;&#34;&#34;Returns a instance object of the specified instance name.
@@ -8189,7 +8435,7 @@ if type of the instance name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L317-L333" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L319-L335" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_instance(self, instance_name):
     &#34;&#34;&#34;Checks if a instance exists for the agent with the input instance name.
@@ -8218,7 +8464,7 @@ if type of the instance name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/instance.py#L1645-L1647" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L1713-L1715" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the instances associated with the Agent of the selected Client.&#34;&#34;&#34;
@@ -8319,6 +8565,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.instance.Instances.add_oracle_instance" href="#cvpysdk.instance.Instances.add_oracle_instance">add_oracle_instance</a></code></li>
 <li><code><a title="cvpysdk.instance.Instances.add_postgresql_instance" href="#cvpysdk.instance.Instances.add_postgresql_instance">add_postgresql_instance</a></code></li>
 <li><code><a title="cvpysdk.instance.Instances.add_salesforce_instance" href="#cvpysdk.instance.Instances.add_salesforce_instance">add_salesforce_instance</a></code></li>
+<li><code><a title="cvpysdk.instance.Instances.add_sap_hana_instance" href="#cvpysdk.instance.Instances.add_sap_hana_instance">add_sap_hana_instance</a></code></li>
 <li><code><a title="cvpysdk.instance.Instances.add_sybase_instance" href="#cvpysdk.instance.Instances.add_sybase_instance">add_sybase_instance</a></code></li>
 <li><code><a title="cvpysdk.instance.Instances.all_instances" href="#cvpysdk.instance.Instances.all_instances">all_instances</a></code></li>
 <li><code><a title="cvpysdk.instance.Instances.delete" href="#cvpysdk.instance.Instances.delete">delete</a></code></li>

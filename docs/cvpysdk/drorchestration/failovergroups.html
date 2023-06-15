@@ -31,7 +31,10 @@ Class for getting information of all failover groups in the commcell</p>
 Class for a failover group that gives us all the live sync pairs associated to in,
 with addition to the clients/hypervisors associated</p>
 <h2 id="failovergroups">Failovergroups</h2>
-<p>FailoverGroupTypes
+<p>FailoverGroupSourceTypes
+&ndash;
+Enum to represent all type of sources for failover groups
+FailoverGroupTypes
 &ndash;
 Enum to represent all types of failover groups
 DRReplicationTypes
@@ -85,15 +88,30 @@ Gets the failover group information from FailoverGroups class</p>
 &ndash;
 Get the failover group properties</p>
 <h5 id="properties_1">properties</h5>
+<p>failover_group_id
+&ndash;
+The ID of the failover group</p>
 <p>failover_group_name
 &ndash;
 The name of the failover group</p>
+<p>replication_type
+&ndash;
+The DRReplicationTypes key for replication of failover group</p>
+<p>group_type
+&ndash;
+The FailoverGroupTypes for operation of failover group</p>
+<p>source_type
+&ndash;
+The FailoverGroupSourceTypes of source of failover group</p>
 <p>is_client_group
 &ndash;
 Whether the VM pairs are part of a client group or not</p>
+<p>replication_pairs
+&ndash;
+The ReplicationPairs class for failover group</p>
 <p>vm_pair_ids
 &ndash;
-The ID of the live sync pairs</p>
+The ID of the replication pairs</p>
 <p>vm_pairs
 &ndash;
 Returns the live sync pair objects for each VM pair of the group
@@ -130,7 +148,7 @@ for approval</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/failovergroups.py#L1-L439" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L1-L502" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -162,6 +180,7 @@ FailoverGroup:      Class for a failover group that gives us all the live sync p
 
 
 FailoverGroups:
+    FailoverGroupSourceTypes                    --  Enum to represent all type of sources for failover groups
     FailoverGroupTypes                          --  Enum to represent all types of failover groups
     DRReplicationTypes                          --  Enum to represent all live sync types
     __init__(commcell_object)                   --  Initialize the object of failovergroups class for commcell
@@ -199,11 +218,21 @@ FailoverGroup:
     _get_failover_group_properties()            --  Get the failover group properties
 
     ##### properties #####
+    failover_group_id                           --  The ID of the failover group
+
     failover_group_name                         --  The name of the failover group
+
+    replication_type                            --  The DRReplicationTypes key for replication of failover group
+
+    group_type                                  --  The FailoverGroupTypes for operation of failover group
+
+    source_type                                 --  The FailoverGroupSourceTypes of source of failover group
 
     is_client_group                             --  Whether the VM pairs are part of a client group or not
 
-    vm_pair_ids                                 --  The ID of the live sync pairs
+    replication_pairs                           --  The ReplicationPairs class for failover group
+
+    vm_pair_ids                                 --  The ID of the replication pairs
 
     vm_pairs                                    --  Returns the live sync pair objects for each VM pair of the group
                                                         as a mapping of source VM name and VM pair object
@@ -231,11 +260,16 @@ FailoverGroup:
 &#34;&#34;&#34;
 from enum import Enum
 from ..exception import SDKException
-from .replication_pairs import ReplicationPair
+from .replication_pairs import ReplicationPairs
 
 
 class FailoverGroups:
     &#34;&#34;&#34;Class for getting all the failover groups in commcell.&#34;&#34;&#34;
+
+    class FailoverGroupSourceTypes(Enum):
+        BACKUP = 0
+        REPLICATION = 1
+        TEMPLATES = 2
 
     class FailoverGroupTypes(Enum):
         &#34;&#34;&#34; Enum to map Failover Group Types to integers&#34;&#34;&#34;
@@ -350,8 +384,18 @@ class FailoverGroups:
             Returns:
                 dict - consists of all failover groups
                     {
-                         &#34;failover_group_name1&#34;: {id: &#39;1&#39;, &#39;type&#39;: VSA_PERIODIC, &#39;operation_type&#39;: FAILOVER},
-                         &#34;failover_group_name2&#34;: {id: &#39;2&#39;, &#39;type&#39;: VSA_CONTINUOUS, &#39;operation_type&#39;: FAILOVER}
+                        &#34;failover_group_name1&#34;: {
+                            &#39;id&#39;: &#39;1&#39;,
+                            &#39;type&#39;: LIVE_SYNC,
+                            &#39;operation_type&#39;: FAILOVER,
+                            &#39;source_type&#39;: REPLICATION
+                        },
+                        &#34;failover_group_name2&#34;: {
+                            &#39;id&#39;: &#39;2&#39;,
+                            &#39;type&#39;: SNAP_ARRAY,
+                            &#39;operation_type&#39;: TEST_FAILOVER
+                            &#39;source_type&#39;: REPLICATION
+                        }
                     }
 
             Raises:
@@ -362,7 +406,9 @@ class FailoverGroups:
         failover_groups = {}
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            &#39;GET&#39;, self._services[&#39;DR_GROUPS&#39;])
+            &#39;GET&#39;, (self._services[&#39;FAILOVER_GROUPS&#39;]
+                    if self._commcell_object.commserv_version &gt; 30
+                    else self._services[&#39;DR_GROUPS&#39;]))
         if flag:
             if &#39;vApp&#39; in response.json():
                 for failover_group in response.json().get(&#39;vApp&#39;, []):
@@ -370,10 +416,12 @@ class FailoverGroups:
                     failover_group_name = failover_group.get(&#39;vAppEntity&#39;, {}).get(&#39;vAppName&#39;, &#39;&#39;).lower()
                     operation_type = self.FailoverGroupTypes(int(failover_group.get(&#39;operationType&#39;, 16)))
                     replication_type = self.DRReplicationTypes(int(failover_group.get(&#39;replicationType&#39;, 0)))
+                    source_type = self.FailoverGroupSourceTypes(int(failover_group.get(&#39;source&#39;, 1)))
                     failover_groups[failover_group_name] = {
                         &#39;id&#39;: failover_group_id,
                         &#39;operation_type&#39;: operation_type,
-                        &#39;type&#39;: replication_type
+                        &#39;type&#39;: replication_type,
+                        &#39;source_type&#39;: source_type
                     }
                 return failover_groups
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -415,7 +463,7 @@ class FailoverGroup:
         self._source_instance = None
         self._destination_instance = None
 
-        self._vm_pairs = {}
+        self._replication_pairs = None
 
         self.refresh()
 
@@ -458,7 +506,9 @@ class FailoverGroup:
         &#34;&#34;&#34;
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;GET&#39;,
-            self._services[&#39;GET_DR_GROUP&#39;] % str(self._failover_group_dict.get(&#39;id&#39;))
+            (self._services[&#39;GET_FAILOVER_GROUP&#39;]
+             if self._commcell_object.commserv_version &gt; 30
+             else self._services[&#39;GET_DR_GROUP&#39;]) % str(self.failover_group_id)
         )
         if flag:
             if &#39;vApp&#39; in response.json():
@@ -470,7 +520,12 @@ class FailoverGroup:
     def refresh(self):
         &#34;&#34;&#34; Refresh the failover group properties &#34;&#34;&#34;
         self._failover_group_properties = self._get_failover_group_properties()
-        self._vm_pairs = None
+        self.replication_pairs.refresh()
+
+    @property
+    def failover_group_id(self):
+        &#34;&#34;&#34;Returns: (str) The ID of the failover group&#34;&#34;&#34;
+        return self._failover_group_dict.get(&#39;id&#39;)
 
     @property
     def failover_group_name(self):
@@ -478,16 +533,41 @@ class FailoverGroup:
         return self._failover_group_name
 
     @property
+    def replication_type(self):
+        &#34;&#34;&#34;Returns: (DRReplicationTypes) The type of replication&#34;&#34;&#34;
+        return self._failover_group_dict.get(&#39;type&#39;)
+
+    @property
+    def group_type(self):
+        &#34;&#34;&#34;Returns: (FailoverGroupTypes) The type of failover group&#34;&#34;&#34;
+        return self._failover_group_dict.get(&#39;operation_type&#39;)
+
+    @property
+    def source_type(self):
+        &#34;&#34;&#34;Returns: (FailoverGroupSourceTypes) The type of failover group&#39;s source&#34;&#34;&#34;
+        return self._failover_group_dict.get(&#39;source_type&#39;)
+
+    @property
     def is_client_group(self):
         &#34;&#34;&#34;Returns: (bool) Whether this failover group has a client group or not&#34;&#34;&#34;
         return self._failover_group_properties.get(&#39;isClientGroup&#39;)
 
     @property
+    def replication_pairs(self):
+        &#34;&#34;&#34;
+        Returns: (ReplicationPairs) Returns the ReplicationPairs object that belongs to this failover group
+        Note: Implemented only for live sync failover groups
+        &#34;&#34;&#34;
+        if not self._replication_pairs:
+            if self.replication_type == FailoverGroups.DRReplicationTypes.LIVE_SYNC:
+                self._replication_pairs = ReplicationPairs(self._commcell_object,
+                                                           failover_group_id=self.failover_group_id)
+        return self._replication_pairs
+
+    @property
     def vm_pair_ids(self):
         &#34;&#34;&#34;Returns: (List[str]) Returns the VM pair IDs that belong to this failover group&#34;&#34;&#34;
-        vm_sequence = (self._failover_group_properties.get(&#39;config&#39;, {}).get(&#39;vmGroups&#39;, [{}])[0]
-                       .get(&#39;vmSequence&#39;, []))
-        return [str(vm_info.get(&#39;replicationId&#39;)) for vm_info in vm_sequence if &#39;replicationId&#39; in vm_info]
+        return list(self.replication_pairs.replication_pairs)
 
     @property
     def vm_pairs(self):
@@ -499,11 +579,12 @@ class FailoverGroup:
                     &lt;source_vm2&gt;: &lt;Replication_pair_obj2&gt;
                 }
         &#34;&#34;&#34;
-        if not self._vm_pairs:
-            for replication_id in self.vm_pair_ids:
-                vm_pair = ReplicationPair(self._commcell_object, replication_id)
-                self._vm_pairs[vm_pair.source_vm] = vm_pair
-        return self._vm_pairs
+        replication_pair_objects = {}
+        for replication_pair_id, replication_pair_dict in self.replication_pairs.replication_pairs.items():
+            source_vm_name = replication_pair_dict.get(&#39;source_vm&#39;)
+            replication_pair_object = self.replication_pairs.get(replication_id=replication_pair_id)
+            replication_pair_objects[source_vm_name] = replication_pair_object
+        return replication_pair_objects
 
     @property
     def replication_groups(self):
@@ -568,8 +649,8 @@ class FailoverGroup:
     @property
     def user_for_approval(self):
         &#34;&#34;&#34;Returns: user name set in failover group&#34;&#34;&#34;
-        user_name = (self._failover_group_properties.get(&#39;usersForApproval&#39;,[{}])[0]
-                     .get(&#39;userEntity&#39;,{}).get(&#39;userName&#39;,&#39;&#39;))
+        user_name = (self._failover_group_properties.get(&#39;usersForApproval&#39;, [{}])[0]
+                     .get(&#39;userEntity&#39;, {}).get(&#39;userName&#39;, &#39;&#39;))
         return user_name</code></pre>
 </details>
 </section>
@@ -599,7 +680,7 @@ name of the failover group</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/failovergroups.py#L262-L439" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L292-L502" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class FailoverGroup:
     &#34;&#34;&#34; Class for representing a failover group &#34;&#34;&#34;
@@ -623,7 +704,7 @@ name of the failover group</p></div>
         self._source_instance = None
         self._destination_instance = None
 
-        self._vm_pairs = {}
+        self._replication_pairs = None
 
         self.refresh()
 
@@ -666,7 +747,9 @@ name of the failover group</p></div>
         &#34;&#34;&#34;
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;GET&#39;,
-            self._services[&#39;GET_DR_GROUP&#39;] % str(self._failover_group_dict.get(&#39;id&#39;))
+            (self._services[&#39;GET_FAILOVER_GROUP&#39;]
+             if self._commcell_object.commserv_version &gt; 30
+             else self._services[&#39;GET_DR_GROUP&#39;]) % str(self.failover_group_id)
         )
         if flag:
             if &#39;vApp&#39; in response.json():
@@ -678,7 +761,12 @@ name of the failover group</p></div>
     def refresh(self):
         &#34;&#34;&#34; Refresh the failover group properties &#34;&#34;&#34;
         self._failover_group_properties = self._get_failover_group_properties()
-        self._vm_pairs = None
+        self.replication_pairs.refresh()
+
+    @property
+    def failover_group_id(self):
+        &#34;&#34;&#34;Returns: (str) The ID of the failover group&#34;&#34;&#34;
+        return self._failover_group_dict.get(&#39;id&#39;)
 
     @property
     def failover_group_name(self):
@@ -686,16 +774,41 @@ name of the failover group</p></div>
         return self._failover_group_name
 
     @property
+    def replication_type(self):
+        &#34;&#34;&#34;Returns: (DRReplicationTypes) The type of replication&#34;&#34;&#34;
+        return self._failover_group_dict.get(&#39;type&#39;)
+
+    @property
+    def group_type(self):
+        &#34;&#34;&#34;Returns: (FailoverGroupTypes) The type of failover group&#34;&#34;&#34;
+        return self._failover_group_dict.get(&#39;operation_type&#39;)
+
+    @property
+    def source_type(self):
+        &#34;&#34;&#34;Returns: (FailoverGroupSourceTypes) The type of failover group&#39;s source&#34;&#34;&#34;
+        return self._failover_group_dict.get(&#39;source_type&#39;)
+
+    @property
     def is_client_group(self):
         &#34;&#34;&#34;Returns: (bool) Whether this failover group has a client group or not&#34;&#34;&#34;
         return self._failover_group_properties.get(&#39;isClientGroup&#39;)
 
     @property
+    def replication_pairs(self):
+        &#34;&#34;&#34;
+        Returns: (ReplicationPairs) Returns the ReplicationPairs object that belongs to this failover group
+        Note: Implemented only for live sync failover groups
+        &#34;&#34;&#34;
+        if not self._replication_pairs:
+            if self.replication_type == FailoverGroups.DRReplicationTypes.LIVE_SYNC:
+                self._replication_pairs = ReplicationPairs(self._commcell_object,
+                                                           failover_group_id=self.failover_group_id)
+        return self._replication_pairs
+
+    @property
     def vm_pair_ids(self):
         &#34;&#34;&#34;Returns: (List[str]) Returns the VM pair IDs that belong to this failover group&#34;&#34;&#34;
-        vm_sequence = (self._failover_group_properties.get(&#39;config&#39;, {}).get(&#39;vmGroups&#39;, [{}])[0]
-                       .get(&#39;vmSequence&#39;, []))
-        return [str(vm_info.get(&#39;replicationId&#39;)) for vm_info in vm_sequence if &#39;replicationId&#39; in vm_info]
+        return list(self.replication_pairs.replication_pairs)
 
     @property
     def vm_pairs(self):
@@ -707,11 +820,12 @@ name of the failover group</p></div>
                     &lt;source_vm2&gt;: &lt;Replication_pair_obj2&gt;
                 }
         &#34;&#34;&#34;
-        if not self._vm_pairs:
-            for replication_id in self.vm_pair_ids:
-                vm_pair = ReplicationPair(self._commcell_object, replication_id)
-                self._vm_pairs[vm_pair.source_vm] = vm_pair
-        return self._vm_pairs
+        replication_pair_objects = {}
+        for replication_pair_id, replication_pair_dict in self.replication_pairs.replication_pairs.items():
+            source_vm_name = replication_pair_dict.get(&#39;source_vm&#39;)
+            replication_pair_object = self.replication_pairs.get(replication_id=replication_pair_id)
+            replication_pair_objects[source_vm_name] = replication_pair_object
+        return replication_pair_objects
 
     @property
     def replication_groups(self):
@@ -776,8 +890,8 @@ name of the failover group</p></div>
     @property
     def user_for_approval(self):
         &#34;&#34;&#34;Returns: user name set in failover group&#34;&#34;&#34;
-        user_name = (self._failover_group_properties.get(&#39;usersForApproval&#39;,[{}])[0]
-                     .get(&#39;userEntity&#39;,{}).get(&#39;userName&#39;,&#39;&#39;))
+        user_name = (self._failover_group_properties.get(&#39;usersForApproval&#39;, [{}])[0]
+                     .get(&#39;userEntity&#39;, {}).get(&#39;userName&#39;, &#39;&#39;))
         return user_name</code></pre>
 </details>
 <h3>Instance variables</h3>
@@ -788,7 +902,7 @@ name of the failover group</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/failovergroups.py#L412-L415" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L475-L478" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination_agent(self):
@@ -802,7 +916,7 @@ def destination_agent(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/failovergroups.py#L407-L410" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L470-L473" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination_client(self):
@@ -816,7 +930,7 @@ def destination_client(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/failovergroups.py#L417-L424" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L480-L487" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination_instance(self):
@@ -828,18 +942,46 @@ def destination_instance(self):
     return self._destination_instance</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.drorchestration.failovergroups.FailoverGroup.failover_group_id"><code class="name">var <span class="ident">failover_group_id</span></code></dt>
+<dd>
+<div class="desc"><p>Returns: (str) The ID of the failover group</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L373-L376" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def failover_group_id(self):
+    &#34;&#34;&#34;Returns: (str) The ID of the failover group&#34;&#34;&#34;
+    return self._failover_group_dict.get(&#39;id&#39;)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.drorchestration.failovergroups.FailoverGroup.failover_group_name"><code class="name">var <span class="ident">failover_group_name</span></code></dt>
 <dd>
 <div class="desc"><p>Returns: (str) The name of the failover group</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/failovergroups.py#L341-L344" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L378-L381" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def failover_group_name(self):
     &#34;&#34;&#34;Returns: (str) The name of the failover group&#34;&#34;&#34;
     return self._failover_group_name</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.drorchestration.failovergroups.FailoverGroup.group_type"><code class="name">var <span class="ident">group_type</span></code></dt>
+<dd>
+<div class="desc"><p>Returns: (FailoverGroupTypes) The type of failover group</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L388-L391" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def group_type(self):
+    &#34;&#34;&#34;Returns: (FailoverGroupTypes) The type of failover group&#34;&#34;&#34;
+    return self._failover_group_dict.get(&#39;operation_type&#39;)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.drorchestration.failovergroups.FailoverGroup.is_approval_required"><code class="name">var <span class="ident">is_approval_required</span></code></dt>
@@ -850,7 +992,7 @@ false: if approval not set in failover group</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/failovergroups.py#L426-L432" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L489-L495" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_approval_required(self):
@@ -867,7 +1009,7 @@ def is_approval_required(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/failovergroups.py#L346-L349" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L398-L401" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_client_group(self):
@@ -881,7 +1023,7 @@ def is_client_group(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/failovergroups.py#L374-L378" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L437-L441" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def replication_groups(self):
@@ -890,13 +1032,49 @@ def replication_groups(self):
     return list(group_names)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.drorchestration.failovergroups.FailoverGroup.replication_pairs"><code class="name">var <span class="ident">replication_pairs</span></code></dt>
+<dd>
+<div class="desc"><p>Returns: (ReplicationPairs) Returns the ReplicationPairs object that belongs to this failover group
+Note: Implemented only for live sync failover groups</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L403-L413" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def replication_pairs(self):
+    &#34;&#34;&#34;
+    Returns: (ReplicationPairs) Returns the ReplicationPairs object that belongs to this failover group
+    Note: Implemented only for live sync failover groups
+    &#34;&#34;&#34;
+    if not self._replication_pairs:
+        if self.replication_type == FailoverGroups.DRReplicationTypes.LIVE_SYNC:
+            self._replication_pairs = ReplicationPairs(self._commcell_object,
+                                                       failover_group_id=self.failover_group_id)
+    return self._replication_pairs</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.drorchestration.failovergroups.FailoverGroup.replication_type"><code class="name">var <span class="ident">replication_type</span></code></dt>
+<dd>
+<div class="desc"><p>Returns: (DRReplicationTypes) The type of replication</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L383-L386" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def replication_type(self):
+    &#34;&#34;&#34;Returns: (DRReplicationTypes) The type of replication&#34;&#34;&#34;
+    return self._failover_group_dict.get(&#39;type&#39;)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.drorchestration.failovergroups.FailoverGroup.source_agent"><code class="name">var <span class="ident">source_agent</span></code></dt>
 <dd>
 <div class="desc"><p>Returns: (Agent) The agent object for the source hypervisor</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/failovergroups.py#L388-L391" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L451-L454" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def source_agent(self):
@@ -910,7 +1088,7 @@ def source_agent(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/failovergroups.py#L380-L386" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L443-L449" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def source_client(self):
@@ -927,7 +1105,7 @@ def source_client(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/failovergroups.py#L393-L405" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L456-L468" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def source_instance(self):
@@ -944,19 +1122,33 @@ def source_instance(self):
     return self._source_instance</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.drorchestration.failovergroups.FailoverGroup.source_type"><code class="name">var <span class="ident">source_type</span></code></dt>
+<dd>
+<div class="desc"><p>Returns: (FailoverGroupSourceTypes) The type of failover group's source</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L393-L396" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def source_type(self):
+    &#34;&#34;&#34;Returns: (FailoverGroupSourceTypes) The type of failover group&#39;s source&#34;&#34;&#34;
+    return self._failover_group_dict.get(&#39;source_type&#39;)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.drorchestration.failovergroups.FailoverGroup.user_for_approval"><code class="name">var <span class="ident">user_for_approval</span></code></dt>
 <dd>
 <div class="desc"><p>Returns: user name set in failover group</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/failovergroups.py#L434-L439" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L497-L502" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_for_approval(self):
     &#34;&#34;&#34;Returns: user name set in failover group&#34;&#34;&#34;
-    user_name = (self._failover_group_properties.get(&#39;usersForApproval&#39;,[{}])[0]
-                 .get(&#39;userEntity&#39;,{}).get(&#39;userName&#39;,&#39;&#39;))
+    user_name = (self._failover_group_properties.get(&#39;usersForApproval&#39;, [{}])[0]
+                 .get(&#39;userEntity&#39;, {}).get(&#39;userName&#39;, &#39;&#39;))
     return user_name</code></pre>
 </details>
 </dd>
@@ -966,14 +1158,12 @@ def user_for_approval(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/failovergroups.py#L351-L356" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L415-L418" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_pair_ids(self):
     &#34;&#34;&#34;Returns: (List[str]) Returns the VM pair IDs that belong to this failover group&#34;&#34;&#34;
-    vm_sequence = (self._failover_group_properties.get(&#39;config&#39;, {}).get(&#39;vmGroups&#39;, [{}])[0]
-                   .get(&#39;vmSequence&#39;, []))
-    return [str(vm_info.get(&#39;replicationId&#39;)) for vm_info in vm_sequence if &#39;replicationId&#39; in vm_info]</code></pre>
+    return list(self.replication_pairs.replication_pairs)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.drorchestration.failovergroups.FailoverGroup.vm_pairs"><code class="name">var <span class="ident">vm_pairs</span></code></dt>
@@ -987,7 +1177,7 @@ eg:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/failovergroups.py#L358-L372" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L420-L435" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_pairs(self):
@@ -999,11 +1189,12 @@ def vm_pairs(self):
                 &lt;source_vm2&gt;: &lt;Replication_pair_obj2&gt;
             }
     &#34;&#34;&#34;
-    if not self._vm_pairs:
-        for replication_id in self.vm_pair_ids:
-            vm_pair = ReplicationPair(self._commcell_object, replication_id)
-            self._vm_pairs[vm_pair.source_vm] = vm_pair
-    return self._vm_pairs</code></pre>
+    replication_pair_objects = {}
+    for replication_pair_id, replication_pair_dict in self.replication_pairs.replication_pairs.items():
+        source_vm_name = replication_pair_dict.get(&#39;source_vm&#39;)
+        replication_pair_object = self.replication_pairs.get(replication_id=replication_pair_id)
+        replication_pair_objects[source_vm_name] = replication_pair_object
+    return replication_pair_objects</code></pre>
 </details>
 </dd>
 </dl>
@@ -1017,12 +1208,12 @@ def vm_pairs(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/failovergroups.py#L336-L339" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L368-L371" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34; Refresh the failover group properties &#34;&#34;&#34;
     self._failover_group_properties = self._get_failover_group_properties()
-    self._vm_pairs = None</code></pre>
+    self.replication_pairs.refresh()</code></pre>
 </details>
 </dd>
 </dl>
@@ -1041,10 +1232,15 @@ instance of the Commcell class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/failovergroups.py#L103-L259" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L114-L289" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class FailoverGroups:
     &#34;&#34;&#34;Class for getting all the failover groups in commcell.&#34;&#34;&#34;
+
+    class FailoverGroupSourceTypes(Enum):
+        BACKUP = 0
+        REPLICATION = 1
+        TEMPLATES = 2
 
     class FailoverGroupTypes(Enum):
         &#34;&#34;&#34; Enum to map Failover Group Types to integers&#34;&#34;&#34;
@@ -1159,8 +1355,18 @@ instance of the Commcell class</p></div>
             Returns:
                 dict - consists of all failover groups
                     {
-                         &#34;failover_group_name1&#34;: {id: &#39;1&#39;, &#39;type&#39;: VSA_PERIODIC, &#39;operation_type&#39;: FAILOVER},
-                         &#34;failover_group_name2&#34;: {id: &#39;2&#39;, &#39;type&#39;: VSA_CONTINUOUS, &#39;operation_type&#39;: FAILOVER}
+                        &#34;failover_group_name1&#34;: {
+                            &#39;id&#39;: &#39;1&#39;,
+                            &#39;type&#39;: LIVE_SYNC,
+                            &#39;operation_type&#39;: FAILOVER,
+                            &#39;source_type&#39;: REPLICATION
+                        },
+                        &#34;failover_group_name2&#34;: {
+                            &#39;id&#39;: &#39;2&#39;,
+                            &#39;type&#39;: SNAP_ARRAY,
+                            &#39;operation_type&#39;: TEST_FAILOVER
+                            &#39;source_type&#39;: REPLICATION
+                        }
                     }
 
             Raises:
@@ -1171,7 +1377,9 @@ instance of the Commcell class</p></div>
         failover_groups = {}
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            &#39;GET&#39;, self._services[&#39;DR_GROUPS&#39;])
+            &#39;GET&#39;, (self._services[&#39;FAILOVER_GROUPS&#39;]
+                    if self._commcell_object.commserv_version &gt; 30
+                    else self._services[&#39;DR_GROUPS&#39;]))
         if flag:
             if &#39;vApp&#39; in response.json():
                 for failover_group in response.json().get(&#39;vApp&#39;, []):
@@ -1179,10 +1387,12 @@ instance of the Commcell class</p></div>
                     failover_group_name = failover_group.get(&#39;vAppEntity&#39;, {}).get(&#39;vAppName&#39;, &#39;&#39;).lower()
                     operation_type = self.FailoverGroupTypes(int(failover_group.get(&#39;operationType&#39;, 16)))
                     replication_type = self.DRReplicationTypes(int(failover_group.get(&#39;replicationType&#39;, 0)))
+                    source_type = self.FailoverGroupSourceTypes(int(failover_group.get(&#39;source&#39;, 1)))
                     failover_groups[failover_group_name] = {
                         &#39;id&#39;: failover_group_id,
                         &#39;operation_type&#39;: operation_type,
-                        &#39;type&#39;: replication_type
+                        &#39;type&#39;: replication_type,
+                        &#39;source_type&#39;: source_type
                     }
                 return failover_groups
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -1207,6 +1417,10 @@ instance of the Commcell class</p></div>
 <dd>
 <div class="desc"><p>Enum to map replication types to replication groups/failover groups</p></div>
 </dd>
+<dt id="cvpysdk.drorchestration.failovergroups.FailoverGroups.FailoverGroupSourceTypes"><code class="name">var <span class="ident">FailoverGroupSourceTypes</span></code></dt>
+<dd>
+<div class="desc"><p>An enumeration.</p></div>
+</dd>
 <dt id="cvpysdk.drorchestration.failovergroups.FailoverGroups.FailoverGroupTypes"><code class="name">var <span class="ident">FailoverGroupTypes</span></code></dt>
 <dd>
 <div class="desc"><p>Enum to map Failover Group Types to integers</p></div>
@@ -1228,7 +1442,7 @@ Raises:</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/failovergroups.py#L197-L210" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L213-L226" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def failover_groups(self):
@@ -1267,7 +1481,7 @@ If Failover group doesnt exists with given name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/failovergroups.py#L176-L195" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L192-L211" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, failover_group_name):
     &#34;&#34;&#34;Returns a failover group object of the specified failover group name.
@@ -1308,7 +1522,7 @@ if proper inputs are not provided</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/failovergroups.py#L158-L174" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L174-L190" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_failover_group(self, failover_group_name):
     &#34;&#34;&#34;Checks if failover group exists or not
@@ -1340,7 +1554,7 @@ Args:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/drorchestration/failovergroups.py#L250-L259" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/failovergroups.py#L280-L289" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34; Refresh the failover groups created in the commcell.
@@ -1430,14 +1644,19 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroup.destination_agent" href="#cvpysdk.drorchestration.failovergroups.FailoverGroup.destination_agent">destination_agent</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroup.destination_client" href="#cvpysdk.drorchestration.failovergroups.FailoverGroup.destination_client">destination_client</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroup.destination_instance" href="#cvpysdk.drorchestration.failovergroups.FailoverGroup.destination_instance">destination_instance</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroup.failover_group_id" href="#cvpysdk.drorchestration.failovergroups.FailoverGroup.failover_group_id">failover_group_id</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroup.failover_group_name" href="#cvpysdk.drorchestration.failovergroups.FailoverGroup.failover_group_name">failover_group_name</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroup.group_type" href="#cvpysdk.drorchestration.failovergroups.FailoverGroup.group_type">group_type</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroup.is_approval_required" href="#cvpysdk.drorchestration.failovergroups.FailoverGroup.is_approval_required">is_approval_required</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroup.is_client_group" href="#cvpysdk.drorchestration.failovergroups.FailoverGroup.is_client_group">is_client_group</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroup.refresh" href="#cvpysdk.drorchestration.failovergroups.FailoverGroup.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroup.replication_groups" href="#cvpysdk.drorchestration.failovergroups.FailoverGroup.replication_groups">replication_groups</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroup.replication_pairs" href="#cvpysdk.drorchestration.failovergroups.FailoverGroup.replication_pairs">replication_pairs</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroup.replication_type" href="#cvpysdk.drorchestration.failovergroups.FailoverGroup.replication_type">replication_type</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroup.source_agent" href="#cvpysdk.drorchestration.failovergroups.FailoverGroup.source_agent">source_agent</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroup.source_client" href="#cvpysdk.drorchestration.failovergroups.FailoverGroup.source_client">source_client</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroup.source_instance" href="#cvpysdk.drorchestration.failovergroups.FailoverGroup.source_instance">source_instance</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroup.source_type" href="#cvpysdk.drorchestration.failovergroups.FailoverGroup.source_type">source_type</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroup.user_for_approval" href="#cvpysdk.drorchestration.failovergroups.FailoverGroup.user_for_approval">user_for_approval</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroup.vm_pair_ids" href="#cvpysdk.drorchestration.failovergroups.FailoverGroup.vm_pair_ids">vm_pair_ids</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroup.vm_pairs" href="#cvpysdk.drorchestration.failovergroups.FailoverGroup.vm_pairs">vm_pairs</a></code></li>
@@ -1445,8 +1664,9 @@ setTimeout(() => input.focus(), 100);
 </li>
 <li>
 <h4><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroups" href="#cvpysdk.drorchestration.failovergroups.FailoverGroups">FailoverGroups</a></code></h4>
-<ul class="two-column">
+<ul class="">
 <li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroups.DRReplicationTypes" href="#cvpysdk.drorchestration.failovergroups.FailoverGroups.DRReplicationTypes">DRReplicationTypes</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroups.FailoverGroupSourceTypes" href="#cvpysdk.drorchestration.failovergroups.FailoverGroups.FailoverGroupSourceTypes">FailoverGroupSourceTypes</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroups.FailoverGroupTypes" href="#cvpysdk.drorchestration.failovergroups.FailoverGroups.FailoverGroupTypes">FailoverGroupTypes</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroups.failover_groups" href="#cvpysdk.drorchestration.failovergroups.FailoverGroups.failover_groups">failover_groups</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.failovergroups.FailoverGroups.get" href="#cvpysdk.drorchestration.failovergroups.FailoverGroups.get">get</a></code></li>

@@ -35,7 +35,7 @@ sync_remote_cache()                   --  syncs remote cache
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/download.py#L1-L366" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/download.py#L1-L488" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -120,6 +120,8 @@ class Download(object):
                 
                 sync_cache_list (list)         --  list of names of remote caches to sync
                                                    use None to sync all caches
+
+                schedule_pattern (dict)        --  pattern for schedule task
                                                    
 
             Returns:
@@ -276,6 +278,126 @@ class Download(object):
                                     &#34;clientAndClientGroups&#34;: client_groups,
                                     &#34;downloadUpdatesJobOptions&#34;: {
                                         &#34;downloadSoftware&#34;: True
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        if schedule_pattern:
+            request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+
+        flag, response = self._cvpysdkcommcell_object.make_request(
+            &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
+        )
+
+        if flag:
+            if response.json():
+                if &#34;jobIds&#34; in response.json():
+                    return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+
+                elif &#34;taskId&#34; in response.json():
+                    return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
+
+                else:
+                    raise SDKException(&#39;Download&#39;, &#39;101&#39;)
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;)
+
+    def copy_software(self, media_loc, username=None, password=None, sync_cache=True, schedule_pattern=None):
+        &#34;&#34;&#34;copies media from the specified location on the commcell
+
+                    Args:
+
+                        media_loc      (str)           --  Media Location to be used for copy software
+
+                        username       (str)           --  username to authenticate to external location
+
+                        password       (str)           --  password to authenticate to external location
+
+                        sync_cache (bool)              --  True if download and sync
+                                                           False only download
+
+                        schedule_pattern(dict)         --  pattern for schedule task
+
+
+                    Returns:
+                        object - instance of the Job class for this copy software job
+
+                    Raises:
+                        SDKException:
+                            if Download job failed
+
+                            if response is empty
+
+                            if response is not success
+
+                            if another download job is running
+                    Usage:
+
+                        -   if media_location directory is local to the machine - username and password is not needed
+
+                            &gt;&gt;&gt; commcell_obj.copy_software(media_loc = &#34;C:\\Downloads\\Media&#34;)
+
+                        -   if Media_location directory is remote- username and passsword(base 64 encoded) are needed
+                            to authenticate the cache
+
+                            &gt;&gt;&gt; commcell_obj.copy_software(
+                            media_loc = &#34;\\subdomain.company.com\Media&#34;,
+                            username = &#34;domainone\\userone&#34;,
+                            password = &#34;base64encoded password&#34;
+                            )
+                &#34;&#34;&#34;
+        client_auth = {}
+        if username:
+            if password is None:
+                raise Exception(f&#34;Password missing for remote location {media_loc}&#34;)
+            client_auth = {
+                &#34;userName&#34;: username,
+                &#34;password&#34;: password
+            }
+        request_json = {
+            &#34;taskInfo&#34;: {
+                &#34;task&#34;: {
+                    &#34;taskType&#34;: 1,
+                    &#34;initiatedFrom&#34;: 2,
+                    &#34;policyType&#34;: 0,
+                    &#34;alert&#34;: {
+                        &#34;alertName&#34;: &#34;&#34;
+                    },
+                    &#34;taskFlags&#34;: {
+                        &#34;isEdgeDrive&#34;: False,
+                        &#34;disabled&#34;: False
+                    }
+                },
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTaskOperation&#34;: 1,
+                        &#34;subTask&#34;: {
+                            &#34;subTaskType&#34;: 1,
+                            &#34;operationType&#34;: 4019
+                        },
+                        &#34;options&#34;: {
+                            &#34;adminOpts&#34;: {
+                                &#34;updateOption&#34;: {
+                                    &#34;syncUpdateCaches&#34;: sync_cache,
+                                    &#34;copyUpdates&#34;: True,
+                                    &#34;copySoftwareAndUpdates&#34;: True,
+                                    &#34;clientAndClientGroups&#34;: [
+                                        {
+                                            &#34;_type_&#34;: 2
+                                        }
+                                    ],
+                                    &#34;downloadUpdatesJobOptions&#34;: {
+                                        &#34;downloadSoftware&#34;: True,
+                                        &#34;updateCachePath&#34;: media_loc,
+                                        &#34;clientAuth&#34;: client_auth
                                     }
                                 }
                             }
@@ -430,7 +552,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/download.py#L39-L366" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/download.py#L39-L488" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Download(object):
     &#34;&#34;&#34;&#34;class for downloading software packages&#34;&#34;&#34;
@@ -477,6 +599,8 @@ instance of the Commcell class</p>
                 
                 sync_cache_list (list)         --  list of names of remote caches to sync
                                                    use None to sync all caches
+
+                schedule_pattern (dict)        --  pattern for schedule task
                                                    
 
             Returns:
@@ -665,6 +789,126 @@ instance of the Commcell class</p>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;)
 
+    def copy_software(self, media_loc, username=None, password=None, sync_cache=True, schedule_pattern=None):
+        &#34;&#34;&#34;copies media from the specified location on the commcell
+
+                    Args:
+
+                        media_loc      (str)           --  Media Location to be used for copy software
+
+                        username       (str)           --  username to authenticate to external location
+
+                        password       (str)           --  password to authenticate to external location
+
+                        sync_cache (bool)              --  True if download and sync
+                                                           False only download
+
+                        schedule_pattern(dict)         --  pattern for schedule task
+
+
+                    Returns:
+                        object - instance of the Job class for this copy software job
+
+                    Raises:
+                        SDKException:
+                            if Download job failed
+
+                            if response is empty
+
+                            if response is not success
+
+                            if another download job is running
+                    Usage:
+
+                        -   if media_location directory is local to the machine - username and password is not needed
+
+                            &gt;&gt;&gt; commcell_obj.copy_software(media_loc = &#34;C:\\Downloads\\Media&#34;)
+
+                        -   if Media_location directory is remote- username and passsword(base 64 encoded) are needed
+                            to authenticate the cache
+
+                            &gt;&gt;&gt; commcell_obj.copy_software(
+                            media_loc = &#34;\\subdomain.company.com\Media&#34;,
+                            username = &#34;domainone\\userone&#34;,
+                            password = &#34;base64encoded password&#34;
+                            )
+                &#34;&#34;&#34;
+        client_auth = {}
+        if username:
+            if password is None:
+                raise Exception(f&#34;Password missing for remote location {media_loc}&#34;)
+            client_auth = {
+                &#34;userName&#34;: username,
+                &#34;password&#34;: password
+            }
+        request_json = {
+            &#34;taskInfo&#34;: {
+                &#34;task&#34;: {
+                    &#34;taskType&#34;: 1,
+                    &#34;initiatedFrom&#34;: 2,
+                    &#34;policyType&#34;: 0,
+                    &#34;alert&#34;: {
+                        &#34;alertName&#34;: &#34;&#34;
+                    },
+                    &#34;taskFlags&#34;: {
+                        &#34;isEdgeDrive&#34;: False,
+                        &#34;disabled&#34;: False
+                    }
+                },
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTaskOperation&#34;: 1,
+                        &#34;subTask&#34;: {
+                            &#34;subTaskType&#34;: 1,
+                            &#34;operationType&#34;: 4019
+                        },
+                        &#34;options&#34;: {
+                            &#34;adminOpts&#34;: {
+                                &#34;updateOption&#34;: {
+                                    &#34;syncUpdateCaches&#34;: sync_cache,
+                                    &#34;copyUpdates&#34;: True,
+                                    &#34;copySoftwareAndUpdates&#34;: True,
+                                    &#34;clientAndClientGroups&#34;: [
+                                        {
+                                            &#34;_type_&#34;: 2
+                                        }
+                                    ],
+                                    &#34;downloadUpdatesJobOptions&#34;: {
+                                        &#34;downloadSoftware&#34;: True,
+                                        &#34;updateCachePath&#34;: media_loc,
+                                        &#34;clientAuth&#34;: client_auth
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        if schedule_pattern:
+            request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+
+        flag, response = self._cvpysdkcommcell_object.make_request(
+            &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
+        )
+
+        if flag:
+            if response.json():
+                if &#34;jobIds&#34; in response.json():
+                    return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+
+                elif &#34;taskId&#34; in response.json():
+                    return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
+
+                else:
+                    raise SDKException(&#39;Download&#39;, &#39;101&#39;)
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;)
+
     def sync_remote_cache(self, client_list=None):
         &#34;&#34;&#34;Syncs remote cache
 
@@ -763,6 +1007,196 @@ instance of the Commcell class</p>
 </details>
 <h3>Methods</h3>
 <dl>
+<dt id="cvpysdk.deployment.download.Download.copy_software"><code class="name flex">
+<span>def <span class="ident">copy_software</span></span>(<span>self, media_loc, username=None, password=None, sync_cache=True, schedule_pattern=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>copies media from the specified location on the commcell</p>
+<h2 id="args">Args</h2>
+<p>media_loc
+(str)
+&ndash;
+Media Location to be used for copy software</p>
+<p>username
+(str)
+&ndash;
+username to authenticate to external location</p>
+<p>password
+(str)
+&ndash;
+password to authenticate to external location</p>
+<p>sync_cache (bool)
+&ndash;
+True if download and sync
+False only download</p>
+<p>schedule_pattern(dict)
+&ndash;
+pattern for schedule task</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Job class for this copy software job</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if Download job failed</p>
+<pre><code>if response is empty
+
+if response is not success
+
+if another download job is running
+</code></pre>
+<h2 id="usage">Usage</h2>
+<ul>
+<li>
+<p>if media_location directory is local to the machine - username and password is not needed</p>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>commcell_obj.copy_software(media_loc = "C:\Downloads\Media")</p>
+</blockquote>
+</blockquote>
+</blockquote>
+</li>
+<li>
+<p>if Media_location directory is remote- username and passsword(base 64 encoded) are needed
+to authenticate the cache</p>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>commcell_obj.copy_software(
+media_loc = "\subdomain.company.com\Media",
+username = "domainone\userone",
+password = "base64encoded password"
+)</p>
+</blockquote>
+</blockquote>
+</blockquote>
+</li>
+</ul></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/download.py#L274-L392" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def copy_software(self, media_loc, username=None, password=None, sync_cache=True, schedule_pattern=None):
+    &#34;&#34;&#34;copies media from the specified location on the commcell
+
+                Args:
+
+                    media_loc      (str)           --  Media Location to be used for copy software
+
+                    username       (str)           --  username to authenticate to external location
+
+                    password       (str)           --  password to authenticate to external location
+
+                    sync_cache (bool)              --  True if download and sync
+                                                       False only download
+
+                    schedule_pattern(dict)         --  pattern for schedule task
+
+
+                Returns:
+                    object - instance of the Job class for this copy software job
+
+                Raises:
+                    SDKException:
+                        if Download job failed
+
+                        if response is empty
+
+                        if response is not success
+
+                        if another download job is running
+                Usage:
+
+                    -   if media_location directory is local to the machine - username and password is not needed
+
+                        &gt;&gt;&gt; commcell_obj.copy_software(media_loc = &#34;C:\\Downloads\\Media&#34;)
+
+                    -   if Media_location directory is remote- username and passsword(base 64 encoded) are needed
+                        to authenticate the cache
+
+                        &gt;&gt;&gt; commcell_obj.copy_software(
+                        media_loc = &#34;\\subdomain.company.com\Media&#34;,
+                        username = &#34;domainone\\userone&#34;,
+                        password = &#34;base64encoded password&#34;
+                        )
+            &#34;&#34;&#34;
+    client_auth = {}
+    if username:
+        if password is None:
+            raise Exception(f&#34;Password missing for remote location {media_loc}&#34;)
+        client_auth = {
+            &#34;userName&#34;: username,
+            &#34;password&#34;: password
+        }
+    request_json = {
+        &#34;taskInfo&#34;: {
+            &#34;task&#34;: {
+                &#34;taskType&#34;: 1,
+                &#34;initiatedFrom&#34;: 2,
+                &#34;policyType&#34;: 0,
+                &#34;alert&#34;: {
+                    &#34;alertName&#34;: &#34;&#34;
+                },
+                &#34;taskFlags&#34;: {
+                    &#34;isEdgeDrive&#34;: False,
+                    &#34;disabled&#34;: False
+                }
+            },
+            &#34;subTasks&#34;: [
+                {
+                    &#34;subTaskOperation&#34;: 1,
+                    &#34;subTask&#34;: {
+                        &#34;subTaskType&#34;: 1,
+                        &#34;operationType&#34;: 4019
+                    },
+                    &#34;options&#34;: {
+                        &#34;adminOpts&#34;: {
+                            &#34;updateOption&#34;: {
+                                &#34;syncUpdateCaches&#34;: sync_cache,
+                                &#34;copyUpdates&#34;: True,
+                                &#34;copySoftwareAndUpdates&#34;: True,
+                                &#34;clientAndClientGroups&#34;: [
+                                    {
+                                        &#34;_type_&#34;: 2
+                                    }
+                                ],
+                                &#34;downloadUpdatesJobOptions&#34;: {
+                                    &#34;downloadSoftware&#34;: True,
+                                    &#34;updateCachePath&#34;: media_loc,
+                                    &#34;clientAuth&#34;: client_auth
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    }
+
+    if schedule_pattern:
+        request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+
+    flag, response = self._cvpysdkcommcell_object.make_request(
+        &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
+    )
+
+    if flag:
+        if response.json():
+            if &#34;jobIds&#34; in response.json():
+                return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+
+            elif &#34;taskId&#34; in response.json():
+                return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
+
+            else:
+                raise SDKException(&#39;Download&#39;, &#39;101&#39;)
+
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.deployment.download.Download.download_software"><code class="name flex">
 <span>def <span class="ident">download_software</span></span>(<span>self, options=None, os_list=None, service_pack=None, cu_number=0, sync_cache=True, sync_cache_list=None, schedule_pattern=None)</span>
 </code></dt>
@@ -791,6 +1225,9 @@ False only download</p>
 &ndash;
 list of names of remote caches to sync
 use None to sync all caches</p>
+<p>schedule_pattern (dict)
+&ndash;
+pattern for schedule task</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this download job</p>
 <h2 id="raises">Raises</h2>
@@ -875,7 +1312,7 @@ cu_number=42
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/download.py#L58-L270" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/download.py#L58-L272" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def download_software(
         self,
@@ -903,6 +1340,8 @@ cu_number=42
             
             sync_cache_list (list)         --  list of names of remote caches to sync
                                                use None to sync all caches
+
+            schedule_pattern (dict)        --  pattern for schedule task
                                                
 
         Returns:
@@ -1116,7 +1555,7 @@ if another sync job is running with the given client
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/deployment/download.py#L272-L366" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/download.py#L394-L488" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def sync_remote_cache(self, client_list=None):
     &#34;&#34;&#34;Syncs remote cache
@@ -1290,6 +1729,7 @@ setTimeout(() => input.focus(), 100);
 <li>
 <h4><code><a title="cvpysdk.deployment.download.Download" href="#cvpysdk.deployment.download.Download">Download</a></code></h4>
 <ul class="">
+<li><code><a title="cvpysdk.deployment.download.Download.copy_software" href="#cvpysdk.deployment.download.Download.copy_software">copy_software</a></code></li>
 <li><code><a title="cvpysdk.deployment.download.Download.download_software" href="#cvpysdk.deployment.download.Download.download_software">download_software</a></code></li>
 <li><code><a title="cvpysdk.deployment.download.Download.sync_remote_cache" href="#cvpysdk.deployment.download.Download.sync_remote_cache">sync_remote_cache</a></code></li>
 </ul>

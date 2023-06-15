@@ -52,7 +52,7 @@ checks if specified role exists on commcell</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/security_association.py#L1-L380" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/security_association.py#L1-L397" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -210,18 +210,35 @@ class SecurityAssociation(object):
             for each_entity_key in entity_value:
                 for element in entity_value[each_entity_key]:
                     if each_entity_key != &#34;role&#34;:
-                        association_blob = {
-                            &#34;entities&#34;: {
-                                &#34;entity&#34;: [{
-                                    each_entity_key: element
-                                }]
-                            },
-                            &#34;properties&#34;: {
-                                &#34;role&#34;: {
-                                    &#34;roleName&#34;: entity_value[&#39;role&#39;][0]
+                        if each_entity_key == &#34;_type_&#34;:
+                            association_blob = {
+                                &#34;entities&#34;: {
+                                    &#34;entity&#34;: [{
+                                        each_entity_key: element,
+                                        &#34;flags&#34;: {
+                                            &#34;includeAll&#34;: True
+                                        }
+                                    }]
+                                },
+                                &#34;properties&#34;: {
+                                    &#34;role&#34;: {
+                                        &#34;roleName&#34;: entity_value[&#39;role&#39;][0]
+                                    }
                                 }
                             }
-                        }
+                        else:
+                            association_blob = {
+                                &#34;entities&#34;: {
+                                    &#34;entity&#34;: [{
+                                        each_entity_key: element
+                                    }]
+                                },
+                                &#34;properties&#34;: {
+                                    &#34;role&#34;: {
+                                        &#34;roleName&#34;: entity_value[&#39;role&#39;][0]
+                                    }
+                                }
+                            }
                         complete_association.append(association_blob)
         return complete_association
 
@@ -464,7 +481,7 @@ manage security operations</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/security_association.py#L48-L379" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/security_association.py#L48-L396" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SecurityAssociation(object):
     &#34;&#34;&#34;Class for managing the security associations roles on the commcell&#34;&#34;&#34;
@@ -575,18 +592,35 @@ manage security operations</p></div>
             for each_entity_key in entity_value:
                 for element in entity_value[each_entity_key]:
                     if each_entity_key != &#34;role&#34;:
-                        association_blob = {
-                            &#34;entities&#34;: {
-                                &#34;entity&#34;: [{
-                                    each_entity_key: element
-                                }]
-                            },
-                            &#34;properties&#34;: {
-                                &#34;role&#34;: {
-                                    &#34;roleName&#34;: entity_value[&#39;role&#39;][0]
+                        if each_entity_key == &#34;_type_&#34;:
+                            association_blob = {
+                                &#34;entities&#34;: {
+                                    &#34;entity&#34;: [{
+                                        each_entity_key: element,
+                                        &#34;flags&#34;: {
+                                            &#34;includeAll&#34;: True
+                                        }
+                                    }]
+                                },
+                                &#34;properties&#34;: {
+                                    &#34;role&#34;: {
+                                        &#34;roleName&#34;: entity_value[&#39;role&#39;][0]
+                                    }
                                 }
                             }
-                        }
+                        else:
+                            association_blob = {
+                                &#34;entities&#34;: {
+                                    &#34;entity&#34;: [{
+                                        each_entity_key: element
+                                    }]
+                                },
+                                &#34;properties&#34;: {
+                                    &#34;role&#34;: {
+                                        &#34;roleName&#34;: entity_value[&#39;role&#39;][0]
+                                    }
+                                }
+                            }
                         complete_association.append(association_blob)
         return complete_association
 
@@ -816,7 +850,7 @@ security association properties of entity</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/security_association.py#L172-L229" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/security_association.py#L189-L246" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@staticmethod
 def fetch_security_association(security_dict):
@@ -898,7 +932,7 @@ True if role with specified name exists</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/security/security_association.py#L367-L379" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/security_association.py#L384-L396" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_role(self, role_name):
     &#34;&#34;&#34;Checks if role with specified name exists

@@ -134,7 +134,7 @@ of the Backupset class
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1-L2324" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L1-L2352" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -1587,7 +1587,9 @@ class Backupset(object):
                 &#34;showDeletedFiles&#34;: options[&#39;show_deleted&#39;],
                 &#34;restoreIndex&#34;: options[&#39;restore_index&#39;],
                 &#34;vsDiskBrowse&#34;: options[&#39;vm_disk_browse&#39;],
-                &#34;vsFileBrowse&#34;: options.get(&#39;vs_file_browse&#39;, False)
+                &#34;vsFileBrowse&#34;: options.get(&#39;vs_file_browse&#39;, False),
+                &#34;includeMetadata&#34;: options.get(&#39;include_meta_data&#39;, False),
+                &#34;hideUserHidden&#34;: options.get(&#39;hide_user_hidden&#39;, False)
             },
             &#34;entity&#34;: {
                 &#34;clientName&#34;: self._client_object.client_name,
@@ -2444,22 +2446,48 @@ class Backupset(object):
         self.subclients = Subclients(self)
         self.schedules = Schedules(self)
 
-    def backed_up_files_count(self):
+    def backed_up_files_count(self, path=&#34;\\**\\*&#34;):
         &#34;&#34;&#34;Returns the count of the total number of files present in the backed up data
-         of all the subclients of the given backupset.
+         of all the subclients of the given backupset and given path.
+
+                Args:
+
+                    path        (str)       --  Folder path to find no of backed up files
+                                                    (Default: \\**\\*)
+
+                Returns:
+
+                    int --  No of backed up files count in given path
+
+                Raises:
+
+                    Exception:
+
+                        if browse response is not proper
          &#34;&#34;&#34;
-        options_dic = {&#34;operation&#34;: &#34;find&#34;, &#34;opType&#34;: 1, &#34;path&#34;: &#34;\**\*&#34;,
-               &#34;_custom_queries&#34;: [{&#34;type&#34;: &#34;AGGREGATE&#34;, &#34;queryId&#34;: &#34;2&#34;,
-                                    &#34;aggrParam&#34;: {&#34;aggrType&#34;: &#34;COUNT&#34;}, &#34;whereClause&#34;: [{
-                       &#34;criteria&#34;: {
-                           &#34;field&#34;: &#34;Flags&#34;,
-                           &#34;dataOperator&#34;: &#34;IN&#34;,
-                           &#34;values&#34;: [&#34;file&#34;]
-                       }
-                   }]}], &#34;_raw_response&#34;: True}
+        options_dic = {&#34;operation&#34;: &#34;find&#34;, &#34;opType&#34;: 1, &#34;path&#34;: path,
+                       &#34;_custom_queries&#34;: [{&#34;type&#34;: &#34;AGGREGATE&#34;, &#34;queryId&#34;: &#34;2&#34;,
+                                            &#34;aggrParam&#34;: {&#34;aggrType&#34;: &#34;COUNT&#34;}, &#34;whereClause&#34;: [{
+                                                &#34;criteria&#34;: {
+                                                    &#34;field&#34;: &#34;Flags&#34;,
+                                                    &#34;dataOperator&#34;: &#34;IN&#34;,
+                                                    &#34;values&#34;: [&#34;file&#34;]
+                                                }
+                                            }]}], &#34;_raw_response&#34;: True}
 
         browse_response = self._do_browse(options_dic)
-        return browse_response[1][&#39;browseResponses&#39;][0][&#39;browseResult&#39;][&#39;aggrResultSet&#39;][0][&#39;count&#39;]</code></pre>
+        if not len(browse_response) &gt; 1:
+            raise SDKException(&#39;Backupset&#39;, &#39;102&#39;, &#39;Browse response is not proper&#39;)
+        browse_response = browse_response[1]
+        if &#39;browseResponses&#39; not in browse_response or len(browse_response[&#39;browseResponses&#39;]) == 0:
+            raise SDKException(&#39;Backupset&#39;, &#39;102&#39;, &#39;Browse response is missing browseResponses&#39;)
+        browse_response = browse_response[&#39;browseResponses&#39;][0]
+        if &#39;browseResult&#39; not in browse_response:
+            raise SDKException(&#39;Backupset&#39;, &#39;102&#39;, &#39;Browse response is missing browseResult&#39;)
+        browse_result = browse_response[&#39;browseResult&#39;]
+        if &#39;aggrResultSet&#39; not in browse_result or len(browse_result[&#39;aggrResultSet&#39;]) == 0:
+            raise SDKException(&#39;Backupset&#39;, &#39;102&#39;, &#39;Browse response is missing aggrResultSet&#39;)
+        return browse_result[&#39;aggrResultSet&#39;][0].get(&#39;count&#39;, 0)</code></pre>
 </details>
 </section>
 <section>
@@ -2497,7 +2525,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1006-L2324" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L1006-L2352" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Backupset(object):
     &#34;&#34;&#34;Class for performing backupset operations for a specific backupset.&#34;&#34;&#34;
@@ -2945,7 +2973,9 @@ default: None</p>
                 &#34;showDeletedFiles&#34;: options[&#39;show_deleted&#39;],
                 &#34;restoreIndex&#34;: options[&#39;restore_index&#39;],
                 &#34;vsDiskBrowse&#34;: options[&#39;vm_disk_browse&#39;],
-                &#34;vsFileBrowse&#34;: options.get(&#39;vs_file_browse&#39;, False)
+                &#34;vsFileBrowse&#34;: options.get(&#39;vs_file_browse&#39;, False),
+                &#34;includeMetadata&#34;: options.get(&#39;include_meta_data&#39;, False),
+                &#34;hideUserHidden&#34;: options.get(&#39;hide_user_hidden&#39;, False)
             },
             &#34;entity&#34;: {
                 &#34;clientName&#34;: self._client_object.client_name,
@@ -3802,22 +3832,48 @@ default: None</p>
         self.subclients = Subclients(self)
         self.schedules = Schedules(self)
 
-    def backed_up_files_count(self):
+    def backed_up_files_count(self, path=&#34;\\**\\*&#34;):
         &#34;&#34;&#34;Returns the count of the total number of files present in the backed up data
-         of all the subclients of the given backupset.
+         of all the subclients of the given backupset and given path.
+
+                Args:
+
+                    path        (str)       --  Folder path to find no of backed up files
+                                                    (Default: \\**\\*)
+
+                Returns:
+
+                    int --  No of backed up files count in given path
+
+                Raises:
+
+                    Exception:
+
+                        if browse response is not proper
          &#34;&#34;&#34;
-        options_dic = {&#34;operation&#34;: &#34;find&#34;, &#34;opType&#34;: 1, &#34;path&#34;: &#34;\**\*&#34;,
-               &#34;_custom_queries&#34;: [{&#34;type&#34;: &#34;AGGREGATE&#34;, &#34;queryId&#34;: &#34;2&#34;,
-                                    &#34;aggrParam&#34;: {&#34;aggrType&#34;: &#34;COUNT&#34;}, &#34;whereClause&#34;: [{
-                       &#34;criteria&#34;: {
-                           &#34;field&#34;: &#34;Flags&#34;,
-                           &#34;dataOperator&#34;: &#34;IN&#34;,
-                           &#34;values&#34;: [&#34;file&#34;]
-                       }
-                   }]}], &#34;_raw_response&#34;: True}
+        options_dic = {&#34;operation&#34;: &#34;find&#34;, &#34;opType&#34;: 1, &#34;path&#34;: path,
+                       &#34;_custom_queries&#34;: [{&#34;type&#34;: &#34;AGGREGATE&#34;, &#34;queryId&#34;: &#34;2&#34;,
+                                            &#34;aggrParam&#34;: {&#34;aggrType&#34;: &#34;COUNT&#34;}, &#34;whereClause&#34;: [{
+                                                &#34;criteria&#34;: {
+                                                    &#34;field&#34;: &#34;Flags&#34;,
+                                                    &#34;dataOperator&#34;: &#34;IN&#34;,
+                                                    &#34;values&#34;: [&#34;file&#34;]
+                                                }
+                                            }]}], &#34;_raw_response&#34;: True}
 
         browse_response = self._do_browse(options_dic)
-        return browse_response[1][&#39;browseResponses&#39;][0][&#39;browseResult&#39;][&#39;aggrResultSet&#39;][0][&#39;count&#39;]</code></pre>
+        if not len(browse_response) &gt; 1:
+            raise SDKException(&#39;Backupset&#39;, &#39;102&#39;, &#39;Browse response is not proper&#39;)
+        browse_response = browse_response[1]
+        if &#39;browseResponses&#39; not in browse_response or len(browse_response[&#39;browseResponses&#39;]) == 0:
+            raise SDKException(&#39;Backupset&#39;, &#39;102&#39;, &#39;Browse response is missing browseResponses&#39;)
+        browse_response = browse_response[&#39;browseResponses&#39;][0]
+        if &#39;browseResult&#39; not in browse_response:
+            raise SDKException(&#39;Backupset&#39;, &#39;102&#39;, &#39;Browse response is missing browseResult&#39;)
+        browse_result = browse_response[&#39;browseResult&#39;]
+        if &#39;aggrResultSet&#39; not in browse_result or len(browse_result[&#39;aggrResultSet&#39;]) == 0:
+            raise SDKException(&#39;Backupset&#39;, &#39;102&#39;, &#39;Browse response is missing aggrResultSet&#39;)
+        return browse_result[&#39;aggrResultSet&#39;][0].get(&#39;count&#39;, 0)</code></pre>
 </details>
 <h3>Subclasses</h3>
 <ul class="hlist">
@@ -3839,7 +3895,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1834-L1837" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L1836-L1839" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backupset_id(self):
@@ -3853,7 +3909,7 @@ def backupset_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1839-L1842" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L1841-L1844" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backupset_name(self):
@@ -3867,7 +3923,7 @@ def backupset_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1844-L1847" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L1846-L1849" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -3881,7 +3937,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1870-L1877" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L1872-L1879" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def guid(self):
@@ -3899,7 +3955,7 @@ def guid(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1849-L1852" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L1851-L1854" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_default_backupset(self):
@@ -3913,7 +3969,7 @@ def is_default_backupset(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1854-L1857" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L1856-L1859" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_on_demand_backupset(self):
@@ -3927,7 +3983,7 @@ def is_on_demand_backupset(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1829-L1832" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L1831-L1834" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -3941,7 +3997,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1859-L1868" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L1861-L1870" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan(self):
@@ -3961,7 +4017,7 @@ def plan(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1824-L1827" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L1826-L1829" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -3973,32 +4029,73 @@ def properties(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.backupset.Backupset.backed_up_files_count"><code class="name flex">
-<span>def <span class="ident">backed_up_files_count</span></span>(<span>self)</span>
+<span>def <span class="ident">backed_up_files_count</span></span>(<span>self, path='\\**\\*')</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns the count of the total number of files present in the backed up data
-of all the subclients of the given backupset.</p></div>
+of all the subclients of the given backupset and given path.</p>
+<pre><code>   Args:
+
+       path        (str)       --  Folder path to find no of backed up files
+                                       (Default: \**\*)
+
+   Returns:
+
+       int --  No of backed up files count in given path
+
+   Raises:
+
+       Exception:
+
+           if browse response is not proper
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L2309-L2324" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L2311-L2352" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def backed_up_files_count(self):
+<pre><code class="python">def backed_up_files_count(self, path=&#34;\\**\\*&#34;):
     &#34;&#34;&#34;Returns the count of the total number of files present in the backed up data
-     of all the subclients of the given backupset.
+     of all the subclients of the given backupset and given path.
+
+            Args:
+
+                path        (str)       --  Folder path to find no of backed up files
+                                                (Default: \\**\\*)
+
+            Returns:
+
+                int --  No of backed up files count in given path
+
+            Raises:
+
+                Exception:
+
+                    if browse response is not proper
      &#34;&#34;&#34;
-    options_dic = {&#34;operation&#34;: &#34;find&#34;, &#34;opType&#34;: 1, &#34;path&#34;: &#34;\**\*&#34;,
-           &#34;_custom_queries&#34;: [{&#34;type&#34;: &#34;AGGREGATE&#34;, &#34;queryId&#34;: &#34;2&#34;,
-                                &#34;aggrParam&#34;: {&#34;aggrType&#34;: &#34;COUNT&#34;}, &#34;whereClause&#34;: [{
-                   &#34;criteria&#34;: {
-                       &#34;field&#34;: &#34;Flags&#34;,
-                       &#34;dataOperator&#34;: &#34;IN&#34;,
-                       &#34;values&#34;: [&#34;file&#34;]
-                   }
-               }]}], &#34;_raw_response&#34;: True}
+    options_dic = {&#34;operation&#34;: &#34;find&#34;, &#34;opType&#34;: 1, &#34;path&#34;: path,
+                   &#34;_custom_queries&#34;: [{&#34;type&#34;: &#34;AGGREGATE&#34;, &#34;queryId&#34;: &#34;2&#34;,
+                                        &#34;aggrParam&#34;: {&#34;aggrType&#34;: &#34;COUNT&#34;}, &#34;whereClause&#34;: [{
+                                            &#34;criteria&#34;: {
+                                                &#34;field&#34;: &#34;Flags&#34;,
+                                                &#34;dataOperator&#34;: &#34;IN&#34;,
+                                                &#34;values&#34;: [&#34;file&#34;]
+                                            }
+                                        }]}], &#34;_raw_response&#34;: True}
 
     browse_response = self._do_browse(options_dic)
-    return browse_response[1][&#39;browseResponses&#39;][0][&#39;browseResult&#39;][&#39;aggrResultSet&#39;][0][&#39;count&#39;]</code></pre>
+    if not len(browse_response) &gt; 1:
+        raise SDKException(&#39;Backupset&#39;, &#39;102&#39;, &#39;Browse response is not proper&#39;)
+    browse_response = browse_response[1]
+    if &#39;browseResponses&#39; not in browse_response or len(browse_response[&#39;browseResponses&#39;]) == 0:
+        raise SDKException(&#39;Backupset&#39;, &#39;102&#39;, &#39;Browse response is missing browseResponses&#39;)
+    browse_response = browse_response[&#39;browseResponses&#39;][0]
+    if &#39;browseResult&#39; not in browse_response:
+        raise SDKException(&#39;Backupset&#39;, &#39;102&#39;, &#39;Browse response is missing browseResult&#39;)
+    browse_result = browse_response[&#39;browseResult&#39;]
+    if &#39;aggrResultSet&#39; not in browse_result or len(browse_result[&#39;aggrResultSet&#39;]) == 0:
+        raise SDKException(&#39;Backupset&#39;, &#39;102&#39;, &#39;Browse response is missing aggrResultSet&#39;)
+    return browse_result[&#39;aggrResultSet&#39;][0].get(&#39;count&#39;, 0)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.backupset.Backupset.backup"><code class="name flex">
@@ -4026,7 +4123,7 @@ the subclients in the backupset</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L2039-L2074" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L2041-L2076" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(self, **kwargs):
     &#34;&#34;&#34;Runs backup job for all subclients in this backupset.
@@ -4110,7 +4207,7 @@ from browse operation
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L2076-L2127" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L2078-L2129" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, *args, **kwargs):
     &#34;&#34;&#34;Browses the content of the Backupset.
@@ -4186,7 +4283,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L2211-L2237" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L2213-L2239" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_data(self, paths):
     &#34;&#34;&#34;Deletes items for the backupset in the Index and makes them unavailable for
@@ -4273,7 +4370,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L2129-L2209" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L2131-L2211" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find(self, *args, **kwargs):
     &#34;&#34;&#34;Searches a file/folder in the backed up content of the backupset,
@@ -4398,7 +4495,7 @@ if failed to list media for content</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L2239-L2300" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L2241-L2302" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def list_media(self, *args, **kwargs):
     &#34;&#34;&#34;List media required to browse and restore backed up data from the backupset
@@ -4472,7 +4569,7 @@ if failed to list media for content</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L2302-L2307" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L2304-L2309" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Backupset.&#34;&#34;&#34;
@@ -4494,7 +4591,7 @@ if failed to set this as the default backupset</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L2018-L2037" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L2020-L2039" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_default_backupset(self):
     &#34;&#34;&#34;Sets the backupset represented by this Backupset class instance as the default backupset
@@ -4542,7 +4639,7 @@ need to change and use the update_properties method to set the properties</p></d
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1780-L1822" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L1782-L1824" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;Updates the backupset properties
@@ -4613,7 +4710,7 @@ if class object is not an instance of the Agent / Instance class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L152-L1003" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L152-L1003" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Backupsets(object):
     &#34;&#34;&#34;Class for getting all the backupsets associated with a client.&#34;&#34;&#34;
@@ -5487,7 +5584,7 @@ request_json[&#39;backupSetInfo&#39;].update({
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L332-L348" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L332-L348" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_backupsets(self):
@@ -5514,7 +5611,7 @@ def all_backupsets(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L1000-L1003" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L1000-L1003" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def default_backup_set(self):
@@ -5567,7 +5664,7 @@ if backupset with same name already exists
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L417-L554" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L417-L554" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">    def add(self, backupset_name, on_demand_backupset=False, **kwargs):
         &#34;&#34;&#34;Adds a new backup set to the agent.
@@ -5737,7 +5834,7 @@ if archiveset with same name already exists
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L556-L674" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L556-L674" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_archiveset(self, archiveset_name, is_nas_turbo_backupset=False):
     &#34;&#34;&#34; 
@@ -5914,7 +6011,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L787-L892" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L787-L892" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_salesforce_backupset(
         self,
@@ -6077,7 +6174,7 @@ Adds a new Office 365 V1 Share Point Pseudo Client to the Commcell.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L676-L785" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L676-L785" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_v1_sharepoint_client(
         self,
@@ -6214,7 +6311,7 @@ if no backupset exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L929-L994" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L929-L994" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, backupset_name):
     &#34;&#34;&#34;Deletes the backup set from the agent.
@@ -6303,7 +6400,7 @@ if type of the backupset name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L894-L927" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L894-L927" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, backupset_name):
     &#34;&#34;&#34;Returns a backupset object of the specified backupset name.
@@ -6358,7 +6455,7 @@ if type of the backupset name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L350-L366" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L350-L366" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_backupset(self, backupset_name):
     &#34;&#34;&#34;Checks if a backupset exists for the agent with the input backupset name.
@@ -6387,7 +6484,7 @@ if type of the backupset name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/backupset.py#L996-L998" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupset.py#L996-L998" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the backupsets associated with the Agent / Instance.&#34;&#34;&#34;

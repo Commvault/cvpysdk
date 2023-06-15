@@ -42,7 +42,7 @@ function to run tape import operation.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/commcell_migration.py#L1-L527" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/commcell_migration.py#L1-L534" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # --------------------------------------------------------------------------
@@ -226,10 +226,28 @@ class CommCellMigration(object):
                 raise SDKException(&#39;CommCellMigration&#39;, &#39;103&#39;)
             sql_password = b64encode(sql_password.encode()).decode()
 
+        common_options = {
+            &#34;otherSqlInstance&#34;: other_sql_instance,
+            &#34;pathType&#34;: self._path_type,
+            &#34;dumpFolder&#34;: export_location,
+            &#34;splitCSDB&#34;: 1,
+            &#34;sqlLinkedServer&#34;: {
+                &#34;sqlServerName&#34;: sql_instance_name,
+                &#34;sqlUserAccount&#34;: {
+                    &#34;userName&#34;: sql_user_name,
+                    &#34;password&#34;: sql_password
+                }
+            }
+        }
+
         if self._path_type == 1:
             if network_user_name == &#34;&#34; or network_user_password == &#34;&#34;:
                 raise SDKException(&#39;CommCellMigration&#39;, &#39;103&#39;)
             network_user_password = b64encode(network_user_password.encode()).decode()
+            common_options[&#34;userAccount&#34;] = {
+                &#34;password&#34;: network_user_password,
+                &#34;userName&#34;: network_user_name
+            }
 
         export_json = {
             &#34;taskInfo&#34;: {
@@ -253,23 +271,7 @@ class CommCellMigration(object):
                         &#34;options&#34;: {
                             &#34;adminOpts&#34;: {
                                 &#34;ccmOption&#34;: {
-                                    &#34;commonOptions&#34;: {
-                                        &#34;otherSqlInstance&#34;: other_sql_instance,
-                                        &#34;pathType&#34;: self._path_type,
-                                        &#34;dumpFolder&#34;: export_location,
-                                        &#34;splitCSDB&#34;: 1,
-                                        &#34;userAccount&#34;: {
-                                            &#34;password&#34;: network_user_password,
-                                            &#34;userName&#34;: network_user_name
-                                        },
-                                        &#34;sqlLinkedServer&#34;: {
-                                            &#34;sqlServerName&#34;: sql_instance_name,
-                                            &#34;sqlUserAccount&#34;: {
-                                                &#34;userName&#34;: sql_user_name,
-                                                &#34;password&#34;: sql_password
-                                            }
-                                        }
-                                    },
+                                    &#34;commonOptions&#34;: common_options,
                                     &#34;captureOptions&#34;: {
                                         &#34;captureMediaAgents&#34;: capture_ma,
                                         &#34;lastHours&#34;: 60,
@@ -278,7 +280,7 @@ class CommCellMigration(object):
                                         &#34;captureSchedules&#34;: capture_schedules,
                                         &#34;captureActivityControl&#34;: capture_activity_control,
                                         &#34;captureOperationWindow&#34;: capture_opw,
-                                        &#34;captureHolidays&#34;:capture_holidays,
+                                        &#34;captureHolidays&#34;: capture_holidays,
                                         &#34;pruneExportedDump&#34;: False,
                                         &#34;autopickCluster&#34;: auto_pick_cluster,
                                         &#34;copyDumpToRemoteCS&#34;: False,
@@ -321,7 +323,7 @@ class CommCellMigration(object):
 
         if client_list:
             if other_sql_instance:
-                if  not sql_instance_name \
+                if not sql_instance_name \
                         or not sql_user_name \
                         or not sql_password \
                         or not client_ids:
@@ -364,6 +366,7 @@ class CommCellMigration(object):
                         &#34;forceOverwrite&#34;: False,
                         &#34;failIfEntityAlreadyExists&#34;: False,
                         &#34;deleteEntitiesNotPresent&#34;: False,
+                        &#34;deleteEntitiesIfOnlyfromSource&#34;: False,
                         &#34;forceOverwriteHolidays&#34;: False,
                         &#34;mergeHolidays&#34;: True,
                         &#34;forceOverwriteOperationWindow&#34;: False,
@@ -389,6 +392,7 @@ class CommCellMigration(object):
         force_overwrite = options_dictionary.get(&#39;forceOverwrite&#39;, False)
         fail_if_entry_already_exists = options_dictionary.get(&#39;failIfEntityAlreadyExists&#39;, False)
         delete_entities_not_present = options_dictionary.get(&#39;deleteEntitiesNotPresent&#39;, False)
+        delete_only_source = options_dictionary.get(&#39;deleteEntitiesIfOnlyfromSource&#39;, False)
         fo_holidays = options_dictionary.get(&#34;forceOverwriteHolidays&#34;, False)
         merge_holidays = options_dictionary.get(&#34;mergeHolidays&#34;, True)
         fo_operation_window = options_dictionary.get(&#34;forceOverwriteOperationWindow&#34;, False)
@@ -399,10 +403,22 @@ class CommCellMigration(object):
         if not (isinstance(path_type, str) and isinstance(import_location, str)):
             raise SDKException(&#39;CommCellMigration&#39;, &#39;101&#39;)
 
+        common_options = {
+            &#34;bRoboJob&#34;: False,
+            &#34;databaseConfiguredRemote&#34;: False,
+            &#34;pathType&#34;: self._path_type,
+            &#34;dumpFolder&#34;: import_location,
+            &#34;splitCSDB&#34;: 0
+        }
+
         if path_type.lower() == &#39;local&#39;:
             self._path_type = 0
         elif path_type.lower() == &#39;network&#39;:
             self._path_type = 1
+            common_options[&#34;userAccount&#34;] = {
+                &#34;password&#34;: network_user_password,
+                &#34;userName&#34;: network_user_name
+            }
         else:
             raise SDKException(&#39;CommCellMigration&#39;, &#39;104&#39;)
 
@@ -446,6 +462,7 @@ class CommCellMigration(object):
                                         &#34;pruneImportedDump&#34;: False,
                                         &#34;alwaysUseFallbackDataPath&#34;: True,
                                         &#34;deleteEntitiesNotPresent&#34;: delete_entities_not_present,
+                                        &#34;deleteEntitiesIfOnlyfromSource&#34;: delete_only_source,
                                         &#34;forceOverwrite&#34;: force_overwrite,
                                         &#34;mergeHolidays&#34;: merge_holidays,
                                         &#34;forceOverwriteSchedule&#34;: fo_schedules,
@@ -458,17 +475,7 @@ class CommCellMigration(object):
                                         &#34;skipConflictMedia&#34;: False,
                                         &#34;stagingPath&#34;: &#34;&#34;
                                     },
-                                    &#34;commonOptions&#34;: {
-                                        &#34;bRoboJob&#34;: False,
-                                        &#34;databaseConfiguredRemote&#34;: False,
-                                        &#34;pathType&#34;: self._path_type,
-                                        &#34;dumpFolder&#34;: import_location,
-                                        &#34;splitCSDB&#34;: 0,
-                                        &#34;userAccount&#34;: {
-                                            &#34;password&#34;: network_user_password,
-                                            &#34;userName&#34;: network_user_name
-                                        }
-                                    }
+                                    &#34;commonOptions&#34;: common_options
                                 }
                             }
                         }
@@ -596,7 +603,7 @@ class CommCellMigration(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/commcell_migration.py#L41-L527" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/commcell_migration.py#L41-L534" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CommCellMigration(object):
     &#34;&#34;&#34;Class for representing the commcell export &amp; import operations from commcell. &#34;&#34;&#34;
@@ -740,10 +747,28 @@ class CommCellMigration(object):
                 raise SDKException(&#39;CommCellMigration&#39;, &#39;103&#39;)
             sql_password = b64encode(sql_password.encode()).decode()
 
+        common_options = {
+            &#34;otherSqlInstance&#34;: other_sql_instance,
+            &#34;pathType&#34;: self._path_type,
+            &#34;dumpFolder&#34;: export_location,
+            &#34;splitCSDB&#34;: 1,
+            &#34;sqlLinkedServer&#34;: {
+                &#34;sqlServerName&#34;: sql_instance_name,
+                &#34;sqlUserAccount&#34;: {
+                    &#34;userName&#34;: sql_user_name,
+                    &#34;password&#34;: sql_password
+                }
+            }
+        }
+
         if self._path_type == 1:
             if network_user_name == &#34;&#34; or network_user_password == &#34;&#34;:
                 raise SDKException(&#39;CommCellMigration&#39;, &#39;103&#39;)
             network_user_password = b64encode(network_user_password.encode()).decode()
+            common_options[&#34;userAccount&#34;] = {
+                &#34;password&#34;: network_user_password,
+                &#34;userName&#34;: network_user_name
+            }
 
         export_json = {
             &#34;taskInfo&#34;: {
@@ -767,23 +792,7 @@ class CommCellMigration(object):
                         &#34;options&#34;: {
                             &#34;adminOpts&#34;: {
                                 &#34;ccmOption&#34;: {
-                                    &#34;commonOptions&#34;: {
-                                        &#34;otherSqlInstance&#34;: other_sql_instance,
-                                        &#34;pathType&#34;: self._path_type,
-                                        &#34;dumpFolder&#34;: export_location,
-                                        &#34;splitCSDB&#34;: 1,
-                                        &#34;userAccount&#34;: {
-                                            &#34;password&#34;: network_user_password,
-                                            &#34;userName&#34;: network_user_name
-                                        },
-                                        &#34;sqlLinkedServer&#34;: {
-                                            &#34;sqlServerName&#34;: sql_instance_name,
-                                            &#34;sqlUserAccount&#34;: {
-                                                &#34;userName&#34;: sql_user_name,
-                                                &#34;password&#34;: sql_password
-                                            }
-                                        }
-                                    },
+                                    &#34;commonOptions&#34;: common_options,
                                     &#34;captureOptions&#34;: {
                                         &#34;captureMediaAgents&#34;: capture_ma,
                                         &#34;lastHours&#34;: 60,
@@ -792,7 +801,7 @@ class CommCellMigration(object):
                                         &#34;captureSchedules&#34;: capture_schedules,
                                         &#34;captureActivityControl&#34;: capture_activity_control,
                                         &#34;captureOperationWindow&#34;: capture_opw,
-                                        &#34;captureHolidays&#34;:capture_holidays,
+                                        &#34;captureHolidays&#34;: capture_holidays,
                                         &#34;pruneExportedDump&#34;: False,
                                         &#34;autopickCluster&#34;: auto_pick_cluster,
                                         &#34;copyDumpToRemoteCS&#34;: False,
@@ -835,7 +844,7 @@ class CommCellMigration(object):
 
         if client_list:
             if other_sql_instance:
-                if  not sql_instance_name \
+                if not sql_instance_name \
                         or not sql_user_name \
                         or not sql_password \
                         or not client_ids:
@@ -878,6 +887,7 @@ class CommCellMigration(object):
                         &#34;forceOverwrite&#34;: False,
                         &#34;failIfEntityAlreadyExists&#34;: False,
                         &#34;deleteEntitiesNotPresent&#34;: False,
+                        &#34;deleteEntitiesIfOnlyfromSource&#34;: False,
                         &#34;forceOverwriteHolidays&#34;: False,
                         &#34;mergeHolidays&#34;: True,
                         &#34;forceOverwriteOperationWindow&#34;: False,
@@ -903,6 +913,7 @@ class CommCellMigration(object):
         force_overwrite = options_dictionary.get(&#39;forceOverwrite&#39;, False)
         fail_if_entry_already_exists = options_dictionary.get(&#39;failIfEntityAlreadyExists&#39;, False)
         delete_entities_not_present = options_dictionary.get(&#39;deleteEntitiesNotPresent&#39;, False)
+        delete_only_source = options_dictionary.get(&#39;deleteEntitiesIfOnlyfromSource&#39;, False)
         fo_holidays = options_dictionary.get(&#34;forceOverwriteHolidays&#34;, False)
         merge_holidays = options_dictionary.get(&#34;mergeHolidays&#34;, True)
         fo_operation_window = options_dictionary.get(&#34;forceOverwriteOperationWindow&#34;, False)
@@ -913,10 +924,22 @@ class CommCellMigration(object):
         if not (isinstance(path_type, str) and isinstance(import_location, str)):
             raise SDKException(&#39;CommCellMigration&#39;, &#39;101&#39;)
 
+        common_options = {
+            &#34;bRoboJob&#34;: False,
+            &#34;databaseConfiguredRemote&#34;: False,
+            &#34;pathType&#34;: self._path_type,
+            &#34;dumpFolder&#34;: import_location,
+            &#34;splitCSDB&#34;: 0
+        }
+
         if path_type.lower() == &#39;local&#39;:
             self._path_type = 0
         elif path_type.lower() == &#39;network&#39;:
             self._path_type = 1
+            common_options[&#34;userAccount&#34;] = {
+                &#34;password&#34;: network_user_password,
+                &#34;userName&#34;: network_user_name
+            }
         else:
             raise SDKException(&#39;CommCellMigration&#39;, &#39;104&#39;)
 
@@ -960,6 +983,7 @@ class CommCellMigration(object):
                                         &#34;pruneImportedDump&#34;: False,
                                         &#34;alwaysUseFallbackDataPath&#34;: True,
                                         &#34;deleteEntitiesNotPresent&#34;: delete_entities_not_present,
+                                        &#34;deleteEntitiesIfOnlyfromSource&#34;: delete_only_source,
                                         &#34;forceOverwrite&#34;: force_overwrite,
                                         &#34;mergeHolidays&#34;: merge_holidays,
                                         &#34;forceOverwriteSchedule&#34;: fo_schedules,
@@ -972,17 +996,7 @@ class CommCellMigration(object):
                                         &#34;skipConflictMedia&#34;: False,
                                         &#34;stagingPath&#34;: &#34;&#34;
                                     },
-                                    &#34;commonOptions&#34;: {
-                                        &#34;bRoboJob&#34;: False,
-                                        &#34;databaseConfiguredRemote&#34;: False,
-                                        &#34;pathType&#34;: self._path_type,
-                                        &#34;dumpFolder&#34;: import_location,
-                                        &#34;splitCSDB&#34;: 0,
-                                        &#34;userAccount&#34;: {
-                                            &#34;password&#34;: network_user_password,
-                                            &#34;userName&#34;: network_user_name
-                                        }
-                                    }
+                                    &#34;commonOptions&#34;: common_options
                                 }
                             }
                         }
@@ -1169,7 +1183,7 @@ if invalid inputs are passed.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/commcell_migration.py#L61-L305" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/commcell_migration.py#L61-L307" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def commcell_export(self, export_location, client_list=None, options_dictionary=None, other_entities=None):
     &#34;&#34;&#34; Starts the Commcell Export job.
@@ -1293,10 +1307,28 @@ if invalid inputs are passed.
             raise SDKException(&#39;CommCellMigration&#39;, &#39;103&#39;)
         sql_password = b64encode(sql_password.encode()).decode()
 
+    common_options = {
+        &#34;otherSqlInstance&#34;: other_sql_instance,
+        &#34;pathType&#34;: self._path_type,
+        &#34;dumpFolder&#34;: export_location,
+        &#34;splitCSDB&#34;: 1,
+        &#34;sqlLinkedServer&#34;: {
+            &#34;sqlServerName&#34;: sql_instance_name,
+            &#34;sqlUserAccount&#34;: {
+                &#34;userName&#34;: sql_user_name,
+                &#34;password&#34;: sql_password
+            }
+        }
+    }
+
     if self._path_type == 1:
         if network_user_name == &#34;&#34; or network_user_password == &#34;&#34;:
             raise SDKException(&#39;CommCellMigration&#39;, &#39;103&#39;)
         network_user_password = b64encode(network_user_password.encode()).decode()
+        common_options[&#34;userAccount&#34;] = {
+            &#34;password&#34;: network_user_password,
+            &#34;userName&#34;: network_user_name
+        }
 
     export_json = {
         &#34;taskInfo&#34;: {
@@ -1320,23 +1352,7 @@ if invalid inputs are passed.
                     &#34;options&#34;: {
                         &#34;adminOpts&#34;: {
                             &#34;ccmOption&#34;: {
-                                &#34;commonOptions&#34;: {
-                                    &#34;otherSqlInstance&#34;: other_sql_instance,
-                                    &#34;pathType&#34;: self._path_type,
-                                    &#34;dumpFolder&#34;: export_location,
-                                    &#34;splitCSDB&#34;: 1,
-                                    &#34;userAccount&#34;: {
-                                        &#34;password&#34;: network_user_password,
-                                        &#34;userName&#34;: network_user_name
-                                    },
-                                    &#34;sqlLinkedServer&#34;: {
-                                        &#34;sqlServerName&#34;: sql_instance_name,
-                                        &#34;sqlUserAccount&#34;: {
-                                            &#34;userName&#34;: sql_user_name,
-                                            &#34;password&#34;: sql_password
-                                        }
-                                    }
-                                },
+                                &#34;commonOptions&#34;: common_options,
                                 &#34;captureOptions&#34;: {
                                     &#34;captureMediaAgents&#34;: capture_ma,
                                     &#34;lastHours&#34;: 60,
@@ -1345,7 +1361,7 @@ if invalid inputs are passed.
                                     &#34;captureSchedules&#34;: capture_schedules,
                                     &#34;captureActivityControl&#34;: capture_activity_control,
                                     &#34;captureOperationWindow&#34;: capture_opw,
-                                    &#34;captureHolidays&#34;:capture_holidays,
+                                    &#34;captureHolidays&#34;: capture_holidays,
                                     &#34;pruneExportedDump&#34;: False,
                                     &#34;autopickCluster&#34;: auto_pick_cluster,
                                     &#34;copyDumpToRemoteCS&#34;: False,
@@ -1388,7 +1404,7 @@ if invalid inputs are passed.
 
     if client_list:
         if other_sql_instance:
-            if  not sql_instance_name \
+            if not sql_instance_name \
                     or not sql_user_name \
                     or not sql_password \
                     or not client_ids:
@@ -1439,6 +1455,7 @@ Contains list of options used for CCMImport and default values.
 "forceOverwrite": False,
 "failIfEntityAlreadyExists": False,
 "deleteEntitiesNotPresent": False,
+"deleteEntitiesIfOnlyfromSource": False,
 "forceOverwriteHolidays": False,
 "mergeHolidays": True,
 "forceOverwriteOperationWindow": False,
@@ -1460,7 +1477,7 @@ if invalid inputs are passed.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/commcell_migration.py#L307-L445" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/commcell_migration.py#L309-L452" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def commcell_import(self, import_location, options_dictionary):
     &#34;&#34;&#34; Starts the Commcell Import job.
@@ -1476,6 +1493,7 @@ if invalid inputs are passed.
                     &#34;forceOverwrite&#34;: False,
                     &#34;failIfEntityAlreadyExists&#34;: False,
                     &#34;deleteEntitiesNotPresent&#34;: False,
+                    &#34;deleteEntitiesIfOnlyfromSource&#34;: False,
                     &#34;forceOverwriteHolidays&#34;: False,
                     &#34;mergeHolidays&#34;: True,
                     &#34;forceOverwriteOperationWindow&#34;: False,
@@ -1501,6 +1519,7 @@ if invalid inputs are passed.
     force_overwrite = options_dictionary.get(&#39;forceOverwrite&#39;, False)
     fail_if_entry_already_exists = options_dictionary.get(&#39;failIfEntityAlreadyExists&#39;, False)
     delete_entities_not_present = options_dictionary.get(&#39;deleteEntitiesNotPresent&#39;, False)
+    delete_only_source = options_dictionary.get(&#39;deleteEntitiesIfOnlyfromSource&#39;, False)
     fo_holidays = options_dictionary.get(&#34;forceOverwriteHolidays&#34;, False)
     merge_holidays = options_dictionary.get(&#34;mergeHolidays&#34;, True)
     fo_operation_window = options_dictionary.get(&#34;forceOverwriteOperationWindow&#34;, False)
@@ -1511,10 +1530,22 @@ if invalid inputs are passed.
     if not (isinstance(path_type, str) and isinstance(import_location, str)):
         raise SDKException(&#39;CommCellMigration&#39;, &#39;101&#39;)
 
+    common_options = {
+        &#34;bRoboJob&#34;: False,
+        &#34;databaseConfiguredRemote&#34;: False,
+        &#34;pathType&#34;: self._path_type,
+        &#34;dumpFolder&#34;: import_location,
+        &#34;splitCSDB&#34;: 0
+    }
+
     if path_type.lower() == &#39;local&#39;:
         self._path_type = 0
     elif path_type.lower() == &#39;network&#39;:
         self._path_type = 1
+        common_options[&#34;userAccount&#34;] = {
+            &#34;password&#34;: network_user_password,
+            &#34;userName&#34;: network_user_name
+        }
     else:
         raise SDKException(&#39;CommCellMigration&#39;, &#39;104&#39;)
 
@@ -1558,6 +1589,7 @@ if invalid inputs are passed.
                                     &#34;pruneImportedDump&#34;: False,
                                     &#34;alwaysUseFallbackDataPath&#34;: True,
                                     &#34;deleteEntitiesNotPresent&#34;: delete_entities_not_present,
+                                    &#34;deleteEntitiesIfOnlyfromSource&#34;: delete_only_source,
                                     &#34;forceOverwrite&#34;: force_overwrite,
                                     &#34;mergeHolidays&#34;: merge_holidays,
                                     &#34;forceOverwriteSchedule&#34;: fo_schedules,
@@ -1570,17 +1602,7 @@ if invalid inputs are passed.
                                     &#34;skipConflictMedia&#34;: False,
                                     &#34;stagingPath&#34;: &#34;&#34;
                                 },
-                                &#34;commonOptions&#34;: {
-                                    &#34;bRoboJob&#34;: False,
-                                    &#34;databaseConfiguredRemote&#34;: False,
-                                    &#34;pathType&#34;: self._path_type,
-                                    &#34;dumpFolder&#34;: import_location,
-                                    &#34;splitCSDB&#34;: 0,
-                                    &#34;userAccount&#34;: {
-                                        &#34;password&#34;: network_user_password,
-                                        &#34;userName&#34;: network_user_name
-                                    }
-                                }
+                                &#34;commonOptions&#34;: common_options
                             }
                         }
                     }
@@ -1626,7 +1648,7 @@ drive pool id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/9fe1e32161e3feaf58085cf77df6ab322a8dca8b/cvpysdk/commcell_migration.py#L447-L527" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/commcell_migration.py#L454-L534" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def tape_import(self, library_id, medias_id, drive_pool_id):
 
