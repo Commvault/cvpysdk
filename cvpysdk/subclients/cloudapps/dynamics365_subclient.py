@@ -42,6 +42,7 @@ MSDynamics365Subclient:
     backup_tables()                         --  Backup the specified tables
     backup_environments()                   --  Backup the specified environments
     restore_in_place()                      --  Run in-place restore for the specified content
+    launch_d365_licensing()                 --  Method to launch Licensing API call.
 
 
     *****************                       Properties                      *****************
@@ -847,3 +848,42 @@ class MSDynamics365Subclient(CloudAppsSubclient):
             job_id=job_id,
             overwrite=overwrite)
         return self._process_restore_response(_restore_json)
+
+    def launch_d365_licensing(self, run_for_all_clients=False):
+        """
+            Method to launch Licensing API call.
+            Arguments:
+                run_for_all_clients(bool)      --  True if thread is to be run on all clients, False otherwise
+                    default: False
+        """
+
+        _LAUNCH_LICENSING = self._services['LAUNCH_O365_LICENSING']
+
+        request_json = {
+            "subClient": {
+                "clientId": int(self._client_object.client_id)
+            },
+            "runForAllClients": run_for_all_clients,
+            "appType": 6
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', _LAUNCH_LICENSING, request_json
+        )
+
+        if flag:
+            try:
+                if response.json():
+                    if response.json().get('resp', {}).get('errorCode', 0) != 0:
+                        error_message = response.json()['errorMessage']
+                        output_string = 'Failed to Launch Licensing Thread\nError: "{0}"'
+                        raise SDKException('Subclient', '102', output_string.format(error_message))
+                    else:
+                        self.refresh()
+            except ValueError:
+                raise SDKException('Response', '102')
+
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+

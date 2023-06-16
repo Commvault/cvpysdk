@@ -282,7 +282,7 @@ class Instances(object):
 
                         agent = dictionary['instance']['appName'].lower()
 
-                        if self._agent_object.agent_name in agent:
+                        if (self._agent_object.agent_name in agent) or ('mariadb' in agent and 'mysql' in self._agent_object.agent_name):
                             temp_name = dictionary['instance']['instanceName'].lower()
                             temp_id = str(dictionary['instance']['instanceId']).lower()
                             return_dict[temp_name] = temp_id
@@ -1027,7 +1027,7 @@ class Instances(object):
         cloud_options = {
                             'instance_name': 'google_test',
                             'description': 'instance for google',
-                            'storage_policy':'cs_sp',
+                            'storage_plan':'cs_sp',
                             'number_of_streams': 2,
                             'access_node': 'CS',
                             'cloudapps_type': 'google_cloud'
@@ -1039,9 +1039,9 @@ class Instances(object):
         cloud_options = {
 
                             'instance_name': 'TestAzureDL',
+                            'storage_plan':'cs_sp',
                             'access_node': 'CS',
                             'description': None,
-                            'storage_policy': 'cs_sp',
                             'accountname': 'xxxxxx',
                             'accesskey': 'xxxxxx',
                             'number_of_streams': 1,
@@ -1051,7 +1051,6 @@ class Instances(object):
         cloud_options = {
                             'instance_name': 'RDS',
                             'storage_plan': 'cs_sp',
-                            'storage_policy': 'cs_sp',
                             'access_node': 'CS',
                             'access_key': 'xxxxx',
                             'secret_key': 'xxxxx',
@@ -1062,7 +1061,6 @@ class Instances(object):
 
                             'instance_name': 'Redshift',
                             'storage_plan': 'cs_sp',
-                            'storage_policy': 'cs_sp',
                             'access_node': 'CS',
                             'access_key': 'xxxxx',
                             'secret_key': 'xxxxx',
@@ -1072,7 +1070,6 @@ class Instances(object):
         cloud_options = {
                             'instance_name': 'DocumentDB',
                             'storage_plan': 'cs_sp',
-                            'storage_policy': 'cs_sp',
                             'access_node': 'CS',
                             'access_key': 'xxxxxx',
                             'secret_key': 'xxxxxx',
@@ -1091,7 +1088,6 @@ class Instances(object):
         cloud_options = {
                             'instance_name': 'DynamoDB',
                             'storage_plan': 'cs_sp',
-                            'storage_policy': 'cs_sp',
                             'access_node': 'CS',
                             'access_key': 'xxxxxx',
                             'secret_key': 'xxxxxx',
@@ -1117,18 +1113,14 @@ class Instances(object):
             raise SDKException(
                 'Instance', '102', 'Empty instance name provided')
 
-        if cloud_options.get("storage_policy"):
-            if not self._commcell_object.storage_policies.has_policy(
-                    cloud_options.get("storage_policy")):
-                raise SDKException(
-                    'Instance',
-                    '102',
-                    'Storage Policy: "{0}" does not exist in the Commcell'.format(
-                        cloud_options.get("storage_policy"))
-                )
-        else:
-            raise SDKException(
-                'Instance', '102', 'Empty storage policy provided')
+        # setting the storage_policy for the general_properties setter method
+        if cloud_options.get('storage_plan') and not cloud_options.get('storage_policy'):
+            cloud_options['storage_policy'] = cloud_options.get('storage_plan')
+
+        # setting storage_plan if not passed and storage_policy is passed instead
+        if cloud_options.get('storage_policy') and not cloud_options.get('storage_plan'):
+            cloud_options['storage_plan'] = cloud_options.get('storage_policy')
+
         if cloud_options.get('description'):
             description = cloud_options.get('description')
         else:
@@ -1148,9 +1140,18 @@ class Instances(object):
         }
 
         if cloud_options.get("storage_plan"):
-            request_json["instanceProperties"]["planEntity"] = {
-                "planName": cloud_options.get("storage_plan")
-            }
+            if not self._commcell_object.storage_policies.has_policy(
+                    cloud_options.get("storage_plan")):
+                raise SDKException(
+                    'Instance',
+                    '102',
+                    'Storage plan: "{0}" does not exist in the Commcell'.format(
+                        cloud_options.get("storage_plan"))
+                )
+            request_json["instanceProperties"]["planEntity"] = {"planName": cloud_options.get("storage_plan")}
+        else:
+            raise SDKException(
+                'Instance', '102', 'Empty storage plan provided')
 
         add_instance = self._commcell_object._services['ADD_INSTANCE']
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -1172,6 +1173,7 @@ class Instances(object):
                     instance_name = response.json()['response']['entity']['instanceName']
                     instance_id = response.json()['response']['entity']['instanceId']
                     agent_name = self._agent_object.agent_name
+                    self.refresh()
                     return self.get(instance_name)
 
             else:

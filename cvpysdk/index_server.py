@@ -93,6 +93,9 @@ IndexServer
 
     update_role()                       --  to update the roles assigned to cloud
 
+    delete_docs_from_core()             --  Deletes the docs from the given core name on index server depending
+                                            on the select dict passed
+
     hard_commit                         --  do hard commit on specified index server solr core
 
     get_all_cores                       --  gets all the cores in index server
@@ -199,7 +202,9 @@ _Roles Attributes
 
     **roles_data**                      --  returns the list of details of all cloud roles
     """
+import json
 
+import http.client as httplib
 from copy import deepcopy
 import enum
 from .exception import SDKException
@@ -813,6 +818,48 @@ class IndexServer(object):
             raise SDKException('Response', '102')
         raise SDKException('Response', '101')
 
+    def delete_docs_from_core(self, core_name, select_dict = None):
+        """Deletes the docs from the given core name on index server depending on the select dict passed
+
+                Args:
+
+                        core_name               (str)  --  name of the solr core
+                        select_dict             (dict) --  dict with query to delete specific documents
+                                                    default query - "*:*" (Deletes all the docs)
+
+                    Returns:
+                        None
+
+                    Raises:
+                        SDKException:
+
+                            if input data is not valid
+
+                            if index server is cloud, not implemented error
+
+                            if response is empty
+
+                            if response is not success
+        """
+        if not isinstance(core_name, str):
+            raise SDKException('IndexServers', '101')
+        if self.is_cloud:
+            raise SDKException('IndexServers', '104', "Not implemented for solr cloud")
+        json_req = {"delete": {"query": self._create_solr_query(select_dict).replace("q=", "").replace("&wt=json", "")}}
+        baseurl = f"{self.server_url[0]}/solr/{core_name}/update?commitWithin=1000&overwrite=true&wt=json"
+        flag, response = self._cvpysdk_object.make_request("POST", baseurl, json_req)
+        if flag and response.json():
+            if 'error' in response.json():
+                raise SDKException('IndexServers', '104', f' Failed with error message - '
+                                                          f'{response.json().get("error").get("msg")}')
+            if 'responseHeader' in response.json():
+                commitstatus = str(response.json().get("responseHeader").get("status"))
+                if int(commitstatus) != 0:
+                    raise SDKException('IndexServers', '104',
+                                       f"Deleting docs from the core returned bad status - {commitstatus}")
+                return
+        raise SDKException('IndexServers', '111')
+
     def hard_commit(self, core_name):
         """do hard commit for the given core name on index server
 
@@ -1036,6 +1083,30 @@ class IndexServer(object):
         flag, response = self._cvpysdk_object.make_request("GET", solr_url)
         if flag and response.json():
             return response.json()
+        elif response.status_code == httplib.FORBIDDEN:
+            cmd = f"(Invoke-WebRequest -UseBasicParsing -uri \"{solr_url}\").content"
+            client_obj = None
+            if solr_client:
+                client_obj = self._commcell_obj.clients.get(solr_client)
+            else:
+                # if no client is passed, then take first client in index server cloud
+                client_obj = self._commcell_obj.clients.get(self.client_name[0])
+            exit_code, output, error_message = client_obj.execute_script(script_type="PowerShell",
+                                                                         script=cmd)
+            if exit_code != 0:
+                raise SDKException(
+                    'IndexServers',
+                    '104',
+                    f"Something went wrong while querying solr - {exit_code}")
+            elif error_message:
+                raise SDKException(
+                    'IndexServers',
+                    '104',
+                    f"Something went wrong while querying solr - {error_message}")
+            try:
+                return json.loads(output.strip())
+            except Exception:
+                raise SDKException('IndexServers', '104', f"Something went wrong while querying solr - {output}")
         raise SDKException('IndexServers', '104', "Something went wrong while querying solr")
 
     def get_index_node(self, node_name):
@@ -1058,7 +1129,10 @@ class IndexServer(object):
         raise SDKException("IndexServers", '104', 'Index server node not found')
 
     def get_plan_info(self):
-        """Returns the plan information of the index server"""
+        """Gets the plan information of the index server
+            Returns:
+                dict - containing the plan information
+        """
         client = self._commcell_obj.clients.get(self.index_server_client_id)
         instance_props = client.properties.get("pseudoClientInfo", {}).get("distributedClusterInstanceProperties", {})
         plan_details = instance_props.get("clusterConfig",{}).get("cloudInfo", {}).get("planInfo", {})
@@ -1099,7 +1173,10 @@ class IndexServer(object):
 
     @property
     def plan_name(self):
-        """Returns the plan name associated with index server"""
+        """Returns the plan name associated with index server
+            Returns:
+                str - name of the plan
+        """
         return self.plan_info.get("planName")
 
     @property

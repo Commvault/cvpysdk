@@ -489,6 +489,12 @@ EXCEPTION_DICT = {
         '105': 'Both Clients list and Other Entities list cannot be none',
         '106': 'Incorrect SQL credentials provied'
     },
+    'GlobalRepositoryCell': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Podcell ID and Podcell name both cannot be None',
+        '104': 'Unable to lookup Podcell ID'
+    },
     'NetworkTopology': {
         '101': 'Data type of the input(s) is not valid',
         '102': ''
@@ -552,7 +558,8 @@ EXCEPTION_DICT = {
         '107': 'Backup is not enabled for client/subclient',
         '108': 'Client name not specified for solr cloud restore',
         '109': 'Provide the Index Server Node name for browse to work',
-        '110': 'Multiple roles found, Unix Index Server Browse works for only 1 role at a time.'
+        '110': 'Multiple roles found, Unix Index Server Browse works for only 1 role at a time.',
+        '111': 'Failed to delete docs in the core'
     },
     'HACClusters': {
         '101': 'Data type of the input(s) is not valid',
@@ -578,8 +585,7 @@ EXCEPTION_DICT = {
     },
     'Region': {
         '101': 'Entity type not found.',
-        '102': '',
-        '103': ''
+        '102': ''
     }
 }
 

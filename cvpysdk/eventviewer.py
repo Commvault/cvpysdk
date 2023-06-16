@@ -98,7 +98,7 @@ class Events(object):
         representation_string = 'Events class instance'
         return representation_string
 
-    def events(self, query_params_dict={}):
+    def events(self, query_params_dict={}, details=False):
         """Gets all the events associated with the commcell
 
             Args:
@@ -107,11 +107,12 @@ class Events(object):
                         {
                             "jobId": 123,
                         }
+                details (bool)            --  Returns all details if True
             Returns:
                 dict - consists of all events in the commcell
                     {
-                         "event1_id": event1_code,
-                         "event2_id": event2_code
+                         "event1_id": event1_code or complete details dict,
+                         "event2_id": event2_code or complete details dict
                     }
 
             Raises:
@@ -139,7 +140,12 @@ class Events(object):
                 for dictionary in response.json()['commservEvents']:
                     event_id = dictionary['id']
                     event_code = dictionary['eventCode']
-                    events_dict[event_id] = event_code
+                    if details:
+                        event_details = dictionary.copy()
+                        del event_details['id']
+                        events_dict[event_id] = event_details
+                    else:
+                        events_dict[event_id] = event_code
 
                 return events_dict
             else:

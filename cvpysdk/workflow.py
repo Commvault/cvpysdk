@@ -570,7 +570,7 @@ class WorkFlows(object):
 
         if not response.json():
             raise SDKException('Response', '102')
-        
+
         if "packageId" not in response.json():
             raise SDKException(
                 'Workflow', '102', response.json()['errorDetail']['errorMessage']
@@ -618,12 +618,18 @@ class WorkFlows(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def get(self, workflow_name):
+    def get(self, workflow_name, **kwargs):
         """Returns a workflow object if workflow name matches specified name
             We check if specified name matches any of the existing workflow names.
 
             Args:
                 workflow_name (str)  --  name of the workflow
+
+            \*\*kwargs  (dict)  --  Optional arguments.
+
+                Available kwargs Options:
+
+                    get_properties      (bool)      -- Fetches workflow properties based on value passed
 
             Returns:
                 object - instance of the Workflow class for the given workflow name
@@ -640,9 +646,9 @@ class WorkFlows(object):
             workflow_name = workflow_name.lower()
 
         workflow_id = self._workflows[workflow_name].get('id')
-
         if self.has_workflow(workflow_name):
-            return WorkFlow(self._commcell_object, workflow_name, workflow_id)
+            return WorkFlow(self._commcell_object, workflow_name, workflow_id,
+                            get_properties = kwargs.get('get_properties',True))
         else:
             raise SDKException(
                 'Workflow',
@@ -835,7 +841,7 @@ class WorkFlows(object):
 class WorkFlow(object):
     """Class for representing a workflow on a commcell."""
 
-    def __init__(self, commcell_object, workflow_name, workflow_id=None):
+    def __init__(self, commcell_object, workflow_name, workflow_id=None, **kwargs):
         """Initialize the WorkFlow class instance for performing workflow related operations.
 
             Args:
@@ -845,6 +851,12 @@ class WorkFlow(object):
 
                 workflow_id          (str)      --  id of the workflow
                     default: None
+
+            \*\*kwargs  (dict)  --  Optional arguments.
+
+                Available kwargs Options:
+
+                    get_properties      (bool)      -- Fetches workflow properties based on value passed
 
             Returns:
                 object  -   instance of the WorkFlow class
@@ -870,7 +882,8 @@ class WorkFlow(object):
 
         self._properties = None
         self._description = None
-        self.refresh()
+        if kwargs.get('get_properties',True):
+            self.refresh()
 
     def _get_workflow_id(self):
         """Gets the workflow id associated with this Workflow.
