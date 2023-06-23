@@ -45,7 +45,7 @@ MediaAgents:
 
     get(media_agent_name)       --  returns the instance of MediaAgent class
     of the media agent specified
-    
+
     delete(media_agent)     --  Deletes the media agent from the commcell.
 
     refresh()                   --  refresh the media agents associated with the commcell
@@ -106,13 +106,13 @@ MediaAgent:
 Libraries:
 
     __init__()               --  initialize the instance of Libraries class
-    
+
     _get_libraries           --  Gets all the libraries associated to the commcell specified by commcell object
-    
+
     has_library              --  Checks if a library exists in the commcell with the input library name
-    
+
     refresh                  --  Refresh the libraries associated with the Commcell
-    
+
 
 DiskLibraries:
     __init__(commcell_object)   --  initialize the DiskLibraries class instance for the commcell
@@ -147,9 +147,13 @@ DiskLibrary:
 
     add_cloud_mount_path()      --  Adds a mount path to the cloud library
 
+    add_storage_accelerator_credential() -- Add storage accelerator credential to the cloud mount path
+
     add_mount_path()            --  adds the mount path on the local/ remote machine
 
     set_mountpath_reserve_space()      --  to set reserve space on the mountpath
+
+    set_max_data_to_write_on_mount_path()  -- to set max data to write on the mountpath
 
     change_device_access_type()  -- to change device access type
 
@@ -199,10 +203,10 @@ TapeLibrary:
      _get_library_properties()   --  gets the disk library properties
 
      get_drive_list()   --  Returns the tape drive list of this tape library
-     
+
      refresh()          --  Refresh the properties of this tape library.
-     
-     
+
+
 """
 
 from __future__ import absolute_import
@@ -387,7 +391,7 @@ class MediaAgents(object):
 
             Args:
                 media_agent (str)  --  name of the Mediaagent to remove from the commcell
-                
+
                 force       (bool)     --  True if you want to delete media agent forcefully.
 
             Raises:
@@ -595,7 +599,7 @@ class MediaAgent(object):
                 Raises:
                         SDKException:
                                     If response is not success
-                                    
+
                                     If Power management is not supported
         """
         if self._is_power_mgmt_allowed:
@@ -623,11 +627,11 @@ class MediaAgent(object):
                 Args :
                         self : Object
                         operation : Operation to perform
-                        
+
                 Raises:
                         SDKException:
                                         If operation is not 1 or 0
-                                            
+
                                         If ower management is NOT enabled or NOT supported on MediaAgent
 
                                         If API response is empty
@@ -957,7 +961,7 @@ class MediaAgent(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101')
-    
+
     def set_concurrent_lan(self, enable=True):
         """
         disable / enable concurrent LAN backup in Media agent properties.
@@ -1674,6 +1678,69 @@ class DiskLibrary(object):
                                                                  self._library_name,
                                                                  _stderr))
 
+    def add_storage_accelerator_credential(self, mount_path, saved_credential="", reset=False):
+        """ Add storage accelerator credential to the cloud mount path
+
+        Args:
+            mount_path  (str)   -- Mount path to which secondary credentials needs to be added
+
+            saved_credential (str)   -- saved credential name
+                default: ""
+
+            reset    (bool)   -- reset storage accelerator credential
+                default: False
+
+        Raises
+            Exception:
+                - if mountpath datatype is invalid
+
+                - if API response error code is not 0
+
+                - if response is empty
+
+                - if response code is not as expected
+            """
+
+        if not isinstance(mount_path, str):
+            raise SDKException('Storage', '101')
+
+        request_json = {
+                        "library": {
+                            "mediaAgentName": self.media_agent,
+                            "libraryName": self._library_name,
+                            "mountPath": mount_path,
+                            "opType": 8
+                        },
+                        "libNewProp": {
+                            "secondaryCredential": {
+                                "credentialName": saved_credential
+                            },
+                            "resetSecondaryCredentials": reset
+                        }
+                    }
+
+        exec_command = self._commcell_object._services['LIBRARY']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', exec_command, request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'library' in response.json():
+                    _response = response.json()['library']
+
+                    if 'errorCode' in _response:
+                        if _response['errorCode'] != 0:
+                            raise SDKException('Storage', '102', _response['errorMessage'])
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            _stdout = 'Failed to add storage accelerator credential with error: \n [{0}]'
+            _stderr = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', _stdout.format(_stderr))
+
     def _get_library_properties(self):
         """Gets the disk library properties.
 
@@ -1804,6 +1871,32 @@ class DiskLibrary(object):
                     },
                     "libNewProp":{
                       "reserveSpaceInMB": size
+                    }
+                }
+        }
+        self._commcell_object.qoperation_execute(request_json)
+
+    def set_max_data_to_write_on_mount_path(self, mount_path, size):
+        """
+            To set max data to write on the mountpath
+            Args:
+                mount_path (str)    --  Folder path for this mount path.
+
+                size (int)          --  max data to be consumed in MB
+        """
+
+        request_json = {
+            "EVGui_ConfigureStorageLibraryReq":
+                {
+                    "isConfigRequired": 1,
+                    "library": {
+                        "opType": 8,
+                        "mediaAgentName": self.media_agent,
+                        "libraryName": self._library_name,
+                        "mountPath": mount_path
+                    },
+                    "libNewProp":{
+                      "maxDataToWriteMB": size
                     }
                 }
         }
@@ -2052,47 +2145,47 @@ class DiskLibrary(object):
         Method to share a mountpath to a disklibrary
 
         Args:
-        
+
             new_media_agent (str)   -- Media agent which is accessing the shared mount path
-            
+
             new_mount_path  (int)   -- Mount path to be shared
-            
+
             \*\*kwargs  (dict)  --  Optional arguments
 
                     Available kwargs Options:
-            
+
                         media_agent     (str)   -- Media agent associated with library
-                        
+
                         library_name    (str)   -- Name of the library which has the mount path
-                    
+
                         mount_path      (str)   -- Mount path to be shared
-                        
+
                         access_type     (int)   -- The access type of the shared mount path
 
                                                     Read Device Access = 4
-                                                    
+
                                                     Read/ Write Device Access = 6
-                                                    
+
                                                     Read Device Access with Preferred = 12
-                                                    
+
                                                     Read/Write Device Access with Preferred = 14
-                                                    
+
                                                     Data Server - IP Read = 20
-                                                    
+
                                                     Data Server - IP Read/ Write = 22
-                                                    
+
                                                     Data Server - FC Read = 36
-                                                    
+
                                                     Data Server - FC Read/ Write = 38
-                                                    
+
                                                     Data Server - iSCSI Read = 132
-                                                    
+
                                                     Data Server - iSCSI Read/ Write = 134
-                                                    
+
                                                     Note: For the Data Server device access type,
                                                           enter the local path provided in the library/mountPath
                                                           parameter in the libNewProp/mountPath parameter also.
-                        
+
 
                         username        (str)   -- Username to access the mount path, if UNC
 
@@ -2595,7 +2688,7 @@ class TapeLibrary(object):
         self.refresh()
 
         drive_list=[]
-        
+
         if 'DriveList' in self.library_properties:
             for drive in self.library_properties["DriveList"]:
                 drive_list.append(drive["driveName"])

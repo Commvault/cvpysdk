@@ -260,6 +260,8 @@ Organization Attributes
 
         **company_theme**           --  Returns the company level theme if it exists
 
+       **user_session_timeout**     -- Returns the time after which user session expires for company users
+
 RemoteOrganization
 ============
 
@@ -970,11 +972,12 @@ class Organizations:
             )
         raise SDKException('RemoteOrganization', '110')
 
-    def delete(self, name):
+    def delete(self, name, deactivate=True):
         """Deletes the organization with the given name from the Commcell.
 
             Args:
                 name            (str)   --  name of the organization to delete
+                deactivate      (bool)   -- Whether to deactivate organization before deleting, By default organization will be deactivated
 
             Returns:
                 None    -   if the organization was removed successfully
@@ -1000,7 +1003,7 @@ class Organizations:
             org = self.get(name)
             target = None
             
-        org.deactivate()
+        if deactivate: org.deactivate()
 
         organization_id = self._organizations[name.lower()]
 
@@ -1105,6 +1108,7 @@ class Organization:
         self._retire_laptops = None
         self._password_age = None
         self._download_software_from_internet = None
+        self._session_timeout = None
         self._tfa_obj = TwoFactorAuthentication(self._commcell_object, organization_id=self._organization_id)
         self.refresh()
 
@@ -1272,6 +1276,7 @@ class Organization:
                 organization_properties['advancedPrivacySettings']['passkeySettings']['enableAuthorizeForRestore']
                 self._is_allow_users_to_enable_passkey_enabled = organization_properties['allowUsersToEnablePasskey']
                 self._owner_privacy = organization_properties.get("allowUsersToEnablePrivacy")
+                self._session_timeout = organization_properties.get("loginSessionTimeoutInMinutes")
 
                 privacy = organization_properties.get('privacy')
                 if privacy:
@@ -1292,7 +1297,7 @@ class Organization:
                 time_string = (datetime.fromtimestamp(time_epoch).strftime("%b %#d") +
                                (datetime.fromtimestamp(time_epoch).strftime(
                                    " %Y") if datetime.now().year != datetime.fromtimestamp(time_epoch).year else '') +
-                               datetime.fromtimestamp(time_epoch).strftime(", %#I:%M:%S %p"))
+                               datetime.fromtimestamp(time_epoch).strftime(", %#I:%M %p"))
                 self._org_creation_time = time_string
 
                 self._machine_count = organization_properties['totalMachineCount']
@@ -2096,6 +2101,21 @@ class Organization:
     def is_owner_data_privacy_enabled(self):
         """Returns true if owner data privacy is enabled"""
         return self._owner_privacy
+
+    @property
+    def user_session_timeout(self):
+        """Returns company user session timeout value"""
+        return self._session_timeout
+
+    @user_session_timeout.setter
+    def user_session_timeout(self, value: int) -> None:
+        """Sets user session timeout
+
+        Args:
+            value (int): timeout time in minutes
+        """
+        self._update_properties_json({'loginSessionTimeoutInMinutes': value})
+        self._update_properties()
 
     def dissociate_plans(self, value):
         """disassociates plans from the organization

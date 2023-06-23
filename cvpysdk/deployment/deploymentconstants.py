@@ -111,6 +111,7 @@ class WindowsDownloadFeatures(Enum):
     DB2_AGENT = 351
     INFORMIX = 360
     SYBASE = 1202
+    WEB_SERVER = 252
 
 
 class OSNameIDMapping(Enum):

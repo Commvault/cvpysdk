@@ -142,6 +142,9 @@ class AzureRMSubclient(VirtualServerSubclient):
                     isinstance(power_on, bool)):
                 raise SDKException('Subclient', '101')
 
+        if vm_to_restore and not isinstance(vm_to_restore, list):
+            vm_to_restore = [vm_to_restore]
+
         self._set_restore_inputs(
             restore_option,
             vm_to_restore=self._set_vm_to_restore(vm_to_restore),

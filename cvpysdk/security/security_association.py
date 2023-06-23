@@ -218,6 +218,10 @@ class SecurityAssociation(object):
                                 security_list.append(each_key)
                                 security_list.append(ext_group.lower())
                                 break
+                            elif 'displayName' in each_key:
+                                security_list.append('clientName')
+                                security_list.append(entity['clientName'].lower())
+                                break
                             else:
                                 security_list.append(each_key)
                                 security_list.append(entity[each_key].lower())

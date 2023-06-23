@@ -39,8 +39,6 @@ Credentials:
 
     add()                       --  creates the credential record on this commcell
 
-    owner_json()                --  returns json blob for setting user or usergroup as creator
-
     refresh()                   --  refreshes the list of credentials on this commcell
 
     delete()                    --  deletes the credential record on this commcell
@@ -68,10 +66,6 @@ Credential:
 
     update_user_credential      --  Sets the value for credential user name and password with
                                     the parameters provided
-
-    credential_owner            --  Returns the creator of credential account
-
-    update_credential_owner()   --  Updates creator of credential account.
 
     refresh()                   --  refreshes the properties of credential account
 
@@ -197,7 +191,7 @@ class Credentials(object):
         return Credential(self._commcell_object, credential_name, self._credentials[
             credential_name.lower()])
 
-    def add(self, record_type, credential_name, user_name, user_password, owner, isuser=1, description=None):
+    def add(self, record_type, credential_name, user_name, user_password, description=None):
         """Creates credential account on this commcell
 
             Args:
@@ -209,11 +203,6 @@ class Credentials(object):
                                             account
 
                 user_password   (str)   --  password for user
-
-                owner           (str)   --  owner who can manage the credential account
-
-                isuser          (bool)  --  Decider, whener owner is user or usergroup
-                                            isuser=1 for user, isuser=0 for usergroup
 
                 description     (str)   --  description for credential account
 
@@ -237,8 +226,6 @@ class Credentials(object):
             )
         password = b64encode(user_password.encode()).decode()
 
-        creator = self.owner_json(owner=owner, isuser_flag=isuser)
-
         record = {
             "userName": user_name,
             "password": password
@@ -251,7 +238,6 @@ class Credentials(object):
                     "credentialName": credential_name
                 },
                 "record": record,
-                "createAs": creator['createAs']
             }]
         }
 
@@ -272,34 +258,6 @@ class Credentials(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
         self.refresh()
-
-    @staticmethod
-    def owner_json(owner, isuser_flag):
-        """returns json blob for setting owners
-        Args:
-            owner       (Str)   --  user or User Group Name
-
-            isuser_flag (Str)   --  decider whether owner is user or usergroup
-        """
-        if isuser_flag == 1:
-            creator = {
-                "createAs": {
-                    "user": {
-                        "user": {
-                            "userName": owner
-                        }
-                    }
-                }
-            }
-        else:
-            creator = {
-                "createAs": {
-                    "userGroup": {
-                        "userGroupName": owner
-                    }
-                }
-            }
-        return creator
 
     def refresh(self):
         """Refresh the list of credential records on this commcell."""
@@ -413,9 +371,6 @@ class Credentials(object):
                 ** kwargs(dict)         --  Key value pairs for supported arguments
 
                 Supported argument values:
-                    owner(str)                  -   owner of the credentials
-                    is_user(bool)               -   Represents whether owner passed is a user or user group
-                                                    is_user=1 for user, is_user=0 for usergroup
                     description(str)            -   description of the credentials
 
             Raises:
@@ -429,13 +384,10 @@ class Credentials(object):
                     if response is not successful
 
         """
-        owner = kwargs.get("owner", "")
-        is_user = kwargs.get("is_user", True)
         description = kwargs.get("description", "")
 
-        if not (isinstance(access_key_id, str) and isinstance(owner, str)
-                and isinstance(is_user, bool) and isinstance(account_name, str)
-                and isinstance(description, str) and isinstance(credential_name, str)):
+        if not (isinstance(access_key_id, str)  and isinstance(account_name, str)
+                 and isinstance(credential_name, str)):
             raise SDKException("Credential", "101")
 
         if self.has_credential(credential_name):
@@ -444,7 +396,6 @@ class Credentials(object):
                     credential_name)
             )
 
-        creator = self.owner_json(owner=owner, isuser_flag=is_user)
         password = b64encode(access_key_id.encode()).decode()
         additional_information = {
             "azureCredInfo": {
@@ -462,8 +413,7 @@ class Credentials(object):
                     "credentialRecord": {
                         "credentialName": credential_name
                     },
-                    "securityAssociations": self.get_security_associations(owner, is_user),
-                    "createAs": creator["createAs"],
+
                     "record": {
                         "userName": account_name,
                         "password": password
@@ -520,8 +470,6 @@ class Credential(object):
 
         self._credential_description = None
         self._credential_user_name = None
-        self._credential_owner_json = None
-        self._credential_owner = None
         self._credential_properties = None
         self._credential_security_assoc = []
         self._record_type = None
@@ -644,25 +592,9 @@ class Credential(object):
         self._update_credential_props(properties_dict=creds_dict)
 
     @property
-    def credential_owner(self):
-        """Returns the Credential name of this commcell Credential"""
-        return self._credential_owner
-
-    @property
     def credential_record_type(self):
         """Returns the Credential name of this commcell Credential record"""
         return self._record_types[self._record_type]
-
-    def update_credential_owner(self, val, isuser):
-        """Sets the value for credential record owner with the parameter provided
-            Args:
-                val     (str)   --  name of user or usergroup
-
-                isuser  (bool)  --  value decides whether owner is user or usergroup
-                                    1 for user and 0 for usergroup
-        """
-        creator = Credentials.owner_json(owner=val, isuser_flag=isuser)
-        self._update_credential_props(properties_dict=creator)
 
     def refresh(self):
         """Refresh the properties of the Credentials."""
@@ -687,19 +619,14 @@ class Credential(object):
                     'credentialName')
                 self._credential_user_name = self._credential_properties['record']['userName']
                 self._record_type = self._credential_properties['recordType']
-                self._credential_owner_json = self._credential_properties.get('createAs', {})
-                if self._record_type != Credential_Type.MICROSOFT_AZURE.value: # Azure Storage Credentials
-                    if "userGroup" in self._credential_owner_json:
-                        cred_id = self._credential_owner_json.get('userGroup', {}).get('userGroupId')
-                        urs = UserGroups(self._commcell_object)
-                        all_groups = urs.all_user_groups
-                        for group_name, group_id in all_groups.items():
-                            if group_id == str(cred_id):
-                                self._credential_owner = group_name
-                    else:
-                        self._credential_owner = self._credential_owner_json.get('user', {}).get(
-                            'user').get('userName')
-                        self._credential_owner_json = self._credential_owner_json.get('user')
+                security = self._credential_properties.get('securityAssociations', {})
+                if "associations" in security:
+                    for each in security['associations']:
+                        for userorgroup in each["userOrGroup"]:
+                            if "userName" in userorgroup:
+                                self._credential_security_assoc.append(userorgroup["userName"])
+                            else:
+                                self._credential_security_assoc.append(userorgroup["userGroupName"])
             else:
                 raise SDKException('Response', '102')
 
@@ -734,14 +661,6 @@ class Credential(object):
         if "credentialRecord" in properties_dict:
             self._credential_name = properties_dict['credentialRecord']['credentialName']
 
-        if "createAs" in properties_dict:
-            owner_json = properties_dict['createAs']
-        else:
-            owner_json = self._credential_owner_json
-
-        if "securityAssociations" in properties_dict:
-            self._credential_security_assoc = properties_dict['securityAssociations']
-
         request_json = {
             "credentialRecordInfo": [{
                 "recordType": self._record_type,
@@ -751,13 +670,11 @@ class Credential(object):
                 },
                 "record": {
                     "userName": self._credential_user_name
-                },
-                "createAs": owner_json
-                }]
-            }
-
-        if self._credential_security_assoc:
-            request_json['credentialRecordInfo'][0].update(securityAssociations=self._credential_security_assoc)
+                }
+            }]
+        }
+        if "securityAssociations" in properties_dict:
+            request_json['credentialRecordInfo'][0].update(securityAssociations=properties_dict['securityAssociations'])
 
         request = self._services['CREDENTIAL']
         flag, response = self._commcell_object._cvpysdk_object.make_request(

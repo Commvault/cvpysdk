@@ -65,6 +65,8 @@ KeyManagementServers:
 
     _add_azure_key_vault_iam_auth() -- Configure Azure Key Management Server with IAM managed identity based authentication
     
+    _add_kmip_certificate()         --  Configure KMIP supported Key Management Server with certificate based authentication
+    
     _kms_api_call() --              call KMS API
     
 
@@ -107,6 +109,7 @@ class KeyManagementServerConstants(ABC):
             "AWS_CREDENTIALS_FILE": 0,
             "AZURE_KEY_VAULT_CERTIFICATE": 1,
             "AZURE_KEY_VAULT_IAM": 3,
+            "KMIP_CERTIFICATE": 99,
         }
 
 class KeyManagementServers(KeyManagementServerConstants):
@@ -281,7 +284,7 @@ class KeyManagementServers(KeyManagementServerConstants):
             response_string = self._commcell._update_response_(response.text)
             raise SDKException("Response", 101, response_string)
 
-        self.refresh()
+        
     
     def has_kms(self, kms_name):
         """Check if the Key Management Server exist or not
@@ -339,7 +342,6 @@ class KeyManagementServers(KeyManagementServerConstants):
                 }
 
                 self._kms_api_call(payload)
-                self.refresh()
 
 
     def _add_aws_kms_with_iam(self, kms_details):
@@ -379,7 +381,6 @@ class KeyManagementServers(KeyManagementServerConstants):
                     }
 
             self._kms_api_call(payload)
-            self.refresh()
 
 
     def _add_azure_key_vault_certificate_auth(self, kms_details):
@@ -463,7 +464,6 @@ class KeyManagementServers(KeyManagementServerConstants):
                       }
 
         self._kms_api_call(payload)
-        self.refresh()
 
 
 
@@ -549,6 +549,21 @@ class KeyManagementServers(KeyManagementServerConstants):
                 "AZURE_CERTIFICATE_THUMBPRINT": "1234",
                 "AZURE_CERTIFICATE_PASSWORD": "1234XYZ==",    -- Base64 encoded
             }
+            
+        input dictionary for creating KMIP KMS with access Node ( certificate based authentication )
+            kms_details = {
+                "KEY_PROVIDER_TYPE": "KEY_PROVIDER_KMIP",
+                "ACCESS_NODE_NAME": "client1",
+                "KMS_NAME": "MyKMS",
+                "KEY_PROVIDER_AUTH_TYPE": "KMIP_CERTIFICATE",
+                "KMIP_CERTIFICATE_PATH": "C:\\certificate\\signed.crt",
+                "KMIP_CERTIFICATE_KEY_PATH": "C:\\certificate\\clientkey.key",
+                "KMIP_CA_CERTIFICATE_PATH": "C:\\certificate\\myCompany.pem",
+                "KMIP_CERTIFICATE_PASS": "abcdxyz", -- Base64 encoded
+                "KMIP_HOST": "123.123.123.123",
+                "KMIP_PORT": "9002",
+                "KMIP_ENC_KEY_LENGTH":256           -- Optional Value. Default is 256
+            }
 
         """
         KeyManagementServers._validate_input(kms_details, dict)
@@ -584,7 +599,77 @@ class KeyManagementServers(KeyManagementServerConstants):
             elif kms_details['KEY_PROVIDER_AUTH_TYPE'] == "AZURE_KEY_VAULT_IAM":
                 self._add_azure_key_vault_iam_auth(kms_details)
 
+        if kms_details['KEY_PROVIDER_TYPE'] == "KEY_PROVIDER_KMIP":
+            self._add_kmip_certificate(kms_details)
+            
         return self.get(kms_details['KMS_NAME'])
+
+
+    def _add_kmip_certificate(self, kms_details):
+        """
+        Configure KMIP Key Management Server with certificate based authentication
+
+        Args:
+            kms_name    (dictionary): dictionary with KMIP KMS details
+        """
+        
+        if "KMIP_ENC_KEY_LENGTH" not in kms_details:
+            kms_details["KMIP_ENC_KEY_LENGTH"] = 256
+            payload = None
+
+        if "ACCESS_NODE_NAME" in kms_details:
+
+                payload = {
+                        "keyProvider": {
+                        "encryptionKeyLength": kms_details["KMIP_ENC_KEY_LENGTH"],
+                        "encryptionType": 3,
+                        "keyProviderType": 2,
+                        "provider": {
+                            "keyProviderName": kms_details["KMS_NAME"]
+                        },
+                        "properties": {
+                            "bringYourOwnKey": "0",
+                            "host": kms_details["KMIP_HOST"],
+                            "port": int(kms_details["KMIP_PORT"]),
+                            "accessNodes": [
+                                {
+                                "accessNode": {
+                                    "clientName": kms_details["ACCESS_NODE_NAME"]
+                                },
+                                "kmipCredential": {
+                                    "caCertFilePath": kms_details["KMIP_CA_CERTIFICATE_PATH"],
+                                    "certFilePath": kms_details["KMIP_CERTIFICATE_PATH"],
+                                    "certPassword": kms_details["KMIP_CERTIFICATE_PASS"],
+                                    "keyFilePath": kms_details["KMIP_CERTIFICATE_KEY_PATH"]
+                                }
+                                }
+                            ]
+                        }
+                        }
+                        }
+
+        else:
+                payload = {
+                    "keyProvider": {
+                        "provider": {
+                            "keyProviderName": kms_details['KMS_NAME']
+                        },
+                        "encryptionKeyLength": kms_details['KMIP_ENC_KEY_LENGTH'],
+                        "encryptionType": 3,
+                        "keyProviderType": 2,
+                        "properties": {
+                            "caCertFilePath": kms_details['KMIP_CA_CERTIFICATE_PATH'],
+                            "certFilePath": kms_details['KMIP_CERTIFICATE_PATH'],
+                            "certPassword": kms_details['KMIP_CERTIFICATE_PASS'],
+                            "keyFilePath": kms_details['KMIP_CERTIFICATE_KEY_PATH'],
+                            "bringYourOwnKey": 0,
+                            "host": kms_details['KMIP_HOST'],
+                            "port": int(kms_details['KMIP_PORT'])
+                        }
+                    }
+                }
+                
+        self._kms_api_call(payload)
 
 
     def _add_azure_key_vault_iam_auth(self, kms_details):
@@ -634,7 +719,6 @@ class KeyManagementServers(KeyManagementServerConstants):
                         }
 
             self._kms_api_call(payload)
-            self.refresh()
 
 
     def add_aws_kms(self, kms_name, aws_access_key, aws_secret_key, aws_region_name=None, kms_details = None):
@@ -730,7 +814,7 @@ class KeyManagementServers(KeyManagementServerConstants):
                 }
 
         self._kms_api_call(payload)
-        self.refresh()
+        
 
     def _kms_api_call(self, payload):
         """ Calling KMS API
@@ -765,7 +849,9 @@ class KeyManagementServers(KeyManagementServerConstants):
         if error_code != 0:
             response_string = self._commcell._update_response_(response.text)
             raise SDKException("Response", 101, response_string)
-    
+        
+        self.refresh()
+        
     def __str__(self):
         """Representation string consisting of all KMS of the commcell.
 
