@@ -302,7 +302,15 @@ class CommCellMigration(object):
                     sub_dict.append(temp_dic)
 
             else:
+                exportable_clients = list(self._commcell_object.grc.get_clients_for_migration(
+                    podcell_id=2, podcell_guid=self._commcell_object.commserv_guid
+                ).values())
                 for client in client_list:
+                    if client not in exportable_clients:
+                        raise SDKException(
+                            'CommCellMigration', '107', 
+                            f'Please choose from list -> {exportable_clients}'
+                        )
                     temp_dic = {'clientName': client, 'commCellName': self._commcell_name}
                     sub_dict.append(temp_dic)
 
@@ -648,13 +656,14 @@ class GlobalRepositoryCell:
         )
         return self._commcell_object.qoperation_execute(modify_task_xml)
 
-    def _get_podcell_entities(self, podcell_name: str = None, podcell_id: int = None):
+    def _get_podcell_entities(self, podcell_name: str = None, podcell_id: int = None, podcell_guid: str = None):
         """
         Gets the entities in podcell available for monitoring via GRC
 
         Args:
             podcell_name    (str)   -   name of pod cell
             podcell_id      (int)   -   id of podcell
+            podcell_guid    (str)   -   guid of podcell (Optional)
 
         Returns:
             monitor_entities    (str)   -   all entities of pod cell in XML format
@@ -687,8 +696,10 @@ class GlobalRepositoryCell:
                 .get('commCell', {}).get('commCellId')
             if podcell_id is None:
                 raise SDKException('GlobalRepositoryCell', '104', f'for podcell: {podcell_name}')
-        podcell_name = self._get_commcell_from_id(podcell_id)
-        podcell_guid = self._commcell_object.registered_commcells[podcell_name].get('commCell', {}).get('csGUID')
+        if podcell_name is None:
+            podcell_name = self._get_commcell_from_id(podcell_id)
+        if podcell_guid is None:
+            podcell_guid = self._commcell_object.registered_commcells[podcell_name].get('commCell', {}).get('csGUID')
 
         entities_xml = """
         <EVGui_GetCCMExportInfo exportMsgType="3" strCSName="{0}*{0}*8400">
@@ -701,13 +712,14 @@ class GlobalRepositoryCell:
         resp = self._commcell_object.qoperation_execute(exec_xml)
         return resp.get('strXmlInfo')
 
-    def get_clients_for_migration(self, podcell_name: str = None, podcell_id: int = None):
+    def get_clients_for_migration(self, podcell_name: str = None, podcell_id: int = None, podcell_guid: str = None):
         """
         Gets the podcell clients that can be migrated
         
         Args:
             podcell_name    (str)   -   name of pod cell
             podcell_id      (int)   -   id of podcell
+            podcell_guid    (str)   -   guid of podcell (Optional)
         
         Returns:
             clients_dict    (dict)  -   dict with client ID as key and client name value
@@ -721,7 +733,8 @@ class GlobalRepositoryCell:
         clients_dict = {}
         entities_xml = self._get_podcell_entities(
             podcell_name=podcell_name,
-            podcell_id=podcell_id
+            podcell_id=podcell_id,
+            podcell_guid=podcell_guid
         )
         entities_xml = ET.fromstring(entities_xml)
         for client_node in entities_xml.findall('clientEntityLst'):

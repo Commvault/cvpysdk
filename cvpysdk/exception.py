@@ -166,7 +166,7 @@ EXCEPTION_DICT = {
         '117': 'Auto discovery is disabled at instance level',
         '118': 'Failed to run the backup copy job',
         '119': 'Invalid pruning type. Valid inputs "days_based" or "cycles_based".',
-        '120': 'Invalid days/cycles value. Please provide an integer value >= 2.',
+        '120': 'Invalid days/cycles value. Please provide an integer value greater than 0.',
         '121': 'IndexServer value should be a client object',
         '122': 'In-Place restore is not supported with multiple source paths'
     },
@@ -487,7 +487,8 @@ EXCEPTION_DICT = {
         '103': 'Please specify all the required inputs',
         '104': 'Please give appropriate input(s)',
         '105': 'Both Clients list and Other Entities list cannot be none',
-        '106': 'Incorrect SQL credentials provied'
+        '106': 'Incorrect SQL credentials provied',
+        '107': 'Given client is not available for export'
     },
     'GlobalRepositoryCell': {
         '101': 'Data type of the input(s) is not valid',

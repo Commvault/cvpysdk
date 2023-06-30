@@ -5450,7 +5450,7 @@ class Client(object):
             Change the Job Result Directory of an Exchange Online Client
 
             Arguments:
-                new_directory   (str)   -- The new JR directory
+                new_directory_path    (str)   -- The new JR directory
                     Example:
                         C:\ JR
                         or
@@ -5498,6 +5498,7 @@ class Client(object):
                     "password": password
                 }
             }
+
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['OFFICE365_MOVE_JOB_RESULT_DIRECTORY'], prop_dict
         )
@@ -6697,6 +6698,29 @@ class Client(object):
             raise SDKException('Response', '101', response_string)
 
         self.refresh()
+
+    def change_dynamics365_client_job_results_directory(
+            self, new_directory_path: str, username: str = str(), password: str = str()):
+        """
+            Change the Job Result Directory of a Dynamics 365 Client
+
+            Arguments:
+                new_directory_path   (str)   -- The new JR directory
+                    Example:
+                        \\vm1.example-active-directory.com\TestFolder1\JobResults
+
+                username    (str)   --
+                    username of the machine, if new JobResults directory is a shared/ UNC path.
+
+                password    (str)   --
+                    Password of the machine, if new JobResults directory is a shared/ UNC path.
+
+            Raises
+                SDKException   (object)
+                    Error in moving the job results directory
+
+        """
+        self.change_o365_client_job_results_directory(new_directory_path, username, password)
 
     def change_company_for_client(self, destination_company_name):
         """
