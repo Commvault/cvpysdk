@@ -85,6 +85,7 @@ SERVICES_DICT_TEMPLATE = {
     'INSTANCE': '{0}Instance/%s',
     'APPLICATION_INSTANCE': '{0}Application/%s',
     'APPLICATION': '{0}Application',
+    'INSTANCE_CREDENTIALS': '{0}v4/Hypervisor/%s/Credentials',
 
     'GET_ALL_SUBCLIENTS': '{0}Subclient?clientId=%s&applicationId=%s&propertyLevel=20',
     'ADD_SUBCLIENT': '{0}Subclient',
