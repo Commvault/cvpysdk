@@ -214,7 +214,7 @@ Commcell instance Attributes
 
     **tape_libraries**          --  returns the instance of the `TapeLibraries` class,
     to interact with the tape libraries added on the Commcell
-
+    
     **storage_policies**        --  returns the instance of the `StoragePolicies` class,
     to interact with the storage policies available on the Commcell
 

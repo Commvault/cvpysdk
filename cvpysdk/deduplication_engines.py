@@ -95,6 +95,8 @@ Store:
     config_only_move_partition()    - performs config-only ddb move operation on specified substore
 
     move_partition()            - performs normal ddb move operation on specified substore
+    
+    add_partition()     -       Adding a partition to this store
 
 Attributes
 ----------
@@ -150,6 +152,7 @@ from enum import Enum
 
 from .exception import SDKException
 from .job import Job
+from .storage import MediaAgent
 
 
 class StoreFlags(Enum):
@@ -269,6 +272,9 @@ class DeduplicationEngines(object):
                 SDKException:
                     if type of the storage policy and copy name arguments are not string
         """
+        
+        self.refresh()
+        
         if not isinstance(storage_policy_name, str) and not isinstance(copy_name, str):
             raise SDKException('Storage', '101')
         return self._engines and (storage_policy_name.lower(), copy_name.lower()) in self._engines
@@ -578,6 +584,39 @@ class Store(object):
         """refreshes all the deduplication store properties"""
         self._initialize_store_properties()
 
+    def add_partition(self, path, media_agent):
+        """Adding a partition to this store
+
+        Args:
+
+            path (str)   - path of the new deduplication database
+
+            media_agent (str)  - MediaAgent name of the new deduplication database
+
+        """
+        payload = None
+
+        if not isinstance(path, str):
+            raise SDKException("Storage","101")
+
+        if not isinstance(media_agent, str) and not isinstance(media_agent, MediaAgent):
+            raise SDKException("Storage", "101")
+
+        if isinstance(media_agent, str):
+            media_agent = MediaAgent(self._commcell_object, media_agent)
+
+        payload = """
+        <EVGui_ParallelDedupConfigReq commCellId="2" copyId="{0}" operation="15">
+        <SIDBStore SIDBStoreId="{1}"/>
+        <dedupconfigItem commCellId="0">
+        <maInfoList><clientInfo id="{2}" name="{3}"/>
+        <subStoreList><accessPath path="{4}"/>
+        </subStoreList></maInfoList></dedupconfigItem>
+        </EVGui_ParallelDedupConfigReq>
+        """.format(self.copy_id, self._store_id, media_agent.media_agent_id, media_agent.media_agent_name, path)
+
+        self._commcell_object._qoperation_execute(payload)
+        
     @property
     def all_substores(self):
         """returns list of all substores present on a deduplication store"""
