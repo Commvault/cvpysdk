@@ -2109,6 +2109,14 @@ class Instance(object):
 
         if self._restore_association is None:
             self._restore_association = self._instance
+            
+        if restore_option.get('deduce_bkset_subcl') == True:
+            del self._restore_association['backupsetName']
+            del self._restore_association['subclientName']
+            del self._restore_association['backupsetId']
+            del self._restore_association['subclientId']
+            del self._restore_association['subclientGUID']
+            
 
         if restore_option.get('copy_precedence') is None:
             restore_option['copy_precedence'] = 0
