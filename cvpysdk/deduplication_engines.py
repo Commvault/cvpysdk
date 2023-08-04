@@ -930,7 +930,8 @@ class Store(object):
         response_string = self._commcell_object._update_response_(response.text)
         raise SDKException('Response', '101', response_string)
 
-    def run_space_reclaimation(self, level=3, clean_orphan_data=False, use_scalable_resource=True, num_streams="max"):
+    def run_space_reclaimation(self, level=3, clean_orphan_data=False, use_scalable_resource=True, num_streams="max",
+                               defragmentation=True):
         """
         runs DDB Space reclaimation job with provided level
 
@@ -945,6 +946,9 @@ class Store(object):
                         Default: True
 
             num_streams (str)   -- Number of streams with which job will run.
+
+            defragmentation(bool) - run space reclamation with Defragmentation or not (True/False)
+                        Default : True
         Returns:
              object - instance of Job class for DDB Verification job
 
@@ -962,6 +966,9 @@ class Store(object):
             raise SDKException('Storage', '101')
 
         if not isinstance(use_scalable_resource, bool):
+            raise SDKException('Storage', '101')
+
+        if not isinstance(defragmentation, bool):
             raise SDKException('Storage', '101')
 
         use_max_streams = "true"
@@ -1018,7 +1025,7 @@ class Store(object):
                                     "backupLevel": "FULL",
                                     "defragmentationPercentage": level_map.get(level),
                                     "ocl": clean_orphan_data,
-                                    "runDefrag": "true"
+                                    "runDefrag": defragmentation
                                 }
                             }
                         },

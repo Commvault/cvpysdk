@@ -369,6 +369,10 @@ class JobController(object):
 
                             default: 20
 
+                    offset           (int)  --  value from which starting job to be returned is counted
+
+                            default: 0
+
                     lookup_time     (int)   --  list of jobs to be retrieved which are specified
                     hours older
 
@@ -428,7 +432,7 @@ class JobController(object):
             "category": job_list_category[options.get('category', 'ALL')],
             "pagingConfig": {
                 "sortDirection": 1,
-                "offset": 0,
+                "offset": options.get('offset', 0),
                 "sortField": "jobId",
                 "limit": options.get('limit', 20)
             },
@@ -657,6 +661,10 @@ class JobController(object):
                     limit           (int)   --  total number of jobs list that are to be returned
                         default: 20
 
+                    offset           (int)  --  value from which starting job to be returned is counted
+
+                        default: 0
+
                     show_aged_job   (bool)  --  boolean specifying whether to include aged jobs in
                     the result or not
 
@@ -744,6 +752,10 @@ class JobController(object):
                     limit           (int)   --  total number of jobs list that are to be returned
 
                         default: 20
+
+                    offset          (int)   --  value from which starting job to be returned is counted
+
+                        default: 0
 
                     show_aged_job   (bool)  --  boolean specifying whether to include aged jobs in
                     the result or not
@@ -841,6 +853,10 @@ class JobController(object):
                     limit           (int)   --  total number of jobs list that are to be returned
 
                         default: 20
+
+                    offset          (int)   --  value from which starting job to be returned is counted
+
+                            default: 0
 
                     show_aged_job   (bool)  --  boolean specifying whether to include aged jobs in
                     the result or not
