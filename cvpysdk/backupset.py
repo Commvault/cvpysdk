@@ -452,8 +452,6 @@ class Backupsets(object):
         """
         if not (isinstance(backupset_name, str) and isinstance(on_demand_backupset, bool)):
             raise SDKException('Backupset', '101')
-        else:
-            backupset_name = backupset_name.lower()
 
         if self.has_backupset(backupset_name):
             raise SDKException(
