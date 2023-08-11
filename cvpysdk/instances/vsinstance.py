@@ -142,6 +142,71 @@ class VirtualServerInstance(Instance):
 
         return list(dict.fromkeys(instance_proxies))
 
+    def _get_application_properties(self):
+        """Gets the application properties of this instance.
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        self._APPLICATION = self._services['APPLICATION_INSTANCE'] % (self._instance_id)
+        self._application_properties = None
+
+        # skip GET instance properties api call if instance id is 1
+        if not int(self.instance_id) == 1:
+            flag, response = self._cvpysdk_object.make_request('GET', self._APPLICATION)
+
+            if flag:
+                if response.json() and "virtualServerInfo" in response.json():
+                    self._application_properties = response.json()["virtualServerInfo"]
+
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '101', self._update_response_(response.text))
+
+
+    def _update_hypervisor_credentials(self, credential_json):
+        """updates the credential for   this instance.
+
+             Args:
+                credentialid (int)  --  Credential ID to update in hypervisor
+                credentialname(str) -- Credential name to update in hypervisor
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        self._credential_service = self._services['INSTANCE_CREDENTIALS'] % int(
+                                                                self._agent_object._client_object.client_id)
+
+        # skip GET instance properties api call if instance id is 1
+        if not int(self.instance_id) == 1:
+            flag, response = self._cvpysdk_object.make_request('PUT', self._credential_service, credential_json)
+
+            if flag:
+                if response.json():
+                    if 'response' in response.json():
+                        if 'errorCode' in response.json()['response']:
+                            error_code = response.json()['response']['errorCode']
+                            if error_code != 0:
+                                error_string = response.json()['response']['errorString']
+                                o_str = 'Failed to update credentials\nError: "{0}"'.format(error_string)
+                                raise SDKException('Instance', '102', o_str)
+                            if 'errorMessage' in response.json():
+                                error_string = response.json()['errorMessage']
+                                if error_string != "":
+                                    o_str = 'Failed to update credentials\nError: "{0}"'.format(error_string)
+                                    raise SDKException('Instance', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '101', self._update_response_(response.text))
+
     @property
     def server_name(self):
         """returns the PseudoClient Name of the associated isntance"""

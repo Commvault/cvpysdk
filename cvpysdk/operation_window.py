@@ -829,16 +829,16 @@ class OperationWindowDetails:
                 operations = response_json.get('operations')
                 operation_reverse_mapping = {value: key for key, value in OPERATION_MAPPING.items()}
                 self._operations = [operation_reverse_mapping[operation] for operation in operations]
-                week_of_the_month = response_json.get("dayTime")[0].get('weekOfTheMonth', [])
+                week_of_the_month = response_json.get("dayTime", [{}])[0].get('weekOfTheMonth', [])
                 if len(response_json.get("dayTime", [])) == 1:
-                    start_time = response_json.get("dayTime")[0]['startTime']
-                    end_time = response_json.get("dayTime")[0]['endTime']
-                    day_of_week = response_json.get("dayTime")[0]['dayOfWeek']
+                    start_time = response_json.get("dayTime", [{}])[0].get('startTime')
+                    end_time = response_json.get("dayTime", [{}])[0].get('endTime')
+                    day_of_week = response_json.get("dayTime", [{}])[0].get('dayOfWeek')
                 else:
                     day_of_week = []
                     start_time = []
                     end_time = []
-                    for week_day in response_json.get("dayTime", []):
+                    for week_day in response_json.get("dayTime", [{}]):
                         if week_day.get("dayOfWeek"):
                             day_of_week.append(week_day.get("dayOfWeek")[0])
                         if week_day.get("startTime") is not None:

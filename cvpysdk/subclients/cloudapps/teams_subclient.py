@@ -53,7 +53,8 @@ TeamsSubclient:
     _json_restoreoptions_searchprocessinginfo_with_extra_queryparameters() -- Get searchprocessinginfo with extra query
                                                                            parameters json for teams restore operation.
     _json_restore_destinationTeamInfo()         -- Get destinationTeamInfo json for teams restore operation.
-    restore_files_to_out_of_place()             -- Restore  files to another team
+    restore_files_to_out_of_place()             -- Restore  files to another team.
+    restore_to_original_location()              -- Restore team to original location.
 """
 
 from __future__ import unicode_literals
@@ -172,7 +173,7 @@ class TeamsSubclient(CloudAppsSubclient):
         request_json['taskInfo']['associations'] = [self._json_association()]
 
         if teams:
-            discovered_teams = self.discover()
+            discovered_teams = self.discover(refresh_cache=False)
             teams = [discovered_teams[team] for team in teams]
             team_json_list = []
             selected_items_json = []
@@ -1047,4 +1048,47 @@ class TeamsSubclient(CloudAppsSubclient):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def restore_to_original_location(self, team_email_id, skip_items=True, restore_posts_as_html=False):
+        """Restore a team to original location.
+                    Args:
+                        team_email_id                (str)   --  The email ID of the team that needs to be restored.
+                        skip_items                (bool)  --  To skip the items.
+                             Default - True
+                        restore_posts_as_html  (bool)  --  To restore pots as html under Files tab.
+                             Default - False
 
+                    Returns:
+                        obj   --  Instance of job.
+
+                    Raises:
+                        SDKException:
+
+                            If restore failed to run.
+                            If response is empty.
+                            If response is not success.
+
+                """
+
+        discovered_teams = self.discover()
+        team = [discovered_teams[team_email_id]]
+        unconditional_overwrite = False
+        if not skip_items:
+            unconditional_overwrite = True
+        request_json = {
+            "taskInfo": {
+                "task": const.RESTORE_TASK_JSON,
+                "associations": [
+                    self._json_association()
+                ],
+                "subTasks": [
+                    {
+                        "subTask": const.RESTORE_SUBTASK_JSON,
+                        "options": self._json_restore_options(
+                            team, skip=skip_items, unconditionalOverwrite=unconditional_overwrite,
+                            restorePostsAsHtml=restore_posts_as_html)
+                    }
+                ]
+            }
+        }
+
+        return self._process_restore(request_json)

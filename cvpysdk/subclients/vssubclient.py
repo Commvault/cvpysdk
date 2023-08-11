@@ -830,8 +830,12 @@ class VirtualServerSubclient(Subclient):
             }
 
             # setting nics for azureRM instance
-            if value.get('destination_instance') == 'azure resource manager':
-                if "networkDisplayName" in value and 'networkrsg' in value and 'destsubid' in value:
+            if value.get('destination_instance').lower() == HypervisorType.AZURE_V2.value.lower():
+                if value.get('subnet_id'):
+                    nics["subnetId"] = value.get('subnet_id')
+                    nics["networkName"] = value.get('subnet_id').split('/')[0]
+                    nics["networkDisplayName"] = nics["networkName"] + '\\' + value.get('subnet_id').split('/')[-1]
+                elif "networkDisplayName" in value and 'networkrsg' in value and 'destsubid' in value:
                     nics["networkDisplayName"] = value["networkDisplayName"]
                     nics["networkName"] = value["networkDisplayName"].split('\\')[0]
                     modify_nics = value.get('subnetId', nics['subnetId']).split('/')
@@ -938,7 +942,8 @@ class VirtualServerSubclient(Subclient):
             "vmIPAddressOptions": value.get("vm_ip_address_options", []),
             "FolderPath": value.get("FolderPath", ""),
             "resourcePoolPath": value.get("ResourcePool", ""),
-            "volumeType": value.get("volumeType", "Auto")
+            "volumeType": value.get("volumeType", "Auto"),
+            "vmCustomMetadata": value.get("vmCustomMetadata",[])
         }
 
         value_dict = {
@@ -2130,7 +2135,8 @@ class VirtualServerSubclient(Subclient):
                 new_name = ""
                 if data["advanced_data"]["browseMetaData"]["virtualServerMetaData"].get('replicaZones', False):
                     replicaZones = restore_option.get("replicaZones")
-            if restore_option['destination_instance'].lower() == 'vmware':
+            if restore_option['destination_instance'].lower() in [HypervisorType.VIRTUAL_CENTER.value.lower(),
+                                                                  HypervisorType.AZURE_V2.value.lower()]:
                 _disk_dict = self._disk_dict_pattern(data['snap_display_name'], ds, new_name)
             else:
                 _disk_dict = self._disk_dict_pattern(disk.split('\\')[-1], ds, new_name)

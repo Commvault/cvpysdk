@@ -81,53 +81,57 @@ class IndexServerSubclient(BigDataAppsSubclient):
 
     def _get_path_for_restore(self, roles=None, core_name=None, client=None):
         """ Forms the path argument for restore request based on specified input
-
+ 
         Args:
-
+ 
             roles       (list)      -- list of role names which needs to be restored
-
+ 
             core_name   (list)      -- list of solr core name which needs to be restored
-
+ 
             client      (str)       -- name of solr node client in case of solr cloud
                     ***Applicable only for solr cloud or CVSolr***
-
+ 
         Returns:
-
+ 
                 list        --  list containing formatted paths
-
+ 
         Raises:
-
+ 
             SDKException:
-
+ 
                     if client name is not passed for index server cloud
-
+ 
                     if client is not a part of cloud
-
+ 
         """
         paths = []
         if client is None:
             client = self._index_server_obj.client_name[0]
         if client not in self._index_server_obj.client_name:
             raise SDKException('IndexServers', '104', 'Given client name is not part of index server cloud')
-
+ 
         path_delimiter = "\\"
         if self._index_server_obj.os_type == IndexServerOSType.UNIX.value:
             path_delimiter = "/"
-
+ 
         if core_name is None and roles is not None:
             paths = [f"{path_delimiter}{role}{path_delimiter}{client}" for role in roles]
-
+ 
         elif roles is None and core_name is not None:
             for core in core_name:
                 core = core.replace(path_delimiter, f"{path_delimiter}{client}{path_delimiter}")
                 paths.append(f"{path_delimiter}{core}")
-
+ 
+        elif len(roles) == 1 and core_name is not None:
+            for core in core_name:
+                paths.append(f"{path_delimiter}{roles[0]}{path_delimiter}{client}{path_delimiter}{core}")
+ 
         else:
             for role in self.content:
                 role = role.replace("\\", '')
                 role = role.replace("%", '')
                 paths.append(f"{path_delimiter}{role}{path_delimiter}{client}")
-
+ 
         return paths
 
     def do_restore_in_place(
@@ -284,7 +288,8 @@ class IndexServerSubclient(BigDataAppsSubclient):
         job_obj = self.backup(backup_level=backup_level)
         return job_obj
 
-    def get_file_details_from_backup(self, roles=None, include_files=True, job_id=0, index_server_node=None):
+    def get_file_details_from_backup(self, roles=None, include_files=True, job_id=0, index_server_node=None,
+                                     **kwargs):
         """Gets files/folders details from index server backup job.
 
                     Args:
@@ -299,6 +304,10 @@ class IndexServerSubclient(BigDataAppsSubclient):
 
                         index_server_node   (str)   --  index server client node name
                             Note : Required compulsory in the case of unix IS when roles is not none.
+
+                        kwargs                      --  Additional info
+                            ex -> core_list (list)  --  List of cores whose file details needs to be fetched
+                                                             from backup
 
 
                      Returns: (list, dict)
@@ -330,7 +339,13 @@ class IndexServerSubclient(BigDataAppsSubclient):
                     raise SDKException('IndexServers', '109')
                 if len(roles) > 1:
                     raise SDKException('IndexServers', '110')
-                roles_path = [f"/{role}/{index_server_node}" for role in roles]
+
+                roles_path = [f"/{roles[0]}/{index_server_node}"]
+                
+                core_list = kwargs.get('core_list')
+                if core_list is not None:
+                    roles_path = [f"/{roles[0]}/{index_server_node}/{core}" for core in core_list]
+
                 find_options['operation'] = 'browse'
 
             find_options['path'] = roles_path

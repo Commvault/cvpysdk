@@ -60,7 +60,6 @@ Attributes
 
     **all_storage_pools**   --  returns dict of all the storage pools on commcell
 
-
 StoragePool
 ===========
 
@@ -73,6 +72,8 @@ __repr__()                      --  returns a string representation of the
  _get_storage_pool_properties()        --  returns the properties of this storage pool
 
 refresh()		                        --	Refresh the properties of the StoragePool
+
+get_copy()                      --  Returns the StoragePolicyCopy object of Storage Pool copy
 
 StoragePool instance attributes
 ================================
@@ -98,6 +99,7 @@ from .storage import DiskLibrary
 from .storage import MediaAgent
 from .security.security_association import SecurityAssociation
 from .constants import StoragePoolConstants
+from .policies.storage_policies import StoragePolicyCopy
 
 
 class StoragePools:
@@ -640,6 +642,9 @@ class StoragePool(object):
         self._commcell_object = commcell_object
         self._storage_pool_properties = None
         self._storage_pool_id = None
+        self._copy_id = None
+        self._copy_name = None
+        
         if storage_pool_id:
             self._storage_pool_id = str(storage_pool_id)
         else:
@@ -647,6 +652,9 @@ class StoragePool(object):
 
         self._STORAGE_POOL = self._commcell_object._services['GET_STORAGE_POOL'] % (self.storage_pool_id)
         self.refresh()
+        
+        self._copy_id = self._storage_pool_properties.get("storagePoolDetails",{}).get("copyInfo",{}).get("StoragePolicyCopy",{}).get("copyId")
+        self._copy_name = self._storage_pool_properties.get("storagePoolDetails", {}).get("copyInfo", {}).get("StoragePolicyCopy", {}).get("copyName")
 
     def __repr__(self):
         """String representation of the instance of this class"""
@@ -695,6 +703,20 @@ class StoragePool(object):
         """Returns the global policy corresponding to the storage pool"""
         return self._storage_pool_properties["storagePoolDetails"]["copyInfo"]["StoragePolicyCopy"]["storagePolicyName"]
 
+    @property
+    def copy_name(self):
+        """Treats copy name as a read only attribute"""
+        return self._copy_name
+        
+    @property
+    def copy_id(self):
+        """Treats copy ID as a read only attribute"""
+        return self._copy_id
+
+    def get_copy(self):
+        """ Returns the StoragePolicyCopy object of Storage Pool copy"""
+        return StoragePolicyCopy(self._commcell_object, self.storage_pool_name, self.copy_name)
+        
     def hyperscale_add_nodes(self, media_agents):
         """
         Add 3 new nodes to an existing storage pool
