@@ -1281,6 +1281,8 @@ class Clients(object):
             return True
         elif self._get_hidden_client_from_hostname(client_name) is not None:
             return True
+        elif self._get_client_from_displayname(client_name) is not None:
+            return True
         return False
 
     def has_hidden_client(self, client_name):
@@ -3444,18 +3446,19 @@ class Clients(object):
             name = name.lower()
             client_name = None
             client_id = None
-            client_from_hostname = None
+            client_from_hostname_or_displayname = None
             if self.has_client(name):
-                client_from_hostname = self._get_client_from_hostname(name)
-                if self.has_hidden_client(name) and not client_from_hostname and name not in self.all_clients:
-                    client_from_hostname = self._get_hidden_client_from_hostname(name)
-            else:
-                name = self._get_client_from_displayname(name)
-                if name is None:
+                client_from_hostname_or_displayname = self._get_client_from_hostname(name)
+                if self.has_hidden_client(name) and not client_from_hostname_or_displayname \
+                                                and name not in self.all_clients:
+                    client_from_hostname_or_displayname = self._get_hidden_client_from_hostname(name)
+                if client_from_hostname_or_displayname is None:
+                    client_from_hostname_or_displayname = self._get_client_from_displayname(name)
+                if name is None and client_name is None and client_from_hostname_or_displayname is None:
                     raise SDKException(
                         'Client', '102', 'No client exists with given name/hostname: {0}'.format(name)
                     )
-            client_name = name if client_from_hostname is None else client_from_hostname
+            client_name = name if client_from_hostname_or_displayname is None else client_from_hostname_or_displayname
 
             if client_name in self.all_clients:
                 client_id = self.all_clients[client_name]['id']
