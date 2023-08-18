@@ -226,6 +226,8 @@ Client
 
     delete_additional_setting()  --  deletes registry key from the client property
 
+    get_configured_additional_setting() --  To get configured additional settings from the client property
+
     release_license()            --  releases a license from a client
 
     retire()                     --  perform retire operation on the client
@@ -1025,11 +1027,13 @@ class Clients(object):
                     {
                          "client1_name": {
                                 "id": client1_id,
-                                "hostname": client1_hostname
+                                "hostname": client1_hostname,
+                                "displayName": client1 display name
                         },
                          "client2_name": {
                                 "id": client2_id,
-                                "hostname": client2_hostname
+                                "hostname": client2_hostname,
+                                "displayName": client2 display name
                          },
                     }
 
@@ -1276,6 +1280,8 @@ class Clients(object):
         elif self.hidden_clients and client_name.lower() in self.hidden_clients:
             return True
         elif self._get_hidden_client_from_hostname(client_name) is not None:
+            return True
+        elif self._get_client_from_displayname(client_name) is not None:
             return True
         return False
 
@@ -2976,6 +2982,7 @@ class Clients(object):
                     user_name (str) : User name for shared job results
                     user_password (str) : User password for shared job results
                     shared_jr_directory (str) : Shared Job results directory path
+                    cloud_region(int) : Cloud region for the client which determines the gcc or gcc high configuration
 
             Returns:
                 object  -   instance of the Client class for this new client
@@ -3008,11 +3015,19 @@ class Clients(object):
 
         access_nodes_list = kwargs.get('access_nodes_list')
         index_server = kwargs.get('index_server')
-        is_resource_pool_enabled = False if server_plan_resources is None else True
+
+        # use resource pool only if resource pool type is Office365 or OneDrive
+        is_resource_pool_enabled = False
+        if server_plan_resources is not None:
+            for resourse in server_plan_resources:
+                if resourse.get('appType', 0) in (1, 5):  # ResourcePoolAppType.O365 or ResourcePoolAppType.OneDrive
+                    is_resource_pool_enabled = True
+
         number_of_backup_streams = kwargs.get('number_of_backup_streams', 10)
         user_name = kwargs.get('user_name')
         user_password = kwargs.get('user_password')
         shared_jr_directory = kwargs.get('shared_jr_directory')
+        cloud_region = kwargs.get('cloud_region', 1)
 
         # If server plan is not resource pool enabled and infrastructure details are not provided, raise Exception
         if not is_resource_pool_enabled and (access_nodes_list is None or index_server is None):
@@ -3097,7 +3112,7 @@ class Clients(object):
                             "oneDriveInstance": {
                                 "manageContentAutomatically": False,
                                 "isAutoDiscoveryEnabled": False,
-                                "cloudRegion": 1,
+                                "cloudRegion": cloud_region,
                                 "azureAppList": {
                                     "azureApps": [
                                         {
@@ -3411,11 +3426,12 @@ class Clients(object):
 
     def get(self, name):
         """Returns a client object if client name or host name or ID or display name matches the client attribute
+
             We check if specified name matches any of the existing client names else
             compare specified name with host names of existing clients else if name matches with the ID
 
             Args:
-                name (str/int)  --  name / hostname / ID of the client / display name
+                name (str/int)  --  name / hostname / ID of the client / display name 
 
             Returns:
                 object - instance of the Client class for the given client name
@@ -3430,19 +3446,19 @@ class Clients(object):
             name = name.lower()
             client_name = None
             client_id = None
-            client_from_hostname = None
+            client_from_hostname_or_displayname = None
             if self.has_client(name):
-                client_from_hostname = self._get_client_from_hostname(name)
-                if self.has_hidden_client(name) and not client_from_hostname and name not in self.all_clients:
-                    client_from_hostname = self._get_hidden_client_from_hostname(name)
-            else:
-                name = self._get_client_from_displayname(name)
-                if name is None:
+                client_from_hostname_or_displayname = self._get_client_from_hostname(name)
+                if self.has_hidden_client(name) and not client_from_hostname_or_displayname \
+                                                and name not in self.all_clients:
+                    client_from_hostname_or_displayname = self._get_hidden_client_from_hostname(name)
+                if client_from_hostname_or_displayname is None:
+                    client_from_hostname_or_displayname = self._get_client_from_displayname(name)
+                if name is None and client_name is None and client_from_hostname_or_displayname is None:
                     raise SDKException(
                         'Client', '102', 'No client exists with given name/hostname: {0}'.format(name)
                     )
-
-            client_name = name if client_from_hostname is None else client_from_hostname
+            client_name = name if client_from_hostname_or_displayname is None else client_from_hostname_or_displayname
 
             if client_name in self.all_clients:
                 client_id = self.all_clients[client_name]['id']
@@ -4162,9 +4178,11 @@ class Client(object):
                 commvault = r'/usr/local/bin/commvault'
 
             if self.instance:
-                command = '{0} -instance {1} {2}'.format(
-                    commvault, self.instance, operations_dict[operation]['unix_command']
-                )
+                command = '{0} -instance {1} {2} {3}'.format(
+                    commvault,
+                    self.instance,
+                    f"-service {service_name}" if service_name != 'ALL' else "",
+                    operations_dict[operation]['unix_command'])
 
                 __, __, error = self.execute_command(command, wait_for_completion=False)
 
@@ -5302,8 +5320,6 @@ class Client(object):
             Args:
                 service_name    (str)   --  name of the service to be started
 
-                    service name is required only for Windows Clients, as for UNIX clients, the
-                    operation is executed on all services
 
                     default:    None
 
@@ -5325,9 +5341,6 @@ class Client(object):
             Args:
                 service_name    (str)   --  name of the service to be stopped
 
-                    service name is required only for Windows Clients, as for UNIX clients, the
-                    operation is executed on all services
-
                     default:    None
 
                     Example:    GxVssProv(Instance001)
@@ -5347,9 +5360,6 @@ class Client(object):
 
             Args:
                 service_name    (str)   --  name of the service to be restarted
-
-                    service name is required only for Windows Clients, as for UNIX clients, the
-                    operation is executed on all services
 
                     default:    None
 
@@ -5443,7 +5453,7 @@ class Client(object):
             Change the Job Result Directory of an Exchange Online Client
 
             Arguments:
-                new_directory   (str)   -- The new JR directory
+                new_directory_path    (str)   -- The new JR directory
                     Example:
                         C:\ JR
                         or
@@ -5491,6 +5501,7 @@ class Client(object):
                     "password": password
                 }
             }
+
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['OFFICE365_MOVE_JOB_RESULT_DIRECTORY'], prop_dict
         )
@@ -5997,6 +6008,26 @@ class Client(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+        
+    def get_configured_additional_settings(self) -> list:
+        """Method to get configured additional settings name"""
+        url = self._services['GET_ADDITIIONAL_SETTINGS'] % self.client_id
+        flag, response = self._cvpysdk_object.make_request('GET', url)
+        if flag:
+            if response.json():
+                response = response.json()
+
+                if response.get('errorMsg'):
+                    error_message = response.json()['errorMsg']
+                    o_str = 'Failed to fetch additional settings.\nError: "{0}"'.format(error_message)
+                    raise SDKException('Client', '102', o_str)
+
+                return response.get('regKeys', [])
+
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
 
     def release_license(self, license_name=None):
         """Releases a license from a client
@@ -6670,6 +6701,29 @@ class Client(object):
             raise SDKException('Response', '101', response_string)
 
         self.refresh()
+
+    def change_dynamics365_client_job_results_directory(
+            self, new_directory_path: str, username: str = str(), password: str = str()):
+        """
+            Change the Job Result Directory of a Dynamics 365 Client
+
+            Arguments:
+                new_directory_path   (str)   -- The new JR directory
+                    Example:
+                        \\vm1.example-active-directory.com\TestFolder1\JobResults
+
+                username    (str)   --
+                    username of the machine, if new JobResults directory is a shared/ UNC path.
+
+                password    (str)   --
+                    Password of the machine, if new JobResults directory is a shared/ UNC path.
+
+            Raises
+                SDKException   (object)
+                    Error in moving the job results directory
+
+        """
+        self.change_o365_client_job_results_directory(new_directory_path, username, password)
 
     def change_company_for_client(self, destination_company_name):
         """

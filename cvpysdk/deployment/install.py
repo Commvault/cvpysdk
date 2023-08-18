@@ -473,6 +473,11 @@ class Install(object):
                                   "portNumber": "port_number",
                                   "encryptedTunnel": True/False
                             }
+            webconsole_inputs (dict) - dictionary for webconsole configuration
+            Ex: webconsole_inputs = {
+                                        "webServerClientId": "webservername"
+                                    }
+
 
         Returns:
                 object - instance of the Job class for this install_software job
@@ -562,6 +567,7 @@ class Install(object):
         db2_logs = kwargs.get('db2_logs_location', {})
         index_cache_location = kwargs.get('index_cache_location', None)
         firewall_inputs = kwargs.get('firewall_inputs', {})
+        web_console_input = kwargs.get('webconsole_inputs', {})
 
         request_json = {
             "taskInfo": {
@@ -639,6 +645,7 @@ class Install(object):
                                                         "configureForLaptopBackups": False
                                                     },
                                                     "componentInfo": install_options,
+                                                    "webConsole": web_console_input
                                                 },
                                                 "clientInfo": {
                                                     "clientGroups": selected_client_groups if client_group_name else [],

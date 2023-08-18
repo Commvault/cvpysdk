@@ -1029,9 +1029,9 @@ class Subclients(object):
                     },
                 },
                 "mySqlSubclientProp": {
-                    "numberOfBackupStreams": kwargs.get('no_of_backup_streams'),
-                    "numberOfTransactionLogStreams": kwargs.get('no_of_log_backup_streams'),
-                    "fullInstanceXtraBackup": kwargs.get('full_instance_xtrabackup')
+                    "numberOfBackupStreams": kwargs.get('no_of_backup_streams', 1),
+                    "numberOfTransactionLogStreams": kwargs.get('no_of_log_backup_streams', 1),
+                    "fullInstanceXtraBackup": kwargs.get('full_instance_xtrabackup', False)
                 },
                 "content": content_list
             }
@@ -1208,6 +1208,10 @@ class Subclients(object):
                 }
             }
         }
+
+        if kwargs.get("customSnapshotResourceGroup"):
+            request_json["subClientProperties"]["vsaSubclientProp"] = \
+                {"customSnapshotResourceGroup": kwargs.get("customSnapshotResourceGroup")}
 
         if kwargs.get('plan_name'):
             if not self._commcell_object.plans.has_plan(kwargs['plan_name']):
@@ -3283,7 +3287,8 @@ c
                 self.update_properties({
                     'planEntity': {
                         'planName': value.plan_name
-                    }
+                    },
+                    "useContentFromPlan": True
                 })
             else:
                 raise SDKException('Subclient', '102', 'Plan does not exist')
@@ -3292,7 +3297,8 @@ c
                 self.update_properties({
                     'planEntity': {
                         'planName': value
-                    }
+                    },
+                    "useContentFromPlan": True
                 })
             else:
                 raise SDKException('Subclient', '102', 'Plan does not exist')

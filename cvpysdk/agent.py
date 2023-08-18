@@ -201,7 +201,9 @@ class Agents(object):
 
         if flag:
             if response.json() and 'agentProperties' in response.json():
+
                 agent_dict = {}
+
                 for dictionary in response.json()['agentProperties']:
                     temp_name = dictionary['idaEntity']['appName'].lower()
                     temp_id = str(dictionary['idaEntity']['applicationId']).lower()
