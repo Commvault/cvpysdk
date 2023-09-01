@@ -1132,7 +1132,8 @@ class Plan(object):
                                 self._plan_properties['schedule']['task']['taskName']
                             )
                         }
-                        if self._subtype == 33554437:
+                        # Skip adding database schedules if plan has no database schedule policy
+                        if self._subtype == 33554437 and self._plan_properties.get('database', {}).get('rpoInMinutes'):
                             self._child_policies['schedulePolicy'].update({
                                 'log': self._commcell_object.policies.schedule_policies.get(
                                     self._plan_properties[
