@@ -357,6 +357,7 @@ class RecoveryTarget:
                 elif self._policy_type == 2:
                     self._vm_folder = self._recovery_target_properties['dataStores'][0]['dataStoreName']
                     self._destination_network = self._recovery_target_properties['networkList'][0]['networkName']
+                    self._destination_host = self._recovery_target_properties['proxyClientEntity']['hostName']
                 elif self._policy_type == 7:
                     self._resource_group = self._recovery_target_properties['esxServers'][0]['esxServerName']
                     self._region = self._recovery_target_properties['region']

@@ -66,6 +66,7 @@ class AzureRMInstance(VirtualServerInstance):
 
         super(VirtualServerInstance, self).__init__(agent, name, iid)
         self._vendor_id = 7
+        self._subscription_id = None
 
 
 
@@ -111,6 +112,43 @@ class AzureRMInstance(VirtualServerInstance):
                        }
                }
         return instance_json
+
+    def _get_application_properties(self):
+        """
+            Get the properties of this instance
+
+            Raise:
+                SDK Exception:
+                    if response is not empty
+                    if response is not success
+        """
+        super(AzureRMInstance, self)._get_application_properties()
+        if 'azureResourceManager' in self._application_properties:
+            self._subscription_id = self._application_properties['azureResourceManager']['subscriptionId']
+
+    def _update_azure_credentials(self, credential_id, credential_name=None, usemanaged_identity=False):
+        """
+        To update the credentials in azure hypervisor
+        Args:
+                credential_id (int)  --  Credential ID to update in hypervisor
+                credential_name(str) -- Credential name to update in hypervisor
+                usemanaged_identity( bool) -- to use managed identity
+        """
+
+        self._get_application_properties()
+
+        self._credential_json = {
+            "hypervisorType": self._vendor_id,
+            "skipCredentialValidation": False,
+            "credentials": {
+                "id": credential_id,
+                "name": credential_name
+            },
+            "subscriptionId": self._subscription_id,
+         "useManagedIdentity": usemanaged_identity
+        }
+
+        super(AzureRMInstance, self)._update_hypervisor_credentials(self._credential_json)
 
 
     @property
