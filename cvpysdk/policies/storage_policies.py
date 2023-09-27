@@ -2133,7 +2133,7 @@ class StoragePolicy(object):
 
     def run_aux_copy(self, storage_policy_copy_name=None,
                      media_agent=None, use_scale=True, streams=0,
-                     all_copies=True, total_jobs_to_process=1000, schedule_pattern=None):
+                     all_copies=True, total_jobs_to_process=1000, schedule_pattern=None, **kwargs):
         """Runs the aux copy job from the commcell.
             Args:
 
@@ -2149,6 +2149,9 @@ class StoragePolicy(object):
                                                    (True/False)
 
                 total_jobs_to_process    (int)  -- Total number jobs to process for the auxcopy job
+
+                **kwargs    --  dict of keyword arguments as follows:
+                job_description     (str)      -- Description for Job
 
             Returns:
                 object - instance of the Job class for this aux copy job
@@ -2221,6 +2224,9 @@ class StoragePolicy(object):
                                         }
                                     }
                                 }
+                            },
+                            "commonOpts": {
+                                "jobDescription": kwargs.get('job_description', '')
                             }
                         }
                     }
