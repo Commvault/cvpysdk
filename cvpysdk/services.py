@@ -65,6 +65,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_FILE_SERVER_CLIENTS': '{0}/v4/FileServers',
     'CLIENTFORCEDELETE':'{0}Client/%s?forceDelete=1',
     'CLIENT': '{0}Client/%s',
+    'GET_ADDITIIONAL_SETTINGS': '{0}Client/%s/AdditionalSettings',
     'FILTER_CLIENTS':'{0}Client?%s',
     'GET_ALL_CLIENTS_PLUS_HIDDEN': '{0}Client?hiddenclients=true',
     'GET_ALL_PSEUDO_CLIENTS': '{0}Client?PseudoClientType',
@@ -84,6 +85,7 @@ SERVICES_DICT_TEMPLATE = {
     'INSTANCE': '{0}Instance/%s',
     'APPLICATION_INSTANCE': '{0}Application/%s',
     'APPLICATION': '{0}Application',
+    'INSTANCE_CREDENTIALS': '{0}v4/Hypervisor/%s/Credentials',
 
     'GET_ALL_SUBCLIENTS': '{0}Subclient?clientId=%s&applicationId=%s&propertyLevel=20',
     'ADD_SUBCLIENT': '{0}Subclient',
@@ -183,6 +185,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'USERGROUPS': '{0}UserGroup?includeSystemCreated=true',
     'USERGROUP': '{0}UserGroup/%s',
+    'USERGROUP_V4': '{0}V4/UserGroup/%s',
     'DELETE_USERGROUP': '{0}UserGroup/%s?newUserId=%s&newUserGroupId=%s',
     'COMPANY_USERGROUP': '{0}UserGroup?parentProvider/providerId=%s',
 
@@ -198,6 +201,7 @@ SERVICES_DICT_TEMPLATE = {
     'DEPLOY_WORKFLOW': '{0}Workflow/%s/action/deploy',
     'EXECUTE_WORKFLOW_API': '{0}Workflow/%s/action/execute',
     'EXECUTE_WORKFLOW': '{0}wapi/%s',
+    'EXECUTE_INTERACTIVE_WORKFLOW': '{0}workflowrequest',
     'GET_WORKFLOW': '{0}Workflow/%s',
     'GET_WORKFLOW_DEFINITION': '{0}Workflow/%s/definition',
     'GET_INTERACTIONS': '{0}WorkflowInteractions',
@@ -244,7 +248,7 @@ SERVICES_DICT_TEMPLATE = {
     'DELETE_HANDLER': '{0}dcube/deletehandler/%s',
     'SHARE_HANDLER': '{0}dcube/share/handler',
     'SHARE_DATASOURCE': '{0}dcube/share/datasource',
-    'GET_CONTENT_ANALYZER_CLOUD': '{0}getContentAnalyzerCloud',
+    'GET_CONTENT_ANALYZER_CLOUD': '{0}getContentAnalyzerClient',
     'ACTIVATE_ENTITIES': '{0}dcube/entity',
     'ACTIVATE_ENTITY': '{0}dcube/entity/%s',
     'ACTIVATE_ENTITY_CONTAINER': '{0}EntityExtractionRules?getDisabled=true',
@@ -310,6 +314,7 @@ SERVICES_DICT_TEMPLATE = {
     'APPLICABLE_SOLNS_ENABLE': '{0}V4/ServerPlan/%s/ApplicableSolutions/Restrict/Enable',
     'APPLICABLE_SOLNS_DISABLE': '{0}V4/ServerPlan/%s/ApplicableSolutions/Restrict/Disable',
     'PLAN_SUPPORTED_SOLUTIONS': '{0}V4/Solutions?filter=PLAN_SUPPORTED_SOLUTIONS',
+    'V4_SERVER_PLAN': '{0}V4/ServerPlan/%s',
 
     'DOMAIN_CONTROLER': '{0}CommCell/DomainController',
     'DELETE_DOMAIN_CONTROLER': '{0}CommCell/DomainController/%s',
@@ -499,6 +504,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'REGISTRATION': '{0}/RegFrgnCell',
     'UNREGISTRATION': '{0}/UnRegisterCommCell',
+    'GET_REGISTERED_COMMCELLS': '{0}/CommCell/registered',
     'GET_REGISTERED_ROUTER_COMMCELLS': '{0}/CommCell/registered?getOnlyServiceCommcells=true',
     'GET_USERSPACE_SERVICE': '{0}/ServiceCommcell/UserSpace',
     'POLL_USER_SERVICE': '{0}/ServiceCommcell/IsUserPresent?userName=%s',
@@ -564,6 +570,8 @@ SERVICES_DICT_TEMPLATE = {
                             '&searchOnAliasName=true&searchOnSmtp=1&ignoreSmtpRule=1&getOrganizationUsers=false&'
                             'getOrganizationGroups=false',
     'DOMAIN_SSO': '{0}V4/LDAP/%s',
+
+    'LAUNCH_O365_LICENSING': '{0}Office365/License',
 
     'VM_GROUP': '{0}V4/VmGroup/%s'
 }

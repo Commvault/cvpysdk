@@ -274,8 +274,10 @@ class Users(object):
                                                             created
                     default: None
 
-                local_usergroups              (str)     --  user can be member of
+                local_usergroups              (list)     --  user can be member of
                                                             these user groups
+                                                            Ex:1. ["master"],
+                                                               2. ["group1", "group2"]
 
                 system_generated_password     (bool)    --  if set to true system
                                                             defined password will be used

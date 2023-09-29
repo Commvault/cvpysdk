@@ -166,7 +166,7 @@ EXCEPTION_DICT = {
         '117': 'Auto discovery is disabled at instance level',
         '118': 'Failed to run the backup copy job',
         '119': 'Invalid pruning type. Valid inputs "days_based" or "cycles_based".',
-        '120': 'Invalid days/cycles value. Please provide an integer value >= 2.',
+        '120': 'Invalid days/cycles value. Please provide an integer value greater than 0.',
         '121': 'IndexServer value should be a client object',
         '122': 'In-Place restore is not supported with multiple source paths'
     },
@@ -487,7 +487,14 @@ EXCEPTION_DICT = {
         '103': 'Please specify all the required inputs',
         '104': 'Please give appropriate input(s)',
         '105': 'Both Clients list and Other Entities list cannot be none',
-        '106': 'Incorrect SQL credentials provied'
+        '106': 'Incorrect SQL credentials provied',
+        '107': 'Given client is not available for export'
+    },
+    'GlobalRepositoryCell': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Podcell ID and Podcell name both cannot be None',
+        '104': 'Unable to lookup Podcell ID'
     },
     'NetworkTopology': {
         '101': 'Data type of the input(s) is not valid',
@@ -552,7 +559,8 @@ EXCEPTION_DICT = {
         '107': 'Backup is not enabled for client/subclient',
         '108': 'Client name not specified for solr cloud restore',
         '109': 'Provide the Index Server Node name for browse to work',
-        '110': 'Multiple roles found, Unix Index Server Browse works for only 1 role at a time.'
+        '110': 'Multiple roles found, Unix Index Server Browse works for only 1 role at a time.',
+        '111': 'Failed to delete docs in the core'
     },
     'HACClusters': {
         '101': 'Data type of the input(s) is not valid',
@@ -574,12 +582,12 @@ EXCEPTION_DICT = {
         '103': 'Key Management Server type is not valid',
         '104': 'Key Management Server type not found',
         '105': 'Invalid key provider authentication type',
-        '106': 'Invalid KMS name'
+        '106': 'Invalid KMS name',
+        '107': 'Key list is missing for Bring Your Own Key'
     },
     'Region': {
         '101': 'Entity type not found.',
-        '102': '',
-        '103': ''
+        '102': ''
     }
 }
 

@@ -21,45 +21,68 @@
 
 MSDynamics365Subclient is the only class defined in this file.
 
-MSDynamics365Subclient:             Derived class from CloudAppsSubclient Base class, representing a
+MSDynamics365Subclient:             Derived class from O365AppsSubclient Base class, representing a
                                     Dynamics 365 subclient, and to perform operations on that subclient
 
 MSDynamics365Subclient:
 
     *****************                       Methods                      *****************
 
-    _get_subclient_properties()             --  gets the properties of MS Dynamics 365 Subclient
+    _get_subclient_properties()             --  Gets the subclient related properties of a MS Dynamics 365 subclient
 
-    _get_subclient_properties_json()        --  gets the properties JSON of MS Dynamics 365 Subclient
+    _get_subclient_properties_json()        --  get the all subclient related properties of this subclient.
 
-    get_discovered_tables()                 --  Method to run a discovery for tables and get them
-    get_discovered_environments()           --  Method to run a discovery for environments and return them
-    _get_associated_content()               --  Get content associated with a Dynamics 365 subclient
-    get_associated_tables()                 --  Get list of associated tables
-    get_associated_environments()           --  Get list of associated environments
-    associate_tables()                      --  Associate tables to a Dynamics 365 subclient
-    associate_environment()                 --  Associate list of environments to the sub   client
-    backup_tables()                         --  Backup the specified tables
-    backup_environments()                   --  Backup the specified environments
-    restore_in_place()                      --  Run in-place restore for the specified content
+    get_discovered_tables()                 --  Method to get the tables discovered from the MS Dynamics 365 CRM subclient
+    get_discovered_environments()           --  Method to get the environments discovered from the Dynamics 365 CRM subclient
+    _get_associated_content()               --  Method to get the content associated with a Dynamics 365 CRM subclient
+    get_associated_tables()                 --  Method to get the tables associated with a Dynamics 365 CRM client
+    get_associated_environments()           --  Method to get the environments associated with a Dynamics 365 CRM client
+    _set_association_json()                 --  JSON to set the content association for a Dynamics 365 CRM client
+    _set_content_association()              --  Method to associate some content to a Dynamics 365 CRM client...
+    _table_association_info_json()          --  Private Method to create the association JSON for associating tables
+                                                to a Dynamics 365 CRM client.
+    set_table_associations()                --  Method to add table associations to a Dynamics 365 CRM client.
+    _environment_association_info_json()    --  Method to create the association JSON for associating environments
+                                                to a Dynamics 365 CRM client.
+    set_environment_associations()          --  Method to add environment associations to a Dynamics 365 CRM client.
+    _json_for_backup_task()                 --  Method to create the association JSON for backing up content for a Dynamics 365 subclient
+    _backup_content_json()                  --  Method to fetch the metadata properties for backing up content for a Dynamics 365 subclient
+    _run_backup()                           --  Method to run backup for the content of a Dynamics 365 subclient
+    backup_tables()                         --  Method to run backup for the specified tables of a Dynamics 365 subclient
+    backup_environments()                   --  Method to run backup for the specified environments of a Dynamics 365 subclient
+    _restore_content_json()                 --  Restore JSON for restoring content for a Dynamics 365 subclient
+    _get_restore_item_path()                --  Get the complete path of the content for running a restore job
+    _prepare_restore_json()                 --  Method to prepare JSON/ Python dict for  in- place restore for the content specified.
+    restore_in_place()                      --  Method to run in- place restore for the content specified.
+    launch_d365_licensing()                 --  Method to launch Licensing API call.
+    _get_environment_id_for_oop_restore()   --  Get the Environment ID for an environment for Out of Place Restore
+    restore_out_of_place()                  --  Method to run out-of-place restore for the content specified.
+    browse()                                --  Browse for the backed up content for a Dynamics 365 subclient
+    _get_guid_for_path()                    --  Method to get the browse GUID corresponding to the path
+    _perform_browse()                       --  Perform a browse of the backed up content
+    _get_dynamics365_browse_params()        --  Default dictionary for the browse parameters for a Dynamics 365 browse query.
 
 
     *****************                       Properties                      *****************
 
-    discovered_environments                 --  Dictionary of environments discovered by the subclient
+    discovered_environments                 --  Property to get the tables discovered by the Dynamics 365 subclient.
     discovered_tables                       --  Dictionary of tables discovered by the subclient
+    browse_item_type()                      --  Dynamics 365 item type
 
 """
 
+import copy
+import json
 from ...exception import SDKException
 
+from ..o365apps_subclient import O365AppsSubclient
 from ..casubclient import CloudAppsSubclient
 
 
-class MSDynamics365Subclient(CloudAppsSubclient):
+class MSDynamics365Subclient(O365AppsSubclient):
     """
         Class representing a MS Dynamics 365 subclient.
-            Class has been derived from the CloudAppsSubclient.
+            Class has been derived from the O365AppsSubclient.
     """
 
     def __init__(self, backupset_object, subclient_name, subclient_id=None):
@@ -88,7 +111,7 @@ class MSDynamics365Subclient(CloudAppsSubclient):
         self._Dynamics365_SET_USER_POLICY_ASSOCIATION = self._commcell_object._services['SET_USER_POLICY_ASSOCIATION']
 
     def _get_subclient_properties(self):
-        """Gets the subclient  related properties of a MS Dynamics 365 subclient"""
+        """Gets the subclient related properties of a MS Dynamics 365 subclient"""
         super(MSDynamics365Subclient, self)._get_subclient_properties()
 
     def _get_subclient_properties_json(self):
@@ -210,8 +233,8 @@ class MSDynamics365Subclient(CloudAppsSubclient):
                         for table in associations:
                             table_name = table.get("userAccountInfo", {}).get("displayName")
                             table_dict = {
-                                "name": table_name.lower(),
-                                "environment_name": table.get("userAccountInfo", {}).get("ParentWebGuid", "").lower(),
+                                "name": table_name,
+                                "environment_name": table.get("userAccountInfo", {}).get("ParentWebGuid", ""),
                                 "userAccountInfo": table.get("userAccountInfo", {}),
                                 "plan": table.get("plan", {}),
                                 "is_environment": False
@@ -376,7 +399,7 @@ class MSDynamics365Subclient(CloudAppsSubclient):
                 tables_list     (list)--    List of tables to be associated to the content
                     List Format:
                         Each list element should be a tuple of the format:
-                            ("environment_name","table_name")
+                            ("table_name", "environment_name")
                                 environment_name is the name of the environment to which the table belongs to
                                 table_name is the name of the table to be associated
 
@@ -391,9 +414,10 @@ class MSDynamics365Subclient(CloudAppsSubclient):
                                "Discovered Tables is Empty.")
 
         for _table in _discovered_tables:
-            _table_name, _parent_env_name = _table["displayName"].lower(), _table["ParentWebGuid"].lower()
+            _table_name, _parent_env_name = _table["displayName"], _table["ParentWebGuid"]
+
             try:
-                if (_parent_env_name, _table_name) in tables_list:
+                if (_table_name, _parent_env_name) in tables_list:
                     _table_assoc_info = _table
                     _table_assoc_info["user.userGUID"] = _table.get("user").get("userGUID")
                     tables_info.append(_table_assoc_info)
@@ -401,8 +425,8 @@ class MSDynamics365Subclient(CloudAppsSubclient):
                 raise SDKException('Subclient', '101',
                                    "For Associating tables, content list should be a list of tuples")
 
-        if len(tables_info) == 0:
-            raise SDKException("Subclient", "101", "None of the input tables were in the list of discovered tables")
+        if len(tables_info) != len(tables_list):
+            raise SDKException("Subclient", "101", "All of the input tables were in the list of discovered tables")
 
         return tables_info
 
@@ -415,11 +439,11 @@ class MSDynamics365Subclient(CloudAppsSubclient):
                 tables_list     (list)--    List of tables to be associated to the content
                     List Format:
                         Each list element should be a tuple of the format:
-                            ("environment_name","table_name")
+                            ("table_name", "environment_name")
                                 environment_name is the name of the environment to which the table belongs to
                                 table_name is the name of the table to be associated
                     Sample input:
-                        [ ("testenv1" , "account") , ("testenv2","note") , ("testenv1","attachments")]
+                        [ ("account", "testenv1") , ("note", "testenv2") , ("attachments", "testenv1")]
 
                 plan_name       (str)--     Name of the Dynamics 365 Plan to be used for content association
         """
@@ -724,6 +748,7 @@ class MSDynamics365Subclient(CloudAppsSubclient):
         elif is_environment is False:
             for _table in self.get_associated_tables(refresh=True):
                 _table_name, _parent_env_name = _table["name"].lower(), _table["environment_name"].lower()
+
                 try:
                     if (_parent_env_name, _table_name) in content_list:
                         _id = _table.get("userAccountInfo").get("smtpAddress").split('/')
@@ -738,15 +763,18 @@ class MSDynamics365Subclient(CloudAppsSubclient):
         __restore_content_list = list(
             map(lambda _restore_id: f"/tenant/{_restore_id}", __restore_content_list)
         )
+
         return __restore_content_list
 
-    def _prepare_in_place_restore_json(self,
-                                       restore_content: list,
-                                       restore_path: list = None,
-                                       overwrite: bool = True,
-                                       job_id: int = None,
-                                       is_environment: bool = False
-                                       ):
+    def _prepare_restore_json(self,
+                              restore_content: list,
+                              restore_path: list = None,
+                              overwrite: bool = True,
+                              job_id: int = None,
+                              is_environment: bool = False,
+                              is_out_of_place_restore: bool = False,
+                              destination_environment: str = str()
+                              ) -> dict:
         """
             Method to prepare JSON/ Python dict for  in- place restore for the content specified.
 
@@ -771,6 +799,8 @@ class MSDynamics365Subclient(CloudAppsSubclient):
                 is_environment          (bool)--    Whether to content to be restored is a table or an environment
                 overwrite               (bool)--    Skip or overwrite content
                 job_id                  (int)--     Job ID for point in time restores
+                destination_environment (Str)--     Destination environment for OOP restore.
+                is_out_of_place_restore (bool)--    Is Out of Place Restore?
             Returns:
                 _restore_content_json   (dict)--    Python dict to be used for restore content request
         """
@@ -798,6 +828,17 @@ class MSDynamics365Subclient(CloudAppsSubclient):
             _restore_content_json["taskInfo"]["subTasks"][0]["options"] \
                 ["restoreOptions"]["cloudAppsRestoreOptions"] \
                 ["d365RestoreOptions"]["overWriteItems"] = True
+
+        if is_out_of_place_restore:
+            _restore_content_json["taskInfo"]["subTasks"][0]["options"] \
+                ["restoreOptions"]["destination"]["destPath"] = [destination_environment]
+            _instance_id = self._get_environment_id_for_oop_restore(environment_name=destination_environment)
+            _restore_content_json["taskInfo"]["subTasks"][0]["options"] \
+                ["restoreOptions"]["cloudAppsRestoreOptions"] \
+                ["d365RestoreOptions"]["destLocation"] = _instance_id
+            _restore_content_json["taskInfo"]["subTasks"][0]["options"] \
+                ["restoreOptions"]["destination"]["inPlace"] = False
+
         return _restore_content_json
 
     def restore_in_place(
@@ -840,10 +881,320 @@ class MSDynamics365Subclient(CloudAppsSubclient):
         if restore_content is None and restore_path is None:
             raise SDKException("Subclient", "101", "Need to have either of restore content or restore path")
 
-        _restore_json = self._prepare_in_place_restore_json(
+        _restore_json = self._prepare_restore_json(
             restore_content=restore_content,
             restore_path=restore_path,
             is_environment=is_environment,
             job_id=job_id,
-            overwrite=overwrite)
+            overwrite=overwrite,
+            is_out_of_place_restore=False)
+
         return self._process_restore_response(_restore_json)
+
+    def launch_d365_licensing(self, run_for_all_clients=False):
+        """
+            Method to launch Licensing API call.
+            Arguments:
+                run_for_all_clients(bool)      --  True if thread is to be run on all clients, False otherwise
+                    default: False
+        """
+
+        _LAUNCH_LICENSING = self._services['LAUNCH_O365_LICENSING']
+
+        request_json = {
+            "subClient": {
+                "clientId": int(self._client_object.client_id)
+            },
+            "runForAllClients": run_for_all_clients,
+            "appType": 6
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', _LAUNCH_LICENSING, request_json
+        )
+
+        if flag:
+            try:
+                if response.json():
+                    if response.json().get('resp', {}).get('errorCode', 0) != 0:
+                        error_message = response.json()['errorMessage']
+                        output_string = 'Failed to Launch Licensing Thread\nError: "{0}"'
+                        raise SDKException('Subclient', '102', output_string.format(error_message))
+                    else:
+                        self.refresh()
+            except ValueError:
+                raise SDKException('Response', '102')
+
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def _get_environment_id_for_oop_restore(self, environment_name: str) -> str:
+        """
+            Get the Environment ID for an environment for Out of Place Restore
+
+            Arguments:
+                environment_name        (str)--     Name of the environment
+
+            Returns:
+                environment_id          (str)--     ID for the environment
+        """
+        for environment in self.discovered_environments:
+            if environment['displayName'] == environment_name:
+                _env_xml = environment.get("xmlGeneric")
+                _env_json = json.loads(_env_xml)
+                _env_id = _env_json.get("_instanceName")
+        return _env_id
+
+    def restore_out_of_place(
+            self,
+            restore_content: list = None,
+            restore_path: list = None,
+            is_environment: bool = False,
+            overwrite: bool = True,
+            job_id: int = None,
+            destination_environment: str = str()):
+        """
+            Method to run out-of-place restore for the content specified.
+
+            Arguments:
+                restore_content         (str)--     List of the content to restore
+                    If content is environment,
+                        List format:
+                            list of strings, with each string corresponding to the environments display name, in lower case
+                        Sample Input:
+                            [ 'testenv1' , 'testenv2' , 'testenv3' ]
+
+                    If content is tables:
+                        List format:
+                            list of tuples, with each tuple, of the form: "environment_name","table_name"
+                                where environment name if the name of the environment to which the table belongs to
+                        Sample input:
+                            [ ("testenv1" , "account") , ("testenv2","note") , ("testenv1","attachments")]
+
+                restore_path            (list)--    List of the paths of the items to restore
+                    Instead of passing, the restore content, restore path can be passed
+                    Restore path, is the path for each item, that is to be restored.
+                        Path is returned by the browse operation
+
+                is_environment          (bool)--    Whether to content to be restored is a table or an environment
+                overwrite               (bool)--    Skip or overwrite content
+                job_id                  (int)--     Job ID for point in time restores
+                destination_environment (str)--     Destination environment name
+            Returns:
+                restore_job             (job)--     Instance of CVPySDK.Job for the restore job
+        """
+
+        if restore_content is None and restore_path is None:
+            raise SDKException("Subclient", "101", "Need to have either of restore content or restore path")
+
+        _restore_json = self._prepare_restore_json(
+            restore_content=restore_content,
+            restore_path=restore_path,
+            is_environment=is_environment,
+            job_id=job_id,
+            overwrite=overwrite,
+            is_out_of_place_restore=True,
+            destination_environment=destination_environment)
+
+        restore_endpoint = self._services['CREATE_TASK']
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request("POST", restore_endpoint, _restore_json)
+
+        return self._process_restore_response(flag, response)
+
+    def browse(self,
+               browse_path: list[str] = None,
+               include_deleted_items: bool = False,
+               till_time: int = -1):
+        """
+            Browse for the backed up content for a Dynamics 365 subclient
+
+            Arguments:
+                browse_path         (list)  --      Path to be browsed
+                    Sample Value:
+                        ["environment-name" , "table-name"]
+                include_deleted_items
+                                    (bool)  --      Whether to include deleted items in the browse response
+                till_time           (int)   --      Time-stamp for point in time browse
+        """
+        _parent_path = str()
+
+        _environments = self._perform_browse(parent_path=_parent_path, till_time=till_time, item_type=2,
+                                             include_deleted_items=include_deleted_items)
+        _browse_response = copy.deepcopy(_environments)
+
+        if browse_path:
+            _item_type: int = 3
+            for path in browse_path:
+                _parent_path = self._get_guid_for_path(_browse_response, path)
+                if not _parent_path:
+                    raise SDKException('Subclient', '101',
+                                       f"Path: {path} not found in browse content: {_browse_response}")
+                _browse_response = self._perform_browse(parent_path=_parent_path, till_time=till_time,
+                                                        item_type=_item_type,
+                                                        include_deleted_items=include_deleted_items)
+                _item_type += 1
+
+        return _browse_response
+
+    def _get_guid_for_path(self, browse_response: dict, path: str) -> str:
+        """
+            Method to get the browse GUID corresponding to the path
+
+            Arguments:
+                browse_reponse          (dict)--    Response from the browse query
+                path                    (str)--     Path for which GUID is to be fetched
+
+            Example:
+                from the browse for "d365-env", find the GUID for the "Accounts" table
+
+            The GUID would be used im the subsequent browse requests
+        """
+        guid: str = str()
+        for item in browse_response:
+            if item.get("appSpecific").get("d365Item").get("displayName") == path:
+                guid = item.get("cvObjectGuid")
+        return guid
+
+    def _perform_browse(self, parent_path: str = str(), till_time: int = -1, item_type: int = 2,
+                        include_deleted_items: bool = False):
+        """
+            Perform a browse of the backed up content
+            Arguments:
+                parent_path         (str)   --      GUID for the parent path
+                include_deleted_items
+                                    (bool)  --      Whether to include deleted items in the browse response
+                till_time           (int)   --      Time-stamp for point in time browse
+                item_type           (int)   --      Item type to be browsed
+        """
+        _browse_default_params = self._get_dynamics365_browse_params(item_type=item_type)
+
+        _query_params = _browse_default_params.get("query_params")
+        _file_filter = _browse_default_params.get("file_filter")
+        _sort_params = _browse_default_params.get("sort_param")
+        _common_filters = _browse_default_params.get("common_filters")
+
+        if parent_path:
+            _parent_path_filter = {
+                "field": "PARENT_GUID",
+                "intraFieldOp": 0,
+                "fieldValues": {
+                    "values": [
+                        f"{parent_path}"
+                    ]
+                }
+            }
+            _file_filter.append(_parent_path_filter)
+
+        if till_time != -1:
+            _backup_time_filter = {
+                "field": "BACKUPTIME",
+                "intraFieldOp": 0,
+                "fieldValues": {
+                    "values": [
+                        "0",
+                        f"{till_time}"
+                    ]
+                }
+            }
+            _file_filter.append(_backup_time_filter)
+
+        if include_deleted_items:
+            _common_filter = {
+                "groupType": 0,
+                "field": "CISTATE",
+                "intraFieldOp": 0,
+                "fieldValues": {
+                    "values": [
+                        "1",
+                        "3333",
+                        "3334",
+                        "3335"
+                    ]
+                }
+            }
+            _common_filters[0] = _common_filter
+
+        return self.do_web_search(query_params=_query_params, file_filter=_file_filter, sort_param=_sort_params,
+                                  common_filters=_common_filters)
+
+    def _get_dynamics365_browse_params(self, item_type: int = 2) -> dict:
+        """
+            Default dictionary for the browse parameters for a Dynamics 365 browse query.
+
+            Arguments:
+                item_type       (int)   --  Item type to br browsed for
+        """
+        _query_params: list = [
+            {
+                "param": "ENABLE_MIXEDVIEW",
+                "value": "true"
+            },
+            {
+                "param": "RESPONSE_FIELD_LIST",
+                "value": "D365_ENTITY_DISP_NAME,D365_ENTITY_DISP_NAME,CONTENTID,CV_OBJECT_GUID,CV_TURBO_GUID,"
+                         "PARENT_GUID,AFILEID,AFILEOFFSET,COMMCELLNO,APPID,D365_ID,D365_DISPLAYNAME,"
+                         "FILE_CREATEDTIME,MODIFIEDTIME,BACKUPTIME,D365_OBJECT_TYPE,D365_CONTENTHASH,D365_FLAGS,"
+                         "D365_ENTITYSET_ID,D365_ENTITYSET_NAME,D365_INSTANCE_ID,D365_INSTANCE_NAME,"
+                         "D365_CREATEDBY_GUID,D365_CREATEDBY_NAME,D365_MODIFIEDBY_GUID,D365_MODIFIEDBY_NAME,"
+                         "D365_OWNER_GUID,D365_OWNER_NAME,DATE_DELETED,CISTATE "
+            },
+            {
+                "param": "COLLAPSE_FIELD",
+                "value": "CV_OBJECT_GUID"
+            }]
+
+        _sort_params: list = [
+            {
+                "sortDirection": 0,
+                "sortField": "D365_DISPLAYNAME"
+            }
+        ]
+
+        _common_filters: list = [
+            {
+                "groupType": 0,
+                "field": "CISTATE",
+                "intraFieldOp": 0,
+                "fieldValues": {
+                    "values": [
+                        "1"
+                    ]
+                }
+            },
+            {
+                "field": "IS_VISIBLE",
+                "intraFieldOpStr": "None",
+                "intraFieldOp": 0,
+                "fieldValues": {
+                    "isMoniker": False,
+                    "isRange": False,
+                    "values": [
+                        "true"
+                    ]
+                }
+            }
+        ]
+
+        _file_filter: list = [
+            {
+                "field": "D365_OBJECT_TYPE",
+                "intraFieldOp": 0,
+                "fieldValues": {
+                    "values": [
+                        f"{item_type}"
+                    ]
+                }
+            }
+        ]
+        return {"query_params": _query_params, "file_filter": _file_filter, "sort_param": _sort_params,
+                "common_filters": _common_filters}
+
+    @property
+    def browse_item_type(self):
+        """Dynamics 365 item types"""
+        _browse_item_type = {"environment": 2,
+                             "table": 3,
+                             "record": 4}
+        return _browse_item_type

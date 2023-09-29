@@ -9,9 +9,8 @@ CVPySDK uses REST APIs to perform CommCell operations.
 Requirements
 ------------
 
-- Python 3 and above
+- Python 3.6 and above
 - `requests <https://pypi.python.org/pypi/requests/>`_ Python package
-- `future <https://pypi.python.org/pypi/future>`_ Python package
 - `xmltodict <https://pypi.python.org/pypi/xmltodict>`_ Python package
 - Commvault Software v11 SP7 or later release with WebConsole installed
 
@@ -24,13 +23,13 @@ CVPySDK can be installed directly from PyPI using pip:
     >>> pip install cvpysdk
 
 
-CVPySDK is available on GitHub `here <https://github.com/Commvault/cvpysdk>`__
+CVPySDK is available on GitHub `here <https://github.com/Commvault/cvpysdk>`_
 
 It can also be installed from source.
 
 After downloading, from within the ``cvpysdk`` directory, execute:
 
-    >>> python setup.py install
+    >>> pip install .
 
 
 Using CVPySDK
@@ -160,7 +159,7 @@ Subclient operations are currently supported for the following Agents:
 Documentation
 -------------
 
-To get started, please see the `full documentation for this library <https://commvault.github.io/cvpysdk/cvpysdk/index.html>`_
+To get started, please see the `full documentation for this library <https://commvault.github.io/cvpysdk/>`_
 
 
 Contribution Guidelines
@@ -194,11 +193,6 @@ Coding Considerations
 - All changes and any new methods/classes should be properly documented.
 - The doc strings should be of the same format as existing docs.
 
-Questions/Comments/Suggestions
-------------------------------
-If you have any questions or comments, please contact us `here <https://ma.commvault.com/>`__.
-Also Check out our community for `Automation <https://community.commvault.com/developer-tools-integration-and-automation-workflow-rest-powershell-etc-50>`_ incase of queries.
-
 Code of Conduct
 ***************
 
@@ -216,7 +210,7 @@ License
 
 About Commvault
 ---------------
-.. image:: https://commvault.github.io/cvpysdk/logo.png
+.. image:: https://upload.wikimedia.org/wikipedia/en/thumb/2/2f/Commvault_logo.svg/320px-Commvault_logo.svg.png
     :align: center
 
 |
