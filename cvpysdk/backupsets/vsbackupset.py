@@ -49,6 +49,7 @@ from inspect import isabstract, isclass, getmembers
 from ..backupset import Backupset
 from ..client import Client
 from ..exception import SDKException
+from ..subclient import Subclient as subclient
 
 
 class VSBackupset(Backupset):
@@ -70,6 +71,28 @@ class VSBackupset(Backupset):
         for name, _class in classes:
             if issubclass(_class, Backupset) and _class.__module__.rsplit(".", 1)[-1] == instance_name:
                 return object.__new__(_class)
+            
+    @property
+    def hidden_subclient(self):
+        """Creates the object for the hidden subclient
+        Returns:
+                _hidden_subclient - object of the subclient
+
+        """
+        if not self._hidden_subclient:
+            hidden_subclient_service = self._commcell_object._services['VSA_HIDDEN_SUBCLIENT'] % (
+                self._client_object.client_name, self.backupset_name)
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                "GET", hidden_subclient_service)
+            if flag:
+                if response.json():
+                    hidden_subclient_id = response.json().get('subclientId')
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '101', self._update_response_(response.text))
+            self._hidden_subclient = subclient(self, 'Do Not Backup', hidden_subclient_id)
+        return self._hidden_subclient
 
     def browse(self, *args, **kwargs):
         """Browses the content of the Backupset.
@@ -180,8 +203,9 @@ class VSBackupset(Backupset):
                     if not isinstance(response_json['browseResponses'], list):
                         response_json['browseResponses'] = [response_json['browseResponses']]
                     if 'messages' in response_json['browseResponses'][0]:
-                        if not isinstance(response_json['browseResponses'][0]['messages'],list):
-                            response_json['browseResponses'][0]['messages'] = [response_json['browseResponses'][0]['messages']]
+                        if not isinstance(response_json['browseResponses'][0]['messages'], list):
+                            response_json['browseResponses'][0]['messages'] = [
+                                response_json['browseResponses'][0]['messages']]
                         message = response_json['browseResponses'][0]['messages'][0]
                         error_message = message['errorMessage']
                         if error_message == 'Please note that this is a live browse operation. Live browse operations can take some time before the results appear in the browse window.':
@@ -314,3 +338,47 @@ class VSBackupset(Backupset):
         }
 
         self._process_update_reponse(request_json)
+
+
+    @property
+    def vm_filter(self):
+        """Returns the vm filters set at the backupset level
+        Returns:
+                list - list of content associated as the filters with the backupset
+        """
+
+        return self.hidden_subclient.content
+
+    @vm_filter.setter
+    def vm_filter(self, content):
+        """
+        Creates the list of content JSON to pass to the API to update
+           content of the vm filter of the backupset
+        Args:
+            content (list)  --  list of the content to add as the filters to the
+                Backupset. list should contain name and type
+
+        """
+        self.hidden_subclient.content = content
+        self.hidden_subclient.refresh()
+
+    @property
+    def vm_disk_filter(self):
+        """Returns the vm disk filters set at the backupset level
+        Returns:
+                list - list of content associated as the disk filters with the backupset
+        """
+        return self.hidden_subclient.vm_diskfilter
+
+    @vm_disk_filter.setter
+    def vm_disk_filter(self, vm_diskfilter):
+        """
+        Creates the list of disk filter content JSON to pass to the API to update
+           content of the vm disk filter of the backupset
+        Args:
+            vm_diskfilter (list) --     list of the Disk filter to add
+                                                 to the backupset
+
+        """
+        self.hidden_subclient.vm_diskfilter = vm_diskfilter
+        self.hidden_subclient.refresh()

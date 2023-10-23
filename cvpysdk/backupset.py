@@ -1107,6 +1107,7 @@ class Backupset(object):
 
         self.subclients = None
         self.schedules = None
+        self._hidden_subclient = None
         self.refresh()
 
         self._default_browse_options = {

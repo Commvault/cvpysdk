@@ -372,24 +372,32 @@ class VirtualServerSubclient(Subclient):
                         for power on/off, we need to specify one more
                         parameter i.e., true -on, false -off(as state variable)
                         example:
+                        subclient_content = [{'allOrAnyChildren': True, 'content': [
+                            {'equal_value': True, 'allOrAnyChildren': True, 'display_name': '*abc*', 'type': 'VMName'},
+                            {'equal_value': False, 'allOrAnyChildren': True, 'display_name': 'xyz', 'type': 'VMName'}]},
+                                      {'allOrAnyChildren': False, 'content': [
+                                          {'equal_value': True, 'allOrAnyChildren': True, 'display_name': '*12*',
+                                           'type': 'VMName'},
+                                          {'equal_value': True, 'allOrAnyChildren': True, 'display_name': '*34*',
+                                           'type': 'VMName'}]}]
                         subclient_content = [
-                            [
-                                {
-                                'type' : VSAObjects.VMName,
-                                'display_name' : 'VM*'
-                                }
-                            ],
-                            [
-                                {
-                                  'type' : VSAObjects.VMNotes,
-                                  'display_name' : 'removed',
-                                },
-                                {
-                                  'type' : VSAObjects.VMPowerState,
-                                  'state': 'false',
-                                }
-                            ]
-                        ]
+                                                [
+                                                    {
+                                                    'type' : VSAObjects.VMName,
+                                                    'display_name' : 'VM*'
+                                                    }
+                                                ],
+                                                [
+                                                    {
+                                                      'type' : VSAObjects.VMNotes,
+                                                      'display_name' : 'removed',
+                                                    },
+                                                    {
+                                                      'type' : VSAObjects.VMPowerState,
+                                                      'state': 'false',
+                                                    }
+                                                ]
+                                            ]
 
 
 
@@ -401,19 +409,30 @@ class VirtualServerSubclient(Subclient):
         try:
             for entity in subclient_content:
                 virtual_server_dict = dict()
-                virtual_server_dict['allOrAnyChildren'] = True
-                virtual_server_dict['equalsOrNotEquals'] = True
+                if not isinstance(entity, dict):
+                    entity = {'content': entity}
+                elif 'content' not in entity:
+                    entity = {'content': entity}
+                virtual_server_dict['allOrAnyChildren'] = entity.get('allOrAnyChildren', True)
                 virtual_server_dict['children'] = []
-                if not isinstance(entity,list):
-                    entity = [entity]
-                for item in entity:
+
+                def add_childrens(item, multiple_rule=False):
+                    """
+                    add contents in the hierarchy
+                    Args:
+                        item                (dict)  :   content's current item to be added
+                        multiple_rule       (bool)  :   If multiple rule present or not
+
+                    """
                     temp = {
                         'allOrAnyChildren': item.get('allOrAnyChildren', True),
-                        'equalsOrNotEquals': item.get('equalsOrNotEquals', True),
-                        'name': item.get('name',""),
-                        'displayName': item.get('display_name',''),
+                        'equalsOrNotEquals': item.get('equal_value', True),
+                        'name': item.get('name', ""),
+                        'displayName': item.get('display_name', ''),
                         'path': '',
-                        'type': item['type'] if (isinstance(item['type'], int) or isinstance(item['type'], str)) else item['type'].value
+                        'type': item['type'] if (
+                                isinstance(item['type'], int) or isinstance(item['type'], str)) else
+                        item['type'].value
                     }
                     if item['type'] == VSAObjects.VMNotes:
                         temp['value'] = item['display_name']
@@ -431,8 +450,23 @@ class VirtualServerSubclient(Subclient):
                         temp['name'] = "PoweredState"
                         temp['value'] = "0"
                         temp['displayName'] = "Powered Off"
-                    virtual_server_dict.get('children').append(temp)
-                content.append(virtual_server_dict)
+                    if multiple_rule:
+                        virtual_server_dict.get('children').append(temp)
+                    else:
+                        content.append(temp)
+
+                if not isinstance(entity, list):
+                    entity = [entity]
+                if len(entity[0]['content']) == 1 or isinstance(entity[0]['content'], dict):
+                    if isinstance(entity[0]['content'], list):
+                        add_childrens(entity[0]['content'][0])
+                    else:
+                        add_childrens(entity[0]['content'])
+                else:
+                    for items in entity:
+                        for item in items['content']:
+                            add_childrens(item, True)
+                        content.append(virtual_server_dict)
         except KeyError as err:
             raise SDKException('Subclient', '102', '{} not given in content'.format(err))
 

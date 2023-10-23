@@ -565,7 +565,8 @@ SERVICES_DICT_TEMPLATE = {
                             'getOrganizationGroups=false',
     'DOMAIN_SSO': '{0}V4/LDAP/%s',
 
-    'VM_GROUP': '{0}V4/VmGroup/%s'
+    'VM_GROUP': '{0}V4/VmGroup/%s',
+    'VSA_HIDDEN_SUBCLIENT': '{0}GetId?clientname=%s&agent=Virtual Server&backupset=%s&subclient=Do Not Backup'
 }
 
 
