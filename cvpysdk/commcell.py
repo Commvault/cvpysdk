@@ -68,6 +68,8 @@ Commcell:
 
     delete_additional_setting() --  deletes registry key from the commserve property
 
+    get_configured_additional_setting() --  To get configured additional settings from the commserve property
+
     download_software()         --  triggers the Download Software job with the given options
 
     copy_software()             --  triggers the Copy Software job with the given options
@@ -212,7 +214,7 @@ Commcell instance Attributes
 
     **tape_libraries**          --  returns the instance of the `TapeLibraries` class,
     to interact with the tape libraries added on the Commcell
-
+    
     **storage_policies**        --  returns the instance of the `StoragePolicies` class,
     to interact with the storage policies available on the Commcell
 
@@ -297,6 +299,9 @@ Commcell instance Attributes
     **commcell_migration**      --  returns the instance of the 'CommCellMigration' class,
     to interact with the Commcell Export & Import on the Commcell
 
+    **grc**      --  returns the instance of the 'GlobalRepositoryCell' class,
+    to interact with the registered commcells and setup/modify GRC schedules
+
     **backup_network_pairs**    --  returns the instance of 'BackupNetworkPairs' class to
     perform backup network pairs operations on the commcell class
 
@@ -379,7 +384,7 @@ from .disasterrecovery import DisasterRecovery
 from .operation_window import OperationWindow
 from .identity_management import IdentityManagementApps
 from .system import System
-from .commcell_migration import CommCellMigration
+from .commcell_migration import CommCellMigration, GlobalRepositoryCell
 from .deployment.download import Download
 from .deployment.cache_config import CommServeCache
 from .deployment.cache_config import RemoteCache
@@ -621,7 +626,9 @@ class Commcell(object):
         self._identity_management = None
         self._system = None
         self._commcell_migration = None
+        self._grc = None
         self._registered_commcells = None
+        self._registered_routing_commcells = None
         self._redirect_rules_service = None
         self._backup_network_pairs = None
         self._reports = None
@@ -733,6 +740,7 @@ class Commcell(object):
         del self._services
         del self._disaster_recovery
         del self._commcell_migration
+        del self._grc
         del self._backup_network_pairs
         del self._job_management
         del self._index_servers
@@ -811,11 +819,12 @@ class Commcell(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def _qoperation_execute(self, request_xml):
+    def _qoperation_execute(self, request_xml, return_xml=False):
         """Makes a qoperation execute rest api call
 
             Args:
                 request_xml     (str)   --  request xml that is to be passed
+                return_xml      (bool)  --  if True, will return xml response instead of json
 
             Returns:
                 dict    -   json response received from the server
@@ -827,6 +836,10 @@ class Commcell(object):
                     if response is not success
 
         """
+        accept_type_initial = self._headers['Accept']
+        if return_xml:
+            self._headers['Accept'] = 'application/xml'
+
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['EXECUTE_QCOMMAND'], request_xml
         )
@@ -834,6 +847,9 @@ class Commcell(object):
         if flag:
             if response.ok:
                 try:
+                    if return_xml:
+                        self._headers['Accept'] = accept_type_initial # reset initial accept type
+                        return response.text
                     return response.json()
                 except ValueError:
                     return {'output': response}
@@ -842,11 +858,13 @@ class Commcell(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def qoperation_execute(self, request_xml):
+    def qoperation_execute(self, request_xml, **kwargs):
         """Wrapper for def _qoperation_execute(self, request_xml)
 
             Args:
                 request_xml     (str)   --  request xml that is to be passed
+                **kwargs:
+                    return_xml  (bool)  --  if True, will get the xml response instead of json
 
             Returns:
                 dict    -   JSON response received from the server.
@@ -858,7 +876,7 @@ class Commcell(object):
                     if response is not success
         """
 
-        return self._qoperation_execute(request_xml)
+        return self._qoperation_execute(request_xml, **kwargs)
 
     @staticmethod
     def _convert_days_to_epoch(days):
@@ -1538,6 +1556,17 @@ class Commcell(object):
             return USER_LOGGED_OUT_MESSAGE
 
     @property
+    def grc(self):
+        """Returns the instance of the GlobalRepositoryCell class"""
+        try:
+            if self._grc is None:
+                self._grc = GlobalRepositoryCell(self)
+
+            return self._grc
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
     def registered_routing_commcells(self):
         """Returns the dictionary consisting of all registered commcells and
         their info
@@ -1552,8 +1581,27 @@ class Commcell(object):
                 }
             }
         """
+        if self._registered_routing_commcells is None:
+            self._registered_routing_commcells = self._get_registered_service_commcells()
+        return self._registered_routing_commcells
+
+    @property
+    def registered_commcells(self):
+        """Returns the dictionary consisting of all registered commcells and
+        their info
+
+        dict - consists of all registered routing commcells
+            {
+                "commcell_name1:{
+                    details related to commcell_name1
+                },
+                "commcell_name2:{
+                    details related to commcell_name2
+                }
+            }
+        """
         if self._registered_commcells is None:
-            self._registered_commcells = self._get_registered_service_commcells()
+            self._registered_commcells = self._get_registered_service_commcells(True)
         return self._registered_commcells
 
     @property
@@ -1869,8 +1917,10 @@ class Commcell(object):
         self._commserv_client = None
         self._identity_management = None
         self._commcell_migration = None
+        self._grc = None
         self._get_commserv_details()
         self._registered_commcells = None
+        self._registered_routing_commcells = None
         self._redirect_rules_service = None
         self._index_servers = None
         self._hac_clusters = None
@@ -2076,6 +2126,10 @@ class Commcell(object):
 
         """
         self.commserv_client.delete_additional_setting(category, key_name)
+
+    def get_configured_additional_setting(self) -> list:
+        """Method to get configured additional settings name"""
+        return self.commserv_client.get_configured_additional_settings()
 
     def protected_vms(self, days, limit=100):
         """
@@ -3039,8 +3093,10 @@ class Commcell(object):
             .format(str(saml_app_key), saml_app_name, props, user_to_be_added)
         self._qoperation_execute(xml_execute_command)
 
-    def _get_registered_service_commcells(self):
+    def _get_registered_service_commcells(self, non_router=False):
         """Gets the registered routing commcells
+            Args:
+                non_router  (bool)  :   will include non_router commcells also if True
 
             Returns:
                 dict - consists of all registered routing commcells
@@ -3058,9 +3114,12 @@ class Commcell(object):
 
                     if response is not success
         """
+        api_endpoint = self._services['GET_REGISTERED_ROUTER_COMMCELLS']
+        if non_router:
+            api_endpoint = self._services['GET_REGISTERED_COMMCELLS']
 
         flag, response = self._cvpysdk_object.make_request(
-            'GET', self._services['GET_REGISTERED_ROUTER_COMMCELLS']
+            'GET', api_endpoint
         )
 
         if flag:
@@ -3123,8 +3182,8 @@ class Commcell(object):
         """
         if not isinstance(commcell_name, str):
             raise SDKException('CommcellRegistration', '104')
-
-        return self.registered_routing_commcells and commcell_name.lower() in self.registered_routing_commcells
+        registered_routing_commcells = {k.lower(): v for k, v in self.registered_routing_commcells.items()}
+        return registered_routing_commcells and commcell_name.lower() in registered_routing_commcells
 
     def register_commcell(
             self,

@@ -34,12 +34,17 @@ GoogleInstance:
 
     restore_out_of_place()      --  runs out-of-place restore for the instance
 
+    modify_index_server()       --  Method to modify the index server
+
+    modify_accessnodes()        --  Method to modify accessnodes
+
 """
 
 from __future__ import unicode_literals
 from ...exception import SDKException
 from ..cainstance import CloudAppsInstance
 from ...constants import AppIDAType
+from base64 import b64encode
 
 
 class GoogleInstance(CloudAppsInstance):
@@ -440,3 +445,77 @@ class GoogleInstance(CloudAppsInstance):
         """Returns the instance properties json."""
 
         return {'instanceProperties': self._properties}
+
+    def modify_index_server(self, modified_index_server):
+        """
+            Method to modify the index server
+
+            Arguments:
+                modified_index_server        (str)--     new index server name
+        """
+        update_dict = {
+            "instance": {
+                "instanceId": int(self.instance_id),
+                "clientId": int(self._agent_object._client_object.client_id),
+                "applicationId": int(self._agent_object.agent_id)
+            },
+                "cloudAppsInstance": {
+                    "instanceType": self.ca_instance_type,
+                    "oneDriveInstance": {
+                    },
+                    "generalCloudProperties": {
+                        "indexServer": {
+                            "clientName": modified_index_server
+                        }
+                    }
+                }
+            }
+
+        self.update_properties(properties_dict=update_dict)
+
+    def modify_accessnodes(self,modified_accessnodes_list,modified_user_name,modified_user_password):
+        """
+                   Method to modify accessnodes
+
+                   Arguments:
+                       modified_accessnodes_list     (list)  --     list of new accessnodes
+                       modified_user_name            (str)   --     new user account name
+                       modified_user_password        (str)   --     new user account password
+        """
+        member_servers=[]
+        for client in modified_accessnodes_list:
+            client_dict = {
+                "client": {
+                    "clientName": client
+                }
+            }
+            member_servers.append(client_dict)
+
+        update_dict = {
+            "instance": {
+                "instanceId": int(self.instance_id),
+                "clientId": int(self._agent_object._client_object.client_id),
+                "applicationId": int(self._agent_object.agent_id)
+            },
+            "cloudAppsInstance": {
+                "instanceType": self.ca_instance_type,
+                "oneDriveInstance": {
+                    "serviceAccounts": {
+                        "accounts": [
+                            {
+                                "serviceType": "SYSTEM_ACCOUNT",
+                                "userAccount": {
+                                    "userName": modified_user_name,
+                                    "password": b64encode(modified_user_password.encode()).decode(),
+                                }
+                            }
+                        ]
+                    }
+                },
+                "generalCloudProperties": {
+                    "memberServers": member_servers
+                }
+            }
+        }
+
+        self.update_properties(properties_dict=update_dict)

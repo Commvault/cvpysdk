@@ -39,6 +39,8 @@ MSDynamics365Instance:
     *****************                       Properties                      *****************
 
     access_node                         --      Name of the access node that the instance is associated with
+
+    idx_app_type                        --      Returns the App type of the MS Dynamics 365 instance
 """
 
 from __future__ import unicode_literals
@@ -109,6 +111,11 @@ class MSDynamics365Instance(CloudAppsInstance):
     def access_node(self):
         """Returns the name of the access node for this MS Dynamics 365 instance"""
         return self._access_node
+
+    @property
+    def idx_app_type(self) -> int:
+        """Returns the App type of the MS Dynamics 365 instance"""
+        return 200127
 
     def discover_content(self, environment_discovery: bool = False):
         """

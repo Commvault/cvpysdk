@@ -188,9 +188,11 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
 
         """
         restore_option = {}
-        extra_options = ['destination_network', 'networks_nic', 'subnetwork_nic']
+        extra_options = ['destination_network', 'networks_nic', 'subnetwork_nic', 'vmCustomMetadata', 'createPublicIP']
         for key in extra_options:
             if key in kwargs:
+                if key == "vmCustomMetadata":
+                    kwargs[key] = [dict(item) for item in kwargs[key]]
                 restore_option[key] = kwargs[key]
             else:
                 restore_option[key] = None

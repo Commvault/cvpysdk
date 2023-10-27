@@ -53,6 +53,9 @@ GoogleSubclient:
 
     _get_user_guids()                   --  Retrieve GUIDs for users specified
 
+    process_index_retention_rules()     --  Makes API call to process index retention rules
+
+
 """
 
 from __future__ import unicode_literals
@@ -60,7 +63,6 @@ from ...exception import SDKException
 import time
 from ..casubclient import CloudAppsSubclient
 from ...constants import AppIDAType
-
 
 class GoogleSubclient(CloudAppsSubclient):
     """Derived class from CloudAppsSubclient Base class, representing a GMail/GDrive/OneDrive subclient,
@@ -744,3 +746,49 @@ class GoogleSubclient(CloudAppsSubclient):
             else:
                 raise SDKException('Subclient', '102', 'User details not found in discovered data')
         return  user_guid_list
+
+    def process_index_retention_rules(self,index_app_type_id,index_server_client_name):
+        """
+         Makes API call to process index retention rules
+
+         Args:
+
+            index_app_type_id           (int)   --   index app type id
+
+            index_server_client_name    (str)   --  client name of index server
+
+         Raises:
+
+                SDKException:
+
+                    if index server not found
+
+                    if response is empty
+
+                    if response is not success
+        """
+        if self._commcell_object.clients.has_client(index_server_client_name):
+            index_server_client_id = int(self._commcell_object.clients[index_server_client_name.lower()]['id'])
+            request_json = {
+                "appType": index_app_type_id,
+                "indexServerClientId": index_server_client_id
+            }
+            flag, response = self._cvpysdk_object.make_request(
+                'POST', self._services['OFFICE365_PROCESS_INDEX_RETENTION_RULES'], request_json
+            )
+            if flag:
+                if response.json():
+                    if "resp" in response.json():
+                        error_code = response.json()['resp']['errorCode']
+                        if error_code != 0:
+                            error_string = response.json()['response']['errorString']
+                            o_str = 'Failed to process index retention rules\nError: "{0}"'.format(error_string)
+                            raise SDKException('Subclient', '102', o_str)
+                    elif 'errorMessage' in response.json():
+                        error_string = response.json()['errorMessage']
+                        o_str = 'Failed to process index retention rules\nError: "{0}"'.format(error_string)
+                        raise SDKException('Subclient', '102', o_str)
+            else:
+                raise SDKException('Response', '101', self._update_response_(response.text))
+        else:
+            raise SDKException('IndexServers', '102')

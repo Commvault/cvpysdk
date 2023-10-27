@@ -67,6 +67,8 @@ StoragePolicy:
 
     _initialize_storage_policy_properties() --  initializes storage policy properties
 
+    edit_block_size_on_gdsp                 --  edits the sidb block size on GDSP
+
     has_copy()                              --  checks if copy with given name exists
 
     create_secondary_copy()                 --  creates a storage policy copy
@@ -195,6 +197,8 @@ StoragePolicyCopy:
 
     set_multiplexing_factor()               --  sets/unset the multiplexing factor for the storage policy copy 
 
+    set_ddb_resiliency()                    -- set/unset ddb resiliency for storage policy copy
+
 Attributes
 ----------
     **override_pool_retention**                 --  Returns if Override Pool Retention flag is set or not
@@ -210,6 +214,8 @@ Attributes
     **source_copy.setter**                      --  Sets the source copy for the copy
 
     **store_priming**                    --  Sets the value of DDB store priming under copy dedupe properties
+
+    **ddb_resiliency**                          -- Returns whether ddb resiliency is set or not
 
     ***is_active***                             --  Returns/Sets the 'Active' Property of the Copy
 
@@ -1054,6 +1060,53 @@ class StoragePolicy(object):
                 }
                 self._copies[copy_name] = temp
 
+    def edit_block_size_on_gdsp(self,
+                                size=512):
+        """
+        edit the block size on the gdsp
+
+        Args:
+                size (int) - SIDB block size to be changed to
+
+
+        Raises:
+            SDKException:
+                    if error in response
+
+                    if response received is empty
+
+                    if response is not success
+        """
+        request_json = {
+                        "App_UpdateStoragePolicyReq": {
+                            "StoragePolicy": {
+                                "storagePolicyName": self._storage_policy_name
+                            },
+                            "sidbBlockSizeKB": size
+                          }
+                        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'error' in response.json():
+                    error_code = int(response.json()['error']['errorCode'])
+                    if error_code != 0:
+                        if 'errorMessage' in response.json()['error']:
+                            error_message = "Failed to update block size factor on gdsp with error \
+                                    {0}".format(str(response.json()['error']['errorMessage']))
+                        else:
+                            error_message = "Failed to update block size factor on gdsp"
+                        raise SDKException('Storage', '102', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     def has_copy(self, copy_name):
         """Checks if a storage policy copy exists for this storage
             policy with the input storage policy name.
@@ -1118,16 +1171,16 @@ class StoragePolicy(object):
                 err_msg = f'Storage Policy copy "{copy_name}" already exists.'
                 raise SDKException('Storage', '102', err_msg)
 
-            if not self._commcell_object.storage_policies.has_policy(global_policy):
+            if not self._commcell_object.storage_pools.has_storage_pool(global_policy):
                 err_msg = f'No Global Storage Policy "{global_policy}" exists.'
-                raise SDKException('Storage', '102')
+                raise SDKException('Storage', '102', err_msg)
 
-            global_policy = self._commcell_object.storage_policies.get(global_policy)
+            global_policy = self._commcell_object.storage_pools.get(global_policy)
 
-            global_policy_copy = global_policy.get_copy(list(global_policy.copies.keys())[0])
+            global_policy_copy = StoragePolicyCopy (self._commcell_object, global_policy.storage_pool_name, global_policy.copy_name)
 
             is_global_dedupe_policy = global_policy_copy._dedupe_flags.get('enableDeduplication', 0)
-
+            
             request = {
                        "copyName": copy_name,
                        "storagePolicyCopyInfo": {
@@ -1150,7 +1203,7 @@ class StoragePolicy(object):
                               "useGlobalDedupStore": is_global_dedupe_policy
                           },
                            "useGlobalPolicy":{
-                               "storagePolicyName": global_policy.name
+                               "storagePolicyName": global_policy.storage_pool_name
                            }
                        }
                     }
@@ -2151,7 +2204,11 @@ class StoragePolicy(object):
                 total_jobs_to_process    (int)  -- Total number jobs to process for the auxcopy job
 
                 **kwargs    --  dict of keyword arguments as follows:
+<<<<<<< HEAD
                 job_description     (str)      -- Description for Job
+=======
+                ignore_dv_failed_jobs  (bool)  -- Ignore DV failed jobs
+>>>>>>> 4f5d676e236ab809f62a508c1d6c856fbe71b7c0
 
             Returns:
                 object - instance of the Job class for this aux copy job
@@ -2187,6 +2244,10 @@ class StoragePolicy(object):
             storage_policy_copy_name = ""
             media_agent = ""
 
+        ignore_dv_failed_jobs = False
+        if kwargs.get('ignore_dv_failed_jobs') is True:
+            ignore_dv_failed_jobs = True
+
         request_json = {
             "taskInfo": {
                 "associations": [
@@ -2218,6 +2279,7 @@ class StoragePolicy(object):
                                         "useMaximumStreams": use_max_streams,
                                         "useScallableResourceManagement": use_scale,
                                         "totalJobsToProcess": total_jobs_to_process,
+                                        "ignoreDataVerificationFailedJobs": ignore_dv_failed_jobs,
                                         "allCopies": all_copies,
                                         "mediaAgent": {
                                             "mediaAgentName": media_agent
@@ -4341,3 +4403,33 @@ class StoragePolicyCopy(object):
             "multiplexingFactor" : mux_factor
         }
         self._set_copy_properties()
+
+    @property
+    def ddb_resiliency(self):
+        """Treats the Resiliency Flag as a read-only attribute.
+            Returns:
+                (bool) : Value of Resiliency Flag
+        """
+        return bool(self._dedupe_flags.get('allowJobsToRunWithoutAllPartitions'))
+
+    def set_ddb_resiliency(self, is_enabled, min_num_partitions):
+        """Sets Resiliency On or Off, and set partition threshold for Resiliency
+            Args:
+                is_enabled  (Boolean) -- True or False to enable and disable resiliency respectively.
+                min_num_partitions (int) -- Number of partitions required to be online for Resiliency to take affect.
+            Raises SDKException:
+                If input is not valid
+                If min_num_partitions < 1
+                If API response is not successful
+        """
+        if isinstance(is_enabled, bool) or isinstance(min_num_partitions, int):
+            SDKException('Storage', '101')
+        if is_enabled:
+            if min_num_partitions < 1:
+                SDKException('Storage', '102', "error min_num_partitions should be greater than or equal to 1")
+            self._copy_properties['minimumNumberOfPartitionsForJobsToRun'] = min_num_partitions
+            self._dedupe_flags['allowJobsToRunWithoutAllPartitions'] = 1
+            self._set_copy_properties()
+        else:
+            self._dedupe_flags['allowJobsToRunWithoutAllPartitions'] = 0
+            self._set_copy_properties()
