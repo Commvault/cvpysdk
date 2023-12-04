@@ -165,16 +165,16 @@ DiskLibrary:
     _get_library_properties()   --  gets the disk library properties
 
     _get_advanced_library_properties() --  gets the advanced disk library  properties
-
+    
     refresh()                   --  Refresh the properties of this disk library.
 
 DiskLibrary instance Attributes
 
-    **media_agents_associated**  --  returns the media agents associated with the disk library
-    **library_properties**       --  Returns the dictionary consisting of the full properties of the library
+    **media_agents_associated**     --  returns the media agents associated with the disk library
+    **library_properties**          --  Returns the dictionary consisting of the full properties of the library
     **advanced_library_properties** -- Returns the dictionary consisting of advanced library properites
-    **free_space**               --  returns the free space on the library
-    **mountpath_usage**          --  returns mountpath usage on library
+    **free_space**                  --  returns the free space on the library
+    **mountpath_usage**             --  returns mountpath usage on library
 
 TapeLibraries:
 
@@ -1782,7 +1782,7 @@ class DiskLibrary(object):
             raise SDKException('Response', '102')
         response_string = self._commcell_object._update_response_(response.text)
         raise SDKException('Response', '101', response_string)
-    
+
     def _get_advanced_library_properties(self):
         """Gets the advanced disk library  properties.
 
@@ -1809,6 +1809,7 @@ class DiskLibrary(object):
             raise SDKException('Response', '102')
         response_string = self._commcell_object._update_response_(response.text)
         raise SDKException('Response', '101', response_string)
+
 
     def _get_library_id(self):
         """Gets the library id associated with this disk library.
@@ -2162,7 +2163,7 @@ class DiskLibrary(object):
         """Returns the dictionary consisting of the full properties of the library"""
         self.refresh()
         return self._library_properties
-    
+
     @property
     def advanced_library_properties(self):
         """Returns the dictionary consisting of the advanced properties of the library"""

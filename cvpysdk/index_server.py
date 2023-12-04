@@ -300,7 +300,7 @@ class IndexServers(object):
                             self._all_index_servers[item['cloudID']]['basePort'].append(item['basePort'])
 
                     else:
-                        item['version'] = [item['version']]
+                        item['version'] = [item.get('version', '')]
                         item['clientId'] = [item['clientId']]
                         item['clientName'] = [item['clientName']]
                         item['hostName'] = [item['hostName']]

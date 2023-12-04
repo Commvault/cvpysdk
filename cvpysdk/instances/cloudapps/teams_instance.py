@@ -28,6 +28,7 @@ TeamsInstance:
     _restore_json()                 --  Returns JSON request to pass to API as per the options selected by the user.
     _cloud_apps_restore_json()      --  Returns JSON for Cloud Apps related properties.
     restore_out_of_place()          --  Restore a team to another location.
+    update_instance()               --  Update Instance properties.
 
 """
 
@@ -38,6 +39,7 @@ from ..cainstance import CloudAppsInstance
 from cvpysdk.job import Job
 
 import time
+
 
 class TeamsInstance(CloudAppsInstance):
     """Class for representing an Instance of Office 365 Teams."""
@@ -88,9 +90,10 @@ class TeamsInstance(CloudAppsInstance):
 
         return {'instanceProperties': self._properties}
 
-    def discover(self, refresh_cache=True):
+    def discover(self, discovery_type, refresh_cache=True):
         """Launches Discovery and returns the discovered teams.
             Args:
+                discovery_type (int) -- TYpe of the discovery Example: Teams 12, users
                 refresh_cache   --  Refreshes Discover cache information.
                     default:    True
 
@@ -105,7 +108,7 @@ class TeamsInstance(CloudAppsInstance):
 
         """
 
-        DISCOVERY_TYPE = 8
+        DISCOVERY_TYPE = discovery_type
         max_retries = 5
         url = f"{self._services['GET_CLOUDAPPS_USERS'] % (self.instance_id, self._agent_object._client_object.client_id, DISCOVERY_TYPE)}&pageSize=0"
 
@@ -123,6 +126,11 @@ class TeamsInstance(CloudAppsInstance):
                     if 'userAccounts' in resp:
                         self.discovered_users = {team['smtpAddress']: team for team in resp['userAccounts']}
                         return self.discovered_users
+                    elif 'groups' in resp:
+                        self.discovered_users = {team['name']: team for team in resp['groups']}
+                        return self.discovered_users
+                    elif not resp:
+                        return {}
 
                     # IF OUR RESPONSE IS EMPTY OR WE HAVE REACHED MAXIMUM NUMBER OF ATTEMPTS WITHOUT DESIRED RESPONSE
                     elif not resp or retry == max_retries-1:
@@ -305,3 +313,35 @@ class TeamsInstance(CloudAppsInstance):
 
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def update_instance(self, request_json):
+        """Update Instance properties.
+
+                    Args:
+                        request_json        (dict)   --  Dict of instance properties.
+                    Returns:
+                        response of the request
+
+                    Raises:
+                        SDKException:
+                            If update failed.
+                            If response is empty.
+                            If response is not success.
+
+                """
+
+        url = self._services['INSTANCE_PROPERTIES'] % (self.instance_id)
+        flag, response = self._cvpysdk_object.make_request('POST', url, request_json)
+        if response.json():
+
+            if 'processinginstructioninfo' in response.json():
+                return response.json()
+
+            elif "errorCode" in response.json():
+                error_message = response.json()['errorMessage']
+                raise SDKException('Subclient', '102', f"Update failed, error message : {error_message}")
+
+            raise SDKException('Response', '102')
+
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException('Response', '101', response_string)

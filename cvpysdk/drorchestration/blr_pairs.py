@@ -918,7 +918,7 @@ class BLRPair:
                 False, if the expected status was not met in given time
         """
         if isinstance(expected_status, str):
-            expected_status = BLRPairs.PairStatus(expected_status.upper())
+            expected_status = BLRPairs.PairStatus[expected_status.upper()]
         start_time = time.time()
         self.refresh()
 

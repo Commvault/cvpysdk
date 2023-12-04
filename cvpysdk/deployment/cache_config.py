@@ -35,6 +35,8 @@ CommServeCache
 
     commit_cache()                        --  commits CS cache
 
+    get_remote_cache_clients()            --  fetches the list of Remote Cache configured for a particular Admin/Tenant
+
 RemoteCache
 ==============
 
@@ -74,6 +76,8 @@ class CommServeCache(object):
 
         self.commcell_object = commcell_object
         self.request_xml = CommServeCache.get_request_xml()
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
 
     @staticmethod
     def get_request_xml():
@@ -179,6 +183,29 @@ class CommServeCache(object):
                 '101',
                 'Error Code:"{0}"\nError Message: "{1}"'.format(response.get('errorCode'), error_message)
             )
+
+    def get_remote_cache_clients(self):
+        """
+        Fetches the List of Remote Cache configured for a particular Admin/Tenant
+        :return: List of Remote Cache configured
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._services['GET_REMOTE_CACHE_CLIENTS'])
+
+        if flag:
+            rc_client_names = []
+            if response.ok:
+                xml_tree = ET.fromstring(response.text)
+                if xml_tree.findall(".//client"):
+                    # Find all 'client' elements
+                    client_elements = xml_tree.findall('.//client')
+                    # Extract the client names
+                    rc_client_names = [client.get('clientName') for client in client_elements]
+                    rc_client_names.remove(self.commcell_object.commserv_name)
+                return rc_client_names
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
 
 
 class RemoteCache(object):

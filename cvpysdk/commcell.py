@@ -82,6 +82,8 @@ Commcell:
 
     install_software()              --  triggers the install Software job with the given options
 
+    remote_cache_clients()      --  fetches the list of Remote Cache configured for a particular Admin/Tenant
+
     enable_auth_code()              --  executes the request on the server to enable Auth Code
     for installation on the commcell
 
@@ -2541,6 +2543,21 @@ class Commcell(object):
             sw_cache_client=sw_cache_client,
             **kwargs)
 
+    @property
+    def remote_cache_clients(self):
+        """
+            Fetches the List of Remote Cache configured for a particular Admin/Tenant
+            :return: List of Remote Cache configured
+        """
+        try:
+            if self._commserv_cache is None:
+                self._commserv_cache = CommServeCache(self)
+
+            return self._commserv_cache.get_remote_cache_clients()
+
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
     def enable_auth_code(self):
         """Executes the request on the server to enable Auth Code for installation on commcell
 
@@ -3313,12 +3330,14 @@ class Commcell(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def unregister_commcell(self, commcell_name):
+    def unregister_commcell(self, commcell_name, force=False):
         """Unregisters a commcell
 
         Args:
 
             commcell_name       (str) - Name of the service commcell that has to be unregistered
+
+            force   (bool)  -   if True, will perform forced unregistration
 
         Raises:
 
@@ -3337,14 +3356,16 @@ class Commcell(object):
                     <commcell ccClientId="{0}" ccClientName="{1}" interfaceName="{2}">
                         <commCell _type_="{3}" commCellId="{4}" csGUID="{5}"/>
                     </commcell>
+                    <forceUnregister>{6}</forceUnregister>
                 </EVGui_CN2RemoveCellRegReq>
                 """.format(
-                    self._registered_commcells[commcell_name]['ccClientId'],
-                    self._registered_commcells[commcell_name]['ccClientName'],
-                    self._registered_commcells[commcell_name]['interfaceName'],
-                    self._registered_commcells[commcell_name]['commCell']['_type_'],
-                    self._registered_commcells[commcell_name]['commCell']['commCellId'],
-                    self._registered_commcells[commcell_name]['commCell']['csGUID']
+                    self.registered_commcells[commcell_name]['ccClientId'],
+                    self.registered_commcells[commcell_name]['ccClientName'],
+                    self.registered_commcells[commcell_name]['interfaceName'],
+                    self.registered_commcells[commcell_name]['commCell']['_type_'],
+                    self.registered_commcells[commcell_name]['commCell']['commCellId'],
+                    self.registered_commcells[commcell_name]['commCell']['csGUID'],
+                    int(force)
                 )
 
                 flag, response = self._cvpysdk_object.make_request(

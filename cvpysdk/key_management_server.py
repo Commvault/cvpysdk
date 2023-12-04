@@ -507,6 +507,19 @@ class KeyManagementServers(KeyManagementServerConstants):
                 "AWS_ACCESS_KEY": "",
                 "AWS_SECRET_KEY": ""     -- Base64 encoded
             }
+            
+        input dictionary for creating AWS KMS with access node ( key based authentication ) and by enabling Bring Your Own Key.
+            kms_details = {
+                "KEY_PROVIDER_TYPE": "KEY_PROVIDER_AWS_KMS",
+                "AWS_REGION_NAME": "US East (Ohio)",    -- Optional Value. Default is "Asia Pacific (Mumbai)"
+                "ACCESS_NODE_NAME": "",
+                "KMS_NAME": "",
+                "KEY_PROVIDER_AUTH_TYPE": "AWS_KEYS",
+                "AWS_ACCESS_KEY": "",
+                "AWS_SECRET_KEY": "",     -- Base64 encoded
+                "BringYourOwnKey": True,
+                "KEYS": []
+            }
 
         input dictionary for creating AWS KMS with access node ( credential template file based authentication )
             kms_details = {
@@ -525,6 +538,8 @@ class KeyManagementServers(KeyManagementServerConstants):
                 "KMS_NAME": "",
                 "KEY_PROVIDER_AUTH_TYPE": "AWS_IAM"
             }
+            
+        
 
         input dictionary for creating Azure KMS with access Node ( certificate based authentication )
             kms_details = {
@@ -594,6 +609,8 @@ class KeyManagementServers(KeyManagementServerConstants):
                 "BringYourOwnKey": True,
                 "KEYS": ["KeyID1/KeyVersion1", "KeyID2/KeyVersion2", "KeyID3/KeyVersion3"]
             }
+            
+        
             
         """
         
@@ -780,6 +797,18 @@ class KeyManagementServers(KeyManagementServerConstants):
         KeyManagementServers._validate_input(kms_name, str)
 
         payload = None
+        is_bring_your_own_key = 0
+        keys = []
+
+        if "BringYourOwnKey" in kms_details:
+            if kms_details.get("BringYourOwnKey"):
+                if "KEYS" not in kms_details:
+                    raise SDKException('KeyManagementServer', 107)
+                if type(kms_details['KEYS']) != list :
+                    raise SDKException('Storage', 101)
+                is_bring_your_own_key = 1
+                for k in kms_details['KEYS']:
+                    keys.append({"keyId": k})
 
         if kms_details == None or "ACCESS_NODE_NAME" not in kms_details:
 
@@ -833,7 +862,8 @@ class KeyManagementServers(KeyManagementServerConstants):
 						        }
 					        }
 				            ],
-				            "bringYourOwnKey": "0",
+				            "bringYourOwnKey": str(is_bring_your_own_key),
+                            "keys": keys,
 				            "regionName": aws_region_name if aws_region_name!=None else kms_details['AWS_REGION_NAME']
 			            },
 			            "provider": {

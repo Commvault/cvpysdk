@@ -399,8 +399,6 @@ class VirtualServerSubclient(Subclient):
                                                 ]
                                             ]
 
-
-
             Returns:
                 list - list of the appropriate JSON for an agent to send to the
                        POST Subclient API
@@ -454,7 +452,6 @@ class VirtualServerSubclient(Subclient):
                         virtual_server_dict.get('children').append(temp)
                     else:
                         content.append(temp)
-
                 if not isinstance(entity, list):
                     entity = [entity]
                 if len(entity[0]['content']) == 1 or isinstance(entity[0]['content'], dict):
@@ -538,15 +535,18 @@ class VirtualServerSubclient(Subclient):
 
         try:
             for temp_dict in subclient_diskfilter:
-                for type_id, type_name in self.filter_types.items():
-                    if type_name == temp_dict['type']:
-                        filter_type_id = type_id
-                        break
+                if temp_dict.get('filterTypeId'):
+                    filter_type_id = temp_dict['filterTypeId']
+                else:
+                    filter_type_id = \
+                        list(filter(lambda x: self.filter_types[x].lower() == temp_dict['filtertype'].lower(),
+                                    self.filter_types))[
+                            0]
 
                 virtual_server_dict = {
                     'filter': temp_dict['filter'],
                     'filterType': filter_type_id,
-                    'vmGuid': temp_dict['vmGuid']
+                    'vmGuid': temp_dict.get('vmGuid')
                 }
 
                 vm_diskfilter.append(virtual_server_dict)

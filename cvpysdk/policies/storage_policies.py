@@ -191,13 +191,19 @@ StoragePolicyCopy:
 
     is_dedupe_enabled()                     --  checks whether deduplication is enabled for the copy
 
-    set_encryption_properties()                   --  configures copy encryption settings as per user input
+    set_encryption_properties()             --  configures copy encryption settings as per user input
 
     set_key_management_server()             --  sets the Key Management Server to this copy
 
-    set_multiplexing_factor()               --  sets/unset the multiplexing factor for the storage policy copy 
+    set_multiplexing_factor()               --  sets/unset the multiplexing factor for the storage policy copy
+
+    delete_datapath()                       --  delete datapath from storage policy copy
+
+    set_default_datapath()                  --  sets default data path
 
     set_ddb_resiliency()                    -- set/unset ddb resiliency for storage policy copy
+    
+    rotate_encryption_master_key()          -- Rotates the encryption key for this copy
 
 Attributes
 ----------
@@ -2204,11 +2210,8 @@ class StoragePolicy(object):
                 total_jobs_to_process    (int)  -- Total number jobs to process for the auxcopy job
 
                 **kwargs    --  dict of keyword arguments as follows:
-<<<<<<< HEAD
-                job_description     (str)      -- Description for Job
-=======
                 ignore_dv_failed_jobs  (bool)  -- Ignore DV failed jobs
->>>>>>> 4f5d676e236ab809f62a508c1d6c856fbe71b7c0
+                job_description     (str)      -- Description for Job
 
             Returns:
                 object - instance of the Job class for this aux copy job
@@ -4402,7 +4405,7 @@ class StoragePolicyCopy(object):
         self._copy_properties['mediaProperties'] = {
             "multiplexingFactor" : mux_factor
         }
-        self._set_copy_properties()
+        self._set_copy_properties()    
 
     @property
     def ddb_resiliency(self):
@@ -4433,3 +4436,112 @@ class StoragePolicyCopy(object):
         else:
             self._dedupe_flags['allowJobsToRunWithoutAllPartitions'] = 0
             self._set_copy_properties()
+
+    def delete_datapath(self, library_name, media_agent_name):
+        """
+        Delete DataPath from the storage policy copy
+
+            Args:
+                library_name    (str)   --   name of the library
+
+                media_agent_name(str)   --   name of the media agent
+
+            Raises:
+                SDKException:
+                    - If type of required input parameters is not string
+                    - If API response is not successful
+        """
+        if not (isinstance(media_agent_name, str)) and isinstance(library_name):
+            raise SDKException('Storage', '101')
+
+        request_json = {
+            "storagePolicyCopyInfo": {
+                "dataPathProperties": [
+                    {
+                        "operationFlags": {
+                            "removeDataPath": True
+                        },
+                        "mediaAgent": {
+                            "mediaAgentName": media_agent_name
+                        },
+                        "library": {
+                            "libraryName": library_name
+                        }
+                    }
+                ]
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request('PUT', self._STORAGE_POLICY_COPY,
+                                                           request_json)
+        self.refresh()
+        if flag:
+            if response.json():
+                response = response.json()
+                if "error" in response and response.get("error", {}).get("errorCode") != 0:
+                    error_message = response.get("error", {}).get("errorMessage")
+                    raise SDKException('Response', '101', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            error_message = response.json().get("errorMessage")
+            raise SDKException('Response', '111', error_message)
+
+    def rotate_encryption_master_key(self):
+        """
+        Rotates the encryption key for this copy
+        """
+        self._copy_properties["dataEncryption"] = {
+            "rotateMasterKey": True
+        }
+        self._set_copy_properties()
+        
+    def set_default_datapath(self, library_name, media_agent_name):
+        """
+        Set default data path for that storage policy copy.
+
+            Args:
+                library_name    (str)   --   name of the library
+
+                media_agent_name(str)   --   name of the media agent
+
+            Raises:
+                SDKException:
+                    - If type of required input parameters is not string
+                    - If API response is not successful
+        """
+        if not (isinstance(media_agent_name, str)) and isinstance(library_name):
+            raise SDKException('Storage', '101')
+
+        request_json = {
+            "storagePolicyCopyInfo": {
+                "dataPathProperties": [
+                    {
+                        "operationFlags": {
+                            "setDefault": True
+                        },
+                        "mediaAgent": {
+                            "mediaAgentName": media_agent_name
+                        },
+                        "library": {
+                            "libraryName": library_name
+                        }
+                    }
+                ]
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request('PUT', self._STORAGE_POLICY_COPY,
+                                                           request_json)
+        self.refresh()
+        if flag:
+            if response.json():
+                response = response.json()
+                if "error" in response and response.get("error", {}).get("errorCode") != 0:
+                    error_message = response.get("error", {}).get("errorMessage")
+                    raise SDKException('Response', '101', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            error_message = response.json().get("errorMessage")
+            raise SDKException('Response', '111', error_message)

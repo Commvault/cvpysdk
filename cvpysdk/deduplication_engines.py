@@ -1052,7 +1052,7 @@ class Store(object):
         raise SDKException('Response', '101', response_string)
 
     def run_ddb_verification(self, incremental_verification=True, quick_verification=True,
-                             use_scalable_resource=True, max_streams=0):
+                             use_scalable_resource=True, max_streams=0, total_jobs_to_process=1000):
         """
         runs deduplication data verification(dv2) job with verification type and dv2 option
 
@@ -1066,7 +1066,11 @@ class Store(object):
             use_scalable_resource (bool)    - Use Scalable Resource Allocation while running DDB Verification Job
                                             Default: True
 
-            max_streams (int)           - DV2 job option, maximum number of streams to use. By default, job uses max streams.
+            max_streams (int)               - DV2 job option, maximum number of streams to use.
+                                              By default, job uses max streams.
+
+            total_jobs_to_process    (int)  - Batch size for number of backup jobs to be picked for verification simultaneously
+                                              Default: 1000 jobs per batch
 
         Returns:
              object - instance of Job class for DDB Verification job
@@ -1122,6 +1126,7 @@ class Store(object):
                                     "auxcopyJobOption": {
                                         "useMaximumStreams": f"{use_max_streams}",
                                         "maxNumberOfStreams": f"{max_streams}",
+                                        "totalJobsToProcess": total_jobs_to_process,
                                         "allCopies": "true",
                                         "mediaAgent": {
                                             "mediaAgentName": ""
