@@ -194,6 +194,15 @@ class DB2Instance(Instance):
             "cloneRecovery": value.get("clone_recovery", False)
         }
 
+        if value.get("archive_log_time", False):
+            self.db2_options_restore_json["logTimeRange"] = dict()
+            self.db2_options_restore_json["logTimeRange"]["fromTimeValue"] = value.get("from_time_value", 0)
+            self.db2_options_restore_json["logTimeRange"]["toTimeValue"] = value.get("to_time_value", 0)
+
+        if value.get("archivelog_lsn", False):
+            self.db2_options_restore_json["startLSNNum"] = value.get("start_lsn_num", 1)
+            self.db2_options_restore_json["endLSNNum"] = value.get("end_lsn_num", 1)
+
         return self.db2_options_restore_json
 
     def _restore_json(self, **kwargs):
@@ -276,6 +285,7 @@ class DB2Instance(Instance):
                     if response is not success
 
         """
+
         recover_db = kwargs.get("recover_db", True)
         restore_incremental = kwargs.get("restore_incremental", True)
         restore_data = kwargs.get("restore_data", True)
@@ -283,6 +293,17 @@ class DB2Instance(Instance):
         roll_forward = kwargs.get("roll_forward", True)
         restore_logs = kwargs.get("restore_logs", True)
         restore_type = kwargs.get("restore_type", 'ENTIREDB')
+        start_lsn_num = kwargs.get("startLSNNum", 1)
+        end_lsn_num = kwargs.get("endLSNNum", 1)
+        end_lsn = kwargs.get("endLSN", False)
+        start_lsn = kwargs.get("startLSN", False)
+        archivelog_lsn = kwargs.get("archiveLogLSN", False)
+        archive_log_time = kwargs.get("archiveLogTime", False)
+        logtime_start = kwargs.get("logTimeStart", False)
+        logtime_end = kwargs.get("logTimeEnd", False)
+        from_time_value = kwargs.get("fromTimeValue", 0)
+        to_time_value = kwargs.get("toTimeValue", 0)
+
 
         if "entiredb" in restore_type.lower():
             restore_type = 0
@@ -299,7 +320,17 @@ class DB2Instance(Instance):
             copy_precedence=copy_precedence,
             roll_forward=roll_forward,
             rollforward_pending=not roll_forward,
-            restore_archive_logs=restore_logs
+            restore_archive_logs=restore_logs,
+            start_lsn_num=start_lsn_num,
+            end_lsn_num=end_lsn_num,
+            archivelog_lsn=archivelog_lsn,
+            start_lsn=start_lsn,
+            end_lsn=end_lsn,
+            archive_log_time=archive_log_time,
+            logtime_start=logtime_start,
+            logtime_end=logtime_end,
+            from_time_value=from_time_value,
+            to_time_value=to_time_value
         )
         request_json['taskInfo']["subTasks"][0]["options"]["restoreOptions"][
             "browseOption"]["backupset"]["backupsetName"] = dest_database_name
