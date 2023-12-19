@@ -46,7 +46,7 @@ _get_path_for_restore               --  forms path argument for restore based on
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/index_server_subclient.py#L1-L381" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/index_server_subclient.py#L1-L396" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # --------------------------------------------------------------------------
@@ -131,53 +131,57 @@ class IndexServerSubclient(BigDataAppsSubclient):
 
     def _get_path_for_restore(self, roles=None, core_name=None, client=None):
         &#34;&#34;&#34; Forms the path argument for restore request based on specified input
-
+ 
         Args:
-
+ 
             roles       (list)      -- list of role names which needs to be restored
-
+ 
             core_name   (list)      -- list of solr core name which needs to be restored
-
+ 
             client      (str)       -- name of solr node client in case of solr cloud
                     ***Applicable only for solr cloud or CVSolr***
-
+ 
         Returns:
-
+ 
                 list        --  list containing formatted paths
-
+ 
         Raises:
-
+ 
             SDKException:
-
+ 
                     if client name is not passed for index server cloud
-
+ 
                     if client is not a part of cloud
-
+ 
         &#34;&#34;&#34;
         paths = []
         if client is None:
             client = self._index_server_obj.client_name[0]
         if client not in self._index_server_obj.client_name:
             raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#39;Given client name is not part of index server cloud&#39;)
-
+ 
         path_delimiter = &#34;\\&#34;
         if self._index_server_obj.os_type == IndexServerOSType.UNIX.value:
             path_delimiter = &#34;/&#34;
-
+ 
         if core_name is None and roles is not None:
             paths = [f&#34;{path_delimiter}{role}{path_delimiter}{client}&#34; for role in roles]
-
+ 
         elif roles is None and core_name is not None:
             for core in core_name:
                 core = core.replace(path_delimiter, f&#34;{path_delimiter}{client}{path_delimiter}&#34;)
                 paths.append(f&#34;{path_delimiter}{core}&#34;)
-
+ 
+        elif len(roles) == 1 and core_name is not None:
+            for core in core_name:
+                paths.append(f&#34;{path_delimiter}{roles[0]}{path_delimiter}{client}{path_delimiter}{core}&#34;)
+ 
         else:
             for role in self.content:
                 role = role.replace(&#34;\\&#34;, &#39;&#39;)
                 role = role.replace(&#34;%&#34;, &#39;&#39;)
                 paths.append(f&#34;{path_delimiter}{role}{path_delimiter}{client}&#34;)
-
+ 
         return paths
 
     def do_restore_in_place(
@@ -334,7 +338,8 @@ class IndexServerSubclient(BigDataAppsSubclient):
         job_obj = self.backup(backup_level=backup_level)
         return job_obj
 
-    def get_file_details_from_backup(self, roles=None, include_files=True, job_id=0, index_server_node=None):
+    def get_file_details_from_backup(self, roles=None, include_files=True, job_id=0, index_server_node=None,
+                                     **kwargs):
         &#34;&#34;&#34;Gets files/folders details from index server backup job.
 
                     Args:
@@ -349,6 +354,10 @@ class IndexServerSubclient(BigDataAppsSubclient):
 
                         index_server_node   (str)   --  index server client node name
                             Note : Required compulsory in the case of unix IS when roles is not none.
+
+                        kwargs                      --  Additional info
+                            ex -&gt; core_list (list)  --  List of cores whose file details needs to be fetched
+                                                             from backup
 
 
                      Returns: (list, dict)
@@ -380,7 +389,13 @@ class IndexServerSubclient(BigDataAppsSubclient):
                     raise SDKException(&#39;IndexServers&#39;, &#39;109&#39;)
                 if len(roles) &gt; 1:
                     raise SDKException(&#39;IndexServers&#39;, &#39;110&#39;)
-                roles_path = [f&#34;/{role}/{index_server_node}&#34; for role in roles]
+
+                roles_path = [f&#34;/{roles[0]}/{index_server_node}&#34;]
+                
+                core_list = kwargs.get(&#39;core_list&#39;)
+                if core_list is not None:
+                    roles_path = [f&#34;/{roles[0]}/{index_server_node}/{core}&#34; for core in core_list]
+
                 find_options[&#39;operation&#39;] = &#39;browse&#39;
 
             find_options[&#39;path&#39;] = roles_path
@@ -461,7 +476,7 @@ and to perform operations on that subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/index_server_subclient.py#L50-L381" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/index_server_subclient.py#L50-L396" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class IndexServerSubclient(BigDataAppsSubclient):
     &#34;&#34;&#34;
@@ -497,53 +512,57 @@ and to perform operations on that subclient</p>
 
     def _get_path_for_restore(self, roles=None, core_name=None, client=None):
         &#34;&#34;&#34; Forms the path argument for restore request based on specified input
-
+ 
         Args:
-
+ 
             roles       (list)      -- list of role names which needs to be restored
-
+ 
             core_name   (list)      -- list of solr core name which needs to be restored
-
+ 
             client      (str)       -- name of solr node client in case of solr cloud
                     ***Applicable only for solr cloud or CVSolr***
-
+ 
         Returns:
-
+ 
                 list        --  list containing formatted paths
-
+ 
         Raises:
-
+ 
             SDKException:
-
+ 
                     if client name is not passed for index server cloud
-
+ 
                     if client is not a part of cloud
-
+ 
         &#34;&#34;&#34;
         paths = []
         if client is None:
             client = self._index_server_obj.client_name[0]
         if client not in self._index_server_obj.client_name:
             raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#39;Given client name is not part of index server cloud&#39;)
-
+ 
         path_delimiter = &#34;\\&#34;
         if self._index_server_obj.os_type == IndexServerOSType.UNIX.value:
             path_delimiter = &#34;/&#34;
-
+ 
         if core_name is None and roles is not None:
             paths = [f&#34;{path_delimiter}{role}{path_delimiter}{client}&#34; for role in roles]
-
+ 
         elif roles is None and core_name is not None:
             for core in core_name:
                 core = core.replace(path_delimiter, f&#34;{path_delimiter}{client}{path_delimiter}&#34;)
                 paths.append(f&#34;{path_delimiter}{core}&#34;)
-
+ 
+        elif len(roles) == 1 and core_name is not None:
+            for core in core_name:
+                paths.append(f&#34;{path_delimiter}{roles[0]}{path_delimiter}{client}{path_delimiter}{core}&#34;)
+ 
         else:
             for role in self.content:
                 role = role.replace(&#34;\\&#34;, &#39;&#39;)
                 role = role.replace(&#34;%&#34;, &#39;&#39;)
                 paths.append(f&#34;{path_delimiter}{role}{path_delimiter}{client}&#34;)
-
+ 
         return paths
 
     def do_restore_in_place(
@@ -700,7 +719,8 @@ and to perform operations on that subclient</p>
         job_obj = self.backup(backup_level=backup_level)
         return job_obj
 
-    def get_file_details_from_backup(self, roles=None, include_files=True, job_id=0, index_server_node=None):
+    def get_file_details_from_backup(self, roles=None, include_files=True, job_id=0, index_server_node=None,
+                                     **kwargs):
         &#34;&#34;&#34;Gets files/folders details from index server backup job.
 
                     Args:
@@ -715,6 +735,10 @@ and to perform operations on that subclient</p>
 
                         index_server_node   (str)   --  index server client node name
                             Note : Required compulsory in the case of unix IS when roles is not none.
+
+                        kwargs                      --  Additional info
+                            ex -&gt; core_list (list)  --  List of cores whose file details needs to be fetched
+                                                             from backup
 
 
                      Returns: (list, dict)
@@ -746,7 +770,13 @@ and to perform operations on that subclient</p>
                     raise SDKException(&#39;IndexServers&#39;, &#39;109&#39;)
                 if len(roles) &gt; 1:
                     raise SDKException(&#39;IndexServers&#39;, &#39;110&#39;)
-                roles_path = [f&#34;/{role}/{index_server_node}&#34; for role in roles]
+
+                roles_path = [f&#34;/{roles[0]}/{index_server_node}&#34;]
+                
+                core_list = kwargs.get(&#39;core_list&#39;)
+                if core_list is not None:
+                    roles_path = [f&#34;/{roles[0]}/{index_server_node}/{core}&#34; for core in core_list]
+
                 find_options[&#39;operation&#39;] = &#39;browse&#39;
 
             find_options[&#39;path&#39;] = roles_path
@@ -831,7 +861,7 @@ list of role names which needs to be backed up</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/index_server_subclient.py#L346-L381" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/index_server_subclient.py#L361-L396" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def configure_backup(self, storage_policy, role_content):
     &#34;&#34;&#34;Edit the default subclient for modifying role content or storage policy.
@@ -928,7 +958,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/index_server_subclient.py#L133-L192" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/index_server_subclient.py#L137-L196" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def do_restore_in_place(
         self,
@@ -1053,7 +1083,7 @@ if failed to initialize job
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/index_server_subclient.py#L194-L257" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/index_server_subclient.py#L198-L261" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def do_restore_out_of_place(
         self,
@@ -1122,7 +1152,7 @@ if failed to initialize job
 </details>
 </dd>
 <dt id="cvpysdk.subclients.index_server_subclient.IndexServerSubclient.get_file_details_from_backup"><code class="name flex">
-<span>def <span class="ident">get_file_details_from_backup</span></span>(<span>self, roles=None, include_files=True, job_id=0, index_server_node=None)</span>
+<span>def <span class="ident">get_file_details_from_backup</span></span>(<span>self, roles=None, include_files=True, job_id=0, index_server_node=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Gets files/folders details from index server backup job.</p>
@@ -1145,7 +1175,14 @@ job id to be used for browse</p>
 (str)
 &ndash;
 index server client node name
-Note : Required compulsory in the case of unix IS when roles is not none.
+Note : Required compulsory in the case of unix IS when roles is not none.</p>
+<p>kwargs
+&ndash;
+Additional info
+ex -&gt; core_list (list)
+&ndash;
+List of cores whose file details needs to be fetched
+from backup
 Returns: (list, dict)</p>
 <pre><code>list    -   List of only the file, folder paths from the browse response
 
@@ -1159,9 +1196,10 @@ dict    -   Dictionary of all the paths with additional metadata retrieved
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/index_server_subclient.py#L287-L344" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/index_server_subclient.py#L291-L359" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get_file_details_from_backup(self, roles=None, include_files=True, job_id=0, index_server_node=None):
+<pre><code class="python">def get_file_details_from_backup(self, roles=None, include_files=True, job_id=0, index_server_node=None,
+                                 **kwargs):
     &#34;&#34;&#34;Gets files/folders details from index server backup job.
 
                 Args:
@@ -1176,6 +1214,10 @@ dict    -   Dictionary of all the paths with additional metadata retrieved
 
                     index_server_node   (str)   --  index server client node name
                         Note : Required compulsory in the case of unix IS when roles is not none.
+
+                    kwargs                      --  Additional info
+                        ex -&gt; core_list (list)  --  List of cores whose file details needs to be fetched
+                                                         from backup
 
 
                  Returns: (list, dict)
@@ -1207,7 +1249,13 @@ dict    -   Dictionary of all the paths with additional metadata retrieved
                 raise SDKException(&#39;IndexServers&#39;, &#39;109&#39;)
             if len(roles) &gt; 1:
                 raise SDKException(&#39;IndexServers&#39;, &#39;110&#39;)
-            roles_path = [f&#34;/{role}/{index_server_node}&#34; for role in roles]
+
+            roles_path = [f&#34;/{roles[0]}/{index_server_node}&#34;]
+            
+            core_list = kwargs.get(&#39;core_list&#39;)
+            if core_list is not None:
+                roles_path = [f&#34;/{roles[0]}/{index_server_node}/{core}&#34; for core in core_list]
+
             find_options[&#39;operation&#39;] = &#39;browse&#39;
 
         find_options[&#39;path&#39;] = roles_path
@@ -1242,7 +1290,7 @@ if backup level specified is not correct</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/index_server_subclient.py#L259-L285" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/index_server_subclient.py#L263-L289" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_backup(self, backup_level=&#34;Full&#34;):
     &#34;&#34;&#34;Runs a backup job for the default subclient.

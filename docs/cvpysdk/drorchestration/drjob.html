@@ -38,7 +38,7 @@ get_vm_list()
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/drjob.py#L1-L159" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/drorchestration/drjob.py#L1-L166" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -166,6 +166,13 @@ class DRJob(Job):
         Job._initialize_job_properties(self)
         self._replication_job_stats = self._get_replication_job_stats()
 
+    def blobs_retained(self):
+        &#34;&#34;&#34;Returns True if blobs to be retained chosen in failover job for Azure destination&#34;&#34;&#34;
+        task_details_json = self.task_details
+        dr_opts = task_details_json[&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;].get(&#39;drOrchestrationOption&#39;)
+        blobs_retained = dr_opts.get(&#39;retainIntegritySnapshot&#39;) if dr_opts else None
+        return blobs_retained
+
     def get_phases(self):
         &#34;&#34;&#34;
         Gets the DR phases of the job
@@ -220,7 +227,7 @@ class DRJob(Job):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/drjob.py#L36-L159" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/drorchestration/drjob.py#L36-L166" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class DRJob(Job):
     &#34;&#34;&#34;Class for performing DR orchestration operations on ReplicationMonitor.&#34;&#34;&#34;
@@ -313,6 +320,13 @@ class DRJob(Job):
         Job._initialize_job_properties(self)
         self._replication_job_stats = self._get_replication_job_stats()
 
+    def blobs_retained(self):
+        &#34;&#34;&#34;Returns True if blobs to be retained chosen in failover job for Azure destination&#34;&#34;&#34;
+        task_details_json = self.task_details
+        dr_opts = task_details_json[&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;].get(&#39;drOrchestrationOption&#39;)
+        blobs_retained = dr_opts.get(&#39;retainIntegritySnapshot&#39;) if dr_opts else None
+        return blobs_retained
+
     def get_phases(self):
         &#34;&#34;&#34;
         Gets the DR phases of the job
@@ -353,6 +367,24 @@ class DRJob(Job):
 </ul>
 <h3>Methods</h3>
 <dl>
+<dt id="cvpysdk.drorchestration.drjob.DRJob.blobs_retained"><code class="name flex">
+<span>def <span class="ident">blobs_retained</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns True if blobs to be retained chosen in failover job for Azure destination</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/drorchestration/drjob.py#L127-L132" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def blobs_retained(self):
+    &#34;&#34;&#34;Returns True if blobs to be retained chosen in failover job for Azure destination&#34;&#34;&#34;
+    task_details_json = self.task_details
+    dr_opts = task_details_json[&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;].get(&#39;drOrchestrationOption&#39;)
+    blobs_retained = dr_opts.get(&#39;retainIntegritySnapshot&#39;) if dr_opts else None
+    return blobs_retained</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.drorchestration.drjob.DRJob.get_phases"><code class="name flex">
 <span>def <span class="ident">get_phases</span></span>(<span>self)</span>
 </code></dt>
@@ -371,7 +403,7 @@ Returns: dictionaries of phases for each source and destination VM pair
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/drorchestration/drjob.py#L127-L159" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/drorchestration/drjob.py#L134-L166" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_phases(self):
     &#34;&#34;&#34;
@@ -415,6 +447,7 @@ Returns: dictionaries of phases for each source and destination VM pair
 <ul class="hlist">
 <li><code><a title="cvpysdk.job.Job.advanced_job_details" href="../job.html#cvpysdk.job.Job.advanced_job_details">advanced_job_details</a></code></li>
 <li><code><a title="cvpysdk.job.Job.agent_name" href="../job.html#cvpysdk.job.Job.agent_name">agent_name</a></code></li>
+<li><code><a title="cvpysdk.job.Job.attempts" href="../job.html#cvpysdk.job.Job.attempts">attempts</a></code></li>
 <li><code><a title="cvpysdk.job.Job.backup_level" href="../job.html#cvpysdk.job.Job.backup_level">backup_level</a></code></li>
 <li><code><a title="cvpysdk.job.Job.backupset_name" href="../job.html#cvpysdk.job.Job.backupset_name">backupset_name</a></code></li>
 <li><code><a title="cvpysdk.job.Job.client_name" href="../job.html#cvpysdk.job.Job.client_name">client_name</a></code></li>
@@ -524,6 +557,7 @@ setTimeout(() => input.focus(), 100);
 <li>
 <h4><code><a title="cvpysdk.drorchestration.drjob.DRJob" href="#cvpysdk.drorchestration.drjob.DRJob">DRJob</a></code></h4>
 <ul class="">
+<li><code><a title="cvpysdk.drorchestration.drjob.DRJob.blobs_retained" href="#cvpysdk.drorchestration.drjob.DRJob.blobs_retained">blobs_retained</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.drjob.DRJob.get_phases" href="#cvpysdk.drorchestration.drjob.DRJob.get_phases">get_phases</a></code></li>
 </ul>
 </li>

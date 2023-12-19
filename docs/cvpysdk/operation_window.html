@@ -103,7 +103,7 @@ client_operation_window_details.modify_operation_window(name="Modified operation
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L1-L1054" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L1-L1054" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -936,16 +936,16 @@ class OperationWindowDetails:
                 operations = response_json.get(&#39;operations&#39;)
                 operation_reverse_mapping = {value: key for key, value in OPERATION_MAPPING.items()}
                 self._operations = [operation_reverse_mapping[operation] for operation in operations]
-                week_of_the_month = response_json.get(&#34;dayTime&#34;)[0].get(&#39;weekOfTheMonth&#39;, [])
+                week_of_the_month = response_json.get(&#34;dayTime&#34;, [{}])[0].get(&#39;weekOfTheMonth&#39;, [])
                 if len(response_json.get(&#34;dayTime&#34;, [])) == 1:
-                    start_time = response_json.get(&#34;dayTime&#34;)[0][&#39;startTime&#39;]
-                    end_time = response_json.get(&#34;dayTime&#34;)[0][&#39;endTime&#39;]
-                    day_of_week = response_json.get(&#34;dayTime&#34;)[0][&#39;dayOfWeek&#39;]
+                    start_time = response_json.get(&#34;dayTime&#34;, [{}])[0].get(&#39;startTime&#39;)
+                    end_time = response_json.get(&#34;dayTime&#34;, [{}])[0].get(&#39;endTime&#39;)
+                    day_of_week = response_json.get(&#34;dayTime&#34;, [{}])[0].get(&#39;dayOfWeek&#39;)
                 else:
                     day_of_week = []
                     start_time = []
                     end_time = []
-                    for week_day in response_json.get(&#34;dayTime&#34;, []):
+                    for week_day in response_json.get(&#34;dayTime&#34;, [{}]):
                         if week_day.get(&#34;dayOfWeek&#34;):
                             day_of_week.append(week_day.get(&#34;dayOfWeek&#34;)[0])
                         if week_day.get(&#34;startTime&#34;) is not None:
@@ -1194,7 +1194,7 @@ If invalid instance is passed</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L153-L589" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L153-L589" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class OperationWindow:
     &#34;&#34;&#34;Class for representing all operation window related operations&#34;&#34;&#34;
@@ -1729,7 +1729,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L257-L441" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L257-L441" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_operation_window(
         self,
@@ -1942,7 +1942,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L443-L485" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L443-L485" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_operation_window(self, rule_id=None, name=None):
     &#34;&#34;&#34;Deletes the operation rule associated with given rule Id/Name.
@@ -2014,7 +2014,7 @@ if type of the operation window name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L550-L589" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L550-L589" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, rule_id=None, name=None):
     &#34;&#34;&#34;Returns the operation rule object for a given rule
@@ -2093,7 +2093,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L487-L548" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L487-L548" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def list_operation_window(self):
     &#34;&#34;&#34;Lists the operation rules for the associated commcell entity.
@@ -2185,7 +2185,7 @@ Returns:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L592-L1054" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L592-L1054" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class OperationWindowDetails:
     &#34;&#34;&#34;Helper class for modifying operation window&#34;&#34;&#34;
@@ -2427,16 +2427,16 @@ Returns:
                 operations = response_json.get(&#39;operations&#39;)
                 operation_reverse_mapping = {value: key for key, value in OPERATION_MAPPING.items()}
                 self._operations = [operation_reverse_mapping[operation] for operation in operations]
-                week_of_the_month = response_json.get(&#34;dayTime&#34;)[0].get(&#39;weekOfTheMonth&#39;, [])
+                week_of_the_month = response_json.get(&#34;dayTime&#34;, [{}])[0].get(&#39;weekOfTheMonth&#39;, [])
                 if len(response_json.get(&#34;dayTime&#34;, [])) == 1:
-                    start_time = response_json.get(&#34;dayTime&#34;)[0][&#39;startTime&#39;]
-                    end_time = response_json.get(&#34;dayTime&#34;)[0][&#39;endTime&#39;]
-                    day_of_week = response_json.get(&#34;dayTime&#34;)[0][&#39;dayOfWeek&#39;]
+                    start_time = response_json.get(&#34;dayTime&#34;, [{}])[0].get(&#39;startTime&#39;)
+                    end_time = response_json.get(&#34;dayTime&#34;, [{}])[0].get(&#39;endTime&#39;)
+                    day_of_week = response_json.get(&#34;dayTime&#34;, [{}])[0].get(&#39;dayOfWeek&#39;)
                 else:
                     day_of_week = []
                     start_time = []
                     end_time = []
-                    for week_day in response_json.get(&#34;dayTime&#34;, []):
+                    for week_day in response_json.get(&#34;dayTime&#34;, [{}]):
                         if week_day.get(&#34;dayOfWeek&#34;):
                             day_of_week.append(week_day.get(&#34;dayOfWeek&#34;)[0])
                         if week_day.get(&#34;startTime&#34;) is not None:
@@ -2659,7 +2659,7 @@ Returns:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L1031-L1034" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L1031-L1034" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def agent_id(self):
@@ -2673,7 +2673,7 @@ def agent_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L1041-L1044" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L1041-L1044" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backupset_id(self):
@@ -2687,7 +2687,7 @@ def backupset_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L1026-L1029" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L1026-L1029" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_id(self):
@@ -2701,7 +2701,7 @@ def client_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L1021-L1024" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L1021-L1024" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def clientgroup_id(self):
@@ -2715,7 +2715,7 @@ def clientgroup_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L1016-L1019" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L1016-L1019" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def commcell_id(self):
@@ -2729,7 +2729,7 @@ def commcell_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L958-L961" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L958-L961" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def day_of_week(self):
@@ -2743,7 +2743,7 @@ def day_of_week(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L859-L862" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L859-L862" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def do_not_submit_job(self):
@@ -2757,7 +2757,7 @@ def do_not_submit_job(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L902-L905" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L902-L905" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def end_date(self):
@@ -2771,7 +2771,7 @@ def end_date(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L993-L996" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L993-L996" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def end_time(self):
@@ -2785,7 +2785,7 @@ def end_time(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L1051-L1054" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L1051-L1054" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def entity_level(self):
@@ -2799,7 +2799,7 @@ def entity_level(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L1036-L1039" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L1036-L1039" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_id(self):
@@ -2813,7 +2813,7 @@ def instance_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L872-L875" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L872-L875" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -2827,7 +2827,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L918-L921" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L918-L921" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def operations(self):
@@ -2841,7 +2841,7 @@ def operations(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L1011-L1014" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L1011-L1014" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def rule_id(self):
@@ -2855,7 +2855,7 @@ def rule_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L886-L889" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L886-L889" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def start_date(self):
@@ -2869,7 +2869,7 @@ def start_date(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L975-L978" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L975-L978" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def start_time(self):
@@ -2883,7 +2883,7 @@ def start_time(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L1046-L1049" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L1046-L1049" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_id(self):
@@ -2897,7 +2897,7 @@ def subclient_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L941-L944" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L941-L944" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def week_of_the_month(self):
@@ -2998,7 +2998,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/operation_window.py#L646-L809" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/operation_window.py#L646-L809" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def modify_operation_window(self, **modify_options):
     &#34;&#34;&#34;Modifies the Operation rule.

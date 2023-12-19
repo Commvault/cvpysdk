@@ -24,7 +24,7 @@
 </header>
 <section id="section-intro">
 <p>Class to perform all the CommCell Migration operations on commcell</p>
-<p>CommCellMigration is the only class defined in this file.</p>
+<p>CommCellMigration, GlobalRepositoryCell are the only classes defined in this file.</p>
 <p>CommCellMigration: Helper class to perform CommCell Import &amp; Export operations.</p>
 <h2 id="commcellmigration">Commcellmigration</h2>
 <p><strong>init</strong>()
@@ -39,10 +39,24 @@ function to run CCM Import operation.</p>
 <p>tape_import()
 &ndash;
 function to run tape import operation.</p>
+<p>GlobalRepositoryCell: Helper class to perform GRC related operations</p>
+<h2 id="globalrepositorycell">Globalrepositorycell</h2>
+<p><strong>init</strong>()
+&ndash;
+initializes GlobalRepositoryCell object</p>
+<p>get_podcell_entities()
+&ndash;
+gets all entities from registered podcell that can be imported</p>
+<p>get_podcell_properties()
+&ndash;
+gets all grc related properties for registered podcell</p>
+<p>modify_monitored_clients()
+&ndash;
+overwrites imported clients in podcell grc schedule</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/commcell_migration.py#L1-L534" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/commcell_migration.py#L1-L847" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # --------------------------------------------------------------------------
@@ -63,7 +77,7 @@ function to run tape import operation.</p>
 
 &#34;&#34;&#34;Class to perform all the CommCell Migration operations on commcell
 
-CommCellMigration is the only class defined in this file.
+CommCellMigration, GlobalRepositoryCell are the only classes defined in this file.
 
 CommCellMigration: Helper class to perform CommCell Import &amp; Export operations.
 
@@ -77,10 +91,24 @@ CommCellMigration:
 
     tape_import()                   --  function to run tape import operation.
 
+GlobalRepositoryCell: Helper class to perform GRC related operations
+
+GlobalRepositoryCell:
+
+    __init__()                      --  initializes GlobalRepositoryCell object
+
+    get_podcell_entities()          --  gets all entities from registered podcell that can be imported
+
+    get_podcell_properties()        --  gets all grc related properties for registered podcell
+
+    modify_monitored_clients()      --  overwrites imported clients in podcell grc schedule
+
 &#34;&#34;&#34;
+import html
+import xml.etree.ElementTree as ET
 from base64 import b64encode
 from .job import Job
-
+from .client import Client
 from .exception import SDKException
 
 
@@ -334,7 +362,15 @@ class CommCellMigration(object):
                     sub_dict.append(temp_dic)
 
             else:
+                exportable_clients = list(self._commcell_object.grc.get_clients_for_migration(
+                    podcell_id=2, podcell_guid=self._commcell_object.commserv_guid
+                ).values())
                 for client in client_list:
+                    if client not in exportable_clients:
+                        raise SDKException(
+                            &#39;CommCellMigration&#39;, &#39;107&#39;, 
+                            f&#39;Please choose from list -&gt; {exportable_clients}&#39;
+                        )
                     temp_dic = {&#39;clientName&#39;: client, &#39;commCellName&#39;: self._commcell_name}
                     sub_dict.append(temp_dic)
 
@@ -577,7 +613,298 @@ class CommCellMigration(object):
                                    str(response.json()[&#39;errorCode&#39;]))
         else:
             response_string = self._update_response_(response.text)
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+class GlobalRepositoryCell:
+    &#34;&#34;&#34;Class for representing the GRC feature from commcell&#34;&#34;&#34;
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;
+        Initializes the object of GlobalRepositoryCell class
+
+        Args:
+            commcell_object (Commcell)  -   Commcell class instance
+
+        Returns:
+            grc (GlobalRepositoryCell) - instance of the GlobalRepositoryCell class
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._cvpysdk_object = self._commcell_object._cvpysdk_object
+        self._services = self._commcell_object._services
+        self._commcell_name = self._commcell_object.commserv_name
+
+    def _get_task_details(self, task_id):
+        &#34;&#34;&#34;
+        Util for getting XML of GRC schedule task (required for generating more XMLs)
+
+        Args:
+            task_id     (int)   -   id of grc schedule&#39;s task
+
+        Returns:
+            task_xml    (str)   -   xml form string with grc schedule details
+            Example:
+                &lt;TMMsg_GetTaskDetailResp&gt;
+                        &lt;taskInfo&gt;
+                                &lt;task taskId=&#34;&#34; taskName=&#34;&#34; &gt; ... &lt;/task&gt;
+                        &lt;appGroup/&gt;
+                        &lt;subTasks&gt;
+                            &lt;subTask subTaskId=&#34;&#34; subTaskType=&#34;&#34; ...&gt;
+                            &lt;options&gt;
+                                &lt;backupOpts backupLevel=&#34;&#34;&gt;
+                                    &lt;dataOpt autoCopy=&#34;&#34;/&gt;
+                                &lt;/backupOpts&gt;
+                                &lt;adminOpts&gt;
+                                    &lt;ccmOption&gt;
+                                        &lt;mergeOptions ...&gt;
+                                        &lt;captureOptions ...&gt;
+                                            ...
+                                        &lt;/captureOptions&gt;
+                                    &lt;/ccmOption&gt;
+                                &lt;/adminOpts&gt;
+                            &lt;/options&gt;
+                            &lt;pattern ...&gt;...&lt;/pattern&gt;
+                        &lt;/subTasks&gt;
+                    &lt;/taskInfo&gt;
+                &lt;/TMMsg_GetTaskDetailResp&gt;
+        &#34;&#34;&#34;
+        get_task_xml = f&#39;&lt;TMMsg_GetTaskDetailReq taskId=&#34;{task_id}&#34;/&gt;&#39;
+        return self._commcell_object.qoperation_execute(get_task_xml, return_xml=True)
+
+    def _get_commcell_from_id(self, commcell_id):
+        &#34;&#34;&#34;
+        Util to get registered commcell name from given commcell id
+
+        Args:
+            commcell_id (int)   -   id of commcell
+
+        Returns:
+            commcell_name   (str)   -   name of commcell
+        &#34;&#34;&#34;
+        for commcell_name, commcell_data in self._commcell_object.registered_commcells.items():
+            if commcell_data.get(&#39;commCell&#39;, {}).get(&#39;commCellId&#39;) == commcell_id:
+                return commcell_name
+
+    def _modify_task_props(self, podcell_properties, task_xml):
+        &#34;&#34;&#34;
+        Util for modifying task properties, after grc properties are updated
+
+        Args:
+            podcell_properties  (dict)  -   the dict returned by get_podcell_properties
+            task_xml    (str)           -   the xml returned for grc schedule&#39;s task info
+
+        Returns:
+            response    (dict)   -   the response from execute qoperation
+        &#34;&#34;&#34;
+        grc_schedule_xml = ET.fromstring(podcell_properties[&#39;schedule_xml&#39;])
+        task_info_xml = ET.fromstring(task_xml)
+        modify_task_xml = &#34;&#34;&#34;
+        &lt;TMMsg_ModifyTaskReq&gt;
+            &lt;taskInfo&gt;
+                &lt;task initiatedFrom=&#34;1&#34; ownerId=&#34;{0}&#34; ownerName=&#34;{1}&#34; policyType=&#34;0&#34; sequenceNumber=&#34;0&#34; taskId=&#34;{2}&#34; taskType=&#34;2&#34;&gt;
+                    &lt;taskFlags disabled=&#34;0&#34; isEZOperation=&#34;0&#34; isEdgeDrive=&#34;0&#34;/&gt;
+                &lt;/task&gt;
+                &lt;appGroup/&gt;
+                {3}
+            &lt;/taskInfo&gt;
+        &lt;/TMMsg_ModifyTaskReq&gt;
+        &#34;&#34;&#34;
+        modify_task_xml = modify_task_xml.format(
+            grc_schedule_xml.find(&#39;taskInfo/task&#39;).get(&#39;ownerId&#39;),
+            grc_schedule_xml.find(&#39;taskInfo/task&#39;).get(&#39;ownerName&#39;),
+            podcell_properties[&#39;task_id&#39;],
+            ET.tostring(task_info_xml.find(&#39;taskInfo/subTasks&#39;), encoding=&#39;unicode&#39;)
+        )
+        return self._commcell_object.qoperation_execute(modify_task_xml)
+
+    def _get_podcell_entities(self, podcell_name: str = None, podcell_id: int = None, podcell_guid: str = None):
+        &#34;&#34;&#34;
+        Gets the entities in podcell available for monitoring via GRC
+
+        Args:
+            podcell_name    (str)   -   name of pod cell
+            podcell_id      (int)   -   id of podcell
+            podcell_guid    (str)   -   guid of podcell (Optional)
+
+        Returns:
+            monitor_entities    (str)   -   all entities of pod cell in XML format
+            Example:
+                &lt;EVGui_CCMCommCellInfo commcellName=&#34;&#34; commcellNumber=&#34;&#34; commcellId=&#34;&#34;&gt;
+                    &lt;clientEntityLst clientId=&#34;&#34; clientName=&#34;&#34;&gt;
+                        ...
+                    &lt;/clientEntityLst&gt;
+                    &lt;clientEntityLst clientId=&#34;&#34; clientName=&#34;&#34;&gt;
+                        ...
+                    &lt;/clientEntityLst&gt;
+                    &lt;clientEntityLst clientId=&#34;&#34; ...&gt;
+                        &lt;appTypeEntityList ... appTypeId=&#34;&#34;&gt;
+                            &lt;instanceList ... instanceId=&#34;&#34;&gt;
+                                &lt;backupSetList ... backupsetId=&#34;&#34;&gt;
+                                    &lt;subclientList ... subclientId=&#34;&#34;/&gt;
+                                &lt;/backupSetList&gt;
+                            &lt;/instanceList&gt;
+                        &lt;/appTypeEntityList&gt;
+                    &lt;/clientEntityLst&gt;
+                    &lt;clientComputerGrp clientGroupId=&#34;&#34; clientGroupName=&#34;&#34;/&gt;
+                    ...
+                    &lt;clientComputerGrp clientGroupId=&#34;&#34; clientGroupName=&#34;&#34;/&gt;
+                &lt;/EVGui_CCMCommCellInfo&gt;
+        &#34;&#34;&#34;
+        if podcell_id is None:
+            if podcell_name is None:
+                raise SDKException(&#39;GlobalRepositoryCell&#39;, &#39;103&#39;)
+            podcell_id = self._commcell_object.registered_commcells.get(podcell_name, {}) \
+                .get(&#39;commCell&#39;, {}).get(&#39;commCellId&#39;)
+            if podcell_id is None:
+                raise SDKException(&#39;GlobalRepositoryCell&#39;, &#39;104&#39;, f&#39;for podcell: {podcell_name}&#39;)
+        if podcell_name is None:
+            podcell_name = self._get_commcell_from_id(podcell_id)
+        if podcell_guid is None:
+            podcell_guid = self._commcell_object.registered_commcells[podcell_name].get(&#39;commCell&#39;, {}).get(&#39;csGUID&#39;)
+
+        entities_xml = &#34;&#34;&#34;
+        &lt;EVGui_GetCCMExportInfo exportMsgType=&#34;3&#34; strCSName=&#34;{0}*{0}*8400&#34;&gt;
+            &lt;mediaAgent _type_=&#34;3&#34;/&gt;
+            &lt;userInfo/&gt;
+            &lt;commCell _type_=&#34;1&#34; commCellId=&#34;{1}&#34; commCellName=&#34;{0}&#34; csGUID=&#34;{2}&#34;/&gt;
+        &lt;/EVGui_GetCCMExportInfo&gt;
+        &#34;&#34;&#34;
+        exec_xml = entities_xml.format(podcell_name, podcell_id, podcell_guid)
+        resp = self._commcell_object.qoperation_execute(exec_xml)
+        return resp.get(&#39;strXmlInfo&#39;)
+
+    def get_clients_for_migration(self, podcell_name: str = None, podcell_id: int = None, podcell_guid: str = None):
+        &#34;&#34;&#34;
+        Gets the podcell clients that can be migrated
+        
+        Args:
+            podcell_name    (str)   -   name of pod cell
+            podcell_id      (int)   -   id of podcell
+            podcell_guid    (str)   -   guid of podcell (Optional)
+        
+        Returns:
+            clients_dict    (dict)  -   dict with client ID as key and client name value
+            Example:
+                {
+                    X: &#34;clientA&#34;,
+                    Y: &#34;clientB&#34;,
+                    Z: &#34;clienta&#34;
+                }
+        &#34;&#34;&#34;
+        clients_dict = {}
+        entities_xml = self._get_podcell_entities(
+            podcell_name=podcell_name,
+            podcell_id=podcell_id,
+            podcell_guid=podcell_guid
+        )
+        entities_xml = ET.fromstring(entities_xml)
+        for client_node in entities_xml.findall(&#39;clientEntityLst&#39;):
+            cl_id = client_node.get(&#39;clientId&#39;)
+            cl_name = client_node.get(&#39;clientName&#39;)
+            clients_dict[cl_id] = cl_name
+        return clients_dict
+
+    def _get_podcell_properties(self, podcell_name: str = None, podcell_id: int = None):
+        &#34;&#34;&#34;
+        Gets the GRC properties of given pod cell
+
+        Args:
+            podcell_name    (str)   -   name of pod cell
+            podcell_id      (int)   -   id of podcell
+
+        Returns:
+            podcell_properties  (dict)  -   different properties of pod cell in dict format with xml values
+        &#34;&#34;&#34;
+        # TODO: Update grc properties map
+        grc_prop_map = {
+            2: &#39;podcell_name&#39;,
+            4: &#39;schedule_xml&#39;,
+            15: &#39;entities_xml&#39;,
+            16: &#39;libraries_xml&#39;,
+            19: &#39;task_id&#39;
+        }
+        if podcell_id is None:
+            if podcell_name is None:
+                raise SDKException(&#39;GlobalRepositoryCell&#39;, &#39;103&#39;)
+            podcell_id = self._commcell_object.registered_commcells.get(podcell_name, {}) \
+                .get(&#39;commCell&#39;, {}).get(&#39;commCellId&#39;)
+            if podcell_id is None:
+                raise SDKException(&#39;GlobalRepositoryCell&#39;, &#39;104&#39;, f&#39;for podcell: {podcell_name}&#39;)
+        grc_props_xml = f&#39;&lt;App_GetGRCCommCellPropsReq commcellId=&#34;{podcell_id}&#34;/&gt;&#39;
+        grc_props_response = self._commcell_object.qoperation_execute(grc_props_xml)
+        podcell_properties = {
+            grc_prop_map.get(prop.get(&#39;propId&#39;), prop.get(&#39;propId&#39;)): prop.get(&#39;stringVal&#39;) or prop.get(&#39;numVal&#39;)
+            for prop in grc_props_response[&#39;grcCommcellPropList&#39;]
+        }
+        return podcell_properties
+
+    def modify_monitored_clients(self, podcell_name: str = None, podcell_id: int = None, clients: list = None):
+        &#34;&#34;&#34;
+        Modifies (overwrites) the monitored clients in grc properties for given podcell
+
+        Args:
+            podcell_name    (str)   -   name of pod cell
+            podcell_id      (int)   -   id of podcell
+            client_ids      (list)  -   list of client ids, names
+                                        or Client objects (of pod cell)
+
+        Returns:
+            None
+        &#34;&#34;&#34;
+        if podcell_id is None:
+            if podcell_name is None:
+                raise SDKException(&#39;GlobalRepositoryCell&#39;, &#39;103&#39;)
+            podcell_id = self._commcell_object.registered_commcells.get(podcell_name, {}) \
+                .get(&#39;commCell&#39;, {}).get(&#39;commCellId&#39;)
+            if podcell_id is None:
+                raise SDKException(&#39;GlobalRepositoryCell&#39;, &#39;104&#39;, f&#39;for podcell: {podcell_name}&#39;)
+
+        set_grc_xml = &#34;&#34;&#34;
+            &lt;App_SetGRCCommCellPropsReq commcellId=&#34;{0}&#34;&gt;
+                &lt;grcCommcellProp numVal=&#34;0&#34; propId=&#34;4&#34; stringVal=&#34;{1}&#34;/&gt;
+                &lt;grcCommcellProp numVal=&#34;1&#34; propId=&#34;1&#34; stringVal=&#34;&#34;/&gt;
+                &lt;grcCommcellProp numVal=&#34;0&#34; propId=&#34;2&#34; stringVal=&#34;{2}&#34;/&gt;
+                &lt;grcCommcellProp numVal=&#34;0&#34; propId=&#34;15&#34; stringVal=&#34;{3}&#34;/&gt;
+                &lt;grcCommcellProp numVal=&#34;1&#34; propId=&#34;8&#34; stringVal=&#34;&#34;/&gt;
+                &lt;grcCommcellProp numVal=&#34;0&#34; propId=&#34;14&#34; stringVal=&#34;&#34;/&gt;
+            &lt;/App_SetGRCCommCellPropsReq&gt;
+        &#34;&#34;&#34;
+        xml_header = &#39;&lt;?xml version=\&#39;1.0\&#39; encoding=\&#39;UTF-8\&#39;?&gt;&#39;
+        cc_props = self._get_podcell_properties(podcell_id=podcell_id)
+        podcell_name = cc_props[&#39;podcell_name&#39;]
+        task_xml = self._get_task_details(task_id=cc_props[&#39;task_id&#39;])
+        podcell_entities = self._get_podcell_entities(podcell_id=podcell_id)
+        entities_xml = ET.fromstring(podcell_entities)
+        client_ids = []
+        if isinstance(clients[0], str):
+            for client_node in entities_xml.findall(&#39;clientEntityLst&#39;):
+                if client_node.get(&#39;clientName&#39;) in clients:
+                    client_ids.append(client_node.get(&#39;clientId&#39;))
+        elif isinstance(clients[0], int):
+            client_ids = clients
+        elif isinstance(clients[0], Client):
+            client_ids = [int(cl.client_id) for cl in clients]
+
+        # Generate nested XML 1 (selected clients)
+        current_schedule = ET.fromstring(cc_props[&#39;schedule_xml&#39;])
+        capture_options = current_schedule.find(&#39;taskInfo/subTasks/options/adminOpts/ccmOption/captureOptions&#39;)
+        # remove all &lt;entities ...&gt; tags
+        for entity_node in capture_options.findall(&#39;entities&#39;):
+            capture_options.remove(entity_node)
+        # insert &lt;entities ...&gt; tags for selected client_ids
+        for clid in client_ids:
+            capture_options.insert(0, ET.Element(&#39;entities&#39;, {&#39;clientId&#39;: str(clid), &#39;_type_&#39;: &#39;3&#39;}))
+        nested_xml1 = ET.tostring(current_schedule, encoding=&#39;unicode&#39;)
+        nested_xml1 = html.escape(f&#39;{xml_header}{nested_xml1}&#39;)
+
+        # Generate nested XML 2 (all clients in podcell)
+        entities_xml = ET.fromstring(podcell_entities)
+        nested_xml2 = ET.tostring(entities_xml, encoding=&#39;unicode&#39;)
+        nested_xml2 = html.escape(nested_xml2)
+
+        # Combine nested XMLs into parent XML
+        final_xml = set_grc_xml.format(podcell_id, nested_xml1, podcell_name, nested_xml2)
+        self._commcell_object.qoperation_execute(final_xml)
+        self._modify_task_props(cc_props, task_xml)</code></pre>
 </details>
 </section>
 <section>
@@ -603,7 +930,7 @@ class CommCellMigration(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/commcell_migration.py#L41-L534" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/commcell_migration.py#L55-L556" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CommCellMigration(object):
     &#34;&#34;&#34;Class for representing the commcell export &amp; import operations from commcell. &#34;&#34;&#34;
@@ -855,7 +1182,15 @@ class CommCellMigration(object):
                     sub_dict.append(temp_dic)
 
             else:
+                exportable_clients = list(self._commcell_object.grc.get_clients_for_migration(
+                    podcell_id=2, podcell_guid=self._commcell_object.commserv_guid
+                ).values())
                 for client in client_list:
+                    if client not in exportable_clients:
+                        raise SDKException(
+                            &#39;CommCellMigration&#39;, &#39;107&#39;, 
+                            f&#39;Please choose from list -&gt; {exportable_clients}&#39;
+                        )
                     temp_dic = {&#39;clientName&#39;: client, &#39;commCellName&#39;: self._commcell_name}
                     sub_dict.append(temp_dic)
 
@@ -1183,7 +1518,7 @@ if invalid inputs are passed.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/commcell_migration.py#L61-L307" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/commcell_migration.py#L75-L329" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def commcell_export(self, export_location, client_list=None, options_dictionary=None, other_entities=None):
     &#34;&#34;&#34; Starts the Commcell Export job.
@@ -1415,7 +1750,15 @@ if invalid inputs are passed.
                 sub_dict.append(temp_dic)
 
         else:
+            exportable_clients = list(self._commcell_object.grc.get_clients_for_migration(
+                podcell_id=2, podcell_guid=self._commcell_object.commserv_guid
+            ).values())
             for client in client_list:
+                if client not in exportable_clients:
+                    raise SDKException(
+                        &#39;CommCellMigration&#39;, &#39;107&#39;, 
+                        f&#39;Please choose from list -&gt; {exportable_clients}&#39;
+                    )
                 temp_dic = {&#39;clientName&#39;: client, &#39;commCellName&#39;: self._commcell_name}
                 sub_dict.append(temp_dic)
 
@@ -1477,7 +1820,7 @@ if invalid inputs are passed.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/commcell_migration.py#L309-L452" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/commcell_migration.py#L331-L474" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def commcell_import(self, import_location, options_dictionary):
     &#34;&#34;&#34; Starts the Commcell Import job.
@@ -1648,7 +1991,7 @@ drive pool id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/commcell_migration.py#L454-L534" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/commcell_migration.py#L476-L556" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def tape_import(self, library_id, medias_id, drive_pool_id):
 
@@ -1735,6 +2078,485 @@ drive pool id</p>
 </dd>
 </dl>
 </dd>
+<dt id="cvpysdk.commcell_migration.GlobalRepositoryCell"><code class="flex name class">
+<span>class <span class="ident">GlobalRepositoryCell</span></span>
+<span>(</span><span>commcell_object)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class for representing the GRC feature from commcell</p>
+<p>Initializes the object of GlobalRepositoryCell class</p>
+<h2 id="args">Args</h2>
+<p>commcell_object (Commcell)
+-
+Commcell class instance</p>
+<h2 id="returns">Returns</h2>
+<p>grc (GlobalRepositoryCell) - instance of the GlobalRepositoryCell class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/commcell_migration.py#L558-L847" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class GlobalRepositoryCell:
+    &#34;&#34;&#34;Class for representing the GRC feature from commcell&#34;&#34;&#34;
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;
+        Initializes the object of GlobalRepositoryCell class
+
+        Args:
+            commcell_object (Commcell)  -   Commcell class instance
+
+        Returns:
+            grc (GlobalRepositoryCell) - instance of the GlobalRepositoryCell class
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._cvpysdk_object = self._commcell_object._cvpysdk_object
+        self._services = self._commcell_object._services
+        self._commcell_name = self._commcell_object.commserv_name
+
+    def _get_task_details(self, task_id):
+        &#34;&#34;&#34;
+        Util for getting XML of GRC schedule task (required for generating more XMLs)
+
+        Args:
+            task_id     (int)   -   id of grc schedule&#39;s task
+
+        Returns:
+            task_xml    (str)   -   xml form string with grc schedule details
+            Example:
+                &lt;TMMsg_GetTaskDetailResp&gt;
+                        &lt;taskInfo&gt;
+                                &lt;task taskId=&#34;&#34; taskName=&#34;&#34; &gt; ... &lt;/task&gt;
+                        &lt;appGroup/&gt;
+                        &lt;subTasks&gt;
+                            &lt;subTask subTaskId=&#34;&#34; subTaskType=&#34;&#34; ...&gt;
+                            &lt;options&gt;
+                                &lt;backupOpts backupLevel=&#34;&#34;&gt;
+                                    &lt;dataOpt autoCopy=&#34;&#34;/&gt;
+                                &lt;/backupOpts&gt;
+                                &lt;adminOpts&gt;
+                                    &lt;ccmOption&gt;
+                                        &lt;mergeOptions ...&gt;
+                                        &lt;captureOptions ...&gt;
+                                            ...
+                                        &lt;/captureOptions&gt;
+                                    &lt;/ccmOption&gt;
+                                &lt;/adminOpts&gt;
+                            &lt;/options&gt;
+                            &lt;pattern ...&gt;...&lt;/pattern&gt;
+                        &lt;/subTasks&gt;
+                    &lt;/taskInfo&gt;
+                &lt;/TMMsg_GetTaskDetailResp&gt;
+        &#34;&#34;&#34;
+        get_task_xml = f&#39;&lt;TMMsg_GetTaskDetailReq taskId=&#34;{task_id}&#34;/&gt;&#39;
+        return self._commcell_object.qoperation_execute(get_task_xml, return_xml=True)
+
+    def _get_commcell_from_id(self, commcell_id):
+        &#34;&#34;&#34;
+        Util to get registered commcell name from given commcell id
+
+        Args:
+            commcell_id (int)   -   id of commcell
+
+        Returns:
+            commcell_name   (str)   -   name of commcell
+        &#34;&#34;&#34;
+        for commcell_name, commcell_data in self._commcell_object.registered_commcells.items():
+            if commcell_data.get(&#39;commCell&#39;, {}).get(&#39;commCellId&#39;) == commcell_id:
+                return commcell_name
+
+    def _modify_task_props(self, podcell_properties, task_xml):
+        &#34;&#34;&#34;
+        Util for modifying task properties, after grc properties are updated
+
+        Args:
+            podcell_properties  (dict)  -   the dict returned by get_podcell_properties
+            task_xml    (str)           -   the xml returned for grc schedule&#39;s task info
+
+        Returns:
+            response    (dict)   -   the response from execute qoperation
+        &#34;&#34;&#34;
+        grc_schedule_xml = ET.fromstring(podcell_properties[&#39;schedule_xml&#39;])
+        task_info_xml = ET.fromstring(task_xml)
+        modify_task_xml = &#34;&#34;&#34;
+        &lt;TMMsg_ModifyTaskReq&gt;
+            &lt;taskInfo&gt;
+                &lt;task initiatedFrom=&#34;1&#34; ownerId=&#34;{0}&#34; ownerName=&#34;{1}&#34; policyType=&#34;0&#34; sequenceNumber=&#34;0&#34; taskId=&#34;{2}&#34; taskType=&#34;2&#34;&gt;
+                    &lt;taskFlags disabled=&#34;0&#34; isEZOperation=&#34;0&#34; isEdgeDrive=&#34;0&#34;/&gt;
+                &lt;/task&gt;
+                &lt;appGroup/&gt;
+                {3}
+            &lt;/taskInfo&gt;
+        &lt;/TMMsg_ModifyTaskReq&gt;
+        &#34;&#34;&#34;
+        modify_task_xml = modify_task_xml.format(
+            grc_schedule_xml.find(&#39;taskInfo/task&#39;).get(&#39;ownerId&#39;),
+            grc_schedule_xml.find(&#39;taskInfo/task&#39;).get(&#39;ownerName&#39;),
+            podcell_properties[&#39;task_id&#39;],
+            ET.tostring(task_info_xml.find(&#39;taskInfo/subTasks&#39;), encoding=&#39;unicode&#39;)
+        )
+        return self._commcell_object.qoperation_execute(modify_task_xml)
+
+    def _get_podcell_entities(self, podcell_name: str = None, podcell_id: int = None, podcell_guid: str = None):
+        &#34;&#34;&#34;
+        Gets the entities in podcell available for monitoring via GRC
+
+        Args:
+            podcell_name    (str)   -   name of pod cell
+            podcell_id      (int)   -   id of podcell
+            podcell_guid    (str)   -   guid of podcell (Optional)
+
+        Returns:
+            monitor_entities    (str)   -   all entities of pod cell in XML format
+            Example:
+                &lt;EVGui_CCMCommCellInfo commcellName=&#34;&#34; commcellNumber=&#34;&#34; commcellId=&#34;&#34;&gt;
+                    &lt;clientEntityLst clientId=&#34;&#34; clientName=&#34;&#34;&gt;
+                        ...
+                    &lt;/clientEntityLst&gt;
+                    &lt;clientEntityLst clientId=&#34;&#34; clientName=&#34;&#34;&gt;
+                        ...
+                    &lt;/clientEntityLst&gt;
+                    &lt;clientEntityLst clientId=&#34;&#34; ...&gt;
+                        &lt;appTypeEntityList ... appTypeId=&#34;&#34;&gt;
+                            &lt;instanceList ... instanceId=&#34;&#34;&gt;
+                                &lt;backupSetList ... backupsetId=&#34;&#34;&gt;
+                                    &lt;subclientList ... subclientId=&#34;&#34;/&gt;
+                                &lt;/backupSetList&gt;
+                            &lt;/instanceList&gt;
+                        &lt;/appTypeEntityList&gt;
+                    &lt;/clientEntityLst&gt;
+                    &lt;clientComputerGrp clientGroupId=&#34;&#34; clientGroupName=&#34;&#34;/&gt;
+                    ...
+                    &lt;clientComputerGrp clientGroupId=&#34;&#34; clientGroupName=&#34;&#34;/&gt;
+                &lt;/EVGui_CCMCommCellInfo&gt;
+        &#34;&#34;&#34;
+        if podcell_id is None:
+            if podcell_name is None:
+                raise SDKException(&#39;GlobalRepositoryCell&#39;, &#39;103&#39;)
+            podcell_id = self._commcell_object.registered_commcells.get(podcell_name, {}) \
+                .get(&#39;commCell&#39;, {}).get(&#39;commCellId&#39;)
+            if podcell_id is None:
+                raise SDKException(&#39;GlobalRepositoryCell&#39;, &#39;104&#39;, f&#39;for podcell: {podcell_name}&#39;)
+        if podcell_name is None:
+            podcell_name = self._get_commcell_from_id(podcell_id)
+        if podcell_guid is None:
+            podcell_guid = self._commcell_object.registered_commcells[podcell_name].get(&#39;commCell&#39;, {}).get(&#39;csGUID&#39;)
+
+        entities_xml = &#34;&#34;&#34;
+        &lt;EVGui_GetCCMExportInfo exportMsgType=&#34;3&#34; strCSName=&#34;{0}*{0}*8400&#34;&gt;
+            &lt;mediaAgent _type_=&#34;3&#34;/&gt;
+            &lt;userInfo/&gt;
+            &lt;commCell _type_=&#34;1&#34; commCellId=&#34;{1}&#34; commCellName=&#34;{0}&#34; csGUID=&#34;{2}&#34;/&gt;
+        &lt;/EVGui_GetCCMExportInfo&gt;
+        &#34;&#34;&#34;
+        exec_xml = entities_xml.format(podcell_name, podcell_id, podcell_guid)
+        resp = self._commcell_object.qoperation_execute(exec_xml)
+        return resp.get(&#39;strXmlInfo&#39;)
+
+    def get_clients_for_migration(self, podcell_name: str = None, podcell_id: int = None, podcell_guid: str = None):
+        &#34;&#34;&#34;
+        Gets the podcell clients that can be migrated
+        
+        Args:
+            podcell_name    (str)   -   name of pod cell
+            podcell_id      (int)   -   id of podcell
+            podcell_guid    (str)   -   guid of podcell (Optional)
+        
+        Returns:
+            clients_dict    (dict)  -   dict with client ID as key and client name value
+            Example:
+                {
+                    X: &#34;clientA&#34;,
+                    Y: &#34;clientB&#34;,
+                    Z: &#34;clienta&#34;
+                }
+        &#34;&#34;&#34;
+        clients_dict = {}
+        entities_xml = self._get_podcell_entities(
+            podcell_name=podcell_name,
+            podcell_id=podcell_id,
+            podcell_guid=podcell_guid
+        )
+        entities_xml = ET.fromstring(entities_xml)
+        for client_node in entities_xml.findall(&#39;clientEntityLst&#39;):
+            cl_id = client_node.get(&#39;clientId&#39;)
+            cl_name = client_node.get(&#39;clientName&#39;)
+            clients_dict[cl_id] = cl_name
+        return clients_dict
+
+    def _get_podcell_properties(self, podcell_name: str = None, podcell_id: int = None):
+        &#34;&#34;&#34;
+        Gets the GRC properties of given pod cell
+
+        Args:
+            podcell_name    (str)   -   name of pod cell
+            podcell_id      (int)   -   id of podcell
+
+        Returns:
+            podcell_properties  (dict)  -   different properties of pod cell in dict format with xml values
+        &#34;&#34;&#34;
+        # TODO: Update grc properties map
+        grc_prop_map = {
+            2: &#39;podcell_name&#39;,
+            4: &#39;schedule_xml&#39;,
+            15: &#39;entities_xml&#39;,
+            16: &#39;libraries_xml&#39;,
+            19: &#39;task_id&#39;
+        }
+        if podcell_id is None:
+            if podcell_name is None:
+                raise SDKException(&#39;GlobalRepositoryCell&#39;, &#39;103&#39;)
+            podcell_id = self._commcell_object.registered_commcells.get(podcell_name, {}) \
+                .get(&#39;commCell&#39;, {}).get(&#39;commCellId&#39;)
+            if podcell_id is None:
+                raise SDKException(&#39;GlobalRepositoryCell&#39;, &#39;104&#39;, f&#39;for podcell: {podcell_name}&#39;)
+        grc_props_xml = f&#39;&lt;App_GetGRCCommCellPropsReq commcellId=&#34;{podcell_id}&#34;/&gt;&#39;
+        grc_props_response = self._commcell_object.qoperation_execute(grc_props_xml)
+        podcell_properties = {
+            grc_prop_map.get(prop.get(&#39;propId&#39;), prop.get(&#39;propId&#39;)): prop.get(&#39;stringVal&#39;) or prop.get(&#39;numVal&#39;)
+            for prop in grc_props_response[&#39;grcCommcellPropList&#39;]
+        }
+        return podcell_properties
+
+    def modify_monitored_clients(self, podcell_name: str = None, podcell_id: int = None, clients: list = None):
+        &#34;&#34;&#34;
+        Modifies (overwrites) the monitored clients in grc properties for given podcell
+
+        Args:
+            podcell_name    (str)   -   name of pod cell
+            podcell_id      (int)   -   id of podcell
+            client_ids      (list)  -   list of client ids, names
+                                        or Client objects (of pod cell)
+
+        Returns:
+            None
+        &#34;&#34;&#34;
+        if podcell_id is None:
+            if podcell_name is None:
+                raise SDKException(&#39;GlobalRepositoryCell&#39;, &#39;103&#39;)
+            podcell_id = self._commcell_object.registered_commcells.get(podcell_name, {}) \
+                .get(&#39;commCell&#39;, {}).get(&#39;commCellId&#39;)
+            if podcell_id is None:
+                raise SDKException(&#39;GlobalRepositoryCell&#39;, &#39;104&#39;, f&#39;for podcell: {podcell_name}&#39;)
+
+        set_grc_xml = &#34;&#34;&#34;
+            &lt;App_SetGRCCommCellPropsReq commcellId=&#34;{0}&#34;&gt;
+                &lt;grcCommcellProp numVal=&#34;0&#34; propId=&#34;4&#34; stringVal=&#34;{1}&#34;/&gt;
+                &lt;grcCommcellProp numVal=&#34;1&#34; propId=&#34;1&#34; stringVal=&#34;&#34;/&gt;
+                &lt;grcCommcellProp numVal=&#34;0&#34; propId=&#34;2&#34; stringVal=&#34;{2}&#34;/&gt;
+                &lt;grcCommcellProp numVal=&#34;0&#34; propId=&#34;15&#34; stringVal=&#34;{3}&#34;/&gt;
+                &lt;grcCommcellProp numVal=&#34;1&#34; propId=&#34;8&#34; stringVal=&#34;&#34;/&gt;
+                &lt;grcCommcellProp numVal=&#34;0&#34; propId=&#34;14&#34; stringVal=&#34;&#34;/&gt;
+            &lt;/App_SetGRCCommCellPropsReq&gt;
+        &#34;&#34;&#34;
+        xml_header = &#39;&lt;?xml version=\&#39;1.0\&#39; encoding=\&#39;UTF-8\&#39;?&gt;&#39;
+        cc_props = self._get_podcell_properties(podcell_id=podcell_id)
+        podcell_name = cc_props[&#39;podcell_name&#39;]
+        task_xml = self._get_task_details(task_id=cc_props[&#39;task_id&#39;])
+        podcell_entities = self._get_podcell_entities(podcell_id=podcell_id)
+        entities_xml = ET.fromstring(podcell_entities)
+        client_ids = []
+        if isinstance(clients[0], str):
+            for client_node in entities_xml.findall(&#39;clientEntityLst&#39;):
+                if client_node.get(&#39;clientName&#39;) in clients:
+                    client_ids.append(client_node.get(&#39;clientId&#39;))
+        elif isinstance(clients[0], int):
+            client_ids = clients
+        elif isinstance(clients[0], Client):
+            client_ids = [int(cl.client_id) for cl in clients]
+
+        # Generate nested XML 1 (selected clients)
+        current_schedule = ET.fromstring(cc_props[&#39;schedule_xml&#39;])
+        capture_options = current_schedule.find(&#39;taskInfo/subTasks/options/adminOpts/ccmOption/captureOptions&#39;)
+        # remove all &lt;entities ...&gt; tags
+        for entity_node in capture_options.findall(&#39;entities&#39;):
+            capture_options.remove(entity_node)
+        # insert &lt;entities ...&gt; tags for selected client_ids
+        for clid in client_ids:
+            capture_options.insert(0, ET.Element(&#39;entities&#39;, {&#39;clientId&#39;: str(clid), &#39;_type_&#39;: &#39;3&#39;}))
+        nested_xml1 = ET.tostring(current_schedule, encoding=&#39;unicode&#39;)
+        nested_xml1 = html.escape(f&#39;{xml_header}{nested_xml1}&#39;)
+
+        # Generate nested XML 2 (all clients in podcell)
+        entities_xml = ET.fromstring(podcell_entities)
+        nested_xml2 = ET.tostring(entities_xml, encoding=&#39;unicode&#39;)
+        nested_xml2 = html.escape(nested_xml2)
+
+        # Combine nested XMLs into parent XML
+        final_xml = set_grc_xml.format(podcell_id, nested_xml1, podcell_name, nested_xml2)
+        self._commcell_object.qoperation_execute(final_xml)
+        self._modify_task_props(cc_props, task_xml)</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.commcell_migration.GlobalRepositoryCell.get_clients_for_migration"><code class="name flex">
+<span>def <span class="ident">get_clients_for_migration</span></span>(<span>self, podcell_name: str = None, podcell_id: int = None, podcell_guid: str = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gets the podcell clients that can be migrated</p>
+<h2 id="args">Args</h2>
+<p>podcell_name
+(str)
+-
+name of pod cell
+podcell_id
+(int)
+-
+id of podcell
+podcell_guid
+(str)
+-
+guid of podcell (Optional)</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt>clients_dict
+(dict)
+-
+dict with client ID as key and client name value</dt>
+<dt>Example:</dt>
+<dt>{</dt>
+<dt><code>
+X</code></dt>
+<dd>"clientA",
+Y: "clientB",
+Z: "clienta"
+}</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/commcell_migration.py#L715-L744" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_clients_for_migration(self, podcell_name: str = None, podcell_id: int = None, podcell_guid: str = None):
+    &#34;&#34;&#34;
+    Gets the podcell clients that can be migrated
+    
+    Args:
+        podcell_name    (str)   -   name of pod cell
+        podcell_id      (int)   -   id of podcell
+        podcell_guid    (str)   -   guid of podcell (Optional)
+    
+    Returns:
+        clients_dict    (dict)  -   dict with client ID as key and client name value
+        Example:
+            {
+                X: &#34;clientA&#34;,
+                Y: &#34;clientB&#34;,
+                Z: &#34;clienta&#34;
+            }
+    &#34;&#34;&#34;
+    clients_dict = {}
+    entities_xml = self._get_podcell_entities(
+        podcell_name=podcell_name,
+        podcell_id=podcell_id,
+        podcell_guid=podcell_guid
+    )
+    entities_xml = ET.fromstring(entities_xml)
+    for client_node in entities_xml.findall(&#39;clientEntityLst&#39;):
+        cl_id = client_node.get(&#39;clientId&#39;)
+        cl_name = client_node.get(&#39;clientName&#39;)
+        clients_dict[cl_id] = cl_name
+    return clients_dict</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.commcell_migration.GlobalRepositoryCell.modify_monitored_clients"><code class="name flex">
+<span>def <span class="ident">modify_monitored_clients</span></span>(<span>self, podcell_name: str = None, podcell_id: int = None, clients: list = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Modifies (overwrites) the monitored clients in grc properties for given podcell</p>
+<h2 id="args">Args</h2>
+<p>podcell_name
+(str)
+-
+name of pod cell
+podcell_id
+(int)
+-
+id of podcell
+client_ids
+(list)
+-
+list of client ids, names
+or Client objects (of pod cell)</p>
+<h2 id="returns">Returns</h2>
+<p>None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/commcell_migration.py#L780-L847" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def modify_monitored_clients(self, podcell_name: str = None, podcell_id: int = None, clients: list = None):
+    &#34;&#34;&#34;
+    Modifies (overwrites) the monitored clients in grc properties for given podcell
+
+    Args:
+        podcell_name    (str)   -   name of pod cell
+        podcell_id      (int)   -   id of podcell
+        client_ids      (list)  -   list of client ids, names
+                                    or Client objects (of pod cell)
+
+    Returns:
+        None
+    &#34;&#34;&#34;
+    if podcell_id is None:
+        if podcell_name is None:
+            raise SDKException(&#39;GlobalRepositoryCell&#39;, &#39;103&#39;)
+        podcell_id = self._commcell_object.registered_commcells.get(podcell_name, {}) \
+            .get(&#39;commCell&#39;, {}).get(&#39;commCellId&#39;)
+        if podcell_id is None:
+            raise SDKException(&#39;GlobalRepositoryCell&#39;, &#39;104&#39;, f&#39;for podcell: {podcell_name}&#39;)
+
+    set_grc_xml = &#34;&#34;&#34;
+        &lt;App_SetGRCCommCellPropsReq commcellId=&#34;{0}&#34;&gt;
+            &lt;grcCommcellProp numVal=&#34;0&#34; propId=&#34;4&#34; stringVal=&#34;{1}&#34;/&gt;
+            &lt;grcCommcellProp numVal=&#34;1&#34; propId=&#34;1&#34; stringVal=&#34;&#34;/&gt;
+            &lt;grcCommcellProp numVal=&#34;0&#34; propId=&#34;2&#34; stringVal=&#34;{2}&#34;/&gt;
+            &lt;grcCommcellProp numVal=&#34;0&#34; propId=&#34;15&#34; stringVal=&#34;{3}&#34;/&gt;
+            &lt;grcCommcellProp numVal=&#34;1&#34; propId=&#34;8&#34; stringVal=&#34;&#34;/&gt;
+            &lt;grcCommcellProp numVal=&#34;0&#34; propId=&#34;14&#34; stringVal=&#34;&#34;/&gt;
+        &lt;/App_SetGRCCommCellPropsReq&gt;
+    &#34;&#34;&#34;
+    xml_header = &#39;&lt;?xml version=\&#39;1.0\&#39; encoding=\&#39;UTF-8\&#39;?&gt;&#39;
+    cc_props = self._get_podcell_properties(podcell_id=podcell_id)
+    podcell_name = cc_props[&#39;podcell_name&#39;]
+    task_xml = self._get_task_details(task_id=cc_props[&#39;task_id&#39;])
+    podcell_entities = self._get_podcell_entities(podcell_id=podcell_id)
+    entities_xml = ET.fromstring(podcell_entities)
+    client_ids = []
+    if isinstance(clients[0], str):
+        for client_node in entities_xml.findall(&#39;clientEntityLst&#39;):
+            if client_node.get(&#39;clientName&#39;) in clients:
+                client_ids.append(client_node.get(&#39;clientId&#39;))
+    elif isinstance(clients[0], int):
+        client_ids = clients
+    elif isinstance(clients[0], Client):
+        client_ids = [int(cl.client_id) for cl in clients]
+
+    # Generate nested XML 1 (selected clients)
+    current_schedule = ET.fromstring(cc_props[&#39;schedule_xml&#39;])
+    capture_options = current_schedule.find(&#39;taskInfo/subTasks/options/adminOpts/ccmOption/captureOptions&#39;)
+    # remove all &lt;entities ...&gt; tags
+    for entity_node in capture_options.findall(&#39;entities&#39;):
+        capture_options.remove(entity_node)
+    # insert &lt;entities ...&gt; tags for selected client_ids
+    for clid in client_ids:
+        capture_options.insert(0, ET.Element(&#39;entities&#39;, {&#39;clientId&#39;: str(clid), &#39;_type_&#39;: &#39;3&#39;}))
+    nested_xml1 = ET.tostring(current_schedule, encoding=&#39;unicode&#39;)
+    nested_xml1 = html.escape(f&#39;{xml_header}{nested_xml1}&#39;)
+
+    # Generate nested XML 2 (all clients in podcell)
+    entities_xml = ET.fromstring(podcell_entities)
+    nested_xml2 = ET.tostring(entities_xml, encoding=&#39;unicode&#39;)
+    nested_xml2 = html.escape(nested_xml2)
+
+    # Combine nested XMLs into parent XML
+    final_xml = set_grc_xml.format(podcell_id, nested_xml1, podcell_name, nested_xml2)
+    self._commcell_object.qoperation_execute(final_xml)
+    self._modify_task_props(cc_props, task_xml)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
 </dl>
 </section>
 </article>
@@ -1809,6 +2631,13 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.commcell_migration.CommCellMigration.commcell_export" href="#cvpysdk.commcell_migration.CommCellMigration.commcell_export">commcell_export</a></code></li>
 <li><code><a title="cvpysdk.commcell_migration.CommCellMigration.commcell_import" href="#cvpysdk.commcell_migration.CommCellMigration.commcell_import">commcell_import</a></code></li>
 <li><code><a title="cvpysdk.commcell_migration.CommCellMigration.tape_import" href="#cvpysdk.commcell_migration.CommCellMigration.tape_import">tape_import</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.commcell_migration.GlobalRepositoryCell" href="#cvpysdk.commcell_migration.GlobalRepositoryCell">GlobalRepositoryCell</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.commcell_migration.GlobalRepositoryCell.get_clients_for_migration" href="#cvpysdk.commcell_migration.GlobalRepositoryCell.get_clients_for_migration">get_clients_for_migration</a></code></li>
+<li><code><a title="cvpysdk.commcell_migration.GlobalRepositoryCell.modify_monitored_clients" href="#cvpysdk.commcell_migration.GlobalRepositoryCell.modify_monitored_clients">modify_monitored_clients</a></code></li>
 </ul>
 </li>
 </ul>

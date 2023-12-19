@@ -71,10 +71,13 @@ Runs in-place restore of selected users for OneDrive for Business Client</p>
 <p>_get_user_guids()
 &ndash;
 Retrieve GUIDs for users specified</p>
+<p>process_index_retention_rules()
+&ndash;
+Makes API call to process index retention rules</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/google_subclient.py#L1-L746" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/google_subclient.py#L1-L795" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -130,6 +133,9 @@ GoogleSubclient:
     in_place_restore_v2()               --  Runs in-place restore of selected users for OneDrive for Business Client
 
     _get_user_guids()                   --  Retrieve GUIDs for users specified
+
+    process_index_retention_rules()     --  Makes API call to process index retention rules
+
 
 &#34;&#34;&#34;
 
@@ -821,7 +827,53 @@ class GoogleSubclient(CloudAppsSubclient):
                 user_guid_list.append(user[0].get(&#39;user&#39;).get(&#39;userGUID&#39;))
             else:
                 raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;User details not found in discovered data&#39;)
-        return  user_guid_list</code></pre>
+        return  user_guid_list
+
+    def process_index_retention_rules(self,index_app_type_id,index_server_client_name):
+        &#34;&#34;&#34;
+         Makes API call to process index retention rules
+
+         Args:
+
+            index_app_type_id           (int)   --   index app type id
+
+            index_server_client_name    (str)   --  client name of index server
+
+         Raises:
+
+                SDKException:
+
+                    if index server not found
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        if self._commcell_object.clients.has_client(index_server_client_name):
+            index_server_client_id = int(self._commcell_object.clients[index_server_client_name.lower()][&#39;id&#39;])
+            request_json = {
+                &#34;appType&#34;: index_app_type_id,
+                &#34;indexServerClientId&#34;: index_server_client_id
+            }
+            flag, response = self._cvpysdk_object.make_request(
+                &#39;POST&#39;, self._services[&#39;OFFICE365_PROCESS_INDEX_RETENTION_RULES&#39;], request_json
+            )
+            if flag:
+                if response.json():
+                    if &#34;resp&#34; in response.json():
+                        error_code = response.json()[&#39;resp&#39;][&#39;errorCode&#39;]
+                        if error_code != 0:
+                            error_string = response.json()[&#39;response&#39;][&#39;errorString&#39;]
+                            o_str = &#39;Failed to process index retention rules\nError: &#34;{0}&#34;&#39;.format(error_string)
+                            raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, o_str)
+                    elif &#39;errorMessage&#39; in response.json():
+                        error_string = response.json()[&#39;errorMessage&#39;]
+                        o_str = &#39;Failed to process index retention rules\nError: &#34;{0}&#34;&#39;.format(error_string)
+                        raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, o_str)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+        else:
+            raise SDKException(&#39;IndexServers&#39;, &#39;102&#39;)</code></pre>
 </details>
 </section>
 <section>
@@ -859,7 +911,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/google_subclient.py#L65-L746" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/google_subclient.py#L68-L795" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class GoogleSubclient(CloudAppsSubclient):
     &#34;&#34;&#34;Derived class from CloudAppsSubclient Base class, representing a GMail/GDrive/OneDrive subclient,
@@ -1542,7 +1594,53 @@ default: None</p>
                 user_guid_list.append(user[0].get(&#39;user&#39;).get(&#39;userGUID&#39;))
             else:
                 raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;User details not found in discovered data&#39;)
-        return  user_guid_list</code></pre>
+        return  user_guid_list
+
+    def process_index_retention_rules(self,index_app_type_id,index_server_client_name):
+        &#34;&#34;&#34;
+         Makes API call to process index retention rules
+
+         Args:
+
+            index_app_type_id           (int)   --   index app type id
+
+            index_server_client_name    (str)   --  client name of index server
+
+         Raises:
+
+                SDKException:
+
+                    if index server not found
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        if self._commcell_object.clients.has_client(index_server_client_name):
+            index_server_client_id = int(self._commcell_object.clients[index_server_client_name.lower()][&#39;id&#39;])
+            request_json = {
+                &#34;appType&#34;: index_app_type_id,
+                &#34;indexServerClientId&#34;: index_server_client_id
+            }
+            flag, response = self._cvpysdk_object.make_request(
+                &#39;POST&#39;, self._services[&#39;OFFICE365_PROCESS_INDEX_RETENTION_RULES&#39;], request_json
+            )
+            if flag:
+                if response.json():
+                    if &#34;resp&#34; in response.json():
+                        error_code = response.json()[&#39;resp&#39;][&#39;errorCode&#39;]
+                        if error_code != 0:
+                            error_string = response.json()[&#39;response&#39;][&#39;errorString&#39;]
+                            o_str = &#39;Failed to process index retention rules\nError: &#34;{0}&#34;&#39;.format(error_string)
+                            raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, o_str)
+                    elif &#39;errorMessage&#39; in response.json():
+                        error_string = response.json()[&#39;errorMessage&#39;]
+                        o_str = &#39;Failed to process index retention rules\nError: &#34;{0}&#34;&#39;.format(error_string)
+                        raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, o_str)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+        else:
+            raise SDKException(&#39;IndexServers&#39;, &#39;102&#39;)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -1557,7 +1655,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/google_subclient.py#L103-L106" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/google_subclient.py#L106-L109" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def content(self):
@@ -1571,7 +1669,7 @@ def content(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/google_subclient.py#L440-L443" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/google_subclient.py#L443-L446" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def get_subclient_users(self):
@@ -1591,7 +1689,7 @@ Groups are assigned only if auto discovery is enabled for groups.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/google_subclient.py#L108-L119" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/google_subclient.py#L111-L122" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def groups(self):
@@ -1624,7 +1722,7 @@ List of user groups</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/google_subclient.py#L334-L380" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/google_subclient.py#L337-L383" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_AD_group(self, value):
     &#34;&#34;&#34;Adds the user group to the subclient if auto discovery type selected
@@ -1688,7 +1786,7 @@ Onedrive user name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/google_subclient.py#L382-L426" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/google_subclient.py#L385-L429" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_user(self, user_name):
     &#34;&#34;&#34;This method adds one drive user to the subclient
@@ -1754,7 +1852,7 @@ if response is returned with errors
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/google_subclient.py#L445-L526" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/google_subclient.py#L448-L529" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_users_v2(self, users, plan_name):
     &#34;&#34;&#34; Adds given OneDrive users to v2 client
@@ -1868,7 +1966,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/google_subclient.py#L228-L276" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/google_subclient.py#L231-L279" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def discover(self, discover_type=&#39;USERS&#39;):
     &#34;&#34;&#34;This method discovers the users/groups on Google GSuite Account/OneDrive
@@ -1937,7 +2035,7 @@ skip_file_permissions (bool) : If True, restore of file permissions are skipped 
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/google_subclient.py#L627-L649" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/google_subclient.py#L630-L652" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_restore_v2(self, users, destination_client, destination_path, skip_file_permissions=False):
     &#34;&#34;&#34; Runs an out-of-place restore job for specified users on OneDrive for business client
@@ -1986,7 +2084,7 @@ skip_file_permissions (bool) : If True, restore of file permissions are skipped 
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/google_subclient.py#L690-L724" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/google_subclient.py#L693-L727" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def in_place_restore_v2(self, users, **kwargs):
     &#34;&#34;&#34; Runs an in-place restore job for specified users on OneDrive for business client
@@ -2047,7 +2145,7 @@ skip_file_permissions (bool) : If True, restore of file permissions are skipped 
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/google_subclient.py#L651-L688" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/google_subclient.py#L654-L691" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def out_of_place_restore_v2(self, users, destination_path, **kwargs):
     &#34;&#34;&#34; Runs an out-of-place restore job for specified users on OneDrive for business client
@@ -2087,6 +2185,80 @@ skip_file_permissions (bool) : If True, restore of file permissions are skipped 
     }
     restore_json = self._instance_object._prepare_restore_json_v2(source_user_list, **kwargs)
     return self._process_restore_response(restore_json)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.process_index_retention_rules"><code class="name flex">
+<span>def <span class="ident">process_index_retention_rules</span></span>(<span>self, index_app_type_id, index_server_client_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Makes API call to process index retention rules</p>
+<h2 id="args">Args</h2>
+<p>index_app_type_id
+(int)
+&ndash;
+index app type id</p>
+<p>index_server_client_name
+(str)
+&ndash;
+client name of index server</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:</p>
+<pre><code>if index server not found
+
+if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/google_subclient.py#L751-L795" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def process_index_retention_rules(self,index_app_type_id,index_server_client_name):
+    &#34;&#34;&#34;
+     Makes API call to process index retention rules
+
+     Args:
+
+        index_app_type_id           (int)   --   index app type id
+
+        index_server_client_name    (str)   --  client name of index server
+
+     Raises:
+
+            SDKException:
+
+                if index server not found
+
+                if response is empty
+
+                if response is not success
+    &#34;&#34;&#34;
+    if self._commcell_object.clients.has_client(index_server_client_name):
+        index_server_client_id = int(self._commcell_object.clients[index_server_client_name.lower()][&#39;id&#39;])
+        request_json = {
+            &#34;appType&#34;: index_app_type_id,
+            &#34;indexServerClientId&#34;: index_server_client_id
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;OFFICE365_PROCESS_INDEX_RETENTION_RULES&#39;], request_json
+        )
+        if flag:
+            if response.json():
+                if &#34;resp&#34; in response.json():
+                    error_code = response.json()[&#39;resp&#39;][&#39;errorCode&#39;]
+                    if error_code != 0:
+                        error_string = response.json()[&#39;response&#39;][&#39;errorString&#39;]
+                        o_str = &#39;Failed to process index retention rules\nError: &#34;{0}&#34;&#39;.format(error_string)
+                        raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, o_str)
+                elif &#39;errorMessage&#39; in response.json():
+                    error_string = response.json()[&#39;errorMessage&#39;]
+                    o_str = &#39;Failed to process index retention rules\nError: &#34;{0}&#34;&#39;.format(error_string)
+                    raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, o_str)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+    else:
+        raise SDKException(&#39;IndexServers&#39;, &#39;102&#39;)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.restore_out_of_place"><code class="name flex">
@@ -2160,7 +2332,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/google_subclient.py#L152-L226" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/google_subclient.py#L155-L229" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -2247,7 +2419,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/google_subclient.py#L320-L332" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/google_subclient.py#L323-L335" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_subclient_discovery(self):
     &#34;&#34;&#34;
@@ -2303,7 +2475,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/google_subclient.py#L569-L625" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/google_subclient.py#L572-L628" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def search_for_user(self, user_id):
     &#34;&#34;&#34; Searches for a specific user&#39;s details from discovered list
@@ -2378,7 +2550,7 @@ depending on the auto discovery type selected at instance level.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/google_subclient.py#L278-L318" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/google_subclient.py#L281-L321" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_auto_discovery(self, value):
     &#34;&#34;&#34;Sets the auto discovery value for subclient.
@@ -2443,7 +2615,7 @@ total_records (int):     Number of users fetched, returns -1 if discovery is not
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/google_subclient.py#L528-L567" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/google_subclient.py#L531-L570" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def verify_discovery_v2(self):
     &#34;&#34;&#34; Verifies that discovery is complete
@@ -2624,6 +2796,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.groups" href="#cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.groups">groups</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.in_place_restore_v2" href="#cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.in_place_restore_v2">in_place_restore_v2</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.out_of_place_restore_v2" href="#cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.out_of_place_restore_v2">out_of_place_restore_v2</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.process_index_retention_rules" href="#cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.process_index_retention_rules">process_index_retention_rules</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.restore_out_of_place" href="#cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.restore_out_of_place">restore_out_of_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.run_subclient_discovery" href="#cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.run_subclient_discovery">run_subclient_discovery</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.search_for_user" href="#cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.search_for_user">search_for_user</a></code></li>

@@ -52,7 +52,7 @@ checks if specified role exists on commcell</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/security_association.py#L1-L397" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/security_association.py#L1-L401" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -274,6 +274,10 @@ class SecurityAssociation(object):
                                 security_list.append(each_key)
                                 security_list.append(ext_group.lower())
                                 break
+                            elif &#39;displayName&#39; in each_key:
+                                security_list.append(&#39;clientName&#39;)
+                                security_list.append(entity[&#39;clientName&#39;].lower())
+                                break
                             else:
                                 security_list.append(each_key)
                                 security_list.append(entity[each_key].lower())
@@ -481,7 +485,7 @@ manage security operations</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/security_association.py#L48-L396" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/security_association.py#L48-L400" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SecurityAssociation(object):
     &#34;&#34;&#34;Class for managing the security associations roles on the commcell&#34;&#34;&#34;
@@ -655,6 +659,10 @@ manage security operations</p></div>
                                     ext_group = entity[each_key]
                                 security_list.append(each_key)
                                 security_list.append(ext_group.lower())
+                                break
+                            elif &#39;displayName&#39; in each_key:
+                                security_list.append(&#39;clientName&#39;)
+                                security_list.append(entity[&#39;clientName&#39;].lower())
                                 break
                             else:
                                 security_list.append(each_key)
@@ -850,7 +858,7 @@ security association properties of entity</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/security_association.py#L189-L246" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/security_association.py#L189-L250" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@staticmethod
 def fetch_security_association(security_dict):
@@ -883,6 +891,10 @@ def fetch_security_association(security_dict):
                                 ext_group = entity[each_key]
                             security_list.append(each_key)
                             security_list.append(ext_group.lower())
+                            break
+                        elif &#39;displayName&#39; in each_key:
+                            security_list.append(&#39;clientName&#39;)
+                            security_list.append(entity[&#39;clientName&#39;].lower())
                             break
                         else:
                             security_list.append(each_key)
@@ -932,7 +944,7 @@ True if role with specified name exists</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/security_association.py#L384-L396" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/security_association.py#L388-L400" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_role(self, role_name):
     &#34;&#34;&#34;Checks if role with specified name exists

@@ -59,7 +59,7 @@ runs the restore job for specified instance</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/hanainstance.py#L1-L463" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/hanainstance.py#L1-L475" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -208,7 +208,8 @@ class SAPHANAInstance(Instance):
             clone_env=False,
             check_access=False,
             destination_instance_dir=None,
-            ignore_delta_backups=False):
+            ignore_delta_backups=False,
+            no_of_streams=2):
         &#34;&#34;&#34;Returns the JSON request to pass to the API as per the options selected by the user.
 
             Args:
@@ -250,6 +251,10 @@ class SAPHANAInstance(Instance):
                 ignore_delta_backups        (bool)  --  whether to ignore delta backups during
                                                             restore or not
                     default: True
+
+                no_of_streams               (int)   --  number of streams to be used for restore
+
+                    default: 2
 
             Returns:
                 dict    -   JSON request to pass to the API
@@ -332,7 +337,8 @@ class SAPHANAInstance(Instance):
                                 },
                                 &#34;destClient&#34;: {
                                     &#34;clientName&#34;: destination_hana_client
-                                }
+                                },
+                                &#34;noOfStreams&#34;: no_of_streams
                             },
                             &#34;browseOption&#34;: {
                                 &#34;backupset&#34;: {
@@ -451,7 +457,8 @@ class SAPHANAInstance(Instance):
             clone_env=False,
             check_access=True,
             destination_instance_dir=None,
-            ignore_delta_backups=True):
+            ignore_delta_backups=True,
+            no_of_streams=2):
         &#34;&#34;&#34;Restores the databases specified in the input paths list.
 
             Args:
@@ -494,6 +501,10 @@ class SAPHANAInstance(Instance):
                                                             restore or not
                     default: True
 
+                no_of_streams               (int)   --  number of streams to be used for restore
+
+                    default: 2
+
             Returns:
                 object  -   instance of the Job class for this restore job
 
@@ -520,7 +531,8 @@ class SAPHANAInstance(Instance):
             clone_env,
             check_access,
             destination_instance_dir,
-            ignore_delta_backups
+            ignore_delta_backups,
+            no_of_streams
         )
 
         return self._process_restore_response(request_json)</code></pre>
@@ -556,7 +568,7 @@ ID of the instance</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/hanainstance.py#L58-L463" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/hanainstance.py#L58-L475" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SAPHANAInstance(Instance):
     &#34;&#34;&#34;Derived class from Instance Base class, representing a SAP HANA instance,
@@ -648,7 +660,8 @@ ID of the instance</p></div>
             clone_env=False,
             check_access=False,
             destination_instance_dir=None,
-            ignore_delta_backups=False):
+            ignore_delta_backups=False,
+            no_of_streams=2):
         &#34;&#34;&#34;Returns the JSON request to pass to the API as per the options selected by the user.
 
             Args:
@@ -690,6 +703,10 @@ ID of the instance</p></div>
                 ignore_delta_backups        (bool)  --  whether to ignore delta backups during
                                                             restore or not
                     default: True
+
+                no_of_streams               (int)   --  number of streams to be used for restore
+
+                    default: 2
 
             Returns:
                 dict    -   JSON request to pass to the API
@@ -772,7 +789,8 @@ ID of the instance</p></div>
                                 },
                                 &#34;destClient&#34;: {
                                     &#34;clientName&#34;: destination_hana_client
-                                }
+                                },
+                                &#34;noOfStreams&#34;: no_of_streams
                             },
                             &#34;browseOption&#34;: {
                                 &#34;backupset&#34;: {
@@ -891,7 +909,8 @@ ID of the instance</p></div>
             clone_env=False,
             check_access=True,
             destination_instance_dir=None,
-            ignore_delta_backups=True):
+            ignore_delta_backups=True,
+            no_of_streams=2):
         &#34;&#34;&#34;Restores the databases specified in the input paths list.
 
             Args:
@@ -934,6 +953,10 @@ ID of the instance</p></div>
                                                             restore or not
                     default: True
 
+                no_of_streams               (int)   --  number of streams to be used for restore
+
+                    default: 2
+
             Returns:
                 object  -   instance of the Job class for this restore job
 
@@ -960,7 +983,8 @@ ID of the instance</p></div>
             clone_env,
             check_access,
             destination_instance_dir,
-            ignore_delta_backups
+            ignore_delta_backups,
+            no_of_streams
         )
 
         return self._process_restore_response(request_json)</code></pre>
@@ -979,7 +1003,7 @@ ID of the instance</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/hanainstance.py#L116-L124" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/hanainstance.py#L116-L124" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def db_instance_client(self):
@@ -1000,7 +1024,7 @@ def db_instance_client(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/hanainstance.py#L126-L134" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/hanainstance.py#L126-L134" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def hdb_user_storekey(self):
@@ -1021,7 +1045,7 @@ def hdb_user_storekey(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/hanainstance.py#L106-L114" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/hanainstance.py#L106-L114" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_db_username(self):
@@ -1042,7 +1066,7 @@ def instance_db_username(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/hanainstance.py#L86-L94" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/hanainstance.py#L86-L94" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_number(self):
@@ -1063,7 +1087,7 @@ def instance_number(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/hanainstance.py#L76-L84" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/hanainstance.py#L76-L84" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sps_version(self):
@@ -1084,7 +1108,7 @@ def sps_version(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/hanainstance.py#L96-L104" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/hanainstance.py#L96-L104" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sql_location_directory(self):
@@ -1101,7 +1125,7 @@ def sql_location_directory(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.instances.hanainstance.SAPHANAInstance.restore"><code class="name flex">
-<span>def <span class="ident">restore</span></span>(<span>self, pseudo_client, instance, backupset_name='default', backup_prefix=None, point_in_time=None, initialize_log_area=False, use_hardware_revert=False, clone_env=False, check_access=True, destination_instance_dir=None, ignore_delta_backups=True)</span>
+<span>def <span class="ident">restore</span></span>(<span>self, pseudo_client, instance, backupset_name='default', backup_prefix=None, point_in_time=None, initialize_log_area=False, use_hardware_revert=False, clone_env=False, check_access=True, destination_instance_dir=None, ignore_delta_backups=True, no_of_streams=2)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the databases specified in the input paths list.</p>
@@ -1167,6 +1191,12 @@ default: None</p>
 whether to ignore delta backups during
 restore or not
 default: True</p>
+<p>no_of_streams
+(int)
+&ndash;
+number of streams to be used for restore</p>
+<pre><code>default: 2
+</code></pre>
 <h2 id="returns">Returns</h2>
 <p>object
 -
@@ -1181,7 +1211,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/hanainstance.py#L379-L463" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/hanainstance.py#L385-L475" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore(
         self,
@@ -1195,7 +1225,8 @@ if response is not success
         clone_env=False,
         check_access=True,
         destination_instance_dir=None,
-        ignore_delta_backups=True):
+        ignore_delta_backups=True,
+        no_of_streams=2):
     &#34;&#34;&#34;Restores the databases specified in the input paths list.
 
         Args:
@@ -1238,6 +1269,10 @@ if response is not success
                                                         restore or not
                 default: True
 
+            no_of_streams               (int)   --  number of streams to be used for restore
+
+                default: 2
+
         Returns:
             object  -   instance of the Job class for this restore job
 
@@ -1264,7 +1299,8 @@ if response is not success
         clone_env,
         check_access,
         destination_instance_dir,
-        ignore_delta_backups
+        ignore_delta_backups,
+        no_of_streams
     )
 
     return self._process_restore_response(request_json)</code></pre>

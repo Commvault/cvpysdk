@@ -254,6 +254,8 @@ allow_owners_to_enable_passkey()   -- Enables option to allow owners to enable /
     organization
 
     **company_theme**           --  Returns the company level theme if it exists
+
+   **user_session_timeout**     -- Returns the time after which user session expires for company users
 </code></pre>
 <h1 id="remoteorganization">RemoteOrganization</h1>
 <pre><code>__init__()                  --  initializes instance of the RemoteOrganization class for doing
@@ -301,7 +303,7 @@ get_entity_counts()         --  To get the counts of associated entities for com
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1-L3831" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1-L3851" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -564,6 +566,8 @@ Organization Attributes
         organization
 
         **company_theme**           --  Returns the company level theme if it exists
+
+       **user_session_timeout**     -- Returns the time after which user session expires for company users
 
 RemoteOrganization
 ============
@@ -1275,11 +1279,12 @@ class Organizations:
             )
         raise SDKException(&#39;RemoteOrganization&#39;, &#39;110&#39;)
 
-    def delete(self, name):
+    def delete(self, name, deactivate=True):
         &#34;&#34;&#34;Deletes the organization with the given name from the Commcell.
 
             Args:
                 name            (str)   --  name of the organization to delete
+                deactivate      (bool)   -- Whether to deactivate organization before deleting, By default organization will be deactivated
 
             Returns:
                 None    -   if the organization was removed successfully
@@ -1305,7 +1310,7 @@ class Organizations:
             org = self.get(name)
             target = None
             
-        org.deactivate()
+        if deactivate: org.deactivate()
 
         organization_id = self._organizations[name.lower()]
 
@@ -1410,6 +1415,7 @@ class Organization:
         self._retire_laptops = None
         self._password_age = None
         self._download_software_from_internet = None
+        self._session_timeout = None
         self._tfa_obj = TwoFactorAuthentication(self._commcell_object, organization_id=self._organization_id)
         self.refresh()
 
@@ -1577,6 +1583,7 @@ class Organization:
                 organization_properties[&#39;advancedPrivacySettings&#39;][&#39;passkeySettings&#39;][&#39;enableAuthorizeForRestore&#39;]
                 self._is_allow_users_to_enable_passkey_enabled = organization_properties[&#39;allowUsersToEnablePasskey&#39;]
                 self._owner_privacy = organization_properties.get(&#34;allowUsersToEnablePrivacy&#34;)
+                self._session_timeout = organization_properties.get(&#34;loginSessionTimeoutInMinutes&#34;)
 
                 privacy = organization_properties.get(&#39;privacy&#39;)
                 if privacy:
@@ -1597,7 +1604,7 @@ class Organization:
                 time_string = (datetime.fromtimestamp(time_epoch).strftime(&#34;%b %#d&#34;) +
                                (datetime.fromtimestamp(time_epoch).strftime(
                                    &#34; %Y&#34;) if datetime.now().year != datetime.fromtimestamp(time_epoch).year else &#39;&#39;) +
-                               datetime.fromtimestamp(time_epoch).strftime(&#34;, %#I:%M:%S %p&#34;))
+                               datetime.fromtimestamp(time_epoch).strftime(&#34;, %#I:%M %p&#34;))
                 self._org_creation_time = time_string
 
                 self._machine_count = organization_properties[&#39;totalMachineCount&#39;]
@@ -2401,6 +2408,21 @@ class Organization:
     def is_owner_data_privacy_enabled(self):
         &#34;&#34;&#34;Returns true if owner data privacy is enabled&#34;&#34;&#34;
         return self._owner_privacy
+
+    @property
+    def user_session_timeout(self):
+        &#34;&#34;&#34;Returns company user session timeout value&#34;&#34;&#34;
+        return self._session_timeout
+
+    @user_session_timeout.setter
+    def user_session_timeout(self, value: int) -&gt; None:
+        &#34;&#34;&#34;Sets user session timeout
+
+        Args:
+            value (int): timeout time in minutes
+        &#34;&#34;&#34;
+        self._update_properties_json({&#39;loginSessionTimeoutInMinutes&#39;: value})
+        self._update_properties()
 
     def dissociate_plans(self, value):
         &#34;&#34;&#34;disassociates plans from the organization
@@ -4173,7 +4195,7 @@ instance of the Organization class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1032-L3272" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1035-L3292" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Organization:
     &#34;&#34;&#34;Class for performing operations on an Organization.&#34;&#34;&#34;
@@ -4251,6 +4273,7 @@ instance of the Organization class</p></div>
         self._retire_laptops = None
         self._password_age = None
         self._download_software_from_internet = None
+        self._session_timeout = None
         self._tfa_obj = TwoFactorAuthentication(self._commcell_object, organization_id=self._organization_id)
         self.refresh()
 
@@ -4418,6 +4441,7 @@ instance of the Organization class</p></div>
                 organization_properties[&#39;advancedPrivacySettings&#39;][&#39;passkeySettings&#39;][&#39;enableAuthorizeForRestore&#39;]
                 self._is_allow_users_to_enable_passkey_enabled = organization_properties[&#39;allowUsersToEnablePasskey&#39;]
                 self._owner_privacy = organization_properties.get(&#34;allowUsersToEnablePrivacy&#34;)
+                self._session_timeout = organization_properties.get(&#34;loginSessionTimeoutInMinutes&#34;)
 
                 privacy = organization_properties.get(&#39;privacy&#39;)
                 if privacy:
@@ -4438,7 +4462,7 @@ instance of the Organization class</p></div>
                 time_string = (datetime.fromtimestamp(time_epoch).strftime(&#34;%b %#d&#34;) +
                                (datetime.fromtimestamp(time_epoch).strftime(
                                    &#34; %Y&#34;) if datetime.now().year != datetime.fromtimestamp(time_epoch).year else &#39;&#39;) +
-                               datetime.fromtimestamp(time_epoch).strftime(&#34;, %#I:%M:%S %p&#34;))
+                               datetime.fromtimestamp(time_epoch).strftime(&#34;, %#I:%M %p&#34;))
                 self._org_creation_time = time_string
 
                 self._machine_count = organization_properties[&#39;totalMachineCount&#39;]
@@ -5242,6 +5266,21 @@ instance of the Organization class</p></div>
     def is_owner_data_privacy_enabled(self):
         &#34;&#34;&#34;Returns true if owner data privacy is enabled&#34;&#34;&#34;
         return self._owner_privacy
+
+    @property
+    def user_session_timeout(self):
+        &#34;&#34;&#34;Returns company user session timeout value&#34;&#34;&#34;
+        return self._session_timeout
+
+    @user_session_timeout.setter
+    def user_session_timeout(self, value: int) -&gt; None:
+        &#34;&#34;&#34;Sets user session timeout
+
+        Args:
+            value (int): timeout time in minutes
+        &#34;&#34;&#34;
+        self._update_properties_json({&#39;loginSessionTimeoutInMinutes&#39;: value})
+        self._update_properties()
 
     def dissociate_plans(self, value):
         &#34;&#34;&#34;disassociates plans from the organization
@@ -6425,7 +6464,7 @@ instance of the Organization class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1623-L1626" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1628-L1631" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def auth_code(self):
@@ -6439,7 +6478,7 @@ def auth_code(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1162-L1165" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1166-L1169" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def auto_laptop_owners_enabled(self):
@@ -6464,7 +6503,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2722-L2765" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2742-L2785" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_groups(self):
@@ -6535,7 +6574,7 @@ iconColor: '#0B2E44'
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3032-L3052" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3052-L3072" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def company_theme(self)-&gt;dict:
@@ -6566,7 +6605,7 @@ def company_theme(self)-&gt;dict:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1692-L1695" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1697-L1700" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def contacts(self):
@@ -6580,7 +6619,7 @@ def contacts(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1831-L1834" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1836-L1839" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def contacts_fullname(self):
@@ -6594,7 +6633,7 @@ def contacts_fullname(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1836-L1839" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1841-L1844" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def default_plan(self):
@@ -6608,7 +6647,7 @@ def default_plan(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1581-L1584" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1586-L1589" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -6622,7 +6661,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1602-L1605" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1607-L1610" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def domain_name(self):
@@ -6636,7 +6675,7 @@ def domain_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1586-L1589" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1591-L1594" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def email_domain_names(self):
@@ -6650,7 +6689,7 @@ def email_domain_names(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1974-L1977" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1979-L1982" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def file_exceptions(self):
@@ -6672,7 +6711,7 @@ def file_exceptions(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2846-L2857" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2866-L2877" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def get_retire_laptop_properties(self):
@@ -6694,7 +6733,7 @@ def get_retire_laptop_properties(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1143-L1146" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1147-L1150" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def infrastructure_type(self):
@@ -6708,7 +6747,7 @@ def infrastructure_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3027-L3030" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3047-L3050" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def isAllowUsersToEnablePasskeyEnabled(self):
@@ -6722,7 +6761,7 @@ def isAllowUsersToEnablePasskeyEnabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3022-L3025" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3042-L3045" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def isAuthrestoreEnabled(self):
@@ -6736,7 +6775,7 @@ def isAuthrestoreEnabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3017-L3020" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3037-L3040" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def isPasskeyEnabled(self):
@@ -6750,7 +6789,7 @@ def isPasskeyEnabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1628-L1631" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1633-L1636" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_auth_code_enabled(self):
@@ -6764,7 +6803,7 @@ def is_auth_code_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1633-L1636" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1638-L1641" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_auto_discover_enabled(self):
@@ -6778,7 +6817,7 @@ def is_auto_discover_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1638-L1641" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1643-L1646" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_backup_disabled(self):
@@ -6792,7 +6831,7 @@ def is_backup_disabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2090-L2093" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2095-L2098" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_company_privacy_enabled(self):
@@ -6806,7 +6845,7 @@ def is_company_privacy_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1133-L1136" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1137-L1140" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_data_encryption_enabled(self):
@@ -6820,7 +6859,7 @@ def is_data_encryption_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1658-L1661" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1663-L1666" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_download_software_from_internet_enabled(self):
@@ -6834,7 +6873,7 @@ def is_download_software_from_internet_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2038-L2041" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2043-L2046" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_global_file_exceptions_enabled(self):
@@ -6848,7 +6887,7 @@ def is_global_file_exceptions_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1648-L1651" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1653-L1656" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_login_disabled(self):
@@ -6862,7 +6901,7 @@ def is_login_disabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2095-L2098" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2100-L2103" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_owner_data_privacy_enabled(self):
@@ -6876,7 +6915,7 @@ def is_owner_data_privacy_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1643-L1646" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1648-L1651" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_restore_disabled(self):
@@ -6890,7 +6929,7 @@ def is_restore_disabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2691-L2694" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2711-L2714" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_tfa_enabled(self):
@@ -6904,7 +6943,7 @@ def is_tfa_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1111-L1114" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1115-L1118" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_using_upn(self):
@@ -6918,7 +6957,7 @@ def is_using_upn(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1199-L1202" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1203-L1206" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def job_start_time(self):
@@ -6932,7 +6971,7 @@ def job_start_time(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1682-L1685" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1687-L1690" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def machine_count(self):
@@ -6946,7 +6985,7 @@ def machine_count(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1550-L1553" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1555-L1558" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -6960,7 +6999,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2296-L2299" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2316-L2319" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def operator_role(self):
@@ -6989,7 +7028,7 @@ list of dicts containing operator details</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1736-L1756" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1741-L1761" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def operators(self) -&gt; list:
@@ -7020,7 +7059,7 @@ def operators(self) -&gt; list:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1969-L1972" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1974-L1977" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def organization_created_on(self):
@@ -7034,7 +7073,7 @@ def organization_created_on(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1555-L1558" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1560-L1563" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def organization_id(self):
@@ -7048,7 +7087,7 @@ def organization_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1560-L1563" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1565-L1568" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def organization_name(self):
@@ -7062,7 +7101,7 @@ def organization_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1653-L1656" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1658-L1661" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def password_age_days(self):
@@ -7076,7 +7115,7 @@ def password_age_days(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1903-L1906" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1908-L1911" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan_details(self):
@@ -7090,7 +7129,7 @@ def plan_details(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1898-L1901" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1903-L1906" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plans(self):
@@ -7104,7 +7143,7 @@ def plans(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1122-L1125" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1126-L1129" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def reseller_enabled(self):
@@ -7118,7 +7157,7 @@ def reseller_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1924-L1927" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1929-L1932" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sender_email(self):
@@ -7132,7 +7171,7 @@ def sender_email(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1913-L1916" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1918-L1921" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sender_name(self):
@@ -7146,7 +7185,7 @@ def sender_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1908-L1911" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1913-L1916" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def server_count(self):
@@ -7160,7 +7199,7 @@ def server_count(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1663-L1666" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1668-L1671" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def shared_laptop(self):
@@ -7177,7 +7216,7 @@ def shared_laptop(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2890-L2898" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2910-L2918" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sites(self):
@@ -7197,7 +7236,7 @@ supported solution from API is a integer value and it needs to be changed to a l
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1182-L1187" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1186-L1191" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def supported_solutions(self):
@@ -7220,7 +7259,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2937-L2962" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2957-L2982" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def tags(self):
@@ -7256,7 +7295,7 @@ def tags(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2215-L2228" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2235-L2248" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def tenant_operator(self):
@@ -7280,7 +7319,7 @@ def tenant_operator(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2696-L2699" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2716-L2719" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def tfa_enabled_user_groups(self):
@@ -7294,7 +7333,7 @@ def tfa_enabled_user_groups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1687-L1690" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1692-L1695" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_count(self):
@@ -7308,12 +7347,26 @@ def user_count(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1964-L1967" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1969-L1972" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_groups(self):
     &#34;&#34;&#34;Returns the user group associated with a company&#34;&#34;&#34;
     return self._user_groups</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.organization.Organization.user_session_timeout"><code class="name">var <span class="ident">user_session_timeout</span></code></dt>
+<dd>
+<div class="desc"><p>Returns company user session timeout value</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2105-L2108" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def user_session_timeout(self):
+    &#34;&#34;&#34;Returns company user session timeout value&#34;&#34;&#34;
+    return self._session_timeout</code></pre>
 </details>
 </dd>
 </dl>
@@ -7338,7 +7391,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2319-L2356" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2339-L2376" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def activate(self):
     &#34;&#34;&#34;
@@ -7399,7 +7452,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2599-L2643" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2619-L2663" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_client_association(self, client_name):
     &#34;&#34;&#34;To associate a client to an organization
@@ -7468,7 +7521,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2485-L2554" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2505-L2574" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_service_commcell_associations(self, name, service_commcell):
     &#34;&#34;&#34;To add organization on service commcell
@@ -7559,7 +7612,7 @@ security association</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2230-L2260" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2250-L2280" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_user_groups_as_operator(self, user_group_list, request_type):
     &#34;&#34;&#34;Update the local user_group as tenant operator of the company
@@ -7610,7 +7663,7 @@ OVERWRITE user security association</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2262-L2294" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2282-L2314" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_users_as_operator(self, user_list, request_type):
     &#34;&#34;&#34;Update the local user as tenant operator of the company
@@ -7659,7 +7712,7 @@ True (Enable Passkey) or False (Disable Passkey)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3205-L3213" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3225-L3233" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def allow_owners_to_enable_passkey(self, flag):
     &#34;&#34;&#34;
@@ -7701,7 +7754,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2358-L2414" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2378-L2434" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def deactivate(self,
                disable_backup=True,
@@ -7782,7 +7835,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2190-L2213" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2210-L2233" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_auth_code(self):
     &#34;&#34;&#34;Executes the request on the server to disable Auth Code Generation for the Organization.
@@ -7821,7 +7874,7 @@ if failed to update enableAutoDiscovery property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2475-L2483" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2495-L2503" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_auto_discover(self):
     &#34;&#34;&#34;Disables autodiscover at company level..
@@ -7842,7 +7895,7 @@ if failed to update enableAutoDiscovery property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2806-L2812" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2826-L2832" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_company_data_privacy(self):
     &#34;&#34;&#34; To disable company privacy to prevent admin access to company data
@@ -7861,7 +7914,7 @@ if failed to update enableAutoDiscovery property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3197-L3203" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3217-L3223" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_owner_data_privacy(self):
     &#34;&#34;&#34; To disable company privacy to allow owner to enable data privacy &#34;&#34;&#34;
@@ -7882,7 +7935,7 @@ if failed to update enableAutoDiscovery property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2713-L2720" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2733-L2740" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_tfa(self):
     &#34;&#34;&#34;
@@ -7909,7 +7962,7 @@ list of plans</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2100-L2134" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2120-L2154" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def dissociate_plans(self, value):
     &#34;&#34;&#34;disassociates plans from the organization
@@ -7970,7 +8023,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2146-L2188" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2166-L2208" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_auth_code(self):
     &#34;&#34;&#34;Executes the request on the server to enable Auth Code Generation for the Organization.
@@ -8028,7 +8081,7 @@ if failed to update enableAutoDiscovery property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2465-L2473" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2485-L2493" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_auto_discover(self):
     &#34;&#34;&#34;Enables autodiscover at company level..
@@ -8049,7 +8102,7 @@ if failed to update enableAutoDiscovery property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2798-L2804" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2818-L2824" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_company_data_privacy(self):
     &#34;&#34;&#34; To enable company privacy to prevent admin access to company data
@@ -8068,7 +8121,7 @@ if failed to update enableAutoDiscovery property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3189-L3195" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3209-L3215" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_owner_data_privacy(self):
     &#34;&#34;&#34; To enable company privacy to allow owner to enable data privacy &#34;&#34;&#34;
@@ -8094,7 +8147,7 @@ list of user group names for which tfa needs to be enabled.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2701-L2711" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2721-L2731" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_tfa(self, user_groups=None):
     &#34;&#34;&#34;
@@ -8124,7 +8177,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2767-L2796" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2787-L2816" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_alerts(self):
     &#34;&#34;&#34;
@@ -8177,7 +8230,7 @@ Returns: (dict)
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1358-L1405" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1363-L1410" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_security_associations(self):
     &#34;&#34;&#34; Get the security associations for a organization
@@ -8254,7 +8307,7 @@ if new password is missing while changing passkey
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3109-L3187" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3129-L3207" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def passkey(self, current_password, action, new_password=None):
     &#34;&#34;&#34;&#34;
@@ -8345,7 +8398,7 @@ if new password is missing while changing passkey
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2136-L2144" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2156-L2164" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Organization.&#34;&#34;&#34;
@@ -8377,7 +8430,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2645-L2689" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2665-L2709" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def remove_client_association(self, client_name):
     &#34;&#34;&#34;To de-associate a client to an organization
@@ -8445,7 +8498,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2556-L2597" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2576-L2617" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def remove_service_commcell_associations(self, name):
     &#34;&#34;&#34; To delete the organization association for service commcell
@@ -8508,7 +8561,7 @@ If retire days is more than delete days</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2859-L2888" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2879-L2908" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def retire_offline_laptops(self, retire_days, delete_days=None):
     &#34;&#34;&#34;
@@ -8557,7 +8610,7 @@ If retire days is more than delete days</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1167-L1180" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1171-L1184" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_auto_laptop_owners(self, client_assign_type, client_assign_value=None):
     &#34;&#34;&#34; Sets the property in company to assign owners to laptop automatically
@@ -8593,7 +8646,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2814-L2844" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2834-L2864" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_company_data_privacy(self, value):
     &#34;&#34;&#34;Method to set company data privacy
@@ -8636,7 +8689,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1138-L1141" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1142-L1145" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_data_encryption_enabled(self, value):
     &#34;&#34;&#34; Sets property to allow owners to enable data encryption &#34;&#34;&#34;
@@ -8662,7 +8715,7 @@ if sender_name or sender_email is missing in inputs</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1935-L1962" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1940-L1967" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_email_settings(self, email_settings):
     &#34;&#34;&#34;
@@ -8742,7 +8795,7 @@ SDKException:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3215-L3272" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3235-L3292" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_general_settings(self, general_settings_dict):
     &#34;&#34;&#34;Method to update properties of general settings in an organization
@@ -8832,7 +8885,7 @@ if response is empty
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1407-L1476" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1412-L1481" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_security_associations(self, userOrGroupName, roleName, request_type=None, isUserGroup=False):
     &#34;&#34;&#34;
@@ -8925,7 +8978,7 @@ if ownership assignment is not correct
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L2416-L2463" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L2436-L2483" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def verify_owner_assignment_config(self, want_ownership_type):
     &#34;&#34;&#34; Verifies that the ownership assignments settings are configured and set properly for company
@@ -8998,7 +9051,7 @@ instance of the Organizations class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L327-L1029" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L329-L1032" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Organizations:
     &#34;&#34;&#34;Class for doing operations on Organizations like add / delete an organization, etc.&#34;&#34;&#34;
@@ -9646,11 +9699,12 @@ instance of the Organizations class</p></div>
             )
         raise SDKException(&#39;RemoteOrganization&#39;, &#39;110&#39;)
 
-    def delete(self, name):
+    def delete(self, name, deactivate=True):
         &#34;&#34;&#34;Deletes the organization with the given name from the Commcell.
 
             Args:
                 name            (str)   --  name of the organization to delete
+                deactivate      (bool)   -- Whether to deactivate organization before deleting, By default organization will be deactivated
 
             Returns:
                 None    -   if the organization was removed successfully
@@ -9676,7 +9730,7 @@ instance of the Organizations class</p></div>
             org = self.get(name)
             target = None
             
-        org.deactivate()
+        if deactivate: org.deactivate()
 
         organization_id = self._organizations[name.lower()]
 
@@ -9719,7 +9773,7 @@ instance of the Organizations class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L507-L520" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L509-L522" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_organizations(self):
@@ -9762,7 +9816,7 @@ def all_organizations(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L522-L547" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L524-L549" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_organizations_props(self):
@@ -9802,7 +9856,7 @@ True/False</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L549-L555" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L551-L557" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def fanout(self)-&gt;bool:
@@ -9887,7 +9941,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L750-L914" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L752-L916" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self,
         name,
@@ -10129,7 +10183,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L587-L748" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L589-L750" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_remote_org(self,
         name,
@@ -10296,7 +10350,7 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.organization.Organizations.delete"><code class="name flex">
-<span>def <span class="ident">delete</span></span>(<span>self, name)</span>
+<span>def <span class="ident">delete</span></span>(<span>self, name, deactivate=True)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Deletes the organization with the given name from the Commcell.</p>
@@ -10304,7 +10358,10 @@ if response is not success
 <p>name
 (str)
 &ndash;
-name of the organization to delete</p>
+name of the organization to delete
+deactivate
+(bool)
+&ndash; Whether to deactivate organization before deleting, By default organization will be deactivated</p>
 <h2 id="returns">Returns</h2>
 <p>None
 -
@@ -10321,13 +10378,14 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L973-L1024" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L975-L1027" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def delete(self, name):
+<pre><code class="python">def delete(self, name, deactivate=True):
     &#34;&#34;&#34;Deletes the organization with the given name from the Commcell.
 
         Args:
             name            (str)   --  name of the organization to delete
+            deactivate      (bool)   -- Whether to deactivate organization before deleting, By default organization will be deactivated
 
         Returns:
             None    -   if the organization was removed successfully
@@ -10353,7 +10411,7 @@ if response is not success
         org = self.get(name)
         target = None
         
-    org.deactivate()
+    if deactivate: org.deactivate()
 
     organization_id = self._organizations[name.lower()]
 
@@ -10399,7 +10457,7 @@ if type of the organization name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L916-L939" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L918-L941" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, name):
     &#34;&#34;&#34;Returns an instance of the Organization class for the given organization name.
@@ -10449,7 +10507,7 @@ if type of the organization name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L941-L971" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L943-L973" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_remote_org(self, name):
     &#34;&#34;&#34;Returns an instance of the RemoteOrganization class for the given organization name.
@@ -10504,7 +10562,7 @@ if type of the organization name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L568-L585" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L570-L587" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_organization(self, name):
     &#34;&#34;&#34;Checks if an organization exists in the Commcell with the input organization name.
@@ -10534,7 +10592,7 @@ if type of the organization name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L1026-L1029" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L1029-L1032" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the list of organizations associated to the Commcell.&#34;&#34;&#34;
@@ -10578,7 +10636,7 @@ instance of the RemoteOrganization class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3275-L3831" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3295-L3851" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class RemoteOrganization:
     &#34;&#34;&#34;Class for performing remote operations on an Organization.&#34;&#34;&#34;
@@ -11150,7 +11208,7 @@ alias name/domain name of this organization</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3449-L3458" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3469-L3478" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def domain_name(self)-&gt;str:
@@ -11174,7 +11232,7 @@ commserve name where this organization exists</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3429-L3437" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3449-L3457" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def homecell(self)-&gt;str:
@@ -11197,7 +11255,7 @@ True if backup is disabled</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3477-L3486" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3497-L3506" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_backup_disabled(self)-&gt;bool:
@@ -11221,7 +11279,7 @@ True if login is disabled</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3499-L3508" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3519-L3528" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_login_disabled(self)-&gt;bool:
@@ -11245,7 +11303,7 @@ True if restore is disabled</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3488-L3497" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3508-L3517" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_restore_disabled(self)-&gt;bool:
@@ -11269,7 +11327,7 @@ name of this organization</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3408-L3416" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3428-L3436" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self)-&gt;str:
@@ -11303,7 +11361,7 @@ list of dicts containing operator details</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3514-L3534" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3534-L3554" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def operators(self)-&gt;list:
@@ -11338,7 +11396,7 @@ id of this organization (in given commcell)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3418-L3427" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3438-L3447" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def organization_id(self)-&gt;str:
@@ -11362,7 +11420,7 @@ organization name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3439-L3447" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3459-L3467" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def organization_name(self)-&gt;str:
@@ -11390,7 +11448,7 @@ Example: {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3460-L3475" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3480-L3495" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def parent_company(self)-&gt;dict:
@@ -11418,7 +11476,7 @@ def parent_company(self)-&gt;dict:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3328-L3336" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3348-L3356" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def reseller_enabled(self)-&gt;bool:
@@ -11455,7 +11513,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3707-L3744" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3727-L3764" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def tags(self)-&gt;list:
@@ -11519,7 +11577,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3609-L3646" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3629-L3666" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def activate(self)-&gt;None:
     &#34;&#34;&#34;
@@ -11590,7 +11648,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3648-L3705" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3668-L3725" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def deactivate(self,
                disable_backup=True,
@@ -11671,7 +11729,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3799-L3831" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3819-L3851" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_entity_counts(self)-&gt;dict:
     &#34;&#34;&#34;Gets the entity type and counts for company&#39;s associated entities
@@ -11716,7 +11774,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/organization.py#L3510-L3512" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/organization.py#L3530-L3532" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self)-&gt;None:
     &#34;&#34;&#34;Refresh the properties of the Organization.&#34;&#34;&#34;
@@ -11891,6 +11949,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.organization.Organization.update_security_associations" href="#cvpysdk.organization.Organization.update_security_associations">update_security_associations</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.user_count" href="#cvpysdk.organization.Organization.user_count">user_count</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.user_groups" href="#cvpysdk.organization.Organization.user_groups">user_groups</a></code></li>
+<li><code><a title="cvpysdk.organization.Organization.user_session_timeout" href="#cvpysdk.organization.Organization.user_session_timeout">user_session_timeout</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.verify_owner_assignment_config" href="#cvpysdk.organization.Organization.verify_owner_assignment_config">verify_owner_assignment_config</a></code></li>
 </ul>
 </li>

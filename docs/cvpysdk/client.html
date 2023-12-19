@@ -222,6 +222,8 @@ add_additional_setting()     --  adds registry key to the client property
 
 delete_additional_setting()  --  deletes registry key from the client property
 
+get_configured_additional_setting() --  To get configured additional settings from the client property
+
 release_license()            --  releases a license from a client
 
 retire()                     --  perform retire operation on the client
@@ -363,7 +365,7 @@ which is consumed by the client
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L1-L6856" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L1-L6910" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # pylint: disable=R1705, R0205
@@ -592,6 +594,8 @@ Client
     add_additional_setting()     --  adds registry key to the client property
 
     delete_additional_setting()  --  deletes registry key from the client property
+
+    get_configured_additional_setting() --  To get configured additional settings from the client property
 
     release_license()            --  releases a license from a client
 
@@ -1392,11 +1396,13 @@ class Clients(object):
                     {
                          &#34;client1_name&#34;: {
                                 &#34;id&#34;: client1_id,
-                                &#34;hostname&#34;: client1_hostname
+                                &#34;hostname&#34;: client1_hostname,
+                                &#34;displayName&#34;: client1 display name
                         },
                          &#34;client2_name&#34;: {
                                 &#34;id&#34;: client2_id,
-                                &#34;hostname&#34;: client2_hostname
+                                &#34;hostname&#34;: client2_hostname,
+                                &#34;displayName&#34;: client2 display name
                          },
                     }
 
@@ -1643,6 +1649,8 @@ class Clients(object):
         elif self.hidden_clients and client_name.lower() in self.hidden_clients:
             return True
         elif self._get_hidden_client_from_hostname(client_name) is not None:
+            return True
+        elif self._get_client_from_displayname(client_name) is not None:
             return True
         return False
 
@@ -3343,6 +3351,7 @@ class Clients(object):
                     user_name (str) : User name for shared job results
                     user_password (str) : User password for shared job results
                     shared_jr_directory (str) : Shared Job results directory path
+                    cloud_region(int) : Cloud region for the client which determines the gcc or gcc high configuration
 
             Returns:
                 object  -   instance of the Client class for this new client
@@ -3375,11 +3384,19 @@ class Clients(object):
 
         access_nodes_list = kwargs.get(&#39;access_nodes_list&#39;)
         index_server = kwargs.get(&#39;index_server&#39;)
-        is_resource_pool_enabled = False if server_plan_resources is None else True
+
+        # use resource pool only if resource pool type is Office365 or OneDrive
+        is_resource_pool_enabled = False
+        if server_plan_resources is not None:
+            for resourse in server_plan_resources:
+                if resourse.get(&#39;appType&#39;, 0) in (1, 5):  # ResourcePoolAppType.O365 or ResourcePoolAppType.OneDrive
+                    is_resource_pool_enabled = True
+
         number_of_backup_streams = kwargs.get(&#39;number_of_backup_streams&#39;, 10)
         user_name = kwargs.get(&#39;user_name&#39;)
         user_password = kwargs.get(&#39;user_password&#39;)
         shared_jr_directory = kwargs.get(&#39;shared_jr_directory&#39;)
+        cloud_region = kwargs.get(&#39;cloud_region&#39;, 1)
 
         # If server plan is not resource pool enabled and infrastructure details are not provided, raise Exception
         if not is_resource_pool_enabled and (access_nodes_list is None or index_server is None):
@@ -3464,7 +3481,7 @@ class Clients(object):
                             &#34;oneDriveInstance&#34;: {
                                 &#34;manageContentAutomatically&#34;: False,
                                 &#34;isAutoDiscoveryEnabled&#34;: False,
-                                &#34;cloudRegion&#34;: 1,
+                                &#34;cloudRegion&#34;: cloud_region,
                                 &#34;azureAppList&#34;: {
                                     &#34;azureApps&#34;: [
                                         {
@@ -3778,11 +3795,12 @@ class Clients(object):
 
     def get(self, name):
         &#34;&#34;&#34;Returns a client object if client name or host name or ID or display name matches the client attribute
+
             We check if specified name matches any of the existing client names else
             compare specified name with host names of existing clients else if name matches with the ID
 
             Args:
-                name (str/int)  --  name / hostname / ID of the client / display name
+                name (str/int)  --  name / hostname / ID of the client / display name 
 
             Returns:
                 object - instance of the Client class for the given client name
@@ -3797,19 +3815,19 @@ class Clients(object):
             name = name.lower()
             client_name = None
             client_id = None
-            client_from_hostname = None
+            client_from_hostname_or_displayname = None
             if self.has_client(name):
-                client_from_hostname = self._get_client_from_hostname(name)
-                if self.has_hidden_client(name) and not client_from_hostname and name not in self.all_clients:
-                    client_from_hostname = self._get_hidden_client_from_hostname(name)
-            else:
-                name = self._get_client_from_displayname(name)
-                if name is None:
+                client_from_hostname_or_displayname = self._get_client_from_hostname(name)
+                if self.has_hidden_client(name) and not client_from_hostname_or_displayname \
+                                                and name not in self.all_clients:
+                    client_from_hostname_or_displayname = self._get_hidden_client_from_hostname(name)
+                if client_from_hostname_or_displayname is None:
+                    client_from_hostname_or_displayname = self._get_client_from_displayname(name)
+                if name is None and client_name is None and client_from_hostname_or_displayname is None:
                     raise SDKException(
                         &#39;Client&#39;, &#39;102&#39;, &#39;No client exists with given name/hostname: {0}&#39;.format(name)
                     )
-
-            client_name = name if client_from_hostname is None else client_from_hostname
+            client_name = name if client_from_hostname_or_displayname is None else client_from_hostname_or_displayname
 
             if client_name in self.all_clients:
                 client_id = self.all_clients[client_name][&#39;id&#39;]
@@ -4529,9 +4547,11 @@ class Client(object):
                 commvault = r&#39;/usr/local/bin/commvault&#39;
 
             if self.instance:
-                command = &#39;{0} -instance {1} {2}&#39;.format(
-                    commvault, self.instance, operations_dict[operation][&#39;unix_command&#39;]
-                )
+                command = &#39;{0} -instance {1} {2} {3}&#39;.format(
+                    commvault,
+                    self.instance,
+                    f&#34;-service {service_name}&#34; if service_name != &#39;ALL&#39; else &#34;&#34;,
+                    operations_dict[operation][&#39;unix_command&#39;])
 
                 __, __, error = self.execute_command(command, wait_for_completion=False)
 
@@ -5669,8 +5689,6 @@ class Client(object):
             Args:
                 service_name    (str)   --  name of the service to be started
 
-                    service name is required only for Windows Clients, as for UNIX clients, the
-                    operation is executed on all services
 
                     default:    None
 
@@ -5692,9 +5710,6 @@ class Client(object):
             Args:
                 service_name    (str)   --  name of the service to be stopped
 
-                    service name is required only for Windows Clients, as for UNIX clients, the
-                    operation is executed on all services
-
                     default:    None
 
                     Example:    GxVssProv(Instance001)
@@ -5714,9 +5729,6 @@ class Client(object):
 
             Args:
                 service_name    (str)   --  name of the service to be restarted
-
-                    service name is required only for Windows Clients, as for UNIX clients, the
-                    operation is executed on all services
 
                     default:    None
 
@@ -5810,7 +5822,7 @@ class Client(object):
             Change the Job Result Directory of an Exchange Online Client
 
             Arguments:
-                new_directory   (str)   -- The new JR directory
+                new_directory_path    (str)   -- The new JR directory
                     Example:
                         C:\ JR
                         or
@@ -5858,6 +5870,7 @@ class Client(object):
                     &#34;password&#34;: password
                 }
             }
+
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._services[&#39;OFFICE365_MOVE_JOB_RESULT_DIRECTORY&#39;], prop_dict
         )
@@ -6364,6 +6377,26 @@ class Client(object):
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+        
+    def get_configured_additional_settings(self) -&gt; list:
+        &#34;&#34;&#34;Method to get configured additional settings name&#34;&#34;&#34;
+        url = self._services[&#39;GET_ADDITIIONAL_SETTINGS&#39;] % self.client_id
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, url)
+        if flag:
+            if response.json():
+                response = response.json()
+
+                if response.get(&#39;errorMsg&#39;):
+                    error_message = response.json()[&#39;errorMsg&#39;]
+                    o_str = &#39;Failed to fetch additional settings.\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Client&#39;, &#39;102&#39;, o_str)
+
+                return response.get(&#39;regKeys&#39;, [])
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;)
 
     def release_license(self, license_name=None):
         &#34;&#34;&#34;Releases a license from a client
@@ -7038,6 +7071,29 @@ class Client(object):
 
         self.refresh()
 
+    def change_dynamics365_client_job_results_directory(
+            self, new_directory_path: str, username: str = str(), password: str = str()):
+        &#34;&#34;&#34;
+            Change the Job Result Directory of a Dynamics 365 Client
+
+            Arguments:
+                new_directory_path   (str)   -- The new JR directory
+                    Example:
+                        \\vm1.example-active-directory.com\TestFolder1\JobResults
+
+                username    (str)   --
+                    username of the machine, if new JobResults directory is a shared/ UNC path.
+
+                password    (str)   --
+                    Password of the machine, if new JobResults directory is a shared/ UNC path.
+
+            Raises
+                SDKException   (object)
+                    Error in moving the job results directory
+
+        &#34;&#34;&#34;
+        self.change_o365_client_job_results_directory(new_directory_path, username, password)
+
     def change_company_for_client(self, destination_company_name):
         &#34;&#34;&#34;
         Changes Company for Client
@@ -7257,7 +7313,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L3555-L6715" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L3571-L6769" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Client(object):
     &#34;&#34;&#34;Class for performing client operations for a specific client.&#34;&#34;&#34;
@@ -7869,9 +7925,11 @@ default: None</p>
                 commvault = r&#39;/usr/local/bin/commvault&#39;
 
             if self.instance:
-                command = &#39;{0} -instance {1} {2}&#39;.format(
-                    commvault, self.instance, operations_dict[operation][&#39;unix_command&#39;]
-                )
+                command = &#39;{0} -instance {1} {2} {3}&#39;.format(
+                    commvault,
+                    self.instance,
+                    f&#34;-service {service_name}&#34; if service_name != &#39;ALL&#39; else &#34;&#34;,
+                    operations_dict[operation][&#39;unix_command&#39;])
 
                 __, __, error = self.execute_command(command, wait_for_completion=False)
 
@@ -9009,8 +9067,6 @@ default: None</p>
             Args:
                 service_name    (str)   --  name of the service to be started
 
-                    service name is required only for Windows Clients, as for UNIX clients, the
-                    operation is executed on all services
 
                     default:    None
 
@@ -9032,9 +9088,6 @@ default: None</p>
             Args:
                 service_name    (str)   --  name of the service to be stopped
 
-                    service name is required only for Windows Clients, as for UNIX clients, the
-                    operation is executed on all services
-
                     default:    None
 
                     Example:    GxVssProv(Instance001)
@@ -9054,9 +9107,6 @@ default: None</p>
 
             Args:
                 service_name    (str)   --  name of the service to be restarted
-
-                    service name is required only for Windows Clients, as for UNIX clients, the
-                    operation is executed on all services
 
                     default:    None
 
@@ -9150,7 +9200,7 @@ default: None</p>
             Change the Job Result Directory of an Exchange Online Client
 
             Arguments:
-                new_directory   (str)   -- The new JR directory
+                new_directory_path    (str)   -- The new JR directory
                     Example:
                         C:\ JR
                         or
@@ -9198,6 +9248,7 @@ default: None</p>
                     &#34;password&#34;: password
                 }
             }
+
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._services[&#39;OFFICE365_MOVE_JOB_RESULT_DIRECTORY&#39;], prop_dict
         )
@@ -9704,6 +9755,26 @@ default: None</p>
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+        
+    def get_configured_additional_settings(self) -&gt; list:
+        &#34;&#34;&#34;Method to get configured additional settings name&#34;&#34;&#34;
+        url = self._services[&#39;GET_ADDITIIONAL_SETTINGS&#39;] % self.client_id
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, url)
+        if flag:
+            if response.json():
+                response = response.json()
+
+                if response.get(&#39;errorMsg&#39;):
+                    error_message = response.json()[&#39;errorMsg&#39;]
+                    o_str = &#39;Failed to fetch additional settings.\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Client&#39;, &#39;102&#39;, o_str)
+
+                return response.get(&#39;regKeys&#39;, [])
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;)
 
     def release_license(self, license_name=None):
         &#34;&#34;&#34;Releases a license from a client
@@ -10378,6 +10449,29 @@ default: None</p>
 
         self.refresh()
 
+    def change_dynamics365_client_job_results_directory(
+            self, new_directory_path: str, username: str = str(), password: str = str()):
+        &#34;&#34;&#34;
+            Change the Job Result Directory of a Dynamics 365 Client
+
+            Arguments:
+                new_directory_path   (str)   -- The new JR directory
+                    Example:
+                        \\vm1.example-active-directory.com\TestFolder1\JobResults
+
+                username    (str)   --
+                    username of the machine, if new JobResults directory is a shared/ UNC path.
+
+                password    (str)   --
+                    Password of the machine, if new JobResults directory is a shared/ UNC path.
+
+            Raises
+                SDKException   (object)
+                    Error in moving the job results directory
+
+        &#34;&#34;&#34;
+        self.change_o365_client_job_results_directory(new_directory_path, username, password)
+
     def change_company_for_client(self, destination_company_name):
         &#34;&#34;&#34;
         Changes Company for Client
@@ -10435,7 +10529,7 @@ installed / configured on the Client.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4489-L4497" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4507-L4515" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def agents(self):
@@ -10454,7 +10548,7 @@ def agents(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4282-L4285" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4300-L4303" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def associated_client_groups(self):
@@ -10468,7 +10562,7 @@ def associated_client_groups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4370-L4373" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4388-L4391" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def available_security_roles(self):
@@ -10482,7 +10576,7 @@ def available_security_roles(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4460-L4463" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4478-L4481" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def block_level_cache_dir(self):
@@ -10496,7 +10590,7 @@ def block_level_cache_dir(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6334-L6338" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6365-L6369" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_guid(self):
@@ -10511,7 +10605,7 @@ def client_guid(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4385-L4388" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4403-L4406" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_hostname(self):
@@ -10525,7 +10619,7 @@ def client_hostname(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4375-L4378" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4393-L4396" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_id(self):
@@ -10539,7 +10633,7 @@ def client_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4380-L4383" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4398-L4401" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_name(self):
@@ -10553,7 +10647,7 @@ def client_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6340-L6344" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6371-L6375" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_type(self):
@@ -10568,7 +10662,7 @@ def client_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4351-L4354" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4369-L4372" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def commcell_name(self):
@@ -10582,7 +10676,7 @@ def commcell_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4287-L4290" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4305-L4308" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def company_id(self):
@@ -10596,7 +10690,7 @@ def company_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6583-L6586" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6614-L6617" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def company_name(self):
@@ -10644,7 +10738,7 @@ if response code is not as expected
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6261-L6326" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6292-L6357" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def consumed_licenses(self):
@@ -10720,7 +10814,7 @@ def consumed_licenses(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6328-L6332" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6359-L6363" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def cvd_port(self):
@@ -10735,7 +10829,7 @@ def cvd_port(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4314-L4317" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4332-L4335" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -10749,7 +10843,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4297-L4300" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4315-L4318" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def display_name(self):
@@ -10763,7 +10857,7 @@ def display_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4277-L4280" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4295-L4298" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def hyperv_id_of_vm(self):
@@ -10777,7 +10871,7 @@ def hyperv_id_of_vm(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4435-L4438" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4453-L4456" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def install_directory(self):
@@ -10791,7 +10885,7 @@ def install_directory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4465-L4475" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4483-L4493" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance(self):
@@ -10812,7 +10906,7 @@ def instance(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4410-L4413" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4428-L4431" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_backup_enabled(self):
@@ -10826,7 +10920,7 @@ def is_backup_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4405-L4408" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4423-L4426" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_ci_enabled(self):
@@ -10840,7 +10934,7 @@ def is_ci_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4535-L4538" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4553-L4556" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_cluster(self):
@@ -10854,7 +10948,7 @@ def is_cluster(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4420-L4423" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4438-L4441" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_data_aging_enabled(self):
@@ -10868,7 +10962,7 @@ def is_data_aging_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4400-L4403" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4418-L4421" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_data_management_enabled(self):
@@ -10882,7 +10976,7 @@ def is_data_management_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4395-L4398" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4413-L4416" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_data_recovery_enabled(self):
@@ -10896,7 +10990,7 @@ def is_data_recovery_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4425-L4428" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4443-L4446" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_intelli_snap_enabled(self):
@@ -10910,7 +11004,7 @@ def is_intelli_snap_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4430-L4433" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4448-L4451" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_privacy_enabled(self):
@@ -10936,7 +11030,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L5185-L5200" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L5203-L5218" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_ready(self):
@@ -10962,7 +11056,7 @@ def is_ready(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4415-L4418" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4433-L4436" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_restore_enabled(self):
@@ -10976,7 +11070,7 @@ def is_restore_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4272-L4275" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4290-L4293" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_vm(self):
@@ -10990,7 +11084,7 @@ def is_vm(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4455-L4458" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4473-L4476" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def job_results_directory(self):
@@ -11004,7 +11098,7 @@ def job_results_directory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6444-L6448" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6475-L6479" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def job_start_time(self):
@@ -11019,7 +11113,7 @@ def job_start_time(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4262-L4265" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4280-L4283" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def latitude(self):
@@ -11033,7 +11127,7 @@ def latitude(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4477-L4487" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4495-L4505" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def log_directory(self):
@@ -11054,7 +11148,7 @@ def log_directory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4267-L4270" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4285-L4288" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def longitude(self):
@@ -11068,7 +11162,7 @@ def longitude(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4292-L4295" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4310-L4313" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -11082,7 +11176,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4356-L4359" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4374-L4377" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name_change(self):
@@ -11096,7 +11190,7 @@ def name_change(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4519-L4525" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4537-L4543" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def network(self):
@@ -11113,7 +11207,7 @@ def network(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4527-L4533" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4545-L4551" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def network_throttle(self):
@@ -11130,7 +11224,7 @@ def network_throttle(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4390-L4393" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4408-L4411" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def os_info(self):
@@ -11144,7 +11238,7 @@ def os_info(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4450-L4453" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4468-L4471" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def owners(self):
@@ -11158,7 +11252,7 @@ def owners(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4257-L4260" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4275-L4278" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -11172,7 +11266,7 @@ def properties(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6450-L6455" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6481-L6486" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def readiness_details(self):
@@ -11189,7 +11283,7 @@ configured on the Client.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4499-L4507" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4517-L4525" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def schedules(self):
@@ -11208,7 +11302,7 @@ def schedules(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4445-L4448" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4463-L4466" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def service_pack(self):
@@ -11222,7 +11316,7 @@ def service_pack(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4331-L4334" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4349-L4352" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def timezone(self):
@@ -11237,7 +11331,7 @@ with permissions set on the Client.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4509-L4517" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4527-L4535" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def users(self):
@@ -11256,7 +11350,7 @@ def users(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4440-L4443" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4458-L4461" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def version(self):
@@ -11270,7 +11364,7 @@ def version(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6346-L6350" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6377-L6381" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_guid(self):
@@ -11316,7 +11410,7 @@ if response code is not as expected
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L5914-L5960" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L5925-L5971" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_additional_setting(self, category, key_name, data_type, value):
     &#34;&#34;&#34;Adds registry key to the client property
@@ -11383,7 +11477,7 @@ if input data is invalid</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L5616-L5650" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L5627-L5661" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_client_owner(self, owner_list):
     &#34;&#34;&#34;Adds the users to the owners list of this client
@@ -11450,7 +11544,7 @@ associations_list = [
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L5591-L5614" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L5602-L5625" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_user_associations(self, associations_list):
     &#34;&#34;&#34;Adds the users to the owners list of this client
@@ -11497,7 +11591,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6674-L6715" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6728-L6769" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def change_company_for_client(self, destination_company_name):
     &#34;&#34;&#34;
@@ -11543,13 +11637,65 @@ if response is not success
     self.refresh()</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.client.Client.change_dynamics365_client_job_results_directory"><code class="name flex">
+<span>def <span class="ident">change_dynamics365_client_job_results_directory</span></span>(<span>self, new_directory_path: str, username: str = '', password: str = '')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Change the Job Result Directory of a Dynamics 365 Client</p>
+<h2 id="arguments">Arguments</h2>
+<p>new_directory_path
+(str)
+&ndash; The new JR directory
+Example:
+\vm1.example-active-directory.com\TestFolder1\JobResults</p>
+<p>username
+(str)
+&ndash;
+username of the machine, if new JobResults directory is a shared/ UNC path.</p>
+<p>password
+(str)
+&ndash;
+Password of the machine, if new JobResults directory is a shared/ UNC path.</p>
+<p>Raises
+SDKException
+(object)
+Error in moving the job results directory</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6705-L6726" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def change_dynamics365_client_job_results_directory(
+        self, new_directory_path: str, username: str = str(), password: str = str()):
+    &#34;&#34;&#34;
+        Change the Job Result Directory of a Dynamics 365 Client
+
+        Arguments:
+            new_directory_path   (str)   -- The new JR directory
+                Example:
+                    \\vm1.example-active-directory.com\TestFolder1\JobResults
+
+            username    (str)   --
+                username of the machine, if new JobResults directory is a shared/ UNC path.
+
+            password    (str)   --
+                Password of the machine, if new JobResults directory is a shared/ UNC path.
+
+        Raises
+            SDKException   (object)
+                Error in moving the job results directory
+
+    &#34;&#34;&#34;
+    self.change_o365_client_job_results_directory(new_directory_path, username, password)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.client.Client.change_exchange_job_results_directory"><code class="name flex">
 <span>def <span class="ident">change_exchange_job_results_directory</span></span>(<span>self, new_directory_path, username=None, password=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Change the Job Result Directory of an Exchange Online Client</p>
 <h2 id="arguments">Arguments</h2>
-<p>new_directory
+<p>new_directory_path
 (str)
 &ndash; The new JR directory
 Example:
@@ -11571,7 +11717,7 @@ Error in moving the job results directory</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L5440-L5517" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L5450-L5528" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def change_exchange_job_results_directory(
         self, new_directory_path, username=None, password=None):
@@ -11579,7 +11725,7 @@ Error in moving the job results directory</p></div>
         Change the Job Result Directory of an Exchange Online Client
 
         Arguments:
-            new_directory   (str)   -- The new JR directory
+            new_directory_path    (str)   -- The new JR directory
                 Example:
                     C:\ JR
                     or
@@ -11627,6 +11773,7 @@ Error in moving the job results directory</p></div>
                 &#34;password&#34;: password
             }
         }
+
     flag, response = self._cvpysdk_object.make_request(
         &#39;POST&#39;, self._services[&#39;OFFICE365_MOVE_JOB_RESULT_DIRECTORY&#39;], prop_dict
     )
@@ -11681,7 +11828,7 @@ Error in moving the job results directory</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L5519-L5542" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L5530-L5553" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def change_o365_client_job_results_directory(
         self, new_directory_path, username=None, password=None):
@@ -11730,7 +11877,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6588-L6626" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6619-L6657" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def check_eligibility_for_migration(self, destination_company_name):
     &#34;&#34;&#34;Checks whether Client is Eligible for migration
@@ -11797,7 +11944,7 @@ if response code is not as expected
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L5962-L5999" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L5973-L6010" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_additional_setting(self, category, key_name):
     &#34;&#34;&#34;Deletes registry key from the client property
@@ -11854,7 +12001,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4621-L4652" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4639-L4670" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_backup(self):
     &#34;&#34;&#34;Disables Backup for this Client.
@@ -11898,7 +12045,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6569-L6573" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6600-L6604" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_content_indexing(self):
     &#34;&#34;&#34;Disables the v1 content indexing on the client&#34;&#34;&#34;
@@ -11922,7 +12069,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4861-L4892" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4879-L4910" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_data_aging(self):
     &#34;&#34;&#34;Disables Data Aging for this Client.
@@ -11973,7 +12120,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L5148-L5183" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L5166-L5201" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_intelli_snap(self):
     &#34;&#34;&#34;Disables Intelli Snap for this Client.
@@ -12021,7 +12168,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6628-L6633" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6659-L6664" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_owner_privacy(self):
     &#34;&#34;&#34;Enables the privacy option for client&#34;&#34;&#34;
@@ -12046,7 +12193,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4741-L4772" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4759-L4790" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_restore(self):
     &#34;&#34;&#34;Disables Restore for this Client.
@@ -12097,7 +12244,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4540-L4571" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4558-L4589" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_backup(self):
     &#34;&#34;&#34;Enable Backup for this Client.
@@ -12157,7 +12304,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4573-L4619" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4591-L4637" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_backup_at_time(self, enable_time, **kwargs):
     &#34;&#34;&#34;Disables Backup if not already disabled, and enables at the time specified.
@@ -12216,7 +12363,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6563-L6567" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6594-L6598" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_content_indexing(self):
     &#34;&#34;&#34;Enables the v1 content indexing on the client&#34;&#34;&#34;
@@ -12240,7 +12387,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4774-L4805" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4792-L4823" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_data_aging(self):
     &#34;&#34;&#34;Enable Data Aging for this Client.
@@ -12306,7 +12453,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4807-L4859" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4825-L4877" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_data_aging_at_time(self, enable_time, **kwargs):
     &#34;&#34;&#34;Disables Data Aging if not already disabled, and enables at the time specified.
@@ -12378,7 +12525,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L5111-L5146" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L5129-L5164" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_intelli_snap(self):
     &#34;&#34;&#34;Enables Intelli Snap for this Client.
@@ -12426,7 +12573,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6575-L6581" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6606-L6612" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_owner_privacy(self):
     &#34;&#34;&#34;Enables the privacy option for client&#34;&#34;&#34;
@@ -12452,7 +12599,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4654-L4685" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4672-L4703" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_restore(self):
     &#34;&#34;&#34;Enable Restore for this Client.
@@ -12518,7 +12665,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4687-L4739" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4705-L4757" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_restore_at_time(self, enable_time, **kwargs):
     &#34;&#34;&#34;Disables Restore if not already disabled, and enables at the time specified.
@@ -12638,7 +12785,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L5023-L5109" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L5041-L5127" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def execute_command(self, command, script_arguments=None, wait_for_completion=True):
     &#34;&#34;&#34;Executes a command on this client.
@@ -12814,7 +12961,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4894-L5021" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4912-L5039" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def execute_script(self, script_type, script, script_arguments=None, wait_for_completion=True):
     &#34;&#34;&#34;Executes the given script of the script type on this client.
@@ -12985,7 +13132,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L5652-L5723" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L5663-L5734" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def filter_clients_return_displaynames(self, filter_by=&#34;OS&#34;, **kwargs):
     &#34;&#34;&#34;Gets all the clients associated with the commcell with properties
@@ -13061,6 +13208,37 @@ if response is not success
     return client_list</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.client.Client.get_configured_additional_settings"><code class="name flex">
+<span>def <span class="ident">get_configured_additional_settings</span></span>(<span>self) ‑> list</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to get configured additional settings name</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6012-L6030" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_configured_additional_settings(self) -&gt; list:
+    &#34;&#34;&#34;Method to get configured additional settings name&#34;&#34;&#34;
+    url = self._services[&#39;GET_ADDITIIONAL_SETTINGS&#39;] % self.client_id
+    flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, url)
+    if flag:
+        if response.json():
+            response = response.json()
+
+            if response.get(&#39;errorMsg&#39;):
+                error_message = response.json()[&#39;errorMsg&#39;]
+                o_str = &#39;Failed to fetch additional settings.\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Client&#39;, &#39;102&#39;, o_str)
+
+            return response.get(&#39;regKeys&#39;, [])
+
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.client.Client.get_dag_member_servers"><code class="name flex">
 <span>def <span class="ident">get_dag_member_servers</span></span>(<span>self)</span>
 </code></dt>
@@ -13076,7 +13254,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6227-L6259" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6258-L6290" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_dag_member_servers(self):
     &#34;&#34;&#34;Gets the member servers for an Exchange DAG client.
@@ -13127,7 +13305,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6457-L6489" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6488-L6520" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_environment_details(self):
     &#34;&#34;&#34;
@@ -13186,7 +13364,7 @@ eg: [{
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6527-L6561" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6558-L6592" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_mount_volumes(self, volume_names=None):
     &#34;&#34;&#34;&#34;Gets mount volumes information for client
@@ -13240,7 +13418,7 @@ for all the service commcells</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6491-L6525" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6522-L6556" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_needs_attention_details(self):
     &#34;&#34;&#34;
@@ -13294,7 +13472,7 @@ if response is not successful</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L5420-L5438" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L5430-L5448" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_network_summary(self):
     &#34;&#34;&#34;Gets the network summary for the client
@@ -13330,7 +13508,7 @@ if response is not successful</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L5544-L5589" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L5555-L5600" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def push_network_config(self):
     &#34;&#34;&#34;Performs a push network configuration on the client
@@ -13411,7 +13589,7 @@ if another download job is already running
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6146-L6184" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6177-L6215" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def push_servicepack_and_hotfix(
         self,
@@ -13469,7 +13647,7 @@ if response code is not as expected
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6110-L6144" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6141-L6175" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def reconfigure_client(self):
     &#34;&#34;&#34;Reapplies license to the client
@@ -13516,7 +13694,7 @@ if response code is not as expected
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L5725-L5733" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L5736-L5744" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refreshes the properties of the Client.&#34;&#34;&#34;
@@ -13557,7 +13735,7 @@ if response code is not as expected
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6001-L6066" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6032-L6097" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def release_license(self, license_name=None):
     &#34;&#34;&#34;Releases a license from a client
@@ -13658,7 +13836,7 @@ if install job failed</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6186-L6225" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6217-L6256" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def repair_software(
         self,
@@ -13712,10 +13890,7 @@ if install job failed</p>
 (str)
 &ndash;
 name of the service to be restarted</p>
-<pre><code>service name is required only for Windows Clients, as for UNIX clients, the
-operation is executed on all services
-
-default:    None
+<pre><code>default:    None
 
 Example:    GxVssProv(Instance001)
 </code></pre>
@@ -13729,16 +13904,13 @@ if failed to restart the service</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L5345-L5366" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L5358-L5376" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restart_service(self, service_name=None):
     &#34;&#34;&#34;Executes the command on the client machine to restart the Commvault service(s).
 
         Args:
             service_name    (str)   --  name of the service to be restarted
-
-                service name is required only for Windows Clients, as for UNIX clients, the
-                operation is executed on all services
 
                 default:    None
 
@@ -13797,7 +13969,7 @@ if failed to restart the services before the timeout value</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L5368-L5418" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L5378-L5428" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restart_services(self, wait_for_service_restart=True, timeout=10, implicit_wait=5):
     &#34;&#34;&#34;Executes the command on the client machine to restart **ALL** services.
@@ -13870,7 +14042,7 @@ if response code is not as expected
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6068-L6108" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6099-L6139" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def retire(self):
     &#34;&#34;&#34;Uninstalls the CommVault Software on the client, releases the license and deletes the client.
@@ -13956,7 +14128,7 @@ OFF, to disable client side deduplication</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L5801-L5912" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L5812-L5923" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_dedup_property(self,
                        prop_name,
@@ -14098,7 +14270,7 @@ to disable encryption
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L5735-L5799" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L5746-L5810" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_encryption_property(self,
                             enc_setting=&#34;USE_SPSETTINGS&#34;,
@@ -14182,7 +14354,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6352-L6383" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6383-L6414" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_job_start_time(self, job_start_time_value):
     &#34;&#34;&#34;Sets the jobstarttime for this Client.
@@ -14236,7 +14408,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6635-L6672" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6666-L6703" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_privacy(self, value):
     &#34;&#34;&#34;
@@ -14288,10 +14460,7 @@ if response is not success
 (str)
 &ndash;
 name of the service to be started</p>
-<pre><code>service name is required only for Windows Clients, as for UNIX clients, the
-operation is executed on all services
-
-default:    None
+<pre><code>default:    None
 
 Example:    GxVssProv(Instance001)
 </code></pre>
@@ -14305,7 +14474,7 @@ if failed to start the service</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L5299-L5320" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L5317-L5336" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def start_service(self, service_name=None):
     &#34;&#34;&#34;Executes the command on the client machine to start the Commvault service(s).
@@ -14313,8 +14482,6 @@ if failed to start the service</p></div>
         Args:
             service_name    (str)   --  name of the service to be started
 
-                service name is required only for Windows Clients, as for UNIX clients, the
-                operation is executed on all services
 
                 default:    None
 
@@ -14341,10 +14508,7 @@ if failed to start the service</p></div>
 (str)
 &ndash;
 name of the service to be stopped</p>
-<pre><code>service name is required only for Windows Clients, as for UNIX clients, the
-operation is executed on all services
-
-default:    None
+<pre><code>default:    None
 
 Example:    GxVssProv(Instance001)
 </code></pre>
@@ -14358,16 +14522,13 @@ if failed to stop the service</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L5322-L5343" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L5338-L5356" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def stop_service(self, service_name=None):
     &#34;&#34;&#34;Executes the command on the client machine to stop the Commvault service(s).
 
         Args:
             service_name    (str)   --  name of the service to be stopped
-
-                service name is required only for Windows Clients, as for UNIX clients, the
-                operation is executed on all services
 
                 default:    None
 
@@ -14408,7 +14569,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L6385-L6416" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L6416-L6447" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def uninstall_software(self, force_uninstall=True,software_list=[]):
     &#34;&#34;&#34;
@@ -14468,7 +14629,7 @@ need to change and use the update_properties method to set the properties</p></d
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L4222-L4255" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L4240-L4273" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;Updates the client properties
@@ -14531,7 +14692,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L5202-L5252" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L5220-L5270" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def upload_file(self, source_file_path, destination_folder):
     &#34;&#34;&#34;Upload the specified source file to destination path on the client machine
@@ -14611,7 +14772,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L5254-L5297" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L5272-L5315" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def upload_folder(self, source_dir, destination_dir):
     &#34;&#34;&#34;Uploads the specified source dir to destination path on the client machine
@@ -14677,7 +14838,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L399-L3552" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L401-L3568" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Clients(object):
     &#34;&#34;&#34;Class for representing all the clients associated with the commcell.&#34;&#34;&#34;
@@ -15308,11 +15469,13 @@ instance of the Commcell class</p>
                     {
                          &#34;client1_name&#34;: {
                                 &#34;id&#34;: client1_id,
-                                &#34;hostname&#34;: client1_hostname
+                                &#34;hostname&#34;: client1_hostname,
+                                &#34;displayName&#34;: client1 display name
                         },
                          &#34;client2_name&#34;: {
                                 &#34;id&#34;: client2_id,
-                                &#34;hostname&#34;: client2_hostname
+                                &#34;hostname&#34;: client2_hostname,
+                                &#34;displayName&#34;: client2 display name
                          },
                     }
 
@@ -15559,6 +15722,8 @@ instance of the Commcell class</p>
         elif self.hidden_clients and client_name.lower() in self.hidden_clients:
             return True
         elif self._get_hidden_client_from_hostname(client_name) is not None:
+            return True
+        elif self._get_client_from_displayname(client_name) is not None:
             return True
         return False
 
@@ -17259,6 +17424,7 @@ instance of the Commcell class</p>
                     user_name (str) : User name for shared job results
                     user_password (str) : User password for shared job results
                     shared_jr_directory (str) : Shared Job results directory path
+                    cloud_region(int) : Cloud region for the client which determines the gcc or gcc high configuration
 
             Returns:
                 object  -   instance of the Client class for this new client
@@ -17291,11 +17457,19 @@ instance of the Commcell class</p>
 
         access_nodes_list = kwargs.get(&#39;access_nodes_list&#39;)
         index_server = kwargs.get(&#39;index_server&#39;)
-        is_resource_pool_enabled = False if server_plan_resources is None else True
+
+        # use resource pool only if resource pool type is Office365 or OneDrive
+        is_resource_pool_enabled = False
+        if server_plan_resources is not None:
+            for resourse in server_plan_resources:
+                if resourse.get(&#39;appType&#39;, 0) in (1, 5):  # ResourcePoolAppType.O365 or ResourcePoolAppType.OneDrive
+                    is_resource_pool_enabled = True
+
         number_of_backup_streams = kwargs.get(&#39;number_of_backup_streams&#39;, 10)
         user_name = kwargs.get(&#39;user_name&#39;)
         user_password = kwargs.get(&#39;user_password&#39;)
         shared_jr_directory = kwargs.get(&#39;shared_jr_directory&#39;)
+        cloud_region = kwargs.get(&#39;cloud_region&#39;, 1)
 
         # If server plan is not resource pool enabled and infrastructure details are not provided, raise Exception
         if not is_resource_pool_enabled and (access_nodes_list is None or index_server is None):
@@ -17380,7 +17554,7 @@ instance of the Commcell class</p>
                             &#34;oneDriveInstance&#34;: {
                                 &#34;manageContentAutomatically&#34;: False,
                                 &#34;isAutoDiscoveryEnabled&#34;: False,
-                                &#34;cloudRegion&#34;: 1,
+                                &#34;cloudRegion&#34;: cloud_region,
                                 &#34;azureAppList&#34;: {
                                     &#34;azureApps&#34;: [
                                         {
@@ -17694,11 +17868,12 @@ instance of the Commcell class</p>
 
     def get(self, name):
         &#34;&#34;&#34;Returns a client object if client name or host name or ID or display name matches the client attribute
+
             We check if specified name matches any of the existing client names else
             compare specified name with host names of existing clients else if name matches with the ID
 
             Args:
-                name (str/int)  --  name / hostname / ID of the client / display name
+                name (str/int)  --  name / hostname / ID of the client / display name 
 
             Returns:
                 object - instance of the Client class for the given client name
@@ -17713,19 +17888,19 @@ instance of the Commcell class</p>
             name = name.lower()
             client_name = None
             client_id = None
-            client_from_hostname = None
+            client_from_hostname_or_displayname = None
             if self.has_client(name):
-                client_from_hostname = self._get_client_from_hostname(name)
-                if self.has_hidden_client(name) and not client_from_hostname and name not in self.all_clients:
-                    client_from_hostname = self._get_hidden_client_from_hostname(name)
-            else:
-                name = self._get_client_from_displayname(name)
-                if name is None:
+                client_from_hostname_or_displayname = self._get_client_from_hostname(name)
+                if self.has_hidden_client(name) and not client_from_hostname_or_displayname \
+                                                and name not in self.all_clients:
+                    client_from_hostname_or_displayname = self._get_hidden_client_from_hostname(name)
+                if client_from_hostname_or_displayname is None:
+                    client_from_hostname_or_displayname = self._get_client_from_displayname(name)
+                if name is None and client_name is None and client_from_hostname_or_displayname is None:
                     raise SDKException(
                         &#39;Client&#39;, &#39;102&#39;, &#39;No client exists with given name/hostname: {0}&#39;.format(name)
                     )
-
-            client_name = name if client_from_hostname is None else client_from_hostname
+            client_name = name if client_from_hostname_or_displayname is None else client_from_hostname_or_displayname
 
             if client_name in self.all_clients:
                 client_id = self.all_clients[client_name][&#39;id&#39;]
@@ -17843,17 +18018,19 @@ instance of the Commcell class</p>
 {
 "client1_name": {
 "id": client1_id,
-"hostname": client1_hostname
+"hostname": client1_hostname,
+"displayName": client1 display name
 },
 "client2_name": {
 "id": client2_id,
-"hostname": client2_hostname
+"hostname": client2_hostname,
+"displayName": client2 display name
 },
 }</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L1020-L1037" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L1022-L1041" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_clients(self):
@@ -17863,11 +18040,13 @@ def all_clients(self):
                 {
                      &#34;client1_name&#34;: {
                             &#34;id&#34;: client1_id,
-                            &#34;hostname&#34;: client1_hostname
+                            &#34;hostname&#34;: client1_hostname,
+                            &#34;displayName&#34;: client1 display name
                     },
                      &#34;client2_name&#34;: {
                             &#34;id&#34;: client2_id,
-                            &#34;hostname&#34;: client2_hostname
+                            &#34;hostname&#34;: client2_hostname,
+                            &#34;displayName&#34;: client2 display name
                      },
                 }
 
@@ -17881,7 +18060,7 @@ def all_clients(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L653-L658" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L655-L660" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def dynamics365_clients(self):
@@ -17913,7 +18092,7 @@ def dynamics365_clients(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L1231-L1254" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L1235-L1258" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def file_server_clients(self):
@@ -17958,7 +18137,7 @@ def file_server_clients(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L1173-L1190" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L1177-L1194" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def hidden_clients(self):
@@ -17986,7 +18165,7 @@ def hidden_clients(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L600-L605" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L602-L607" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def office_365_clients(self):
@@ -18002,7 +18181,7 @@ def office_365_clients(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L694-L699" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L696-L701" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def salesforce_clients(self):
@@ -18031,7 +18210,7 @@ def salesforce_clients(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L1211-L1229" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L1215-L1233" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def virtualization_access_nodes(self):
@@ -18071,7 +18250,7 @@ def virtualization_access_nodes(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L1192-L1209" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L1196-L1213" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def virtualization_clients(self):
@@ -18128,7 +18307,7 @@ if None value in alicloud options</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L2880-L2951" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L2886-L2957" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_alicloud_client(self, client_name, access_node, alicloud_options):
     &#34;&#34;&#34;
@@ -18247,7 +18426,7 @@ if None value in amazon options</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L2705-L2804" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L2711-L2810" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_amazon_client(self, client_name, access_node, amazon_options):
     &#34;&#34;&#34;
@@ -18385,7 +18564,7 @@ if None value in azure options</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L2625-L2703" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L2631-L2709" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_azure_client(self, client_name, access_node, azure_options):
     &#34;&#34;&#34;
@@ -18506,7 +18685,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L2375-L2480" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L2381-L2486" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_case_client(
         self,
@@ -18725,7 +18904,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L2147-L2373" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L2153-L2379" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_exchange_client(
         self,
@@ -18989,7 +19168,7 @@ if None value in google options</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L2806-L2878" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L2812-L2884" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_google_client(self, client_name, access_node, google_options):
     &#34;&#34;&#34;
@@ -19106,7 +19285,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L1669-L1749" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L1675-L1755" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_hyperv_client(
         self,
@@ -19232,7 +19411,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L1355-L1468" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L1361-L1474" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_kubernetes_client(
         self,
@@ -19387,7 +19566,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L1470-L1580" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L1476-L1586" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_nas_client(self,
                 ndmp_server_clientname,
@@ -19540,7 +19719,7 @@ if nfs_option and cifs_option both are false</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L3323-L3410" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L3338-L3425" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_nutanix_files_client(self, client_name, array_name, cifs_option=True, nfs_option=True):
     &#34;&#34;&#34;
@@ -19684,7 +19863,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L3157-L3321" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L3172-L3336" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_onedrive_client(self,
                         client_name,
@@ -19870,7 +20049,8 @@ access_nodes_list (list[str/object]) : List of names/objects of access node clie
 number_of_backup_streams (int) : Number of backup streams to be associated (default: 10)
 user_name (str) : User name for shared job results
 user_password (str) : User password for shared job results
-shared_jr_directory (str) : Shared Job results directory path</p>
+shared_jr_directory (str) : Shared Job results directory path
+cloud_region(int) : Cloud region for the client which determines the gcc or gcc high configuration</p>
 <h2 id="returns">Returns</h2>
 <p>object
 -
@@ -19893,7 +20073,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L2953-L3155" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L2959-L3170" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_onedrive_v2_client(
         self,
@@ -19921,6 +20101,7 @@ if response is not success
                 user_name (str) : User name for shared job results
                 user_password (str) : User password for shared job results
                 shared_jr_directory (str) : Shared Job results directory path
+                cloud_region(int) : Cloud region for the client which determines the gcc or gcc high configuration
 
         Returns:
             object  -   instance of the Client class for this new client
@@ -19953,11 +20134,19 @@ if response is not success
 
     access_nodes_list = kwargs.get(&#39;access_nodes_list&#39;)
     index_server = kwargs.get(&#39;index_server&#39;)
-    is_resource_pool_enabled = False if server_plan_resources is None else True
+
+    # use resource pool only if resource pool type is Office365 or OneDrive
+    is_resource_pool_enabled = False
+    if server_plan_resources is not None:
+        for resourse in server_plan_resources:
+            if resourse.get(&#39;appType&#39;, 0) in (1, 5):  # ResourcePoolAppType.O365 or ResourcePoolAppType.OneDrive
+                is_resource_pool_enabled = True
+
     number_of_backup_streams = kwargs.get(&#39;number_of_backup_streams&#39;, 10)
     user_name = kwargs.get(&#39;user_name&#39;)
     user_password = kwargs.get(&#39;user_password&#39;)
     shared_jr_directory = kwargs.get(&#39;shared_jr_directory&#39;)
+    cloud_region = kwargs.get(&#39;cloud_region&#39;, 1)
 
     # If server plan is not resource pool enabled and infrastructure details are not provided, raise Exception
     if not is_resource_pool_enabled and (access_nodes_list is None or index_server is None):
@@ -20042,7 +20231,7 @@ if response is not success
                         &#34;oneDriveInstance&#34;: {
                             &#34;manageContentAutomatically&#34;: False,
                             &#34;isAutoDiscoveryEnabled&#34;: False,
-                            &#34;cloudRegion&#34;: 1,
+                            &#34;cloudRegion&#34;: cloud_region,
                             &#34;azureAppList&#34;: {
                                 &#34;azureApps&#34;: [
                                     {
@@ -20167,7 +20356,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L2482-L2623" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L2488-L2629" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_salesforce_client(
         self,
@@ -20390,7 +20579,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L1751-L2023" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L1757-L2029" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_share_point_client(
         self,
@@ -20712,7 +20901,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L2025-L2145" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L2031-L2151" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_splunk_client(self,
                       new_client_name,
@@ -20880,7 +21069,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L1582-L1667" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L1588-L1673" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_vmware_client(
         self,
@@ -21005,7 +21194,7 @@ if failed to get client id from response
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L1039-L1116" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L1043-L1120" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_pseudo_client(self, client_name, client_hostname=None, client_type=&#34;windows&#34;):
     &#34;&#34;&#34; Creates a pseudo client
@@ -21113,7 +21302,7 @@ if no client exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L3468-L3542" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L3484-L3558" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, client_name, forceDelete= True):
     &#34;&#34;&#34;Deletes the client from the commcell.
@@ -21196,13 +21385,13 @@ if no client exists with the given name
 <span>def <span class="ident">get</span></span>(<span>self, name)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns a client object if client name or host name or ID or display name matches the client attribute
-We check if specified name matches any of the existing client names else
+<div class="desc"><p>Returns a client object if client name or host name or ID or display name matches the client attribute</p>
+<p>We check if specified name matches any of the existing client names else
 compare specified name with host names of existing clients else if name matches with the ID</p>
 <h2 id="args">Args</h2>
 <p>name (str/int)
 &ndash;
-name / hostname / ID of the client / display name</p>
+name / hostname / ID of the client / display name </p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Client class for the given client name</p>
 <h2 id="raises">Raises</h2>
@@ -21213,15 +21402,16 @@ if type of the client name argument is not string or Int</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L3412-L3466" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L3427-L3482" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, name):
     &#34;&#34;&#34;Returns a client object if client name or host name or ID or display name matches the client attribute
+
         We check if specified name matches any of the existing client names else
         compare specified name with host names of existing clients else if name matches with the ID
 
         Args:
-            name (str/int)  --  name / hostname / ID of the client / display name
+            name (str/int)  --  name / hostname / ID of the client / display name 
 
         Returns:
             object - instance of the Client class for the given client name
@@ -21236,19 +21426,19 @@ if type of the client name argument is not string or Int</p>
         name = name.lower()
         client_name = None
         client_id = None
-        client_from_hostname = None
+        client_from_hostname_or_displayname = None
         if self.has_client(name):
-            client_from_hostname = self._get_client_from_hostname(name)
-            if self.has_hidden_client(name) and not client_from_hostname and name not in self.all_clients:
-                client_from_hostname = self._get_hidden_client_from_hostname(name)
-        else:
-            name = self._get_client_from_displayname(name)
-            if name is None:
+            client_from_hostname_or_displayname = self._get_client_from_hostname(name)
+            if self.has_hidden_client(name) and not client_from_hostname_or_displayname \
+                                            and name not in self.all_clients:
+                client_from_hostname_or_displayname = self._get_hidden_client_from_hostname(name)
+            if client_from_hostname_or_displayname is None:
+                client_from_hostname_or_displayname = self._get_client_from_displayname(name)
+            if name is None and client_name is None and client_from_hostname_or_displayname is None:
                 raise SDKException(
                     &#39;Client&#39;, &#39;102&#39;, &#39;No client exists with given name/hostname: {0}&#39;.format(name)
                 )
-
-        client_name = name if client_from_hostname is None else client_from_hostname
+        client_name = name if client_from_hostname_or_displayname is None else client_from_hostname_or_displayname
 
         if client_name in self.all_clients:
             client_id = self.all_clients[client_name][&#39;id&#39;]
@@ -21292,7 +21482,7 @@ if type of the client name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L1256-L1280" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L1260-L1286" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_client(self, client_name):
     &#34;&#34;&#34;Checks if a client exists in the commcell with the given client name / hostname.
@@ -21318,6 +21508,8 @@ if type of the client name argument is not string</p></div>
         return True
     elif self._get_hidden_client_from_hostname(client_name) is not None:
         return True
+    elif self._get_client_from_displayname(client_name) is not None:
+        return True
     return False</code></pre>
 </details>
 </dd>
@@ -21339,7 +21531,7 @@ if type of the client name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L1282-L1300" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L1288-L1306" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_hidden_client(self, client_name):
     &#34;&#34;&#34;Checks if a client exists in the commcell with the input client name as a hidden client.
@@ -21370,7 +21562,7 @@ if type of the client name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L3544-L3552" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L3560-L3568" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the clients associated with the Commcell.&#34;&#34;&#34;
@@ -21408,7 +21600,7 @@ if failed to get client id from response
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/client.py#L1118-L1171" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/client.py#L1122-L1175" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def register_decoupled_client(self, client_name, client_host_name, port_number=8400):
     &#34;&#34;&#34; registers decoupled client
@@ -21556,6 +21748,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.client.Client.available_security_roles" href="#cvpysdk.client.Client.available_security_roles">available_security_roles</a></code></li>
 <li><code><a title="cvpysdk.client.Client.block_level_cache_dir" href="#cvpysdk.client.Client.block_level_cache_dir">block_level_cache_dir</a></code></li>
 <li><code><a title="cvpysdk.client.Client.change_company_for_client" href="#cvpysdk.client.Client.change_company_for_client">change_company_for_client</a></code></li>
+<li><code><a title="cvpysdk.client.Client.change_dynamics365_client_job_results_directory" href="#cvpysdk.client.Client.change_dynamics365_client_job_results_directory">change_dynamics365_client_job_results_directory</a></code></li>
 <li><code><a title="cvpysdk.client.Client.change_exchange_job_results_directory" href="#cvpysdk.client.Client.change_exchange_job_results_directory">change_exchange_job_results_directory</a></code></li>
 <li><code><a title="cvpysdk.client.Client.change_o365_client_job_results_directory" href="#cvpysdk.client.Client.change_o365_client_job_results_directory">change_o365_client_job_results_directory</a></code></li>
 <li><code><a title="cvpysdk.client.Client.check_eligibility_for_migration" href="#cvpysdk.client.Client.check_eligibility_for_migration">check_eligibility_for_migration</a></code></li>
@@ -21590,6 +21783,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.client.Client.execute_command" href="#cvpysdk.client.Client.execute_command">execute_command</a></code></li>
 <li><code><a title="cvpysdk.client.Client.execute_script" href="#cvpysdk.client.Client.execute_script">execute_script</a></code></li>
 <li><code><a title="cvpysdk.client.Client.filter_clients_return_displaynames" href="#cvpysdk.client.Client.filter_clients_return_displaynames">filter_clients_return_displaynames</a></code></li>
+<li><code><a title="cvpysdk.client.Client.get_configured_additional_settings" href="#cvpysdk.client.Client.get_configured_additional_settings">get_configured_additional_settings</a></code></li>
 <li><code><a title="cvpysdk.client.Client.get_dag_member_servers" href="#cvpysdk.client.Client.get_dag_member_servers">get_dag_member_servers</a></code></li>
 <li><code><a title="cvpysdk.client.Client.get_environment_details" href="#cvpysdk.client.Client.get_environment_details">get_environment_details</a></code></li>
 <li><code><a title="cvpysdk.client.Client.get_mount_volumes" href="#cvpysdk.client.Client.get_mount_volumes">get_mount_volumes</a></code></li>

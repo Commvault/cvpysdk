@@ -43,7 +43,7 @@ _get_instance_properties()     --  VirtualServer Instance class method
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/virtualserver/azure_resource_manager.py#L1-L126" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/virtualserver/azure_resource_manager.py#L1-L164" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -113,6 +113,7 @@ class AzureRMInstance(VirtualServerInstance):
 
         super(VirtualServerInstance, self).__init__(agent, name, iid)
         self._vendor_id = 7
+        self._subscription_id = None
 
 
 
@@ -158,6 +159,43 @@ class AzureRMInstance(VirtualServerInstance):
                        }
                }
         return instance_json
+
+    def _get_application_properties(self):
+        &#34;&#34;&#34;
+            Get the properties of this instance
+
+            Raise:
+                SDK Exception:
+                    if response is not empty
+                    if response is not success
+        &#34;&#34;&#34;
+        super(AzureRMInstance, self)._get_application_properties()
+        if &#39;azureResourceManager&#39; in self._application_properties:
+            self._subscription_id = self._application_properties[&#39;azureResourceManager&#39;][&#39;subscriptionId&#39;]
+
+    def _update_azure_credentials(self, credential_id, credential_name=None, usemanaged_identity=False):
+        &#34;&#34;&#34;
+        To update the credentials in azure hypervisor
+        Args:
+                credential_id (int)  --  Credential ID to update in hypervisor
+                credential_name(str) -- Credential name to update in hypervisor
+                usemanaged_identity( bool) -- to use managed identity
+        &#34;&#34;&#34;
+
+        self._get_application_properties()
+
+        self._credential_json = {
+            &#34;hypervisorType&#34;: self._vendor_id,
+            &#34;skipCredentialValidation&#34;: False,
+            &#34;credentials&#34;: {
+                &#34;id&#34;: credential_id,
+                &#34;name&#34;: credential_name
+            },
+            &#34;subscriptionId&#34;: self._subscription_id,
+         &#34;useManagedIdentity&#34;: usemanaged_identity
+        }
+
+        super(AzureRMInstance, self)._update_hypervisor_credentials(self._credential_json)
 
 
     @property
@@ -204,7 +242,7 @@ instance id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/virtualserver/azure_resource_manager.py#L45-L126" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/virtualserver/azure_resource_manager.py#L45-L164" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AzureRMInstance(VirtualServerInstance):
 
@@ -230,6 +268,7 @@ instance id</p></div>
 
         super(VirtualServerInstance, self).__init__(agent, name, iid)
         self._vendor_id = 7
+        self._subscription_id = None
 
 
 
@@ -276,6 +315,43 @@ instance id</p></div>
                }
         return instance_json
 
+    def _get_application_properties(self):
+        &#34;&#34;&#34;
+            Get the properties of this instance
+
+            Raise:
+                SDK Exception:
+                    if response is not empty
+                    if response is not success
+        &#34;&#34;&#34;
+        super(AzureRMInstance, self)._get_application_properties()
+        if &#39;azureResourceManager&#39; in self._application_properties:
+            self._subscription_id = self._application_properties[&#39;azureResourceManager&#39;][&#39;subscriptionId&#39;]
+
+    def _update_azure_credentials(self, credential_id, credential_name=None, usemanaged_identity=False):
+        &#34;&#34;&#34;
+        To update the credentials in azure hypervisor
+        Args:
+                credential_id (int)  --  Credential ID to update in hypervisor
+                credential_name(str) -- Credential name to update in hypervisor
+                usemanaged_identity( bool) -- to use managed identity
+        &#34;&#34;&#34;
+
+        self._get_application_properties()
+
+        self._credential_json = {
+            &#34;hypervisorType&#34;: self._vendor_id,
+            &#34;skipCredentialValidation&#34;: False,
+            &#34;credentials&#34;: {
+                &#34;id&#34;: credential_id,
+                &#34;name&#34;: credential_name
+            },
+            &#34;subscriptionId&#34;: self._subscription_id,
+         &#34;useManagedIdentity&#34;: usemanaged_identity
+        }
+
+        super(AzureRMInstance, self)._update_hypervisor_credentials(self._credential_json)
+
 
     @property
     def server_name(self):
@@ -302,7 +378,7 @@ instance id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/virtualserver/azure_resource_manager.py#L121-L124" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/virtualserver/azure_resource_manager.py#L159-L162" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def server_host_name(self):
@@ -316,7 +392,7 @@ def server_host_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/virtualserver/azure_resource_manager.py#L116-L119" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/virtualserver/azure_resource_manager.py#L154-L157" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def server_name(self):

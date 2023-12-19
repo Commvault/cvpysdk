@@ -35,17 +35,23 @@ set_region()                    --  Associate a region to an entity
 get_region()                    --  Gets the Region associated to an Entity
 calculate_region()              --  Calculates the Region to be associated to an Entity
 </code></pre>
-<h1 id="region">Region:</h1>
-<pre><code>_get_region_id()                --  Returns the region id
-</code></pre>
 <h2 id="attributes">Attributes</h2>
+<p><strong><em>all_regions</em></strong>
+&ndash;
+returns dict of details about region such as id
+Region:
+=======
+_get_region_id()
+&ndash;
+Returns the region id</p>
+<h2 id="attributes_1">Attributes</h2>
 <p><strong><em>region_id</em></strong>
 &ndash;
 Id of the given Region</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/regions.py#L1-L285" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/regions.py#L1-L296" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -77,6 +83,10 @@ Regions:
     set_region()                    --  Associate a region to an entity
     get_region()                    --  Gets the Region associated to an Entity
     calculate_region()              --  Calculates the Region to be associated to an Entity
+
+Attributes:
+
+    ***all_regions***               --  returns dict of details about region such as id
 
 Region:
 =======
@@ -178,13 +188,15 @@ class Regions:
                                                     MEDIAAGENT,
                                                     STORAGE_POOL, etc
                                             )
-            entity_id           (int)   :   unique id of the entity
+            entity_id           (int/str):   unique id of the entity
 
             entity_region_type  (str)   :   Type of the region
                                             (WORKLOAD or BACKUP)
 
             region_id           (int)   :   ID of the region from app_regions
         &#34;&#34;&#34;
+        if isinstance(region_id,str):
+            region_id = int(region_id)
         request = {
             &#34;entityRegionType&#34;: entity_region_type,
             &#34;region&#34;:
@@ -294,6 +306,11 @@ class Regions:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
+    @property
+    def all_regions(self):
+        &#34;&#34;&#34;Returns dict consisting of all regions details such as id&#34;&#34;&#34;
+        return self._regions
+
 
 
 class Region:
@@ -371,7 +388,7 @@ instance of the Region class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/regions.py#L250-L285" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/regions.py#L261-L296" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Region:
     &#34;&#34;&#34; Class for performing operations on a given Region &#34;&#34;&#34;
@@ -418,7 +435,7 @@ instance of the Region class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/regions.py#L282-L285" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/regions.py#L293-L296" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def region_id(self):
@@ -438,7 +455,7 @@ def region_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/regions.py#L43-L246" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/regions.py#L47-L257" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Regions:
     &#34;&#34;&#34;
@@ -529,13 +546,15 @@ def region_id(self):
                                                     MEDIAAGENT,
                                                     STORAGE_POOL, etc
                                             )
-            entity_id           (int)   :   unique id of the entity
+            entity_id           (int/str):   unique id of the entity
 
             entity_region_type  (str)   :   Type of the region
                                             (WORKLOAD or BACKUP)
 
             region_id           (int)   :   ID of the region from app_regions
         &#34;&#34;&#34;
+        if isinstance(region_id,str):
+            region_id = int(region_id)
         request = {
             &#34;entityRegionType&#34;: entity_region_type,
             &#34;region&#34;:
@@ -643,8 +662,30 @@ def region_id(self):
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    @property
+    def all_regions(self):
+        &#34;&#34;&#34;Returns dict consisting of all regions details such as id&#34;&#34;&#34;
+        return self._regions</code></pre>
 </details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.regions.Regions.all_regions"><code class="name">var <span class="ident">all_regions</span></code></dt>
+<dd>
+<div class="desc"><p>Returns dict consisting of all regions details such as id</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/regions.py#L254-L257" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def all_regions(self):
+    &#34;&#34;&#34;Returns dict consisting of all regions details such as id&#34;&#34;&#34;
+    return self._regions</code></pre>
+</details>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.regions.Regions.calculate_region"><code class="name flex">
@@ -677,7 +718,7 @@ Type of the region
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/regions.py#L211-L246" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/regions.py#L217-L252" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def calculate_region(self, entity_type, entity_id, entity_region_type):
     &#34;&#34;&#34;
@@ -738,7 +779,7 @@ name of the Region</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/regions.py#L98-L118" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/regions.py#L102-L122" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, name):
     &#34;&#34;&#34;
@@ -794,7 +835,7 @@ Type of the region
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/regions.py#L170-L209" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/regions.py#L176-L215" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_region(self, entity_type, entity_id, entity_region_type):
     &#34;&#34;&#34;
@@ -858,7 +899,7 @@ if type of the Region name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/regions.py#L79-L96" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/regions.py#L83-L100" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_region(self, name):
     &#34;&#34;&#34;Checks if the given Region exists in the Commcell.
@@ -888,7 +929,7 @@ if type of the Region name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/regions.py#L75-L77" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/regions.py#L79-L81" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the list of Regions associated to commcell&#34;&#34;&#34;
@@ -914,8 +955,7 @@ MEDIAAGENT,
 STORAGE_POOL, etc
 )
 entity_id
-(int)
-:
+(int/str):
 unique id of the entity</p>
 <p>entity_region_type
 (str)
@@ -929,7 +969,7 @@ ID of the region from app_regions</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/regions.py#L120-L168" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/regions.py#L124-L174" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_region(self, entity_type, entity_id, entity_region_type, region_id):
     &#34;&#34;&#34;
@@ -943,13 +983,15 @@ ID of the region from app_regions</p></div>
                                                 MEDIAAGENT,
                                                 STORAGE_POOL, etc
                                         )
-        entity_id           (int)   :   unique id of the entity
+        entity_id           (int/str):   unique id of the entity
 
         entity_region_type  (str)   :   Type of the region
                                         (WORKLOAD or BACKUP)
 
         region_id           (int)   :   ID of the region from app_regions
     &#34;&#34;&#34;
+    if isinstance(region_id,str):
+        region_id = int(region_id)
     request = {
         &#34;entityRegionType&#34;: entity_region_type,
         &#34;region&#34;:
@@ -1064,6 +1106,7 @@ setTimeout(() => input.focus(), 100);
 <li>
 <h4><code><a title="cvpysdk.regions.Regions" href="#cvpysdk.regions.Regions">Regions</a></code></h4>
 <ul class="two-column">
+<li><code><a title="cvpysdk.regions.Regions.all_regions" href="#cvpysdk.regions.Regions.all_regions">all_regions</a></code></li>
 <li><code><a title="cvpysdk.regions.Regions.calculate_region" href="#cvpysdk.regions.Regions.calculate_region">calculate_region</a></code></li>
 <li><code><a title="cvpysdk.regions.Regions.get" href="#cvpysdk.regions.Regions.get">get</a></code></li>
 <li><code><a title="cvpysdk.regions.Regions.get_region" href="#cvpysdk.regions.Regions.get_region">get_region</a></code></li>

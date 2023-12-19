@@ -42,7 +42,7 @@ The Virtual Server 'Hyper-V' is named as 'hyperv.py'
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupsets/vsbackupset.py#L1-L316" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/vsbackupset.py#L1-L383" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -95,6 +95,7 @@ from inspect import isabstract, isclass, getmembers
 from ..backupset import Backupset
 from ..client import Client
 from ..exception import SDKException
+from ..subclient import Subclient as subclient
 
 
 class VSBackupset(Backupset):
@@ -116,6 +117,28 @@ class VSBackupset(Backupset):
         for name, _class in classes:
             if issubclass(_class, Backupset) and _class.__module__.rsplit(&#34;.&#34;, 1)[-1] == instance_name:
                 return object.__new__(_class)
+
+    @property
+    def hidden_subclient(self):
+        &#34;&#34;&#34;Creates the object for the hidden subclient
+        Returns:
+                _hidden_subclient - object of the subclient
+
+        &#34;&#34;&#34;
+        if not self._hidden_subclient:
+            hidden_subclient_service = self._commcell_object._services[&#39;VSA_HIDDEN_SUBCLIENT&#39;] % (
+                self._client_object.client_name, self.backupset_name)
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                &#34;GET&#34;, hidden_subclient_service)
+            if flag:
+                if response.json():
+                    hidden_subclient_id = response.json().get(&#39;subclientId&#39;)
+                else:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+            self._hidden_subclient = subclient(self, &#39;Do Not Backup&#39;, hidden_subclient_id)
+        return self._hidden_subclient
 
     def browse(self, *args, **kwargs):
         &#34;&#34;&#34;Browses the content of the Backupset.
@@ -226,8 +249,9 @@ class VSBackupset(Backupset):
                     if not isinstance(response_json[&#39;browseResponses&#39;], list):
                         response_json[&#39;browseResponses&#39;] = [response_json[&#39;browseResponses&#39;]]
                     if &#39;messages&#39; in response_json[&#39;browseResponses&#39;][0]:
-                        if not isinstance(response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;],list):
-                            response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;] = [response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;]]
+                        if not isinstance(response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;], list):
+                            response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;] = [
+                                response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;]]
                         message = response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;][0]
                         error_message = message[&#39;errorMessage&#39;]
                         if error_message == &#39;Please note that this is a live browse operation. Live browse operations can take some time before the results appear in the browse window.&#39;:
@@ -257,7 +281,7 @@ class VSBackupset(Backupset):
                         mod_time = time.strftime(&#39;%d/%m/%Y %H:%M:%S&#39;, mod_time)
                     else:
                         mod_time = None
-                    
+
                     if &#39;backupTime&#39; in result[&#39;advancedData&#39;] and int(result[&#39;advancedData&#39;][&#39;backupTime&#39;]) &gt; 0:
                         bkp_time = time.localtime(int(result[&#39;advancedData&#39;][&#39;backupTime&#39;]))
                         bkp_time = time.strftime(&#39;%d/%m/%Y %H:%M:%S&#39;, bkp_time)
@@ -359,7 +383,50 @@ class VSBackupset(Backupset):
             &#39;backupsetProperties&#39;: properties
         }
 
-        self._process_update_reponse(request_json)</code></pre>
+        self._process_update_reponse(request_json)
+
+    @property
+    def vm_filter(self):
+        &#34;&#34;&#34;Returns the vm filters set at the backupset level
+        Returns:
+                list - list of content associated as the filters with the backupset
+        &#34;&#34;&#34;
+
+        return self.hidden_subclient.content
+
+    @vm_filter.setter
+    def vm_filter(self, content):
+        &#34;&#34;&#34;
+        Creates the list of content JSON to pass to the API to update
+           content of the vm filter of the backupset
+        Args:
+            content (list)  --  list of the content to add as the filters to the
+                Backupset. list should contain name and type
+
+        &#34;&#34;&#34;
+        self.hidden_subclient.content = content
+        self.hidden_subclient.refresh()
+
+    @property
+    def vm_disk_filter(self):
+        &#34;&#34;&#34;Returns the vm disk filters set at the backupset level
+        Returns:
+                list - list of content associated as the disk filters with the backupset
+        &#34;&#34;&#34;
+        return self.hidden_subclient.vm_diskfilter
+
+    @vm_disk_filter.setter
+    def vm_disk_filter(self, vm_diskfilter):
+        &#34;&#34;&#34;
+        Creates the list of disk filter content JSON to pass to the API to update
+           content of the vm disk filter of the backupset
+        Args:
+            vm_diskfilter (list) --     list of the Disk filter to add
+                                                 to the backupset
+
+        &#34;&#34;&#34;
+        self.hidden_subclient.vm_diskfilter = vm_diskfilter
+        self.hidden_subclient.refresh()</code></pre>
 </details>
 </section>
 <section>
@@ -398,7 +465,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupsets/vsbackupset.py#L54-L316" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/vsbackupset.py#L55-L383" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VSBackupset(Backupset):
     &#34;&#34;&#34;Derived class from Backupset Base class, representing a vs backupset,
@@ -419,6 +486,28 @@ default: None</p>
         for name, _class in classes:
             if issubclass(_class, Backupset) and _class.__module__.rsplit(&#34;.&#34;, 1)[-1] == instance_name:
                 return object.__new__(_class)
+
+    @property
+    def hidden_subclient(self):
+        &#34;&#34;&#34;Creates the object for the hidden subclient
+        Returns:
+                _hidden_subclient - object of the subclient
+
+        &#34;&#34;&#34;
+        if not self._hidden_subclient:
+            hidden_subclient_service = self._commcell_object._services[&#39;VSA_HIDDEN_SUBCLIENT&#39;] % (
+                self._client_object.client_name, self.backupset_name)
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                &#34;GET&#34;, hidden_subclient_service)
+            if flag:
+                if response.json():
+                    hidden_subclient_id = response.json().get(&#39;subclientId&#39;)
+                else:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+            self._hidden_subclient = subclient(self, &#39;Do Not Backup&#39;, hidden_subclient_id)
+        return self._hidden_subclient
 
     def browse(self, *args, **kwargs):
         &#34;&#34;&#34;Browses the content of the Backupset.
@@ -529,8 +618,9 @@ default: None</p>
                     if not isinstance(response_json[&#39;browseResponses&#39;], list):
                         response_json[&#39;browseResponses&#39;] = [response_json[&#39;browseResponses&#39;]]
                     if &#39;messages&#39; in response_json[&#39;browseResponses&#39;][0]:
-                        if not isinstance(response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;],list):
-                            response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;] = [response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;]]
+                        if not isinstance(response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;], list):
+                            response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;] = [
+                                response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;]]
                         message = response_json[&#39;browseResponses&#39;][0][&#39;messages&#39;][0]
                         error_message = message[&#39;errorMessage&#39;]
                         if error_message == &#39;Please note that this is a live browse operation. Live browse operations can take some time before the results appear in the browse window.&#39;:
@@ -560,7 +650,7 @@ default: None</p>
                         mod_time = time.strftime(&#39;%d/%m/%Y %H:%M:%S&#39;, mod_time)
                     else:
                         mod_time = None
-                    
+
                     if &#39;backupTime&#39; in result[&#39;advancedData&#39;] and int(result[&#39;advancedData&#39;][&#39;backupTime&#39;]) &gt; 0:
                         bkp_time = time.localtime(int(result[&#39;advancedData&#39;][&#39;backupTime&#39;]))
                         bkp_time = time.strftime(&#39;%d/%m/%Y %H:%M:%S&#39;, bkp_time)
@@ -662,7 +752,50 @@ default: None</p>
             &#39;backupsetProperties&#39;: properties
         }
 
-        self._process_update_reponse(request_json)</code></pre>
+        self._process_update_reponse(request_json)
+
+    @property
+    def vm_filter(self):
+        &#34;&#34;&#34;Returns the vm filters set at the backupset level
+        Returns:
+                list - list of content associated as the filters with the backupset
+        &#34;&#34;&#34;
+
+        return self.hidden_subclient.content
+
+    @vm_filter.setter
+    def vm_filter(self, content):
+        &#34;&#34;&#34;
+        Creates the list of content JSON to pass to the API to update
+           content of the vm filter of the backupset
+        Args:
+            content (list)  --  list of the content to add as the filters to the
+                Backupset. list should contain name and type
+
+        &#34;&#34;&#34;
+        self.hidden_subclient.content = content
+        self.hidden_subclient.refresh()
+
+    @property
+    def vm_disk_filter(self):
+        &#34;&#34;&#34;Returns the vm disk filters set at the backupset level
+        Returns:
+                list - list of content associated as the disk filters with the backupset
+        &#34;&#34;&#34;
+        return self.hidden_subclient.vm_diskfilter
+
+    @vm_disk_filter.setter
+    def vm_disk_filter(self, vm_diskfilter):
+        &#34;&#34;&#34;
+        Creates the list of disk filter content JSON to pass to the API to update
+           content of the vm disk filter of the backupset
+        Args:
+            vm_diskfilter (list) --     list of the Disk filter to add
+                                                 to the backupset
+
+        &#34;&#34;&#34;
+        self.hidden_subclient.vm_diskfilter = vm_diskfilter
+        self.hidden_subclient.refresh()</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -670,13 +803,46 @@ default: None</p>
 </ul>
 <h3>Instance variables</h3>
 <dl>
+<dt id="cvpysdk.backupsets.vsbackupset.VSBackupset.hidden_subclient"><code class="name">var <span class="ident">hidden_subclient</span></code></dt>
+<dd>
+<div class="desc"><p>Creates the object for the hidden subclient</p>
+<h2 id="returns">Returns</h2>
+<p>_hidden_subclient - object of the subclient</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/vsbackupset.py#L75-L95" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def hidden_subclient(self):
+    &#34;&#34;&#34;Creates the object for the hidden subclient
+    Returns:
+            _hidden_subclient - object of the subclient
+
+    &#34;&#34;&#34;
+    if not self._hidden_subclient:
+        hidden_subclient_service = self._commcell_object._services[&#39;VSA_HIDDEN_SUBCLIENT&#39;] % (
+            self._client_object.client_name, self.backupset_name)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#34;GET&#34;, hidden_subclient_service)
+        if flag:
+            if response.json():
+                hidden_subclient_id = response.json().get(&#39;subclientId&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+        self._hidden_subclient = subclient(self, &#39;Do Not Backup&#39;, hidden_subclient_id)
+    return self._hidden_subclient</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.backupsets.vsbackupset.VSBackupset.index_server"><code class="name">var <span class="ident">index_server</span></code></dt>
 <dd>
 <div class="desc"><p>Returns the index server client set for the backupset</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupsets/vsbackupset.py#L251-L264" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/vsbackupset.py#L275-L288" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_server(self):
@@ -692,6 +858,45 @@ def index_server(self):
         return Client(self._commcell_object, client_name=client_name)
 
     return None</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.backupsets.vsbackupset.VSBackupset.vm_disk_filter"><code class="name">var <span class="ident">vm_disk_filter</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the vm disk filters set at the backupset level</p>
+<h2 id="returns">Returns</h2>
+<p>list - list of content associated as the disk filters with the backupset</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/vsbackupset.py#L364-L370" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def vm_disk_filter(self):
+    &#34;&#34;&#34;Returns the vm disk filters set at the backupset level
+    Returns:
+            list - list of content associated as the disk filters with the backupset
+    &#34;&#34;&#34;
+    return self.hidden_subclient.vm_diskfilter</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.backupsets.vsbackupset.VSBackupset.vm_filter"><code class="name">var <span class="ident">vm_filter</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the vm filters set at the backupset level</p>
+<h2 id="returns">Returns</h2>
+<p>list - list of content associated as the filters with the backupset</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/vsbackupset.py#L342-L349" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def vm_filter(self):
+    &#34;&#34;&#34;Returns the vm filters set at the backupset level
+    Returns:
+            list - list of content associated as the filters with the backupset
+    &#34;&#34;&#34;
+
+    return self.hidden_subclient.content</code></pre>
 </details>
 </dd>
 </dl>
@@ -739,7 +944,7 @@ from browse operation
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/backupsets/vsbackupset.py#L74-L118" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/vsbackupset.py#L97-L141" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, *args, **kwargs):
     &#34;&#34;&#34;Browses the content of the Backupset.
@@ -886,7 +1091,10 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="cvpysdk.backupsets.vsbackupset.VSBackupset" href="#cvpysdk.backupsets.vsbackupset.VSBackupset">VSBackupset</a></code></h4>
 <ul class="">
 <li><code><a title="cvpysdk.backupsets.vsbackupset.VSBackupset.browse" href="#cvpysdk.backupsets.vsbackupset.VSBackupset.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.backupsets.vsbackupset.VSBackupset.hidden_subclient" href="#cvpysdk.backupsets.vsbackupset.VSBackupset.hidden_subclient">hidden_subclient</a></code></li>
 <li><code><a title="cvpysdk.backupsets.vsbackupset.VSBackupset.index_server" href="#cvpysdk.backupsets.vsbackupset.VSBackupset.index_server">index_server</a></code></li>
+<li><code><a title="cvpysdk.backupsets.vsbackupset.VSBackupset.vm_disk_filter" href="#cvpysdk.backupsets.vsbackupset.VSBackupset.vm_disk_filter">vm_disk_filter</a></code></li>
+<li><code><a title="cvpysdk.backupsets.vsbackupset.VSBackupset.vm_filter" href="#cvpysdk.backupsets.vsbackupset.VSBackupset.vm_filter">vm_filter</a></code></li>
 </ul>
 </li>
 </ul>

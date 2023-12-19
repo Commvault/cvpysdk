@@ -196,7 +196,7 @@ refresh the properties of the instance</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L1-L3091" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L1-L3101" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -482,7 +482,7 @@ class Instances(object):
 
                         agent = dictionary[&#39;instance&#39;][&#39;appName&#39;].lower()
 
-                        if self._agent_object.agent_name in agent:
+                        if (self._agent_object.agent_name in agent) or (&#39;mariadb&#39; in agent and &#39;mysql&#39; in self._agent_object.agent_name):
                             temp_name = dictionary[&#39;instance&#39;][&#39;instanceName&#39;].lower()
                             temp_id = str(dictionary[&#39;instance&#39;][&#39;instanceId&#39;]).lower()
                             return_dict[temp_name] = temp_id
@@ -1227,7 +1227,7 @@ class Instances(object):
         cloud_options = {
                             &#39;instance_name&#39;: &#39;google_test&#39;,
                             &#39;description&#39;: &#39;instance for google&#39;,
-                            &#39;storage_policy&#39;:&#39;cs_sp&#39;,
+                            &#39;storage_plan&#39;:&#39;cs_sp&#39;,
                             &#39;number_of_streams&#39;: 2,
                             &#39;access_node&#39;: &#39;CS&#39;,
                             &#39;cloudapps_type&#39;: &#39;google_cloud&#39;
@@ -1239,9 +1239,9 @@ class Instances(object):
         cloud_options = {
 
                             &#39;instance_name&#39;: &#39;TestAzureDL&#39;,
+                            &#39;storage_plan&#39;:&#39;cs_sp&#39;,
                             &#39;access_node&#39;: &#39;CS&#39;,
                             &#39;description&#39;: None,
-                            &#39;storage_policy&#39;: &#39;cs_sp&#39;,
                             &#39;accountname&#39;: &#39;xxxxxx&#39;,
                             &#39;accesskey&#39;: &#39;xxxxxx&#39;,
                             &#39;number_of_streams&#39;: 1,
@@ -1251,7 +1251,6 @@ class Instances(object):
         cloud_options = {
                             &#39;instance_name&#39;: &#39;RDS&#39;,
                             &#39;storage_plan&#39;: &#39;cs_sp&#39;,
-                            &#39;storage_policy&#39;: &#39;cs_sp&#39;,
                             &#39;access_node&#39;: &#39;CS&#39;,
                             &#39;access_key&#39;: &#39;xxxxx&#39;,
                             &#39;secret_key&#39;: &#39;xxxxx&#39;,
@@ -1262,7 +1261,6 @@ class Instances(object):
 
                             &#39;instance_name&#39;: &#39;Redshift&#39;,
                             &#39;storage_plan&#39;: &#39;cs_sp&#39;,
-                            &#39;storage_policy&#39;: &#39;cs_sp&#39;,
                             &#39;access_node&#39;: &#39;CS&#39;,
                             &#39;access_key&#39;: &#39;xxxxx&#39;,
                             &#39;secret_key&#39;: &#39;xxxxx&#39;,
@@ -1272,7 +1270,6 @@ class Instances(object):
         cloud_options = {
                             &#39;instance_name&#39;: &#39;DocumentDB&#39;,
                             &#39;storage_plan&#39;: &#39;cs_sp&#39;,
-                            &#39;storage_policy&#39;: &#39;cs_sp&#39;,
                             &#39;access_node&#39;: &#39;CS&#39;,
                             &#39;access_key&#39;: &#39;xxxxxx&#39;,
                             &#39;secret_key&#39;: &#39;xxxxxx&#39;,
@@ -1291,7 +1288,6 @@ class Instances(object):
         cloud_options = {
                             &#39;instance_name&#39;: &#39;DynamoDB&#39;,
                             &#39;storage_plan&#39;: &#39;cs_sp&#39;,
-                            &#39;storage_policy&#39;: &#39;cs_sp&#39;,
                             &#39;access_node&#39;: &#39;CS&#39;,
                             &#39;access_key&#39;: &#39;xxxxxx&#39;,
                             &#39;secret_key&#39;: &#39;xxxxxx&#39;,
@@ -1317,18 +1313,14 @@ class Instances(object):
             raise SDKException(
                 &#39;Instance&#39;, &#39;102&#39;, &#39;Empty instance name provided&#39;)
 
-        if cloud_options.get(&#34;storage_policy&#34;):
-            if not self._commcell_object.storage_policies.has_policy(
-                    cloud_options.get(&#34;storage_policy&#34;)):
-                raise SDKException(
-                    &#39;Instance&#39;,
-                    &#39;102&#39;,
-                    &#39;Storage Policy: &#34;{0}&#34; does not exist in the Commcell&#39;.format(
-                        cloud_options.get(&#34;storage_policy&#34;))
-                )
-        else:
-            raise SDKException(
-                &#39;Instance&#39;, &#39;102&#39;, &#39;Empty storage policy provided&#39;)
+        # setting the storage_policy for the general_properties setter method
+        if cloud_options.get(&#39;storage_plan&#39;) and not cloud_options.get(&#39;storage_policy&#39;):
+            cloud_options[&#39;storage_policy&#39;] = cloud_options.get(&#39;storage_plan&#39;)
+
+        # setting storage_plan if not passed and storage_policy is passed instead
+        if cloud_options.get(&#39;storage_policy&#39;) and not cloud_options.get(&#39;storage_plan&#39;):
+            cloud_options[&#39;storage_plan&#39;] = cloud_options.get(&#39;storage_policy&#39;)
+
         if cloud_options.get(&#39;description&#39;):
             description = cloud_options.get(&#39;description&#39;)
         else:
@@ -1348,9 +1340,18 @@ class Instances(object):
         }
 
         if cloud_options.get(&#34;storage_plan&#34;):
-            request_json[&#34;instanceProperties&#34;][&#34;planEntity&#34;] = {
-                &#34;planName&#34;: cloud_options.get(&#34;storage_plan&#34;)
-            }
+            if not self._commcell_object.storage_policies.has_policy(
+                    cloud_options.get(&#34;storage_plan&#34;)):
+                raise SDKException(
+                    &#39;Instance&#39;,
+                    &#39;102&#39;,
+                    &#39;Storage plan: &#34;{0}&#34; does not exist in the Commcell&#39;.format(
+                        cloud_options.get(&#34;storage_plan&#34;))
+                )
+            request_json[&#34;instanceProperties&#34;][&#34;planEntity&#34;] = {&#34;planName&#34;: cloud_options.get(&#34;storage_plan&#34;)}
+        else:
+            raise SDKException(
+                &#39;Instance&#39;, &#39;102&#39;, &#39;Empty storage plan provided&#39;)
 
         add_instance = self._commcell_object._services[&#39;ADD_INSTANCE&#39;]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -1372,6 +1373,7 @@ class Instances(object):
                     instance_name = response.json()[&#39;response&#39;][&#39;entity&#39;][&#39;instanceName&#39;]
                     instance_id = response.json()[&#39;response&#39;][&#39;entity&#39;][&#39;instanceId&#39;]
                     agent_name = self._agent_object.agent_name
+                    self.refresh()
                     return self.get(instance_name)
 
             else:
@@ -2307,6 +2309,14 @@ class Instance(object):
 
         if self._restore_association is None:
             self._restore_association = self._instance
+            
+        if restore_option.get(&#39;deduce_bkset_subcl&#39;) == True:
+            del self._restore_association[&#39;backupsetName&#39;]
+            del self._restore_association[&#39;subclientName&#39;]
+            del self._restore_association[&#39;backupsetId&#39;]
+            del self._restore_association[&#39;subclientId&#39;]
+            del self._restore_association[&#39;subclientGUID&#39;]
+            
 
         if restore_option.get(&#39;copy_precedence&#39;) is None:
             restore_option[&#39;copy_precedence&#39;] = 0
@@ -3326,7 +3336,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L1718-L3091" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L1720-L3101" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Instance(object):
     &#34;&#34;&#34;Class for performing instance operations for a specific instance.&#34;&#34;&#34;
@@ -3720,6 +3730,14 @@ default: None</p>
 
         if self._restore_association is None:
             self._restore_association = self._instance
+            
+        if restore_option.get(&#39;deduce_bkset_subcl&#39;) == True:
+            del self._restore_association[&#39;backupsetName&#39;]
+            del self._restore_association[&#39;subclientName&#39;]
+            del self._restore_association[&#39;backupsetId&#39;]
+            del self._restore_association[&#39;subclientId&#39;]
+            del self._restore_association[&#39;subclientGUID&#39;]
+            
 
         if restore_option.get(&#39;copy_precedence&#39;) is None:
             restore_option[&#39;copy_precedence&#39;] = 0
@@ -4730,7 +4748,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L2614-L2617" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L2624-L2627" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_id(self):
@@ -4744,7 +4762,7 @@ def instance_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L2619-L2622" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L2629-L2632" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_name(self):
@@ -4758,7 +4776,7 @@ def instance_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L2585-L2588" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L2595-L2598" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -4772,7 +4790,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L2580-L2583" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L2590-L2593" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -4830,7 +4848,7 @@ Refer <code>default_browse_options</code>_ for all the supported options.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L2624-L2680" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L2634-L2690" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, *args, **kwargs):
     &#34;&#34;&#34;Browses the content of the Instance.
@@ -4950,7 +4968,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L2682-L2748" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L2692-L2758" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find(self, *args, **kwargs):
     &#34;&#34;&#34;Searches a file/folder in the backed up content of the instance,
@@ -5029,7 +5047,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L3085-L3091" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L3095-L3101" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Instance.&#34;&#34;&#34;
@@ -5064,7 +5082,7 @@ need to change and use the update_properties method to set the properties</p></d
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L2550-L2578" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L2560-L2588" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;Updates the instance properties
@@ -5115,7 +5133,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L160-L1715" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L160-L1717" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Instances(object):
     &#34;&#34;&#34;Class for getting all the instances associated with a client.&#34;&#34;&#34;
@@ -5242,7 +5260,7 @@ instance of the Agent class</p>
 
                         agent = dictionary[&#39;instance&#39;][&#39;appName&#39;].lower()
 
-                        if self._agent_object.agent_name in agent:
+                        if (self._agent_object.agent_name in agent) or (&#39;mariadb&#39; in agent and &#39;mysql&#39; in self._agent_object.agent_name):
                             temp_name = dictionary[&#39;instance&#39;][&#39;instanceName&#39;].lower()
                             temp_id = str(dictionary[&#39;instance&#39;][&#39;instanceId&#39;]).lower()
                             return_dict[temp_name] = temp_id
@@ -5987,7 +6005,7 @@ instance of the Agent class</p>
         cloud_options = {
                             &#39;instance_name&#39;: &#39;google_test&#39;,
                             &#39;description&#39;: &#39;instance for google&#39;,
-                            &#39;storage_policy&#39;:&#39;cs_sp&#39;,
+                            &#39;storage_plan&#39;:&#39;cs_sp&#39;,
                             &#39;number_of_streams&#39;: 2,
                             &#39;access_node&#39;: &#39;CS&#39;,
                             &#39;cloudapps_type&#39;: &#39;google_cloud&#39;
@@ -5999,9 +6017,9 @@ instance of the Agent class</p>
         cloud_options = {
 
                             &#39;instance_name&#39;: &#39;TestAzureDL&#39;,
+                            &#39;storage_plan&#39;:&#39;cs_sp&#39;,
                             &#39;access_node&#39;: &#39;CS&#39;,
                             &#39;description&#39;: None,
-                            &#39;storage_policy&#39;: &#39;cs_sp&#39;,
                             &#39;accountname&#39;: &#39;xxxxxx&#39;,
                             &#39;accesskey&#39;: &#39;xxxxxx&#39;,
                             &#39;number_of_streams&#39;: 1,
@@ -6011,7 +6029,6 @@ instance of the Agent class</p>
         cloud_options = {
                             &#39;instance_name&#39;: &#39;RDS&#39;,
                             &#39;storage_plan&#39;: &#39;cs_sp&#39;,
-                            &#39;storage_policy&#39;: &#39;cs_sp&#39;,
                             &#39;access_node&#39;: &#39;CS&#39;,
                             &#39;access_key&#39;: &#39;xxxxx&#39;,
                             &#39;secret_key&#39;: &#39;xxxxx&#39;,
@@ -6022,7 +6039,6 @@ instance of the Agent class</p>
 
                             &#39;instance_name&#39;: &#39;Redshift&#39;,
                             &#39;storage_plan&#39;: &#39;cs_sp&#39;,
-                            &#39;storage_policy&#39;: &#39;cs_sp&#39;,
                             &#39;access_node&#39;: &#39;CS&#39;,
                             &#39;access_key&#39;: &#39;xxxxx&#39;,
                             &#39;secret_key&#39;: &#39;xxxxx&#39;,
@@ -6032,7 +6048,6 @@ instance of the Agent class</p>
         cloud_options = {
                             &#39;instance_name&#39;: &#39;DocumentDB&#39;,
                             &#39;storage_plan&#39;: &#39;cs_sp&#39;,
-                            &#39;storage_policy&#39;: &#39;cs_sp&#39;,
                             &#39;access_node&#39;: &#39;CS&#39;,
                             &#39;access_key&#39;: &#39;xxxxxx&#39;,
                             &#39;secret_key&#39;: &#39;xxxxxx&#39;,
@@ -6051,7 +6066,6 @@ instance of the Agent class</p>
         cloud_options = {
                             &#39;instance_name&#39;: &#39;DynamoDB&#39;,
                             &#39;storage_plan&#39;: &#39;cs_sp&#39;,
-                            &#39;storage_policy&#39;: &#39;cs_sp&#39;,
                             &#39;access_node&#39;: &#39;CS&#39;,
                             &#39;access_key&#39;: &#39;xxxxxx&#39;,
                             &#39;secret_key&#39;: &#39;xxxxxx&#39;,
@@ -6077,18 +6091,14 @@ instance of the Agent class</p>
             raise SDKException(
                 &#39;Instance&#39;, &#39;102&#39;, &#39;Empty instance name provided&#39;)
 
-        if cloud_options.get(&#34;storage_policy&#34;):
-            if not self._commcell_object.storage_policies.has_policy(
-                    cloud_options.get(&#34;storage_policy&#34;)):
-                raise SDKException(
-                    &#39;Instance&#39;,
-                    &#39;102&#39;,
-                    &#39;Storage Policy: &#34;{0}&#34; does not exist in the Commcell&#39;.format(
-                        cloud_options.get(&#34;storage_policy&#34;))
-                )
-        else:
-            raise SDKException(
-                &#39;Instance&#39;, &#39;102&#39;, &#39;Empty storage policy provided&#39;)
+        # setting the storage_policy for the general_properties setter method
+        if cloud_options.get(&#39;storage_plan&#39;) and not cloud_options.get(&#39;storage_policy&#39;):
+            cloud_options[&#39;storage_policy&#39;] = cloud_options.get(&#39;storage_plan&#39;)
+
+        # setting storage_plan if not passed and storage_policy is passed instead
+        if cloud_options.get(&#39;storage_policy&#39;) and not cloud_options.get(&#39;storage_plan&#39;):
+            cloud_options[&#39;storage_plan&#39;] = cloud_options.get(&#39;storage_policy&#39;)
+
         if cloud_options.get(&#39;description&#39;):
             description = cloud_options.get(&#39;description&#39;)
         else:
@@ -6108,9 +6118,18 @@ instance of the Agent class</p>
         }
 
         if cloud_options.get(&#34;storage_plan&#34;):
-            request_json[&#34;instanceProperties&#34;][&#34;planEntity&#34;] = {
-                &#34;planName&#34;: cloud_options.get(&#34;storage_plan&#34;)
-            }
+            if not self._commcell_object.storage_policies.has_policy(
+                    cloud_options.get(&#34;storage_plan&#34;)):
+                raise SDKException(
+                    &#39;Instance&#39;,
+                    &#39;102&#39;,
+                    &#39;Storage plan: &#34;{0}&#34; does not exist in the Commcell&#39;.format(
+                        cloud_options.get(&#34;storage_plan&#34;))
+                )
+            request_json[&#34;instanceProperties&#34;][&#34;planEntity&#34;] = {&#34;planName&#34;: cloud_options.get(&#34;storage_plan&#34;)}
+        else:
+            raise SDKException(
+                &#39;Instance&#39;, &#39;102&#39;, &#39;Empty storage plan provided&#39;)
 
         add_instance = self._commcell_object._services[&#39;ADD_INSTANCE&#39;]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -6132,6 +6151,7 @@ instance of the Agent class</p>
                     instance_name = response.json()[&#39;response&#39;][&#39;entity&#39;][&#39;instanceName&#39;]
                     instance_id = response.json()[&#39;response&#39;][&#39;entity&#39;][&#39;instanceId&#39;]
                     agent_name = self._agent_object.agent_name
+                    self.refresh()
                     return self.get(instance_name)
 
             else:
@@ -6687,7 +6707,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L306-L317" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L306-L317" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_instances(self):
@@ -6728,7 +6748,7 @@ if cannot retrieve cluster type from default Instance</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L898-L1005" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L898-L1005" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_big_data_apps_instance(self, distributed_options):
     &#34;&#34;&#34;
@@ -6867,7 +6887,7 @@ cloud_options = {
 cloud_options = {
 'instance_name': 'google_test',
 'description': 'instance for google',
-'storage_policy':'cs_sp',
+'storage_plan':'cs_sp',
 'number_of_streams': 2,
 'access_node': 'CS',
 'cloudapps_type': 'google_cloud'
@@ -6878,9 +6898,9 @@ cloud_options = {
 Cloud : Azure Datalake Gen2
 cloud_options = {</p>
 <pre><code>                'instance_name': 'TestAzureDL',
+                'storage_plan':'cs_sp',
                 'access_node': 'CS',
                 'description': None,
-                'storage_policy': 'cs_sp',
                 'accountname': 'xxxxxx',
                 'accesskey': 'xxxxxx',
                 'number_of_streams': 1,
@@ -6891,7 +6911,6 @@ cloud_options = {</p>
 cloud_options = {
 'instance_name': 'RDS',
 'storage_plan': 'cs_sp',
-'storage_policy': 'cs_sp',
 'access_node': 'CS',
 'access_key': 'xxxxx',
 'secret_key': 'xxxxx',
@@ -6901,7 +6920,6 @@ Cloud : Amazon Redshift
 cloud_options = {</p>
 <pre><code>                'instance_name': 'Redshift',
                 'storage_plan': 'cs_sp',
-                'storage_policy': 'cs_sp',
                 'access_node': 'CS',
                 'access_key': 'xxxxx',
                 'secret_key': 'xxxxx',
@@ -6912,7 +6930,6 @@ cloud_options = {</p>
 cloud_options = {
 'instance_name': 'DocumentDB',
 'storage_plan': 'cs_sp',
-'storage_policy': 'cs_sp',
 'access_node': 'CS',
 'access_key': 'xxxxxx',
 'secret_key': 'xxxxxx',
@@ -6932,7 +6949,6 @@ SDKException :</p>
 cloud_options = {
 'instance_name': 'DynamoDB',
 'storage_plan': 'cs_sp',
-'storage_policy': 'cs_sp',
 'access_node': 'CS',
 'access_key': 'xxxxxx',
 'secret_key': 'xxxxxx',
@@ -6951,7 +6967,7 @@ SDKException :</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L1007-L1182" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L1007-L1184" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_cloud_storage_instance(self, cloud_options):
     &#34;&#34;&#34;Returns the JSON request to pass to the API for adding a cloud storage instance
@@ -6976,7 +6992,7 @@ SDKException :</p>
     cloud_options = {
                         &#39;instance_name&#39;: &#39;google_test&#39;,
                         &#39;description&#39;: &#39;instance for google&#39;,
-                        &#39;storage_policy&#39;:&#39;cs_sp&#39;,
+                        &#39;storage_plan&#39;:&#39;cs_sp&#39;,
                         &#39;number_of_streams&#39;: 2,
                         &#39;access_node&#39;: &#39;CS&#39;,
                         &#39;cloudapps_type&#39;: &#39;google_cloud&#39;
@@ -6988,9 +7004,9 @@ SDKException :</p>
     cloud_options = {
 
                         &#39;instance_name&#39;: &#39;TestAzureDL&#39;,
+                        &#39;storage_plan&#39;:&#39;cs_sp&#39;,
                         &#39;access_node&#39;: &#39;CS&#39;,
                         &#39;description&#39;: None,
-                        &#39;storage_policy&#39;: &#39;cs_sp&#39;,
                         &#39;accountname&#39;: &#39;xxxxxx&#39;,
                         &#39;accesskey&#39;: &#39;xxxxxx&#39;,
                         &#39;number_of_streams&#39;: 1,
@@ -7000,7 +7016,6 @@ SDKException :</p>
     cloud_options = {
                         &#39;instance_name&#39;: &#39;RDS&#39;,
                         &#39;storage_plan&#39;: &#39;cs_sp&#39;,
-                        &#39;storage_policy&#39;: &#39;cs_sp&#39;,
                         &#39;access_node&#39;: &#39;CS&#39;,
                         &#39;access_key&#39;: &#39;xxxxx&#39;,
                         &#39;secret_key&#39;: &#39;xxxxx&#39;,
@@ -7011,7 +7026,6 @@ SDKException :</p>
 
                         &#39;instance_name&#39;: &#39;Redshift&#39;,
                         &#39;storage_plan&#39;: &#39;cs_sp&#39;,
-                        &#39;storage_policy&#39;: &#39;cs_sp&#39;,
                         &#39;access_node&#39;: &#39;CS&#39;,
                         &#39;access_key&#39;: &#39;xxxxx&#39;,
                         &#39;secret_key&#39;: &#39;xxxxx&#39;,
@@ -7021,7 +7035,6 @@ SDKException :</p>
     cloud_options = {
                         &#39;instance_name&#39;: &#39;DocumentDB&#39;,
                         &#39;storage_plan&#39;: &#39;cs_sp&#39;,
-                        &#39;storage_policy&#39;: &#39;cs_sp&#39;,
                         &#39;access_node&#39;: &#39;CS&#39;,
                         &#39;access_key&#39;: &#39;xxxxxx&#39;,
                         &#39;secret_key&#39;: &#39;xxxxxx&#39;,
@@ -7040,7 +7053,6 @@ SDKException :</p>
     cloud_options = {
                         &#39;instance_name&#39;: &#39;DynamoDB&#39;,
                         &#39;storage_plan&#39;: &#39;cs_sp&#39;,
-                        &#39;storage_policy&#39;: &#39;cs_sp&#39;,
                         &#39;access_node&#39;: &#39;CS&#39;,
                         &#39;access_key&#39;: &#39;xxxxxx&#39;,
                         &#39;secret_key&#39;: &#39;xxxxxx&#39;,
@@ -7066,18 +7078,14 @@ SDKException :</p>
         raise SDKException(
             &#39;Instance&#39;, &#39;102&#39;, &#39;Empty instance name provided&#39;)
 
-    if cloud_options.get(&#34;storage_policy&#34;):
-        if not self._commcell_object.storage_policies.has_policy(
-                cloud_options.get(&#34;storage_policy&#34;)):
-            raise SDKException(
-                &#39;Instance&#39;,
-                &#39;102&#39;,
-                &#39;Storage Policy: &#34;{0}&#34; does not exist in the Commcell&#39;.format(
-                    cloud_options.get(&#34;storage_policy&#34;))
-            )
-    else:
-        raise SDKException(
-            &#39;Instance&#39;, &#39;102&#39;, &#39;Empty storage policy provided&#39;)
+    # setting the storage_policy for the general_properties setter method
+    if cloud_options.get(&#39;storage_plan&#39;) and not cloud_options.get(&#39;storage_policy&#39;):
+        cloud_options[&#39;storage_policy&#39;] = cloud_options.get(&#39;storage_plan&#39;)
+
+    # setting storage_plan if not passed and storage_policy is passed instead
+    if cloud_options.get(&#39;storage_policy&#39;) and not cloud_options.get(&#39;storage_plan&#39;):
+        cloud_options[&#39;storage_plan&#39;] = cloud_options.get(&#39;storage_policy&#39;)
+
     if cloud_options.get(&#39;description&#39;):
         description = cloud_options.get(&#39;description&#39;)
     else:
@@ -7097,9 +7105,18 @@ SDKException :</p>
     }
 
     if cloud_options.get(&#34;storage_plan&#34;):
-        request_json[&#34;instanceProperties&#34;][&#34;planEntity&#34;] = {
-            &#34;planName&#34;: cloud_options.get(&#34;storage_plan&#34;)
-        }
+        if not self._commcell_object.storage_policies.has_policy(
+                cloud_options.get(&#34;storage_plan&#34;)):
+            raise SDKException(
+                &#39;Instance&#39;,
+                &#39;102&#39;,
+                &#39;Storage plan: &#34;{0}&#34; does not exist in the Commcell&#39;.format(
+                    cloud_options.get(&#34;storage_plan&#34;))
+            )
+        request_json[&#34;instanceProperties&#34;][&#34;planEntity&#34;] = {&#34;planName&#34;: cloud_options.get(&#34;storage_plan&#34;)}
+    else:
+        raise SDKException(
+            &#39;Instance&#39;, &#39;102&#39;, &#39;Empty storage plan provided&#39;)
 
     add_instance = self._commcell_object._services[&#39;ADD_INSTANCE&#39;]
     flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -7121,6 +7138,7 @@ SDKException :</p>
                 instance_name = response.json()[&#39;response&#39;][&#39;entity&#39;][&#39;instanceName&#39;]
                 instance_id = response.json()[&#39;response&#39;][&#39;entity&#39;][&#39;instanceId&#39;]
                 agent_name = self._agent_object.agent_name
+                self.refresh()
                 return self.get(instance_name)
 
         else:
@@ -7158,7 +7176,7 @@ if None value in db2 options</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L780-L896" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L780-L896" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_db2_instance(self, db2_options):
     &#34;&#34;&#34;
@@ -7310,7 +7328,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L420-L534" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L420-L534" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_informix_instance(self, informix_options):
     &#34;&#34;&#34;Adds new Informix Instance to given Client
@@ -7467,7 +7485,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L1532-L1621" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L1534-L1623" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_mysql_instance(self, instance_name, database_options):
     &#34;&#34;&#34;Adds new mysql Instance to given Client
@@ -7629,7 +7647,7 @@ Given storage policies do not exist in Commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L1623-L1711" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L1625-L1713" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_oracle_instance(self, instance_name, **oracle_options):
     &#34;&#34;&#34;Adds new oracle instance for the given client
@@ -7774,7 +7792,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L1304-L1361" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L1306-L1363" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_postgresql_instance(self, instance_name, **kwargs):
     &#34;&#34;&#34;Adds new postgresql instance to given client
@@ -7896,7 +7914,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L1184-L1302" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L1186-L1304" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_salesforce_instance(
         self, instance_name, access_node,
@@ -8053,7 +8071,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L536-L596" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L536-L596" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_sap_hana_instance(self, **kwargs):
     &#34;&#34;&#34;Adds new sap hana instance to given client
@@ -8151,7 +8169,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L663-L778" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L663-L778" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_sybase_instance(self, sybase_options):
     &#34;&#34;&#34;
@@ -8294,7 +8312,7 @@ if no instance exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L598-L661" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L598-L661" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, instance_name):
     &#34;&#34;&#34;Deletes the instance specified by the instance_name from the agent.
@@ -8381,7 +8399,7 @@ if type of the instance name argument is not string or Int</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L337-L369" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L337-L369" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, instance_name):
     &#34;&#34;&#34;Returns a instance object of the specified instance name.
@@ -8435,7 +8453,7 @@ if type of the instance name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L319-L335" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L319-L335" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_instance(self, instance_name):
     &#34;&#34;&#34;Checks if a instance exists for the agent with the input instance name.
@@ -8464,7 +8482,7 @@ if type of the instance name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instance.py#L1713-L1715" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L1715-L1717" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the instances associated with the Agent of the selected Client.&#34;&#34;&#34;

@@ -152,7 +152,7 @@ The Virtual Server 'Hyper-V' is named as 'hyperv.py'
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L1-L2940" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L1-L2976" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -528,26 +528,32 @@ class VirtualServerSubclient(Subclient):
                         for power on/off, we need to specify one more
                         parameter i.e., true -on, false -off(as state variable)
                         example:
+                        subclient_content = [{&#39;allOrAnyChildren&#39;: True, &#39;content&#39;: [
+                            {&#39;equal_value&#39;: True, &#39;allOrAnyChildren&#39;: True, &#39;display_name&#39;: &#39;*abc*&#39;, &#39;type&#39;: &#39;VMName&#39;},
+                            {&#39;equal_value&#39;: False, &#39;allOrAnyChildren&#39;: True, &#39;display_name&#39;: &#39;xyz&#39;, &#39;type&#39;: &#39;VMName&#39;}]},
+                                      {&#39;allOrAnyChildren&#39;: False, &#39;content&#39;: [
+                                          {&#39;equal_value&#39;: True, &#39;allOrAnyChildren&#39;: True, &#39;display_name&#39;: &#39;*12*&#39;,
+                                           &#39;type&#39;: &#39;VMName&#39;},
+                                          {&#39;equal_value&#39;: True, &#39;allOrAnyChildren&#39;: True, &#39;display_name&#39;: &#39;*34*&#39;,
+                                           &#39;type&#39;: &#39;VMName&#39;}]}]
                         subclient_content = [
-                            [
-                                {
-                                &#39;type&#39; : VSAObjects.VMName,
-                                &#39;display_name&#39; : &#39;VM*&#39;
-                                }
-                            ],
-                            [
-                                {
-                                  &#39;type&#39; : VSAObjects.VMNotes,
-                                  &#39;display_name&#39; : &#39;removed&#39;,
-                                },
-                                {
-                                  &#39;type&#39; : VSAObjects.VMPowerState,
-                                  &#39;state&#39;: &#39;false&#39;,
-                                }
-                            ]
-                        ]
-
-
+                                                [
+                                                    {
+                                                    &#39;type&#39; : VSAObjects.VMName,
+                                                    &#39;display_name&#39; : &#39;VM*&#39;
+                                                    }
+                                                ],
+                                                [
+                                                    {
+                                                      &#39;type&#39; : VSAObjects.VMNotes,
+                                                      &#39;display_name&#39; : &#39;removed&#39;,
+                                                    },
+                                                    {
+                                                      &#39;type&#39; : VSAObjects.VMPowerState,
+                                                      &#39;state&#39;: &#39;false&#39;,
+                                                    }
+                                                ]
+                                            ]
 
             Returns:
                 list - list of the appropriate JSON for an agent to send to the
@@ -557,19 +563,30 @@ class VirtualServerSubclient(Subclient):
         try:
             for entity in subclient_content:
                 virtual_server_dict = dict()
-                virtual_server_dict[&#39;allOrAnyChildren&#39;] = True
-                virtual_server_dict[&#39;equalsOrNotEquals&#39;] = True
+                if not isinstance(entity, dict):
+                    entity = {&#39;content&#39;: entity}
+                elif &#39;content&#39; not in entity:
+                    entity = {&#39;content&#39;: entity}
+                virtual_server_dict[&#39;allOrAnyChildren&#39;] = entity.get(&#39;allOrAnyChildren&#39;, True)
                 virtual_server_dict[&#39;children&#39;] = []
-                if not isinstance(entity,list):
-                    entity = [entity]
-                for item in entity:
+
+                def add_childrens(item, multiple_rule=False):
+                    &#34;&#34;&#34;
+                    add contents in the hierarchy
+                    Args:
+                        item                (dict)  :   content&#39;s current item to be added
+                        multiple_rule       (bool)  :   If multiple rule present or not
+
+                    &#34;&#34;&#34;
                     temp = {
                         &#39;allOrAnyChildren&#39;: item.get(&#39;allOrAnyChildren&#39;, True),
-                        &#39;equalsOrNotEquals&#39;: item.get(&#39;equalsOrNotEquals&#39;, True),
-                        &#39;name&#39;: item.get(&#39;name&#39;,&#34;&#34;),
-                        &#39;displayName&#39;: item.get(&#39;display_name&#39;,&#39;&#39;),
+                        &#39;equalsOrNotEquals&#39;: item.get(&#39;equal_value&#39;, True),
+                        &#39;name&#39;: item.get(&#39;name&#39;, &#34;&#34;),
+                        &#39;displayName&#39;: item.get(&#39;display_name&#39;, &#39;&#39;),
                         &#39;path&#39;: &#39;&#39;,
-                        &#39;type&#39;: item[&#39;type&#39;] if (isinstance(item[&#39;type&#39;], int) or isinstance(item[&#39;type&#39;], str)) else item[&#39;type&#39;].value
+                        &#39;type&#39;: item[&#39;type&#39;] if (
+                                isinstance(item[&#39;type&#39;], int) or isinstance(item[&#39;type&#39;], str)) else
+                        item[&#39;type&#39;].value
                     }
                     if item[&#39;type&#39;] == VSAObjects.VMNotes:
                         temp[&#39;value&#39;] = item[&#39;display_name&#39;]
@@ -587,8 +604,22 @@ class VirtualServerSubclient(Subclient):
                         temp[&#39;name&#39;] = &#34;PoweredState&#34;
                         temp[&#39;value&#39;] = &#34;0&#34;
                         temp[&#39;displayName&#39;] = &#34;Powered Off&#34;
-                    virtual_server_dict.get(&#39;children&#39;).append(temp)
-                content.append(virtual_server_dict)
+                    if multiple_rule:
+                        virtual_server_dict.get(&#39;children&#39;).append(temp)
+                    else:
+                        content.append(temp)
+                if not isinstance(entity, list):
+                    entity = [entity]
+                if len(entity[0][&#39;content&#39;]) == 1 or isinstance(entity[0][&#39;content&#39;], dict):
+                    if isinstance(entity[0][&#39;content&#39;], list):
+                        add_childrens(entity[0][&#39;content&#39;][0])
+                    else:
+                        add_childrens(entity[0][&#39;content&#39;])
+                else:
+                    for items in entity:
+                        for item in items[&#39;content&#39;]:
+                            add_childrens(item, True)
+                        content.append(virtual_server_dict)
         except KeyError as err:
             raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;{} not given in content&#39;.format(err))
 
@@ -660,15 +691,18 @@ class VirtualServerSubclient(Subclient):
 
         try:
             for temp_dict in subclient_diskfilter:
-                for type_id, type_name in self.filter_types.items():
-                    if type_name == temp_dict[&#39;type&#39;]:
-                        filter_type_id = type_id
-                        break
+                if temp_dict.get(&#39;filterTypeId&#39;):
+                    filter_type_id = temp_dict[&#39;filterTypeId&#39;]
+                else:
+                    filter_type_id = \
+                        list(filter(lambda x: self.filter_types[x].lower() == temp_dict[&#39;filtertype&#39;].lower(),
+                                    self.filter_types))[
+                            0]
 
                 virtual_server_dict = {
                     &#39;filter&#39;: temp_dict[&#39;filter&#39;],
                     &#39;filterType&#39;: filter_type_id,
-                    &#39;vmGuid&#39;: temp_dict[&#39;vmGuid&#39;]
+                    &#39;vmGuid&#39;: temp_dict.get(&#39;vmGuid&#39;)
                 }
 
                 vm_diskfilter.append(virtual_server_dict)
@@ -1094,7 +1128,8 @@ class VirtualServerSubclient(Subclient):
             &#34;vmIPAddressOptions&#34;: value.get(&#34;vm_ip_address_options&#34;, []),
             &#34;FolderPath&#34;: value.get(&#34;FolderPath&#34;, &#34;&#34;),
             &#34;resourcePoolPath&#34;: value.get(&#34;ResourcePool&#34;, &#34;&#34;),
-            &#34;volumeType&#34;: value.get(&#34;volumeType&#34;, &#34;Auto&#34;)
+            &#34;volumeType&#34;: value.get(&#34;volumeType&#34;, &#34;Auto&#34;),
+            &#34;vmCustomMetadata&#34;: value.get(&#34;vmCustomMetadata&#34;,[])
         }
 
         value_dict = {
@@ -2286,7 +2321,8 @@ class VirtualServerSubclient(Subclient):
                 new_name = &#34;&#34;
                 if data[&#34;advanced_data&#34;][&#34;browseMetaData&#34;][&#34;virtualServerMetaData&#34;].get(&#39;replicaZones&#39;, False):
                     replicaZones = restore_option.get(&#34;replicaZones&#34;)
-            if restore_option[&#39;destination_instance&#39;].lower() == &#39;vmware&#39;:
+            if restore_option[&#39;destination_instance&#39;].lower() in [HypervisorType.VIRTUAL_CENTER.value.lower(),
+                                                                  HypervisorType.AZURE_V2.value.lower()]:
                 _disk_dict = self._disk_dict_pattern(data[&#39;snap_display_name&#39;], ds, new_name)
             else:
                 _disk_dict = self._disk_dict_pattern(disk.split(&#39;\\&#39;)[-1], ds, new_name)
@@ -3129,7 +3165,7 @@ subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L162-L2940" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L162-L2976" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VirtualServerSubclient(Subclient):
     &#34;&#34;&#34;Derived class from Subclient Base class, representing a virtual server subclient,
@@ -3344,26 +3380,32 @@ subclient id</p></div>
                         for power on/off, we need to specify one more
                         parameter i.e., true -on, false -off(as state variable)
                         example:
+                        subclient_content = [{&#39;allOrAnyChildren&#39;: True, &#39;content&#39;: [
+                            {&#39;equal_value&#39;: True, &#39;allOrAnyChildren&#39;: True, &#39;display_name&#39;: &#39;*abc*&#39;, &#39;type&#39;: &#39;VMName&#39;},
+                            {&#39;equal_value&#39;: False, &#39;allOrAnyChildren&#39;: True, &#39;display_name&#39;: &#39;xyz&#39;, &#39;type&#39;: &#39;VMName&#39;}]},
+                                      {&#39;allOrAnyChildren&#39;: False, &#39;content&#39;: [
+                                          {&#39;equal_value&#39;: True, &#39;allOrAnyChildren&#39;: True, &#39;display_name&#39;: &#39;*12*&#39;,
+                                           &#39;type&#39;: &#39;VMName&#39;},
+                                          {&#39;equal_value&#39;: True, &#39;allOrAnyChildren&#39;: True, &#39;display_name&#39;: &#39;*34*&#39;,
+                                           &#39;type&#39;: &#39;VMName&#39;}]}]
                         subclient_content = [
-                            [
-                                {
-                                &#39;type&#39; : VSAObjects.VMName,
-                                &#39;display_name&#39; : &#39;VM*&#39;
-                                }
-                            ],
-                            [
-                                {
-                                  &#39;type&#39; : VSAObjects.VMNotes,
-                                  &#39;display_name&#39; : &#39;removed&#39;,
-                                },
-                                {
-                                  &#39;type&#39; : VSAObjects.VMPowerState,
-                                  &#39;state&#39;: &#39;false&#39;,
-                                }
-                            ]
-                        ]
-
-
+                                                [
+                                                    {
+                                                    &#39;type&#39; : VSAObjects.VMName,
+                                                    &#39;display_name&#39; : &#39;VM*&#39;
+                                                    }
+                                                ],
+                                                [
+                                                    {
+                                                      &#39;type&#39; : VSAObjects.VMNotes,
+                                                      &#39;display_name&#39; : &#39;removed&#39;,
+                                                    },
+                                                    {
+                                                      &#39;type&#39; : VSAObjects.VMPowerState,
+                                                      &#39;state&#39;: &#39;false&#39;,
+                                                    }
+                                                ]
+                                            ]
 
             Returns:
                 list - list of the appropriate JSON for an agent to send to the
@@ -3373,19 +3415,30 @@ subclient id</p></div>
         try:
             for entity in subclient_content:
                 virtual_server_dict = dict()
-                virtual_server_dict[&#39;allOrAnyChildren&#39;] = True
-                virtual_server_dict[&#39;equalsOrNotEquals&#39;] = True
+                if not isinstance(entity, dict):
+                    entity = {&#39;content&#39;: entity}
+                elif &#39;content&#39; not in entity:
+                    entity = {&#39;content&#39;: entity}
+                virtual_server_dict[&#39;allOrAnyChildren&#39;] = entity.get(&#39;allOrAnyChildren&#39;, True)
                 virtual_server_dict[&#39;children&#39;] = []
-                if not isinstance(entity,list):
-                    entity = [entity]
-                for item in entity:
+
+                def add_childrens(item, multiple_rule=False):
+                    &#34;&#34;&#34;
+                    add contents in the hierarchy
+                    Args:
+                        item                (dict)  :   content&#39;s current item to be added
+                        multiple_rule       (bool)  :   If multiple rule present or not
+
+                    &#34;&#34;&#34;
                     temp = {
                         &#39;allOrAnyChildren&#39;: item.get(&#39;allOrAnyChildren&#39;, True),
-                        &#39;equalsOrNotEquals&#39;: item.get(&#39;equalsOrNotEquals&#39;, True),
-                        &#39;name&#39;: item.get(&#39;name&#39;,&#34;&#34;),
-                        &#39;displayName&#39;: item.get(&#39;display_name&#39;,&#39;&#39;),
+                        &#39;equalsOrNotEquals&#39;: item.get(&#39;equal_value&#39;, True),
+                        &#39;name&#39;: item.get(&#39;name&#39;, &#34;&#34;),
+                        &#39;displayName&#39;: item.get(&#39;display_name&#39;, &#39;&#39;),
                         &#39;path&#39;: &#39;&#39;,
-                        &#39;type&#39;: item[&#39;type&#39;] if (isinstance(item[&#39;type&#39;], int) or isinstance(item[&#39;type&#39;], str)) else item[&#39;type&#39;].value
+                        &#39;type&#39;: item[&#39;type&#39;] if (
+                                isinstance(item[&#39;type&#39;], int) or isinstance(item[&#39;type&#39;], str)) else
+                        item[&#39;type&#39;].value
                     }
                     if item[&#39;type&#39;] == VSAObjects.VMNotes:
                         temp[&#39;value&#39;] = item[&#39;display_name&#39;]
@@ -3403,8 +3456,22 @@ subclient id</p></div>
                         temp[&#39;name&#39;] = &#34;PoweredState&#34;
                         temp[&#39;value&#39;] = &#34;0&#34;
                         temp[&#39;displayName&#39;] = &#34;Powered Off&#34;
-                    virtual_server_dict.get(&#39;children&#39;).append(temp)
-                content.append(virtual_server_dict)
+                    if multiple_rule:
+                        virtual_server_dict.get(&#39;children&#39;).append(temp)
+                    else:
+                        content.append(temp)
+                if not isinstance(entity, list):
+                    entity = [entity]
+                if len(entity[0][&#39;content&#39;]) == 1 or isinstance(entity[0][&#39;content&#39;], dict):
+                    if isinstance(entity[0][&#39;content&#39;], list):
+                        add_childrens(entity[0][&#39;content&#39;][0])
+                    else:
+                        add_childrens(entity[0][&#39;content&#39;])
+                else:
+                    for items in entity:
+                        for item in items[&#39;content&#39;]:
+                            add_childrens(item, True)
+                        content.append(virtual_server_dict)
         except KeyError as err:
             raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;{} not given in content&#39;.format(err))
 
@@ -3476,15 +3543,18 @@ subclient id</p></div>
 
         try:
             for temp_dict in subclient_diskfilter:
-                for type_id, type_name in self.filter_types.items():
-                    if type_name == temp_dict[&#39;type&#39;]:
-                        filter_type_id = type_id
-                        break
+                if temp_dict.get(&#39;filterTypeId&#39;):
+                    filter_type_id = temp_dict[&#39;filterTypeId&#39;]
+                else:
+                    filter_type_id = \
+                        list(filter(lambda x: self.filter_types[x].lower() == temp_dict[&#39;filtertype&#39;].lower(),
+                                    self.filter_types))[
+                            0]
 
                 virtual_server_dict = {
                     &#39;filter&#39;: temp_dict[&#39;filter&#39;],
                     &#39;filterType&#39;: filter_type_id,
-                    &#39;vmGuid&#39;: temp_dict[&#39;vmGuid&#39;]
+                    &#39;vmGuid&#39;: temp_dict.get(&#39;vmGuid&#39;)
                 }
 
                 vm_diskfilter.append(virtual_server_dict)
@@ -3910,7 +3980,8 @@ subclient id</p></div>
             &#34;vmIPAddressOptions&#34;: value.get(&#34;vm_ip_address_options&#34;, []),
             &#34;FolderPath&#34;: value.get(&#34;FolderPath&#34;, &#34;&#34;),
             &#34;resourcePoolPath&#34;: value.get(&#34;ResourcePool&#34;, &#34;&#34;),
-            &#34;volumeType&#34;: value.get(&#34;volumeType&#34;, &#34;Auto&#34;)
+            &#34;volumeType&#34;: value.get(&#34;volumeType&#34;, &#34;Auto&#34;),
+            &#34;vmCustomMetadata&#34;: value.get(&#34;vmCustomMetadata&#34;,[])
         }
 
         value_dict = {
@@ -5102,7 +5173,8 @@ subclient id</p></div>
                 new_name = &#34;&#34;
                 if data[&#34;advanced_data&#34;][&#34;browseMetaData&#34;][&#34;virtualServerMetaData&#34;].get(&#39;replicaZones&#39;, False):
                     replicaZones = restore_option.get(&#34;replicaZones&#34;)
-            if restore_option[&#39;destination_instance&#39;].lower() == &#39;vmware&#39;:
+            if restore_option[&#39;destination_instance&#39;].lower() in [HypervisorType.VIRTUAL_CENTER.value.lower(),
+                                                                  HypervisorType.AZURE_V2.value.lower()]:
                 _disk_dict = self._disk_dict_pattern(data[&#39;snap_display_name&#39;], ds, new_name)
             else:
                 _disk_dict = self._disk_dict_pattern(disk.split(&#39;\\&#39;)[-1], ds, new_name)
@@ -5956,7 +6028,7 @@ True/False</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L568-L577" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L602-L611" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def cbtvalue(self):
@@ -5978,7 +6050,7 @@ def cbtvalue(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L247-L261" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L247-L261" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def content(self):
@@ -6007,7 +6079,7 @@ Proxy at instane</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L273-L281" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L273-L281" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_proxy(self):
@@ -6026,7 +6098,7 @@ def instance_proxy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L529-L536" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L563-L570" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def live_sync(self):
@@ -6046,7 +6118,7 @@ Default: False for subclient which doesnt have the property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L336-L348" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L336-L348" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def metadata(self):
@@ -6072,7 +6144,7 @@ True/False</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L2918-L2927" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L2954-L2963" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def quiesce_file_system(self):
@@ -6096,7 +6168,7 @@ Proxies at the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L263-L271" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L263-L271" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_proxy(self):
@@ -6117,7 +6189,7 @@ def subclient_proxy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L298-L334" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L298-L334" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_diskfilter(self):
@@ -6166,7 +6238,7 @@ def vm_diskfilter(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L283-L296" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L283-L296" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_filter(self):
@@ -6203,7 +6275,7 @@ dictionary with all VM restore options</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L2281-L2316" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L2317-L2352" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def amazon_defaults(self, vm_to_restore, restore_option):
     &#34;&#34;&#34;
@@ -6301,7 +6373,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L2633-L2708" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L2669-L2744" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(self,
            backup_level=&#34;Incremental&#34;,
@@ -6428,7 +6500,7 @@ if failed to browse content</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L1155-L1233" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L1190-L1268" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, vm_path=&#39;\\&#39;,
            show_deleted_files=False,
@@ -6592,7 +6664,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L1325-L1408" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L1360-L1443" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse_in_time(
         self,
@@ -6737,7 +6809,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L1410-L1482" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L1445-L1517" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_level_browse(self, vm_path=&#39;\\&#39;,
                       show_deleted_files=False,
@@ -6835,7 +6907,7 @@ nics info for that vm</dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L1278-L1323" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L1313-L1358" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_nics_from_browse(self, copy_precedence=0):
     &#34;&#34;&#34;
@@ -6898,7 +6970,7 @@ dictionary of guest file restores options</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L1619-L1733" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L1654-L1768" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def guest_file_restore(self, *args, **kwargs):
     &#34;&#34;&#34;perform Guest file restore of the provided path
@@ -7080,7 +7152,7 @@ if from date value is incorrect</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L1484-L1552" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L1519-L1587" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def guest_files_browse(
         self,
@@ -7175,7 +7247,7 @@ if input parameter is not proper</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L1235-L1276" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L1270-L1311" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def parse_nics_xml(self, input_xml):
     &#34;&#34;&#34;
@@ -7232,7 +7304,7 @@ if input parameter is not proper</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L2895-L2916" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L2931-L2952" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def preview_content(self):
     &#34;&#34;&#34;
@@ -7286,7 +7358,7 @@ name                        - name of the VM to be restored
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L2172-L2241" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L2208-L2277" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_advanced_attach_disk_restore_options(self, vm_to_restore, restore_option):
     &#34;&#34;&#34;
@@ -7390,7 +7462,7 @@ name                        - name of the VM to be restored
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L2030-L2170" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L2065-L2206" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_advanced_vm_restore_options(self, vm_to_restore, restore_option):
     &#34;&#34;&#34;
@@ -7495,7 +7567,8 @@ name                        - name of the VM to be restored
             new_name = &#34;&#34;
             if data[&#34;advanced_data&#34;][&#34;browseMetaData&#34;][&#34;virtualServerMetaData&#34;].get(&#39;replicaZones&#39;, False):
                 replicaZones = restore_option.get(&#34;replicaZones&#34;)
-        if restore_option[&#39;destination_instance&#39;].lower() == &#39;vmware&#39;:
+        if restore_option[&#39;destination_instance&#39;].lower() in [HypervisorType.VIRTUAL_CENTER.value.lower(),
+                                                              HypervisorType.AZURE_V2.value.lower()]:
             _disk_dict = self._disk_dict_pattern(data[&#39;snap_display_name&#39;], ds, new_name)
         else:
             _disk_dict = self._disk_dict_pattern(disk.split(&#39;\\&#39;)[-1], ds, new_name)
@@ -7547,7 +7620,7 @@ dict of all propterties of subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L593-L604" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L627-L638" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;
@@ -7605,7 +7678,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L1735-L1767" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L1770-L1802" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def vm_files_browse(self, vm_path=&#39;\\&#39;, show_deleted_files=False, operation=&#39;browse&#39;, copy_precedence=0):
     &#34;&#34;&#34;Browses the Files and Folders of a Virtual Machine.
@@ -7698,7 +7771,7 @@ if from date value is incorrect</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/vssubclient.py#L1769-L1828" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L1804-L1863" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def vm_files_browse_in_time(
         self,

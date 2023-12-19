@@ -106,6 +106,9 @@ forms complete joson request for usergroup</p>
 <p>_update_usergroup_props()
 &ndash;
 Updates the properties of this usergroup</p>
+<p>_v4_update_usergroup_props()
+&ndash;
+Uses V4 API to update properties of a usergroup</p>
 <p>users()
 &ndash;
 returns users who are members of this usergroup</p>
@@ -146,10 +149,13 @@ Disables tfa for this user group</p>
 <p>update_navigation_preferences
 &ndash;
 Updates user group navigation preferences</p>
+<p>allow_multiple_company_members
+&ndash;
+Sets/Gets the value for allowing multiple members for a company</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L1-L961" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L1-L1022" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -235,6 +241,8 @@ UserGroup:
 
     _update_usergroup_props()       --  Updates the properties of this usergroup
 
+    _v4_update_usergroup_props()    --  Uses V4 API to update properties of a usergroup
+
     users()                         --  returns users who are members of this usergroup
 
     usergroups()                    --  returns external usergroups who are members of this
@@ -261,6 +269,8 @@ UserGroup:
     disable_tfa()                   --  Disables tfa for this user group
 
     update_navigation_preferences   --  Updates user group navigation preferences
+
+    allow_multiple_company_members  --  Sets/Gets the value for allowing multiple members for a company
 
 &#34;&#34;&#34;
 
@@ -670,6 +680,7 @@ class UserGroup(object):
         self._usergroup_status = None
         self._company_id = None
         self._company_name = None
+        self._allow_multiple_company_members = False
         self.refresh()
 
     def __repr__(self):
@@ -712,6 +723,8 @@ class UserGroup(object):
 
                 if &#39;enabled&#39; in self._properties:
                     self._usergroup_status = self._properties[&#39;enabled&#39;]
+
+                self._allow_multiple_company_members = self._properties.get(&#39;allowMultiCompanyMembers&#39;, False)
 
                 if &#39;email&#39; in self._properties:
                     self._email = self._properties[&#39;email&#39;]
@@ -806,6 +819,29 @@ class UserGroup(object):
             }]
         }
         self._update_usergroup_props(request_json)
+
+    @property
+    def allow_multiple_company_members(self):
+        &#34;&#34;&#34;
+        Returns the status of user group on this commcell
+        Returns:
+            Bool    -   True for allowing multiple company members
+                        False otherwise
+        &#34;&#34;&#34;
+        return self._allow_multiple_company_members
+
+    @allow_multiple_company_members.setter
+    def allow_multiple_company_members(self, flag=True):
+        &#34;&#34;&#34;
+        Allows Multiple Company Members to be part of this commcell user group
+        Args:
+            flag(bool)      -   True if multiple company members to be allowed,
+                                False otherwise
+        &#34;&#34;&#34;
+        if not isinstance(flag, bool):
+            raise SDKException(&#39;UserGroup&#39;, &#39;101&#39;)
+        request_json = {&#34;allowMultipleCompanyMembers&#34;: flag}
+        self._v4_update_usergroup_props(request_json)
 
     @property
     def users(self):
@@ -1078,6 +1114,36 @@ class UserGroup(object):
         }
 
         self._update_usergroup_props(request_json)
+
+    def _v4_update_usergroup_props(self, properties_dict):
+        &#34;&#34;&#34;Updates the properties of this usergroup
+
+            Args:
+                properties_dict (dict)  --  user property dict which is to be updated
+
+            Raises:
+                SDKException:
+                    if arguments passed are of incorrect types
+                    if failed to update user group properties
+                    if response is empty
+                    if response is not success
+        &#34;&#34;&#34;
+        if not isinstance(properties_dict, dict):
+            raise SDKException(&#39;UserGroup&#39;, &#39;101&#39;)
+        usergroup_request = self._commcell_object._services[&#39;USERGROUP_V4&#39;] % (self._user_group_id)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;PUT&#39;, usergroup_request, properties_dict
+        )
+        if flag:
+            if response.json():
+                error_code = response.json().get(&#39;errorCode&#39;, 0)
+                if error_code != 0:
+                    raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+                self.refresh()
+                return
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
 
     def _update_usergroup_props(self, properties_dict):
         &#34;&#34;&#34;Updates the properties of this usergroup
@@ -1149,7 +1215,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L485-L961" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L489-L1021" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class UserGroup(object):
     &#34;&#34;&#34;Class for performing operations for a specific User Group.&#34;&#34;&#34;
@@ -1186,6 +1252,7 @@ default: None</p>
         self._usergroup_status = None
         self._company_id = None
         self._company_name = None
+        self._allow_multiple_company_members = False
         self.refresh()
 
     def __repr__(self):
@@ -1228,6 +1295,8 @@ default: None</p>
 
                 if &#39;enabled&#39; in self._properties:
                     self._usergroup_status = self._properties[&#39;enabled&#39;]
+
+                self._allow_multiple_company_members = self._properties.get(&#39;allowMultiCompanyMembers&#39;, False)
 
                 if &#39;email&#39; in self._properties:
                     self._email = self._properties[&#39;email&#39;]
@@ -1322,6 +1391,29 @@ default: None</p>
             }]
         }
         self._update_usergroup_props(request_json)
+
+    @property
+    def allow_multiple_company_members(self):
+        &#34;&#34;&#34;
+        Returns the status of user group on this commcell
+        Returns:
+            Bool    -   True for allowing multiple company members
+                        False otherwise
+        &#34;&#34;&#34;
+        return self._allow_multiple_company_members
+
+    @allow_multiple_company_members.setter
+    def allow_multiple_company_members(self, flag=True):
+        &#34;&#34;&#34;
+        Allows Multiple Company Members to be part of this commcell user group
+        Args:
+            flag(bool)      -   True if multiple company members to be allowed,
+                                False otherwise
+        &#34;&#34;&#34;
+        if not isinstance(flag, bool):
+            raise SDKException(&#39;UserGroup&#39;, &#39;101&#39;)
+        request_json = {&#34;allowMultipleCompanyMembers&#34;: flag}
+        self._v4_update_usergroup_props(request_json)
 
     @property
     def users(self):
@@ -1595,6 +1687,36 @@ default: None</p>
 
         self._update_usergroup_props(request_json)
 
+    def _v4_update_usergroup_props(self, properties_dict):
+        &#34;&#34;&#34;Updates the properties of this usergroup
+
+            Args:
+                properties_dict (dict)  --  user property dict which is to be updated
+
+            Raises:
+                SDKException:
+                    if arguments passed are of incorrect types
+                    if failed to update user group properties
+                    if response is empty
+                    if response is not success
+        &#34;&#34;&#34;
+        if not isinstance(properties_dict, dict):
+            raise SDKException(&#39;UserGroup&#39;, &#39;101&#39;)
+        usergroup_request = self._commcell_object._services[&#39;USERGROUP_V4&#39;] % (self._user_group_id)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;PUT&#39;, usergroup_request, properties_dict
+        )
+        if flag:
+            if response.json():
+                error_code = response.json().get(&#39;errorCode&#39;, 0)
+                if error_code != 0:
+                    raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+                self.refresh()
+                return
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+
     def _update_usergroup_props(self, properties_dict):
         &#34;&#34;&#34;Updates the properties of this usergroup
 
@@ -1631,13 +1753,37 @@ default: None</p>
 </details>
 <h3>Instance variables</h3>
 <dl>
+<dt id="cvpysdk.security.usergroup.UserGroup.allow_multiple_company_members"><code class="name">var <span class="ident">allow_multiple_company_members</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the status of user group on this commcell</p>
+<h2 id="returns">Returns</h2>
+<p>Bool
+-
+True for allowing multiple company members
+False otherwise</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L664-L672" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def allow_multiple_company_members(self):
+    &#34;&#34;&#34;
+    Returns the status of user group on this commcell
+    Returns:
+        Bool    -   True for allowing multiple company members
+                    False otherwise
+    &#34;&#34;&#34;
+    return self._allow_multiple_company_members</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.security.usergroup.UserGroup.associations"><code class="name">var <span class="ident">associations</span></code></dt>
 <dd>
 <div class="desc"><p>Returns security associations present on th usergroup</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L677-L680" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L707-L710" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def associations(self):
@@ -1651,7 +1797,7 @@ def associations(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L623-L626" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L630-L633" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def company_id(self):
@@ -1671,7 +1817,7 @@ empty string, if usergroup belongs to Commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L628-L635" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L635-L642" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def company_name(self):
@@ -1689,7 +1835,7 @@ def company_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L613-L616" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L620-L623" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -1703,7 +1849,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L618-L621" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L625-L628" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def email(self):
@@ -1717,7 +1863,7 @@ def email(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L682-L685" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L712-L715" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_tfa_enabled(self):
@@ -1731,7 +1877,7 @@ def is_tfa_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L598-L601" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L605-L608" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -1745,7 +1891,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L641-L644" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L648-L651" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def status(self):
@@ -1759,7 +1905,7 @@ def status(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L603-L606" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L610-L613" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_group_id(self):
@@ -1773,7 +1919,7 @@ def user_group_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L608-L611" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L615-L618" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_group_name(self):
@@ -1787,7 +1933,7 @@ def user_group_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L667-L675" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L697-L705" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def usergroups(self):
@@ -1806,7 +1952,7 @@ def usergroups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L657-L665" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L687-L695" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def users(self):
@@ -1832,7 +1978,7 @@ def users(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L703-L715" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L733-L745" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_tfa(self):
     &#34;&#34;&#34;
@@ -1861,7 +2007,7 @@ def users(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L687-L701" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L717-L731" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_tfa(self):
     &#34;&#34;&#34;
@@ -1888,7 +2034,7 @@ def users(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L637-L639" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L644-L646" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the UserGroup.&#34;&#34;&#34;
@@ -1912,7 +2058,7 @@ list of navigation items to be seen in command center</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L832-L860" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L862-L890" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_navigation_preferences(self, include_navigation_list):
     &#34;&#34;&#34;Updates the user group&#39;s include navigation preferences with the the list provided
@@ -2005,7 +2151,7 @@ OVERWRITE user security association.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L717-L768" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L747-L798" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_security_associations(self, entity_dictionary, request_type):
     &#34;&#34;&#34;handles three way associations (role-usergroup-entities)
@@ -2101,7 +2247,7 @@ e.g : local_usergroups=['usergroup1', 'usegrouop2']</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L770-L830" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L800-L860" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_usergroup_members(
         self,
@@ -2184,7 +2330,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L121-L482" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L125-L486" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class UserGroups(object):
     &#34;&#34;&#34;Class for getting all the usergroups associated with a commcell.&#34;&#34;&#34;
@@ -2562,7 +2708,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L471-L482" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L475-L486" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_user_groups(self):
@@ -2664,7 +2810,7 @@ if failed to add usergroup to commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L245-L380" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L249-L384" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self,
         usergroup_name,
@@ -2843,7 +2989,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L382-L465" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L386-L469" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, user_group, new_user=None, new_usergroup=None):
     &#34;&#34;&#34;Deletes the specified user from the existing commcell users
@@ -2950,7 +3096,7 @@ if type of the user group name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L216-L243" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L220-L247" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, user_group_name):
     &#34;&#34;&#34;Returns a user group object of the specified user group name.
@@ -3000,7 +3146,7 @@ if type of the user group name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L197-L214" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L201-L218" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_user_group(self, user_group_name):
     &#34;&#34;&#34;Checks if a user group exists in the commcell with the input user group name.
@@ -3030,7 +3176,7 @@ if type of the user group name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/security/usergroup.py#L467-L469" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/usergroup.py#L471-L473" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the user groups associated with the Commcell.&#34;&#34;&#34;
@@ -3110,6 +3256,7 @@ setTimeout(() => input.focus(), 100);
 <li>
 <h4><code><a title="cvpysdk.security.usergroup.UserGroup" href="#cvpysdk.security.usergroup.UserGroup">UserGroup</a></code></h4>
 <ul class="">
+<li><code><a title="cvpysdk.security.usergroup.UserGroup.allow_multiple_company_members" href="#cvpysdk.security.usergroup.UserGroup.allow_multiple_company_members">allow_multiple_company_members</a></code></li>
 <li><code><a title="cvpysdk.security.usergroup.UserGroup.associations" href="#cvpysdk.security.usergroup.UserGroup.associations">associations</a></code></li>
 <li><code><a title="cvpysdk.security.usergroup.UserGroup.company_id" href="#cvpysdk.security.usergroup.UserGroup.company_id">company_id</a></code></li>
 <li><code><a title="cvpysdk.security.usergroup.UserGroup.company_name" href="#cvpysdk.security.usergroup.UserGroup.company_name">company_name</a></code></li>

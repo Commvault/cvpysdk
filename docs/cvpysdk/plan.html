@@ -136,7 +136,7 @@ update_security_associations() -- to update security associations of a plan
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1-L2457" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1-L2517" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -942,7 +942,7 @@ class Plans(object):
 
                     index_content       (bool)      --  Speifies whether to index content or not to index server
 
-                    content_analyzer    (list)      --  list of Content analyzer cloud name
+                    content_analyzer    (list)      --  list of Content analyzer client name
 
                     entity_list         (list)      --  list of entities which needs to be extracted
 
@@ -1010,11 +1010,11 @@ class Plans(object):
                 raise SDKException(&#39;Plan&#39;, &#39;103&#39;)
             ca_list = []
             for ca in kwargs.get(&#39;content_analyzer&#39;, []):
-                ca_cloud_id = self._commcell_object.content_analyzers.get(ca).cloud_id
+                ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
                 ca_list.append({
-                    &#39;cloudId&#39;: ca_cloud_id
+                    &#39;clientId&#39;: ca_client_id
                 })
-            request_json[&#39;plan&#39;][&#39;eDiscoveryInfo&#39;][&#39;contentAnalyzerCloud&#39;] = ca_list
+            request_json[&#39;plan&#39;][&#39;eDiscoveryInfo&#39;][&#39;contentAnalyzerClient&#39;] = ca_list
             if &#39;entity_list&#39; not in kwargs and &#39;classifier_list&#39; not in kwargs:
                 raise SDKException(&#39;Plan&#39;, &#39;104&#39;)
             activate_obj = self._commcell_object.activate
@@ -1272,7 +1272,8 @@ class Plan(object):
                                 self._plan_properties[&#39;schedule&#39;][&#39;task&#39;][&#39;taskName&#39;]
                             )
                         }
-                        if self._subtype == 33554437:
+                        # Skip adding database schedules if plan has no database schedule policy
+                        if self._subtype == 33554437 and self._plan_properties.get(&#39;database&#39;, {}).get(&#39;rpoInMinutes&#39;):
                             self._child_policies[&#39;schedulePolicy&#39;].update({
                                 &#39;log&#39;: self._commcell_object.policies.schedule_policies.get(
                                     self._plan_properties[
@@ -2374,7 +2375,7 @@ class Plan(object):
 
                     index_content       (bool)      --  Speifies whether to index content or not to index server
 
-                    content_analyzer    (list)      --  list of Content analyzer cloud name
+                    content_analyzer    (list)      --  list of Content analyzer client name
 
                     entity_list         (list)      --  list of entities which needs to be extracted
 
@@ -2416,12 +2417,12 @@ class Plan(object):
                 if &#39;content_analyzer&#39; in kwargs:
                     ca_list = []
                     for ca in kwargs.get(&#39;content_analyzer&#39;, []):
-                        ca_cloud_id = self._commcell_object.content_analyzers.get(ca).cloud_id
+                        ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
                         ca_list.append({
-                            &#39;cloudId&#39;: ca_cloud_id
+                            &#39;clientId&#39;: ca_client_id
                         })
                     request_json[&#39;eDiscoveryInfo&#39;] = {
-                        &#39;contentAnalyzerCloud&#39;: ca_list}
+                        &#39;contentAnalyzerClient&#39;: ca_list}
                 if &#39;entity_list&#39; in kwargs or &#39;classifier_list&#39; in kwargs:
                     entity_mgr_obj = activate_obj.entity_manager()
                     # classifier is also an activate entity with type alone different so
@@ -2493,6 +2494,48 @@ class Plan(object):
             
         return result
     
+    def update_content_policy(self, content):
+        &#34;&#34;&#34;
+        Args:
+            content (dict)  :  dictionary with backup content details. 
+            
+            example:
+                content = {
+                    &#34;windowsIncludedPaths&#34;: [&#34;Desktop&#34;],
+                    &#34;windowsExcludedPaths&#34;: [&#34;Music&#34;],
+                    &#34;windowsFilterToExcludePaths&#34;: [&#34;Videos&#34;],
+                    &#34;unixIncludedPaths&#34;: [&#34;Desktop&#34;],
+                    &#34;unixExcludedPaths&#34;: [&#34;Music&#34;],
+                    &#34;unixFilterToExcludePaths&#34;: [&#34;Videos&#34;],
+                    &#34;macIncludedPaths&#34;: [&#34;Desktop&#34;],
+                    &#34;macExcludedPaths&#34;: [&#34;Music&#34;],
+                    &#34;macFilterToExcludePaths&#34;: [&#34;Videos&#34;],
+                    &#34;backupSystemState&#34;: True,
+                    &#34;useVSSForSystemState&#34;: True,
+                    &#34;backupSystemStateOnlyWithFullBackup&#34;: False
+                }
+
+            For unix and mac, replace key name with respective os name, **IncludedPaths, **ExcludedPaths, **FilterToExcludePaths
+
+        &#34;&#34;&#34;
+        
+        request_json = {
+            &#39;backupContent&#39; : content
+        }
+
+        request_url = self._commcell_object._services[&#39;V4_SERVER_PLAN&#39;] % self.plan_id
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;PUT&#39;, request_url, request_json)
+
+        if flag:
+            if response.json():
+                if response.json()[&#39;errorCode&#39;]:
+                    raise SDKException(&#39;Plan&#39;, 102, response.json()[&#39;errorMessage&#39;])
+            else:
+                raise SDKException(&#39;Plan&#39;, 102, &#39;Failed to update backup content&#39;)
+        else:
+            raise SDKException(&#39;Plan&#39;, 102, response.text)
+
     def update_backup_content(self, content, request_type = &#39;OVERWRITE&#39;):
         &#34;&#34;&#34;
         Args:
@@ -2513,9 +2556,22 @@ class Plan(object):
                         &#39;Content&#39; : [&#39;/%Pictures%&#39;],
                         &#39;Exclude&#39; : [&#39;/%Documents%&#39;]
                     }
+                }
                     
             request_type (str)      :  Supported values &#39;OVERWRITE&#39; (default), &#39;UPDATE&#39;, &#39;DELETE&#39;. 
-        }
+
+            For plans created from SP32, Please use below format of content
+            example:
+                content = {
+                    &#34;windowsIncludedPaths&#34;: [&#34;Desktop&#34;],
+                    &#34;windowsExcludedPaths&#34;: [&#34;Music&#34;],
+                    &#34;windowsFilterToExcludePaths&#34;: [&#34;Videos&#34;],
+                    &#34;backupSystemState&#34;: True,
+                    &#34;useVSSForSystemState&#34;: True,
+                    &#34;backupSystemStateOnlyWithFullBackup&#34;: False
+                }
+
+            For unix and mac, replace key name with respective os name, **IncludedPaths, **ExcludedPaths, **FilterToExcludePaths
         &#34;&#34;&#34;
         
         update_request_type = {
@@ -2525,6 +2581,10 @@ class Plan(object):
         }
         
         subclients = self.policy_subclient_ids()
+
+        if not subclients:
+            self.update_content_policy(content)
+            return
         
         for os, value in content.items():
             request_json = {
@@ -2632,7 +2692,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L967-L2456" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L967-L2516" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Plan(object):
     &#34;&#34;&#34;Class for performing operations for a specific Plan.&#34;&#34;&#34;
@@ -2802,7 +2862,8 @@ default: None</p>
                                 self._plan_properties[&#39;schedule&#39;][&#39;task&#39;][&#39;taskName&#39;]
                             )
                         }
-                        if self._subtype == 33554437:
+                        # Skip adding database schedules if plan has no database schedule policy
+                        if self._subtype == 33554437 and self._plan_properties.get(&#39;database&#39;, {}).get(&#39;rpoInMinutes&#39;):
                             self._child_policies[&#39;schedulePolicy&#39;].update({
                                 &#39;log&#39;: self._commcell_object.policies.schedule_policies.get(
                                     self._plan_properties[
@@ -3904,7 +3965,7 @@ default: None</p>
 
                     index_content       (bool)      --  Speifies whether to index content or not to index server
 
-                    content_analyzer    (list)      --  list of Content analyzer cloud name
+                    content_analyzer    (list)      --  list of Content analyzer client name
 
                     entity_list         (list)      --  list of entities which needs to be extracted
 
@@ -3946,12 +4007,12 @@ default: None</p>
                 if &#39;content_analyzer&#39; in kwargs:
                     ca_list = []
                     for ca in kwargs.get(&#39;content_analyzer&#39;, []):
-                        ca_cloud_id = self._commcell_object.content_analyzers.get(ca).cloud_id
+                        ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
                         ca_list.append({
-                            &#39;cloudId&#39;: ca_cloud_id
+                            &#39;clientId&#39;: ca_client_id
                         })
                     request_json[&#39;eDiscoveryInfo&#39;] = {
-                        &#39;contentAnalyzerCloud&#39;: ca_list}
+                        &#39;contentAnalyzerClient&#39;: ca_list}
                 if &#39;entity_list&#39; in kwargs or &#39;classifier_list&#39; in kwargs:
                     entity_mgr_obj = activate_obj.entity_manager()
                     # classifier is also an activate entity with type alone different so
@@ -4023,6 +4084,48 @@ default: None</p>
             
         return result
     
+    def update_content_policy(self, content):
+        &#34;&#34;&#34;
+        Args:
+            content (dict)  :  dictionary with backup content details. 
+            
+            example:
+                content = {
+                    &#34;windowsIncludedPaths&#34;: [&#34;Desktop&#34;],
+                    &#34;windowsExcludedPaths&#34;: [&#34;Music&#34;],
+                    &#34;windowsFilterToExcludePaths&#34;: [&#34;Videos&#34;],
+                    &#34;unixIncludedPaths&#34;: [&#34;Desktop&#34;],
+                    &#34;unixExcludedPaths&#34;: [&#34;Music&#34;],
+                    &#34;unixFilterToExcludePaths&#34;: [&#34;Videos&#34;],
+                    &#34;macIncludedPaths&#34;: [&#34;Desktop&#34;],
+                    &#34;macExcludedPaths&#34;: [&#34;Music&#34;],
+                    &#34;macFilterToExcludePaths&#34;: [&#34;Videos&#34;],
+                    &#34;backupSystemState&#34;: True,
+                    &#34;useVSSForSystemState&#34;: True,
+                    &#34;backupSystemStateOnlyWithFullBackup&#34;: False
+                }
+
+            For unix and mac, replace key name with respective os name, **IncludedPaths, **ExcludedPaths, **FilterToExcludePaths
+
+        &#34;&#34;&#34;
+        
+        request_json = {
+            &#39;backupContent&#39; : content
+        }
+
+        request_url = self._commcell_object._services[&#39;V4_SERVER_PLAN&#39;] % self.plan_id
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;PUT&#39;, request_url, request_json)
+
+        if flag:
+            if response.json():
+                if response.json()[&#39;errorCode&#39;]:
+                    raise SDKException(&#39;Plan&#39;, 102, response.json()[&#39;errorMessage&#39;])
+            else:
+                raise SDKException(&#39;Plan&#39;, 102, &#39;Failed to update backup content&#39;)
+        else:
+            raise SDKException(&#39;Plan&#39;, 102, response.text)
+
     def update_backup_content(self, content, request_type = &#39;OVERWRITE&#39;):
         &#34;&#34;&#34;
         Args:
@@ -4043,9 +4146,22 @@ default: None</p>
                         &#39;Content&#39; : [&#39;/%Pictures%&#39;],
                         &#39;Exclude&#39; : [&#39;/%Documents%&#39;]
                     }
+                }
                     
             request_type (str)      :  Supported values &#39;OVERWRITE&#39; (default), &#39;UPDATE&#39;, &#39;DELETE&#39;. 
-        }
+
+            For plans created from SP32, Please use below format of content
+            example:
+                content = {
+                    &#34;windowsIncludedPaths&#34;: [&#34;Desktop&#34;],
+                    &#34;windowsExcludedPaths&#34;: [&#34;Music&#34;],
+                    &#34;windowsFilterToExcludePaths&#34;: [&#34;Videos&#34;],
+                    &#34;backupSystemState&#34;: True,
+                    &#34;useVSSForSystemState&#34;: True,
+                    &#34;backupSystemStateOnlyWithFullBackup&#34;: False
+                }
+
+            For unix and mac, replace key name with respective os name, **IncludedPaths, **ExcludedPaths, **FilterToExcludePaths
         &#34;&#34;&#34;
         
         update_request_type = {
@@ -4055,6 +4171,10 @@ default: None</p>
         }
         
         subclients = self.policy_subclient_ids()
+
+        if not subclients:
+            self.update_content_policy(content)
+            return
         
         for os, value in content.items():
             request_json = {
@@ -4133,7 +4253,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1931-L1938" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1932-L1939" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def addons(self):
@@ -4151,7 +4271,7 @@ def addons(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L2423-L2426" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L2483-L2486" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def applicable_solutions(self):
@@ -4165,7 +4285,7 @@ def applicable_solutions(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1945-L1948" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1946-L1949" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def associated_entities(self):
@@ -4179,7 +4299,7 @@ def associated_entities(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1997-L2000" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1998-L2001" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def content_indexing_props(self):
@@ -4193,7 +4313,7 @@ def content_indexing_props(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1831-L1834" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1832-L1835" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def full_operation_window(self):
@@ -4207,7 +4327,7 @@ def full_operation_window(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1783-L1786" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1784-L1787" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def operation_window(self):
@@ -4221,7 +4341,7 @@ def operation_window(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1888-L1891" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1889-L1892" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def override_entities(self):
@@ -4235,7 +4355,7 @@ def override_entities(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1950-L1953" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1951-L1954" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def parent_plan(self):
@@ -4249,7 +4369,7 @@ def parent_plan(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1724-L1727" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1725-L1728" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan_id(self):
@@ -4263,7 +4383,7 @@ def plan_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1729-L1732" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1730-L1733" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan_name(self):
@@ -4277,7 +4397,7 @@ def plan_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1878-L1881" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1879-L1882" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan_type(self):
@@ -4291,7 +4411,7 @@ def plan_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L2002-L2005" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L2003-L2006" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -4305,7 +4425,7 @@ def properties(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L2007-L2010" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L2008-L2011" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def region_id(self):
@@ -4319,7 +4439,7 @@ def region_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1926-L1929" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1927-L1930" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def schedule_policies(self):
@@ -4337,7 +4457,7 @@ def schedule_policies(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1955-L1963" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1956-L1964" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def security_associations(self):
@@ -4356,7 +4476,7 @@ def security_associations(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1757-L1760" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1758-L1761" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sla_in_minutes(self):
@@ -4370,7 +4490,7 @@ def sla_in_minutes(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1921-L1924" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1922-L1925" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_copies(self):
@@ -4384,7 +4504,7 @@ def storage_copies(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1916-L1919" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1917-L1920" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy(self):
@@ -4398,7 +4518,7 @@ def storage_policy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1940-L1943" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1941-L1944" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_policy(self):
@@ -4412,7 +4532,7 @@ def subclient_policy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1883-L1886" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1884-L1887" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subtype(self):
@@ -4451,7 +4571,7 @@ dictionary of all copies of this plan</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1563-L1595" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1564-L1596" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_storage_copy(self, copy_name, storage_pool, retention=30, extended_retention=None):
     &#34;&#34;&#34;Add a storage copy as backup destination to this plan
@@ -4504,7 +4624,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L2016-L2069" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L2017-L2070" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def associate_user(self, userlist):
     &#34;&#34;&#34;associates the users to the plan.
@@ -4614,7 +4734,7 @@ if inheritance rules are not followed
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1234-L1515" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1235-L1516" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def derive_and_add(self,
                    plan_name,
@@ -4908,7 +5028,7 @@ if inheritance rules are not followed
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1597-L1604" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1598-L1605" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_full_schedule(self):
     &#34;&#34;&#34;Disable the full backup schedule of the plan&#34;&#34;&#34;
@@ -4948,7 +5068,7 @@ if plan not found</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1606-L1665" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1607-L1666" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def edit_association(self, entities, new_plan=None):
     &#34;&#34;&#34;Reassociates or dissociates the entities from this plan
@@ -5026,7 +5146,7 @@ Speifies whether to index content or not to index server</p>
 <p>content_analyzer
 (list)
 &ndash;
-list of Content analyzer cloud name</p>
+list of Content analyzer client name</p>
 <p>entity_list
 (list)
 &ndash;
@@ -5071,7 +5191,7 @@ Maximum document size in MB</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L2228-L2322" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L2229-L2323" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def edit_plan(self, **kwargs):
     &#34;&#34;&#34;Edit plan options
@@ -5082,7 +5202,7 @@ Maximum document size in MB</p></div>
 
                 index_content       (bool)      --  Speifies whether to index content or not to index server
 
-                content_analyzer    (list)      --  list of Content analyzer cloud name
+                content_analyzer    (list)      --  list of Content analyzer client name
 
                 entity_list         (list)      --  list of entities which needs to be extracted
 
@@ -5124,12 +5244,12 @@ Maximum document size in MB</p></div>
             if &#39;content_analyzer&#39; in kwargs:
                 ca_list = []
                 for ca in kwargs.get(&#39;content_analyzer&#39;, []):
-                    ca_cloud_id = self._commcell_object.content_analyzers.get(ca).cloud_id
+                    ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
                     ca_list.append({
-                        &#39;cloudId&#39;: ca_cloud_id
+                        &#39;clientId&#39;: ca_client_id
                     })
                 request_json[&#39;eDiscoveryInfo&#39;] = {
-                    &#39;contentAnalyzerCloud&#39;: ca_list}
+                    &#39;contentAnalyzerClient&#39;: ca_list}
             if &#39;entity_list&#39; in kwargs or &#39;classifier_list&#39; in kwargs:
                 entity_mgr_obj = activate_obj.entity_manager()
                 # classifier is also an activate entity with type alone different so
@@ -5204,7 +5324,7 @@ Pass True if he schedule to be modified is the full backup schedule</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1517-L1561" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1518-L1562" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def modify_schedule(self, schedule_json, is_full_schedule=False):
     &#34;&#34;&#34;Modifies the incremental RPO schedule pattern of the plan with the given schedule json
@@ -5272,7 +5392,7 @@ Pass True if he schedule to be modified is the full backup schedule</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L2324-L2354" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L2325-L2355" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def policy_subclient_ids(self):
     &#34;&#34;&#34;Returns Policy subclient IDs of the plan
@@ -5315,7 +5435,7 @@ Pass True if he schedule to be modified is the full backup schedule</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L2012-L2014" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L2013-L2015" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Plan.&#34;&#34;&#34;
@@ -5355,7 +5475,7 @@ Operation type</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L2184-L2226" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L2185-L2227" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def schedule(self, schedule_name, pattern_json, ops_type=2):
     &#34;&#34;&#34;Creates or modifies the schedule associated with plan
@@ -5440,7 +5560,7 @@ Operation type</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L2071-L2182" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L2072-L2183" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def share(self, user_or_group_name, role_name, is_user=True, ops_type=1):
     &#34;&#34;&#34;Shares plan with given user or group by associating with given role
@@ -5579,16 +5699,27 @@ dictionary with backup content details. </p>
 'Mac' : {
 'Content' : ['/%Pictures%'],
 'Exclude' : ['/%Documents%']
+}
 }</dd>
 </dl>
 <p>request_type (str)
 :
-Supported values 'OVERWRITE' (default), 'UPDATE', 'DELETE'.
-}</p></div>
+Supported values 'OVERWRITE' (default), 'UPDATE', 'DELETE'. </p>
+<p>For plans created from SP32, Please use below format of content
+example:
+content = {
+"windowsIncludedPaths": ["Desktop"],
+"windowsExcludedPaths": ["Music"],
+"windowsFilterToExcludePaths": ["Videos"],
+"backupSystemState": True,
+"useVSSForSystemState": True,
+"backupSystemStateOnlyWithFullBackup": False
+}</p>
+<p>For unix and mac, replace key name with respective os name, <strong>IncludedPaths, </strong>ExcludedPaths, **FilterToExcludePaths</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L2356-L2421" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L2399-L2481" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_backup_content(self, content, request_type = &#39;OVERWRITE&#39;):
     &#34;&#34;&#34;
@@ -5610,9 +5741,22 @@ Supported values 'OVERWRITE' (default), 'UPDATE', 'DELETE'.
                     &#39;Content&#39; : [&#39;/%Pictures%&#39;],
                     &#39;Exclude&#39; : [&#39;/%Documents%&#39;]
                 }
+            }
                 
         request_type (str)      :  Supported values &#39;OVERWRITE&#39; (default), &#39;UPDATE&#39;, &#39;DELETE&#39;. 
-    }
+
+        For plans created from SP32, Please use below format of content
+        example:
+            content = {
+                &#34;windowsIncludedPaths&#34;: [&#34;Desktop&#34;],
+                &#34;windowsExcludedPaths&#34;: [&#34;Music&#34;],
+                &#34;windowsFilterToExcludePaths&#34;: [&#34;Videos&#34;],
+                &#34;backupSystemState&#34;: True,
+                &#34;useVSSForSystemState&#34;: True,
+                &#34;backupSystemStateOnlyWithFullBackup&#34;: False
+            }
+
+        For unix and mac, replace key name with respective os name, **IncludedPaths, **ExcludedPaths, **FilterToExcludePaths
     &#34;&#34;&#34;
     
     update_request_type = {
@@ -5622,6 +5766,10 @@ Supported values 'OVERWRITE' (default), 'UPDATE', 'DELETE'.
     }
     
     subclients = self.policy_subclient_ids()
+
+    if not subclients:
+        self.update_content_policy(content)
+        return
     
     for os, value in content.items():
         request_json = {
@@ -5656,6 +5804,78 @@ Supported values 'OVERWRITE' (default), 'UPDATE', 'DELETE'.
                 raise SDKException(&#39;Plan&#39;, 102, &#39;Failed to get subclient Ids.&#39;)
         else:
             raise SDKException(&#39;Plan&#39;, 102, response.text)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.plan.Plan.update_content_policy"><code class="name flex">
+<span>def <span class="ident">update_content_policy</span></span>(<span>self, content)</span>
+</code></dt>
+<dd>
+<div class="desc"><h2 id="args">Args</h2>
+<p>content (dict)
+:
+dictionary with backup content details. </p>
+<p>example:
+content = {
+"windowsIncludedPaths": ["Desktop"],
+"windowsExcludedPaths": ["Music"],
+"windowsFilterToExcludePaths": ["Videos"],
+"unixIncludedPaths": ["Desktop"],
+"unixExcludedPaths": ["Music"],
+"unixFilterToExcludePaths": ["Videos"],
+"macIncludedPaths": ["Desktop"],
+"macExcludedPaths": ["Music"],
+"macFilterToExcludePaths": ["Videos"],
+"backupSystemState": True,
+"useVSSForSystemState": True,
+"backupSystemStateOnlyWithFullBackup": False
+}</p>
+<p>For unix and mac, replace key name with respective os name, <strong>IncludedPaths, </strong>ExcludedPaths, **FilterToExcludePaths</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L2357-L2397" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def update_content_policy(self, content):
+    &#34;&#34;&#34;
+    Args:
+        content (dict)  :  dictionary with backup content details. 
+        
+        example:
+            content = {
+                &#34;windowsIncludedPaths&#34;: [&#34;Desktop&#34;],
+                &#34;windowsExcludedPaths&#34;: [&#34;Music&#34;],
+                &#34;windowsFilterToExcludePaths&#34;: [&#34;Videos&#34;],
+                &#34;unixIncludedPaths&#34;: [&#34;Desktop&#34;],
+                &#34;unixExcludedPaths&#34;: [&#34;Music&#34;],
+                &#34;unixFilterToExcludePaths&#34;: [&#34;Videos&#34;],
+                &#34;macIncludedPaths&#34;: [&#34;Desktop&#34;],
+                &#34;macExcludedPaths&#34;: [&#34;Music&#34;],
+                &#34;macFilterToExcludePaths&#34;: [&#34;Videos&#34;],
+                &#34;backupSystemState&#34;: True,
+                &#34;useVSSForSystemState&#34;: True,
+                &#34;backupSystemStateOnlyWithFullBackup&#34;: False
+            }
+
+        For unix and mac, replace key name with respective os name, **IncludedPaths, **ExcludedPaths, **FilterToExcludePaths
+
+    &#34;&#34;&#34;
+    
+    request_json = {
+        &#39;backupContent&#39; : content
+    }
+
+    request_url = self._commcell_object._services[&#39;V4_SERVER_PLAN&#39;] % self.plan_id
+
+    flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;PUT&#39;, request_url, request_json)
+
+    if flag:
+        if response.json():
+            if response.json()[&#39;errorCode&#39;]:
+                raise SDKException(&#39;Plan&#39;, 102, response.json()[&#39;errorMessage&#39;])
+        else:
+            raise SDKException(&#39;Plan&#39;, 102, &#39;Failed to update backup content&#39;)
+    else:
+        raise SDKException(&#39;Plan&#39;, 102, response.text)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.plan.Plan.update_security_associations"><code class="name flex">
@@ -5694,7 +5914,7 @@ if association is not of List type</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L1965-L1995" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L1966-L1996" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_security_associations(self, associations_list, is_user = True, request_type = None, external_group = False):
     &#34;&#34;&#34;
@@ -5740,7 +5960,7 @@ if association is not of List type</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L149-L160" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L149-L160" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class PlanTypes(Enum):
     &#34;&#34;&#34;Class Enum to represent different plan types&#34;&#34;&#34;
@@ -5818,7 +6038,7 @@ if association is not of List type</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L163-L964" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L163-L964" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Plans(object):
     &#34;&#34;&#34;Class for representing all the plans in the commcell.&#34;&#34;&#34;
@@ -6462,7 +6682,7 @@ if association is not of List type</p></div>
 
                     index_content       (bool)      --  Speifies whether to index content or not to index server
 
-                    content_analyzer    (list)      --  list of Content analyzer cloud name
+                    content_analyzer    (list)      --  list of Content analyzer client name
 
                     entity_list         (list)      --  list of entities which needs to be extracted
 
@@ -6530,11 +6750,11 @@ if association is not of List type</p></div>
                 raise SDKException(&#39;Plan&#39;, &#39;103&#39;)
             ca_list = []
             for ca in kwargs.get(&#39;content_analyzer&#39;, []):
-                ca_cloud_id = self._commcell_object.content_analyzers.get(ca).cloud_id
+                ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
                 ca_list.append({
-                    &#39;cloudId&#39;: ca_cloud_id
+                    &#39;clientId&#39;: ca_client_id
                 })
-            request_json[&#39;plan&#39;][&#39;eDiscoveryInfo&#39;][&#39;contentAnalyzerCloud&#39;] = ca_list
+            request_json[&#39;plan&#39;][&#39;eDiscoveryInfo&#39;][&#39;contentAnalyzerClient&#39;] = ca_list
             if &#39;entity_list&#39; not in kwargs and &#39;classifier_list&#39; not in kwargs:
                 raise SDKException(&#39;Plan&#39;, &#39;104&#39;)
             activate_obj = self._commcell_object.activate
@@ -6638,7 +6858,7 @@ if association is not of List type</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L315-L328" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L315-L328" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_plans(self):
@@ -6728,7 +6948,7 @@ if input parameters are incorrect</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L510-L725" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L510-L725" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self,
         plan_name,
@@ -6970,7 +7190,7 @@ cvpysdk.activateapps.constants.TargetApps</p>
 <p>**kwargs</p>
 <pre><code>index_content       (bool)      --  Speifies whether to index content or not to index server
 
-content_analyzer    (list)      --  list of Content analyzer cloud name
+content_analyzer    (list)      --  list of Content analyzer client name
 
 entity_list         (list)      --  list of entities which needs to be extracted
 
@@ -7012,7 +7232,7 @@ max_doc_size        (int)       --  Maximum document size in MB
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L788-L964" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L788-L964" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_data_classification_plan(self, plan_name, index_server, target_app=TargetApps.FSO, **kwargs):
     &#34;&#34;&#34;Adds data classification plan to the commcell
@@ -7031,7 +7251,7 @@ max_doc_size        (int)       --  Maximum document size in MB
 
                 index_content       (bool)      --  Speifies whether to index content or not to index server
 
-                content_analyzer    (list)      --  list of Content analyzer cloud name
+                content_analyzer    (list)      --  list of Content analyzer client name
 
                 entity_list         (list)      --  list of entities which needs to be extracted
 
@@ -7099,11 +7319,11 @@ max_doc_size        (int)       --  Maximum document size in MB
             raise SDKException(&#39;Plan&#39;, &#39;103&#39;)
         ca_list = []
         for ca in kwargs.get(&#39;content_analyzer&#39;, []):
-            ca_cloud_id = self._commcell_object.content_analyzers.get(ca).cloud_id
+            ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
             ca_list.append({
-                &#39;cloudId&#39;: ca_cloud_id
+                &#39;clientId&#39;: ca_client_id
             })
-        request_json[&#39;plan&#39;][&#39;eDiscoveryInfo&#39;][&#39;contentAnalyzerCloud&#39;] = ca_list
+        request_json[&#39;plan&#39;][&#39;eDiscoveryInfo&#39;][&#39;contentAnalyzerClient&#39;] = ca_list
         if &#39;entity_list&#39; not in kwargs and &#39;classifier_list&#39; not in kwargs:
             raise SDKException(&#39;Plan&#39;, &#39;104&#39;)
         activate_obj = self._commcell_object.activate
@@ -7216,7 +7436,7 @@ if no plan exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L449-L508" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L449-L508" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, plan_name):
     &#34;&#34;&#34;Deletes the plan from the commcell.
@@ -7311,7 +7531,7 @@ if failed to get the response
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L330-L396" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L330-L396" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def filter_plans(self, plan_type, company_name = None):
     &#34;&#34;&#34;
@@ -7401,7 +7621,7 @@ if type of the plan name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L417-L447" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L417-L447" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, plan_name):
     &#34;&#34;&#34;Returns a plan object of the specified plan name.
@@ -7460,7 +7680,7 @@ if there is an error in the response</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L727-L767" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L727-L767" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_eligible_plans(self, entities):
     &#34;&#34;&#34;Returns dict of plans that are eligible for the specified entities
@@ -7513,7 +7733,7 @@ if there is an error in the response</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L769-L782" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L769-L782" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_supported_solutions(self):
     &#34;&#34;&#34;Method to get supported solutions for plans&#34;&#34;&#34;
@@ -7551,7 +7771,7 @@ if type of the plan name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L398-L415" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L398-L415" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_plan(self, plan_name):
     &#34;&#34;&#34;Checks if a plan exists in the commcell with the input plan name.
@@ -7581,7 +7801,7 @@ if type of the plan name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/plan.py#L784-L786" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/plan.py#L784-L786" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the plans associated with the Commcell.&#34;&#34;&#34;
@@ -7702,6 +7922,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.plan.Plan.subclient_policy" href="#cvpysdk.plan.Plan.subclient_policy">subclient_policy</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.subtype" href="#cvpysdk.plan.Plan.subtype">subtype</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.update_backup_content" href="#cvpysdk.plan.Plan.update_backup_content">update_backup_content</a></code></li>
+<li><code><a title="cvpysdk.plan.Plan.update_content_policy" href="#cvpysdk.plan.Plan.update_content_policy">update_content_policy</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.update_security_associations" href="#cvpysdk.plan.Plan.update_security_associations">update_security_associations</a></code></li>
 </ul>
 </li>

@@ -92,11 +92,13 @@ _json_restore_destinationTeamInfo()
 &ndash; Get destinationTeamInfo json for teams restore operation.
 restore_files_to_out_of_place()
 &ndash; Restore
-files to another team</p>
+files to another team.
+restore_to_original_location()
+&ndash; Restore team to original location.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/teams_subclient.py#L1-L1050" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/teams_subclient.py#L1-L1094" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # ————————————————————————–
@@ -153,7 +155,8 @@ TeamsSubclient:
     _json_restoreoptions_searchprocessinginfo_with_extra_queryparameters() -- Get searchprocessinginfo with extra query
                                                                            parameters json for teams restore operation.
     _json_restore_destinationTeamInfo()         -- Get destinationTeamInfo json for teams restore operation.
-    restore_files_to_out_of_place()             -- Restore  files to another team
+    restore_files_to_out_of_place()             -- Restore  files to another team.
+    restore_to_original_location()              -- Restore team to original location.
 &#34;&#34;&#34;
 
 from __future__ import unicode_literals
@@ -272,7 +275,7 @@ class TeamsSubclient(CloudAppsSubclient):
         request_json[&#39;taskInfo&#39;][&#39;associations&#39;] = [self._json_association()]
 
         if teams:
-            discovered_teams = self.discover()
+            discovered_teams = self.discover(refresh_cache=False)
             teams = [discovered_teams[team] for team in teams]
             team_json_list = []
             selected_items_json = []
@@ -1145,7 +1148,52 @@ class TeamsSubclient(CloudAppsSubclient):
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
 
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def restore_to_original_location(self, team_email_id, skip_items=True, restore_posts_as_html=False):
+        &#34;&#34;&#34;Restore a team to original location.
+                    Args:
+                        team_email_id                (str)   --  The email ID of the team that needs to be restored.
+                        skip_items                (bool)  --  To skip the items.
+                             Default - True
+                        restore_posts_as_html  (bool)  --  To restore pots as html under Files tab.
+                             Default - False
+
+                    Returns:
+                        obj   --  Instance of job.
+
+                    Raises:
+                        SDKException:
+
+                            If restore failed to run.
+                            If response is empty.
+                            If response is not success.
+
+                &#34;&#34;&#34;
+
+        discovered_teams = self.discover()
+        team = [discovered_teams[team_email_id]]
+        unconditional_overwrite = False
+        if not skip_items:
+            unconditional_overwrite = True
+        request_json = {
+            &#34;taskInfo&#34;: {
+                &#34;task&#34;: const.RESTORE_TASK_JSON,
+                &#34;associations&#34;: [
+                    self._json_association()
+                ],
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTask&#34;: const.RESTORE_SUBTASK_JSON,
+                        &#34;options&#34;: self._json_restore_options(
+                            team, skip=skip_items, unconditionalOverwrite=unconditional_overwrite,
+                            restorePostsAsHtml=restore_posts_as_html)
+                    }
+                ]
+            }
+        }
+
+        return self._process_restore(request_json)</code></pre>
 </details>
 </section>
 <section>
@@ -1183,7 +1231,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/teams_subclient.py#L71-L1048" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/teams_subclient.py#L72-L1094" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class TeamsSubclient(CloudAppsSubclient):
     &#34;&#34;&#34;Derived class from Subclient Base class, representing a Microsoft Office 365 Teams subclient
@@ -1289,7 +1337,7 @@ default: None</p>
         request_json[&#39;taskInfo&#39;][&#39;associations&#39;] = [self._json_association()]
 
         if teams:
-            discovered_teams = self.discover()
+            discovered_teams = self.discover(refresh_cache=False)
             teams = [discovered_teams[team] for team in teams]
             team_json_list = []
             selected_items_json = []
@@ -2162,7 +2210,52 @@ default: None</p>
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
 
             response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def restore_to_original_location(self, team_email_id, skip_items=True, restore_posts_as_html=False):
+        &#34;&#34;&#34;Restore a team to original location.
+                    Args:
+                        team_email_id                (str)   --  The email ID of the team that needs to be restored.
+                        skip_items                (bool)  --  To skip the items.
+                             Default - True
+                        restore_posts_as_html  (bool)  --  To restore pots as html under Files tab.
+                             Default - False
+
+                    Returns:
+                        obj   --  Instance of job.
+
+                    Raises:
+                        SDKException:
+
+                            If restore failed to run.
+                            If response is empty.
+                            If response is not success.
+
+                &#34;&#34;&#34;
+
+        discovered_teams = self.discover()
+        team = [discovered_teams[team_email_id]]
+        unconditional_overwrite = False
+        if not skip_items:
+            unconditional_overwrite = True
+        request_json = {
+            &#34;taskInfo&#34;: {
+                &#34;task&#34;: const.RESTORE_TASK_JSON,
+                &#34;associations&#34;: [
+                    self._json_association()
+                ],
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTask&#34;: const.RESTORE_SUBTASK_JSON,
+                        &#34;options&#34;: self._json_restore_options(
+                            team, skip=skip_items, unconditionalOverwrite=unconditional_overwrite,
+                            restorePostsAsHtml=restore_posts_as_html)
+                    }
+                ]
+            }
+        }
+
+        return self._process_restore(request_json)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -2194,7 +2287,7 @@ If response is not success.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/teams_subclient.py#L153-L212" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/teams_subclient.py#L154-L213" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(self, teams=None):
     &#34;&#34;&#34;Run an Incremental backup.
@@ -2218,7 +2311,7 @@ If response is not success.
     request_json[&#39;taskInfo&#39;][&#39;associations&#39;] = [self._json_association()]
 
     if teams:
-        discovered_teams = self.discover()
+        discovered_teams = self.discover(refresh_cache=False)
         teams = [discovered_teams[team] for team in teams]
         team_json_list = []
         selected_items_json = []
@@ -2280,7 +2373,7 @@ If response is not success.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/teams_subclient.py#L108-L151" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/teams_subclient.py#L109-L152" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def content(self, teams, o365_plan):
     &#34;&#34;&#34;Add teams, discover() must be called before teams added using this method.
@@ -2351,7 +2444,7 @@ If response is not success.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/teams_subclient.py#L88-L106" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/teams_subclient.py#L89-L107" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def discover(self, refresh_cache=True):
     &#34;&#34;&#34;Launches Discovery and returns the discovered teams.
@@ -2387,7 +2480,7 @@ Boolean if the association was removed successfully</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/teams_subclient.py#L721-L741" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/teams_subclient.py#L722-L742" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def exclude_teams_from_backup(self, user_assoc):
     &#34;&#34;&#34;Excludes user association from a teams client
@@ -2425,7 +2518,7 @@ Boolean if the association was removed successfully</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/teams_subclient.py#L643-L671" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/teams_subclient.py#L644-L672" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_associated_teams(self, pagingInfo=None, **kwargs):
     &#34;&#34;&#34;Get all associated teams for a client
@@ -2475,7 +2568,7 @@ Instance of Team.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/teams_subclient.py#L551-L560" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/teams_subclient.py#L552-L561" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_team(self, team):
     &#34;&#34;&#34;Get team object from team email address.
@@ -2520,7 +2613,7 @@ If response is not success.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/teams_subclient.py#L214-L259" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/teams_subclient.py#L215-L260" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def out_of_place_restore(self, team, destination_team, **kwargs):
     &#34;&#34;&#34;Restore a team to another location.
@@ -2580,7 +2673,7 @@ Boolean if the association was removed successfully</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/teams_subclient.py#L695-L719" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/teams_subclient.py#L696-L720" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def remove_all_users_content(self):
     &#34;&#34;&#34;Removes all user content from a teams client
@@ -2622,7 +2715,7 @@ Boolean if the association was removed successfully</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/teams_subclient.py#L673-L693" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/teams_subclient.py#L674-L694" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def remove_team_association(self, user_assoc):
     &#34;&#34;&#34;Removes user association from a teams client
@@ -2691,7 +2784,7 @@ If response is not success.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/teams_subclient.py#L955-L1048" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/teams_subclient.py#L956-L1049" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_files_to_out_of_place(self, source_team_mail, destination_team_mail, destination_channel,
                                   selected_files_ids, values, selected_files):
@@ -2827,7 +2920,7 @@ If response is not success.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/teams_subclient.py#L802-L905" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/teams_subclient.py#L803-L906" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place_to_file_location(self, source_team_mail, dest_client, dest_path, selected_items, values):
     &#34;&#34;&#34;Restore a team to file location.
@@ -2961,7 +3054,7 @@ If response is not success.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/teams_subclient.py#L510-L549" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/teams_subclient.py#L511-L550" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_posts_to_html(self, teams, destination_team=None):
     &#34;&#34;&#34;Restore posts of a team as HTML.
@@ -3005,6 +3098,87 @@ If response is not success.</p></div>
     return self._process_restore(request_json)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.restore_to_original_location"><code class="name flex">
+<span>def <span class="ident">restore_to_original_location</span></span>(<span>self, team_email_id, skip_items=True, restore_posts_as_html=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Restore a team to original location.</p>
+<h2 id="args">Args</h2>
+<p>team_email_id
+(str)
+&ndash;
+The email ID of the team that needs to be restored.
+skip_items
+(bool)
+&ndash;
+To skip the items.
+Default - True
+restore_posts_as_html
+(bool)
+&ndash;
+To restore pots as html under Files tab.
+Default - False</p>
+<h2 id="returns">Returns</h2>
+<p>obj
+&ndash;
+Instance of job.</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:</p>
+<pre><code>If restore failed to run.
+If response is empty.
+If response is not success.
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/teams_subclient.py#L1051-L1094" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def restore_to_original_location(self, team_email_id, skip_items=True, restore_posts_as_html=False):
+    &#34;&#34;&#34;Restore a team to original location.
+                Args:
+                    team_email_id                (str)   --  The email ID of the team that needs to be restored.
+                    skip_items                (bool)  --  To skip the items.
+                         Default - True
+                    restore_posts_as_html  (bool)  --  To restore pots as html under Files tab.
+                         Default - False
+
+                Returns:
+                    obj   --  Instance of job.
+
+                Raises:
+                    SDKException:
+
+                        If restore failed to run.
+                        If response is empty.
+                        If response is not success.
+
+            &#34;&#34;&#34;
+
+    discovered_teams = self.discover()
+    team = [discovered_teams[team_email_id]]
+    unconditional_overwrite = False
+    if not skip_items:
+        unconditional_overwrite = True
+    request_json = {
+        &#34;taskInfo&#34;: {
+            &#34;task&#34;: const.RESTORE_TASK_JSON,
+            &#34;associations&#34;: [
+                self._json_association()
+            ],
+            &#34;subTasks&#34;: [
+                {
+                    &#34;subTask&#34;: const.RESTORE_SUBTASK_JSON,
+                    &#34;options&#34;: self._json_restore_options(
+                        team, skip=skip_items, unconditionalOverwrite=unconditional_overwrite,
+                        restorePostsAsHtml=restore_posts_as_html)
+                }
+            ]
+        }
+    }
+
+    return self._process_restore(request_json)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.set_all_users_content"><code class="name flex">
 <span>def <span class="ident">set_all_users_content</span></span>(<span>self, plan_name)</span>
 </code></dt>
@@ -3015,7 +3189,7 @@ If response is not success.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/cloudapps/teams_subclient.py#L594-L624" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/cloudapps/teams_subclient.py#L595-L625" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_all_users_content(self, plan_name):
     &#34;&#34;&#34;Add all teams to content
@@ -3189,6 +3363,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.restore_files_to_out_of_place" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.restore_files_to_out_of_place">restore_files_to_out_of_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.restore_out_of_place_to_file_location" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.restore_out_of_place_to_file_location">restore_out_of_place_to_file_location</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.restore_posts_to_html" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.restore_posts_to_html">restore_posts_to_html</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.restore_to_original_location" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.restore_to_original_location">restore_to_original_location</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.set_all_users_content" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.set_all_users_content">set_all_users_content</a></code></li>
 </ul>
 </li>

@@ -48,7 +48,7 @@ user to the same location</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L1-L233" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L1-L235" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -240,9 +240,11 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
 
         &#34;&#34;&#34;
         restore_option = {}
-        extra_options = [&#39;destination_network&#39;, &#39;networks_nic&#39;, &#39;subnetwork_nic&#39;]
+        extra_options = [&#39;destination_network&#39;, &#39;networks_nic&#39;, &#39;subnetwork_nic&#39;, &#39;vmCustomMetadata&#39;, &#39;createPublicIP&#39;]
         for key in extra_options:
             if key in kwargs:
+                if key == &#34;vmCustomMetadata&#34;:
+                    kwargs[key] = [dict(item) for item in kwargs[key]]
                 restore_option[key] = kwargs[key]
             else:
                 restore_option[key] = None
@@ -311,7 +313,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L46-L233" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L46-L235" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient Base class.
@@ -458,9 +460,11 @@ backupset class, subclient name, subclient id</p></div>
 
         &#34;&#34;&#34;
         restore_option = {}
-        extra_options = [&#39;destination_network&#39;, &#39;networks_nic&#39;, &#39;subnetwork_nic&#39;]
+        extra_options = [&#39;destination_network&#39;, &#39;networks_nic&#39;, &#39;subnetwork_nic&#39;, &#39;vmCustomMetadata&#39;, &#39;createPublicIP&#39;]
         for key in extra_options:
             if key in kwargs:
+                if key == &#34;vmCustomMetadata&#34;:
+                    kwargs[key] = [dict(item) for item in kwargs[key]]
                 restore_option[key] = kwargs[key]
             else:
                 restore_option[key] = None
@@ -565,7 +569,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L63-L127" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L63-L127" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(
         self,
@@ -698,7 +702,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L129-L233" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L129-L235" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(
         self,
@@ -762,9 +766,11 @@ if response is not success
 
     &#34;&#34;&#34;
     restore_option = {}
-    extra_options = [&#39;destination_network&#39;, &#39;networks_nic&#39;, &#39;subnetwork_nic&#39;]
+    extra_options = [&#39;destination_network&#39;, &#39;networks_nic&#39;, &#39;subnetwork_nic&#39;, &#39;vmCustomMetadata&#39;, &#39;createPublicIP&#39;]
     for key in extra_options:
         if key in kwargs:
+            if key == &#34;vmCustomMetadata&#34;:
+                kwargs[key] = [dict(item) for item in kwargs[key]]
             restore_option[key] = kwargs[key]
         else:
             restore_option[key] = None

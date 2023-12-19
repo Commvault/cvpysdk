@@ -60,7 +60,7 @@ The Virtual Server 'Hyper-V' is named as 'hyperv.py'
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/vsinstance.py#L1-L312" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/vsinstance.py#L1-L377" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -205,6 +205,71 @@ class VirtualServerInstance(Instance):
                 instance_proxies.append(member)
 
         return list(dict.fromkeys(instance_proxies))
+
+    def _get_application_properties(self):
+        &#34;&#34;&#34;Gets the application properties of this instance.
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        self._APPLICATION = self._services[&#39;APPLICATION_INSTANCE&#39;] % (self._instance_id)
+        self._application_properties = None
+
+        # skip GET instance properties api call if instance id is 1
+        if not int(self.instance_id) == 1:
+            flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._APPLICATION)
+
+            if flag:
+                if response.json() and &#34;virtualServerInfo&#34; in response.json():
+                    self._application_properties = response.json()[&#34;virtualServerInfo&#34;]
+
+                else:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+
+    def _update_hypervisor_credentials(self, credential_json):
+        &#34;&#34;&#34;updates the credential for   this instance.
+
+             Args:
+                credentialid (int)  --  Credential ID to update in hypervisor
+                credentialname(str) -- Credential name to update in hypervisor
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        self._credential_service = self._services[&#39;INSTANCE_CREDENTIALS&#39;] % int(
+                                                                self._agent_object._client_object.client_id)
+
+        # skip GET instance properties api call if instance id is 1
+        if not int(self.instance_id) == 1:
+            flag, response = self._cvpysdk_object.make_request(&#39;PUT&#39;, self._credential_service, credential_json)
+
+            if flag:
+                if response.json():
+                    if &#39;response&#39; in response.json():
+                        if &#39;errorCode&#39; in response.json()[&#39;response&#39;]:
+                            error_code = response.json()[&#39;response&#39;][&#39;errorCode&#39;]
+                            if error_code != 0:
+                                error_string = response.json()[&#39;response&#39;][&#39;errorString&#39;]
+                                o_str = &#39;Failed to update credentials\nError: &#34;{0}&#34;&#39;.format(error_string)
+                                raise SDKException(&#39;Instance&#39;, &#39;102&#39;, o_str)
+                            if &#39;errorMessage&#39; in response.json():
+                                error_string = response.json()[&#39;errorMessage&#39;]
+                                if error_string != &#34;&#34;:
+                                    o_str = &#39;Failed to update credentials\nError: &#34;{0}&#34;&#39;.format(error_string)
+                                    raise SDKException(&#39;Instance&#39;, &#39;102&#39;, o_str)
+                else:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
     @property
     def server_name(self):
@@ -411,7 +476,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/vsinstance.py#L86-L312" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/vsinstance.py#L86-L377" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VirtualServerInstance(Instance):
     &#34;&#34;&#34;Class for representing an Instance of the Virtual Server agent.&#34;&#34;&#34;
@@ -471,6 +536,71 @@ default: None</p>
                 instance_proxies.append(member)
 
         return list(dict.fromkeys(instance_proxies))
+
+    def _get_application_properties(self):
+        &#34;&#34;&#34;Gets the application properties of this instance.
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        self._APPLICATION = self._services[&#39;APPLICATION_INSTANCE&#39;] % (self._instance_id)
+        self._application_properties = None
+
+        # skip GET instance properties api call if instance id is 1
+        if not int(self.instance_id) == 1:
+            flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._APPLICATION)
+
+            if flag:
+                if response.json() and &#34;virtualServerInfo&#34; in response.json():
+                    self._application_properties = response.json()[&#34;virtualServerInfo&#34;]
+
+                else:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+
+    def _update_hypervisor_credentials(self, credential_json):
+        &#34;&#34;&#34;updates the credential for   this instance.
+
+             Args:
+                credentialid (int)  --  Credential ID to update in hypervisor
+                credentialname(str) -- Credential name to update in hypervisor
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        self._credential_service = self._services[&#39;INSTANCE_CREDENTIALS&#39;] % int(
+                                                                self._agent_object._client_object.client_id)
+
+        # skip GET instance properties api call if instance id is 1
+        if not int(self.instance_id) == 1:
+            flag, response = self._cvpysdk_object.make_request(&#39;PUT&#39;, self._credential_service, credential_json)
+
+            if flag:
+                if response.json():
+                    if &#39;response&#39; in response.json():
+                        if &#39;errorCode&#39; in response.json()[&#39;response&#39;]:
+                            error_code = response.json()[&#39;response&#39;][&#39;errorCode&#39;]
+                            if error_code != 0:
+                                error_string = response.json()[&#39;response&#39;][&#39;errorString&#39;]
+                                o_str = &#39;Failed to update credentials\nError: &#34;{0}&#34;&#39;.format(error_string)
+                                raise SDKException(&#39;Instance&#39;, &#39;102&#39;, o_str)
+                            if &#39;errorMessage&#39; in response.json():
+                                error_string = response.json()[&#39;errorMessage&#39;]
+                                if error_string != &#34;&#34;:
+                                    o_str = &#39;Failed to update credentials\nError: &#34;{0}&#34;&#39;.format(error_string)
+                                    raise SDKException(&#39;Instance&#39;, &#39;102&#39;, o_str)
+                else:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
     @property
     def server_name(self):
@@ -675,7 +805,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/vsinstance.py#L150-L163" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/vsinstance.py#L215-L228" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def associated_clients(self):
@@ -699,7 +829,7 @@ def associated_clients(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/vsinstance.py#L227-L236" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/vsinstance.py#L292-L301" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def co_ordinator(self):
@@ -729,7 +859,7 @@ string : frel client name</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/vsinstance.py#L238-L262" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/vsinstance.py#L303-L327" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def frel(self):
@@ -764,7 +894,7 @@ def frel(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/instances/vsinstance.py#L145-L148" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/vsinstance.py#L210-L213" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def server_name(self):

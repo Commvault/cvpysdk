@@ -38,7 +38,7 @@ install_software                 --  Installs the features selected on the machi
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/install.py#L1-L706" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/deployment/install.py#L1-L713" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -515,6 +515,11 @@ class Install(object):
                                   &#34;portNumber&#34;: &#34;port_number&#34;,
                                   &#34;encryptedTunnel&#34;: True/False
                             }
+            webconsole_inputs (dict) - dictionary for webconsole configuration
+            Ex: webconsole_inputs = {
+                                        &#34;webServerClientId&#34;: &#34;webservername&#34;
+                                    }
+
 
         Returns:
                 object - instance of the Job class for this install_software job
@@ -604,6 +609,7 @@ class Install(object):
         db2_logs = kwargs.get(&#39;db2_logs_location&#39;, {})
         index_cache_location = kwargs.get(&#39;index_cache_location&#39;, None)
         firewall_inputs = kwargs.get(&#39;firewall_inputs&#39;, {})
+        web_console_input = kwargs.get(&#39;webconsole_inputs&#39;, {})
 
         request_json = {
             &#34;taskInfo&#34;: {
@@ -681,6 +687,7 @@ class Install(object):
                                                         &#34;configureForLaptopBackups&#34;: False
                                                     },
                                                     &#34;componentInfo&#34;: install_options,
+                                                    &#34;webConsole&#34;: web_console_input
                                                 },
                                                 &#34;clientInfo&#34;: {
                                                     &#34;clientGroups&#34;: selected_client_groups if client_group_name else [],
@@ -773,7 +780,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/install.py#L42-L706" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/deployment/install.py#L42-L713" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Install(object):
     &#34;&#34;&#34;&#34;class for installing software packages&#34;&#34;&#34;
@@ -1209,6 +1216,11 @@ instance of the Commcell class</p>
                                   &#34;portNumber&#34;: &#34;port_number&#34;,
                                   &#34;encryptedTunnel&#34;: True/False
                             }
+            webconsole_inputs (dict) - dictionary for webconsole configuration
+            Ex: webconsole_inputs = {
+                                        &#34;webServerClientId&#34;: &#34;webservername&#34;
+                                    }
+
 
         Returns:
                 object - instance of the Job class for this install_software job
@@ -1298,6 +1310,7 @@ instance of the Commcell class</p>
         db2_logs = kwargs.get(&#39;db2_logs_location&#39;, {})
         index_cache_location = kwargs.get(&#39;index_cache_location&#39;, None)
         firewall_inputs = kwargs.get(&#39;firewall_inputs&#39;, {})
+        web_console_input = kwargs.get(&#39;webconsole_inputs&#39;, {})
 
         request_json = {
             &#34;taskInfo&#34;: {
@@ -1375,6 +1388,7 @@ instance of the Commcell class</p>
                                                         &#34;configureForLaptopBackups&#34;: False
                                                     },
                                                     &#34;componentInfo&#34;: install_options,
+                                                    &#34;webConsole&#34;: web_console_input
                                                 },
                                                 &#34;clientInfo&#34;: {
                                                     &#34;clientGroups&#34;: selected_client_groups if client_group_name else [],
@@ -1543,16 +1557,23 @@ firewall_inputs = {
 "httpProxyConfigurationType": 0,
 "encryptedTunnel": True/False
 }</p>
-<p>Ex 3: Client can communicate to CS using Proxy
-firewall_inputs = {
-"enableFirewallConfig": True,
-"firewallConnectionType": 2,
-"httpProxyConfigurationType": 0,
-"proxyClientName": "Proxy_client_name",
-"proxyHostName": "Proxy_host_name",
-"portNumber": "port_number",
-"encryptedTunnel": True/False
-}</p>
+<dl>
+<dt>Ex 3: Client can communicate to CS using Proxy</dt>
+<dt>firewall_inputs = {</dt>
+<dt>"enableFirewallConfig": True,</dt>
+<dt>"firewallConnectionType": 2,</dt>
+<dt>"httpProxyConfigurationType": 0,</dt>
+<dt>"proxyClientName": "Proxy_client_name",</dt>
+<dt>"proxyHostName": "Proxy_host_name",</dt>
+<dt>"portNumber": "port_number",</dt>
+<dt>"encryptedTunnel": True/False</dt>
+<dt>}</dt>
+<dt>webconsole_inputs (dict) - dictionary for webconsole configuration</dt>
+<dt><strong><code>Ex</code></strong></dt>
+<dd>webconsole_inputs = {
+"webServerClientId": "webservername"
+}</dd>
+</dl>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this install_software job</p>
 <h2 id="raises">Raises</h2>
@@ -1603,7 +1624,7 @@ not both
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/install.py#L361-L706" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/deployment/install.py#L361-L713" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def install_software(
         self,
@@ -1720,6 +1741,11 @@ not both
                               &#34;portNumber&#34;: &#34;port_number&#34;,
                               &#34;encryptedTunnel&#34;: True/False
                         }
+        webconsole_inputs (dict) - dictionary for webconsole configuration
+        Ex: webconsole_inputs = {
+                                    &#34;webServerClientId&#34;: &#34;webservername&#34;
+                                }
+
 
     Returns:
             object - instance of the Job class for this install_software job
@@ -1809,6 +1835,7 @@ not both
     db2_logs = kwargs.get(&#39;db2_logs_location&#39;, {})
     index_cache_location = kwargs.get(&#39;index_cache_location&#39;, None)
     firewall_inputs = kwargs.get(&#39;firewall_inputs&#39;, {})
+    web_console_input = kwargs.get(&#39;webconsole_inputs&#39;, {})
 
     request_json = {
         &#34;taskInfo&#34;: {
@@ -1886,6 +1913,7 @@ not both
                                                     &#34;configureForLaptopBackups&#34;: False
                                                 },
                                                 &#34;componentInfo&#34;: install_options,
+                                                &#34;webConsole&#34;: web_console_input
                                             },
                                             &#34;clientInfo&#34;: {
                                                 &#34;clientGroups&#34;: selected_client_groups if client_group_name else [],
@@ -2010,7 +2038,7 @@ if another download job is already running
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/install.py#L195-L359" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/deployment/install.py#L195-L359" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def push_servicepack_and_hotfix(
         self,
@@ -2221,7 +2249,7 @@ client computer will be repaired</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/deployment/install.py#L60-L193" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/deployment/install.py#L60-L193" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def repair_software(self,
                     client=None,

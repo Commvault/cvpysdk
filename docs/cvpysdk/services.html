@@ -37,7 +37,7 @@ dictionary, for their usage, and the value will be in the format:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/services.py#L1-L586" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/services.py#L1-L595" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -106,6 +106,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;GET_FILE_SERVER_CLIENTS&#39;: &#39;{0}/v4/FileServers&#39;,
     &#39;CLIENTFORCEDELETE&#39;:&#39;{0}Client/%s?forceDelete=1&#39;,
     &#39;CLIENT&#39;: &#39;{0}Client/%s&#39;,
+    &#39;GET_ADDITIIONAL_SETTINGS&#39;: &#39;{0}Client/%s/AdditionalSettings&#39;,
     &#39;FILTER_CLIENTS&#39;:&#39;{0}Client?%s&#39;,
     &#39;GET_ALL_CLIENTS_PLUS_HIDDEN&#39;: &#39;{0}Client?hiddenclients=true&#39;,
     &#39;GET_ALL_PSEUDO_CLIENTS&#39;: &#39;{0}Client?PseudoClientType&#39;,
@@ -125,6 +126,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;INSTANCE&#39;: &#39;{0}Instance/%s&#39;,
     &#39;APPLICATION_INSTANCE&#39;: &#39;{0}Application/%s&#39;,
     &#39;APPLICATION&#39;: &#39;{0}Application&#39;,
+    &#39;INSTANCE_CREDENTIALS&#39;: &#39;{0}v4/Hypervisor/%s/Credentials&#39;,
 
     &#39;GET_ALL_SUBCLIENTS&#39;: &#39;{0}Subclient?clientId=%s&amp;applicationId=%s&amp;propertyLevel=20&#39;,
     &#39;ADD_SUBCLIENT&#39;: &#39;{0}Subclient&#39;,
@@ -224,6 +226,7 @@ SERVICES_DICT_TEMPLATE = {
 
     &#39;USERGROUPS&#39;: &#39;{0}UserGroup?includeSystemCreated=true&#39;,
     &#39;USERGROUP&#39;: &#39;{0}UserGroup/%s&#39;,
+    &#39;USERGROUP_V4&#39;: &#39;{0}V4/UserGroup/%s&#39;,
     &#39;DELETE_USERGROUP&#39;: &#39;{0}UserGroup/%s?newUserId=%s&amp;newUserGroupId=%s&#39;,
     &#39;COMPANY_USERGROUP&#39;: &#39;{0}UserGroup?parentProvider/providerId=%s&#39;,
 
@@ -239,6 +242,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;DEPLOY_WORKFLOW&#39;: &#39;{0}Workflow/%s/action/deploy&#39;,
     &#39;EXECUTE_WORKFLOW_API&#39;: &#39;{0}Workflow/%s/action/execute&#39;,
     &#39;EXECUTE_WORKFLOW&#39;: &#39;{0}wapi/%s&#39;,
+    &#39;EXECUTE_INTERACTIVE_WORKFLOW&#39;: &#39;{0}workflowrequest&#39;,
     &#39;GET_WORKFLOW&#39;: &#39;{0}Workflow/%s&#39;,
     &#39;GET_WORKFLOW_DEFINITION&#39;: &#39;{0}Workflow/%s/definition&#39;,
     &#39;GET_INTERACTIONS&#39;: &#39;{0}WorkflowInteractions&#39;,
@@ -285,7 +289,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;DELETE_HANDLER&#39;: &#39;{0}dcube/deletehandler/%s&#39;,
     &#39;SHARE_HANDLER&#39;: &#39;{0}dcube/share/handler&#39;,
     &#39;SHARE_DATASOURCE&#39;: &#39;{0}dcube/share/datasource&#39;,
-    &#39;GET_CONTENT_ANALYZER_CLOUD&#39;: &#39;{0}getContentAnalyzerCloud&#39;,
+    &#39;GET_CONTENT_ANALYZER_CLOUD&#39;: &#39;{0}getContentAnalyzerClient&#39;,
     &#39;ACTIVATE_ENTITIES&#39;: &#39;{0}dcube/entity&#39;,
     &#39;ACTIVATE_ENTITY&#39;: &#39;{0}dcube/entity/%s&#39;,
     &#39;ACTIVATE_ENTITY_CONTAINER&#39;: &#39;{0}EntityExtractionRules?getDisabled=true&#39;,
@@ -351,6 +355,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;APPLICABLE_SOLNS_ENABLE&#39;: &#39;{0}V4/ServerPlan/%s/ApplicableSolutions/Restrict/Enable&#39;,
     &#39;APPLICABLE_SOLNS_DISABLE&#39;: &#39;{0}V4/ServerPlan/%s/ApplicableSolutions/Restrict/Disable&#39;,
     &#39;PLAN_SUPPORTED_SOLUTIONS&#39;: &#39;{0}V4/Solutions?filter=PLAN_SUPPORTED_SOLUTIONS&#39;,
+    &#39;V4_SERVER_PLAN&#39;: &#39;{0}V4/ServerPlan/%s&#39;,
 
     &#39;DOMAIN_CONTROLER&#39;: &#39;{0}CommCell/DomainController&#39;,
     &#39;DELETE_DOMAIN_CONTROLER&#39;: &#39;{0}CommCell/DomainController/%s&#39;,
@@ -524,7 +529,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;SNAP_OPERATIONS&#39;: &#39;{0}/Snaps/Operations&#39;,
     &#39;STORAGE_ARRAYS&#39;: &#39;{0}/StorageArrays&#39;,
 
-    &#39;GET_NETWORK_SUMMARY&#39; :&#39;{0}/FirewallSummary/%s&#39;,
+    &#39;GET_NETWORK_SUMMARY&#39;:&#39;{0}/FirewallSummary/%s&#39;,
     &#39;NETWORK_TOPOLOGIES&#39;: &#39;{0}FirewallTopology&#39;,
     &#39;NETWORK_TOPOLOGY&#39;: &#39;{0}FirewallTopology/%s&#39;,
     &#39;PUSH_TOPOLOGY&#39;: &#39;{0}FirewallTopology/%s/Push&#39;,
@@ -540,6 +545,7 @@ SERVICES_DICT_TEMPLATE = {
 
     &#39;REGISTRATION&#39;: &#39;{0}/RegFrgnCell&#39;,
     &#39;UNREGISTRATION&#39;: &#39;{0}/UnRegisterCommCell&#39;,
+    &#39;GET_REGISTERED_COMMCELLS&#39;: &#39;{0}/CommCell/registered&#39;,
     &#39;GET_REGISTERED_ROUTER_COMMCELLS&#39;: &#39;{0}/CommCell/registered?getOnlyServiceCommcells=true&#39;,
     &#39;GET_USERSPACE_SERVICE&#39;: &#39;{0}/ServiceCommcell/UserSpace&#39;,
     &#39;POLL_USER_SERVICE&#39;: &#39;{0}/ServiceCommcell/IsUserPresent?userName=%s&#39;,
@@ -606,7 +612,10 @@ SERVICES_DICT_TEMPLATE = {
                             &#39;getOrganizationGroups=false&#39;,
     &#39;DOMAIN_SSO&#39;: &#39;{0}V4/LDAP/%s&#39;,
 
-    &#39;VM_GROUP&#39;: &#39;{0}V4/VmGroup/%s&#39;
+    &#39;LAUNCH_O365_LICENSING&#39;: &#39;{0}Office365/License&#39;,
+
+    &#39;VM_GROUP&#39;: &#39;{0}V4/VmGroup/%s&#39;,
+    &#39;VSA_HIDDEN_SUBCLIENT&#39;: &#39;{0}GetId?clientname=%s&amp;agent=Virtual Server&amp;backupset=%s&amp;subclient=Do Not Backup&#39;
 }
 
 
@@ -651,7 +660,7 @@ services dict consisting of all APIs</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/services.py#L572-L586" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/services.py#L581-L595" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_services(web_service):
     &#34;&#34;&#34;Initializes the SERVICES DICT with the web service for APIs.

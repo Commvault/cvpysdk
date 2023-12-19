@@ -92,7 +92,12 @@ change_plan()                       --  changes the plan of a given index server
 
 update_role()                       --  to update the roles assigned to cloud
 
+delete_docs_from_core()             --  Deletes the docs from the given core name on index server depending
+                                        on the select dict passed
+
 hard_commit                         --  do hard commit on specified index server solr core
+
+get_health_indicators()             --  get health indicators for index server node by client name
 
 get_all_cores                       --  gets all the cores in index server
 
@@ -189,7 +194,7 @@ update_roles_data()                 --  fetches the cloud roles data from commce
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1-L1369" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1-L1484" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
@@ -286,7 +291,12 @@ IndexServer
 
     update_role()                       --  to update the roles assigned to cloud
 
+    delete_docs_from_core()             --  Deletes the docs from the given core name on index server depending
+                                            on the select dict passed
+
     hard_commit                         --  do hard commit on specified index server solr core
+
+    get_health_indicators()             --  get health indicators for index server node by client name
 
     get_all_cores                       --  gets all the cores in index server
 
@@ -392,7 +402,9 @@ _Roles Attributes
 
     **roles_data**                      --  returns the list of details of all cloud roles
     &#34;&#34;&#34;
+import json
 
+import http.client as httplib
 from copy import deepcopy
 import enum
 from .exception import SDKException
@@ -1006,6 +1018,48 @@ class IndexServer(object):
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;)
 
+    def delete_docs_from_core(self, core_name, select_dict = None):
+        &#34;&#34;&#34;Deletes the docs from the given core name on index server depending on the select dict passed
+
+                Args:
+
+                        core_name               (str)  --  name of the solr core
+                        select_dict             (dict) --  dict with query to delete specific documents
+                                                    default query - &#34;*:*&#34; (Deletes all the docs)
+
+                    Returns:
+                        None
+
+                    Raises:
+                        SDKException:
+
+                            if input data is not valid
+
+                            if index server is cloud, not implemented error
+
+                            if response is empty
+
+                            if response is not success
+        &#34;&#34;&#34;
+        if not isinstance(core_name, str):
+            raise SDKException(&#39;IndexServers&#39;, &#39;101&#39;)
+        if self.is_cloud:
+            raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#34;Not implemented for solr cloud&#34;)
+        json_req = {&#34;delete&#34;: {&#34;query&#34;: self._create_solr_query(select_dict).replace(&#34;q=&#34;, &#34;&#34;).replace(&#34;&amp;wt=json&#34;, &#34;&#34;)}}
+        baseurl = f&#34;{self.server_url[0]}/solr/{core_name}/update?commitWithin=1000&amp;overwrite=true&amp;wt=json&#34;
+        flag, response = self._cvpysdk_object.make_request(&#34;POST&#34;, baseurl, json_req)
+        if flag and response.json():
+            if &#39;error&#39; in response.json():
+                raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, f&#39; Failed with error message - &#39;
+                                                          f&#39;{response.json().get(&#34;error&#34;).get(&#34;msg&#34;)}&#39;)
+            if &#39;responseHeader&#39; in response.json():
+                commitstatus = str(response.json().get(&#34;responseHeader&#34;).get(&#34;status&#34;))
+                if int(commitstatus) != 0:
+                    raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;,
+                                       f&#34;Deleting docs from the core returned bad status - {commitstatus}&#34;)
+                return
+        raise SDKException(&#39;IndexServers&#39;, &#39;111&#39;)
+
     def hard_commit(self, core_name):
         &#34;&#34;&#34;do hard commit for the given core name on index server
 
@@ -1042,6 +1096,42 @@ class IndexServer(object):
                     raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#34;Hard commit returned bad status&#34;)
                 return
         raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#34;Something went wrong with hard commit&#34;)
+
+    
+    def get_health_indicators(self, client_name=None):
+        &#34;&#34;&#34;Get health indicators for index server node by client name
+
+                Args:
+                    client_name     (str)       --  name of the client node
+
+                Returns:
+                    (response(str)) -- str json object
+
+                Raises:
+
+                    SDKException:
+                        if input data is not valid
+                        if client name is not passed for index server cloud
+                        if response is not success
+                        if response is empty
+
+        &#34;&#34;&#34;
+        server_url = self.server_url[0]
+        response = None
+        if self.is_cloud or len(self.client_name) &gt; 1:
+            if client_name is None:
+                raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#39;Client name param missing for solr cloud&#39;)
+            if client_name not in self.client_name:
+                raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#39;client name not found in this index server cloud&#39;)
+            server_url = self.server_url[self.client_name.index(client_name)]
+        baseurl = f&#34;{server_url}/solr/rest/admin/healthsummary&#34;
+        headers = {
+            &#39;Accept&#39;: &#39;application/xml&#39;
+        }
+        flag, response = self._cvpysdk_object.make_request(&#34;GET&#34;, headers=headers, url=baseurl)
+        if flag:
+            return response
+        raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#34;Could not get health summary for [{}]&#34;.format(client_name))
 
     def get_all_cores(self, client_name=None):
         &#34;&#34;&#34;gets all cores &amp; core details from index server
@@ -1229,6 +1319,30 @@ class IndexServer(object):
         flag, response = self._cvpysdk_object.make_request(&#34;GET&#34;, solr_url)
         if flag and response.json():
             return response.json()
+        elif response.status_code == httplib.FORBIDDEN:
+            cmd = f&#34;(Invoke-WebRequest -UseBasicParsing -uri \&#34;{solr_url}\&#34;).content&#34;
+            client_obj = None
+            if solr_client:
+                client_obj = self._commcell_obj.clients.get(solr_client)
+            else:
+                # if no client is passed, then take first client in index server cloud
+                client_obj = self._commcell_obj.clients.get(self.client_name[0])
+            exit_code, output, error_message = client_obj.execute_script(script_type=&#34;PowerShell&#34;,
+                                                                         script=cmd)
+            if exit_code != 0:
+                raise SDKException(
+                    &#39;IndexServers&#39;,
+                    &#39;104&#39;,
+                    f&#34;Something went wrong while querying solr - {exit_code}&#34;)
+            elif error_message:
+                raise SDKException(
+                    &#39;IndexServers&#39;,
+                    &#39;104&#39;,
+                    f&#34;Something went wrong while querying solr - {error_message}&#34;)
+            try:
+                return json.loads(output.strip())
+            except Exception:
+                raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, f&#34;Something went wrong while querying solr - {output}&#34;)
         raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#34;Something went wrong while querying solr&#34;)
 
     def get_index_node(self, node_name):
@@ -1251,7 +1365,10 @@ class IndexServer(object):
         raise SDKException(&#34;IndexServers&#34;, &#39;104&#39;, &#39;Index server node not found&#39;)
 
     def get_plan_info(self):
-        &#34;&#34;&#34;Returns the plan information of the index server&#34;&#34;&#34;
+        &#34;&#34;&#34;Gets the plan information of the index server
+            Returns:
+                dict - containing the plan information
+        &#34;&#34;&#34;
         client = self._commcell_obj.clients.get(self.index_server_client_id)
         instance_props = client.properties.get(&#34;pseudoClientInfo&#34;, {}).get(&#34;distributedClusterInstanceProperties&#34;, {})
         plan_details = instance_props.get(&#34;clusterConfig&#34;,{}).get(&#34;cloudInfo&#34;, {}).get(&#34;planInfo&#34;, {})
@@ -1292,7 +1409,10 @@ class IndexServer(object):
 
     @property
     def plan_name(self):
-        &#34;&#34;&#34;Returns the plan name associated with index server&#34;&#34;&#34;
+        &#34;&#34;&#34;Returns the plan name associated with index server
+            Returns:
+                str - name of the plan
+        &#34;&#34;&#34;
         return self.plan_info.get(&#34;planName&#34;)
 
     @property
@@ -1594,7 +1714,7 @@ Index server node client name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1202-L1303" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1317-L1418" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class IndexNode(object):
     &#34;&#34;&#34;Class for Index server node object&#34;&#34;&#34;
@@ -1707,7 +1827,7 @@ Index server node client name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1257-L1264" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1372-L1379" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_location(self):
@@ -1725,7 +1845,7 @@ def index_location(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1266-L1273" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1381-L1388" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def jvm_memory(self):
@@ -1743,7 +1863,7 @@ def jvm_memory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1237-L1240" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1352-L1355" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def node_id(self):
@@ -1757,7 +1877,7 @@ def node_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1232-L1235" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1347-L1350" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def node_name(self):
@@ -1771,7 +1891,7 @@ def node_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1252-L1255" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1367-L1370" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def roles(self):
@@ -1785,7 +1905,7 @@ def roles(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1242-L1245" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1357-L1360" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def solr_port(self):
@@ -1799,7 +1919,7 @@ def solr_port(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1247-L1250" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1362-L1365" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def solr_url(self):
@@ -1818,7 +1938,7 @@ def solr_url(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1223-L1230" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1338-L1345" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the index node properties&#34;&#34;&#34;
@@ -1858,7 +1978,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L633-L1199" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L640-L1314" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class IndexServer(object):
     &#34;&#34;&#34;Class for performing index server operations for a specific index server&#34;&#34;&#34;
@@ -2043,6 +2163,48 @@ default: None</p>
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;)
 
+    def delete_docs_from_core(self, core_name, select_dict = None):
+        &#34;&#34;&#34;Deletes the docs from the given core name on index server depending on the select dict passed
+
+                Args:
+
+                        core_name               (str)  --  name of the solr core
+                        select_dict             (dict) --  dict with query to delete specific documents
+                                                    default query - &#34;*:*&#34; (Deletes all the docs)
+
+                    Returns:
+                        None
+
+                    Raises:
+                        SDKException:
+
+                            if input data is not valid
+
+                            if index server is cloud, not implemented error
+
+                            if response is empty
+
+                            if response is not success
+        &#34;&#34;&#34;
+        if not isinstance(core_name, str):
+            raise SDKException(&#39;IndexServers&#39;, &#39;101&#39;)
+        if self.is_cloud:
+            raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#34;Not implemented for solr cloud&#34;)
+        json_req = {&#34;delete&#34;: {&#34;query&#34;: self._create_solr_query(select_dict).replace(&#34;q=&#34;, &#34;&#34;).replace(&#34;&amp;wt=json&#34;, &#34;&#34;)}}
+        baseurl = f&#34;{self.server_url[0]}/solr/{core_name}/update?commitWithin=1000&amp;overwrite=true&amp;wt=json&#34;
+        flag, response = self._cvpysdk_object.make_request(&#34;POST&#34;, baseurl, json_req)
+        if flag and response.json():
+            if &#39;error&#39; in response.json():
+                raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, f&#39; Failed with error message - &#39;
+                                                          f&#39;{response.json().get(&#34;error&#34;).get(&#34;msg&#34;)}&#39;)
+            if &#39;responseHeader&#39; in response.json():
+                commitstatus = str(response.json().get(&#34;responseHeader&#34;).get(&#34;status&#34;))
+                if int(commitstatus) != 0:
+                    raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;,
+                                       f&#34;Deleting docs from the core returned bad status - {commitstatus}&#34;)
+                return
+        raise SDKException(&#39;IndexServers&#39;, &#39;111&#39;)
+
     def hard_commit(self, core_name):
         &#34;&#34;&#34;do hard commit for the given core name on index server
 
@@ -2079,6 +2241,42 @@ default: None</p>
                     raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#34;Hard commit returned bad status&#34;)
                 return
         raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#34;Something went wrong with hard commit&#34;)
+
+    
+    def get_health_indicators(self, client_name=None):
+        &#34;&#34;&#34;Get health indicators for index server node by client name
+
+                Args:
+                    client_name     (str)       --  name of the client node
+
+                Returns:
+                    (response(str)) -- str json object
+
+                Raises:
+
+                    SDKException:
+                        if input data is not valid
+                        if client name is not passed for index server cloud
+                        if response is not success
+                        if response is empty
+
+        &#34;&#34;&#34;
+        server_url = self.server_url[0]
+        response = None
+        if self.is_cloud or len(self.client_name) &gt; 1:
+            if client_name is None:
+                raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#39;Client name param missing for solr cloud&#39;)
+            if client_name not in self.client_name:
+                raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#39;client name not found in this index server cloud&#39;)
+            server_url = self.server_url[self.client_name.index(client_name)]
+        baseurl = f&#34;{server_url}/solr/rest/admin/healthsummary&#34;
+        headers = {
+            &#39;Accept&#39;: &#39;application/xml&#39;
+        }
+        flag, response = self._cvpysdk_object.make_request(&#34;GET&#34;, headers=headers, url=baseurl)
+        if flag:
+            return response
+        raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#34;Could not get health summary for [{}]&#34;.format(client_name))
 
     def get_all_cores(self, client_name=None):
         &#34;&#34;&#34;gets all cores &amp; core details from index server
@@ -2266,6 +2464,30 @@ default: None</p>
         flag, response = self._cvpysdk_object.make_request(&#34;GET&#34;, solr_url)
         if flag and response.json():
             return response.json()
+        elif response.status_code == httplib.FORBIDDEN:
+            cmd = f&#34;(Invoke-WebRequest -UseBasicParsing -uri \&#34;{solr_url}\&#34;).content&#34;
+            client_obj = None
+            if solr_client:
+                client_obj = self._commcell_obj.clients.get(solr_client)
+            else:
+                # if no client is passed, then take first client in index server cloud
+                client_obj = self._commcell_obj.clients.get(self.client_name[0])
+            exit_code, output, error_message = client_obj.execute_script(script_type=&#34;PowerShell&#34;,
+                                                                         script=cmd)
+            if exit_code != 0:
+                raise SDKException(
+                    &#39;IndexServers&#39;,
+                    &#39;104&#39;,
+                    f&#34;Something went wrong while querying solr - {exit_code}&#34;)
+            elif error_message:
+                raise SDKException(
+                    &#39;IndexServers&#39;,
+                    &#39;104&#39;,
+                    f&#34;Something went wrong while querying solr - {error_message}&#34;)
+            try:
+                return json.loads(output.strip())
+            except Exception:
+                raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, f&#34;Something went wrong while querying solr - {output}&#34;)
         raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#34;Something went wrong while querying solr&#34;)
 
     def get_index_node(self, node_name):
@@ -2288,7 +2510,10 @@ default: None</p>
         raise SDKException(&#34;IndexServers&#34;, &#39;104&#39;, &#39;Index server node not found&#39;)
 
     def get_plan_info(self):
-        &#34;&#34;&#34;Returns the plan information of the index server&#34;&#34;&#34;
+        &#34;&#34;&#34;Gets the plan information of the index server
+            Returns:
+                dict - containing the plan information
+        &#34;&#34;&#34;
         client = self._commcell_obj.clients.get(self.index_server_client_id)
         instance_props = client.properties.get(&#34;pseudoClientInfo&#34;, {}).get(&#34;distributedClusterInstanceProperties&#34;, {})
         plan_details = instance_props.get(&#34;clusterConfig&#34;,{}).get(&#34;cloudInfo&#34;, {}).get(&#34;planInfo&#34;, {})
@@ -2329,7 +2554,10 @@ default: None</p>
 
     @property
     def plan_name(self):
-        &#34;&#34;&#34;Returns the plan name associated with index server&#34;&#34;&#34;
+        &#34;&#34;&#34;Returns the plan name associated with index server
+            Returns:
+                str - name of the plan
+        &#34;&#34;&#34;
         return self.plan_info.get(&#34;planName&#34;)
 
     @property
@@ -2436,7 +2664,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1155-L1158" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1270-L1273" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def base_port(self):
@@ -2450,7 +2678,7 @@ def base_port(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1160-L1163" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1275-L1278" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_id(self):
@@ -2464,7 +2692,7 @@ def client_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1140-L1143" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1255-L1258" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_name(self):
@@ -2478,7 +2706,7 @@ def client_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1181-L1184" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1296-L1299" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def cloud_id(self):
@@ -2492,7 +2720,7 @@ def cloud_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1135-L1138" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1250-L1253" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def cloud_name(self):
@@ -2506,7 +2734,7 @@ def cloud_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1191-L1194" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1306-L1309" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def engine_name(self):
@@ -2520,7 +2748,7 @@ def engine_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1130-L1133" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1245-L1248" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def host_name(self):
@@ -2534,7 +2762,7 @@ def host_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1196-L1199" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1311-L1314" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_server_client_id(self):
@@ -2548,7 +2776,7 @@ def index_server_client_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1110-L1113" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1225-L1228" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_cloud(self):
@@ -2562,7 +2790,7 @@ def is_cloud(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1115-L1118" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1230-L1233" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def nodes_count(self):
@@ -2576,7 +2804,7 @@ def nodes_count(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1105-L1108" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1220-L1223" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def os_info(self):
@@ -2586,15 +2814,20 @@ def os_info(self):
 </dd>
 <dt id="cvpysdk.index_server.IndexServer.plan_name"><code class="name">var <span class="ident">plan_name</span></code></dt>
 <dd>
-<div class="desc"><p>Returns the plan name associated with index server</p></div>
+<div class="desc"><p>Returns the plan name associated with index server</p>
+<h2 id="returns">Returns</h2>
+<p>str - name of the plan</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1100-L1103" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1212-L1218" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan_name(self):
-    &#34;&#34;&#34;Returns the plan name associated with index server&#34;&#34;&#34;
+    &#34;&#34;&#34;Returns the plan name associated with index server
+        Returns:
+            str - name of the plan
+    &#34;&#34;&#34;
     return self.plan_info.get(&#34;planName&#34;)</code></pre>
 </details>
 </dd>
@@ -2604,7 +2837,7 @@ def plan_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1125-L1128" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1240-L1243" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -2618,7 +2851,7 @@ def properties(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1170-L1179" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1285-L1294" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def role_display_name(self):
@@ -2638,7 +2871,7 @@ def role_display_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1165-L1168" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1280-L1283" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def roles(self):
@@ -2652,7 +2885,7 @@ def roles(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1120-L1123" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1235-L1238" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def roles_data(self):
@@ -2666,7 +2899,7 @@ def roles_data(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1186-L1189" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1301-L1304" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def server_type(self):
@@ -2680,7 +2913,7 @@ def server_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1145-L1148" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1260-L1263" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def server_url(self):
@@ -2694,7 +2927,7 @@ def server_url(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1150-L1153" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1265-L1268" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def type(self):
@@ -2723,7 +2956,7 @@ if plan with given name doesn't exist</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L742-L774" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L749-L781" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def change_plan(self, plan_name):
     &#34;&#34;&#34;Modifies the plan used by an index server
@@ -2758,6 +2991,76 @@ if plan with given name doesn't exist</p></div>
                 return
         raise SDKException(&#39;Response&#39;, &#39;102&#39;)
     raise SDKException(&#39;Response&#39;, &#39;101&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.index_server.IndexServer.delete_docs_from_core"><code class="name flex">
+<span>def <span class="ident">delete_docs_from_core</span></span>(<span>self, core_name, select_dict=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Deletes the docs from the given core name on index server depending on the select dict passed</p>
+<h2 id="args">Args</h2>
+<pre><code>core_name               (str)  --  name of the solr core
+select_dict             (dict) --  dict with query to delete specific documents
+                            default query - "*:*" (Deletes all the docs)
+</code></pre>
+<p>Returns:
+None</p>
+<p>Raises:
+SDKException:</p>
+<pre><code>    if input data is not valid
+
+    if index server is cloud, not implemented error
+
+    if response is empty
+
+    if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L823-L863" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def delete_docs_from_core(self, core_name, select_dict = None):
+    &#34;&#34;&#34;Deletes the docs from the given core name on index server depending on the select dict passed
+
+            Args:
+
+                    core_name               (str)  --  name of the solr core
+                    select_dict             (dict) --  dict with query to delete specific documents
+                                                default query - &#34;*:*&#34; (Deletes all the docs)
+
+                Returns:
+                    None
+
+                Raises:
+                    SDKException:
+
+                        if input data is not valid
+
+                        if index server is cloud, not implemented error
+
+                        if response is empty
+
+                        if response is not success
+    &#34;&#34;&#34;
+    if not isinstance(core_name, str):
+        raise SDKException(&#39;IndexServers&#39;, &#39;101&#39;)
+    if self.is_cloud:
+        raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#34;Not implemented for solr cloud&#34;)
+    json_req = {&#34;delete&#34;: {&#34;query&#34;: self._create_solr_query(select_dict).replace(&#34;q=&#34;, &#34;&#34;).replace(&#34;&amp;wt=json&#34;, &#34;&#34;)}}
+    baseurl = f&#34;{self.server_url[0]}/solr/{core_name}/update?commitWithin=1000&amp;overwrite=true&amp;wt=json&#34;
+    flag, response = self._cvpysdk_object.make_request(&#34;POST&#34;, baseurl, json_req)
+    if flag and response.json():
+        if &#39;error&#39; in response.json():
+            raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, f&#39; Failed with error message - &#39;
+                                                      f&#39;{response.json().get(&#34;error&#34;).get(&#34;msg&#34;)}&#39;)
+        if &#39;responseHeader&#39; in response.json():
+            commitstatus = str(response.json().get(&#34;responseHeader&#34;).get(&#34;status&#34;))
+            if int(commitstatus) != 0:
+                raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;,
+                                   f&#34;Deleting docs from the core returned bad status - {commitstatus}&#34;)
+            return
+    raise SDKException(&#39;IndexServers&#39;, &#39;111&#39;)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.index_server.IndexServer.execute_solr_query"><code class="name flex">
@@ -2818,7 +3121,7 @@ mention 'wt' param as it is always json</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L977-L1039" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1062-L1148" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def execute_solr_query(
         self,
@@ -2882,6 +3185,30 @@ mention 'wt' param as it is always json</p>
     flag, response = self._cvpysdk_object.make_request(&#34;GET&#34;, solr_url)
     if flag and response.json():
         return response.json()
+    elif response.status_code == httplib.FORBIDDEN:
+        cmd = f&#34;(Invoke-WebRequest -UseBasicParsing -uri \&#34;{solr_url}\&#34;).content&#34;
+        client_obj = None
+        if solr_client:
+            client_obj = self._commcell_obj.clients.get(solr_client)
+        else:
+            # if no client is passed, then take first client in index server cloud
+            client_obj = self._commcell_obj.clients.get(self.client_name[0])
+        exit_code, output, error_message = client_obj.execute_script(script_type=&#34;PowerShell&#34;,
+                                                                     script=cmd)
+        if exit_code != 0:
+            raise SDKException(
+                &#39;IndexServers&#39;,
+                &#39;104&#39;,
+                f&#34;Something went wrong while querying solr - {exit_code}&#34;)
+        elif error_message:
+            raise SDKException(
+                &#39;IndexServers&#39;,
+                &#39;104&#39;,
+                f&#34;Something went wrong while querying solr - {error_message}&#34;)
+        try:
+            return json.loads(output.strip())
+        except Exception:
+            raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, f&#34;Something went wrong while querying solr - {output}&#34;)
     raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#34;Something went wrong while querying solr&#34;)</code></pre>
 </details>
 </dd>
@@ -2913,7 +3240,7 @@ if response is empty
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L853-L894" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L938-L979" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_all_cores(self, client_name=None):
     &#34;&#34;&#34;gets all cores &amp; core details from index server
@@ -2959,6 +3286,65 @@ if response is empty
     raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#34;Something went wrong while getting core names&#34;)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.index_server.IndexServer.get_health_indicators"><code class="name flex">
+<span>def <span class="ident">get_health_indicators</span></span>(<span>self, client_name=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get health indicators for index server node by client name</p>
+<h2 id="args">Args</h2>
+<p>client_name
+(str)
+&ndash;
+name of the client node</p>
+<h2 id="returns">Returns</h2>
+<p>(response(str)) &ndash; str json object</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if input data is not valid
+if client name is not passed for index server cloud
+if response is not success
+if response is empty</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L903-L936" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_health_indicators(self, client_name=None):
+    &#34;&#34;&#34;Get health indicators for index server node by client name
+
+            Args:
+                client_name     (str)       --  name of the client node
+
+            Returns:
+                (response(str)) -- str json object
+
+            Raises:
+
+                SDKException:
+                    if input data is not valid
+                    if client name is not passed for index server cloud
+                    if response is not success
+                    if response is empty
+
+    &#34;&#34;&#34;
+    server_url = self.server_url[0]
+    response = None
+    if self.is_cloud or len(self.client_name) &gt; 1:
+        if client_name is None:
+            raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#39;Client name param missing for solr cloud&#39;)
+        if client_name not in self.client_name:
+            raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#39;client name not found in this index server cloud&#39;)
+        server_url = self.server_url[self.client_name.index(client_name)]
+    baseurl = f&#34;{server_url}/solr/rest/admin/healthsummary&#34;
+    headers = {
+        &#39;Accept&#39;: &#39;application/xml&#39;
+    }
+    flag, response = self._cvpysdk_object.make_request(&#34;GET&#34;, headers=headers, url=baseurl)
+    if flag:
+        return response
+    raise SDKException(&#39;IndexServers&#39;, &#39;104&#39;, &#34;Could not get health summary for [{}]&#34;.format(client_name))</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.index_server.IndexServer.get_index_node"><code class="name flex">
 <span>def <span class="ident">get_index_node</span></span>(<span>self, node_name)</span>
 </code></dt>
@@ -2978,7 +3364,7 @@ Index server node name</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1041-L1058" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1150-L1167" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_index_node(self, node_name):
     &#34;&#34;&#34;Returns an Index server node object for given node name
@@ -3008,7 +3394,7 @@ Index server node name</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1067-L1082" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1179-L1194" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_os_info(self):
     &#34;&#34;&#34;Returns the OS type for the Index server&#34;&#34;&#34;
@@ -3032,14 +3418,19 @@ Index server node name</p>
 <span>def <span class="ident">get_plan_info</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns the plan information of the index server</p></div>
+<div class="desc"><p>Gets the plan information of the index server</p>
+<h2 id="returns">Returns</h2>
+<p>dict - containing the plan information</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L1060-L1065" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L1169-L1177" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_plan_info(self):
-    &#34;&#34;&#34;Returns the plan information of the index server&#34;&#34;&#34;
+    &#34;&#34;&#34;Gets the plan information of the index server
+        Returns:
+            dict - containing the plan information
+    &#34;&#34;&#34;
     client = self._commcell_obj.clients.get(self.index_server_client_id)
     instance_props = client.properties.get(&#34;pseudoClientInfo&#34;, {}).get(&#34;distributedClusterInstanceProperties&#34;, {})
     plan_details = instance_props.get(&#34;clusterConfig&#34;,{}).get(&#34;cloudInfo&#34;, {}).get(&#34;planInfo&#34;, {})
@@ -3071,7 +3462,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L816-L851" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L865-L900" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def hard_commit(self, core_name):
     &#34;&#34;&#34;do hard commit for the given core name on index server
@@ -3142,7 +3533,7 @@ Response was empty.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L697-L740" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L704-L747" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def modify(self, index_location, node_name, node_params):
     &#34;&#34;&#34;Modifies the properties of an index server
@@ -3198,7 +3589,7 @@ Response was empty.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L682-L691" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L689-L698" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the index server properties&#34;&#34;&#34;
@@ -3240,7 +3631,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L776-L814" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L783-L821" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_role(self, props=None):
     &#34;&#34;&#34;Updates a role of an Index Server
@@ -3291,7 +3682,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L693-L695" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L700-L702" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_roles_data(self):
     &#34;&#34;&#34;Synchronize the cloud roles data with the commcell&#34;&#34;&#34;
@@ -3309,7 +3700,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L626-L630" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L633-L637" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class IndexServerOSType(enum.Enum):
     &#34;&#34;&#34;Enum class for Index Server OS Type&#34;&#34;&#34;
@@ -3353,7 +3744,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L209-L623" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L216-L630" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class IndexServers(object):
     &#34;&#34;&#34;Class for representing all the index servers associated with the commcell.&#34;&#34;&#34;
@@ -3798,7 +4189,7 @@ Sample - {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L312-L334" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L319-L341" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_index_servers(self):
@@ -3833,7 +4224,7 @@ def all_index_servers(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L336-L343" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L343-L350" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def roles_data(self):
@@ -3904,7 +4295,7 @@ Response was empty.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L427-L562" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L434-L569" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create(
         self,
@@ -4065,7 +4456,7 @@ Response was empty.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L564-L600" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L571-L607" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, cloud_name):
     &#34;&#34;&#34;Deletes / removes an index server from the commcell
@@ -4131,7 +4522,7 @@ Index Server not found.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L391-L425" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L398-L432" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, cloud_data):
     &#34;&#34;&#34;Returns IndexServer object if a index server is found.
@@ -4187,7 +4578,7 @@ dict consisting details of the index server</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L356-L368" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L363-L375" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_properties(self, cloud_name):
     &#34;&#34;&#34;Returns all details of a index server with the cloud name
@@ -4225,7 +4616,7 @@ Data type of the input(s) is not valid</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L370-L389" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L377-L396" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has(self, cloud_name):
     &#34;&#34;&#34;Returns True if the index server with given name is present in commcell.
@@ -4264,7 +4655,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L602-L623" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L609-L630" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def prune_orphan_datasources(self):
     &#34;&#34;&#34;Deletes all the orphan datasources
@@ -4298,7 +4689,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L345-L350" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L352-L357" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of IndexServers class&#34;&#34;&#34;
@@ -4316,7 +4707,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/72534fb602d3d7d1fc922ea1ec5a16fe4d403218/cvpysdk/index_server.py#L352-L354" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/index_server.py#L359-L361" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_roles_data(self):
     &#34;&#34;&#34;Synchronises all the cloud roles details with the commcell&#34;&#34;&#34;
@@ -4432,9 +4823,11 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.index_server.IndexServer.client_name" href="#cvpysdk.index_server.IndexServer.client_name">client_name</a></code></li>
 <li><code><a title="cvpysdk.index_server.IndexServer.cloud_id" href="#cvpysdk.index_server.IndexServer.cloud_id">cloud_id</a></code></li>
 <li><code><a title="cvpysdk.index_server.IndexServer.cloud_name" href="#cvpysdk.index_server.IndexServer.cloud_name">cloud_name</a></code></li>
+<li><code><a title="cvpysdk.index_server.IndexServer.delete_docs_from_core" href="#cvpysdk.index_server.IndexServer.delete_docs_from_core">delete_docs_from_core</a></code></li>
 <li><code><a title="cvpysdk.index_server.IndexServer.engine_name" href="#cvpysdk.index_server.IndexServer.engine_name">engine_name</a></code></li>
 <li><code><a title="cvpysdk.index_server.IndexServer.execute_solr_query" href="#cvpysdk.index_server.IndexServer.execute_solr_query">execute_solr_query</a></code></li>
 <li><code><a title="cvpysdk.index_server.IndexServer.get_all_cores" href="#cvpysdk.index_server.IndexServer.get_all_cores">get_all_cores</a></code></li>
+<li><code><a title="cvpysdk.index_server.IndexServer.get_health_indicators" href="#cvpysdk.index_server.IndexServer.get_health_indicators">get_health_indicators</a></code></li>
 <li><code><a title="cvpysdk.index_server.IndexServer.get_index_node" href="#cvpysdk.index_server.IndexServer.get_index_node">get_index_node</a></code></li>
 <li><code><a title="cvpysdk.index_server.IndexServer.get_os_info" href="#cvpysdk.index_server.IndexServer.get_os_info">get_os_info</a></code></li>
 <li><code><a title="cvpysdk.index_server.IndexServer.get_plan_info" href="#cvpysdk.index_server.IndexServer.get_plan_info">get_plan_info</a></code></li>

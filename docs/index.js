@@ -176,6 +176,7 @@ URLS=[
 "cvpysdk/subclients/cloudapps/cloud_database_subclient.html",
 "cvpysdk/subclients/cloudapps/cloud_storage_subclient.html",
 "cvpysdk/subclients/cloudapps/dynamics365_subclient.html",
+"cvpysdk/subclients/o365apps_subclient.html",
 "cvpysdk/subclients/cloudapps/google_subclient.html",
 "cvpysdk/subclients/cloudapps/salesforce_subclient.html",
 "cvpysdk/subclients/cloudapps/spanner_subclient.html",
@@ -200,7 +201,6 @@ URLS=[
 "cvpysdk/subclients/lotusnotes/lndocsubclient.html",
 "cvpysdk/subclients/mysqlsubclient.html",
 "cvpysdk/subclients/nassubclient.html",
-"cvpysdk/subclients/o365apps_subclient.html",
 "cvpysdk/subclients/oraclesubclient.html",
 "cvpysdk/subclients/postgressubclient.html",
 "cvpysdk/subclients/saporaclesubclient.html",
@@ -4662,6 +4662,11 @@ INDEX=[
 "doc":"Derived class from Backupset Base class, representing a vs backupset, and to perform operations on that backupset. Initialise the backupset object. Args: instance_object (object)  instance of the Instance class backupset_name (str)  name of the backupset backupset_id (str)  id of the backupset default: None Returns: object - instance of the Backupset class"
 },
 {
+"ref":"cvpysdk.backupsets.vsbackupset.VSBackupset.hidden_subclient",
+"url":29,
+"doc":"Creates the object for the hidden subclient Returns: _hidden_subclient - object of the subclient"
+},
+{
 "ref":"cvpysdk.backupsets.vsbackupset.VSBackupset.browse",
 "url":29,
 "doc":"Browses the content of the Backupset. Args: Dictionary of browse options: Example: browse({ 'path': 'c: hello', 'show_deleted': True, 'from_time': '2014-04-20 12:00:00', 'to_time': '2016-04-21 12:00:00' }) Kwargs: Keyword argument of browse options: Example: browse( path='c:\\hello', show_deleted=True, from_time='2014-04-20 12:00:00', to_time='2016-04-21 12:00:00' ) Returns: (list, dict) list - List of only the file, folder paths from the browse response dict - Dictionary of all the paths with additional metadata retrieved from browse operation",
@@ -4671,6 +4676,16 @@ INDEX=[
 "ref":"cvpysdk.backupsets.vsbackupset.VSBackupset.index_server",
 "url":29,
 "doc":"Returns the index server client set for the backupset"
+},
+{
+"ref":"cvpysdk.backupsets.vsbackupset.VSBackupset.vm_filter",
+"url":29,
+"doc":"Returns the vm filters set at the backupset level Returns: list - list of content associated as the filters with the backupset"
+},
+{
+"ref":"cvpysdk.backupsets.vsbackupset.VSBackupset.vm_disk_filter",
+"url":29,
+"doc":"Returns the vm disk filters set at the backupset level Returns: list - list of content associated as the disk filters with the backupset"
 },
 {
 "ref":"cvpysdk.backupsets.vsbackupset.VSBackupset.update_properties",
@@ -4842,7 +4857,7 @@ INDEX=[
 {
 "ref":"cvpysdk.client",
 "url":32,
-"doc":"File for performing client related operations on the Commcell. Clients and Client are 2 classes defined in this file. Clients: Class for representing all the clients associated with the commcell Client: Class for a single client of the commcell Clients    = __init__(commcell_object)  initialize object of Clients class associated with the commcell __str__()  returns all the clients associated with the commcell __repr__()  returns the string to represent the instance of the Clients class __len__()  returns the number of clients associated with the Commcell __getitem__()  returns the name of the client at the given index or the details for the given client name _get_clients()  gets all the clients associated with the commcell _get_office_365_clients()  get all office365 clients in the commcell _get_dynamics_365_clients()  get all the Dynamics 365 clients in the commcell _get_salesforce_clients()  get all salesforce clients in the commcell _get_hidden_clients()  gets all the hidden clients associated with the commcell _get_virtualization_clients()  gets all the virtualization clients associated with the commcell _get_virtualization_access_nodes()  gets all the virtualization access nodes associated with the commcell _get_client_dict()  returns the client dict for client to be added to member server _member_servers()  returns member clients to be associated with the Virtual Client _get_client_from_hostname()  returns the client name if associated with specified hostname if exists _get_hidden_client_from_hostname()  returns the client name if associated with specified hostname if exists _get_client_from_displayname()  get the client name for given display name has_client(client_name)  checks if a client exists with the given name or not has_hidden_client(client_name)  checks if a hidden client exists with the given name _process_add_response()  to process the add client request using API call add_vmware_client()  adds a new VMWare Virtualization Client to the Commcell add_kubernetes_client()  adds a new Kubernetes Virtualization Client to the Commcell add_nas_client()  adds a new NAS Client add_share_point_client()  adds a new sharepoint pseudo client to the Commcell add_onedrive_v2_client()  adds a new OneDrive for Business client to Commcell add_exchange_client()  adds a new Exchange Virtual Client to the Commcell add_splunk_client()  adds a new Splunk Client to the Commcell add_case_client()  adds a new Case Manger Client to the Commcell add_salesforce_client()  adds a new salesforce client add_azure_client()  adds a new azure cloud client add_amazon_client()  adds a new amazon cloud client add_google_client()  adds a new google cloud client add_alicloud_client()  adds a new alibaba cloud client add_nutanix_files_client()  adds a new nutanix files client add_onedrive_client()  adds a new onedrive client get(client_name)  returns the Client class object of the input client name delete(client_name)  deletes the client specified by the client name from the commcell filter_clients_return_displaynames()  filter clients based on criteria refresh()  refresh the clients associated with the commcell Clients Attributes           all_clients  returns the dictionary consisting of all the clients that are associated with the commcell and their information such as id and hostname  hidden_clients  returns the dictionary consisting of only the hidden clients that are associated with the commcell and their information such as id and hostname  virtualization_clients  returns the dictionary consisting of only the virtualization clients that are associated with the commcell and their information such as id and hostname  virtualization_access_nodes  returns the dictionary consisting of only the virtualization clients that are associated with the commcell and their information such as id and hostname  office365_clients  Returns the dictionary consisting of all the office 365 clients that are associated with the commcell  dynamics365_clients  Returns the dictionary consisting of all the Dynamics 365 clients that are associated with the commcell  salesforce_clients  Returns the dictionary consisting of all the salesforce clients that are associated with the commcell  file_server_clients  Returns the dictionary consisting of all the File Server clients that are associated with the commcell Client    __init__()  initialize object of Class with the specified client name and id, and associated to the commcell __repr__()  return the client name and id, the instance is associated with _get_client_id()  method to get the client id, if not specified in __init__ _get_client_properties()  get the properties of this client _get_instance_of_client()  get the instance associated with the client _get_log_directory()  get the log directory path on the client _service_operations()  perform services related operations on a client START / STOP / RESTART _make_request()  makes the upload request to the server _process_update_request()  to process the request using API call update_properties()  to update the client properties enable_backup()  enables the backup for the client enable_backup_at_time()  enables the backup for the client at the input time specified disable_backup()  disables the backup for the client enable_restore()  enables the restore for the client enable_restore_at_time()  enables the restore for the client at the input time specified disable_restore()  disables the restore for the client enable_data_aging()  enables the data aging for the client enable_data_aging_at_time()  enables the data aging for the client at input time specified disable_data_aging()  disables the data aging for the client execute_script()  executes given script on the client execute_command()  executes a command on the client enable_intelli_snap()  enables intelli snap for the client disable_intelli_snap()  disables intelli snap for the client upload_file()  uploads the specified file on controller to the client machine upload_folder()  uploads the specified folder on controller to client machine start_service()  starts the service with the given name on the client stop_service()  stops the service with the given name on the client restart_service()  restarts the service with the given name on the client restart_services()  executes the command on the client to restart the services push_network_config()  performs a push network configuration on the client add_user_association()  adds the user associations on this client add_client_owner()  adds users to owner list of this client refresh()  refresh the properties of the client add_additional_setting()  adds registry key to the client property delete_additional_setting()  deletes registry key from the client property release_license()  releases a license from a client retire()  perform retire operation on the client reconfigure_client()  reapplies license to the client push_servicepack_and_hotfixes()  triggers installation of service pack and hotfixes repair_software()  triggers Repair software on the client machine get_dag_member_servers()  Gets the member servers of an Exchange DAG client. create_pseudo_client()  Creates a pseudo client register_decoupled_client()  registers decoupled client set_job_start_time()  sets the job start time at client level uninstall_software()  Uninstalls all the packages of the client get_network_summary()  Gets the network summary of the client change_exchange_job_results_directory()  Move the Job Results Directory for an Exchange Online Environment get_environment_details()  Gets environment tile details present in dashboard page get_needs_attention_details()  Gets needs attention tile details from dashboard page enable_content_indexing()  Enables the v1 content indexing on the client disable_content_indexing()  Disables the v1 content indexing on the client check_eligibility_for_migration()  Checks whether client is Eligible for Migration or not change_company_for_client()  Migrates client to specified company disable_owner_privacy()  Disables the privacy option for client enable_owner_privacy()  Enables the privacy option for client Client Attributes         -  available_security_roles  returns the security roles available for the selected client  properties  returns the properties of the client  display_name  returns the display name of the client  description  returns the description of the client  client_id  returns the id of the client  client_name  returns the name of the client  client_hostname  returns the host name of the client  timezone  returns the timezone of the client  os_info  returns string consisting of OS information of the client  is_data_recovery_enabled  boolean specifying whether data recovery is enabled for the client or not  is_data_management_enabled  boolean specifying whether data management is enabled for the client or not  is_ci_enabled  boolean specifying whether content indexing is enabled for the client or not  is_backup_enabled  boolean specifying whether backup activity is enabled for the client or not  is_restore_enabled  boolean specifying whether restore activity is enabled for the client or not  is_data_aging_enabled  boolean specifying whether data aging is enabled for the client or not  is_intelli_snap_enabled  boolean specifying whether intelli snap is enabled for the client or not  install_directory  returns the path where the client is installed at  version  returns the version of the product installed on the client  service_pack  returns the service pack installed on the client  job_results_directory  returns the path of the job results directory on the client  instance  returns the Instance of the client  log_directory  returns the path of the log directory on the client  agents  returns the instance of the Agents class representing the list of agents installed on the Client  schedules  returns the instance of the Schedules class representing the list of schedules configured for the Client  users  returns the instance of the Users class representing the list of users with access to the Client  network  returns object of the Network class corresponding to the selected client  is_ready  returns boolean value specifying whether services on the client are running or not, and whether the CommServ is able to communicate with the client  set_encryption_prop  Set encryption properties on a client  set_dedup_prop  Set DDB properties  consumed_licenses  returns dictionary of all the license details which is consumed by the client  cvd_port  returns cvd port of the client  vm_guid  returns guid of the vm client  company_name  returns company name for the client  is_privacy_enabled  returns if client privacy is enabled  latitude  Returns the latitude from geo location of the client  longitude  Returns the longitude from geo location of the client  is_vm  Returns True if its a VM client  hyperv_id_of_vm  Returns the Id of hyperV that the given VM is associated with  associated_client_group  Returns the list of clientgroups that the client is associated to  company_id  Returns the company Id of the client"
+"doc":"File for performing client related operations on the Commcell. Clients and Client are 2 classes defined in this file. Clients: Class for representing all the clients associated with the commcell Client: Class for a single client of the commcell Clients    = __init__(commcell_object)  initialize object of Clients class associated with the commcell __str__()  returns all the clients associated with the commcell __repr__()  returns the string to represent the instance of the Clients class __len__()  returns the number of clients associated with the Commcell __getitem__()  returns the name of the client at the given index or the details for the given client name _get_clients()  gets all the clients associated with the commcell _get_office_365_clients()  get all office365 clients in the commcell _get_dynamics_365_clients()  get all the Dynamics 365 clients in the commcell _get_salesforce_clients()  get all salesforce clients in the commcell _get_hidden_clients()  gets all the hidden clients associated with the commcell _get_virtualization_clients()  gets all the virtualization clients associated with the commcell _get_virtualization_access_nodes()  gets all the virtualization access nodes associated with the commcell _get_client_dict()  returns the client dict for client to be added to member server _member_servers()  returns member clients to be associated with the Virtual Client _get_client_from_hostname()  returns the client name if associated with specified hostname if exists _get_hidden_client_from_hostname()  returns the client name if associated with specified hostname if exists _get_client_from_displayname()  get the client name for given display name has_client(client_name)  checks if a client exists with the given name or not has_hidden_client(client_name)  checks if a hidden client exists with the given name _process_add_response()  to process the add client request using API call add_vmware_client()  adds a new VMWare Virtualization Client to the Commcell add_kubernetes_client()  adds a new Kubernetes Virtualization Client to the Commcell add_nas_client()  adds a new NAS Client add_share_point_client()  adds a new sharepoint pseudo client to the Commcell add_onedrive_v2_client()  adds a new OneDrive for Business client to Commcell add_exchange_client()  adds a new Exchange Virtual Client to the Commcell add_splunk_client()  adds a new Splunk Client to the Commcell add_case_client()  adds a new Case Manger Client to the Commcell add_salesforce_client()  adds a new salesforce client add_azure_client()  adds a new azure cloud client add_amazon_client()  adds a new amazon cloud client add_google_client()  adds a new google cloud client add_alicloud_client()  adds a new alibaba cloud client add_nutanix_files_client()  adds a new nutanix files client add_onedrive_client()  adds a new onedrive client get(client_name)  returns the Client class object of the input client name delete(client_name)  deletes the client specified by the client name from the commcell filter_clients_return_displaynames()  filter clients based on criteria refresh()  refresh the clients associated with the commcell Clients Attributes           all_clients  returns the dictionary consisting of all the clients that are associated with the commcell and their information such as id and hostname  hidden_clients  returns the dictionary consisting of only the hidden clients that are associated with the commcell and their information such as id and hostname  virtualization_clients  returns the dictionary consisting of only the virtualization clients that are associated with the commcell and their information such as id and hostname  virtualization_access_nodes  returns the dictionary consisting of only the virtualization clients that are associated with the commcell and their information such as id and hostname  office365_clients  Returns the dictionary consisting of all the office 365 clients that are associated with the commcell  dynamics365_clients  Returns the dictionary consisting of all the Dynamics 365 clients that are associated with the commcell  salesforce_clients  Returns the dictionary consisting of all the salesforce clients that are associated with the commcell  file_server_clients  Returns the dictionary consisting of all the File Server clients that are associated with the commcell Client    __init__()  initialize object of Class with the specified client name and id, and associated to the commcell __repr__()  return the client name and id, the instance is associated with _get_client_id()  method to get the client id, if not specified in __init__ _get_client_properties()  get the properties of this client _get_instance_of_client()  get the instance associated with the client _get_log_directory()  get the log directory path on the client _service_operations()  perform services related operations on a client START / STOP / RESTART _make_request()  makes the upload request to the server _process_update_request()  to process the request using API call update_properties()  to update the client properties enable_backup()  enables the backup for the client enable_backup_at_time()  enables the backup for the client at the input time specified disable_backup()  disables the backup for the client enable_restore()  enables the restore for the client enable_restore_at_time()  enables the restore for the client at the input time specified disable_restore()  disables the restore for the client enable_data_aging()  enables the data aging for the client enable_data_aging_at_time()  enables the data aging for the client at input time specified disable_data_aging()  disables the data aging for the client execute_script()  executes given script on the client execute_command()  executes a command on the client enable_intelli_snap()  enables intelli snap for the client disable_intelli_snap()  disables intelli snap for the client upload_file()  uploads the specified file on controller to the client machine upload_folder()  uploads the specified folder on controller to client machine start_service()  starts the service with the given name on the client stop_service()  stops the service with the given name on the client restart_service()  restarts the service with the given name on the client restart_services()  executes the command on the client to restart the services push_network_config()  performs a push network configuration on the client add_user_association()  adds the user associations on this client add_client_owner()  adds users to owner list of this client refresh()  refresh the properties of the client add_additional_setting()  adds registry key to the client property delete_additional_setting()  deletes registry key from the client property get_configured_additional_setting()  To get configured additional settings from the client property release_license()  releases a license from a client retire()  perform retire operation on the client reconfigure_client()  reapplies license to the client push_servicepack_and_hotfixes()  triggers installation of service pack and hotfixes repair_software()  triggers Repair software on the client machine get_dag_member_servers()  Gets the member servers of an Exchange DAG client. create_pseudo_client()  Creates a pseudo client register_decoupled_client()  registers decoupled client set_job_start_time()  sets the job start time at client level uninstall_software()  Uninstalls all the packages of the client get_network_summary()  Gets the network summary of the client change_exchange_job_results_directory()  Move the Job Results Directory for an Exchange Online Environment get_environment_details()  Gets environment tile details present in dashboard page get_needs_attention_details()  Gets needs attention tile details from dashboard page enable_content_indexing()  Enables the v1 content indexing on the client disable_content_indexing()  Disables the v1 content indexing on the client check_eligibility_for_migration()  Checks whether client is Eligible for Migration or not change_company_for_client()  Migrates client to specified company disable_owner_privacy()  Disables the privacy option for client enable_owner_privacy()  Enables the privacy option for client Client Attributes         -  available_security_roles  returns the security roles available for the selected client  properties  returns the properties of the client  display_name  returns the display name of the client  description  returns the description of the client  client_id  returns the id of the client  client_name  returns the name of the client  client_hostname  returns the host name of the client  timezone  returns the timezone of the client  os_info  returns string consisting of OS information of the client  is_data_recovery_enabled  boolean specifying whether data recovery is enabled for the client or not  is_data_management_enabled  boolean specifying whether data management is enabled for the client or not  is_ci_enabled  boolean specifying whether content indexing is enabled for the client or not  is_backup_enabled  boolean specifying whether backup activity is enabled for the client or not  is_restore_enabled  boolean specifying whether restore activity is enabled for the client or not  is_data_aging_enabled  boolean specifying whether data aging is enabled for the client or not  is_intelli_snap_enabled  boolean specifying whether intelli snap is enabled for the client or not  install_directory  returns the path where the client is installed at  version  returns the version of the product installed on the client  service_pack  returns the service pack installed on the client  job_results_directory  returns the path of the job results directory on the client  instance  returns the Instance of the client  log_directory  returns the path of the log directory on the client  agents  returns the instance of the Agents class representing the list of agents installed on the Client  schedules  returns the instance of the Schedules class representing the list of schedules configured for the Client  users  returns the instance of the Users class representing the list of users with access to the Client  network  returns object of the Network class corresponding to the selected client  is_ready  returns boolean value specifying whether services on the client are running or not, and whether the CommServ is able to communicate with the client  set_encryption_prop  Set encryption properties on a client  set_dedup_prop  Set DDB properties  consumed_licenses  returns dictionary of all the license details which is consumed by the client  cvd_port  returns cvd port of the client  vm_guid  returns guid of the vm client  company_name  returns company name for the client  is_privacy_enabled  returns if client privacy is enabled  latitude  Returns the latitude from geo location of the client  longitude  Returns the longitude from geo location of the client  is_vm  Returns True if its a VM client  hyperv_id_of_vm  Returns the Id of hyperV that the given VM is associated with  associated_client_group  Returns the list of clientgroups that the client is associated to  company_id  Returns the company Id of the client"
 },
 {
 "ref":"cvpysdk.client.Clients",
@@ -4867,7 +4882,7 @@ INDEX=[
 {
 "ref":"cvpysdk.client.Clients.all_clients",
 "url":32,
-"doc":"Returns the dictionary consisting of all the clients and their info. dict - consists of all clients in the commcell { \"client1_name\": { \"id\": client1_id, \"hostname\": client1_hostname }, \"client2_name\": { \"id\": client2_id, \"hostname\": client2_hostname }, }"
+"doc":"Returns the dictionary consisting of all the clients and their info. dict - consists of all clients in the commcell { \"client1_name\": { \"id\": client1_id, \"hostname\": client1_hostname, \"displayName\": client1 display name }, \"client2_name\": { \"id\": client2_id, \"hostname\": client2_hostname, \"displayName\": client2 display name }, }"
 },
 {
 "ref":"cvpysdk.client.Clients.create_pseudo_client",
@@ -4994,7 +5009,7 @@ INDEX=[
 {
 "ref":"cvpysdk.client.Clients.add_onedrive_v2_client",
 "url":32,
-"doc":"Adds OneDrive for Business (v2) client Args: client_name (str) : Client Name server_plan (str) : Server Plan's Name azure_app_id (str) : Azure app ID azure_directory_id (str) : Azure directory ID azure_app_key_id (str) : Azure App key ID  kwargs (dict) : Additional parameters index_server (str) : Index Server's Name access_nodes_list (list[str/object]) : List of names/objects of access node clients number_of_backup_streams (int) : Number of backup streams to be associated (default: 10) user_name (str) : User name for shared job results user_password (str) : User password for shared job results shared_jr_directory (str) : Shared Job results directory path Returns: object - instance of the Client class for this new client Raises: SDKException: if client with given name already exists if server plan donot exists with the given name if data type of the input(s) is not valid if access node do not exists with the given name if failed to add the client if response is empty if response is not success",
+"doc":"Adds OneDrive for Business (v2) client Args: client_name (str) : Client Name server_plan (str) : Server Plan's Name azure_app_id (str) : Azure app ID azure_directory_id (str) : Azure directory ID azure_app_key_id (str) : Azure App key ID  kwargs (dict) : Additional parameters index_server (str) : Index Server's Name access_nodes_list (list[str/object]) : List of names/objects of access node clients number_of_backup_streams (int) : Number of backup streams to be associated (default: 10) user_name (str) : User name for shared job results user_password (str) : User password for shared job results shared_jr_directory (str) : Shared Job results directory path cloud_region(int) : Cloud region for the client which determines the gcc or gcc high configuration Returns: object - instance of the Client class for this new client Raises: SDKException: if client with given name already exists if server plan donot exists with the given name if data type of the input(s) is not valid if access node do not exists with the given name if failed to add the client if response is empty if response is not success",
 "func":1
 },
 {
@@ -5336,19 +5351,19 @@ INDEX=[
 {
 "ref":"cvpysdk.client.Client.start_service",
 "url":32,
-"doc":"Executes the command on the client machine to start the Commvault service(s). Args: service_name (str)  name of the service to be started service name is required only for Windows Clients, as for UNIX clients, the operation is executed on all services default: None Example: GxVssProv(Instance001) Returns: None - if the service was started successfully Raises: SDKException: if failed to start the service",
+"doc":"Executes the command on the client machine to start the Commvault service(s). Args: service_name (str)  name of the service to be started default: None Example: GxVssProv(Instance001) Returns: None - if the service was started successfully Raises: SDKException: if failed to start the service",
 "func":1
 },
 {
 "ref":"cvpysdk.client.Client.stop_service",
 "url":32,
-"doc":"Executes the command on the client machine to stop the Commvault service(s). Args: service_name (str)  name of the service to be stopped service name is required only for Windows Clients, as for UNIX clients, the operation is executed on all services default: None Example: GxVssProv(Instance001) Returns: None - if the service was stopped successfully Raises: SDKException: if failed to stop the service",
+"doc":"Executes the command on the client machine to stop the Commvault service(s). Args: service_name (str)  name of the service to be stopped default: None Example: GxVssProv(Instance001) Returns: None - if the service was stopped successfully Raises: SDKException: if failed to stop the service",
 "func":1
 },
 {
 "ref":"cvpysdk.client.Client.restart_service",
 "url":32,
-"doc":"Executes the command on the client machine to restart the Commvault service(s). Args: service_name (str)  name of the service to be restarted service name is required only for Windows Clients, as for UNIX clients, the operation is executed on all services default: None Example: GxVssProv(Instance001) Returns: None - if the service was restarted successfully Raises: SDKException: if failed to restart the service",
+"doc":"Executes the command on the client machine to restart the Commvault service(s). Args: service_name (str)  name of the service to be restarted default: None Example: GxVssProv(Instance001) Returns: None - if the service was restarted successfully Raises: SDKException: if failed to restart the service",
 "func":1
 },
 {
@@ -5366,7 +5381,7 @@ INDEX=[
 {
 "ref":"cvpysdk.client.Client.change_exchange_job_results_directory",
 "url":32,
-"doc":"Change the Job Result Directory of an Exchange Online Client Arguments: new_directory (str)  The new JR directory Example: C:\\ JR or  username (str)  username of the machine, if new JobResults directory is a shared/ UNC path. password (str)  Password of the machine, if new JobResults directory is a shared/ UNC path. Raises SDKException (object) Error in moving the job results directory",
+"doc":"Change the Job Result Directory of an Exchange Online Client Arguments: new_directory_path (str)  The new JR directory Example: C:\\ JR or  username (str)  username of the machine, if new JobResults directory is a shared/ UNC path. password (str)  Password of the machine, if new JobResults directory is a shared/ UNC path. Raises SDKException (object) Error in moving the job results directory",
 "func":1
 },
 {
@@ -5427,6 +5442,12 @@ INDEX=[
 "ref":"cvpysdk.client.Client.delete_additional_setting",
 "url":32,
 "doc":"Deletes registry key from the client property Args: category (str)  Category of registry key key_name (str)  Name of the registry key Raises: SDKException: if failed to delete if response is empty if response code is not as expected",
+"func":1
+},
+{
+"ref":"cvpysdk.client.Client.get_configured_additional_settings",
+"url":32,
+"doc":"Method to get configured additional settings name",
 "func":1
 },
 {
@@ -5569,6 +5590,12 @@ INDEX=[
 "ref":"cvpysdk.client.Client.set_privacy",
 "url":32,
 "doc":"Internal function to enable/disable privacy for client Args: value(bool): True/False to enable/disable the privacy Raises: SDKException: if setting privacy for client fails if response is empty if response is not success",
+"func":1
+},
+{
+"ref":"cvpysdk.client.Client.change_dynamics365_client_job_results_directory",
+"url":32,
+"doc":"Change the Job Result Directory of a Dynamics 365 Client Arguments: new_directory_path (str)  The new JR directory Example: \\vm1.example-active-directory.com\\TestFolder1\\JobResults username (str)  username of the machine, if new JobResults directory is a shared/ UNC path. password (str)  Password of the machine, if new JobResults directory is a shared/ UNC path. Raises SDKException (object) Error in moving the job results directory",
 "func":1
 },
 {
@@ -6183,19 +6210,19 @@ INDEX=[
 {
 "ref":"cvpysdk.clients.onedrive_client.OneDriveClient.start_service",
 "url":32,
-"doc":"Executes the command on the client machine to start the Commvault service(s). Args: service_name (str)  name of the service to be started service name is required only for Windows Clients, as for UNIX clients, the operation is executed on all services default: None Example: GxVssProv(Instance001) Returns: None - if the service was started successfully Raises: SDKException: if failed to start the service",
+"doc":"Executes the command on the client machine to start the Commvault service(s). Args: service_name (str)  name of the service to be started default: None Example: GxVssProv(Instance001) Returns: None - if the service was started successfully Raises: SDKException: if failed to start the service",
 "func":1
 },
 {
 "ref":"cvpysdk.clients.onedrive_client.OneDriveClient.stop_service",
 "url":32,
-"doc":"Executes the command on the client machine to stop the Commvault service(s). Args: service_name (str)  name of the service to be stopped service name is required only for Windows Clients, as for UNIX clients, the operation is executed on all services default: None Example: GxVssProv(Instance001) Returns: None - if the service was stopped successfully Raises: SDKException: if failed to stop the service",
+"doc":"Executes the command on the client machine to stop the Commvault service(s). Args: service_name (str)  name of the service to be stopped default: None Example: GxVssProv(Instance001) Returns: None - if the service was stopped successfully Raises: SDKException: if failed to stop the service",
 "func":1
 },
 {
 "ref":"cvpysdk.clients.onedrive_client.OneDriveClient.restart_service",
 "url":32,
-"doc":"Executes the command on the client machine to restart the Commvault service(s). Args: service_name (str)  name of the service to be restarted service name is required only for Windows Clients, as for UNIX clients, the operation is executed on all services default: None Example: GxVssProv(Instance001) Returns: None - if the service was restarted successfully Raises: SDKException: if failed to restart the service",
+"doc":"Executes the command on the client machine to restart the Commvault service(s). Args: service_name (str)  name of the service to be restarted default: None Example: GxVssProv(Instance001) Returns: None - if the service was restarted successfully Raises: SDKException: if failed to restart the service",
 "func":1
 },
 {
@@ -6213,7 +6240,7 @@ INDEX=[
 {
 "ref":"cvpysdk.clients.onedrive_client.OneDriveClient.change_exchange_job_results_directory",
 "url":32,
-"doc":"Change the Job Result Directory of an Exchange Online Client Arguments: new_directory (str)  The new JR directory Example: C:\\ JR or  username (str)  username of the machine, if new JobResults directory is a shared/ UNC path. password (str)  Password of the machine, if new JobResults directory is a shared/ UNC path. Raises SDKException (object) Error in moving the job results directory",
+"doc":"Change the Job Result Directory of an Exchange Online Client Arguments: new_directory_path (str)  The new JR directory Example: C:\\ JR or  username (str)  username of the machine, if new JobResults directory is a shared/ UNC path. password (str)  Password of the machine, if new JobResults directory is a shared/ UNC path. Raises SDKException (object) Error in moving the job results directory",
 "func":1
 },
 {
@@ -6274,6 +6301,12 @@ INDEX=[
 "ref":"cvpysdk.clients.onedrive_client.OneDriveClient.delete_additional_setting",
 "url":32,
 "doc":"Deletes registry key from the client property Args: category (str)  Category of registry key key_name (str)  Name of the registry key Raises: SDKException: if failed to delete if response is empty if response code is not as expected",
+"func":1
+},
+{
+"ref":"cvpysdk.clients.onedrive_client.OneDriveClient.get_configured_additional_settings",
+"url":32,
+"doc":"Method to get configured additional settings name",
 "func":1
 },
 {
@@ -6416,6 +6449,12 @@ INDEX=[
 "ref":"cvpysdk.clients.onedrive_client.OneDriveClient.set_privacy",
 "url":32,
 "doc":"Internal function to enable/disable privacy for client Args: value(bool): True/False to enable/disable the privacy Raises: SDKException: if setting privacy for client fails if response is empty if response is not success",
+"func":1
+},
+{
+"ref":"cvpysdk.clients.onedrive_client.OneDriveClient.change_dynamics365_client_job_results_directory",
+"url":32,
+"doc":"Change the Job Result Directory of a Dynamics 365 Client Arguments: new_directory_path (str)  The new JR directory Example: \\vm1.example-active-directory.com\\TestFolder1\\JobResults username (str)  username of the machine, if new JobResults directory is a shared/ UNC path. password (str)  Password of the machine, if new JobResults directory is a shared/ UNC path. Raises SDKException (object) Error in moving the job results directory",
 "func":1
 },
 {
@@ -6750,19 +6789,19 @@ INDEX=[
 {
 "ref":"cvpysdk.clients.vmclient.VMClient.start_service",
 "url":32,
-"doc":"Executes the command on the client machine to start the Commvault service(s). Args: service_name (str)  name of the service to be started service name is required only for Windows Clients, as for UNIX clients, the operation is executed on all services default: None Example: GxVssProv(Instance001) Returns: None - if the service was started successfully Raises: SDKException: if failed to start the service",
+"doc":"Executes the command on the client machine to start the Commvault service(s). Args: service_name (str)  name of the service to be started default: None Example: GxVssProv(Instance001) Returns: None - if the service was started successfully Raises: SDKException: if failed to start the service",
 "func":1
 },
 {
 "ref":"cvpysdk.clients.vmclient.VMClient.stop_service",
 "url":32,
-"doc":"Executes the command on the client machine to stop the Commvault service(s). Args: service_name (str)  name of the service to be stopped service name is required only for Windows Clients, as for UNIX clients, the operation is executed on all services default: None Example: GxVssProv(Instance001) Returns: None - if the service was stopped successfully Raises: SDKException: if failed to stop the service",
+"doc":"Executes the command on the client machine to stop the Commvault service(s). Args: service_name (str)  name of the service to be stopped default: None Example: GxVssProv(Instance001) Returns: None - if the service was stopped successfully Raises: SDKException: if failed to stop the service",
 "func":1
 },
 {
 "ref":"cvpysdk.clients.vmclient.VMClient.restart_service",
 "url":32,
-"doc":"Executes the command on the client machine to restart the Commvault service(s). Args: service_name (str)  name of the service to be restarted service name is required only for Windows Clients, as for UNIX clients, the operation is executed on all services default: None Example: GxVssProv(Instance001) Returns: None - if the service was restarted successfully Raises: SDKException: if failed to restart the service",
+"doc":"Executes the command on the client machine to restart the Commvault service(s). Args: service_name (str)  name of the service to be restarted default: None Example: GxVssProv(Instance001) Returns: None - if the service was restarted successfully Raises: SDKException: if failed to restart the service",
 "func":1
 },
 {
@@ -6780,7 +6819,7 @@ INDEX=[
 {
 "ref":"cvpysdk.clients.vmclient.VMClient.change_exchange_job_results_directory",
 "url":32,
-"doc":"Change the Job Result Directory of an Exchange Online Client Arguments: new_directory (str)  The new JR directory Example: C:\\ JR or  username (str)  username of the machine, if new JobResults directory is a shared/ UNC path. password (str)  Password of the machine, if new JobResults directory is a shared/ UNC path. Raises SDKException (object) Error in moving the job results directory",
+"doc":"Change the Job Result Directory of an Exchange Online Client Arguments: new_directory_path (str)  The new JR directory Example: C:\\ JR or  username (str)  username of the machine, if new JobResults directory is a shared/ UNC path. password (str)  Password of the machine, if new JobResults directory is a shared/ UNC path. Raises SDKException (object) Error in moving the job results directory",
 "func":1
 },
 {
@@ -6841,6 +6880,12 @@ INDEX=[
 "ref":"cvpysdk.clients.vmclient.VMClient.delete_additional_setting",
 "url":32,
 "doc":"Deletes registry key from the client property Args: category (str)  Category of registry key key_name (str)  Name of the registry key Raises: SDKException: if failed to delete if response is empty if response code is not as expected",
+"func":1
+},
+{
+"ref":"cvpysdk.clients.vmclient.VMClient.get_configured_additional_settings",
+"url":32,
+"doc":"Method to get configured additional settings name",
 "func":1
 },
 {
@@ -6986,6 +7031,12 @@ INDEX=[
 "func":1
 },
 {
+"ref":"cvpysdk.clients.vmclient.VMClient.change_dynamics365_client_job_results_directory",
+"url":32,
+"doc":"Change the Job Result Directory of a Dynamics 365 Client Arguments: new_directory_path (str)  The new JR directory Example: \\vm1.example-active-directory.com\\TestFolder1\\JobResults username (str)  username of the machine, if new JobResults directory is a shared/ UNC path. password (str)  Password of the machine, if new JobResults directory is a shared/ UNC path. Raises SDKException (object) Error in moving the job results directory",
+"func":1
+},
+{
 "ref":"cvpysdk.clients.vmclient.VMClient.change_company_for_client",
 "url":32,
 "doc":"Changes Company for Client Args: destination_company_name (str)  Destination company name to which client is to be migrated Raises: SDKException: If Client is not eligible for migration if response is empty if response is not success",
@@ -6994,7 +7045,7 @@ INDEX=[
 {
 "ref":"cvpysdk.commcell",
 "url":37,
-"doc":"Main file for performing operations on Commcell via REST API. Commcell is the main class for the CVPySDK python package. Commcell: Initializes a connection to the commcell and is a wrapper for the entire commcell ops. Commcell: __init__()  initialize instance of the Commcell class __repr__()  return the name of the commcell, user is connected to, along with the user name of the connected user __enter__()  returns the current instance, using the \"with\" context manager __exit__()  logs out the user associated with the current instance _update_response_()  returns only the relevant response for the response received from the server _remove_attribs_()  removes all the attributs associated with the commcell object upon call to the logout method _get_commserv_details()  gets the details of the commserv, the Commcell class instance is initialized for _qoperation_execute()  runs the qoperation execute rest api on specified input xml _qoperation_execscript()  runs the qoperation execute qscript with specified arguements get_gxglobalparam_value()  makes a rest api call to get values from GXGlobalParam _set_gxglobalparam_value  updates GXGlobalParam(commcell level configuration parameters) verify_owner_assignment_config()  verifies that the ownership assignments settings are configured and set properly logout()  logs out the user associated with the current instance request()  runs an input HTTP request on the API specified, and returns its response send_mail()  sends an email to the specified user refresh()  refresh the properties associated with the Commcell class instance run_data_aging()  triggers data aging job from the commcell level get_saml_token()  returns the SAML token for the currently logged-in user add_additional_setting()  adds registry key to the commserve property delete_additional_setting()  deletes registry key from the commserve property download_software()  triggers the Download Software job with the given options copy_software()  triggers the Copy Software job with the given options sync_remote_cache()  syncs remote cache get_remote_cache()  returns the instance of the RemoteCache class push_servicepack_and_hotfixes()  triggers installation of service pack and hotfixes install_software()  triggers the install Software job with the given options enable_auth_code()  executes the request on the server to enable Auth Code for installation on the commcell enable_shared_laptop()  Executes the request on the server to enable Shared Laptop on commcell disable_shared_laptop()  Executes the request on the server to disable Shared Laptop on commcell execute_qcommand()  executes the ExecuteQCommand API on the commcell add_associations_to_saml_app()  Adds the given user under associations of the SAML app _get_registered_service_commcells()  gets the list of registered service commcells register_commcell()  registers a commcell sync_service_commcell()  Sync a service commcell unregister_commcell()  unregisters a commcell is_commcell_registered()  checks if the commcell is registered _get_redirect_rules_service_commcell()  gets the redirect rules of service commcell get_eligible_service_commcells()  gets the eligible service commcells to redirect get_default_plan()  Get the default plans associed with the commcell get_security_associations()  Get the security associations associated with the commcell get_password_encryption_config()  Get the Password encryption configuration for the commcell get_email_settings()  Get the SMTP settings for the commcell set_email_settings()  Set the SMTP settings for the commcell get_commcell_properties()  Get the general, privacy and other properties of commcell get_commcell_organization_properties()  Get the organization properties of commcell add_service_commcell_associations()  adds an association for an entity on a service commcell get_service_commcell_associations()  gets the association details for entity on commcell remove_service_commcell_association()  removes association for an entity on all service commcells enable_tfa()  Enables two factor authentication on this commcell disable_tfa()  Disables two factor authentication on this commcell _get_commserv_metadata()  Returns back the commserv metadata on this commcell _get_commserv_oem_id()  Returns back the commserv OEM ID on this commcell enable_privacy()  Enables users to enable data privacy on commcell disable_privacy()  Enables users to disable data privacy on commcell switch_to_company()  Login to company as an operator, just like using switcher on Command Center reset_company()  Switch back to Commcell allow_users_to_enable_passkey()  Enable or Disable passkey authorization for company administrators and client owners get_sla_configuration()  gets the sla configuration details at commcell level get_workload_region()  gets the current workload region get_user_suggestions()  gets details of entities matching given term enable_limit_user_logon_attempts()  Enables limit user logon attempts feature. disable_limit_user_logon_attempts()  Disables limit user logon attempts feature. Commcell instance Attributes                commserv_guid  returns the  CommServ GUID, class instance is initalized for  commserv_hostname  returns the hostname of the  CommServ , class instance is initalized for  commserv_name  returns the  CommServ name, class instance is initalized for  commserv_timezone  returns the time zone of the  CommServ , class instance is initalized for  commserv_timezone_name  returns the name of the  CommServ time zone, class instance is initalized for  commserv_version  returns the ContentStore version installed on the  CommServ , class instance is initalized for  version  returns the complete version info of the commserv  commcell_id  returns the  CommCell ID  commserv_metadata  returns the commserv metadata of the commserv  commserv_oem_id  returns the commserv OEM ID of the commserv  webconsole_hostname  returns the host name of the  webconsole , class instance is connected to  auth_token  returns the  Authtoken for the current session to the commcell  commcell_username  returns the associated  user name for the current session to the commcell  device_id  returns the id associated with the calling machine  name_change  returns the name change object of the commcell  clients  returns the instance of the  Clients class, to interact with the clients added on the Commcell  commserv_cache  returns the instance of the  CommServeCache class  media_agents  returns the instance of the  MediaAgents class, to interact with the media agents associated with the Commcell class instance  workflows  returns the instance of the  WorkFlow class, to interact with the workflows deployed on the Commcell  alerts  returns the instance of the  Alerts class, to interact with the alerts available on the Commcell  disk_libraries  returns the instance of the  DiskLibraries class, to interact with the disk libraries added on the Commcell  tape_libraries  returns the instance of the  TapeLibraries class, to interact with the tape libraries added on the Commcell  storage_policies  returns the instance of the  StoragePolicies class, to interact with the storage policies available on the Commcell  schedule_policies  returns the instance of the  SchedulePolicies class, to interact with the schedule policies added to the Commcell  schedules  returns the instance of the  Schedules class, to interact with the schedules associated to the Commcell  user_groups  returns the instance of the  UserGroups class, to interact with the user groups added to the Commcell  domains  returns the instance of the  Domains class, to interact with the domains added to the Commcell  client_groups  returns the instance of the  ClientGroups class, to interact with the client groups added to the Commcell  global_filters  returns the instance of the  GlobalFilters class, to interact with the global filters available on the Commcell  datacube  returns the instance of the  Datacube class, to interact with the datacube engine deployed on the Commcell  content_analyzers  returns the instance of the  ContentAnalyzers class, to interact with the CA cloud deployed on the Commcell  activate  returns the instance of the  Activate class, to interact with activate apps on the Commcell  plans  returns the instance of the  Plans class, to interact with the plans associated with the Commcell  job_controller  returns the instance of the  JobController class, to interact with all the jobs finished / running on the Commcell  users  returns the instance of the  Users class, to interact with the users added to the Commcell  roles  returns the instance of the  Roles class, to interact with the roles added to the Commcell  credentials  returns the instance of the  Credentials class, to interact with the credentials records added to the Commcell  download_center  returns the instance of the  DownloadCenter class, to interact with the download center repositories deployed on the Commcell WebConsole  organizations  returns the instance of the  Organizations class, to interact with the organizations/companies added on the Commcell  storage_pools  returns the instance of the  StoragePools class, to interact with the storage pools added to the Commcell Admin Console  monitoring_policies  returns the instance of the  MonitoringPolicies class, to interact with the MonitoringPolicies added to the Commcell  operation_window  returns the instance of the 'OperationWindow' class, to interact with the opeartion windows of commcell  array_management  returns the instance of the  ArrayManagement class, to perform SNAP related operations on the Commcell  activity_control  returns the instance of the  ActivityControl class, to interact with the Activity Control on the Commcell  event_viewer  returns the instance of the  Events class, to interact with the Events associated on the Commcell  disasterrecovery  returns the instance of the 'DisasterRecovery' class, to run disaster recovery backup , restore operations.  commserv_client  returns the client object associated with the commserver  identity_management  returns the instance of the 'IdentityManagementApps class to perform identity management operations on the commcell class  system  returns the instance of the 'System' class to perform system related operations on the commcell  commcell_migration  returns the instance of the 'CommCellMigration' class, to interact with the Commcell Export & Import on the Commcell  backup_network_pairs  returns the instance of 'BackupNetworkPairs' class to perform backup network pairs operations on the commcell class  recovery_targets  Returns the instance of RecoverTargets class  reports  Return the instance of Report class  job_management  Returns an instance of the JobManagement class.  hac_clusters  Returns an instance of the HAC Clusters class  index_pools  Returns an instance of the IndexPools class  deduplications_engines  Returnes the instance of the DeduplicationEngines class to interact wtih deduplication enines available on the commcell  two_factor_authentication  Returns an instance of the TwoFactorAuthentication class.  is_tfa_enabled  Returns the status of tfa on this commcell.  tfa_enabled_user_groups  Returns user group names on which tfa is enabled. only for user group inclusion tfa.  is_linux_commserv  boolean specifying if CommServer is installed on linux cs.  default_timezone  Default timezone used by all the operations performed via cvpysdk.  metallic  Returns the instance of CVMetallic class  key_management_servers  Returns the instance of  KeyManagementServers class"
+"doc":"Main file for performing operations on Commcell via REST API. Commcell is the main class for the CVPySDK python package. Commcell: Initializes a connection to the commcell and is a wrapper for the entire commcell ops. Commcell: __init__()  initialize instance of the Commcell class __repr__()  return the name of the commcell, user is connected to, along with the user name of the connected user __enter__()  returns the current instance, using the \"with\" context manager __exit__()  logs out the user associated with the current instance _update_response_()  returns only the relevant response for the response received from the server _remove_attribs_()  removes all the attributs associated with the commcell object upon call to the logout method _get_commserv_details()  gets the details of the commserv, the Commcell class instance is initialized for _qoperation_execute()  runs the qoperation execute rest api on specified input xml _qoperation_execscript()  runs the qoperation execute qscript with specified arguements get_gxglobalparam_value()  makes a rest api call to get values from GXGlobalParam _set_gxglobalparam_value  updates GXGlobalParam(commcell level configuration parameters) verify_owner_assignment_config()  verifies that the ownership assignments settings are configured and set properly logout()  logs out the user associated with the current instance request()  runs an input HTTP request on the API specified, and returns its response send_mail()  sends an email to the specified user refresh()  refresh the properties associated with the Commcell class instance run_data_aging()  triggers data aging job from the commcell level get_saml_token()  returns the SAML token for the currently logged-in user add_additional_setting()  adds registry key to the commserve property delete_additional_setting()  deletes registry key from the commserve property get_configured_additional_setting()  To get configured additional settings from the commserve property download_software()  triggers the Download Software job with the given options copy_software()  triggers the Copy Software job with the given options sync_remote_cache()  syncs remote cache get_remote_cache()  returns the instance of the RemoteCache class push_servicepack_and_hotfixes()  triggers installation of service pack and hotfixes install_software()  triggers the install Software job with the given options enable_auth_code()  executes the request on the server to enable Auth Code for installation on the commcell enable_shared_laptop()  Executes the request on the server to enable Shared Laptop on commcell disable_shared_laptop()  Executes the request on the server to disable Shared Laptop on commcell execute_qcommand()  executes the ExecuteQCommand API on the commcell add_associations_to_saml_app()  Adds the given user under associations of the SAML app _get_registered_service_commcells()  gets the list of registered service commcells register_commcell()  registers a commcell sync_service_commcell()  Sync a service commcell unregister_commcell()  unregisters a commcell is_commcell_registered()  checks if the commcell is registered _get_redirect_rules_service_commcell()  gets the redirect rules of service commcell get_eligible_service_commcells()  gets the eligible service commcells to redirect get_default_plan()  Get the default plans associed with the commcell get_security_associations()  Get the security associations associated with the commcell get_password_encryption_config()  Get the Password encryption configuration for the commcell get_email_settings()  Get the SMTP settings for the commcell set_email_settings()  Set the SMTP settings for the commcell get_commcell_properties()  Get the general, privacy and other properties of commcell get_commcell_organization_properties()  Get the organization properties of commcell add_service_commcell_associations()  adds an association for an entity on a service commcell get_service_commcell_associations()  gets the association details for entity on commcell remove_service_commcell_association()  removes association for an entity on all service commcells enable_tfa()  Enables two factor authentication on this commcell disable_tfa()  Disables two factor authentication on this commcell _get_commserv_metadata()  Returns back the commserv metadata on this commcell _get_commserv_oem_id()  Returns back the commserv OEM ID on this commcell enable_privacy()  Enables users to enable data privacy on commcell disable_privacy()  Enables users to disable data privacy on commcell switch_to_company()  Login to company as an operator, just like using switcher on Command Center reset_company()  Switch back to Commcell allow_users_to_enable_passkey()  Enable or Disable passkey authorization for company administrators and client owners get_sla_configuration()  gets the sla configuration details at commcell level get_workload_region()  gets the current workload region get_user_suggestions()  gets details of entities matching given term enable_limit_user_logon_attempts()  Enables limit user logon attempts feature. disable_limit_user_logon_attempts()  Disables limit user logon attempts feature. Commcell instance Attributes                commserv_guid  returns the  CommServ GUID, class instance is initalized for  commserv_hostname  returns the hostname of the  CommServ , class instance is initalized for  commserv_name  returns the  CommServ name, class instance is initalized for  commserv_timezone  returns the time zone of the  CommServ , class instance is initalized for  commserv_timezone_name  returns the name of the  CommServ time zone, class instance is initalized for  commserv_version  returns the ContentStore version installed on the  CommServ , class instance is initalized for  version  returns the complete version info of the commserv  commcell_id  returns the  CommCell ID  commserv_metadata  returns the commserv metadata of the commserv  commserv_oem_id  returns the commserv OEM ID of the commserv  webconsole_hostname  returns the host name of the  webconsole , class instance is connected to  auth_token  returns the  Authtoken for the current session to the commcell  commcell_username  returns the associated  user name for the current session to the commcell  device_id  returns the id associated with the calling machine  name_change  returns the name change object of the commcell  clients  returns the instance of the  Clients class, to interact with the clients added on the Commcell  commserv_cache  returns the instance of the  CommServeCache class  media_agents  returns the instance of the  MediaAgents class, to interact with the media agents associated with the Commcell class instance  workflows  returns the instance of the  WorkFlow class, to interact with the workflows deployed on the Commcell  alerts  returns the instance of the  Alerts class, to interact with the alerts available on the Commcell  disk_libraries  returns the instance of the  DiskLibraries class, to interact with the disk libraries added on the Commcell  tape_libraries  returns the instance of the  TapeLibraries class, to interact with the tape libraries added on the Commcell  storage_policies  returns the instance of the  StoragePolicies class, to interact with the storage policies available on the Commcell  schedule_policies  returns the instance of the  SchedulePolicies class, to interact with the schedule policies added to the Commcell  schedules  returns the instance of the  Schedules class, to interact with the schedules associated to the Commcell  user_groups  returns the instance of the  UserGroups class, to interact with the user groups added to the Commcell  domains  returns the instance of the  Domains class, to interact with the domains added to the Commcell  client_groups  returns the instance of the  ClientGroups class, to interact with the client groups added to the Commcell  global_filters  returns the instance of the  GlobalFilters class, to interact with the global filters available on the Commcell  datacube  returns the instance of the  Datacube class, to interact with the datacube engine deployed on the Commcell  content_analyzers  returns the instance of the  ContentAnalyzers class, to interact with the CA cloud deployed on the Commcell  activate  returns the instance of the  Activate class, to interact with activate apps on the Commcell  plans  returns the instance of the  Plans class, to interact with the plans associated with the Commcell  job_controller  returns the instance of the  JobController class, to interact with all the jobs finished / running on the Commcell  users  returns the instance of the  Users class, to interact with the users added to the Commcell  roles  returns the instance of the  Roles class, to interact with the roles added to the Commcell  credentials  returns the instance of the  Credentials class, to interact with the credentials records added to the Commcell  download_center  returns the instance of the  DownloadCenter class, to interact with the download center repositories deployed on the Commcell WebConsole  organizations  returns the instance of the  Organizations class, to interact with the organizations/companies added on the Commcell  storage_pools  returns the instance of the  StoragePools class, to interact with the storage pools added to the Commcell Admin Console  monitoring_policies  returns the instance of the  MonitoringPolicies class, to interact with the MonitoringPolicies added to the Commcell  operation_window  returns the instance of the 'OperationWindow' class, to interact with the opeartion windows of commcell  array_management  returns the instance of the  ArrayManagement class, to perform SNAP related operations on the Commcell  activity_control  returns the instance of the  ActivityControl class, to interact with the Activity Control on the Commcell  event_viewer  returns the instance of the  Events class, to interact with the Events associated on the Commcell  disasterrecovery  returns the instance of the 'DisasterRecovery' class, to run disaster recovery backup , restore operations.  commserv_client  returns the client object associated with the commserver  identity_management  returns the instance of the 'IdentityManagementApps class to perform identity management operations on the commcell class  system  returns the instance of the 'System' class to perform system related operations on the commcell  commcell_migration  returns the instance of the 'CommCellMigration' class, to interact with the Commcell Export & Import on the Commcell  grc  returns the instance of the 'GlobalRepositoryCell' class, to interact with the registered commcells and setup/modify GRC schedules  backup_network_pairs  returns the instance of 'BackupNetworkPairs' class to perform backup network pairs operations on the commcell class  recovery_targets  Returns the instance of RecoverTargets class  reports  Return the instance of Report class  job_management  Returns an instance of the JobManagement class.  hac_clusters  Returns an instance of the HAC Clusters class  index_pools  Returns an instance of the IndexPools class  deduplications_engines  Returnes the instance of the DeduplicationEngines class to interact wtih deduplication enines available on the commcell  two_factor_authentication  Returns an instance of the TwoFactorAuthentication class.  is_tfa_enabled  Returns the status of tfa on this commcell.  tfa_enabled_user_groups  Returns user group names on which tfa is enabled. only for user group inclusion tfa.  is_linux_commserv  boolean specifying if CommServer is installed on linux cs.  default_timezone  Default timezone used by all the operations performed via cvpysdk.  metallic  Returns the instance of CVMetallic class  key_management_servers  Returns the instance of  KeyManagementServers class"
 },
 {
 "ref":"cvpysdk.commcell.USER_DOES_NOT_HAVE_PERMISSION",
@@ -7009,7 +7060,7 @@ INDEX=[
 {
 "ref":"cvpysdk.commcell.Commcell.qoperation_execute",
 "url":37,
-"doc":"Wrapper for def _qoperation_execute(self, request_xml) Args: request_xml (str)  request xml that is to be passed Returns: dict - JSON response received from the server. Raises: SDKException: if response is empty if response is not success",
+"doc":"Wrapper for def _qoperation_execute(self, request_xml) Args: request_xml (str)  request xml that is to be passed  kwargs: return_xml (bool)  if True, will get the xml response instead of json Returns: dict - JSON response received from the server. Raises: SDKException: if response is empty if response is not success",
 "func":1
 },
 {
@@ -7290,7 +7341,17 @@ INDEX=[
 "doc":"Returns the instance of the CommcellMigration class"
 },
 {
+"ref":"cvpysdk.commcell.Commcell.grc",
+"url":37,
+"doc":"Returns the instance of the GlobalRepositoryCell class"
+},
+{
 "ref":"cvpysdk.commcell.Commcell.registered_routing_commcells",
+"url":37,
+"doc":"Returns the dictionary consisting of all registered commcells and their info dict - consists of all registered routing commcells { \"commcell_name1:{ details related to commcell_name1 }, \"commcell_name2:{ details related to commcell_name2 } }"
+},
+{
+"ref":"cvpysdk.commcell.Commcell.registered_commcells",
 "url":37,
 "doc":"Returns the dictionary consisting of all registered commcells and their info dict - consists of all registered routing commcells { \"commcell_name1:{ details related to commcell_name1 }, \"commcell_name2:{ details related to commcell_name2 } }"
 },
@@ -7421,6 +7482,12 @@ INDEX=[
 "ref":"cvpysdk.commcell.Commcell.delete_additional_setting",
 "url":37,
 "doc":"Deletes registry key from the commserve property. Args: category (str)  Category of registry key key_name (str)  Name of the registry key Returns: None Raises: SDKException: if failed to delete if response is empty if response code is not as expected",
+"func":1
+},
+{
+"ref":"cvpysdk.commcell.Commcell.get_configured_additional_setting",
+"url":37,
+"doc":"Method to get configured additional settings name",
 "func":1
 },
 {
@@ -7701,7 +7768,7 @@ INDEX=[
 {
 "ref":"cvpysdk.commcell_migration",
 "url":38,
-"doc":"Class to perform all the CommCell Migration operations on commcell CommCellMigration is the only class defined in this file. CommCellMigration: Helper class to perform CommCell Import & Export operations. CommCellMigration: __init__()  initializes CommCellMigration helper object. commcell_export()  function to run CCM Export operation. commcell_import()  function to run CCM Import operation. tape_import()  function to run tape import operation."
+"doc":"Class to perform all the CommCell Migration operations on commcell CommCellMigration, GlobalRepositoryCell are the only classes defined in this file. CommCellMigration: Helper class to perform CommCell Import & Export operations. CommCellMigration: __init__()  initializes CommCellMigration helper object. commcell_export()  function to run CCM Export operation. commcell_import()  function to run CCM Import operation. tape_import()  function to run tape import operation. GlobalRepositoryCell: Helper class to perform GRC related operations GlobalRepositoryCell: __init__()  initializes GlobalRepositoryCell object get_podcell_entities()  gets all entities from registered podcell that can be imported get_podcell_properties()  gets all grc related properties for registered podcell modify_monitored_clients()  overwrites imported clients in podcell grc schedule"
 },
 {
 "ref":"cvpysdk.commcell_migration.CommCellMigration",
@@ -7724,6 +7791,23 @@ INDEX=[
 "ref":"cvpysdk.commcell_migration.CommCellMigration.tape_import",
 "url":38,
 "doc":"performs the tape import import operation for the specified tape. Args: library_id (int)  tape library id. medias_id (list)  tape id. drive_pool_id (int)  drive pool id Returns: Tape import job instance",
+"func":1
+},
+{
+"ref":"cvpysdk.commcell_migration.GlobalRepositoryCell",
+"url":38,
+"doc":"Class for representing the GRC feature from commcell Initializes the object of GlobalRepositoryCell class Args: commcell_object (Commcell) - Commcell class instance Returns: grc (GlobalRepositoryCell) - instance of the GlobalRepositoryCell class"
+},
+{
+"ref":"cvpysdk.commcell_migration.GlobalRepositoryCell.get_clients_for_migration",
+"url":38,
+"doc":"Gets the podcell clients that can be migrated Args: podcell_name (str) - name of pod cell podcell_id (int) - id of podcell podcell_guid (str) - guid of podcell (Optional) Returns: clients_dict (dict) - dict with client ID as key and client name value Example: { X: \"clientA\", Y: \"clientB\", Z: \"clienta\" }",
+"func":1
+},
+{
+"ref":"cvpysdk.commcell_migration.GlobalRepositoryCell.modify_monitored_clients",
+"url":38,
+"doc":"Modifies (overwrites) the monitored clients in grc properties for given podcell Args: podcell_name (str) - name of pod cell podcell_id (int) - id of podcell client_ids (list) - list of client ids, names or Client objects (of pod cell) Returns: None",
 "func":1
 },
 {
@@ -8709,7 +8793,7 @@ INDEX=[
 {
 "ref":"cvpysdk.content_analyzer",
 "url":40,
-"doc":"Main file for performing operations on content analyzers, and a single content analyzer cloud in the commcell.  ContentAnalyzers , and  ContentAnalyzer are 2 classes defined in this file. ContentAnalyzers: Class for representing all the Content analyzers in the commcell. ContentAnalyzer: Class for representing a single content analyzer cloud in the commcell. ContentAnalyzers: __init__(commcell_object)  initialise object of the ContentAnalyzers class _response_not_success()  parses through the exception response, and raises SDKException refresh()  refresh the content analyzers associated with the commcell get()  Returns an instance of ContentAnalyzer class for the given CAcloud name get_properties()  Returns the properties for the given content analyzer cloud name _get_all_contentanalyzers()  Returns dict consisting all content analyzers associated with commcell _get_cloud_from_collections()  gets all the content analyzer details from collection response has_cloud()  Checks whether given CA cloud exists in commcell or not create()  Creates the content analyzer cloud for the given client name delete()  deletes the content analyzer cloud for the given cloud name ContentAnalyzer: __init__( commcell_object, cloud_name, cloud_id=None)  initialize an object of ContentAnalyzer Class with the given CACloud name and id associated to the commcell refresh()  refresh the properties of the CAcloud _get_cloud_id()  Gets content analyzer cloud id for the given CA cloud name _get_cloud_properties()  Gets all the details of associated content analyzer cloud ContentAnalyzer Attributes         -  cloud_id  returns the cloudid of the content analyzer  cloud_url  returns the url of the content analyzer"
+"doc":"Main file for performing operations on content analyzers, and a single content analyzer client in the commcell.  ContentAnalyzers , and  ContentAnalyzer are 2 classes defined in this file. ContentAnalyzers: Class for representing all the Content analyzers in the commcell. ContentAnalyzer: Class for representing a single content analyzer client in the commcell. ContentAnalyzers: __init__(commcell_object)  initialise object of the ContentAnalyzers class _response_not_success()  parses through the exception response, and raises SDKException refresh()  refresh the content analyzers associated with the commcell get()  Returns an instance of ContentAnalyzer class for the given CA client name get_properties()  Returns the properties for the given content analyzer client name _get_all_contentanalyzers()  Returns dict consisting all content analyzers associated with commcell _get_cloud_from_collections()  gets all the content analyzer details from collection response has_client()  Checks whether given CA client exists in commcell or not ContentAnalyzer: __init__()  initialize an object of ContentAnalyzer Class with the given CACloud name and client id associated to the commcell refresh()  refresh the properties of the CA client _get_cloud_properties()  Gets all the details of associated content analyzer client ContentAnalyzer Attributes         -  client_id  returns the client id of the content analyzer client  cloud_url  returns the url of the content analyzer"
 },
 {
 "ref":"cvpysdk.content_analyzer.ContentAnalyzers",
@@ -8719,7 +8803,7 @@ INDEX=[
 {
 "ref":"cvpysdk.content_analyzer.ContentAnalyzers.get_properties",
 "url":40,
-"doc":"Returns a properties of the specified content analyzer cloud name. Args: cacloud_name (str)  name of the content analyzer cloud Returns: dict - properties for the given content analyzer cloud name",
+"doc":"Returns a properties of the specified content analyzer client name. Args: caclient_name (str)  name of the content analyzer client Returns: dict - properties for the given content analyzer client name",
 "func":1
 },
 {
@@ -8729,33 +8813,21 @@ INDEX=[
 "func":1
 },
 {
-"ref":"cvpysdk.content_analyzer.ContentAnalyzers.create",
-"url":40,
-"doc":"Creates an content analyzer cloud within the commcell Args: client_name (str)  Name of the client where content analyzer package is installed content_analyzer_name (str)  name for the content analyzer cloud temp_directory (str)  temp location for the content extractor cloud_param (list)  list of custom parameters to be parsed into the json for content analyser meta info [ { \"name\":  , \"value\":  } ] Returns: None Raises: SDKException: Data type of the input(s) is not valid. Response was not success. Response was empty.",
-"func":1
-},
-{
-"ref":"cvpysdk.content_analyzer.ContentAnalyzers.delete",
-"url":40,
-"doc":"Deletes / removes an content analyzer from the commcell Args: cloud_name (str)  cloud name of content analyzer to be deleted from the commcell Raises: SDKException: Data type of the input(s) is not valid. Response was not success. Response was empty.",
-"func":1
-},
-{
 "ref":"cvpysdk.content_analyzer.ContentAnalyzers.get",
 "url":40,
-"doc":"Returns a ContentAnalyzer object for the given CA cloud name. Args: cloud_name (str)  name of the Content analyzer cloud Returns: obj  Object of ContentAnalyzer class Raises: SDKException: if response is empty if response is not success if cacloud_name is not of type string",
+"doc":"Returns a ContentAnalyzer object for the given CA client name. Args: client_name (str)  name of the Content analyzer client Returns: obj  Object of ContentAnalyzer class Raises: SDKException: if response is empty if response is not success if cacloud_name is not of type string",
 "func":1
 },
 {
-"ref":"cvpysdk.content_analyzer.ContentAnalyzers.has_cloud",
+"ref":"cvpysdk.content_analyzer.ContentAnalyzers.has_client",
 "url":40,
-"doc":"Checks if a content analyzer cloud exists in the commcell with the input name. Args: cloud_name (str)  name of the content analyzer Returns: bool - boolean output whether the CA cloud exists in the commcell or not Raises: SDKException: if type of the CA cloud name argument is not string",
+"doc":"Checks if a content analyzer client exists in the commcell with the input name. Args: client_name (str)  name of the content analyzer client Returns: bool - boolean output whether the CA client exists in the commcell or not Raises: SDKException: if type of the CA client name argument is not string",
 "func":1
 },
 {
 "ref":"cvpysdk.content_analyzer.ContentAnalyzer",
 "url":40,
-"doc":"Class for performing operations on a single content analyzer cloud Initialize an object of the ContentAnalyzer class. Args: commcell_object (object)  instance of the commcell class cloud_name (str)  name of the content analyzer cloud cloud_id (str)  id of the content analyzer cloud default: None Returns: object - instance of the ContentAnalyzer class"
+"doc":"Class for performing operations on a single content analyzer client Initialize an object of the ContentAnalyzer class. Args: commcell_object (object)  instance of the commcell class client_name (str)  name of the content analyzer client Returns: object - instance of the ContentAnalyzer class"
 },
 {
 "ref":"cvpysdk.content_analyzer.ContentAnalyzer.client_id",
@@ -8763,14 +8835,9 @@ INDEX=[
 "doc":"Returns the value of the Content analyzer client id attribute."
 },
 {
-"ref":"cvpysdk.content_analyzer.ContentAnalyzer.cloud_id",
-"url":40,
-"doc":"Returns the value of the Content analyzer cloud id attribute."
-},
-{
 "ref":"cvpysdk.content_analyzer.ContentAnalyzer.cloud_url",
 "url":40,
-"doc":"Returns the value of the Content analyzer cloud url attribute."
+"doc":"Returns the value of the Content analyzer client url attribute."
 },
 {
 "ref":"cvpysdk.content_analyzer.ContentAnalyzer.refresh",
@@ -8781,7 +8848,7 @@ INDEX=[
 {
 "ref":"cvpysdk.credential_manager",
 "url":41,
-"doc":"Main file for managing credentials records on this commcell Credentials and Credential are only the two classes defined in this commcell Credentials: __init__()  initializes the Credentials class object __str__()  returns all the Credentials associated with the commcell __repr__()  returns the string for the instance of the Credentials class _get_credentials()  Returns the list of Credentials configured on this commcell all_credentials()  Returns all the Credentials present in the commcell has_credential()  Checks if any Credentials with specified name exists on this commcell get()  Returns the Credential object for the specified Credential name add()  creates the credential record on this commcell owner_json()  returns json blob for setting user or usergroup as creator refresh()  refreshes the list of credentials on this commcell delete()  deletes the credential record on this commcell get_security_associations()  Returns the security association dictionary for a given user or user group add_azure_cloud_creds()  Creates azure access key based credential on this commcell Credential: __init__()  initiaizes the credential class object __repr__()  returns the string for the instance of the credential class _get_credential_id()  Gets the Credential id associated with this Credential credential_name  Returns the name of the credential record credential_id  Returns the id of the credential record credential_description  Returns the description set of credential record credential_user_name  Returns the user name set in the credential record update_user_credential  Sets the value for credential user name and password with the parameters provided credential_owner  Returns the creator of credential account update_credential_owner()  Updates creator of credential account. refresh()  refreshes the properties of credential account _get_credential_properties() returns the properties of credential account _update_credential_props()  Updates credential account properties"
+"doc":"Main file for managing credentials records on this commcell Credentials and Credential are only the two classes defined in this commcell Credentials: __init__()  initializes the Credentials class object __str__()  returns all the Credentials associated with the commcell __repr__()  returns the string for the instance of the Credentials class _get_credentials()  Returns the list of Credentials configured on this commcell all_credentials()  Returns all the Credentials present in the commcell has_credential()  Checks if any Credentials with specified name exists on this commcell get()  Returns the Credential object for the specified Credential name add()  creates the credential record on this commcell refresh()  refreshes the list of credentials on this commcell delete()  deletes the credential record on this commcell get_security_associations()  Returns the security association dictionary for a given user or user group add_azure_cloud_creds()  Creates azure access key based credential on this commcell Credential: __init__()  initiaizes the credential class object __repr__()  returns the string for the instance of the credential class _get_credential_id()  Gets the Credential id associated with this Credential credential_name  Returns the name of the credential record credential_id  Returns the id of the credential record credential_description  Returns the description set of credential record credential_user_name  Returns the user name set in the credential record update_user_credential  Sets the value for credential user name and password with the parameters provided refresh()  refreshes the properties of credential account _get_credential_properties() returns the properties of credential account _update_credential_props()  Updates credential account properties"
 },
 {
 "ref":"cvpysdk.credential_manager.Credentials",
@@ -8808,13 +8875,7 @@ INDEX=[
 {
 "ref":"cvpysdk.credential_manager.Credentials.add",
 "url":41,
-"doc":"Creates credential account on this commcell Args: record_type (str)  type of credential record to be created (windows\\linux) credential_name (str)  name to be given to credential account user_name (str)  name of the user to be associated to this credential account user_password (str)  password for user owner (str)  owner who can manage the credential account isuser (bool)  Decider, whener owner is user or usergroup isuser=1 for user, isuser=0 for usergroup description (str)  description for credential account Raises: SDKException: if credential account is already present on the commcell if string format are not proper if response is not successful",
-"func":1
-},
-{
-"ref":"cvpysdk.credential_manager.Credentials.owner_json",
-"url":41,
-"doc":"returns json blob for setting owners Args: owner (Str)  user or User Group Name isuser_flag (Str)  decider whether owner is user or usergroup",
+"doc":"Creates credential account on this commcell Args: record_type (str)  type of credential record to be created (windows\\linux) credential_name (str)  name to be given to credential account user_name (str)  name of the user to be associated to this credential account user_password (str)  password for user description (str)  description for credential account Raises: SDKException: if credential account is already present on the commcell if string format are not proper if response is not successful",
 "func":1
 },
 {
@@ -8838,7 +8899,7 @@ INDEX=[
 {
 "ref":"cvpysdk.credential_manager.Credentials.add_azure_cloud_creds",
 "url":41,
-"doc":"Creates azure access key based credential on this commcell Args: credential_name (str)  name to be given to credential account account_name (str)  name of the azure storage account access_key_id (str)  access key for azure storage  kwargs(dict)  Key value pairs for supported arguments Supported argument values: owner(str) - owner of the credentials is_user(bool) - Represents whether owner passed is a user or user group is_user=1 for user, is_user=0 for usergroup description(str) - description of the credentials Raises: SDKException: if arguments type is incorrect if credential account is already present on the commcell if string format are not proper if response is not successful",
+"doc":"Creates azure access key based credential on this commcell Args: credential_name (str)  name to be given to credential account account_name (str)  name of the azure storage account access_key_id (str)  access key for azure storage  kwargs(dict)  Key value pairs for supported arguments Supported argument values: description(str) - description of the credentials Raises: SDKException: if arguments type is incorrect if credential account is already present on the commcell if string format are not proper if response is not successful",
 "func":1
 },
 {
@@ -8884,20 +8945,9 @@ INDEX=[
 "func":1
 },
 {
-"ref":"cvpysdk.credential_manager.Credential.credential_owner",
-"url":41,
-"doc":"Returns the Credential name of this commcell Credential"
-},
-{
 "ref":"cvpysdk.credential_manager.Credential.credential_record_type",
 "url":41,
 "doc":"Returns the Credential name of this commcell Credential record"
-},
-{
-"ref":"cvpysdk.credential_manager.Credential.update_credential_owner",
-"url":41,
-"doc":"Sets the value for credential record owner with the parameter provided Args: val (str)  name of user or usergroup isuser (bool)  value decides whether owner is user or usergroup 1 for user and 0 for usergroup",
-"func":1
 },
 {
 "ref":"cvpysdk.credential_manager.Credential.refresh",
@@ -9579,7 +9629,7 @@ INDEX=[
 {
 "ref":"cvpysdk.deduplication_engines.Store.run_ddb_verification",
 "url":49,
-"doc":"runs deduplication data verification(dv2) job with verification type and dv2 option Args: incremental_verification (bool) - DV2 job type, incremental or Full (True/False) Default: True (Incremental) quick_verification (bool) - DV2 job option, Quick or Complete (True/False) Default: True (quick verification) use_scalable_resource (bool) - Use Scalable Resource Allocation while running DDB Verification Job Default: True Returns: object - instance of Job class for DDB Verification job Raises: SDKException: if DDB Verification job failed if response if empty if response in not success",
+"doc":"runs deduplication data verification(dv2) job with verification type and dv2 option Args: incremental_verification (bool) - DV2 job type, incremental or Full (True/False) Default: True (Incremental) quick_verification (bool) - DV2 job option, Quick or Complete (True/False) Default: True (quick verification) use_scalable_resource (bool) - Use Scalable Resource Allocation while running DDB Verification Job Default: True max_streams (int) - DV2 job option, maximum number of streams to use. By default, job uses max streams. Returns: object - instance of Job class for DDB Verification job Raises: SDKException: if DDB Verification job failed if response if empty if response in not success",
 "func":1
 },
 {
@@ -10066,6 +10116,11 @@ INDEX=[
 "doc":""
 },
 {
+"ref":"cvpysdk.deployment.deploymentconstants.WindowsDownloadFeatures.WEB_SERVER",
+"url":52,
+"doc":""
+},
+{
 "ref":"cvpysdk.deployment.deploymentconstants.OSNameIDMapping",
 "url":52,
 "doc":"Class for os name to id mapping"
@@ -10208,7 +10263,7 @@ INDEX=[
 {
 "ref":"cvpysdk.deployment.install.Install.install_software",
 "url":54,
-"doc":"Installs the features selected on the given machines Args: client_computers (list)  list of hostnames/IP address to install the features on default : None windows_features (list of enum)  list of windows features to be installed default : None unix_features (list of enum)  list of unix features to be installed default : None username (str)  username of the machine to install features on default : None password (str)  base64 encoded password default : None install_path (str)  Install to a specified path on the client default : None log_file_loc (str)  Install to a specified log path on the client default : None client_group_name (list)  List of client groups for the client default : None storage_policy_name (str)  Storage policy for the default subclient default : None sw_cache_client (str)  Remote Cache Client Name/ Over-riding Software Cache default : None (Use CS Cache by default)  kwargs: (dict)  Key value pairs for supporting conditional initializations Supported - install_flags (dict) - dictionary of install flag values Ex : install_flags = {\"preferredIPFamily\":2, \"install32Base\":True} db2_logs_location (dict) - dictionary of db2 logs location Ex: db2_logs_location = { \"db2ArchivePath\": \"/opt/Archive/\", \"db2RetrievePath\": \"/opt/Retrieve/\", \"db2AuditErrorPath\": \"/opt/Audit/\" } index_cache_location (str) - Set index cache location for MA package Ex: index_cache_location = \"/opt/IndexCache/\" firewall_inputs (dict) - dictionary for firewall configuration Ex: firewall_inputs = { \"enableFirewallConfig\": True, \"firewallConnectionType\": 1, \"httpProxyConfigurationType\": 0, \"proxyClientName\": \"Proxy_client_name\", \"proxyHostName\": \"Proxy_host_name\", \"portNumber\": \"port_number\", \"encryptedTunnel\": \"encrypted_tunnel\" } firewall_inputs can take the following values Ex 1: Client can open connection to CS firewall_inputs = { \"enableFirewallConfig\": True, \"firewallConnectionType\": 0, \"proxyClientName\":  , \"proxyHostName\":  , \"portNumber\": \"port_number\", \"httpProxyConfigurationType\": 0, \"encryptedTunnel\": True/False } Ex 2: CS can open connection to Client firewall_inputs = { \"enableFirewallConfig\": True, \"firewallConnectionType\": 1, \"proxyClientName\":  , \"proxyHostName\":  , \"portNumber\": \"port_number\", \"httpProxyConfigurationType\": 0, \"encryptedTunnel\": True/False } Ex 3: Client can communicate to CS using Proxy firewall_inputs = { \"enableFirewallConfig\": True, \"firewallConnectionType\": 2, \"httpProxyConfigurationType\": 0, \"proxyClientName\": \"Proxy_client_name\", \"proxyHostName\": \"Proxy_host_name\", \"portNumber\": \"port_number\", \"encryptedTunnel\": True/False } Returns: object - instance of the Job class for this install_software job Raises: SDKException: if install job failed if response is empty if response is not success Usage: - UnixDownloadFeatures and WindowsDownloadFeatures enum is used for providing input to the install_software method, it can be imported by >>> from cvpysdk.deployment.deploymentconstants import UnixDownloadFeatures from cvpysdk.deployment.deploymentconstants import WindowsDownloadFeatures - sample method call >>> commcell_obj.install_software( client_computers=[win_machine1, win_machine2], windows_features=[WindowsDownloadFeatures.FILE_SYSTEM.value], unix_features=None, username='username', password='password', install_path='C:\\Temp, log_file_loc='/var/log', client_group_name=[My_Servers], storage_policy_name='My_Storage_Policy', install_flags={\"preferredIPFamily\":2})  NOTE: Either Unix or Windows clients_computers should be chosen and not both",
+"doc":"Installs the features selected on the given machines Args: client_computers (list)  list of hostnames/IP address to install the features on default : None windows_features (list of enum)  list of windows features to be installed default : None unix_features (list of enum)  list of unix features to be installed default : None username (str)  username of the machine to install features on default : None password (str)  base64 encoded password default : None install_path (str)  Install to a specified path on the client default : None log_file_loc (str)  Install to a specified log path on the client default : None client_group_name (list)  List of client groups for the client default : None storage_policy_name (str)  Storage policy for the default subclient default : None sw_cache_client (str)  Remote Cache Client Name/ Over-riding Software Cache default : None (Use CS Cache by default)  kwargs: (dict)  Key value pairs for supporting conditional initializations Supported - install_flags (dict) - dictionary of install flag values Ex : install_flags = {\"preferredIPFamily\":2, \"install32Base\":True} db2_logs_location (dict) - dictionary of db2 logs location Ex: db2_logs_location = { \"db2ArchivePath\": \"/opt/Archive/\", \"db2RetrievePath\": \"/opt/Retrieve/\", \"db2AuditErrorPath\": \"/opt/Audit/\" } index_cache_location (str) - Set index cache location for MA package Ex: index_cache_location = \"/opt/IndexCache/\" firewall_inputs (dict) - dictionary for firewall configuration Ex: firewall_inputs = { \"enableFirewallConfig\": True, \"firewallConnectionType\": 1, \"httpProxyConfigurationType\": 0, \"proxyClientName\": \"Proxy_client_name\", \"proxyHostName\": \"Proxy_host_name\", \"portNumber\": \"port_number\", \"encryptedTunnel\": \"encrypted_tunnel\" } firewall_inputs can take the following values Ex 1: Client can open connection to CS firewall_inputs = { \"enableFirewallConfig\": True, \"firewallConnectionType\": 0, \"proxyClientName\":  , \"proxyHostName\":  , \"portNumber\": \"port_number\", \"httpProxyConfigurationType\": 0, \"encryptedTunnel\": True/False } Ex 2: CS can open connection to Client firewall_inputs = { \"enableFirewallConfig\": True, \"firewallConnectionType\": 1, \"proxyClientName\":  , \"proxyHostName\":  , \"portNumber\": \"port_number\", \"httpProxyConfigurationType\": 0, \"encryptedTunnel\": True/False } Ex 3: Client can communicate to CS using Proxy firewall_inputs = { \"enableFirewallConfig\": True, \"firewallConnectionType\": 2, \"httpProxyConfigurationType\": 0, \"proxyClientName\": \"Proxy_client_name\", \"proxyHostName\": \"Proxy_host_name\", \"portNumber\": \"port_number\", \"encryptedTunnel\": True/False } webconsole_inputs (dict) - dictionary for webconsole configuration Ex: webconsole_inputs = { \"webServerClientId\": \"webservername\" } Returns: object - instance of the Job class for this install_software job Raises: SDKException: if install job failed if response is empty if response is not success Usage: - UnixDownloadFeatures and WindowsDownloadFeatures enum is used for providing input to the install_software method, it can be imported by >>> from cvpysdk.deployment.deploymentconstants import UnixDownloadFeatures from cvpysdk.deployment.deploymentconstants import WindowsDownloadFeatures - sample method call >>> commcell_obj.install_software( client_computers=[win_machine1, win_machine2], windows_features=[WindowsDownloadFeatures.FILE_SYSTEM.value], unix_features=None, username='username', password='password', install_path='C:\\Temp, log_file_loc='/var/log', client_group_name=[My_Servers], storage_policy_name='My_Storage_Policy', install_flags={\"preferredIPFamily\":2})  NOTE: Either Unix or Windows clients_computers should be chosen and not both",
 "func":1
 },
 {
@@ -10918,6 +10973,12 @@ INDEX=[
 "doc":"Class for performing DR orchestration operations on ReplicationMonitor. Initialise the DR job"
 },
 {
+"ref":"cvpysdk.drorchestration.drjob.DRJob.blobs_retained",
+"url":62,
+"doc":"Returns True if blobs to be retained chosen in failover job for Azure destination",
+"func":1
+},
+{
 "ref":"cvpysdk.drorchestration.drjob.DRJob.get_phases",
 "url":62,
 "doc":"Gets the DR phases of the job Returns: dictionaries of phases for each source and destination VM pair {\"source_vm_1\": [{ 'phase_name': enum - Enum of phase short name and full name mapping, 'phase_status': int - 0 for success, 1 for failed, 'start_time': int - timestamp of start of job, 'end_time': int - timestamp of end of job, 'machine_name': str - The name of the machine Job is executing on, 'error_message': str - Error message, if any, }], }",
@@ -11013,6 +11074,11 @@ INDEX=[
 "ref":"cvpysdk.drorchestration.drjob.DRJob.phase",
 "url":63,
 "doc":"Treats the job current phase as a read-only attribute."
+},
+{
+"ref":"cvpysdk.drorchestration.drjob.DRJob.attempts",
+"url":63,
+"doc":"Returns job attempts data as read-only attribute"
 },
 {
 "ref":"cvpysdk.drorchestration.drjob.DRJob.summary",
@@ -12302,7 +12368,7 @@ INDEX=[
 {
 "ref":"cvpysdk.eventviewer.Events.events",
 "url":71,
-"doc":"Gets all the events associated with the commcell Args: query_params_dict (dict)  Query Params Dict Example: { \"jobId\": 123, } Returns: dict - consists of all events in the commcell { \"event1_id\": event1_code, \"event2_id\": event2_code } Raises: SDKException: if response is empty if response is not success",
+"doc":"Gets all the events associated with the commcell Args: query_params_dict (dict)  Query Params Dict Example: { \"jobId\": 123, } details (bool)  Returns all details if True Returns: dict - consists of all events in the commcell { \"event1_id\": event1_code or complete details dict, \"event2_id\": event2_code or complete details dict } Raises: SDKException: if response is empty if response is not success",
 "func":1
 },
 {
@@ -12785,7 +12851,7 @@ INDEX=[
 {
 "ref":"cvpysdk.index_server",
 "url":77,
-"doc":"File for performing index server related operations on the commcell IndexServers, IndexServer and _Roles are 3 classes defined in this file IndexServers: Class for representing all the index servers associated with the commcell IndexServer: Class for a instance of a single index server of the commcell _Roles: Class for storing all the cloud role details \"IndexServerOSType\" is the enum class used to represent os type of IS IndexServers       __init__()  initialize object of IndexServers class associated with the commcell __str()  returns all the index servers of the commcell __repr__()  returns the string to represent the instance __len__()  returns the number of index servers associated _get_index_servers()  gets all the index server associated with the commcell _response_not_success()  raise exception when response is not 200 _get_all_roles()  creates an instance of _Roles class has()  returns whether the index server is present or not get()  returns a IndexServer object for given cloud name create()  creates a index server within the commcell delete()  deletes a index server associated with commcell update_roles_data()  fetches the cloud roles data from commcell get_properties()  returns a dict of data of index server for the given cloud name refresh()  refresh the index servers associated with commcell prune_orphan_datasources()  Deletes all the orphan datasources IndexServers Attributes            -  all_index_servers  returns the dictionary consisting of all the index servers associated with the commcell and there details  roles_data  returns the list of cloud roles details IndexServer      = __init()__  initializes the object with the specified commcell object, index server name and the cloud id __repr__()  returns the index server's name, the instance is associated with _get_cloud_id()  gets the cloud id _get_properties()  gets all the properties of the index server refresh()  refresh all the properties of client update_roles_data()  fetches the cloud roles data from commcell modify()  to modify the index server node details change_plan()  changes the plan of a given index server update_role()  to update the roles assigned to cloud hard_commit  do hard commit on specified index server solr core get_all_cores  gets all the cores in index server _create_solr_query()  Create solr search query based on inputs provided execute_solr_query()  Creates solr url based on input and executes it on solr on given core get_index_node()  returns an Index server node object for given node name get_os_info()  returns the OS type for the Index server get_plan_info()  Returns the plan information of the index server __form_field_query()  returns the query with the key and value passed IndexServer Attributes             properties  returns the properties of this index server  roles_data  returns all the available cloud roles data  host_name  returns the host name for the index server  internal_cloud_name  returns the internal cloud name  client_name  returns the client name for index server  server_url  returns the content indexing server url  type  returns the type of the index server  base_port  returns the base port of this index server  client_id  returns the client id for this index server  roles  returns the array of roles installed with the index server within the commcell  cloud_id  returns the cloud id of the index server  server_type  returns the server type of the index server  engine_name  returns the engine name that is index server name  index_server_client_id  returns the index server client id  role_display_name  display name of roles  is_cloud  returns boolean True if the Index server is cloud else returns False  node_count  returns the number of Index server nodes  os_info  returns the OS type for the Index server  plan_name  Returns the plan name associated with index server IndexNode     = __init__()  initializes the class with commcell object Index server cloud id and Node client name refresh()  refreshes the attributes modify()  to modify the index server node details IndexNode Attributes            node_name  returns Index server node client name  node_id  returns Index server node client id  solr_port  returns port number Solr is running on the Index server node  solr_url  returns Solr URL for Index server node  roles  returns the array of roles installed with the index server within the commcell  index_location  returns Index directory for the Index server Node  jvm_memory  returns Solr JVM memory for the Index server Node _Roles    __init__()  initializes the class with commcell object refresh()  refreshes the attributes _get_all_roles()  fetches the cloud roles data from commcell get_role_id()  returns role id for given role name update_roles_data()  fetches the cloud roles data from commcell _Roles Attributes         -  roles_data  returns the list of details of all cloud roles"
+"doc":"File for performing index server related operations on the commcell IndexServers, IndexServer and _Roles are 3 classes defined in this file IndexServers: Class for representing all the index servers associated with the commcell IndexServer: Class for a instance of a single index server of the commcell _Roles: Class for storing all the cloud role details \"IndexServerOSType\" is the enum class used to represent os type of IS IndexServers       __init__()  initialize object of IndexServers class associated with the commcell __str()  returns all the index servers of the commcell __repr__()  returns the string to represent the instance __len__()  returns the number of index servers associated _get_index_servers()  gets all the index server associated with the commcell _response_not_success()  raise exception when response is not 200 _get_all_roles()  creates an instance of _Roles class has()  returns whether the index server is present or not get()  returns a IndexServer object for given cloud name create()  creates a index server within the commcell delete()  deletes a index server associated with commcell update_roles_data()  fetches the cloud roles data from commcell get_properties()  returns a dict of data of index server for the given cloud name refresh()  refresh the index servers associated with commcell prune_orphan_datasources()  Deletes all the orphan datasources IndexServers Attributes            -  all_index_servers  returns the dictionary consisting of all the index servers associated with the commcell and there details  roles_data  returns the list of cloud roles details IndexServer      = __init()__  initializes the object with the specified commcell object, index server name and the cloud id __repr__()  returns the index server's name, the instance is associated with _get_cloud_id()  gets the cloud id _get_properties()  gets all the properties of the index server refresh()  refresh all the properties of client update_roles_data()  fetches the cloud roles data from commcell modify()  to modify the index server node details change_plan()  changes the plan of a given index server update_role()  to update the roles assigned to cloud delete_docs_from_core()  Deletes the docs from the given core name on index server depending on the select dict passed hard_commit  do hard commit on specified index server solr core get_health_indicators()  get health indicators for index server node by client name get_all_cores  gets all the cores in index server _create_solr_query()  Create solr search query based on inputs provided execute_solr_query()  Creates solr url based on input and executes it on solr on given core get_index_node()  returns an Index server node object for given node name get_os_info()  returns the OS type for the Index server get_plan_info()  Returns the plan information of the index server __form_field_query()  returns the query with the key and value passed IndexServer Attributes             properties  returns the properties of this index server  roles_data  returns all the available cloud roles data  host_name  returns the host name for the index server  internal_cloud_name  returns the internal cloud name  client_name  returns the client name for index server  server_url  returns the content indexing server url  type  returns the type of the index server  base_port  returns the base port of this index server  client_id  returns the client id for this index server  roles  returns the array of roles installed with the index server within the commcell  cloud_id  returns the cloud id of the index server  server_type  returns the server type of the index server  engine_name  returns the engine name that is index server name  index_server_client_id  returns the index server client id  role_display_name  display name of roles  is_cloud  returns boolean True if the Index server is cloud else returns False  node_count  returns the number of Index server nodes  os_info  returns the OS type for the Index server  plan_name  Returns the plan name associated with index server IndexNode     = __init__()  initializes the class with commcell object Index server cloud id and Node client name refresh()  refreshes the attributes modify()  to modify the index server node details IndexNode Attributes            node_name  returns Index server node client name  node_id  returns Index server node client id  solr_port  returns port number Solr is running on the Index server node  solr_url  returns Solr URL for Index server node  roles  returns the array of roles installed with the index server within the commcell  index_location  returns Index directory for the Index server Node  jvm_memory  returns Solr JVM memory for the Index server Node _Roles    __init__()  initializes the class with commcell object refresh()  refreshes the attributes _get_all_roles()  fetches the cloud roles data from commcell get_role_id()  returns role id for given role name update_roles_data()  fetches the cloud roles data from commcell _Roles Attributes         -  roles_data  returns the list of details of all cloud roles"
 },
 {
 "ref":"cvpysdk.index_server.IndexServers",
@@ -12906,9 +12972,21 @@ INDEX=[
 "func":1
 },
 {
+"ref":"cvpysdk.index_server.IndexServer.delete_docs_from_core",
+"url":77,
+"doc":"Deletes the docs from the given core name on index server depending on the select dict passed Args: core_name (str)  name of the solr core select_dict (dict)  dict with query to delete specific documents default query - \" : \" (Deletes all the docs) Returns: None Raises: SDKException: if input data is not valid if index server is cloud, not implemented error if response is empty if response is not success",
+"func":1
+},
+{
 "ref":"cvpysdk.index_server.IndexServer.hard_commit",
 "url":77,
 "doc":"do hard commit for the given core name on index server Args: core_name (str)  name of the solr core Returns: None Raises: SDKException: if input data is not valid if index server is cloud, not implemented error if response is empty if response is not success",
+"func":1
+},
+{
+"ref":"cvpysdk.index_server.IndexServer.get_health_indicators",
+"url":77,
+"doc":"Get health indicators for index server node by client name Args: client_name (str)  name of the client node Returns: (response(str  str json object Raises: SDKException: if input data is not valid if client name is not passed for index server cloud if response is not success if response is empty",
 "func":1
 },
 {
@@ -12932,7 +13010,7 @@ INDEX=[
 {
 "ref":"cvpysdk.index_server.IndexServer.get_plan_info",
 "url":77,
-"doc":"Returns the plan information of the index server",
+"doc":"Gets the plan information of the index server Returns: dict - containing the plan information",
 "func":1
 },
 {
@@ -12944,7 +13022,7 @@ INDEX=[
 {
 "ref":"cvpysdk.index_server.IndexServer.plan_name",
 "url":77,
-"doc":"Returns the plan name associated with index server"
+"doc":"Returns the plan name associated with index server Returns: str - name of the plan"
 },
 {
 "ref":"cvpysdk.index_server.IndexServer.os_info",
@@ -13148,7 +13226,7 @@ INDEX=[
 {
 "ref":"cvpysdk.instance.Instances.add_cloud_storage_instance",
 "url":78,
-"doc":"Returns the JSON request to pass to the API for adding a cloud storage instance Args: cloud_options (dict)  Options needed for adding a new cloud storage instance. Example: Cloud : S3 cloud_options = { 'instance_name': 'S3', 'description': 'instance for s3', 'storage_policy':'cs_sp', 'number_of_streams': 2, 'access_node': 'CS', 'accesskey':'xxxxxxxx', 'secretkey':'yyyyyyyy', 'cloudapps_type': 's3' } Cloud : Google Cloud cloud_options = { 'instance_name': 'google_test', 'description': 'instance for google', 'storage_policy':'cs_sp', 'number_of_streams': 2, 'access_node': 'CS', 'cloudapps_type': 'google_cloud' 'host_url':'storage.googleapis.com', 'access_key':'xxxxxx', 'secret_key':'yyyyyy' } Cloud : Azure Datalake Gen2 cloud_options = { 'instance_name': 'TestAzureDL', 'access_node': 'CS', 'description': None, 'storage_policy': 'cs_sp', 'accountname': 'xxxxxx', 'accesskey': 'xxxxxx', 'number_of_streams': 1, 'cloudapps_type': 'azureDL' } Cloud : Amazon RDS cloud_options = { 'instance_name': 'RDS', 'storage_plan': 'cs_sp', 'storage_policy': 'cs_sp', 'access_node': 'CS', 'access_key': 'xxxxx', 'secret_key': 'xxxxx', 'cloudapps_type': 'amazon_rds' } Cloud : Amazon Redshift cloud_options = { 'instance_name': 'Redshift', 'storage_plan': 'cs_sp', 'storage_policy': 'cs_sp', 'access_node': 'CS', 'access_key': 'xxxxx', 'secret_key': 'xxxxx', 'cloudapps_type': 'amazon_redshift' } Cloud : Amazon Document DB cloud_options = { 'instance_name': 'DocumentDB', 'storage_plan': 'cs_sp', 'storage_policy': 'cs_sp', 'access_node': 'CS', 'access_key': 'xxxxxx', 'secret_key': 'xxxxxx', 'cloudapps_type': 'amazon_docdb' } Returns: dict  JSON request to pass to the API Raises : SDKException : if cloud storage instance with same name already exists if given storage policy does not exist in commcell Cloud : Amazon DynamoDB cloud_options = { 'instance_name': 'DynamoDB', 'storage_plan': 'cs_sp', 'storage_policy': 'cs_sp', 'access_node': 'CS', 'access_key': 'xxxxxx', 'secret_key': 'xxxxxx', 'cloudapps_type': 'amazon_dynamodb' } Returns: dict  JSON request to pass to the API Raises : SDKException : if cloud storage instance with same name already exists if given storage policy does not exist in commcell",
+"doc":"Returns the JSON request to pass to the API for adding a cloud storage instance Args: cloud_options (dict)  Options needed for adding a new cloud storage instance. Example: Cloud : S3 cloud_options = { 'instance_name': 'S3', 'description': 'instance for s3', 'storage_policy':'cs_sp', 'number_of_streams': 2, 'access_node': 'CS', 'accesskey':'xxxxxxxx', 'secretkey':'yyyyyyyy', 'cloudapps_type': 's3' } Cloud : Google Cloud cloud_options = { 'instance_name': 'google_test', 'description': 'instance for google', 'storage_plan':'cs_sp', 'number_of_streams': 2, 'access_node': 'CS', 'cloudapps_type': 'google_cloud' 'host_url':'storage.googleapis.com', 'access_key':'xxxxxx', 'secret_key':'yyyyyy' } Cloud : Azure Datalake Gen2 cloud_options = { 'instance_name': 'TestAzureDL', 'storage_plan':'cs_sp', 'access_node': 'CS', 'description': None, 'accountname': 'xxxxxx', 'accesskey': 'xxxxxx', 'number_of_streams': 1, 'cloudapps_type': 'azureDL' } Cloud : Amazon RDS cloud_options = { 'instance_name': 'RDS', 'storage_plan': 'cs_sp', 'access_node': 'CS', 'access_key': 'xxxxx', 'secret_key': 'xxxxx', 'cloudapps_type': 'amazon_rds' } Cloud : Amazon Redshift cloud_options = { 'instance_name': 'Redshift', 'storage_plan': 'cs_sp', 'access_node': 'CS', 'access_key': 'xxxxx', 'secret_key': 'xxxxx', 'cloudapps_type': 'amazon_redshift' } Cloud : Amazon Document DB cloud_options = { 'instance_name': 'DocumentDB', 'storage_plan': 'cs_sp', 'access_node': 'CS', 'access_key': 'xxxxxx', 'secret_key': 'xxxxxx', 'cloudapps_type': 'amazon_docdb' } Returns: dict  JSON request to pass to the API Raises : SDKException : if cloud storage instance with same name already exists if given storage policy does not exist in commcell Cloud : Amazon DynamoDB cloud_options = { 'instance_name': 'DynamoDB', 'storage_plan': 'cs_sp', 'access_node': 'CS', 'access_key': 'xxxxxx', 'secret_key': 'xxxxxx', 'cloudapps_type': 'amazon_dynamodb' } Returns: dict  JSON request to pass to the API Raises : SDKException : if cloud storage instance with same name already exists if given storage policy does not exist in commcell",
 "func":1
 },
 {
@@ -13853,7 +13931,7 @@ INDEX=[
 {
 "ref":"cvpysdk.instances.cloudapps.dynamics365_instance",
 "url":87,
-"doc":"File for performing operations on a MS Dynamics 365 Instance. MSDynamics365Instance is the only class defined in this file. MSDynamics365Instance: Class derived from CloudAppsInstance Base class and representing a Dynamics 365 CRM instance, MSDynamics365Instance:  Methods  _get_instance_properties()  Instance class method overwritten to fetch cloud apps instance properties _get_instance_properties_json()  Returns the instance properties json discover_content()  Discover content for the Dynamics 365 Instance  Properties  access_node  Name of the access node that the instance is associated with"
+"doc":"File for performing operations on a MS Dynamics 365 Instance. MSDynamics365Instance is the only class defined in this file. MSDynamics365Instance: Class derived from CloudAppsInstance Base class and representing a Dynamics 365 CRM instance, MSDynamics365Instance:  Methods  _get_instance_properties()  Instance class method overwritten to fetch cloud apps instance properties _get_instance_properties_json()  Returns the instance properties json discover_content()  Discover content for the Dynamics 365 Instance  Properties  access_node  Name of the access node that the instance is associated with idx_app_type  Returns the App type of the MS Dynamics 365 instance"
 },
 {
 "ref":"cvpysdk.instances.cloudapps.dynamics365_instance.MSDynamics365Instance",
@@ -13864,6 +13942,11 @@ INDEX=[
 "ref":"cvpysdk.instances.cloudapps.dynamics365_instance.MSDynamics365Instance.access_node",
 "url":87,
 "doc":"Returns the name of the access node for this MS Dynamics 365 instance"
+},
+{
+"ref":"cvpysdk.instances.cloudapps.dynamics365_instance.MSDynamics365Instance.idx_app_type",
+"url":87,
+"doc":"Returns the App type of the MS Dynamics 365 instance"
 },
 {
 "ref":"cvpysdk.instances.cloudapps.dynamics365_instance.MSDynamics365Instance.discover_content",
@@ -14500,7 +14583,7 @@ INDEX=[
 {
 "ref":"cvpysdk.instances.hanainstance.SAPHANAInstance.restore",
 "url":94,
-"doc":"Restores the databases specified in the input paths list. Args: pseudo_client (str)  HANA client to restore the database at instance (str)  destination instance to restore the db at backupset_name (str)  backupset name of the instance to be restored. If the instance is a single DB instance then the backupset name is  default . default: default backup_prefix (str)  prefix of the backup job default: None point_in_time (str)  time to which db should be restored to default: None initialize_log_area (bool)  boolean to specify whether to initialize the new log area after restore default: False use_hardware_revert (bool)  boolean to specify whether to do a hardware revert in restore default: False clone_env (bool)  boolean to specify whether the database should be cloned or not default: False check_access (bool)  check access during restore or not default: True destination_instance_dir (str)  HANA data directory for snap cross instance restore or cross machine restores default: None ignore_delta_backups (bool)  whether to ignore delta backups during restore or not default: True Returns: object - instance of the Job class for this restore job Raises: SDKException: if instance is not a string or object if response is empty if response is not success",
+"doc":"Restores the databases specified in the input paths list. Args: pseudo_client (str)  HANA client to restore the database at instance (str)  destination instance to restore the db at backupset_name (str)  backupset name of the instance to be restored. If the instance is a single DB instance then the backupset name is  default . default: default backup_prefix (str)  prefix of the backup job default: None point_in_time (str)  time to which db should be restored to default: None initialize_log_area (bool)  boolean to specify whether to initialize the new log area after restore default: False use_hardware_revert (bool)  boolean to specify whether to do a hardware revert in restore default: False clone_env (bool)  boolean to specify whether the database should be cloned or not default: False check_access (bool)  check access during restore or not default: True destination_instance_dir (str)  HANA data directory for snap cross instance restore or cross machine restores default: None ignore_delta_backups (bool)  whether to ignore delta backups during restore or not default: True no_of_streams (int)  number of streams to be used for restore default: 2 Returns: object - instance of the Job class for this restore job Raises: SDKException: if instance is not a string or object if response is empty if response is not success",
 "func":1
 },
 {
@@ -17713,7 +17796,7 @@ INDEX=[
 {
 "ref":"cvpysdk.job",
 "url":63,
-"doc":"Main file for performing operations on a job. JobController: Class for managing jobs on this commcell JobManagement: Class for performing Job Management operations Job: Class for keeping track of a job and perform various operations on it. JobController       = __init__(commcell_object)  initializes the instance of JobController class associated with the specified commcell __str__()  returns the string representation of the active jobs on this commcell __repr__()  returns the string representation of the object of this class, with the commcell it is associated with _get_jobs_list()  executes the request, and parses and returns the jobs response _get_jobs_request_json( options)  Returns the request json for the jobs request _modify_all_jobs(operation_type=None)  executes a request on the server to suspend/resume/kill all the jobs on the commserver. all_jobs()  returns all the jobs on this commcell active_jobs()  returns the dict of active jobs and their details finished_jobs()  retutns the dict of finished jobs and their details get()  returns the Job class instance for the given job id kill_all_jobs()  Kills all jobs on the commcell resume_all_jobs()  Resumes all jobs on the commcell suspend_all_jobs()  Suspends all jobs on the commcell JobManagement        __init__(commcell_object)  initialise object of the JobManagement class _set_jobmanagement_settings()  sets the jobmanagement settings _refresh()  refresh the job management settings set_general_settings(settings)  sets the general settings of job management set_priority_settings(settings)  sets the priority settings of job management set_restart_settings(settings)  sets the restart settings of job management set_update_settings(settings)  sets the update settings of job management job_priority_precedence  gets the job priority precedence job_priority_precedence(priority_type)  sets the job priority precedence property start_phase_retry_interval  gets the start phase retry interval in (minutes) start_phase_retry_interval(minutes)  sets the start phase retry interval property state_update_interval_for_continuous_data_replicator  gets the start phase retry interval in (minutes) state_update_interval_for_continuous_data_replicator(minutes)  sets the state update interval for continuous data replicator allow_running_jobs_to_complete_past_operation_window  gets the allow running jobs to complete past operation window(True/False) allow_running_jobs_to_complete_past_operation_window(flag)  sets the allow running jobs to complete past operation window job_alive_check_interval_in_minutes  gets the job alive check interval in (minutes) job_alive_check_interval_in_minutes(minutes)  sets the job alive check interval in minutes queue_scheduled_jobs  gets the queue scheduled jobs(True/False) queue_scheduled_jobs(flags)  sets the queue scheduled jobs enable_job_throttle_at_client_level  gets the enable job throttle at client level (True/False) enable_job_throttle_at_client_level(flag)  sets the enable job throttle at client level enable_multiplexing_for_db_agents  gets the enable multiplexing for db agents (True/False) enable_multiplexing_for_db_agents(flag)  sets the enable multiplexing for db agents queue_jobs_if_conflicting_jobs_active  gets the queue jobs if conflicting jobs active (True/False) queue_jobs_if_conflicting_jobs_active(flag)  sets the queue jobs if conflicting jobs active queue_jobs_if_activity_disabled  gets the queue jobs if activity disabled (True/False) queue_jobs_if_activity_disabled(flag)  sets the queue jobs if activity disabled backups_preempts_auxilary_copy  gets the backups preempts auxilary copy (True/False) backups_preempts_auxilary_copy(flag)  sets the backups preempts auxilary copy restore_preempts_other_jobs  gets the restore preempts other jobs (True/False) restore_preempts_other_jobs(flag)  sets the restore preempts other jobs enable_multiplexing_for_oracle  gets the enable multiplexing for oracle (True/False) enable_multiplexing_for_oracle(flag)  sets the enable multiplexing for oracle job_stream_high_water_mark_level  gets the job stream high water mark level job_stream_high_water_mark_level(level)  sets the job stream high water mark level backups_preempts_other_backups  gets the backups preempts other backups (True/False) backups_preempts_other_backups(flag)  sets the backups preempts other backups do_not_start_backups_on_disabled_client  gets the do not start backups on disabled client(True/False) do_not_start_backups_on_disabled_client(flag)  sets the do not start backups on disabled client get_restart_setting(jobtype)  gets the restart settings of a specific jobtype get_priority_setting(jobtype)  gets the priority setting of a specific jobtype get_update_setting(jobtype)  gets the update settings of a specific jobtype get_restart_settings  gets the restart settings of job management get_priority_settings  gets the priority settings of job management get_update_settings  gets the update settings of job management Job  = __init__()  initializes the instance of Job class associated with the specified commcell of job with id: 'job_id' __repr__()  returns the string representation of the object of this class, with the job id it is associated with _is_valid_job()  checks if the job with the given id is a valid job or not _get_job_summary()  gets the summary of the job with the given job id _get_job_details()  gets the details of the job with the given job id _initialize_job_properties() initializes the properties of the job _wait_for_status()  waits for 6 minutes or till the job status is changed to given status, whichever is earlier wait_for_completion()  waits for the job to finish, (job.is_finished  True) is_finished()  checks for the status of the job. Returns True if finished, else False pause()  suspend the job resume()  resumes the job resubmit()  to resubmit the job kill()  kills the job refresh()  refresh the properties of the Job advanced_job_details()  Returns advanced properties for the job get_events()  returns the commserv events for the job get_child_jobs()  Returns the child jobs Job instance Attributes            -  job.is_finished  specifies whether the job is finished or not (True / False)  job.client_name  returns the name of the client, job is running for  job.agent_name  returns the name of the agent, job is running for  job.instance_name  returns the name of the instance, job is running for  job.backupset_name  returns the name of the backupset, job is running for  job.subclient_name  returns the name of the subclient, job is running for  job.status  returns the current status of the job (Completed / Suspended / Waiting /  . / etc.) http: documentation.commvault.com/commvault/v11/article?p=features/rest_api/operations/get_job.htm please refer status section in above doc link for complete list of status available  job.job_id  returns the id of the job  job.job_type  returns the type of the job  job.backup_level  returns the backup level (if applicable), otherwise None  job.start_time  returns the start time of the job  job.end_time  returns the end time of the job  job.delay_reason  reason why the job was delayed  job.pending_reason  reason if job went into pending state  job.phase  returns the current phase of the job  job.summary  returns the dictionary consisting of the full summary of the job  job.username  returns the username with which the job started  job.userid  returns the userid with which the job started  job.details  returns the dictionary consisting of the full details of the job  job.num_of_files_transferred  returns the current number of files transferred for the job.  job.state  returns the current state of the job. ErrorRule     = _get_xml_for_rule()  Returns the XML for a given rule's dictionary of key value pairs. add_error_rule()  Add new error rules as well as update existing rules. _modify_job_status_on_errors()  Internally used to enable or disable job status on errors. enable()  Enable an error rule for a specific iDA using _modify_job_status_on_errors. disable()  Disable an error rule for a specific iDA using _modify_job_status_on_errors."
+"doc":"Main file for performing operations on a job. JobController: Class for managing jobs on this commcell JobManagement: Class for performing Job Management operations Job: Class for keeping track of a job and perform various operations on it. JobController       = __init__(commcell_object)  initializes the instance of JobController class associated with the specified commcell __str__()  returns the string representation of the active jobs on this commcell __repr__()  returns the string representation of the object of this class, with the commcell it is associated with _get_jobs_list()  executes the request, and parses and returns the jobs response _get_jobs_request_json( options)  Returns the request json for the jobs request _modify_all_jobs(operation_type=None)  executes a request on the server to suspend/resume/kill all the jobs on the commserver. all_jobs()  returns all the jobs on this commcell active_jobs()  returns the dict of active jobs and their details finished_jobs()  retutns the dict of finished jobs and their details get()  returns the Job class instance for the given job id kill_all_jobs()  Kills all jobs on the commcell resume_all_jobs()  Resumes all jobs on the commcell suspend_all_jobs()  Suspends all jobs on the commcell JobManagement        __init__(commcell_object)  initialise object of the JobManagement class _set_jobmanagement_settings()  sets the jobmanagement settings _refresh()  refresh the job management settings set_general_settings(settings)  sets the general settings of job management set_priority_settings(settings)  sets the priority settings of job management set_restart_settings(settings)  sets the restart settings of job management set_update_settings(settings)  sets the update settings of job management job_priority_precedence  gets the job priority precedence job_priority_precedence(priority_type)  sets the job priority precedence property start_phase_retry_interval  gets the start phase retry interval in (minutes) start_phase_retry_interval(minutes)  sets the start phase retry interval property state_update_interval_for_continuous_data_replicator  gets the start phase retry interval in (minutes) state_update_interval_for_continuous_data_replicator(minutes)  sets the state update interval for continuous data replicator allow_running_jobs_to_complete_past_operation_window  gets the allow running jobs to complete past operation window(True/False) allow_running_jobs_to_complete_past_operation_window(flag)  sets the allow running jobs to complete past operation window job_alive_check_interval_in_minutes  gets the job alive check interval in (minutes) job_alive_check_interval_in_minutes(minutes)  sets the job alive check interval in minutes queue_scheduled_jobs  gets the queue scheduled jobs(True/False) queue_scheduled_jobs(flags)  sets the queue scheduled jobs enable_job_throttle_at_client_level  gets the enable job throttle at client level (True/False) enable_job_throttle_at_client_level(flag)  sets the enable job throttle at client level enable_multiplexing_for_db_agents  gets the enable multiplexing for db agents (True/False) enable_multiplexing_for_db_agents(flag)  sets the enable multiplexing for db agents queue_jobs_if_conflicting_jobs_active  gets the queue jobs if conflicting jobs active (True/False) queue_jobs_if_conflicting_jobs_active(flag)  sets the queue jobs if conflicting jobs active queue_jobs_if_activity_disabled  gets the queue jobs if activity disabled (True/False) queue_jobs_if_activity_disabled(flag)  sets the queue jobs if activity disabled backups_preempts_auxilary_copy  gets the backups preempts auxilary copy (True/False) backups_preempts_auxilary_copy(flag)  sets the backups preempts auxilary copy restore_preempts_other_jobs  gets the restore preempts other jobs (True/False) restore_preempts_other_jobs(flag)  sets the restore preempts other jobs enable_multiplexing_for_oracle  gets the enable multiplexing for oracle (True/False) enable_multiplexing_for_oracle(flag)  sets the enable multiplexing for oracle job_stream_high_water_mark_level  gets the job stream high water mark level job_stream_high_water_mark_level(level)  sets the job stream high water mark level backups_preempts_other_backups  gets the backups preempts other backups (True/False) backups_preempts_other_backups(flag)  sets the backups preempts other backups do_not_start_backups_on_disabled_client  gets the do not start backups on disabled client(True/False) do_not_start_backups_on_disabled_client(flag)  sets the do not start backups on disabled client get_restart_setting(jobtype)  gets the restart settings of a specific jobtype get_priority_setting(jobtype)  gets the priority setting of a specific jobtype get_update_setting(jobtype)  gets the update settings of a specific jobtype get_restart_settings  gets the restart settings of job management get_priority_settings  gets the priority settings of job management get_update_settings  gets the update settings of job management Job  = __init__()  initializes the instance of Job class associated with the specified commcell of job with id: 'job_id' __repr__()  returns the string representation of the object of this class, with the job id it is associated with _is_valid_job()  checks if the job with the given id is a valid job or not _get_job_summary()  gets the summary of the job with the given job id _get_job_details()  gets the details of the job with the given job id _initialize_job_properties() initializes the properties of the job _wait_for_status()  waits for 6 minutes or till the job status is changed to given status, whichever is earlier wait_for_completion()  waits for the job to finish, (job.is_finished  True) is_finished()  checks for the status of the job. Returns True if finished, else False pause()  suspend the job resume()  resumes the job resubmit()  to resubmit the job kill()  kills the job refresh()  refresh the properties of the Job advanced_job_details()  Returns advanced properties for the job get_events()  returns the commserv events for the job get_child_jobs()  Returns the child jobs Job instance Attributes            -  job.is_finished  specifies whether the job is finished or not (True / False)  job.client_name  returns the name of the client, job is running for  job.agent_name  returns the name of the agent, job is running for  job.instance_name  returns the name of the instance, job is running for  job.backupset_name  returns the name of the backupset, job is running for  job.subclient_name  returns the name of the subclient, job is running for  job.status  returns the current status of the job (Completed / Suspended / Waiting /  . / etc.) http: documentation.commvault.com/commvault/v11/article?p=features/rest_api/operations/get_job.htm please refer status section in above doc link for complete list of status available  job.job_id  returns the id of the job  job.job_type  returns the type of the job  job.backup_level  returns the backup level (if applicable), otherwise None  job.start_time  returns the start time of the job  job.end_time  returns the end time of the job  job.delay_reason  reason why the job was delayed  job.pending_reason  reason if job went into pending state  job.phase  returns the current phase of the job  job.summary  returns the dictionary consisting of the full summary of the job  job.attempts  returns the dictionary consisting of the attempt details of the job  job.username  returns the username with which the job started  job.userid  returns the userid with which the job started  job.details  returns the dictionary consisting of the full details of the job  job.num_of_files_transferred  returns the current number of files transferred for the job.  job.state  returns the current state of the job. ErrorRule     = _get_xml_for_rule()  Returns the XML for a given rule's dictionary of key value pairs. add_error_rule()  Add new error rules as well as update existing rules. _modify_job_status_on_errors()  Internally used to enable or disable job status on errors. enable()  Enable an error rule for a specific iDA using _modify_job_status_on_errors. disable()  Disable an error rule for a specific iDA using _modify_job_status_on_errors."
 },
 {
 "ref":"cvpysdk.job.JobController",
@@ -17723,19 +17806,19 @@ INDEX=[
 {
 "ref":"cvpysdk.job.JobController.all_jobs",
 "url":63,
-"doc":"Returns the dict consisting of all the jobs executed on the Commcell within the number of hours specified in lookup time value. Args: client_name (str)  name of the client to filter out the jobs for default: None, get all the jobs lookup_time (int)  get all the jobs executed within the number of hours default: 5 Hours job_filter (str)  type of jobs to filter for multiple filters, give the values  comma(,) separated List of Possible Values: Backup Restore AUXCOPY WORKFLOW etc http: documentation.commvault.com/commvault/v11/article?p=features/rest_api/operations/get_job.htm to get the complete list of filters available default: None options (dict)  dict of key-word arguments Available Options: limit (int)  total number of jobs list that are to be returned default: 20 show_aged_job (bool)  boolean specifying whether to include aged jobs in the result or not default: False clients_list (list)  list of clients to return the jobs for default: [] job_type_list (list)  list of job operation types default: [] job_summary (str)  To return the basic job summary or full job summary default: basic accepted values: ['basic', 'full'] Returns: dict - dictionary consisting of the job IDs matching the given criteria as the key, and their details as its value Raises: SDKException: if client name is given, and no client exists with the given name",
+"doc":"Returns the dict consisting of all the jobs executed on the Commcell within the number of hours specified in lookup time value. Args: client_name (str)  name of the client to filter out the jobs for default: None, get all the jobs lookup_time (int)  get all the jobs executed within the number of hours default: 5 Hours job_filter (str)  type of jobs to filter for multiple filters, give the values  comma(,) separated List of Possible Values: Backup Restore AUXCOPY WORKFLOW etc http: documentation.commvault.com/commvault/v11/article?p=features/rest_api/operations/get_job.htm to get the complete list of filters available default: None options (dict)  dict of key-word arguments Available Options: limit (int)  total number of jobs list that are to be returned default: 20 offset (int)  value from which starting job to be returned is counted default: 0 show_aged_job (bool)  boolean specifying whether to include aged jobs in the result or not default: False hide_admin_jobs (bool)  boolean specifying whether to exclude admin jobs from the result or not default: False clients_list (list)  list of clients to return the jobs for default: [] job_type_list (list)  list of job operation types default: [] job_summary (str)  To return the basic job summary or full job summary default: basic accepted values: ['basic', 'full'] Returns: dict - dictionary consisting of the job IDs matching the given criteria as the key, and their details as its value Raises: SDKException: if client name is given, and no client exists with the given name",
 "func":1
 },
 {
 "ref":"cvpysdk.job.JobController.active_jobs",
 "url":63,
-"doc":"Returns the dict consisting of all the active jobs currently being executed on the Commcell within the number of hours specified in lookup time value. Args: client_name (str)  name of the client to filter out the jobs for default: None, get all the jobs lookup_time (int)  get all the jobs executed within the number of hours default: 1 Hour(s) job_filter (str)  type of jobs to filter for multiple filters, give the values  comma(,) separated List of Possible Values: Backup Restore AUXCOPY WORKFLOW etc http: documentation.commvault.com/commvault/v11/article?p=features/rest_api/operations/get_job.htm to get the complete list of filters available default: None options (dict)  dict of key-word arguments Available Options: limit (int)  total number of jobs list that are to be returned default: 20 show_aged_job (bool)  boolean specifying whether to include aged jobs in the result or not default: False clients_list (list)  list of clients to return the jobs for default: [] job_type_list (list)  list of job operation types default: [] job_summary (str)  To return the basic job summary or full job summary default: basic accepted values: ['basic', 'full'] entity (dict)  dict containing entity details to which associated jobs has to be fetched Example : To fetch job details of particular data source id \"entity\": { \"dataSourceId\": 2575 } Returns: dict - dictionary consisting of the job IDs matching the given criteria as the key, and their details as its value Raises: SDKException: if client name is given, and no client exists with the given name",
+"doc":"Returns the dict consisting of all the active jobs currently being executed on the Commcell within the number of hours specified in lookup time value. Args: client_name (str)  name of the client to filter out the jobs for default: None, get all the jobs lookup_time (int)  get all the jobs executed within the number of hours default: 1 Hour(s) job_filter (str)  type of jobs to filter for multiple filters, give the values  comma(,) separated List of Possible Values: Backup Restore AUXCOPY WORKFLOW etc http: documentation.commvault.com/commvault/v11/article?p=features/rest_api/operations/get_job.htm to get the complete list of filters available default: None options (dict)  dict of key-word arguments Available Options: limit (int)  total number of jobs list that are to be returned default: 20 offset (int)  value from which starting job to be returned is counted default: 0 show_aged_job (bool)  boolean specifying whether to include aged jobs in the result or not default: False hide_admin_jobs (bool)  boolean specifying whether to exclude admin jobs from the result or not default: False clients_list (list)  list of clients to return the jobs for default: [] job_type_list (list)  list of job operation types default: [] job_summary (str)  To return the basic job summary or full job summary default: basic accepted values: ['basic', 'full'] entity (dict)  dict containing entity details to which associated jobs has to be fetched Example : To fetch job details of particular data source id \"entity\": { \"dataSourceId\": 2575 } Returns: dict - dictionary consisting of the job IDs matching the given criteria as the key, and their details as its value Raises: SDKException: if client name is given, and no client exists with the given name",
 "func":1
 },
 {
 "ref":"cvpysdk.job.JobController.finished_jobs",
 "url":63,
-"doc":"Returns the dict consisting of all the finished jobs on the Commcell within the number of hours specified in lookup time value. Args: client_name (str)  name of the client to filter out the jobs for default: None, get all the jobs ir-respective of client lookup_time (int)  get all the jobs executed within the number of hours default: 24 Hours job_filter (str)  type of jobs to filter for multiple filters, give the values  comma(,) separated List of Possible Values: Backup Restore AUXCOPY WORKFLOW etc http: documentation.commvault.com/commvault/v11/article?p=features/rest_api/operations/get_job.htm to get the complete list of filters available default: None options (dict)  dict of key-word arguments Available Options: limit (int)  total number of jobs list that are to be returned default: 20 show_aged_job (bool)  boolean specifying whether to include aged jobs in the result or not default: False clients_list (list)  list of clients to return the jobs for default: [] job_type_list (list)  list of job operation types default: [] job_summary (str)  To return the basic job summary or full job summary default: basic accepted values: ['basic', 'full'] entity (dict)  dict containing entity details to which associated jobs has to be fetched Example : To fetch job details of particular data source id \"entity\": { \"dataSourceId\": 2575 } Returns: dict - dictionary consisting of the job IDs matching the given criteria as the key, and their details as its value Raises: SDKException: if client name is given, and no client exists with the given name",
+"doc":"Returns the dict consisting of all the finished jobs on the Commcell within the number of hours specified in lookup time value. Args: client_name (str)  name of the client to filter out the jobs for default: None, get all the jobs ir-respective of client lookup_time (int)  get all the jobs executed within the number of hours default: 24 Hours job_filter (str)  type of jobs to filter for multiple filters, give the values  comma(,) separated List of Possible Values: Backup Restore AUXCOPY WORKFLOW etc http: documentation.commvault.com/commvault/v11/article?p=features/rest_api/operations/get_job.htm to get the complete list of filters available default: None options (dict)  dict of key-word arguments Available Options: limit (int)  total number of jobs list that are to be returned default: 20 offset (int)  value from which starting job to be returned is counted default: 0 show_aged_job (bool)  boolean specifying whether to include aged jobs in the result or not default: False hide_admin_jobs (bool)  boolean specifying whether to exclude admin jobs from the result or not default: False clients_list (list)  list of clients to return the jobs for default: [] job_type_list (list)  list of job operation types default: [] job_summary (str)  To return the basic job summary or full job summary default: basic accepted values: ['basic', 'full'] entity (dict)  dict containing entity details to which associated jobs has to be fetched Example : To fetch job details of particular data source id \"entity\": { \"dataSourceId\": 2575 } Returns: dict - dictionary consisting of the job IDs matching the given criteria as the key, and their details as its value Raises: SDKException: if client name is given, and no client exists with the given name",
 "func":1
 },
 {
@@ -18023,6 +18106,11 @@ INDEX=[
 "doc":"Treats the job current phase as a read-only attribute."
 },
 {
+"ref":"cvpysdk.job.Job.attempts",
+"url":63,
+"doc":"Returns job attempts data as read-only attribute"
+},
+{
 "ref":"cvpysdk.job.Job.summary",
 "url":63,
 "doc":"Treats the job full summary as a read-only attribute."
@@ -18124,7 +18212,7 @@ INDEX=[
 {
 "ref":"cvpysdk.key_management_server",
 "url":133,
-"doc":"Main file for performing Key Management Server operations on commcell This file has all the classes related to Key Management Server operations. KeyManagementServerConstants  Abstract class to define the key management server related constancts KeyManagementServers  Class for representing all the KMS in the commcell. KeyManagementServer  Class for representing a single KMS in the commcell. KeyManagementServerConstants Attributes                    =  _KMS_TYPE  dictionary of key management server types  _KMS_AUTHENTICATION_TYPE  dictionary of key management server authentication KeyManagementServers Attributes               _kms_dict  a name-indexed dictionary of KeyManagementServer objects KeyManagementServers:         = __init__()  initializes KeyManagementServers class object _get_kms_dict()  fetches the dictionary of all Key Management Servers get()  gets a specific Key Management Server object get_all_kms()  gets the dictionary of all Key Management Servers refresh()  refreshes the dictionary of Key Management Servers delete()  deletes a Key Management Server has_kms()  checks if the Key Management Server exists or not add_aws_kms()  configures AWS Key Management Server with key based authentication _add_aws_kms_with_cred_file()  configures AWS KMS with credential file based authentication _add_aws_kms_with_iam()  configures AWS KMS with IAM based authentication _add_azure_key_vault_certificate_auth()  Configure Azure Key Management Server with AD-app certificate based authentication _add_azure_key_vault_iam_auth()  Configure Azure Key Management Server with IAM managed identity based authentication _kms_api_call()  call KMS API KeyManagementServer:         = __init__()  initializes KeyManagementServer class object _get_name_from_type()  returns the type name for type id KeyManagementServer Attributes               name  name of the Key Management Server  id  id of the Key Management Server  type_id  type id of the Key Management Server  type_name  type name of the Key Management Server"
+"doc":"Main file for performing Key Management Server operations on commcell This file has all the classes related to Key Management Server operations. KeyManagementServerConstants  Abstract class to define the key management server related constancts KeyManagementServers  Class for representing all the KMS in the commcell. KeyManagementServer  Class for representing a single KMS in the commcell. KeyManagementServerConstants Attributes                    =  _KMS_TYPE  dictionary of key management server types  _KMS_AUTHENTICATION_TYPE  dictionary of key management server authentication KeyManagementServers Attributes               _kms_dict  a name-indexed dictionary of KeyManagementServer objects KeyManagementServers:         = __init__()  initializes KeyManagementServers class object _get_kms_dict()  fetches the dictionary of all Key Management Servers get()  gets a specific Key Management Server object get_all_kms()  gets the dictionary of all Key Management Servers refresh()  refreshes the dictionary of Key Management Servers delete()  deletes a Key Management Server has_kms()  checks if the Key Management Server exists or not add_aws_kms()  configures AWS Key Management Server with key based authentication _add_aws_kms_with_cred_file()  configures AWS KMS with credential file based authentication _add_aws_kms_with_iam()  configures AWS KMS with IAM based authentication _add_azure_key_vault_certificate_auth()  Configure Azure Key Management Server with AD-app certificate based authentication _add_azure_key_vault_iam_auth()  Configure Azure Key Management Server with IAM managed identity based authentication _add_kmip_certificate()  Configure KMIP supported Key Management Server with certificate based authentication _kms_api_call()  call KMS API KeyManagementServer:         = __init__()  initializes KeyManagementServer class object _get_name_from_type()  returns the type name for type id KeyManagementServer Attributes               name  name of the Key Management Server  id  id of the Key Management Server  type_id  type id of the Key Management Server  type_name  type name of the Key Management Server"
 },
 {
 "ref":"cvpysdk.key_management_server.KeyManagementServerConstants",
@@ -18169,7 +18257,7 @@ INDEX=[
 {
 "ref":"cvpysdk.key_management_server.KeyManagementServers.add",
 "url":133,
-"doc":"Method to add Key Management Server Args: kms_details (dictionary)  dictionary with KMS details input dictionary for creating AWS KMS without access node ( key based authentication ) kms_details = { \"KEY_PROVIDER_TYPE\": \"KEY_PROVIDER_AWS_KMS\", \"KMS_NAME\": \"KMS1\" , \"AWS_ACCESS_KEY\":\"1234\", \"AWS_SECRET_KEY\": \"1234\", \"AWS_REGION_NAME\": \"Asia Pacific (Mumbai)\",  Optional Value. Default is \"Asia Pacific (Mumbai)\" \"KEY_PROVIDER_AUTH_TYPE\": \"AWS_KEYS\" } input dictionary for creating AWS KMS with access node ( key based authentication ) kms_details = { \"KEY_PROVIDER_TYPE\": \"KEY_PROVIDER_AWS_KMS\", \"AWS_REGION_NAME\": \"US East (Ohio)\",  Optional Value. Default is \"Asia Pacific (Mumbai)\" \"ACCESS_NODE_NAME\": \"ma1\", \"KMS_NAME\": \"kms1 , \"KEY_PROVIDER_AUTH_TYPE\": \"AWS_KEYS\", \"AWS_ACCESS_KEY\": \"1234\", \"AWS_SECRET_KEY\": \"1234\"  Base64 encoded } input dictionary for creating AWS KMS with access node ( credential template file based authentication ) kms_details = { \"KEY_PROVIDER_TYPE\": \"KEY_PROVIDER_AWS_KMS\", \"AWS_REGION_NAME\": \"US East (Ohio)\",  Optional Value. Default is \"Asia Pacific (Mumbai)\" \"ACCESS_NODE_NAME\": \"client1\", \"KMS_NAME\": \"AWS_KMS_NAME\", \"KEY_PROVIDER_AUTH_TYPE\": \"AWS_CREDENTIALS_FILE\", \"AWS_CREDENTIALS_FILE_PROFILE_NAME\": \"AWSProfile1\" } input dictionary for creating AWS KMS with access Node ( IAM based authentication ) kms_details = { \"KEY_PROVIDER_TYPE\": \"KEY_PROVIDER_AWS_KMS\", \"ACCESS_NODE_NAME\": \"MA1\", \"KMS_NAME\": \"aws_kms_name\", \"KEY_PROVIDER_AUTH_TYPE\": \"AWS_IAM\" } input dictionary for creating Azure KMS with access Node ( certificate based authentication ) kms_details = { \"KEY_PROVIDER_TYPE\": \"KEY_PROVIDER_AZURE_KEY_VAULT\", \"ACCESS_NODE_NAME\": \"MediaAgent1\", \"KMS_NAME\": \"Azure_KMS_1\", \"KEY_PROVIDER_AUTH_TYPE\": \"AZURE_KEY_VAULT_CERTIFICATE\", \"AZURE_KEY_VAULT_KEY_LENGTH\":2048,  Optional Value. Default is 3072 \"AZURE_KEY_VAULT_NAME\":\"MyCompanyKeyVault\", \"AZURE_TENANT_ID\":\"123\", \"AZURE_APP_ID\":\"456\", \"AZURE_CERTIFICATE_PATH\":\"c:\\cert.pfx\", \"AZURE_CERTIFICATE_THUMBPRINT\":\"789\", \"AZURE_CERTIFICATE_PASSWORD\": \"password123\",  Base64 encoded } input dictionary for creating Azure KMS with access Node ( IAM managed identity based authentication ) kms_details = { \"KEY_PROVIDER_TYPE\": \"KEY_PROVIDER_AZURE_KEY_VAULT\", \"ACCESS_NODE_NAME\": \"ma1\", \"KMS_NAME\": \"MyKMS\", \"KEY_PROVIDER_AUTH_TYPE\": \"AZURE_KEY_VAULT_IAM\", \"AZURE_KEY_VAULT_NAME\":\"MyKeyVaultName\", } input dictionary for creating Azure KMS without access Node ( certificate based authentication ) kms_details = { \"KEY_PROVIDER_TYPE\": \"KEY_PROVIDER_AZURE_KEY_VAULT\", \"KMS_NAME\": \"MyKMS\", \"KEY_PROVIDER_AUTH_TYPE\": \"AZURE_KEY_VAULT_CERTIFICATE\", \"AZURE_KEY_VAULT_NAME\":\"MyKeyVaultName\", \"AZURE_TENANT_ID\": \"1234\", \"AZURE_APP_ID\": \"1234 , \"AZURE_CERTIFICATE_PATH\": \"c:\\cert.pfx\", \"AZURE_CERTIFICATE_THUMBPRINT\": \"1234\", \"AZURE_CERTIFICATE_PASSWORD\": \"1234XYZ \",  Base64 encoded }",
+"doc":"Method to add Key Management Server Args: kms_details (dictionary)  dictionary with KMS details input dictionary for creating AWS KMS without access node ( key based authentication ) kms_details = { \"KEY_PROVIDER_TYPE\": \"KEY_PROVIDER_AWS_KMS\", \"KMS_NAME\": \"KMS1\" , \"AWS_ACCESS_KEY\":\"1234\", \"AWS_SECRET_KEY\": \"1234\", \"AWS_REGION_NAME\": \"Asia Pacific (Mumbai)\",  Optional Value. Default is \"Asia Pacific (Mumbai)\" \"KEY_PROVIDER_AUTH_TYPE\": \"AWS_KEYS\" } input dictionary for creating AWS KMS with access node ( key based authentication ) kms_details = { \"KEY_PROVIDER_TYPE\": \"KEY_PROVIDER_AWS_KMS\", \"AWS_REGION_NAME\": \"US East (Ohio)\",  Optional Value. Default is \"Asia Pacific (Mumbai)\" \"ACCESS_NODE_NAME\": \"ma1\", \"KMS_NAME\": \"kms1 , \"KEY_PROVIDER_AUTH_TYPE\": \"AWS_KEYS\", \"AWS_ACCESS_KEY\": \"1234\", \"AWS_SECRET_KEY\": \"1234\"  Base64 encoded } input dictionary for creating AWS KMS with access node ( credential template file based authentication ) kms_details = { \"KEY_PROVIDER_TYPE\": \"KEY_PROVIDER_AWS_KMS\", \"AWS_REGION_NAME\": \"US East (Ohio)\",  Optional Value. Default is \"Asia Pacific (Mumbai)\" \"ACCESS_NODE_NAME\": \"client1\", \"KMS_NAME\": \"AWS_KMS_NAME\", \"KEY_PROVIDER_AUTH_TYPE\": \"AWS_CREDENTIALS_FILE\", \"AWS_CREDENTIALS_FILE_PROFILE_NAME\": \"AWSProfile1\" } input dictionary for creating AWS KMS with access Node ( IAM based authentication ) kms_details = { \"KEY_PROVIDER_TYPE\": \"KEY_PROVIDER_AWS_KMS\", \"ACCESS_NODE_NAME\": \"MA1\", \"KMS_NAME\": \"aws_kms_name\", \"KEY_PROVIDER_AUTH_TYPE\": \"AWS_IAM\" } input dictionary for creating Azure KMS with access Node ( certificate based authentication ) kms_details = { \"KEY_PROVIDER_TYPE\": \"KEY_PROVIDER_AZURE_KEY_VAULT\", \"ACCESS_NODE_NAME\": \"MediaAgent1\", \"KMS_NAME\": \"Azure_KMS_1\", \"KEY_PROVIDER_AUTH_TYPE\": \"AZURE_KEY_VAULT_CERTIFICATE\", \"AZURE_KEY_VAULT_KEY_LENGTH\":2048,  Optional Value. Default is 3072 \"AZURE_KEY_VAULT_NAME\":\"MyCompanyKeyVault\", \"AZURE_TENANT_ID\":\"123\", \"AZURE_APP_ID\":\"456\", \"AZURE_CERTIFICATE_PATH\":\"c:\\cert.pfx\", \"AZURE_CERTIFICATE_THUMBPRINT\":\"789\", \"AZURE_CERTIFICATE_PASSWORD\": \"password123\",  Base64 encoded } input dictionary for creating Azure KMS with access Node ( IAM managed identity based authentication ) kms_details = { \"KEY_PROVIDER_TYPE\": \"KEY_PROVIDER_AZURE_KEY_VAULT\", \"ACCESS_NODE_NAME\": \"ma1\", \"KMS_NAME\": \"MyKMS\", \"KEY_PROVIDER_AUTH_TYPE\": \"AZURE_KEY_VAULT_IAM\", \"AZURE_KEY_VAULT_NAME\":\"MyKeyVaultName\", } input dictionary for creating Azure KMS without access Node ( certificate based authentication ) kms_details = { \"KEY_PROVIDER_TYPE\": \"KEY_PROVIDER_AZURE_KEY_VAULT\", \"KMS_NAME\": \"MyKMS\", \"KEY_PROVIDER_AUTH_TYPE\": \"AZURE_KEY_VAULT_CERTIFICATE\", \"AZURE_KEY_VAULT_NAME\":\"MyKeyVaultName\", \"AZURE_TENANT_ID\": \"1234\", \"AZURE_APP_ID\": \"1234 , \"AZURE_CERTIFICATE_PATH\": \"c:\\cert.pfx\", \"AZURE_CERTIFICATE_THUMBPRINT\": \"1234\", \"AZURE_CERTIFICATE_PASSWORD\": \"1234XYZ \",  Base64 encoded } input dictionary for creating KMIP KMS with access Node ( certificate based authentication ) kms_details = { \"KEY_PROVIDER_TYPE\": \"KEY_PROVIDER_KMIP\", \"ACCESS_NODE_NAME\": \"client1\", \"KMS_NAME\": \"MyKMS\", \"KEY_PROVIDER_AUTH_TYPE\": \"KMIP_CERTIFICATE\", \"KMIP_CERTIFICATE_PATH\": \"C:\\certificate\\signed.crt\", \"KMIP_CERTIFICATE_KEY_PATH\": \"C:\\certificate\\clientkey.key\", \"KMIP_CA_CERTIFICATE_PATH\": \"C:\\certificate\\myCompany.pem\", \"KMIP_CERTIFICATE_PASS\": \"abcdxyz\",  Base64 encoded \"KMIP_HOST\": \"123.123.123.123\", \"KMIP_PORT\": \"9002\", \"KMIP_ENC_KEY_LENGTH\":256  Optional Value. Default is 256 }",
 "func":1
 },
 {
@@ -18998,7 +19086,7 @@ INDEX=[
 {
 "ref":"cvpysdk.organization",
 "url":143,
-"doc":"File for doing operations on an organization. This module has classes defined for doing operations for organizations:  . Add a new organization  . Delete an organization  . Enabling Auth Code  . Disabling Auth Code  . Get Auth Code  . Get the list of plans associated with the organization  . Update the plans associated with the organization  . Update the default plan of the organization  . Enabling Operator role for a user  . Disabling Operator role for a user This module now also supports remote operations added as part of Ring Routing project  . Enable fanout to view all organizations from associated service commcells  . Add new organization remotely to a service commcell  . Delete an organization in service commcell remotely  . Manage operators, tags of the organization remotely Organizations       = __init__(commcell_object)  initializes object of the Organizations class associated with the commcell __str__()  returns all the organizations associated with the commcell __repr__()  returns the string representation of an instance of this class __len__()  returns the number of organizations configured on the Commcell __getitem__()  returns the name of the organization for the organization Id or the details for the given organization name _get_organizations()  returns all organizations added to the commcell _get_headers()  returns headers required for remote operations has_organization()  checks whether the organization with given name exists or not add()  adds a new organization to the commcell add_remote_org()  adds a new organization to given service commcell get()  returns Organization class object for the specified input name get_remote_org()  returns RemoteOrganization class object for given input delete()  deletes an organization from the commcell or service commcell dissociate_plans()  disassociates plans from the organization refresh()  refresh the list of organizations in given commcell and/or service commcells Organizations Attributes              all_organizations  returns the dict consisting of organizations and their details  all_organizations_props  returns the dict consisting of organizations and their guid's  fanout  determines if remote operations will be performed, returns current fanout set Organization       __init__()  initializes instance of the Organization class for doing operations on the selected Organization __repr__()  returns the string representation of an instance of this class _get_organization_id()  gets the ID of the Organization _get_properties()  get the properties of the organization _get_company_usergroup()  get usergroups associated to a organization get_security_associations()  get the security associations for a organization _update_properties()  update the properties of the organization _update_properties_json()  update the values of organizationProperties tag in the properties JSON refresh()  refresh the properties of the organization enable_auth_code()  enable Auth Code generation for the organization disable_auth_code()  disable Auth Code generation for the organization add_users_as_operator()  assigns users as operator add_user_groups_as_operator()  assigns user groups as operator activate()  To activate the organization deactivate()  To deactivate the organization verify_owner_assignment_config()  Verifies that the ownership assignments settings are configured and set properly for company enable_auto_discover()  Enable autodiscover option for the oraganization disable_auto_discover()  Diable autodiscover option for the oraganization add_service_commcell_associations()  Adds the organization association on service commcell remove_service_commcell_associations() Removes the orgainization association on service commcell enable_tfa()  Enable tfa option for the organization disable_tfa()  Disable tfa option for the organization get_alerts()  get all the alerts associated to organization add_client_association()  Associates a client to an organization remove_client_association()  Removes the client from an organization enable_company_data_privacy()  enable company privacy to prevent admin access to company data disable_company_data_privacy()  To disable company privacy to prevent admin access to company data enable_owner_data_privacy()  To enable company privacy to allow owner to enable data privacy disable_owner_data_privacy()  To disable company privacy to allow owner to enable data privacy update_security_associations()  Updates Security Associations for user or usergroup on Organisation update_email_settings()  Updates Email settings for the organisation retire_offline_laptops()  Updates Company Laptops Retire / Delete settings passkey()  Handles Enable / Disable / Authorise / Change Passkey functionalities for Organisation allow_owners_to_enable_passkey()  Enables option to allow owners to enable / disable passkey Organization Attributes            - Following attributes are available for an instance of the Organization class:  organization_id  returns the id of the organization  organization_name  returns the name of the organization  description  returns the description for the organization  email_domain_names  returns the list of email domain names associated with the organization  domain_name  returns the primary domain associated with the organization  auth_code  returns the Auth Code for the Organization, if enabled  is_auth_code_enabled  returns boolean specifying whether Auth Code is enabled for the organization or not  machine_count  returns the count of machines associated with the organization  user_count  returns the count of users associated with the organization  contacts  returns the list of primary contacts for the organization  sender_name  returns email sender name  sender_email  returns email adress of sender  default_plan  returns the default plan associated with the organization  plans  returns the list of plans associated with the organization  operator_role  returns the operator role assigned to an user  tenant_operator  returns the operators associated with the organization  is_auto_discover_enabled  returns the autodiscover option for the Organization  is_backup_disabled  returns the backup activity status for the Organization  is_restore_disabled  returns the restore activity status for the Organization  is_login_disabled  returns the Login activity status for the Organization  password_age_days  returns the password age days for the Organization  is_download_software_from_internet_enabled  returns the status of download software option for the Organization  is_tfa_enabled  returns the status of tfa for the organization.  tfa_enabled_user_groups  returns list of user groups names for which tfa is enabled.  is_using_upn  returns if organization is using upn or not  reseller_enabled  returns if reseller is enabled or not  is_data_encryption_enabled  returns if owners are allowed to enable data encryption  infrastructure_type  returns infrastructure associated with a organization  auto_laptop_owners_enabled  returns if laptop owners are assigned automatically for an organization  supported_solutions  returns the supported solutions for an organization  job_start_time  returns the job start time associated with the organization  client_groups  returns clientgroups associated with the organization  file_exceptions  returns dictionary consisting Global File exceptions for the Organisation  sites  Returns Sites configured for Organisation  tags  Returns Tags associated with Organisation  isPasskeyEnabled  Returns True - If Passkey is enabled at Organisation level  isAuthrestoreEnabled  Returns True - If Authrestore is enabled at Organisation level  isAllowUserstoEnablePasskeyEnabled  Returns True - If users have rights to enable passkey  is_company_privacy_enabled  Returns True if the privacy is enabled for organization  is_owner_data_privacy_enabled  Returns True if the privacy is enabled for owner of client in organization  company_theme  Returns the company level theme if it exists RemoteOrganization       __init__()  initializes instance of the RemoteOrganization class for doing remote operations on the selected Organization __repr__()  returns the string representation of an instance of this class _get_organization_id()  gets the local ID of the RemoteOrganization _get_properties()  get the properties of the organization by fanout refresh()  refresh the properties of the organization activate()  To activate the organization deactivate()  To deactivate the organization get_entity_counts()  To get the counts of associated entities for company Organization Attributes            - Following attributes are available for an instance of the RemoteOrganization class:  organization_id  returns the local id of the organization  organization_name  returns the name of the organization  homecell  returns the commserve name of the service commcell of this org  organization_name  returns the name of the organization  domain_name  returns the primary domain associated with the organization (alias)  reseller_enabled  returns if reseller is enabled or not  is_backup_disabled  returns the backup activity status for the Organization  is_restore_disabled  returns the restore activity status for the Organization  is_login_disabled  returns the Login activity status for the Organization  tags  Returns Tags associated with Organisation  operators  Returns Operators associated with this Organization"
+"doc":"File for doing operations on an organization. This module has classes defined for doing operations for organizations:  . Add a new organization  . Delete an organization  . Enabling Auth Code  . Disabling Auth Code  . Get Auth Code  . Get the list of plans associated with the organization  . Update the plans associated with the organization  . Update the default plan of the organization  . Enabling Operator role for a user  . Disabling Operator role for a user This module now also supports remote operations added as part of Ring Routing project  . Enable fanout to view all organizations from associated service commcells  . Add new organization remotely to a service commcell  . Delete an organization in service commcell remotely  . Manage operators, tags of the organization remotely Organizations       = __init__(commcell_object)  initializes object of the Organizations class associated with the commcell __str__()  returns all the organizations associated with the commcell __repr__()  returns the string representation of an instance of this class __len__()  returns the number of organizations configured on the Commcell __getitem__()  returns the name of the organization for the organization Id or the details for the given organization name _get_organizations()  returns all organizations added to the commcell _get_headers()  returns headers required for remote operations has_organization()  checks whether the organization with given name exists or not add()  adds a new organization to the commcell add_remote_org()  adds a new organization to given service commcell get()  returns Organization class object for the specified input name get_remote_org()  returns RemoteOrganization class object for given input delete()  deletes an organization from the commcell or service commcell dissociate_plans()  disassociates plans from the organization refresh()  refresh the list of organizations in given commcell and/or service commcells Organizations Attributes              all_organizations  returns the dict consisting of organizations and their details  all_organizations_props  returns the dict consisting of organizations and their guid's  fanout  determines if remote operations will be performed, returns current fanout set Organization       __init__()  initializes instance of the Organization class for doing operations on the selected Organization __repr__()  returns the string representation of an instance of this class _get_organization_id()  gets the ID of the Organization _get_properties()  get the properties of the organization _get_company_usergroup()  get usergroups associated to a organization get_security_associations()  get the security associations for a organization _update_properties()  update the properties of the organization _update_properties_json()  update the values of organizationProperties tag in the properties JSON refresh()  refresh the properties of the organization enable_auth_code()  enable Auth Code generation for the organization disable_auth_code()  disable Auth Code generation for the organization add_users_as_operator()  assigns users as operator add_user_groups_as_operator()  assigns user groups as operator activate()  To activate the organization deactivate()  To deactivate the organization verify_owner_assignment_config()  Verifies that the ownership assignments settings are configured and set properly for company enable_auto_discover()  Enable autodiscover option for the oraganization disable_auto_discover()  Diable autodiscover option for the oraganization add_service_commcell_associations()  Adds the organization association on service commcell remove_service_commcell_associations() Removes the orgainization association on service commcell enable_tfa()  Enable tfa option for the organization disable_tfa()  Disable tfa option for the organization get_alerts()  get all the alerts associated to organization add_client_association()  Associates a client to an organization remove_client_association()  Removes the client from an organization enable_company_data_privacy()  enable company privacy to prevent admin access to company data disable_company_data_privacy()  To disable company privacy to prevent admin access to company data enable_owner_data_privacy()  To enable company privacy to allow owner to enable data privacy disable_owner_data_privacy()  To disable company privacy to allow owner to enable data privacy update_security_associations()  Updates Security Associations for user or usergroup on Organisation update_email_settings()  Updates Email settings for the organisation retire_offline_laptops()  Updates Company Laptops Retire / Delete settings passkey()  Handles Enable / Disable / Authorise / Change Passkey functionalities for Organisation allow_owners_to_enable_passkey()  Enables option to allow owners to enable / disable passkey Organization Attributes            - Following attributes are available for an instance of the Organization class:  organization_id  returns the id of the organization  organization_name  returns the name of the organization  description  returns the description for the organization  email_domain_names  returns the list of email domain names associated with the organization  domain_name  returns the primary domain associated with the organization  auth_code  returns the Auth Code for the Organization, if enabled  is_auth_code_enabled  returns boolean specifying whether Auth Code is enabled for the organization or not  machine_count  returns the count of machines associated with the organization  user_count  returns the count of users associated with the organization  contacts  returns the list of primary contacts for the organization  sender_name  returns email sender name  sender_email  returns email adress of sender  default_plan  returns the default plan associated with the organization  plans  returns the list of plans associated with the organization  operator_role  returns the operator role assigned to an user  tenant_operator  returns the operators associated with the organization  is_auto_discover_enabled  returns the autodiscover option for the Organization  is_backup_disabled  returns the backup activity status for the Organization  is_restore_disabled  returns the restore activity status for the Organization  is_login_disabled  returns the Login activity status for the Organization  password_age_days  returns the password age days for the Organization  is_download_software_from_internet_enabled  returns the status of download software option for the Organization  is_tfa_enabled  returns the status of tfa for the organization.  tfa_enabled_user_groups  returns list of user groups names for which tfa is enabled.  is_using_upn  returns if organization is using upn or not  reseller_enabled  returns if reseller is enabled or not  is_data_encryption_enabled  returns if owners are allowed to enable data encryption  infrastructure_type  returns infrastructure associated with a organization  auto_laptop_owners_enabled  returns if laptop owners are assigned automatically for an organization  supported_solutions  returns the supported solutions for an organization  job_start_time  returns the job start time associated with the organization  client_groups  returns clientgroups associated with the organization  file_exceptions  returns dictionary consisting Global File exceptions for the Organisation  sites  Returns Sites configured for Organisation  tags  Returns Tags associated with Organisation  isPasskeyEnabled  Returns True - If Passkey is enabled at Organisation level  isAuthrestoreEnabled  Returns True - If Authrestore is enabled at Organisation level  isAllowUserstoEnablePasskeyEnabled  Returns True - If users have rights to enable passkey  is_company_privacy_enabled  Returns True if the privacy is enabled for organization  is_owner_data_privacy_enabled  Returns True if the privacy is enabled for owner of client in organization  company_theme  Returns the company level theme if it exists  user_session_timeout  Returns the time after which user session expires for company users RemoteOrganization       __init__()  initializes instance of the RemoteOrganization class for doing remote operations on the selected Organization __repr__()  returns the string representation of an instance of this class _get_organization_id()  gets the local ID of the RemoteOrganization _get_properties()  get the properties of the organization by fanout refresh()  refresh the properties of the organization activate()  To activate the organization deactivate()  To deactivate the organization get_entity_counts()  To get the counts of associated entities for company Organization Attributes            - Following attributes are available for an instance of the RemoteOrganization class:  organization_id  returns the local id of the organization  organization_name  returns the name of the organization  homecell  returns the commserve name of the service commcell of this org  organization_name  returns the name of the organization  domain_name  returns the primary domain associated with the organization (alias)  reseller_enabled  returns if reseller is enabled or not  is_backup_disabled  returns the backup activity status for the Organization  is_restore_disabled  returns the restore activity status for the Organization  is_login_disabled  returns the Login activity status for the Organization  tags  Returns Tags associated with Organisation  operators  Returns Operators associated with this Organization"
 },
 {
 "ref":"cvpysdk.organization.Organizations",
@@ -19053,7 +19141,7 @@ INDEX=[
 {
 "ref":"cvpysdk.organization.Organizations.delete",
 "url":143,
-"doc":"Deletes the organization with the given name from the Commcell. Args: name (str)  name of the organization to delete Returns: None - if the organization was removed successfully Raises: SDKException: if organization with the given name does not exists if failed to delete the organization if response is empty if response is not success",
+"doc":"Deletes the organization with the given name from the Commcell. Args: name (str)  name of the organization to delete deactivate (bool)  Whether to deactivate organization before deleting, By default organization will be deactivated Returns: None - if the organization was removed successfully Raises: SDKException: if organization with the given name does not exists if failed to delete the organization if response is empty if response is not success",
 "func":1
 },
 {
@@ -19291,6 +19379,11 @@ INDEX=[
 "ref":"cvpysdk.organization.Organization.is_owner_data_privacy_enabled",
 "url":143,
 "doc":"Returns true if owner data privacy is enabled"
+},
+{
+"ref":"cvpysdk.organization.Organization.user_session_timeout",
+"url":143,
+"doc":"Returns company user session timeout value"
 },
 {
 "ref":"cvpysdk.organization.Organization.dissociate_plans",
@@ -19724,7 +19817,7 @@ INDEX=[
 {
 "ref":"cvpysdk.plan.Plans.add_data_classification_plan",
 "url":144,
-"doc":"Adds data classification plan to the commcell Args: plan_name (str)  Name of plan index_server (str)  Index server name target_app (enum)  Target app for this plan cvpysdk.activateapps.constants.TargetApps  kwargs index_content (bool)  Speifies whether to index content or not to index server content_analyzer (list)  list of Content analyzer cloud name entity_list (list)  list of entities which needs to be extracted classifier_list (list)  list of classifier which needs to be classified enable_ocr (bool)  specifies whether OCR is enabled or not ocr_language (int)  Language to be used when doing OCR Default : English (Value-1) Supported Languages: ENGLISH = 1, HEBREW = 2, SPANISH = 3, FRENCH = 4, ITALIAN = 5, DANISH = 6 include_docs (str)  Include documents type separated by comma exclude_path (list)  List of paths which needs to be excluded min_doc_size (int)  Minimum document size in MB max_doc_size (int)  Maximum document size in MB Returns: object - Plan object Raises: SDKException: if input is not valid if failed to create plan if failed to find entities/classifier details",
+"doc":"Adds data classification plan to the commcell Args: plan_name (str)  Name of plan index_server (str)  Index server name target_app (enum)  Target app for this plan cvpysdk.activateapps.constants.TargetApps  kwargs index_content (bool)  Speifies whether to index content or not to index server content_analyzer (list)  list of Content analyzer client name entity_list (list)  list of entities which needs to be extracted classifier_list (list)  list of classifier which needs to be classified enable_ocr (bool)  specifies whether OCR is enabled or not ocr_language (int)  Language to be used when doing OCR Default : English (Value-1) Supported Languages: ENGLISH = 1, HEBREW = 2, SPANISH = 3, FRENCH = 4, ITALIAN = 5, DANISH = 6 include_docs (str)  Include documents type separated by comma exclude_path (list)  List of paths which needs to be excluded min_doc_size (int)  Minimum document size in MB max_doc_size (int)  Maximum document size in MB Returns: object - Plan object Raises: SDKException: if input is not valid if failed to create plan if failed to find entities/classifier details",
 "func":1
 },
 {
@@ -19890,7 +19983,7 @@ INDEX=[
 {
 "ref":"cvpysdk.plan.Plan.edit_plan",
 "url":144,
-"doc":"Edit plan options Args:  kwargs for Data Classification Plan index_content (bool)  Speifies whether to index content or not to index server content_analyzer (list)  list of Content analyzer cloud name entity_list (list)  list of entities which needs to be extracted classifier_list (list)  list of classifier which needs to be classified enable_ocr (bool)  specifies whether OCR is enabled or not ocr_language (int)  Language to be used when doing OCR Default : English (Value-1) Supported Languages: ENGLISH = 1, HEBREW = 2, SPANISH = 3, FRENCH = 4, ITALIAN = 5, DANISH = 6 include_docs (str)  Include documents type separated by comma exclude_path (list)  List of paths which needs to be excluded min_doc_size (int)  Minimum document size in MB max_doc_size (int)  Maximum document size in MB",
+"doc":"Edit plan options Args:  kwargs for Data Classification Plan index_content (bool)  Speifies whether to index content or not to index server content_analyzer (list)  list of Content analyzer client name entity_list (list)  list of entities which needs to be extracted classifier_list (list)  list of classifier which needs to be classified enable_ocr (bool)  specifies whether OCR is enabled or not ocr_language (int)  Language to be used when doing OCR Default : English (Value-1) Supported Languages: ENGLISH = 1, HEBREW = 2, SPANISH = 3, FRENCH = 4, ITALIAN = 5, DANISH = 6 include_docs (str)  Include documents type separated by comma exclude_path (list)  List of paths which needs to be excluded min_doc_size (int)  Minimum document size in MB max_doc_size (int)  Maximum document size in MB",
 "func":1
 },
 {
@@ -19900,9 +19993,15 @@ INDEX=[
 "func":1
 },
 {
+"ref":"cvpysdk.plan.Plan.update_content_policy",
+"url":144,
+"doc":"Args: content (dict) : dictionary with backup content details. example: content = { \"windowsIncludedPaths\": [\"Desktop\"], \"windowsExcludedPaths\": [\"Music\"], \"windowsFilterToExcludePaths\": [\"Videos\"], \"unixIncludedPaths\": [\"Desktop\"], \"unixExcludedPaths\": [\"Music\"], \"unixFilterToExcludePaths\": [\"Videos\"], \"macIncludedPaths\": [\"Desktop\"], \"macExcludedPaths\": [\"Music\"], \"macFilterToExcludePaths\": [\"Videos\"], \"backupSystemState\": True, \"useVSSForSystemState\": True, \"backupSystemStateOnlyWithFullBackup\": False } For unix and mac, replace key name with respective os name,  IncludedPaths,  ExcludedPaths,  FilterToExcludePaths",
+"func":1
+},
+{
 "ref":"cvpysdk.plan.Plan.update_backup_content",
 "url":144,
-"doc":"Args: content (dict) : dictionary with backup content details. example: content = { 'Windows' : { 'Content' : ['\\%Pictures%', '\\%Desktop%'], 'Exclude' : ['\\%Documents%'], 'Backup System State' : True }, 'Linux' : { 'Content' : ['/%Pictures%'], 'Exclude' : ['/%Documents%'] }, 'Mac' : { 'Content' : ['/%Pictures%'], 'Exclude' : ['/%Documents%'] } request_type (str) : Supported values 'OVERWRITE' (default), 'UPDATE', 'DELETE'. }",
+"doc":"Args: content (dict) : dictionary with backup content details. example: content = { 'Windows' : { 'Content' : ['\\%Pictures%', '\\%Desktop%'], 'Exclude' : ['\\%Documents%'], 'Backup System State' : True }, 'Linux' : { 'Content' : ['/%Pictures%'], 'Exclude' : ['/%Documents%'] }, 'Mac' : { 'Content' : ['/%Pictures%'], 'Exclude' : ['/%Documents%'] } } request_type (str) : Supported values 'OVERWRITE' (default), 'UPDATE', 'DELETE'. For plans created from SP32, Please use below format of content example: content = { \"windowsIncludedPaths\": [\"Desktop\"], \"windowsExcludedPaths\": [\"Music\"], \"windowsFilterToExcludePaths\": [\"Videos\"], \"backupSystemState\": True, \"useVSSForSystemState\": True, \"backupSystemStateOnlyWithFullBackup\": False } For unix and mac, replace key name with respective os name,  IncludedPaths,  ExcludedPaths,  FilterToExcludePaths",
 "func":1
 },
 {
@@ -20695,7 +20794,7 @@ INDEX=[
 {
 "ref":"cvpysdk.policies.storage_policies",
 "url":149,
-"doc":"Main file for performing storage policy related operations on the commcell. This file has all the classes related to Storage Policy operations. StoragePolicies: Class for representing all the Storage Policies associated to the commcell. StoragePolicy: Class for representing a single Storage Policy associated to the commcell. StoragePolicies: __init__(commcell_object)  initialize the StoragePolicies instance for the commcell __str__()  returns all the storage policies associated with the commcell __repr__()  returns a string for the instance of the StoragePolicies class _get_policies()  gets all the storage policies of the commcell all_storage_policies()  returns the dict of all the storage policies on commcell has_policy(policy_name)  checks if a storage policy exists with the given name add_global_storage_policy()  adds a new global storage policy to the commcell add()  adds a new storage policy to the commcell add_tape_sp()  add new storage policy with tape library as data path delete(storage_policy_name)  removes the specified storage policy from the commcell refresh()  refresh the storage policies associated with the commcell StoragePolicy: __init__(commcell_object, storage_policy_name, storage_policy_id)  initialize the instance of StoragePolicy class for a specific storage policy of the commcell __repr__()  returns a string representation of the StoragePolicy instance _get_storage_policy_id()  gets the id of the StoragePolicy instance _get_storage_policy_properties()  returns the properties of this storage policy _get_storage_policy_advanced_properties() returns the advanced properties of this storage policy _initialize_storage_policy_properties()  initializes storage policy properties has_copy()  checks if copy with given name exists create_secondary_copy()  creates a storage policy copy create_snap_copy()  creates snap, snapvault, snapmirror, replica and replica mirror copies create_dedupe_secondary_copy()  create secondary copy with dedupe enabled delete_secondary_copy()  deletes storage policy copy copies()  returns the storage policy copies associated with this storage policy get_copy_precedence()  returns the copy precedence value associated with the copy name update_snapshot_options()  Method for Updating Backup Copy and Snapshot Catalog Options run_backup_copy()  Runs the backup copy job from Commcell modify_dynamic_stream_allocation()  modifies dsa property of storage policy run_snapshot_cataloging()  Runs the deferred catalog job from Commcell run_aux_copy()  starts a aux copy job for this storage policy and returns the job object refresh()  refresh the properties of the storage policy update_transactional_ddb()  enable/disable transactional DDB option on a DDB seal_ddb()  seal a DDB store add_ddb_partition()  Adds a new DDB partition move_dedupe_store()  Moves a deduplication store run_ddb_verification()  Runs DDB verification job run_data_verification()  Runs Data Verification Job get_copy()  Returns the StoragePolicyCopy class object of the input copy get_primary_copy()  Returns the primary copy of the storage policy get_secondary_copies()  Returns all the secondary copies in the storage policy sorted by copy precedence mark_for_recovery()  Marks Deduplication store for recovery run_recon()  Runs non-mem DB Reconstruction job reassociate_all_subclients()  Reassociates all subclients associated to Storage Policy enable_entity_extraction()  Enables the entity extraction for subclients associated to this policy enable_content_indexing()  Enables the content indexing for this storage policy run_content_indexing()  start the content indexing job for this storage policy start_over()  performs start over operation on storage policy/gdsp run_data_forecast()  runs granular data forecast operation for given storage policy StoragePolicyCopy: __init__(self, commcell_object, storage_policy_name, copy_name, copy_id)  initialize the instance of StoragePolicy class for a specific storage policy of the commcell __repr__()  returns a string representation of the StoragePolicy instance copy_name()  Gets the name of the storage policy copy get_copy_id()  Gets the storage policy id asscoiated with the storage policy get_copy_Precedence()  Gets the copy precendence associated with the storage policy copy refresh()  Refresh the properties of the StoragePolicy _get_request_json()  Gets all the storage policy copy properties _get_copy_properties()  Gets the storage policy copy properties _set_copy_properties()  sets the properties of this storage policy copy set_copy_software_compression()  Sets the copy software compression setting is_parallel_copy()  Gets the parallel copy setting on storage policy copy set_parallel_copy()  Sets the parallel copy setting on storage policy copy is_inline_copy()  Gets the inline copy setting on storage policy copy set_inline_copy()  Sets the inline copy setting on storage policy copy get_jobs_on_copy()  Fetches the Details of jobs on Storage Policy Copy delete_job()  delete a job from storage policy copy node _mark_jobs_on_copy()  marks job(s) for given operation on a secondary copy pick_for_copy()  marks job(s) to be Picked for Copy to a secondary copy recopy_jobs()  marks job(s) to be picked for ReCopying to a secondary copy do_not_copy_jobs()  marks job(s) as Do Not Copy to a secondary copy pick_jobs_for_data_verification()  marks job(s) on a copy to be Picked for Data Verification do_not_verify_data()  marks job(s) on a copy to not be Picked for Data Verification pick_jobs_for_backupcopy  marks job(skipped/unpicked) on a copy to be picked for backup copy mark_jobs_bad()  marks job(s) on a copy as Bad is_dedupe_enabled()  checks whether deduplication is enabled for the copy set_encryption_properties()  configures copy encryption settings as per user input set_key_management_server()  sets the Key Management Server to this copy set_multiplexing_factor()  sets/unset the multiplexing factor for the storage policy copy Attributes       override_pool_retention  Returns if Override Pool Retention flag is set or not  override_pool_retention.setter  Sets/Unsets the override Pool Retention Flag  space_optimized_auxillary_copy  Returns the value of space optimized auxillary copy setting  space_optimized_auxillary_copy.setter  Sets the value of space optimized auxillary copy setting  source_copy  Returns the source copy associated with the copy  source_copy.setter  Sets the source copy for the copy  store_priming  Sets the value of DDB store priming under copy dedupe properties  is_active  Returns/Sets the 'Active' Property of the Copy  network_throttle_bandwidth  Returns/Sets the value of Network Throttle Bandwidth"
+"doc":"Main file for performing storage policy related operations on the commcell. This file has all the classes related to Storage Policy operations. StoragePolicies: Class for representing all the Storage Policies associated to the commcell. StoragePolicy: Class for representing a single Storage Policy associated to the commcell. StoragePolicies: __init__(commcell_object)  initialize the StoragePolicies instance for the commcell __str__()  returns all the storage policies associated with the commcell __repr__()  returns a string for the instance of the StoragePolicies class _get_policies()  gets all the storage policies of the commcell all_storage_policies()  returns the dict of all the storage policies on commcell has_policy(policy_name)  checks if a storage policy exists with the given name add_global_storage_policy()  adds a new global storage policy to the commcell add()  adds a new storage policy to the commcell add_tape_sp()  add new storage policy with tape library as data path delete(storage_policy_name)  removes the specified storage policy from the commcell refresh()  refresh the storage policies associated with the commcell StoragePolicy: __init__(commcell_object, storage_policy_name, storage_policy_id)  initialize the instance of StoragePolicy class for a specific storage policy of the commcell __repr__()  returns a string representation of the StoragePolicy instance _get_storage_policy_id()  gets the id of the StoragePolicy instance _get_storage_policy_properties()  returns the properties of this storage policy _get_storage_policy_advanced_properties() returns the advanced properties of this storage policy _initialize_storage_policy_properties()  initializes storage policy properties edit_block_size_on_gdsp  edits the sidb block size on GDSP has_copy()  checks if copy with given name exists create_secondary_copy()  creates a storage policy copy create_snap_copy()  creates snap, snapvault, snapmirror, replica and replica mirror copies create_dedupe_secondary_copy()  create secondary copy with dedupe enabled delete_secondary_copy()  deletes storage policy copy copies()  returns the storage policy copies associated with this storage policy get_copy_precedence()  returns the copy precedence value associated with the copy name update_snapshot_options()  Method for Updating Backup Copy and Snapshot Catalog Options run_backup_copy()  Runs the backup copy job from Commcell modify_dynamic_stream_allocation()  modifies dsa property of storage policy run_snapshot_cataloging()  Runs the deferred catalog job from Commcell run_aux_copy()  starts a aux copy job for this storage policy and returns the job object refresh()  refresh the properties of the storage policy update_transactional_ddb()  enable/disable transactional DDB option on a DDB seal_ddb()  seal a DDB store add_ddb_partition()  Adds a new DDB partition move_dedupe_store()  Moves a deduplication store run_ddb_verification()  Runs DDB verification job run_data_verification()  Runs Data Verification Job get_copy()  Returns the StoragePolicyCopy class object of the input copy get_primary_copy()  Returns the primary copy of the storage policy get_secondary_copies()  Returns all the secondary copies in the storage policy sorted by copy precedence mark_for_recovery()  Marks Deduplication store for recovery run_recon()  Runs non-mem DB Reconstruction job reassociate_all_subclients()  Reassociates all subclients associated to Storage Policy enable_entity_extraction()  Enables the entity extraction for subclients associated to this policy enable_content_indexing()  Enables the content indexing for this storage policy run_content_indexing()  start the content indexing job for this storage policy start_over()  performs start over operation on storage policy/gdsp run_data_forecast()  runs granular data forecast operation for given storage policy StoragePolicyCopy: __init__(self, commcell_object, storage_policy_name, copy_name, copy_id)  initialize the instance of StoragePolicy class for a specific storage policy of the commcell __repr__()  returns a string representation of the StoragePolicy instance copy_name()  Gets the name of the storage policy copy get_copy_id()  Gets the storage policy id asscoiated with the storage policy get_copy_Precedence()  Gets the copy precendence associated with the storage policy copy refresh()  Refresh the properties of the StoragePolicy _get_request_json()  Gets all the storage policy copy properties _get_copy_properties()  Gets the storage policy copy properties _set_copy_properties()  sets the properties of this storage policy copy set_copy_software_compression()  Sets the copy software compression setting is_parallel_copy()  Gets the parallel copy setting on storage policy copy set_parallel_copy()  Sets the parallel copy setting on storage policy copy is_inline_copy()  Gets the inline copy setting on storage policy copy set_inline_copy()  Sets the inline copy setting on storage policy copy get_jobs_on_copy()  Fetches the Details of jobs on Storage Policy Copy delete_job()  delete a job from storage policy copy node _mark_jobs_on_copy()  marks job(s) for given operation on a secondary copy pick_for_copy()  marks job(s) to be Picked for Copy to a secondary copy recopy_jobs()  marks job(s) to be picked for ReCopying to a secondary copy do_not_copy_jobs()  marks job(s) as Do Not Copy to a secondary copy pick_jobs_for_data_verification()  marks job(s) on a copy to be Picked for Data Verification do_not_verify_data()  marks job(s) on a copy to not be Picked for Data Verification pick_jobs_for_backupcopy  marks job(skipped/unpicked) on a copy to be picked for backup copy mark_jobs_bad()  marks job(s) on a copy as Bad is_dedupe_enabled()  checks whether deduplication is enabled for the copy set_encryption_properties()  configures copy encryption settings as per user input set_key_management_server()  sets the Key Management Server to this copy set_multiplexing_factor()  sets/unset the multiplexing factor for the storage policy copy Attributes       override_pool_retention  Returns if Override Pool Retention flag is set or not  override_pool_retention.setter  Sets/Unsets the override Pool Retention Flag  space_optimized_auxillary_copy  Returns the value of space optimized auxillary copy setting  space_optimized_auxillary_copy.setter  Sets the value of space optimized auxillary copy setting  source_copy  Returns the source copy associated with the copy  source_copy.setter  Sets the source copy for the copy  store_priming  Sets the value of DDB store priming under copy dedupe properties  is_active  Returns/Sets the 'Active' Property of the Copy  network_throttle_bandwidth  Returns/Sets the value of Network Throttle Bandwidth"
 },
 {
 "ref":"cvpysdk.policies.storage_policies.StoragePolicies",
@@ -20753,6 +20852,12 @@ INDEX=[
 "ref":"cvpysdk.policies.storage_policies.StoragePolicy",
 "url":149,
 "doc":"Class for performing storage policy operations for a specific storage policy Initialise the Storage Policy class instance."
+},
+{
+"ref":"cvpysdk.policies.storage_policies.StoragePolicy.edit_block_size_on_gdsp",
+"url":149,
+"doc":"edit the block size on the gdsp Args: size (int) - SIDB block size to be changed to Raises: SDKException: if error in response if response received is empty if response is not success",
+"func":1
 },
 {
 "ref":"cvpysdk.policies.storage_policies.StoragePolicy.has_copy",
@@ -20890,7 +20995,7 @@ INDEX=[
 {
 "ref":"cvpysdk.policies.storage_policies.StoragePolicy.run_aux_copy",
 "url":149,
-"doc":"Runs the aux copy job from the commcell. Args: storage_policy_copy_name (str)  name of the storage policy copy media_agent (str)  name of the media agent use_scale (bool)  use Scalable Resource Management (True/False) streams (int)  number of streams to use all_copies (bool)  run auxcopy job on all copies or select copy (True/False) total_jobs_to_process (int)  Total number jobs to process for the auxcopy job Returns: object - instance of the Job class for this aux copy job Raises: SDKException: if type of the argument is not string if aux copy job failed if response is empty if response is not success",
+"doc":"Runs the aux copy job from the commcell. Args: storage_policy_copy_name (str)  name of the storage policy copy media_agent (str)  name of the media agent use_scale (bool)  use Scalable Resource Management (True/False) streams (int)  number of streams to use all_copies (bool)  run auxcopy job on all copies or select copy (True/False) total_jobs_to_process (int)  Total number jobs to process for the auxcopy job  kwargs  dict of keyword arguments as follows: ignore_dv_failed_jobs (bool)  Ignore DV failed jobs job_description (str)  Description for Job Returns: object - instance of the Job class for this aux copy job Raises: SDKException: if type of the argument is not string if aux copy job failed if response is empty if response is not success",
 "func":1
 },
 {
@@ -21497,7 +21602,7 @@ INDEX=[
 {
 "ref":"cvpysdk.regions",
 "url":152,
-"doc":"File for associating Workload and Backup destination regions for various entites class: Regions. Region Regions:     _get_regions()  Gets all the regions created in commcell refresh()  Refresh the list of Regions associated to commcell has_region()  Checks if region with given name exists get()  returns Region class object for the specified input name set_region()  Associate a region to an entity get_region()  Gets the Region associated to an Entity calculate_region()  Calculates the Region to be associated to an Entity Region:    = _get_region_id()  Returns the region id Attributes:  region_id  Id of the given Region"
+"doc":"File for associating Workload and Backup destination regions for various entites class: Regions. Region Regions:     _get_regions()  Gets all the regions created in commcell refresh()  Refresh the list of Regions associated to commcell has_region()  Checks if region with given name exists get()  returns Region class object for the specified input name set_region()  Associate a region to an entity get_region()  Gets the Region associated to an Entity calculate_region()  Calculates the Region to be associated to an Entity Attributes:  all_regions  returns dict of details about region such as id Region:    = _get_region_id()  Returns the region id Attributes:  region_id  Id of the given Region"
 },
 {
 "ref":"cvpysdk.regions.Regions",
@@ -21525,7 +21630,7 @@ INDEX=[
 {
 "ref":"cvpysdk.regions.Regions.set_region",
 "url":152,
-"doc":"Associate a region to an entity Args: entity_type (str) : Type of the entity (eg: COMMCELL, COMPANY, CLIENT, CLIENT_GROUP, MEDIAAGENT, STORAGE_POOL, etc ) entity_id (int) : unique id of the entity entity_region_type (str) : Type of the region (WORKLOAD or BACKUP) region_id (int) : ID of the region from app_regions",
+"doc":"Associate a region to an entity Args: entity_type (str) : Type of the entity (eg: COMMCELL, COMPANY, CLIENT, CLIENT_GROUP, MEDIAAGENT, STORAGE_POOL, etc ) entity_id (int/str): unique id of the entity entity_region_type (str) : Type of the region (WORKLOAD or BACKUP) region_id (int) : ID of the region from app_regions",
 "func":1
 },
 {
@@ -21539,6 +21644,11 @@ INDEX=[
 "url":152,
 "doc":"Calculates the Region to be associated to an Entity Args: entity_type (str) : Type of the entity (eg: COMMCELL, COMPANY, CLIENT, CLIENT_GROUP, MEDIAAGENT, STORAGE_POOL, etc ) entity_id (int) : unique id of the entity entity_region_type (str) : Type of the region (WORKLOAD or BACKUP)",
 "func":1
+},
+{
+"ref":"cvpysdk.regions.Regions.all_regions",
+"url":152,
+"doc":"Returns dict consisting of all regions details such as id"
 },
 {
 "ref":"cvpysdk.regions.Region",
@@ -22067,7 +22177,7 @@ INDEX=[
 {
 "ref":"cvpysdk.security.user.Users.add",
 "url":160,
-"doc":"Adds a local/external user to this commcell Args: user_name (str)  name of the user to be created full_name (str)  full name of the user to be created email (str)  email of the user to be created domain (str)  Needed in case you are adding external user password (str)  password of the user to be created default: None local_usergroups (str)  user can be member of these user groups system_generated_password (bool)  if set to true system defined password will be used default: False entity_dictionary  combination of entity_type, entity names and role e.g.: security_dict={ 'assoc1': { 'entity_type':['entity_name'], 'entity_type':['entity_name', 'entity_name'], 'role': ['role1'] }, 'assoc2': { 'mediaAgentName': ['networktestcs', 'standbycs'], 'clientName': ['Linux1'], 'role': ['New1'] } } entity_type  key for the entity present in dictionary on which user will have access entity_name  Value of the key role  key for role name you specify e.g.: {\"clientName\":\"Linux1\"} entity_type: clientName, mediaAgentName, libraryName, userName, userGroupName, storagePolicyName, clientGroupName, schedulePolicyName, locationName, providerDomainName, alertName, workflowName, policyName, roleName entity_name: client name for entity_type 'clientName' Media agent name for entitytype 'mediaAgentName' similar for other entity_typees Raises: SDKException: if data type of input is invalid if user with specified name already exists if password or system_generated_password are not set if failed to add user to commcell",
+"doc":"Adds a local/external user to this commcell Args: user_name (str)  name of the user to be created full_name (str)  full name of the user to be created email (str)  email of the user to be created domain (str)  Needed in case you are adding external user password (str)  password of the user to be created default: None local_usergroups (list)  user can be member of these user groups Ex:1. [\"master\"], 2. [\"group1\", \"group2\"] system_generated_password (bool)  if set to true system defined password will be used default: False entity_dictionary  combination of entity_type, entity names and role e.g.: security_dict={ 'assoc1': { 'entity_type':['entity_name'], 'entity_type':['entity_name', 'entity_name'], 'role': ['role1'] }, 'assoc2': { 'mediaAgentName': ['networktestcs', 'standbycs'], 'clientName': ['Linux1'], 'role': ['New1'] } } entity_type  key for the entity present in dictionary on which user will have access entity_name  Value of the key role  key for role name you specify e.g.: {\"clientName\":\"Linux1\"} entity_type: clientName, mediaAgentName, libraryName, userName, userGroupName, storagePolicyName, clientGroupName, schedulePolicyName, locationName, providerDomainName, alertName, workflowName, policyName, roleName entity_name: client name for entity_type 'clientName' Media agent name for entitytype 'mediaAgentName' similar for other entity_typees Raises: SDKException: if data type of input is invalid if user with specified name already exists if password or system_generated_password are not set if failed to add user to commcell",
 "func":1
 },
 {
@@ -22235,7 +22345,7 @@ INDEX=[
 {
 "ref":"cvpysdk.security.usergroup",
 "url":161,
-"doc":"Main file for performing user group operations. UserGroups and UserGroup are the classes defined in this file. UserGroups: Class for representing all the user groups associated with a commcell UserGroup: Class for representing a single User Group of the commcell UserGroups: __init__(commcell_object)  Initialise instance of the UserGroups associated with the specified commcell __str__()  Returns all the user groups associated with the commcell __repr__()  Returns the string for the instance of the UserGroups class _get_usergroups()  Gets all the usergroups associated with the commcell specified has_user_group()  Checks if a user group exists with the given name or not get(user_group_name)  Returns the instance of the UserGroup class, for the the input user group name add()  Adds local/external user group on this commserver delete(user_group_name)  Deletes the user group from the commcell refresh()  Refresh the user groups associated with the commcell all_user_groups()  Returns all the usergroups present in the commcell UserGroup: __init__(commcell_object, usergroup_name, usergroup_id=None)  initialise instance of the UserGroup for the commcell __repr__()  return the usergroup name, the instance is associated with _get_usergroup_id()  method to get the usergroup id, if not specified in __init__ _get_usergroup_properties()  get the properties of this usergroup _has_usergroup()  checks list of users present on the commcell refresh()  refresh the properties of the user group status()  sets status for users (enable or disable) update_security_associations()  updates 3-way security associations on usergroup update_usergroup_members()  DELETE, OVERWRITE users with this usergroup _send_request()  forms complete joson request for usergroup _update_usergroup_props()  Updates the properties of this usergroup users()  returns users who are members of this usergroup usergroups()  returns external usergroups who are members of this usergroup user_group_id()  returns group id of this user group user_group_name()  returns user group name of this group description()  returns the description set for this user group email()  returns the email of this user group company_name()  returns the company name of this user group company_id()  returns the company id of this user group associations()  Returns security associations present on the usergroup is_tfa_enabled()  Returns status of tfa enable_tfa()  Enables tfa for this user group disable_tfa()  Disables tfa for this user group update_navigation_preferences  Updates user group navigation preferences"
+"doc":"Main file for performing user group operations. UserGroups and UserGroup are the classes defined in this file. UserGroups: Class for representing all the user groups associated with a commcell UserGroup: Class for representing a single User Group of the commcell UserGroups: __init__(commcell_object)  Initialise instance of the UserGroups associated with the specified commcell __str__()  Returns all the user groups associated with the commcell __repr__()  Returns the string for the instance of the UserGroups class _get_usergroups()  Gets all the usergroups associated with the commcell specified has_user_group()  Checks if a user group exists with the given name or not get(user_group_name)  Returns the instance of the UserGroup class, for the the input user group name add()  Adds local/external user group on this commserver delete(user_group_name)  Deletes the user group from the commcell refresh()  Refresh the user groups associated with the commcell all_user_groups()  Returns all the usergroups present in the commcell UserGroup: __init__(commcell_object, usergroup_name, usergroup_id=None)  initialise instance of the UserGroup for the commcell __repr__()  return the usergroup name, the instance is associated with _get_usergroup_id()  method to get the usergroup id, if not specified in __init__ _get_usergroup_properties()  get the properties of this usergroup _has_usergroup()  checks list of users present on the commcell refresh()  refresh the properties of the user group status()  sets status for users (enable or disable) update_security_associations()  updates 3-way security associations on usergroup update_usergroup_members()  DELETE, OVERWRITE users with this usergroup _send_request()  forms complete joson request for usergroup _update_usergroup_props()  Updates the properties of this usergroup _v4_update_usergroup_props()  Uses V4 API to update properties of a usergroup users()  returns users who are members of this usergroup usergroups()  returns external usergroups who are members of this usergroup user_group_id()  returns group id of this user group user_group_name()  returns user group name of this group description()  returns the description set for this user group email()  returns the email of this user group company_name()  returns the company name of this user group company_id()  returns the company id of this user group associations()  Returns security associations present on the usergroup is_tfa_enabled()  Returns status of tfa enable_tfa()  Enables tfa for this user group disable_tfa()  Disables tfa for this user group update_navigation_preferences  Updates user group navigation preferences allow_multiple_company_members  Sets/Gets the value for allowing multiple members for a company"
 },
 {
 "ref":"cvpysdk.security.usergroup.UserGroups",
@@ -22329,6 +22439,11 @@ INDEX=[
 "doc":"Returns the status of user group on this commcell"
 },
 {
+"ref":"cvpysdk.security.usergroup.UserGroup.allow_multiple_company_members",
+"url":161,
+"doc":"Returns the status of user group on this commcell Returns: Bool - True for allowing multiple company members False otherwise"
+},
+{
 "ref":"cvpysdk.security.usergroup.UserGroup.users",
 "url":161,
 "doc":"Returns the list of associated users with this usergroup"
@@ -22392,7 +22507,7 @@ INDEX=[
 {
 "ref":"cvpysdk.storage",
 "url":163,
-"doc":"Main file for performing storage related operations on the commcell. This file has all the classes related to Storage operations. MediaAgents: Class for representing all the media agents attached to the commcell. MediaAgent: Class for representing a single media agent attached to the commcell. DiskLibraries: Class for representing all the disk libraries attached to the commcell. DiskLibrary: Class for representing a single disk library associated with the commcell. MediaAgents: __init__(commcell_object)  initialize the MediaAgents class instance for the commcell __str__()  returns all the media agents associated with the commcell __repr__()  returns the string for the instance of the MediaAgents class _get_media_agents()  gets all the media agents of the commcell all_media_agents()  returns all the media agents on the commcell has_media_agent()  checks if a media agent exists with the given name or not get(media_agent_name)  returns the instance of MediaAgent class of the media agent specified delete(media_agent)  Deletes the media agent from the commcell. refresh()  refresh the media agents associated with the commcell MediaAgent: __init__(commcell_object, media_agent_name, media_agent_id)  initialize the instance of MediaAgent class for a specific media agent of the commcell __repr__()  returns a string representation of the MediaAgent instance _get_media_agent_id()  gets the id of the MediaAgent instance from commcell _get_media_agent_properties()  returns media agent properties _initialize_media_agent_properties()  initializes media agent properties enable_power_management()  Enable VM Management (power management) _perform_power_operation()  Performs power operation (power-on/power-off) power_on()  Power-on MediaAgent if VM management is enabled power_off()  Power-off MediaAgent if VM management is enabled wait_for_power_status()  Waits till the expected power status is not achieved media_agent_name()  returns media agent name media_agent_id()  returns media agent id is_online()  returns True is media agent is online platform()  returns os info of the media agent refresh()  refresh the properties of the media agent change_index_cache()  runs catalog migration index_cache_path()  returns index cache path of the media agent index_cache_enabled()  returns index cache enabled status set_state()  enables/disables media agent mark_for_maintenance()  marks/unmarks media agent offline for maintenance set_ransomware_protection()  set / unset ransomware protection on Windows MA set_concurrent_lan()  set / unset concurrent LAN backup in Media agent properties. is_power_management_enabled()  returns of power management is enabled or not Libraries: __init__()  initialize the instance of Libraries class _get_libraries  Gets all the libraries associated to the commcell specified by commcell object has_library  Checks if a library exists in the commcell with the input library name refresh  Refresh the libraries associated with the Commcell DiskLibraries: __init__(commcell_object)  initialize the DiskLibraries class instance for the commcell __str__()  returns all the disk libraries associated with the commcell __repr__()  returns the string for the instance of the DiskLibraries class all_disk_libraries()  returns the dict of all the disk libraries on commcell add()  adds a new disk library to the commcell delete()  Deletes a disk library from commcell get(library_name)  returns the instance of the DiskLibrary class for the library specified DiskLibrary: __init__(commcell_object, library_name, library_id)  initialize the instance of DiskLibrary class for a specific disk library of the commcell __repr__()  returns a string representation of the DiskLibrary instance _get_library_id()  gets the id of the DiskLibrary instance from commcell move_mountpath()  To perform move mountpath operation validate_mountpath()  To perform storage validation on mountpath add_cloud_mount_path()  Adds a mount path to the cloud library add_mount_path()  adds the mount path on the local/ remote machine set_mountpath_reserve_space()  to set reserve space on the mountpath change_device_access_type()  to change device access type verify_media()  To perform verify media operation on media set_mountpath_preferred_on_mediaagent()  Sets select preferred mountPath according to mediaagent setting on the library _get_library_properties()  gets the disk library properties refresh()  Refresh the properties of this disk library. DiskLibrary instance Attributes  media_agents_associated  returns the media agents associated with the disk library  library_properties  Returns the dictionary consisting of the full properties of the library  free_space  returns the free space on the library  mountpath_usage  returns mountpath usage on library TapeLibraries: __init__()  initialize the TapeLibrary class instance for the commcell get()  Returns the TapeLibrary object of the specified library delete()  Deletes the specified library lock_mm_configuration()  Locks the MM config for tape library detection unlock_mm_configuration()  Unlocks the MM config for tape library detection __lock_unlock_mm_configuration()  Locks or unlocks the MM config for tape library detection detect_tape_library()  Detect the tape library of the specified MediaAgent(s) configure_tape_library()  Configure the specified tape library TapeLibrary: __init__()  Initialize the TapeLibrary class instance __repr__  returns the string for the instance of the TapeLibrary class _get_library_id()  Returns the library ID _get_library_properties()  gets the disk library properties get_drive_list()  Returns the tape drive list of this tape library refresh()  Refresh the properties of this tape library."
+"doc":"Main file for performing storage related operations on the commcell. This file has all the classes related to Storage operations. MediaAgents: Class for representing all the media agents attached to the commcell. MediaAgent: Class for representing a single media agent attached to the commcell. DiskLibraries: Class for representing all the disk libraries attached to the commcell. DiskLibrary: Class for representing a single disk library associated with the commcell. MediaAgents: __init__(commcell_object)  initialize the MediaAgents class instance for the commcell __str__()  returns all the media agents associated with the commcell __repr__()  returns the string for the instance of the MediaAgents class _get_media_agents()  gets all the media agents of the commcell all_media_agents()  returns all the media agents on the commcell has_media_agent()  checks if a media agent exists with the given name or not get(media_agent_name)  returns the instance of MediaAgent class of the media agent specified delete(media_agent)  Deletes the media agent from the commcell. refresh()  refresh the media agents associated with the commcell MediaAgent: __init__(commcell_object, media_agent_name, media_agent_id)  initialize the instance of MediaAgent class for a specific media agent of the commcell __repr__()  returns a string representation of the MediaAgent instance _get_media_agent_id()  gets the id of the MediaAgent instance from commcell _get_media_agent_properties()  returns media agent properties _initialize_media_agent_properties()  initializes media agent properties enable_power_management()  Enable VM Management (power management) _perform_power_operation()  Performs power operation (power-on/power-off) power_on()  Power-on MediaAgent if VM management is enabled power_off()  Power-off MediaAgent if VM management is enabled wait_for_power_status()  Waits till the expected power status is not achieved media_agent_name()  returns media agent name media_agent_id()  returns media agent id is_online()  returns True is media agent is online platform()  returns os info of the media agent refresh()  refresh the properties of the media agent change_index_cache()  runs catalog migration index_cache_path()  returns index cache path of the media agent index_cache_enabled()  returns index cache enabled status set_state()  enables/disables media agent mark_for_maintenance()  marks/unmarks media agent offline for maintenance set_ransomware_protection()  set / unset ransomware protection on Windows MA set_concurrent_lan()  set / unset concurrent LAN backup in Media agent properties. is_power_management_enabled()  returns of power management is enabled or not Libraries: __init__()  initialize the instance of Libraries class _get_libraries  Gets all the libraries associated to the commcell specified by commcell object has_library  Checks if a library exists in the commcell with the input library name refresh  Refresh the libraries associated with the Commcell DiskLibraries: __init__(commcell_object)  initialize the DiskLibraries class instance for the commcell __str__()  returns all the disk libraries associated with the commcell __repr__()  returns the string for the instance of the DiskLibraries class all_disk_libraries()  returns the dict of all the disk libraries on commcell add()  adds a new disk library to the commcell delete()  Deletes a disk library from commcell get(library_name)  returns the instance of the DiskLibrary class for the library specified DiskLibrary: __init__(commcell_object, library_name, library_id)  initialize the instance of DiskLibrary class for a specific disk library of the commcell __repr__()  returns a string representation of the DiskLibrary instance _get_library_id()  gets the id of the DiskLibrary instance from commcell move_mountpath()  To perform move mountpath operation validate_mountpath()  To perform storage validation on mountpath add_cloud_mount_path()  Adds a mount path to the cloud library add_storage_accelerator_credential()  Add storage accelerator credential to the cloud mount path add_mount_path()  adds the mount path on the local/ remote machine set_mountpath_reserve_space()  to set reserve space on the mountpath set_max_data_to_write_on_mount_path()  to set max data to write on the mountpath change_device_access_type()  to change device access type verify_media()  To perform verify media operation on media set_mountpath_preferred_on_mediaagent()  Sets select preferred mountPath according to mediaagent setting on the library _get_library_properties()  gets the disk library properties _get_advanced_library_properties()  gets the advanced disk library properties refresh()  Refresh the properties of this disk library. DiskLibrary instance Attributes  media_agents_associated  returns the media agents associated with the disk library  library_properties  Returns the dictionary consisting of the full properties of the library  advanced_library_properties  Returns the dictionary consisting of advanced library properites  free_space  returns the free space on the library  mountpath_usage  returns mountpath usage on library TapeLibraries: __init__()  initialize the TapeLibrary class instance for the commcell get()  Returns the TapeLibrary object of the specified library delete()  Deletes the specified library lock_mm_configuration()  Locks the MM config for tape library detection unlock_mm_configuration()  Unlocks the MM config for tape library detection __lock_unlock_mm_configuration()  Locks or unlocks the MM config for tape library detection detect_tape_library()  Detect the tape library of the specified MediaAgent(s) configure_tape_library()  Configure the specified tape library TapeLibrary: __init__()  Initialize the TapeLibrary class instance __repr__  returns the string for the instance of the TapeLibrary class _get_library_id()  Returns the library ID _get_library_properties()  gets the disk library properties get_drive_list()  Returns the tape drive list of this tape library refresh()  Refresh the properties of this tape library."
 },
 {
 "ref":"cvpysdk.storage.MediaAgents",
@@ -22619,6 +22734,12 @@ INDEX=[
 "func":1
 },
 {
+"ref":"cvpysdk.storage.DiskLibrary.add_storage_accelerator_credential",
+"url":163,
+"doc":"Add storage accelerator credential to the cloud mount path Args: mount_path (str)  Mount path to which secondary credentials needs to be added saved_credential (str)  saved credential name default:  reset (bool)  reset storage accelerator credential default: False Raises Exception: - if mountpath datatype is invalid - if API response error code is not 0 - if response is empty - if response code is not as expected",
+"func":1
+},
+{
 "ref":"cvpysdk.storage.DiskLibrary.refresh",
 "url":163,
 "doc":"Refresh the properties of this disk library.",
@@ -22634,6 +22755,12 @@ INDEX=[
 "ref":"cvpysdk.storage.DiskLibrary.set_mountpath_reserve_space",
 "url":163,
 "doc":"To set reserve space on the mountpath Args: mount_path (str)  Mountpath size (int)  reserve space to be set in MB",
+"func":1
+},
+{
+"ref":"cvpysdk.storage.DiskLibrary.set_max_data_to_write_on_mount_path",
+"url":163,
+"doc":"To set max data to write on the mountpath Args: mount_path (str)  Folder path for this mount path. size (int)  max data to be consumed in MB",
 "func":1
 },
 {
@@ -22688,6 +22815,11 @@ INDEX=[
 "ref":"cvpysdk.storage.DiskLibrary.library_properties",
 "url":163,
 "doc":"Returns the dictionary consisting of the full properties of the library"
+},
+{
+"ref":"cvpysdk.storage.DiskLibrary.advanced_library_properties",
+"url":163,
+"doc":"Returns the dictionary consisting of the advanced properties of the library"
 },
 {
 "ref":"cvpysdk.storage.DiskLibrary.mount_path",
@@ -25571,12 +25703,12 @@ INDEX=[
 {
 "ref":"cvpysdk.subclients.cloudapps.dynamics365_subclient",
 "url":176,
-"doc":"File for operating on a Dynamics 365 CRM Subclient. MSDynamics365Subclient is the only class defined in this file. MSDynamics365Subclient: Derived class from CloudAppsSubclient Base class, representing a Dynamics 365 subclient, and to perform operations on that subclient MSDynamics365Subclient:  Methods  _get_subclient_properties()  gets the properties of MS Dynamics 365 Subclient _get_subclient_properties_json()  gets the properties JSON of MS Dynamics 365 Subclient get_discovered_tables()  Method to run a discovery for tables and get them get_discovered_environments()  Method to run a discovery for environments and return them _get_associated_content()  Get content associated with a Dynamics 365 subclient get_associated_tables()  Get list of associated tables get_associated_environments()  Get list of associated environments associate_tables()  Associate tables to a Dynamics 365 subclient associate_environment()  Associate list of environments to the sub client backup_tables()  Backup the specified tables backup_environments()  Backup the specified environments restore_in_place()  Run in-place restore for the specified content  Properties  discovered_environments  Dictionary of environments discovered by the subclient discovered_tables  Dictionary of tables discovered by the subclient"
+"doc":"File for operating on a Dynamics 365 CRM Subclient. MSDynamics365Subclient is the only class defined in this file. MSDynamics365Subclient: Derived class from O365AppsSubclient Base class, representing a Dynamics 365 subclient, and to perform operations on that subclient MSDynamics365Subclient:  Methods  _get_subclient_properties()  Gets the subclient related properties of a MS Dynamics 365 subclient _get_subclient_properties_json()  get the all subclient related properties of this subclient. get_discovered_tables()  Method to get the tables discovered from the MS Dynamics 365 CRM subclient get_discovered_environments()  Method to get the environments discovered from the Dynamics 365 CRM subclient _get_associated_content()  Method to get the content associated with a Dynamics 365 CRM subclient get_associated_tables()  Method to get the tables associated with a Dynamics 365 CRM client get_associated_environments()  Method to get the environments associated with a Dynamics 365 CRM client _set_association_json()  JSON to set the content association for a Dynamics 365 CRM client _set_content_association()  Method to associate some content to a Dynamics 365 CRM client . _table_association_info_json()  Private Method to create the association JSON for associating tables to a Dynamics 365 CRM client. set_table_associations()  Method to add table associations to a Dynamics 365 CRM client. _environment_association_info_json()  Method to create the association JSON for associating environments to a Dynamics 365 CRM client. set_environment_associations()  Method to add environment associations to a Dynamics 365 CRM client. _json_for_backup_task()  Method to create the association JSON for backing up content for a Dynamics 365 subclient _backup_content_json()  Method to fetch the metadata properties for backing up content for a Dynamics 365 subclient _run_backup()  Method to run backup for the content of a Dynamics 365 subclient backup_tables()  Method to run backup for the specified tables of a Dynamics 365 subclient backup_environments()  Method to run backup for the specified environments of a Dynamics 365 subclient _restore_content_json()  Restore JSON for restoring content for a Dynamics 365 subclient _get_restore_item_path()  Get the complete path of the content for running a restore job _prepare_restore_json()  Method to prepare JSON/ Python dict for in- place restore for the content specified. restore_in_place()  Method to run in- place restore for the content specified. launch_d365_licensing()  Method to launch Licensing API call. _get_environment_id_for_oop_restore()  Get the Environment ID for an environment for Out of Place Restore restore_out_of_place()  Method to run out-of-place restore for the content specified. browse()  Browse for the backed up content for a Dynamics 365 subclient _get_guid_for_path()  Method to get the browse GUID corresponding to the path _perform_browse()  Perform a browse of the backed up content _get_dynamics365_browse_params()  Default dictionary for the browse parameters for a Dynamics 365 browse query.  Properties  discovered_environments  Property to get the tables discovered by the Dynamics 365 subclient. discovered_tables  Dictionary of tables discovered by the subclient browse_item_type()  Dynamics 365 item type"
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient",
 "url":176,
-"doc":"Class representing a MS Dynamics 365 subclient. Class has been derived from the CloudAppsSubclient. Initialize the Subclient object for the given MSDynamics365 Subclient. Args: backupset_object (object)  instance of the backup-set class subclient_name (str)  subclient name subclient_id (int)  subclient id"
+"doc":"Class representing a MS Dynamics 365 subclient. Class has been derived from the O365AppsSubclient. Initialize the Subclient object for the given MSDynamics365 Subclient. Args: backupset_object (object)  instance of the backup-set class subclient_name (str)  subclient name subclient_id (int)  subclient id"
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.discover_tables",
@@ -25615,7 +25747,7 @@ INDEX=[
 {
 "ref":"cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.set_table_associations",
 "url":176,
-"doc":"Method to add table associations to a Dynamics 365 CRM client. Arguments: tables_list (list) List of tables to be associated to the content List Format: Each list element should be a tuple of the format: (\"environment_name\",\"table_name\") environment_name is the name of the environment to which the table belongs to table_name is the name of the table to be associated Sample input: [ (\"testenv1\" , \"account\") , (\"testenv2\",\"note\") , (\"testenv1\",\"attachments\")] plan_name (str) Name of the Dynamics 365 Plan to be used for content association",
+"doc":"Method to add table associations to a Dynamics 365 CRM client. Arguments: tables_list (list) List of tables to be associated to the content List Format: Each list element should be a tuple of the format: (\"table_name\", \"environment_name\") environment_name is the name of the environment to which the table belongs to table_name is the name of the table to be associated Sample input: [ (\"account\", \"testenv1\") , (\"note\", \"testenv2\") , (\"attachments\", \"testenv1\")] plan_name (str) Name of the Dynamics 365 Plan to be used for content association",
 "func":1
 },
 {
@@ -25640,6 +25772,41 @@ INDEX=[
 "ref":"cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.restore_in_place",
 "url":176,
 "doc":"Method to run in- place restore for the content specified. Arguments: restore_content (str) List of the content to restore If content is environment, List format: list of strings, with each string corresponding to the environments display name, in lower case Sample Input: [ 'testenv1' , 'testenv2' , 'testenv3' ] If content is tables: List format: list of tuples, with each tuple, of the form: \"environment_name\",\"table_name\" where environment name if the name of the environment to which the table belongs to Sample input: [ (\"testenv1\" , \"account\") , (\"testenv2\",\"note\") , (\"testenv1\",\"attachments\")] restore_path (list) List of the paths of the items to restore Instead of passing, the restore content, restore path can be passed Restore path, is the path for each item, that is to be restored. Path is returned by the browse operation is_environment (bool) Whether to content to be restored is a table or an environment overwrite (bool) Skip or overwrite content job_id (int) Job ID for point in time restores Returns: restore_job (job) Instance of CVPySDK.Job for the restore job",
+"func":1
+},
+{
+"ref":"cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.launch_d365_licensing",
+"url":176,
+"doc":"Method to launch Licensing API call. Arguments: run_for_all_clients(bool)  True if thread is to be run on all clients, False otherwise default: False",
+"func":1
+},
+{
+"ref":"cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.restore_out_of_place",
+"url":176,
+"doc":"Method to run out-of-place restore for the content specified. Arguments: restore_content (str) List of the content to restore If content is environment, List format: list of strings, with each string corresponding to the environments display name, in lower case Sample Input: [ 'testenv1' , 'testenv2' , 'testenv3' ] If content is tables: List format: list of tuples, with each tuple, of the form: \"environment_name\",\"table_name\" where environment name if the name of the environment to which the table belongs to Sample input: [ (\"testenv1\" , \"account\") , (\"testenv2\",\"note\") , (\"testenv1\",\"attachments\")] restore_path (list) List of the paths of the items to restore Instead of passing, the restore content, restore path can be passed Restore path, is the path for each item, that is to be restored. Path is returned by the browse operation is_environment (bool) Whether to content to be restored is a table or an environment overwrite (bool) Skip or overwrite content job_id (int) Job ID for point in time restores destination_environment (str) Destination environment name Returns: restore_job (job) Instance of CVPySDK.Job for the restore job",
+"func":1
+},
+{
+"ref":"cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.browse",
+"url":176,
+"doc":"Browse for the backed up content for a Dynamics 365 subclient Arguments: browse_path (list)  Path to be browsed Sample Value: [\"environment-name\" , \"table-name\"] include_deleted_items (bool)  Whether to include deleted items in the browse response till_time (int)  Time-stamp for point in time browse",
+"func":1
+},
+{
+"ref":"cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.browse_item_type",
+"url":176,
+"doc":"Dynamics 365 item types"
+},
+{
+"ref":"cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.do_web_search",
+"url":177,
+"doc":"Method to perform a web search using the /Search endpoint. Default browse endpoint for new O365 agents. Arguments: kwargs: Dictionary of arguments to be used for the browse",
+"func":1
+},
+{
+"ref":"cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.process_index_retention",
+"url":177,
+"doc":"Run the retention thread for Dynamics 365/ Office 365 Apps sub-client Args: index_server_client_id (int)  client id of index server Raises: SDKException: if response is empty if response is not success",
 "func":1
 },
 {
@@ -25831,12 +25998,6 @@ INDEX=[
 "func":1
 },
 {
-"ref":"cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.browse",
-"url":165,
-"doc":"Browses the content of the Subclient. Args: Dictionary of browse options: Example: browse({ 'path': 'c: hello', 'show_deleted': True, 'from_time': '2014-04-20 12:00:00', 'to_time': '2016-04-21 12:00:00' }) Kwargs: Keyword argument of browse options: Example: browse( path='c:\\hello', show_deleted=True, from_time='2014-04-20 12:00:00', to_time='2016-04-21 12:00:00' ) Returns: (list, dict) list - List of only the file, folder paths from the browse response dict - Dictionary of all the paths with additional metadata retrieved from browse operation Refer  default_browse_options _ for all the supported options.  _default_browse_options: https: github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py L565",
-"func":1
-},
-{
 "ref":"cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.find",
 "url":165,
 "doc":"Searches a file/folder in the backed up content of the subclient, and returns all the files matching the filters given. Args: Dictionary of browse options: Example: find({ 'file_name': ' .txt', 'show_deleted': True, 'from_time': '2014-04-20 12:00:00', 'to_time': '2016-04-31 12:00:00' }) Kwargs: Keyword argument of browse options: Example: find( file_name=' .txt', show_deleted=True, 'from_time': '2014-04-20 12:00:00', to_time='2016-04-31 12:00:00' ) Returns: (list, dict) list - List of only the file, folder paths from the browse response dict - Dictionary of all the paths with additional metadata retrieved from browse operation Refer  default_browse_options _ for all the supported options. Additional options supported: file_name (str)  Find files with name file_size_gt (int)  Find files with size greater than size file_size_lt (int)  Find files with size lesser than size file_size_et (int)  Find files with size equal to size  _default_browse_options: https: github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py L565",
@@ -25846,12 +26007,6 @@ INDEX=[
 "ref":"cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.list_media",
 "url":165,
 "doc":"List media required to browse and restore backed up data from the subclient Args: Dictionary of options: Example: list_media({ 'path': 'c:\\hello', 'show_deleted': True, 'from_time': '2020-04-20 12:00:00', 'to_time': '2021-04-19 12:00:00' }) Kwargs: Keyword argument of options: Example: list_media( path='c:\\hello', show_deleted=True, from_time='2020-04-20 12:00:00', to_time='2021-04-19 12:00:00' ) Note: Refer  _default_browse_options in backupset.py for all the supported options. Returns: (List, Dict) - List - List of all the media required for the given options Dict - Total size of the media Raises: SDKException: if failed to list media for content if response is not success",
-"func":1
-},
-{
-"ref":"cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.restore_out_of_place",
-"url":165,
-"doc":"Restores the files/folders specified in the input paths list to the input client, at the specified destionation location. Args: client (str/object)  either the name of the client or the instance of the Client destination_path (str)  full path of the restore location on client paths (list)  list of full paths of files/folders to restore overwrite (bool)  unconditional overwrite files during restore default: True restore_data_and_acl (bool)  restore data and ACL files default: True copy_precedence (int)  copy precedence value of storage policy copy default: None from_time (str)  time to restore the contents after format: YYYY-MM-DD HH:MM:SS default: None to_time (str)  time to restore the contents before format: YYYY-MM-DD HH:MM:SS default: None fs_options (dict)  dictionary that includes all advanced options options: preserve_level : preserve level option to set in restore proxy_client : proxy that needed to be used for restore impersonate_user : Impersonate user options for restore impersonate_password: Impersonate password option for restore in base64 encoded form all_versions : if set to True restores all the versions of the specified file versions : list of version numbers to be backed up media_agent : Media Agent need to be used for Browse and restore validate_only : To validate data backed up for restore schedule_pattern (dict)  scheduling options to be included for the task Please refer schedules.schedulePattern.createSchedule() doc for the types of Jsons schedule_pattern (dict)  scheduling options to be included for the task Please refer schedules.schedulePattern.createSchedule() doc for the types of Jsons proxy_client (str)  Proxy client used during FS under NAS operations advanced_options (dict)  Advanced restore options Options: job_description (str)  Restore job description timezone (str)  Timezone to be used for restore  Note make use of TIMEZONES dict in constants.py to pass timezone Returns: object - instance of the Job class for this restore job if its an immediate Job instance of the Schedule class for this restore job if its a scheduled Job Raises: SDKException: if client is not a string or Client instance if destination_path is not a string if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
@@ -25899,99 +26054,105 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.google_subclient",
-"url":177,
-"doc":"File for operating on a GMail/GDrive/OneDrive Subclient. GoogleSubclient is the only class defined in this file. GoogleSubclient: Derived class from CloudAppsSubclient Base class, representing a GMail/GDrive/OneDrive subclient, and to perform operations on that subclient GoogleSubclient: _get_subclient_properties()  gets the properties of Google Subclient _get_subclient_properties_json()  gets the properties JSON of Google Subclient content()  gets the content of the subclient groups()  gets the groups associated with the subclient restore_out_of_place()  runs out-of-place restore for the subclient discover()  runs user discovery on subclient add_AD_group()  adds AD group to the subclient add_user()  adds user to the subclient add_users_v2()  Adds user to OneDrive for Business Client search_for_user()  Searches for a specific user's details from discovered list disk_restore_v2()  Runs disk restore of selected users for OneDrive for Business Client out_of_place_restore_v2()  Runs out-of-place restore of selected users for OneDrive for Business Client in_place_restore_v2()  Runs in-place restore of selected users for OneDrive for Business Client _get_user_guids()  Retrieve GUIDs for users specified"
+"url":178,
+"doc":"File for operating on a GMail/GDrive/OneDrive Subclient. GoogleSubclient is the only class defined in this file. GoogleSubclient: Derived class from CloudAppsSubclient Base class, representing a GMail/GDrive/OneDrive subclient, and to perform operations on that subclient GoogleSubclient: _get_subclient_properties()  gets the properties of Google Subclient _get_subclient_properties_json()  gets the properties JSON of Google Subclient content()  gets the content of the subclient groups()  gets the groups associated with the subclient restore_out_of_place()  runs out-of-place restore for the subclient discover()  runs user discovery on subclient add_AD_group()  adds AD group to the subclient add_user()  adds user to the subclient add_users_v2()  Adds user to OneDrive for Business Client search_for_user()  Searches for a specific user's details from discovered list disk_restore_v2()  Runs disk restore of selected users for OneDrive for Business Client out_of_place_restore_v2()  Runs out-of-place restore of selected users for OneDrive for Business Client in_place_restore_v2()  Runs in-place restore of selected users for OneDrive for Business Client _get_user_guids()  Retrieve GUIDs for users specified process_index_retention_rules()  Makes API call to process index retention rules"
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient",
-"url":177,
+"url":178,
 "doc":"Derived class from CloudAppsSubclient Base class, representing a GMail/GDrive/OneDrive subclient, and to perform operations on that subclient. Initialise the Subclient object. Args: backupset_object (object)  instance of the Backupset class subclient_name (str)  name of the subclient subclient_id (str)  id of the subclient default: None Returns: object - instance of the Subclient class"
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.content",
-"url":177,
+"url":178,
 "doc":"Returns the subclient content dict"
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.groups",
-"url":177,
+"url":178,
 "doc":"Returns the list of groups assigned to the subclient if any. Groups can be azure AD group or Google groups. Groups are assigned only if auto discovery is enabled for groups. Returns: list - list of groups associated with the subclient"
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.restore_out_of_place",
-"url":177,
+"url":178,
 "doc":"Restores the files/folders specified in the input paths list to the input client, at the specified destionation location. Args: client (str/object)  either the name of the client or the instance of the Client destination_path (str)  full path of the restore location on client paths (list)  list of full paths of files/folders to restore overwrite (bool)  unconditional overwrite files during restore default: True restore_data_and_acl (bool)  restore data and ACL files default: True copy_precedence (int)  copy precedence value of storage policy copy default: None from_time (str)  time to retore the contents after format: YYYY-MM-DD HH:MM:SS default: None to_time (str)  time to retore the contents before format: YYYY-MM-DD HH:MM:SS default: None to_disk (bool)  If True, restore to disk will be performed Returns: object - instance of the Job class for this restore job Raises: SDKException: if client is not a string or Client instance if destination_path is not a string if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.discover",
-"url":177,
+"url":178,
 "doc":"This method discovers the users/groups on Google GSuite Account/OneDrive Args: discover_type (str)  Type of discovery Valid Values are - USERS - GROUPS Default: USERS Returns: List (list)  List of users on GSuite account Raises: SDKException: if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.set_auto_discovery",
-"url":177,
+"url":178,
 "doc":"Sets the auto discovery value for subclient. You can either set a RegEx value or a user group, depending on the auto discovery type selected at instance level. Args: value (list)  List of RegEx or user groups",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.run_subclient_discovery",
-"url":177,
+"url":178,
 "doc":"This method launches AutoDiscovery on the subclient",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.add_AD_group",
-"url":177,
+"url":178,
 "doc":"Adds the user group to the subclient if auto discovery type selected AD group at instance level. Args: value (list)  List of user groups",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.add_user",
-"url":177,
+"url":178,
 "doc":"This method adds one drive user to the subclient Args: user_name (str)  Onedrive user name",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.get_subclient_users",
-"url":177,
+"url":178,
 "doc":"Returns the users in subclient"
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.add_users_v2",
-"url":177,
+"url":178,
 "doc":"Adds given OneDrive users to v2 client Args: users (list) : List of user's SMTP address plan_name (str) : O365 plan name to associate with users Raises: SDKException: if response is not success if response is returned with errors",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.verify_discovery_v2",
-"url":177,
+"url":178,
 "doc":"Verifies that discovery is complete Returns: discovery_stats (tuple): discovery_status (bool): True if users are discovered else returns False total_records (int): Number of users fetched, returns -1 if discovery is not complete Raises: SDKException: if response is not success if response received does not contain pagining info",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.search_for_user",
-"url":177,
+"url":178,
 "doc":"Searches for a specific user's details from discovered list Args: user_id (str) : user's SMTP address Returns: user_accounts (list): user details' list fetched from discovered content eg: [ { 'displayName':  , 'smtpAddress':  , 'isSuperAdmin': False, 'isAutoDiscoveredUser': False, 'commonFlags': 0, 'user': { '_type_': 13, 'userGUID': 'UserGuid' } } ] Raises: SDKException: if discovery is not complete if invalid SMTP address is passed if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.disk_restore_v2",
-"url":177,
+"url":178,
 "doc":"Runs an out-of-place restore job for specified users on OneDrive for business client By default restore skips the files already present in destination Args: users (list) : list of SMTP addresses of users destination_client (str) : client where the users need to be restored destination_path (str) : Destination folder location skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False) Returns: object - instance of the Job class for this restore job",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.out_of_place_restore_v2",
-"url":177,
+"url":178,
 "doc":"Runs an out-of-place restore job for specified users on OneDrive for business client By default restore skips the files already present in destination Args: users (list) : list of SMTP addresses of users destination_path (str) : SMTP address of destination user  kwargs (dict) : Additional parameters overwrite (bool) : unconditional overwrite files during restore (default: False) restore_as_copy (bool) : restore files as copy during restore (default: False) skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False) Returns: object - instance of the Job class for this restore job Raises: SDKException: if overwrite and restore as copy file options are both selected",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.in_place_restore_v2",
-"url":177,
+"url":178,
 "doc":"Runs an in-place restore job for specified users on OneDrive for business client By default restore skips the files already present in destination Args: users (list) : List of SMTP addresses of users  kwargs (dict) : Additional parameters overwrite (bool) : unconditional overwrite files during restore (default: False) restore_as_copy (bool) : restore files as copy during restore (default: False) skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False) Returns: object - instance of the Job class for this restore job Raises: SDKException: if overwrite and restore as copy file options are both selected",
+"func":1
+},
+{
+"ref":"cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient.process_index_retention_rules",
+"url":178,
+"doc":"Makes API call to process index retention rules Args: index_app_type_id (int)  index app type id index_server_client_name (str)  client name of index server Raises: SDKException: if index server not found if response is empty if response is not success",
 "func":1
 },
 {
@@ -26251,103 +26412,103 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.salesforce_subclient",
-"url":178,
+"url":179,
 "doc":"File for operating on a Salesforce Subclient. SalesforceSubclient is the only class defined in this file. SalesforceSubclient: Derived class from CloudAppsSubclient Base class, representing a salesforce subclient, and to perform operations on that subclient SalesforceSubclient: _get_subclient_properties()  Subclient class method overwritten to add salesforce subclient properties as well _get_subclient_properties_json()  gets all the subclient related properties of salesforce subclient. enable_files  Enables files option on subclient content disable_files  Disables files option on subclient content enable_metadata  Enables metadata option on subclient content disable_metadata  Disables metadata option on subclient content enable_archived_deleted  Enables backup archived and deleted option on subclient content disable_archived_deleted  Disables backup archived and deleted option on subclient content browse()  Browses the salesforce content _check_object_in_browse()  internal method to check the object exists in browse content _restore_salesforce_options_json()  internal method for salesforce options json _restore_salesforce_destination_json()  internal method for salesforce destination option json restore_to_file_system()  restores the selected content to filesystem restore_to_database()  restores the selected content to database restore_to_salesforce_from_database()  restores the selected content to salesforce from database restore_to_salesforce_from_media()  restores the selected content to salesforce from media _prepare_salesforce_restore_json()  internal method which prepares entire restore json for salesforce"
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient",
-"url":178,
+"url":179,
 "doc":"Derived class from CloudAppsSubclient Base class, representing a Salesforce subclient, and to perform operations on that subclient. Constructor for the class Args: backupset_object (object)  instance of the Backupset class subclient_name (str)  name of the subclient subclient_id (str)  id of the subclient"
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.objects",
-"url":178,
+"url":179,
 "doc":"getter for salesforce files option"
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.files",
-"url":178,
+"url":179,
 "doc":"getter for salesforce files option"
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.metadata",
-"url":178,
+"url":179,
 "doc":"getter for salesforce metadata option"
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.archived_deleted",
-"url":178,
+"url":179,
 "doc":"getter for salesfoce backup archived and deleted data"
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.enable_files",
-"url":178,
+"url":179,
 "doc":"Enables files option on subclient content",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.enable_metadata",
-"url":178,
+"url":179,
 "doc":"Enables metadata option on subclient content",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.enable_archived_deleted",
-"url":178,
+"url":179,
 "doc":"Enables backup archived deleted option on subclient content",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.disable_files",
-"url":178,
+"url":179,
 "doc":"Disables files option on subclient content",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.disable_metadata",
-"url":178,
+"url":179,
 "doc":"Enables metadata option on subclient content",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.disable_archived_deleted",
-"url":178,
+"url":179,
 "doc":"Disables backup archived and deleted option on subclient content",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.check_object_in_browse",
-"url":178,
+"url":179,
 "doc":"Check if the particular object is present in browse of the subclient Args: object_to_restore (str)  folder path whioch has to be restored browse_data (str)  list of objects from browse response Raises: SDKException: if object is not present in browse result",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.restore_to_file_system",
-"url":178,
+"url":179,
 "doc":"perform restore to file system to the provided path Args: objects_to_restore (str)  list of objects to restore destination_client (str)  destination client name where cloud connector package exists if this value not provided, it will automatically use source backup client sf_options (dict) destination_path (str) : staging path for salesforce restore data. if this value is not provided, uses download cache path from source dependent_level (int) : restore children based on selected level. 0 - no Children 1 - immediate children -1 - All children default: 0 streams (int) : no of streams to use for restore default: 2 copy_precedence (int) : copy number to use for restore default: 0 from_time (str) : date to get the contents after format: dd/MM/YYYY gets content from 01/01/1970 if not specified default: 0 to_time (str) : date to get the contents before format: dd/MM/YYYY gets content till latest if not specified default: 0 show_deleted_files (bool) : include deleted files in the content or not default: True Raises: SDKException: if from time value is incorrect if to time value is incorrect if to time is less than from time if failed to browse content if response is empty if response is not success if destination client does not exist on commcell",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.restore_to_database",
-"url":178,
+"url":179,
 "doc":"perform Restore to Database Args: objects_to_restore (str)  list of objects to restore destination_client (str)  destination clientname where cloud connector package exists. if this value not provided, it will automatically use source backup client sf_options (dict) destination_path (str) : staging path for salesforce restore data. if this value is not provided, it will automatically use download cache path from source db_type (str) : database type. if database details does not provided, it will use syncdb database for restore default: SQLSERVER db_host_name (str) : database hostname (ex:dbhost.company.com) db_instance (str) : database instance name (provide if applicable for that database type) db_name (str) : database database name (it is where data will be imported) db_port (str) : database connection port default: 1433 db_user_name (str) : database username (it should have read/write permissions on db) db_user_password (str) : database user password overrirde_table (bool) : overrides the tables on database default: True dependent_level (int) : restore dependent object based on selected level. 0 - no Children 1 - immediate children -1 - All children default: 0 streams (int) : no of streams to use for restore default: 2 copy_precedence (int) : copy number to use for restore default: 0 from_date (str) : date to get the contents after format: dd/MM/YYYY gets contents from 01/01/1970 if not specified default: 0 to_date (str) : date to get the contents before format: dd/MM/YYYY gets contents till current day if not specified default: 0 show_deleted_files (bool) : include deleted files in the content or not default: True Raises: SDKException: if from time value is incorrect if to time value is incorrect if to time is less than from time if failed to browse content if response is empty if response is not success if destination client does not exist on commcell if all the database details not provided",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.restore_to_salesforce_from_database",
-"url":178,
+"url":179,
 "doc":"perform Restore to Salesforce from Database Args: objects_to_restore (str)  list of objects to restore destination_client (str)  destination pseudo client name. if this value not provided, it will automatically select source client destination_instance (str)  destination instance name. if this value not provided, it will automatically select source instance name destination_backupset (str)  destination backupset name. if this value not provided, it will automatically select source backupset sf_options (dict) destination_path (str) : staging path for salesforce restore data db_type (str) : database type. if database details does not provided, it will use syncdb database for restore default: SQLSERVER db_host_name (str) : database hostname (ex:dbhost.company.com) db_instance (str) : database instance name (provide if applicable for that database type) db_name (str) : database database name (it is where data will be imported) db_port (str) : database connection port default: 1433 db_user_name (str) : database username (read/write permissions needed on db) db_user_password (str) : database user password overrirde_table (bool) : overrides the tables on database default: True dependent_level (int) : restore children based on selected level. 0 - no Children 1 - immediate children -1 - All children default: 0 streams (int) : no of streams to use for restore default: 2 copy_precedence (int) : copy number to use for restore default: 0 from_time (str) : date to get the contents after format: dd/MM/YYYY gets contents from 01/01/1970 if not specified default: None to_time (str) : date to get the contents before format: dd/MM/YYYY gets contents till current day if not specified default: None show_deleted_files (bool) : include deleted files in the content or not default: True Raises: SDKException: if from date value is incorrect if to date value is incorrect if to date is less than from date if failed to browse content if response is empty if response is not success if destination client does not exist if destination instance does not exist if destination backupset does not exist if syncdb is not enabled and user not provided the database details",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.restore_to_salesforce_from_media",
-"url":178,
+"url":179,
 "doc":"perform Restore to Salesforce from Media. Args: objects_to_restore (str)  list of objects to restore destination_client (str)  destination pseudo client name. if this value not provided, it will automatically select source client destination_instance (str)  destination instance name. if this value not provided, it will automatically select source instance name destination_backupset (str)  destination backupset name. if this value not provided, it will automatically select source backupset sf_options (dict) destination_path (str) : staging path for salesforce restore data db_type (str) : database type. if database details does not provided, it will use syncdb database for restore default: SQLSERVER db_host_name (str) : database hostname (ex:dbhost.company.com) db_instance (str) : database instance name (provide if applicable for that database type) db_name (str) : database database name (it is where data will be imported) db_port (str) : database connection port default: 1433 db_user_name (str) : database username (read/write permissions needed on db) db_user_password (str) : database user password overrirde_table (bool) : overrides the tables on database default: True dependent_level (int) : restore children based on selected level. 0 - no Children 1 - immediate children -1 - All children default: 0 streams (int) : no of streams to use for restore default: 2 copy_precedence (int) : copy number to use for restore default: 0 from_time (str) : date to get the contents after format: dd/MM/YYYY gets contents from 01/01/1970 if not specified default: None to_time (str) : date to get the contents before format: dd/MM/YYYY gets contents till current day if not specified default: None show_deleted_files (bool) : include deleted files in the content or not default: True Raises: SDKException: if from date value is incorrect if to date value is incorrect if to date is less than from date if failed to browse content if response is empty if response is not success if destination client does not exist if destination instance does not exist if destination backupset does not exist if user does not provide staging database details",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient.metadata_restore_to_salesforce",
-"url":178,
+"url":179,
 "doc":"perform Restore to Salesforce from Media. Args: metadata_list (list)  List of metadata components to restore like \"folder/component.type\" destination_client (str)  destination pseudo client name. if this value not provided, it will automatically select source client destination_instance (str)  destination instance name. if this value not provided, it will automatically select source instance name destination_backupset (str)  destination backupset name. if this value not provided, it will automatically select source backupset sf_options: destination_path (str) : staging path for salesforce restore data streams (int) : no of streams to use for restore default: 2 copy_precedence (int) : copy number to use for restore default: 0 from_time (str) : date to get the contents after format: dd/MM/YYYY gets contents from 01/01/1970 if not specified default: None to_time (str) : date to get the contents before format: dd/MM/YYYY gets contents till current day if not specified default: None show_deleted_files (bool) : include deleted files in the content or not default: True Raises: SDKException: if from date value is incorrect if to date value is incorrect if to date is less than from date if failed to browse content if response is empty if response is not success if destination client does not exist if destination instance does not exist if destination backupset does not exist",
 "func":1
 },
@@ -26614,17 +26775,17 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.spanner_subclient",
-"url":179,
+"url":180,
 "doc":"File for operating on a Google Cloud Spanner Subclient. GoogleSpannerSubclient is the only class defined in this file. GoogleSpannerSubclient: Derived class from CloudAppsSubclient Base class, representing a Google Cloud Spanner subclient, and to perform operations on that subclient GoogleSpannerSubclient: _get_subclient_properties()  gets the properties of Google Subclient content()  sets the content of the subclient discover()  runs database discovery on subclient GoogleSpannerSubclient Attributes: content  Returns the subclient content list"
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.spanner_subclient.GoogleSpannerSubclient",
-"url":179,
+"url":180,
 "doc":"Derived class from CloudAppsSubclient Base class, representing a Google Cloud Spanner subclient, and to perform operations on that subclient. Initialise the Subclient object. Args: backupset_object (object)  instance of the Backupset class subclient_name (str)  name of the subclient subclient_id (str)  id of the subclient default: None Returns: object - instance of the Subclient class"
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.spanner_subclient.GoogleSpannerSubclient.content",
-"url":179,
+"url":180,
 "doc":"Returns the subclient content list Returns: list - list of subclient content"
 },
 {
@@ -26890,155 +27051,161 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_constants",
-"url":180,
+"url":181,
 "doc":"Helper file to maintain all the constants for MS Teams subclient. TeamsConstants - Maintains constants for MS Teams subclient."
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants",
-"url":180,
+"url":181,
 "doc":"Class to maintain all the Teams subclient related constants."
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.ADD_DISCOVER_TYPE",
-"url":180,
+"url":181,
 "doc":""
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.ADD_SUBCLIENT_ENTITY_JSON",
-"url":180,
+"url":181,
 "doc":""
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.ADD_USER_JSON",
-"url":180,
+"url":181,
 "doc":""
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.ADD_TEAM_JSON",
-"url":180,
+"url":181,
 "doc":""
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.ADD_REQUEST_JSON",
-"url":180,
+"url":181,
 "doc":""
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.BACKUP_TEAM_JSON",
-"url":180,
+"url":181,
 "doc":""
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.ASSOCIATIONS",
-"url":180,
+"url":181,
 "doc":""
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.BACKUP_SUBTASK_JSON",
-"url":180,
+"url":181,
 "doc":""
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.BACKUP_REQUEST_JSON",
-"url":180,
+"url":181,
 "doc":""
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.RESTORE_TASK_JSON",
-"url":180,
+"url":181,
 "doc":""
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.RESTORE_SUBTASK_JSON",
-"url":180,
+"url":181,
 "doc":""
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_subclient",
-"url":181,
-"doc":"File for operating on a Microsoft Office 365 Teams subclient TeamsSubclient is the only class defined in this file. TeamsSubclient: Derived class from Subclient Base class, representing a Microsoft Office 365 Teams subclient, and to perform operations on that subclient TeamsSubclient: _json_subclient_entity()  Get subclientEntity json for teams association operation discover()  Launches Discovery and returns the discovered teams. content()  Add teams, discover() must be called before teams added using this method. backup()  Backup a single or mulitple teams. out_of_place_restore()  Restore a single team or multiple teams. _json_association()  Get association json for teams restore operation _json_restoreoptions_searchprocessinginfo()  Get searchprocessingginfo json for teams restore operation _json_restoreoptions_advsearchgrp()  Get advSearchGrp json for teams restore operation _json_restoreoptions_findquery()  Get findquery json for teams restore operation _json_restoreoptions_destination()  Get destination json for teams restore operation _json_restoreoptions_msteamsrestoreoptions() Get msTeamsRestoreOptions json for teams restore operation _json_restoreoptions_cloudappsrestore()  Get cloudAppsRestoreOptions json for teams restore operation _json_restoreoptions()  Get complete restoreOptions json for teams restore operation _json_restore_options()  Get options json for teams restore operation restore_posts_to_html()  Restore posts of a team as HTML get_team()  Get team object from team email address _json_cloud_app_association()  Get cloudAppAssociation json for teams association operation set_all_users_content()  Add all teams to content _json_get_associations()  Get associations json for a team get_associated_teams()  Get all associated teams for a client remove_team_association()  Removes user association from a teams client remove_all_users_content()  Removes all user content from a teams client get_content_association()  Get all associated contents for a client exclude_teams_from_backup()  Excludes user association from a teams client _process_restore_posts_to_html()  Helper method to restore a team posts as HTML to another location _process_remove_association()  Helper method to change association of a teams client restore_out_of_place_to_file_location()  Restore a team to file location _json_restoreoptions_searchprocessinginfo_with_extra_queryparameters()  Get searchprocessinginfo with extra query parameters json for teams restore operation. _json_restore_destinationTeamInfo()  Get destinationTeamInfo json for teams restore operation. restore_files_to_out_of_place()  Restore files to another team"
+"url":182,
+"doc":"File for operating on a Microsoft Office 365 Teams subclient TeamsSubclient is the only class defined in this file. TeamsSubclient: Derived class from Subclient Base class, representing a Microsoft Office 365 Teams subclient, and to perform operations on that subclient TeamsSubclient: _json_subclient_entity()  Get subclientEntity json for teams association operation discover()  Launches Discovery and returns the discovered teams. content()  Add teams, discover() must be called before teams added using this method. backup()  Backup a single or mulitple teams. out_of_place_restore()  Restore a single team or multiple teams. _json_association()  Get association json for teams restore operation _json_restoreoptions_searchprocessinginfo()  Get searchprocessingginfo json for teams restore operation _json_restoreoptions_advsearchgrp()  Get advSearchGrp json for teams restore operation _json_restoreoptions_findquery()  Get findquery json for teams restore operation _json_restoreoptions_destination()  Get destination json for teams restore operation _json_restoreoptions_msteamsrestoreoptions() Get msTeamsRestoreOptions json for teams restore operation _json_restoreoptions_cloudappsrestore()  Get cloudAppsRestoreOptions json for teams restore operation _json_restoreoptions()  Get complete restoreOptions json for teams restore operation _json_restore_options()  Get options json for teams restore operation restore_posts_to_html()  Restore posts of a team as HTML get_team()  Get team object from team email address _json_cloud_app_association()  Get cloudAppAssociation json for teams association operation set_all_users_content()  Add all teams to content _json_get_associations()  Get associations json for a team get_associated_teams()  Get all associated teams for a client remove_team_association()  Removes user association from a teams client remove_all_users_content()  Removes all user content from a teams client get_content_association()  Get all associated contents for a client exclude_teams_from_backup()  Excludes user association from a teams client _process_restore_posts_to_html()  Helper method to restore a team posts as HTML to another location _process_remove_association()  Helper method to change association of a teams client restore_out_of_place_to_file_location()  Restore a team to file location _json_restoreoptions_searchprocessinginfo_with_extra_queryparameters()  Get searchprocessinginfo with extra query parameters json for teams restore operation. _json_restore_destinationTeamInfo()  Get destinationTeamInfo json for teams restore operation. restore_files_to_out_of_place()  Restore files to another team. restore_to_original_location()  Restore team to original location."
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient",
-"url":181,
+"url":182,
 "doc":"Derived class from Subclient Base class, representing a Microsoft Office 365 Teams subclient and to perform operations on that subclient. Initialise the Subclient object. Args: backupset_object (object)  instance of the Backupset class subclient_name (str)  name of the subclient subclient_id (str)  id of the subclient default: None Returns: object - instance of the Subclient class"
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.discover",
-"url":181,
+"url":182,
 "doc":"Launches Discovery and returns the discovered teams. Args: refresh_cache  Refreshes Discover cache information. default: True Returns: dict  Returns dictionary with team email ID as key and team properties as value. Raises: SDKException: If discovery failed to launch. If response is empty. If response is not success.",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.content",
-"url":181,
+"url":182,
 "doc":"Add teams, discover() must be called before teams added using this method. Args: teams (list)  List of team Email IDs. o365_plan (str)  Name of the Office 365 plan. Raises: SDKException: If content failed to be set. If response is empty. If response is not success.",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.backup",
-"url":181,
+"url":182,
 "doc":"Run an Incremental backup. Args: teams (list)  List of team Email IDs. Returns: obj  Instance of job. Raises: SDKException: If backup failed to run. If response is empty. If response is not success.",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.out_of_place_restore",
-"url":181,
+"url":182,
 "doc":"Restore a team to another location. Args: team (str)  The email ID of the team that needs to be restored. destination_team (str)  The email ID of the team to be restored to. kwargs (dict) dest_subclient_object  The subclient object of the destination client Returns: obj  Instance of job. Raises: SDKException: If restore failed to run. If response is empty. If response is not success.",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.restore_posts_to_html",
-"url":181,
+"url":182,
 "doc":"Restore posts of a team as HTML. Args: team (list)  The email ID of the teams that needs to be restored. destination_team (str)  The email ID of the team to be restored to. Returns: obj  Instance of job. Raises: SDKException: If restore failed to run. If response is empty. If response is not success.",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.get_team",
-"url":181,
+"url":182,
 "doc":"Get team object from team email address. Args: team (str)  The email ID of the teams that needs. Returns: obj  Instance of Team.",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.set_all_users_content",
-"url":181,
+"url":182,
 "doc":"Add all teams to content Args: plan_name(str): Name of the plan to be associated with All teams content",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.get_associated_teams",
-"url":181,
+"url":182,
 "doc":"Get all associated teams for a client Args: pagingInfo (dict): Dict of Page number and pageSize Returns: List of all user associations and their details",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.remove_team_association",
-"url":181,
+"url":182,
 "doc":"Removes user association from a teams client Args: user_assoc (list): List of input users assoication object whose association is to be removed Returns Boolean if the association was removed successfully",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.remove_all_users_content",
-"url":181,
+"url":182,
 "doc":"Removes all user content from a teams client Returns Boolean if the association was removed successfully",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.exclude_teams_from_backup",
-"url":181,
+"url":182,
 "doc":"Excludes user association from a teams client Args: users (list): List of input users whose association is to be excluded Returns Boolean if the association was removed successfully",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.restore_out_of_place_to_file_location",
-"url":181,
+"url":182,
 "doc":"Restore a team to file location. Args: source_team_mail (str)  The email ID of the team that needs to be restored. dest_client (str)  The name of the client to be restored to. dest_path (str)  The path of the client to be restored to. selected_items (list)  List of dictonary of properties of selected items. values (list)  Content id's of a selected items. Returns: obj  Instance of Restore job. Raises: SDKException: If restore failed to run. If response is empty. If response is not success.",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.restore_files_to_out_of_place",
-"url":181,
+"url":182,
 "doc":"Restore files to another team Args: source_team_mail (str)  The email ID of the team that needs to be restored. destination_team_mail (str)  The name of the client to be restored to. channel (obj)  The object of the channel to be restored. selected_files_ids (list)  List of dictonaries of properties of selected files with contentids. values (list)  Content id's of a selected files. selected_files (list)  List of dictonaries of files name and their type. Returns: obj  Instance of Restore job. Raises: SDKException: If restore failed to run. If response is empty. If response is not success.",
+"func":1
+},
+{
+"ref":"cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.restore_to_original_location",
+"url":182,
+"doc":"Restore a team to original location. Args: team_email_id (str)  The email ID of the team that needs to be restored. skip_items (bool)  To skip the items. Default - True restore_posts_as_html (bool)  To restore pots as html under Files tab. Default - False Returns: obj  Instance of job. Raises: SDKException: If restore failed to run. If response is empty. If response is not success.",
 "func":1
 },
 {
@@ -27298,66 +27465,66 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.db2subclient",
-"url":182,
+"url":183,
 "doc":"File for operating on a Db2 Subclient DB2Subclient is the only class defined in this file. DB2Subclient: Derived class from Subclient Base class, representing an db2 subclient, and to perform operations on that subclient Db2Subclient: __init__()  constructor for the class _get_subclient_properties()  gets the subclient related properties of db2 subclient _get_subclient_properties_json()  gets subclient property json for db2 db2_use_dedupe_device()  getter and setter for enabling dedupe device option for db2 db2_delete_log_files_after()  getter and setter for enabling delete log files after option in db2 db2_backup_log_files()  getter and setter for enabling backup log files option for db2 db2_delete_log_files_after()  getter and setter for enabling delete log file after option for db2 is_backup_data_enabled()  getter and setter for enabling backup data option enable_backupdata()  Method to enable backup data option at subclient level disable_backupdata()  Method to disable backup data option at subclient level enable_table_level()  Enable Table Level Browse enable_acs_backup()  Enable DB2 ACS snap backup"
 },
 {
 "ref":"cvpysdk.subclients.db2subclient.DB2Subclient",
-"url":182,
+"url":183,
 "doc":"DB2Subclient is a class to work on DB2 subclients Constructor for the class Args: backupset_object (object)  instance of the Backupset class subclient_name (str)  name of the subclient subclient_id (str)  id of the subclient"
 },
 {
 "ref":"cvpysdk.subclients.db2subclient.DB2Subclient.db2_use_dedupe_device",
-"url":182,
+"url":183,
 "doc":"Getter to fetch dedupe device option Returns: Bool - True if dedupe_device is enabled on the subclient. Else False"
 },
 {
 "ref":"cvpysdk.subclients.db2subclient.DB2Subclient.db2_delete_log_files_after",
-"url":182,
+"url":183,
 "doc":"Getter to fetch status of delete log files option Returns: Bool - True if delete log files option is enabled on the subclient. Else False"
 },
 {
 "ref":"cvpysdk.subclients.db2subclient.DB2Subclient.db2_backup_log_files",
-"url":182,
+"url":183,
 "doc":"Getter to fetch backup logfiles option is enabled or not Returns: Bool - True if delete log files option is enabled on the subclient. Else False"
 },
 {
 "ref":"cvpysdk.subclients.db2subclient.DB2Subclient.is_backup_data_enabled",
-"url":182,
+"url":183,
 "doc":"Getter to fetch data backup status is enabled or disabled Returns: (bool) - boolean value is returned based on the status of data backup option"
 },
 {
 "ref":"cvpysdk.subclients.db2subclient.DB2Subclient.enable_backupdata",
-"url":182,
+"url":183,
 "doc":"To enable data backup",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.db2subclient.DB2Subclient.disable_backupdata",
-"url":182,
+"url":183,
 "doc":"To disable data backup",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.db2subclient.DB2Subclient.enable_table_level",
-"url":182,
+"url":183,
 "doc":"To enable table level browse",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.db2subclient.DB2Subclient.enable_acs_backup",
-"url":182,
+"url":183,
 "doc":"To enable DB2 ACS backup",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.db2subclient.DB2Subclient.backup_mode_online",
-"url":182,
+"url":183,
 "doc":"Getter to fetch online backup mode is enabled or disabled Returns: (bool) - boolean value is returned based on the status of data backup option 0 - online database , 1 - offline database"
 },
 {
 "ref":"cvpysdk.subclients.db2subclient.DB2Subclient.db2_backup",
-"url":182,
+"url":183,
 "doc":"Performs backup on DB2 subclient Args: backup_level (str)  Level of backup. full|incremental|differential create_backup_copy_immediately (bool)  Sybase snap job needs this backup copy operation default : False backup_copy_type (int)  backup copy job to be launched based on below two options default : 2, possible values : 1 (USING_STORAGE_POLICY_RULE), 2( USING_LATEST_CYCLE) Returns: (object) - instance of Job class Raises: SDKException: if backup level is incorrect if response is empty if response does not succeed",
 "func":1
 },
@@ -27624,17 +27791,17 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.dbsubclient",
-"url":183,
+"url":184,
 "doc":"File for operating on a Database Server Subclient DatabaseSubclient is the only class defined in this file. DatabaseSubclient: Derived class from Subclient Base class, representing a Database server subclient, and to perform operations on that subclient DatabaseSubclient: log_backup_storage_policy()  updpates the log backup storage policy for this subclient"
 },
 {
 "ref":"cvpysdk.subclients.dbsubclient.DatabaseSubclient",
-"url":183,
+"url":184,
 "doc":"Derived class from Subclient Base class, representing a file system subclient, and to perform operations on that subclient. Initialise the Subclient object. Args: backupset_object (object)  instance of the Backupset class subclient_name (str)  name of the subclient subclient_id (str)  id of the subclient default: None Returns: object - instance of the Subclient class"
 },
 {
 "ref":"cvpysdk.subclients.dbsubclient.DatabaseSubclient.log_backup_storage_policy",
-"url":183,
+"url":184,
 "doc":"Treats the subclient description as a property of the Subclient class."
 },
 {
@@ -27900,93 +28067,93 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.exchange",
-"url":184,
+"url":185,
 "doc":"Initialize Exchange Subclients for the SDK."
 },
 {
 "ref":"cvpysdk.subclients.exchange.contentstoremailbox_subclient",
-"url":185,
+"url":186,
 "doc":"File for operating on a ContentStoreMailbox Subclient. ContentStoreMailboxSubclient is the only class defined in this file. ContentStoreMailboxSubclient: Derived class from ExchangeMailboxSubclient Base class, representing a ContentStoreMailbox subclient, and to perform operations on that subclient JournalMailboxSubclient: _get_subclient_properties()  gets the properties of UserMailbox Subclient _get_subclient_properties_json()  gets the properties JSON of UserMailbox Subclient users()  creates users association for subclient Databases()  creates Db association for the subclient Adgroups()  creates Adgroup association for subclient restore_in_place()  runs in-place restore for the subclient"
 },
 {
 "ref":"cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient",
-"url":185,
+"url":186,
 "doc":"Derived class from ExchangeSubclient Base class. This represents a contentstoremailbox subclient, and can perform discover and restore operations on only that subclient. Initialize the Instance object for the given ContentStoreMailbox Subclient. Args: backupset_object (object)  instance of the backupset class subclient_name (str)  subclient name subclient_id (int)  subclient id"
 },
 {
 "ref":"cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient.content_store_mailboxes",
-"url":185,
+"url":186,
 "doc":"\"Returns the list of discovered users for the UserMailbox subclient."
 },
 {
 "ref":"cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient.set_contentstore_assocaition",
-"url":185,
+"url":186,
 "doc":"Create User assocaition for UserMailboxSubclient. Args: subclient_content (dict)  dict of the Users to add to the subclient subclient_content = { 'mailboxNames' : [\"AutoCi2\"] 'contentStoreClients' : [shindex], 'archive_policy' : \"CIPLAN Archiving policy\", 'cleanup_policy' : 'CIPLAN Clean-up policy', 'retention_policy': 'CIPLAN Retention policy' }",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient.refresh",
-"url":185,
+"url":186,
 "doc":"Refresh the User Mailbox Subclient.",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient.cleanup",
-"url":186,
+"url":187,
 "doc":"Runs a cleanup job for the subclient . Returns: object - instance of the Job class for this backup job",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient.restore_in_place",
-"url":186,
+"url":187,
 "doc":"Restores the mailboxes/folders specified in the input paths list to the same location. Args: paths (list)  list of paths of mailboxes/folders to restore overwrite (bool)  unconditional overwrite files during restore default: True journal_report (bool)  Journal report is true for journal and contentStore Mailbox default: False restore_as_stub (dict)  setters for common options recovery_point_id (int)  ID of the recovery point to which the mailbox is to be restored to Default: None Returns: object - instance of the Job class for this restore job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient.out_of_place_restore",
-"url":186,
+"url":187,
 "doc":"Restores the mailboxes/folders specified in the input paths list to the same location. Args: paths (list)  list of paths of mailboxes/folders to restore destination_client  client where the mailboxes needs to be restored destination_path  path where the mailboxes needs to be restored overwrite (bool)  unconditional overwrite files during restore default: True journal_report (bool)  Journal report is true for journal and contentStore Mailbox default: False Returns: object - instance of the Job class for this restore job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient.disk_restore",
-"url":186,
+"url":187,
 "doc":"Restores the mailboxes/folders specified in the input paths list to the same location. Args: paths (list)  list of paths of mailboxes/folders to restore destination_client  client where the mailboxes needs to be restored destination_path  path where the mailboxes needs to be restored overwrite (bool)  unconditional overwrite files during restore default: True journal_report (bool)  Journal report is true for journal and contentStore Mailbox default: False Returns: object - instance of the Job class for this restore job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient.pst_restore",
-"url":186,
+"url":187,
 "doc":"Restores the Mailbox/Emails specified in the input paths list to the PST PATH location. Args: paths (list)  list of paths of mailboxes/folders to restore overwrite (bool)  unconditional overwrite files during restore default: True journal_report (bool)  Journal report is true for journal and contentStore Mailbox default: False Returns: object - instance of the Job class for this restore job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient.pst_ingestion",
-"url":186,
+"url":187,
 "doc":"Runs a backup job for the subclient of the level specified. Returns: object - instance of the Job class for this backup job",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient.subclient_content_indexing",
-"url":186,
+"url":187,
 "doc":"Run content Indexing on Subclient . Args: pick_failed_items default:False (bool)  Pick fail items during Content Indexing pick_only_failed_items (bool)  Pick only fail items items during Content Indeixng default: False streams (int)  Streams for Content Indexing job default: 4 proxies (list)  provide the proxies to run CI default: None Returns: object - instance of the Job class for this ContentIndexing job",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient.get_pst_task_json",
-"url":186,
+"url":187,
 "doc":"Get task json for pst ingestion job Returns: Pst task json",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient.get_pst_backup_opt_json",
-"url":186,
+"url":187,
 "doc":"Get backup options json for pst ingestion job Returns: Pst backup options json",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient.get_pst_data_opt_json",
-"url":186,
+"url":187,
 "doc":"Get data options json for pst ingestion job Returns: Pst data options json",
 "func":1
 },
@@ -28241,58 +28408,58 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.exchange.exchange_database_subclient",
-"url":187,
+"url":188,
 "doc":"Module for doing operations on an Exchange Database Agent. This module has operations that are applicable at the Agent level for Exchange Database. ExchangeDatabaseSubclient: _get_subclient_properties()  get the properties of the subclient, and initialize the basic properties _get_subclient_properties_json()  gets all the subclient properties of the Exchange Database subclient _set_content  Sets the content for Exchange Database subclient restore_in_place()  runs in-place restore for the subclient restore_out_of_place  runs out of place restore for the subclient set_subclient_properties()  sets the properties of this sub client create_recovery_point()  create recovery point for a database get_session()  Get the session ids for a database get_mailbox_tags()  Get the mailboxtags for mailboxes run_restore_messages()  run livebrowse restore Attributes       content  returns the content of the Exchange Database subclient"
 },
 {
 "ref":"cvpysdk.subclients.exchange.exchange_database_subclient.ExchangeDatabaseSubclient",
-"url":187,
+"url":188,
 "doc":"Derived class from the Subclient Base class, to perform operations specific to an Exchange Database Subclient. Initialise the Subclient object. Args: backupset_object (object)  instance of the Backupset class subclient_name (str)  name of the subclient subclient_id (str)  id of the subclient default: None Returns: object - instance of the Subclient class"
 },
 {
 "ref":"cvpysdk.subclients.exchange.exchange_database_subclient.ExchangeDatabaseSubclient.content",
-"url":187,
+"url":188,
 "doc":"Gets the appropriate content from the Subclient relevant to the user. Returns: list - list of content added to the subclient"
 },
 {
 "ref":"cvpysdk.subclients.exchange.exchange_database_subclient.ExchangeDatabaseSubclient.set_exchangedb_subclient_prop",
-"url":187,
+"url":188,
 "doc":"Sets the exchange DB sublcient properties Args: key (str)  property to be changed value (obj)  value to be set",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.exchange_database_subclient.ExchangeDatabaseSubclient.restore_in_place",
-"url":187,
+"url":188,
 "doc":"Run inplace restore for Exchange database subclient Args: paths (list)  list of path used for inplace restore client (object)  object of client class Returns: object - Job class object for restore job",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.exchange_database_subclient.ExchangeDatabaseSubclient.restore_out_of_place",
-"url":187,
+"url":188,
 "doc":"Run out of place restore for Exchange database subclient Args: client (str)  destination client on which the restore should run paths (list)  list of path used for out of place restore Returns: object - Job class object for restore job",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.exchange_database_subclient.ExchangeDatabaseSubclient.create_recovery_point",
-"url":187,
+"url":188,
 "doc":"\" Run a create recovery point job on a backup Args: db_name (str)  database name media_agent (str)  media agent name to create recovery point on expiry_days (int)  no of days to keep the recovery point default : 5 Returns: job - Job id of recovery point",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.exchange_database_subclient.ExchangeDatabaseSubclient.get_session",
-"url":187,
+"url":188,
 "doc":"\" Get session ids for a recovery point Args: path (str)  database name media_agent (str)  media agent name to create recovery point on edb_paths (dict)  edb paths with job Ids ex: {97297: ' SPVM\\sc_4701_job_97296_1563312295\\1563312295\\Microsoft Information Store\\AUTODBx_spvm.VAYU.COMMVAULT.COM\\EDBFILES\\AUTODBx_spvm.VAYU.COMMVAULT.COM.edb ', 97298: ' MSE-2013\\sc_4701_job_97296_1563312333\\1563312333\\Microsoft Information St ore\\AUTODBx_MSE-2013.VAYU.COMMVAULT.COM\\EDBFILES\\AUTODBx_MSE-2013.VAYU.COMMVAULT.COM.edb'} recovery_point_ids (dict)  ids of recovery point jobs ex: {97297: 834, 97298: 835} Returns: Sessionids - dictionary of sessionids",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.exchange_database_subclient.ExchangeDatabaseSubclient.get_mailbox_tags",
-"url":187,
+"url":188,
 "doc":"\" Get the mailbox tags for a recovery point Args: path (str)  database name media_agent (str)  media agent name to create recovery point on edb_paths (dict)  edb paths with job Ids session_ids (dict)  sessionIDs of recovery point jobs Returns: mailboxTags - dictionary of mailboxes and their tags",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.exchange_database_subclient.ExchangeDatabaseSubclient.run_restore_messages",
-"url":187,
+"url":188,
 "doc":"\" Run a create recovery point job on a backup Args: path (str)  database name media_agent (str)  media agent name to create recovery point on oop_path (str)  path for pst restore edb_path (dict)  edb paths with job Ids session_id (dict)  sessionIDs of recovery point jobs mailbox_tags (dict)  mailbox tags for which restore has to run Returns: Response",
 "func":1
 },
@@ -28547,99 +28714,99 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.exchange.journalmailbox_subclient",
-"url":188,
+"url":189,
 "doc":"File for operating on a JournalMailbox Subclient. JournalMailboxSubclient is the only class defined in this file. JournalMailboxSubclient: Derived class from ExchangeMailboxSubclient Base class, representing a JournalMailbox subclient, and to perform operations on that subclient JournalMailboxSubclient: users()  creates users association for subclient restore_in_place()  runs in-place restore for the subclient"
 },
 {
 "ref":"cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient",
-"url":188,
+"url":189,
 "doc":"Derived class from ExchangeSubclient Base class. This represents a JournalMailbox subclient, and can perform discover and restore operations on only that subclient. Initialize the Instance object for the given JournalMailbox Subclient. Args: backupset_object (object)  instance of the backupset class subclient_name (str)  subclient name subclient_id (int)  subclient id"
 },
 {
 "ref":"cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient.discover_journal_users",
-"url":188,
+"url":189,
 "doc":"\"Returns the list of discovered journal users for the JournalMailbox subclient."
 },
 {
 "ref":"cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient.journal_users",
-"url":188,
+"url":189,
 "doc":"Returns the list of journal users associated with JournalMailbox subclient."
 },
 {
 "ref":"cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient.set_journal_user_assocaition",
-"url":188,
+"url":189,
 "doc":"Create Journal assocaition for JournalMailboxSubclient. Args: subclient_content (dict)  dict of the Users to add to the subclient subclient_content = { 'mailboxNames' : [\"AutoCi2\"], 'archive_policy' : \"CIPLAN Archiving policy\", 'cleanup_policy' : 'CIPLAN Clean-up policy', 'retention_policy': 'CIPLAN Retention policy' }",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient.set_pst_assocaition",
-"url":188,
+"url":189,
 "doc":"Create PST assocaition for JournalMailboxSubclient. Args: subclient_content (dict)  dict of the pst to add to the subclient subclient_content = { 'pstTaskName' : \"Task Name for PST\", 'folders' : ['list of folders'], 'pstOwnerManagement' : { 'defaultOwner': \"default owner if no owner is determined\", 'pstDestFolder': \"ingest psts under this folder\", 'usePSTNameToCreateChild': Boolean } }",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient.refresh",
-"url":188,
+"url":189,
 "doc":"Refresh the Journal Mailbox Subclient.",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient.cleanup",
-"url":186,
+"url":187,
 "doc":"Runs a cleanup job for the subclient . Returns: object - instance of the Job class for this backup job",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient.restore_in_place",
-"url":186,
+"url":187,
 "doc":"Restores the mailboxes/folders specified in the input paths list to the same location. Args: paths (list)  list of paths of mailboxes/folders to restore overwrite (bool)  unconditional overwrite files during restore default: True journal_report (bool)  Journal report is true for journal and contentStore Mailbox default: False restore_as_stub (dict)  setters for common options recovery_point_id (int)  ID of the recovery point to which the mailbox is to be restored to Default: None Returns: object - instance of the Job class for this restore job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient.out_of_place_restore",
-"url":186,
+"url":187,
 "doc":"Restores the mailboxes/folders specified in the input paths list to the same location. Args: paths (list)  list of paths of mailboxes/folders to restore destination_client  client where the mailboxes needs to be restored destination_path  path where the mailboxes needs to be restored overwrite (bool)  unconditional overwrite files during restore default: True journal_report (bool)  Journal report is true for journal and contentStore Mailbox default: False Returns: object - instance of the Job class for this restore job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient.disk_restore",
-"url":186,
+"url":187,
 "doc":"Restores the mailboxes/folders specified in the input paths list to the same location. Args: paths (list)  list of paths of mailboxes/folders to restore destination_client  client where the mailboxes needs to be restored destination_path  path where the mailboxes needs to be restored overwrite (bool)  unconditional overwrite files during restore default: True journal_report (bool)  Journal report is true for journal and contentStore Mailbox default: False Returns: object - instance of the Job class for this restore job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient.pst_restore",
-"url":186,
+"url":187,
 "doc":"Restores the Mailbox/Emails specified in the input paths list to the PST PATH location. Args: paths (list)  list of paths of mailboxes/folders to restore overwrite (bool)  unconditional overwrite files during restore default: True journal_report (bool)  Journal report is true for journal and contentStore Mailbox default: False Returns: object - instance of the Job class for this restore job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient.pst_ingestion",
-"url":186,
+"url":187,
 "doc":"Runs a backup job for the subclient of the level specified. Returns: object - instance of the Job class for this backup job",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient.subclient_content_indexing",
-"url":186,
+"url":187,
 "doc":"Run content Indexing on Subclient . Args: pick_failed_items default:False (bool)  Pick fail items during Content Indexing pick_only_failed_items (bool)  Pick only fail items items during Content Indeixng default: False streams (int)  Streams for Content Indexing job default: 4 proxies (list)  provide the proxies to run CI default: None Returns: object - instance of the Job class for this ContentIndexing job",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient.get_pst_task_json",
-"url":186,
+"url":187,
 "doc":"Get task json for pst ingestion job Returns: Pst task json",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient.get_pst_backup_opt_json",
-"url":186,
+"url":187,
 "doc":"Get backup options json for pst ingestion job Returns: Pst backup options json",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient.get_pst_data_opt_json",
-"url":186,
+"url":187,
 "doc":"Get data options json for pst ingestion job Returns: Pst data options json",
 "func":1
 },
@@ -28894,226 +29061,226 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient",
-"url":189,
+"url":190,
 "doc":"File for operating on a UserMailbox Subclient. UsermailboxSubclient is the only class defined in this file. UsermailboxSubclient: Derived class from ExchangeMailboxSubclient Base class, representing a UserMailbox subclient, and to perform operations on that subclient UsermailboxSubclient:            _get_subclient_properties()  gets the properties of UserMailbox Subclient _get_subclient_properties_json()  gets the properties JSON of UserMailbox Subclient _get_discover_adgroups()  Get the discovered AD Groups _get_discover_users()  Get the discovered users _association_json_with_plan()  Create the Association JSON for associations using Exchange Plan _association_mailboxes_json()  Association for particular mailboxes _task_json_for_backup()  JSON for backup task for Exchange User mailbox Subclient _backup_generic_items_json()  JSON to backup generic items Content Association Methods:                set_user_assocaition()  Set exchange users association set_pst_association()  Create PST association for UserMailboxSubclient set_fs_association_for_pst()  Helper method to create pst association for PST Ingestion by FS association set_adgroup_associations()  Create Association for ADGroups set_o365group_asscoiations()  Create O365 group association delete_user_assocaition()  Delete User Association from content delete_o365group_association()  Delete Office 365 Group Association delete_database_assocaition()  Delete Exchange DB Association delete_adgroup_assocaition  Delete association for an AD Group enable_allusers_association()  Enable association for all mailboxes disable_allusers_association()  Disable All Users Association enable_auto_discover_association  Enable Association for Auto Discovered Content viz. All Public Folders/ All Mailboxes/ All Group Mailboxes delete_auto_discover_association  Delete Association for Auto Discovered Content  viz. All Public Folders/ All Mailboxes/ All Group Mailboxes enable_ews_support()  Enables EWS Support for backup for ON_PREM Mailboxes Browse/ Restore/ Backup Methods:                browse_mailboxes()  Backup specific mailboxes backup_generic_items()  Backup Generic Items viz. All Public Folders/ All User Mailboxes/ All Group Mailboxes backup_mailboxes()  Backup selected mailboxes restore_in_place()  runs in-place restore for the subclient create_recovery_point()  Create a recovery point for a mailbox User Mailbox Subclient Instance Attributes:                discover_users  Dictionary of users discovered discover_databases  Dictionary of databases discovered adgroups  Dictionary of discovered AD Groups o365groups  Dictionary of discovered Office 365 Groups"
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient",
-"url":189,
+"url":190,
 "doc":"Derived class from ExchangeSubclient Base class. This represents a usermailbox subclient, and can perform discover and restore operations on only that subclient. Initialize the Instance object for the given UserMailbox Subclient. Args: backupset_object (object)  instance of the backupset class subclient_name (str)  subclient name subclient_id (int)  subclient id"
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.discover_users",
-"url":189,
+"url":190,
 "doc":"\"Returns the list of discovered users for the UserMailbox subclient."
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.discover_databases",
-"url":189,
+"url":190,
 "doc":"Returns the list of discovered databases for the UserMailbox subclient."
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.discover_adgroups",
-"url":189,
+"url":190,
 "doc":"Returns the list of discovered AD groups for the UserMailbox subclient."
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.users",
-"url":189,
+"url":190,
 "doc":"Returns the list of users associated with UserMailbox subclient."
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.databases",
-"url":189,
+"url":190,
 "doc":"Returns the list of databases associated with the UserMailbox subclient."
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.adgroups",
-"url":189,
+"url":190,
 "doc":"Returns the list of AD groups associated with the UserMailbox subclient."
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.o365groups",
-"url":189,
+"url":190,
 "doc":"Returns the list of discovered O365 groups for the UserMailbox subclient."
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_user_assocaition",
-"url":189,
+"url":190,
 "doc":"Create User assocaition for UserMailboxSubclient. Args: subclient_content (dict)  dict of the Users to add to the subclient subclient_content = { 'mailboxNames' : [\"AutoCi2\"]  if use_policies is True  'archive_policy' : \"CIPLAN Archiving policy\", 'cleanup_policy' : 'CIPLAN Clean-up policy', 'retention_policy': 'CIPLAN Retention policy'  if use_policies is False  'plan_name': 'Exchange Plan Name', 'plan_id': int or None (Optional)  }",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_pst_association",
-"url":189,
+"url":190,
 "doc":"Create PST assocaition for UserMailboxSubclient. Args: subclient_content (dict)  dict of the pst to add to the subclient subclient_content = { 'pstTaskName' : \"Task Name for PST\", 'folders' : ['list of folders']  If pst ingestion by folder location, 'fsContent': Dictionary of client, backupset, subclient Ex: {'client1':{'backupset1':[subclient1], 'backupset2':None}, 'client2': None} This would add subclient1, all subclients under backupset2 and all backupsets under client2 to the association 'pstOwnerManagement' : { 'defaultOwner': \"default owner if no owner is determined\", 'pstDestFolder': \"ingest psts under this folder\", 'usePSTNameToCreateChild': Boolean } }",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_fs_association_for_pst",
-"url":189,
+"url":190,
 "doc":"Helper method to create pst association for PST Ingestion by FS Args: association(dict)  Dictionary of client, backupset, subclient Ex: {'client1':{'backupset1':[subclient1], 'backupset2':None}, 'client2': None} This would add subclient1, all subclients under backupset2 and all backupsets under client2 to the association",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_database_assocaition",
-"url":189,
+"url":190,
 "doc":"Create Database assocaition for UserMailboxSubclient. Args: subclient_content (dict)  dict of the databases to add to the subclient subclient_content = { 'databaseNames' : [\"SGDB-1\"], 'is_auto_discover_user' : True, 'archive_policy' : \"CIPLAN Archiving policy\", 'cleanup_policy' : 'CIPLAN Clean-up policy', 'retention_policy': 'CIPLAN Retention policy', }",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_adgroup_associations",
-"url":189,
+"url":190,
 "doc":"Create Ad groups assocaition for UserMailboxSubclient. Args: subclient_content (dict)  dict of the adgroups to add to the subclient subclient_content = { 'adGroupNames' : [\"_Man5_Man5_\"], 'is_auto_discover_user' : True, 'archive_policy' : \"CIPLAN Archiving policy\", 'cleanup_policy' : 'CIPLAN Clean-up policy', 'retention_policy': 'CIPLAN Retention policy', }",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_o365group_asscoiations",
-"url":189,
+"url":190,
 "doc":"Create O365 Group association for UserMailboxSubclient. Args: subclient_content (dict)  dict of the policies to associate subclient_content = { 'archive_policy' : \"CIPLAN Archiving policy\", 'cleanup_policy' : 'CIPLAN Clean-up policy', 'retention_policy': 'CIPLAN Retention policy' }",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.delete_user_assocaition",
-"url":189,
+"url":190,
 "doc":"delete User assocaition for UserMailboxSubclient. Args: subclient_content (dict)  dict of the Users to delete from subclient subclient_content = { 'mailboxNames' : [\"AutoCi2\"],  if use_policies is True  'archive_policy' : \"CIPLAN Archiving policy\", 'cleanup_policy' : 'CIPLAN Clean-up policy', 'retention_policy': 'CIPLAN Retention policy'   if use_policies is False  'plan_name': Plan Name, 'plan_id': int or None (Optional)  } use_policies (bool)  If True uses policies else uses Plan",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.delete_o365group_association",
-"url":189,
+"url":190,
 "doc":"delete O365 group association for UserMailboxSubclient. Args: subclient_content (dict)  dict of the Users to delete from subclient subclient_content = { 'mailboxNames' : [\"AutoCi2\"], 'archive_policy' : \"CIPLAN Archiving policy\", 'cleanup_policy' : 'CIPLAN Clean-up policy', 'retention_policy': 'CIPLAN Retention policy' }",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.delete_database_assocaition",
-"url":189,
+"url":190,
 "doc":"Deletes Database assocaition for UserMailboxSubclient. Args: subclient_content (dict)  dict of the databases to delete from subclient subclient_content = { 'databaseNames' : [\"SGDB-1\"], 'is_auto_discover_user' : True, 'archive_policy' : \"CIPLAN Archiving policy\", 'cleanup_policy' : 'CIPLAN Clean-up policy', 'retention_policy': 'CIPLAN Retention policy', }",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.delete_adgroup_assocaition",
-"url":189,
+"url":190,
 "doc":"Deletes Ad groups assocaition for UserMailboxSubclient. Args: subclient_content (dict)  dict of the adgroups to delete from subclient subclient_content = { 'adGroupNames' : [\"_Man5_Man5_\"], 'is_auto_discover_user' : True, 'archive_policy' : \"CIPLAN Archiving policy\", 'cleanup_policy' : 'CIPLAN Clean-up policy', 'retention_policy': 'CIPLAN Retention policy', }",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.enable_allusers_associations",
-"url":189,
+"url":190,
 "doc":"Enable all users assocaition for UserMailboxSubclient. Args: subclient_content (dict)  dict of the policies which needs to be assigned to all user assocaitions subclient_content = { 'is_auto_discover_user' : True 'archive_policy' : \"CIPLAN Archiving policy\", 'cleanup_policy' : 'CIPLAN Clean-up policy', 'retention_policy': 'CIPLAN Retention policy', }",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.disable_allusers_associations",
-"url":189,
+"url":190,
 "doc":"Disables alluser assocaition for UserMailboxSubclient.",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.enable_auto_discover_association",
-"url":189,
+"url":190,
 "doc":"Enable all users assocaition for UserMailboxSubclient. Args: association_name (str)  Type of auto discover association Valid Values: \"All Users\" \"All O365 Mailboxes\" \"All Public Folders\" plan_name (str)  Name of the plan to associate with users/groups",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.delete_auto_discover_association",
-"url":189,
+"url":190,
 "doc":"Delete all users association for UserMailboxSubclient. Args: association_name (str)  Type of auto discover association Valid Values: \"All Users\" \"All O365 Mailboxes\" \"All Public Folders\" subclient_content (dict) - containing the information of users/groups if use_policies is True subclient_content={ \"is_auto_dicover_user\" (bool): True \"archive_policy\" (obj): Archive Policy object \"cleanup_policy\" (obj): Cleanup Policy Object \"retention_policy\" (obj): Retention Policy Object } if use_policies is False subclient_content={ \"is_auto_discover_user\" (bool): True, \"plan_name\" (str): Name of the exchange plan }",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.enable_ews_support",
-"url":189,
+"url":190,
 "doc":"This function provides support for EWS protocol to backup on-prem mailboxes Args: service_url (string)  EWS Connection URL for your exchange server Returns: None",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.browse_mailboxes",
-"url":189,
+"url":190,
 "doc":"This function returns the mailboxes available for OOP restore return: dictionary containing mailbox info",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.backup_generic_items",
-"url":189,
+"url":190,
 "doc":"Backups the Generic Items for any Exchange Online Client GGeneric Items: All Public Folders/ All O365 Group ailboxes/ All Users Args: subclient_content (list) List having dictionary of items to be backed up subclient_content = [ { \"associationName\" : \"All Public Folders\", \"associationType\":12 }, { \"associationName\" : \"All Users\", \"associationType\":12 } ]",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.backup_mailboxes",
-"url":189,
+"url":190,
 "doc":"Backup specific mailboxes. Args: mailbox_alias_names(list): alias names of all the mailboxes to backup Sample Values: ['aj', 'tkumar'] Returns: job(Job): instance of job class for the backup job",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.create_recovery_point",
-"url":189,
+"url":190,
 "doc":"Method to create a recovery point Arguments: mailbox_prop (dict) Dictionary of mailbox properties for which the Recovery point is to be created Sample: { 'mailbox_smtp' : name of the mailbox for which recovery point is to be created 'mailbox_guid': GUID of the mailbox 'index_server': Name of the index server to be used to create index on } job (object) Backup Job to which restore point has to be created job_id (int) Backup Job ID to which restore point is to be created Either pass the job object or the job_id Returns: res_dict (dict) Dictionary of Response Format: { 'rercovery_point_id' : ID of the recovery point created, 'recovery_point_job_id': Job ID for recovery point creation JOB }",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.refresh",
-"url":189,
+"url":190,
 "doc":"Refresh the User Mailbox Subclient.",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.cleanup",
-"url":186,
+"url":187,
 "doc":"Runs a cleanup job for the subclient . Returns: object - instance of the Job class for this backup job",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.restore_in_place",
-"url":186,
+"url":187,
 "doc":"Restores the mailboxes/folders specified in the input paths list to the same location. Args: paths (list)  list of paths of mailboxes/folders to restore overwrite (bool)  unconditional overwrite files during restore default: True journal_report (bool)  Journal report is true for journal and contentStore Mailbox default: False restore_as_stub (dict)  setters for common options recovery_point_id (int)  ID of the recovery point to which the mailbox is to be restored to Default: None Returns: object - instance of the Job class for this restore job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.out_of_place_restore",
-"url":186,
+"url":187,
 "doc":"Restores the mailboxes/folders specified in the input paths list to the same location. Args: paths (list)  list of paths of mailboxes/folders to restore destination_client  client where the mailboxes needs to be restored destination_path  path where the mailboxes needs to be restored overwrite (bool)  unconditional overwrite files during restore default: True journal_report (bool)  Journal report is true for journal and contentStore Mailbox default: False Returns: object - instance of the Job class for this restore job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.disk_restore",
-"url":186,
+"url":187,
 "doc":"Restores the mailboxes/folders specified in the input paths list to the same location. Args: paths (list)  list of paths of mailboxes/folders to restore destination_client  client where the mailboxes needs to be restored destination_path  path where the mailboxes needs to be restored overwrite (bool)  unconditional overwrite files during restore default: True journal_report (bool)  Journal report is true for journal and contentStore Mailbox default: False Returns: object - instance of the Job class for this restore job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.pst_restore",
-"url":186,
+"url":187,
 "doc":"Restores the Mailbox/Emails specified in the input paths list to the PST PATH location. Args: paths (list)  list of paths of mailboxes/folders to restore overwrite (bool)  unconditional overwrite files during restore default: True journal_report (bool)  Journal report is true for journal and contentStore Mailbox default: False Returns: object - instance of the Job class for this restore job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.pst_ingestion",
-"url":186,
+"url":187,
 "doc":"Runs a backup job for the subclient of the level specified. Returns: object - instance of the Job class for this backup job",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.subclient_content_indexing",
-"url":186,
+"url":187,
 "doc":"Run content Indexing on Subclient . Args: pick_failed_items default:False (bool)  Pick fail items during Content Indexing pick_only_failed_items (bool)  Pick only fail items items during Content Indeixng default: False streams (int)  Streams for Content Indexing job default: 4 proxies (list)  provide the proxies to run CI default: None Returns: object - instance of the Job class for this ContentIndexing job",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.get_pst_task_json",
-"url":186,
+"url":187,
 "doc":"Get task json for pst ingestion job Returns: Pst task json",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.get_pst_backup_opt_json",
-"url":186,
+"url":187,
 "doc":"Get backup options json for pst ingestion job Returns: Pst backup options json",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.get_pst_data_opt_json",
-"url":186,
+"url":187,
 "doc":"Get data options json for pst ingestion job Returns: Pst data options json",
 "func":1
 },
@@ -29368,71 +29535,71 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.exchsubclient",
-"url":186,
+"url":187,
 "doc":"File for operating on an Exchange Subclient. ExchangeSubclient is the only class defined in this file. ExchangeSubclient: Derived class from Subclient Base class, representing an Exchange Mailbox Agent subclient, and to perform operations on that subclient. ExchangeSubclient: __new__()  Method to create object based on the backupset name"
 },
 {
 "ref":"cvpysdk.subclients.exchsubclient.ExchangeSubclient",
-"url":186,
+"url":187,
 "doc":"Derived class from Subclient Base class, representing an Exchange subclient, and to perform operations on that subclient. Initialise the Subclient object. Args: backupset_object (object)  instance of the Backupset class subclient_name (str)  name of the subclient subclient_id (str)  id of the subclient default: None Returns: object - instance of the Subclient class"
 },
 {
 "ref":"cvpysdk.subclients.exchsubclient.ExchangeSubclient.cleanup",
-"url":186,
+"url":187,
 "doc":"Runs a cleanup job for the subclient . Returns: object - instance of the Job class for this backup job",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchsubclient.ExchangeSubclient.restore_in_place",
-"url":186,
+"url":187,
 "doc":"Restores the mailboxes/folders specified in the input paths list to the same location. Args: paths (list)  list of paths of mailboxes/folders to restore overwrite (bool)  unconditional overwrite files during restore default: True journal_report (bool)  Journal report is true for journal and contentStore Mailbox default: False restore_as_stub (dict)  setters for common options recovery_point_id (int)  ID of the recovery point to which the mailbox is to be restored to Default: None Returns: object - instance of the Job class for this restore job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchsubclient.ExchangeSubclient.out_of_place_restore",
-"url":186,
+"url":187,
 "doc":"Restores the mailboxes/folders specified in the input paths list to the same location. Args: paths (list)  list of paths of mailboxes/folders to restore destination_client  client where the mailboxes needs to be restored destination_path  path where the mailboxes needs to be restored overwrite (bool)  unconditional overwrite files during restore default: True journal_report (bool)  Journal report is true for journal and contentStore Mailbox default: False Returns: object - instance of the Job class for this restore job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchsubclient.ExchangeSubclient.disk_restore",
-"url":186,
+"url":187,
 "doc":"Restores the mailboxes/folders specified in the input paths list to the same location. Args: paths (list)  list of paths of mailboxes/folders to restore destination_client  client where the mailboxes needs to be restored destination_path  path where the mailboxes needs to be restored overwrite (bool)  unconditional overwrite files during restore default: True journal_report (bool)  Journal report is true for journal and contentStore Mailbox default: False Returns: object - instance of the Job class for this restore job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchsubclient.ExchangeSubclient.pst_restore",
-"url":186,
+"url":187,
 "doc":"Restores the Mailbox/Emails specified in the input paths list to the PST PATH location. Args: paths (list)  list of paths of mailboxes/folders to restore overwrite (bool)  unconditional overwrite files during restore default: True journal_report (bool)  Journal report is true for journal and contentStore Mailbox default: False Returns: object - instance of the Job class for this restore job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchsubclient.ExchangeSubclient.pst_ingestion",
-"url":186,
+"url":187,
 "doc":"Runs a backup job for the subclient of the level specified. Returns: object - instance of the Job class for this backup job",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchsubclient.ExchangeSubclient.subclient_content_indexing",
-"url":186,
+"url":187,
 "doc":"Run content Indexing on Subclient . Args: pick_failed_items default:False (bool)  Pick fail items during Content Indexing pick_only_failed_items (bool)  Pick only fail items items during Content Indeixng default: False streams (int)  Streams for Content Indexing job default: 4 proxies (list)  provide the proxies to run CI default: None Returns: object - instance of the Job class for this ContentIndexing job",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchsubclient.ExchangeSubclient.get_pst_task_json",
-"url":186,
+"url":187,
 "doc":"Get task json for pst ingestion job Returns: Pst task json",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchsubclient.ExchangeSubclient.get_pst_backup_opt_json",
-"url":186,
+"url":187,
 "doc":"Get backup options json for pst ingestion job Returns: Pst backup options json",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.exchsubclient.ExchangeSubclient.get_pst_data_opt_json",
-"url":186,
+"url":187,
 "doc":"Get data options json for pst ingestion job Returns: Pst data options json",
 "func":1
 },
@@ -30229,53 +30396,53 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.hanasubclient",
-"url":190,
+"url":191,
 "doc":"File for operating on a HANA Server Subclient HANAServerSubclient is the only class defined in this file. HANAServerSubclient: Derived class from Subclient Base class, representing a HANA server subclient, and to perform operations on that subclient HANAServerSubclient: _backup_request_json()  prepares the json for the backup request _get_subclient_properties()  gets the subclient related properties of SAP HANA subclient. backup()  run a backup job for the subclient"
 },
 {
 "ref":"cvpysdk.subclients.hanasubclient.SAPHANASubclient",
-"url":190,
+"url":191,
 "doc":"Derived class from Subclient Base class, representing a SAP HANA subclient, and to perform operations on that subclient. Initialise the Subclient object. Args: backupset_object (object)  instance of the Backupset class subclient_name (str)  name of the subclient subclient_id (str)  id of the subclient default: None Returns: object - instance of the Subclient class"
 },
 {
 "ref":"cvpysdk.subclients.hanasubclient.SAPHANASubclient.content",
-"url":190,
+"url":191,
 "doc":"Treats the subclient content as a property of the Subclient class."
 },
 {
 "ref":"cvpysdk.subclients.hanasubclient.SAPHANASubclient.browse",
-"url":190,
+"url":191,
 "doc":"Browses the content of the Subclient. Args: Dictionary of browse options: Example: browse({ 'path': 'c: hello', 'show_deleted': True, 'from_time': '2014-04-20 12:00:00', 'to_time': '2016-04-21 12:00:00' }) Kwargs: Keyword argument of browse options: Example: browse( path='c:\\hello', show_deleted=True, from_time='2014-04-20 12:00:00', to_time='2016-04-21 12:00:00' ) Returns: (list, dict) list - List of only the file, folder paths from the browse response dict - Dictionary of all the paths with additional metadata retrieved from browse operation Refer  default_browse_options _ for all the supported options.  _default_browse_options: https: github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py L565"
 },
 {
 "ref":"cvpysdk.subclients.hanasubclient.SAPHANASubclient.browse_in_time",
-"url":190,
+"url":191,
 "doc":""
 },
 {
 "ref":"cvpysdk.subclients.hanasubclient.SAPHANASubclient.find",
-"url":190,
+"url":191,
 "doc":"Searches a file/folder in the backed up content of the subclient, and returns all the files matching the filters given. Args: Dictionary of browse options: Example: find({ 'file_name': ' .txt', 'show_deleted': True, 'from_time': '2014-04-20 12:00:00', 'to_time': '2016-04-31 12:00:00' }) Kwargs: Keyword argument of browse options: Example: find( file_name=' .txt', show_deleted=True, 'from_time': '2014-04-20 12:00:00', to_time='2016-04-31 12:00:00' ) Returns: (list, dict) list - List of only the file, folder paths from the browse response dict - Dictionary of all the paths with additional metadata retrieved from browse operation Refer  default_browse_options _ for all the supported options. Additional options supported: file_name (str)  Find files with name file_size_gt (int)  Find files with size greater than size file_size_lt (int)  Find files with size lesser than size file_size_et (int)  Find files with size equal to size  _default_browse_options: https: github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py L565"
 },
 {
 "ref":"cvpysdk.subclients.hanasubclient.SAPHANASubclient.restore_in_place",
-"url":190,
+"url":191,
 "doc":"Restores the files/folders specified in the input paths list to the same location. Args: paths (list)  list of full paths of files/folders to restore overwrite (bool)  unconditional overwrite files during restore default: True restore_data_and_acl (bool)  restore data and ACL files default: True copy_precedence (int)  copy precedence value of storage policy copy default: None from_time (str)  time to restore the contents after format: YYYY-MM-DD HH:MM:SS default: None to_time (str)  time to restore the contents before format: YYYY-MM-DD HH:MM:SS default: None fs_options (dict)  dictionary that includes all advanced options options: all_versions : if set to True restores all the versions of the specified file versions : list of version numbers to be backed up validate_only : To validate data backed up for restore schedule_pattern (dict)  scheduling options to be included for the task Please refer schedules.schedulePattern.createSchedule() doc for the types of Jsons schedule_pattern (dict)  scheduling options to be included for the task Please refer schedules.schedulePattern.createSchedule() doc for the types of Jsons proxy_client (str)  Proxy client used during FS under NAS operations advanced_options (dict)  Advanced restore options Options: job_description (str)  Restore job description timezone (str)  Timezone to be used for restore  Note make use of TIMEZONES dict in constants.py to pass timezone Returns: object - instance of the Job class for this restore job if its an immediate Job instance of the Schedule class for this restore job if its a scheduled Job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success"
 },
 {
 "ref":"cvpysdk.subclients.hanasubclient.SAPHANASubclient.restore_out_of_place",
-"url":190,
+"url":191,
 "doc":"Restores the files/folders specified in the input paths list to the input client, at the specified destionation location. Args: client (str/object)  either the name of the client or the instance of the Client destination_path (str)  full path of the restore location on client paths (list)  list of full paths of files/folders to restore overwrite (bool)  unconditional overwrite files during restore default: True restore_data_and_acl (bool)  restore data and ACL files default: True copy_precedence (int)  copy precedence value of storage policy copy default: None from_time (str)  time to restore the contents after format: YYYY-MM-DD HH:MM:SS default: None to_time (str)  time to restore the contents before format: YYYY-MM-DD HH:MM:SS default: None fs_options (dict)  dictionary that includes all advanced options options: preserve_level : preserve level option to set in restore proxy_client : proxy that needed to be used for restore impersonate_user : Impersonate user options for restore impersonate_password: Impersonate password option for restore in base64 encoded form all_versions : if set to True restores all the versions of the specified file versions : list of version numbers to be backed up media_agent : Media Agent need to be used for Browse and restore validate_only : To validate data backed up for restore schedule_pattern (dict)  scheduling options to be included for the task Please refer schedules.schedulePattern.createSchedule() doc for the types of Jsons schedule_pattern (dict)  scheduling options to be included for the task Please refer schedules.schedulePattern.createSchedule() doc for the types of Jsons proxy_client (str)  Proxy client used during FS under NAS operations advanced_options (dict)  Advanced restore options Options: job_description (str)  Restore job description timezone (str)  Timezone to be used for restore  Note make use of TIMEZONES dict in constants.py to pass timezone Returns: object - instance of the Job class for this restore job if its an immediate Job instance of the Schedule class for this restore job if its a scheduled Job Raises: SDKException: if client is not a string or Client instance if destination_path is not a string if paths is not a list if failed to initialize job if response is empty if response is not success"
 },
 {
 "ref":"cvpysdk.subclients.hanasubclient.SAPHANASubclient.backup",
-"url":190,
+"url":191,
 "doc":"Runs a backup job for the subclient of the level specified. Args: backup_level (str)  level of backup the user wish to run Full / Incremental / Differential default: Differential backup_prefix (str)  the prefix that the user wish to add to the backup default: None Returns: object - instance of the Job class for this backup job Raises: SDKException: if backup level specified is not correct if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.hanasubclient.SAPHANASubclient.log_backup_storage_policy",
-"url":183,
+"url":184,
 "doc":"Treats the subclient description as a property of the Subclient class."
 },
 {
@@ -30511,41 +30678,41 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.index_server_subclient",
-"url":191,
+"url":192,
 "doc":"Module for operating with index server subclient IndexServerSubClient is the only class defined in this file IndexServerSubClient : Derived class from BigDataAppsSubclient Base class, representing Index Server subclient and to perform operations on that subclient IndexServerSubClient:        = __init__  initialise object of the IndexServerSubClient class run_backup  run backup job for this index server configure_backup  Edit default subclient on index server for modifying subclient role content do_restore_in_place  restores the index server index to index server client do_restore_out_of_place  restores the index server index to the specified dir on client get_file_details_from_backup  gets folder/file details from index server backup using index find _get_path_for_restore  forms path argument for restore based on index server mode"
 },
 {
 "ref":"cvpysdk.subclients.index_server_subclient.IndexServerSubclient",
-"url":191,
+"url":192,
 "doc":"Derived class from BigDataAppsSubclient, representing index server subclient, and to perform operations on that subclient Constructor for the IndexServerSubclient class Args: backupset_object (object)  instance of the Backupset class subclient_name (str)  name of the subclient subclient_id (str)  id of the subclient"
 },
 {
 "ref":"cvpysdk.subclients.index_server_subclient.IndexServerSubclient.do_restore_in_place",
-"url":191,
+"url":192,
 "doc":"Restores the indexed data for the specified role or core list to the same index location on index server Args: roles (list)  list of role name to be restored default:None (all roles defined in this subclient) Example : ['Data Analytics'] core_name (list)  list of solr core name which needs to be restore. default:None (all cores) Format : [role name\\core name] Example : [r'Data Analytics\\cvcorefla0'] overwrite (bool)  unconditional overwrite files during restore default: True from_time (str)  time to retore the contents after format: YYYY-MM-DD HH:MM:SS default: None to_time (str)  time to retore the contents before format: YYYY-MM-DD HH:MM:SS default: None client (str)  name of solr client whose data needs to be restored.  Applicable only for solr cloud mode default : None Returns: object - instance of the Job class for this restore job Raises: SDKException: if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.index_server_subclient.IndexServerSubclient.do_restore_out_of_place",
-"url":191,
+"url":192,
 "doc":"Restores the indexed data for the specified role or core list to any other client Args: dest_client (str)  Client where index needs to be restored dest_path (str)  folder path where index needs to be restored on client roles (list)  list of role name to be restored default:None (all roles defined in this subclient) Example : ['Data Analytics'] core_name (list)  list of solr core name which needs to be restore. default:None (all cores) Format : [role name\\core name] Example : [r'Data Analytics\\cvcorefla0'] overwrite (bool)  unconditional overwrite files during restore default: True from_time (str)  time to retore the contents after format: YYYY-MM-DD HH:MM:SS default: None to_time (str)  time to retore the contents before format: YYYY-MM-DD HH:MM:SS default: None client (str)  name of Index server client whose data needs to be restored.  Applicable only for solr cloud mode default : None Returns: object - instance of the Job class for this restore job Raises: SDKException: if input data type is not valid if failed to initialize job",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.index_server_subclient.IndexServerSubclient.run_backup",
-"url":191,
+"url":192,
 "doc":"Runs a backup job for the default subclient. Args: backup_level (str)  level of backup the user wish to run default: Full Returns: object - instance of the Job class for this backup job Raises: SDKException: if backup level specified is not correct if failed to start job",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.index_server_subclient.IndexServerSubclient.get_file_details_from_backup",
-"url":191,
-"doc":"Gets files/folders details from index server backup job. Args: roles (list)  list of roles whose file details needs to be fetched from backup include_files (bool)  whether to include files in response or not default : True (Both files/folders from backup will be returned) Note : Works only in the case of Windows IS, does not work for Linux IS job_id (str)  job id to be used for browse index_server_node (str)  index server client node name Note : Required compulsory in the case of unix IS when roles is not none. Returns: (list, dict) list - List of only the file, folder paths from the browse response dict - Dictionary of all the paths with additional metadata retrieved from browse operation Raises: SDKException: if failed to do browse",
+"url":192,
+"doc":"Gets files/folders details from index server backup job. Args: roles (list)  list of roles whose file details needs to be fetched from backup include_files (bool)  whether to include files in response or not default : True (Both files/folders from backup will be returned) Note : Works only in the case of Windows IS, does not work for Linux IS job_id (str)  job id to be used for browse index_server_node (str)  index server client node name Note : Required compulsory in the case of unix IS when roles is not none. kwargs  Additional info ex -> core_list (list)  List of cores whose file details needs to be fetched from backup Returns: (list, dict) list - List of only the file, folder paths from the browse response dict - Dictionary of all the paths with additional metadata retrieved from browse operation Raises: SDKException: if failed to do browse",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.index_server_subclient.IndexServerSubclient.configure_backup",
-"url":191,
+"url":192,
 "doc":"Edit the default subclient for modifying role content or storage policy. Args: storage_policy (str)  Storage policy to be associated with default subclient role_content (list)  list of role names which needs to be backed up Returns: None Raises: SDKException: if input data type is not valid if response is empty if response is not success",
 "func":1
 },
@@ -31083,23 +31250,23 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.informixsubclient",
-"url":192,
+"url":193,
 "doc":"File for operating on a Informix Subclient InformixSubclient is the only class defined in this file. InformixSubclient: Derived class from Subclient Base class, representing a Informix subclient, and to perform operations on that subclient InformixSubclient: _get_subclient_properties()  gets the subclient related properties of Informix subclient _get_subclient_properties_json()  gets all the subclient related properties of Informix subclient restore_in_place()  restores the Informix data/log files specified in the input db_space list to the same location InformixSubclient instance Attributes                   backup_mode  returns the  backup_mode of Informix subclient"
 },
 {
 "ref":"cvpysdk.subclients.informixsubclient.InformixSubclient",
-"url":192,
+"url":193,
 "doc":"Derived class from Subclient Base class, representing a Informix subclient, and to perform operations on that subclient. Initialise the Subclient object. Args: backupset_object (object)  instance of the Backupset class subclient_name (str)  name of the subclient subclient_id (str)  id of the subclient default: None Returns: object - instance of the Subclient class"
 },
 {
 "ref":"cvpysdk.subclients.informixsubclient.InformixSubclient.restore_in_place",
-"url":192,
+"url":193,
 "doc":"Restores the Informix data/log files specified in the input db_space list to the same location. Args: path (list)  List of dbspaces to be restored restore_type (str)  Restore type for informix instance Accepted Values: ENTIRE INSTANCE/WHOLE SYSTEM copy_precedence (str)  Copy precedence associted with storage policy physical_restore (bool)  Physical restore flag logical_restore (bool)  Logical restore flag Returns: object - instance of the Job class for this restore job",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.informixsubclient.InformixSubclient.backup_mode",
-"url":192,
+"url":193,
 "doc":"Returns the  backup_mode of Informix subclient"
 },
 {
@@ -31359,34 +31526,34 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.lndbsubclient",
-"url":193,
+"url":194,
 "doc":"File for operating on a Notes Database Subclient. LNDbSubclient is the only class defined in this file. LNDbSubclient: Derived class from Subclient Base class. Represents a notes database subclient, and performs operations on that subclient LNDbSubclient: _get_subclient_properties()  gets subclient related properties of Notes Database subclient. _get_subclient_properties_json()  gets all the subclient related properties of Notes Database subclient. content()  get the content of the subclient restore_in_place()  performs an in place restore of the subclient restore_out_of_place()  performs and out of place restore of the subclient backup()  run a backup job for the subclient"
 },
 {
 "ref":"cvpysdk.subclients.lndbsubclient.LNDbSubclient",
-"url":193,
+"url":194,
 "doc":"Derived class from Subclient Base class, representing a LNDB subclient, and to perform operations on that subclient. Initialise the Subclient object. Args: backupset_object (object)  instance of the Backupset class subclient_name (str)  name of the subclient subclient_id (str)  id of the subclient default: None Returns: object - instance of the Subclient class"
 },
 {
 "ref":"cvpysdk.subclients.lndbsubclient.LNDbSubclient.content",
-"url":193,
+"url":194,
 "doc":"Gets the appropriate content from the Subclient relevant to the user. Returns: list - list of content associated with the subclient"
 },
 {
 "ref":"cvpysdk.subclients.lndbsubclient.LNDbSubclient.restore_in_place",
-"url":193,
+"url":194,
 "doc":"Restores the files/folders specified in the input paths list to the same location. Args: paths (list)  list of full paths of files/folders to restore overwrite (bool)  unconditional overwrite files during restore default: True restore_data_and_acl (bool)  restore data and ACL files default: True copy_precedence (int)  copy precedence value of storage policy copy default: None from_time (str)  time to retore the contents after format: YYYY-MM-DD HH:MM:SS default: None to_time (str)  time to retore the contents before format: YYYY-MM-DD HH:MM:SS default: None common_options_dict (dict)  dictionary for all the common options options: unconditionalOverwrite : overwrite the files during restore even if they exist recoverWait : Specifies whether this restore operation must wait until resources become available if a database recovery is already taking place recoverZap : Specifies whether the IBM Domino must change the DBIID associated with the restored database recoverZapReplica : Specifies whether the restore operation changes the replica id of the restored database recoverZapIfNecessary : Specifies whether the IBM Domino can change the DBIID associated with the restored database if necessary doNotReplayTransactLogs : option to skip restoring or replaying logs Disaster Recovery special options: skipErrorsAndContinue : enables a data recovery operation to continue despite media errors disasterRecovery : run disaster recovery lndb_restore_options (dict)  dictionary for all options specific to an lndb restore options: disableReplication : disable relpication on database disableBackgroundAgents : disable background agents Returns: object - instance of the Job class for this restore job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.lndbsubclient.LNDbSubclient.restore_out_of_place",
-"url":193,
+"url":194,
 "doc":"Restores the files/folders specified in the input paths list to the input client, at the specified destionation location. Args: client (str/object)  either the name of the client or the instance of the Client destination_path (str)  full path of the restore location on client paths (list)  list of full paths of files/folders to restore overwrite (bool)  unconditional overwrite files during restore default: True restore_data_and_acl (bool)  restore data and ACL files default: True copy_precedence (int)  copy precedence value of storage policy copy default: None from_time (str)  time to retore the contents after format: YYYY-MM-DD HH:MM:SS default: None to_time (str)  time to retore the contents before format: YYYY-MM-DD HH:MM:SS default: None common_options_dict (dict)  dictionary for all the common options options: unconditionalOverwrite : overwrite the files during restore even if they exist recoverWait : Specifies whether this restore operation must wait until resources become available if a database recovery is already taking place recoverZap : Specifies whether the IBM Domino must change the DBIID associated with the restored database recoverZapReplica : Specifies whether the restore operation changes the replica id of the restored database recoverZapIfNecessary : Specifies whether the IBM Domino can change the DBIID associated with the restored database if necessary doNotReplayTransactLogs : option to skip restoring or replaying logs Disaster Recovery special options: skipErrorsAndContinue : enables a data recovery operation to continue despite media errors disasterRecovery : run disaster recovery lndb_restore_options (dict)  dictionary for all options specific to an lndb restore options: disableReplication : disable relpication on database disableBackgroundAgents : disable background agents Returns: object - instance of the Job class for this restore job Raises: SDKException: if client is not a string or Client instance if destination_path is not a string if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.lndbsubclient.LNDbSubclient.backup",
-"url":193,
+"url":194,
 "doc":"Returns the JSON request to pass to the API as per the options selected by the user. Args: backup_level (str)  level of backup the user wish to run Full / Incremental / Differential / Synthetic_full incremental_backup (bool)  run incremental backup only applicable in case of Synthetic_full backup incremental_level (str)  run incremental backup before/after synthetic full BEFORE_SYNTH / AFTER_SYNTH only applicable in case of Synthetic_full backup schedule_pattern (dict)  scheduling options to be included for the task Please refer schedules.schedulePattern.createSchedule() doc for the types of Jsons Returns: dict - JSON request to pass to the API",
 "func":1
 },
@@ -31635,39 +31802,39 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.lotusnotes",
-"url":194,
+"url":195,
 "doc":"Initialize Lotus Notes Subclients for the SDK."
 },
 {
 "ref":"cvpysdk.subclients.lotusnotes.lndbsubclient",
-"url":195,
+"url":196,
 "doc":"File for operating on a Notes Database Subclient. LNDbSubclient is the only class defined in this file. LNDbSubclient: Derived class from Subclient Base class. Represents a notes database subclient, and performs operations on that subclient LNDbSubclient: _get_subclient_properties()  gets subclient related properties of Notes Database subclient. _get_subclient_properties_json()  gets all the subclient related properties of Notes Database subclient. content()  get the content of the subclient restore_in_place()  performs an in place restore of the subclient restore_out_of_place()  performs and out of place restore of the subclient"
 },
 {
 "ref":"cvpysdk.subclients.lotusnotes.lndbsubclient.LNDbSubclient",
-"url":195,
+"url":196,
 "doc":"Derived class from LNSubclient Base class, representing a LNDB subclient, and to perform operations on that subclient. Initialise the Subclient object. Args: backupset_object (object)  instance of the Backupset class subclient_name (str)  name of the subclient subclient_id (str)  id of the subclient default: None Returns: object - instance of the Subclient class"
 },
 {
 "ref":"cvpysdk.subclients.lotusnotes.lndbsubclient.LNDbSubclient.content",
-"url":195,
+"url":196,
 "doc":"Gets the appropriate content from the Subclient relevant to the user. Returns: list - list of content associated with the subclient"
 },
 {
 "ref":"cvpysdk.subclients.lotusnotes.lndbsubclient.LNDbSubclient.restore_in_place",
-"url":195,
+"url":196,
 "doc":"Restores the files/folders specified in the input paths list to the same location. Args: paths (list)  list of full paths of files/folders to restore overwrite (bool)  unconditional overwrite files during restore default: True restore_data_and_acl (bool)  restore data and ACL files default: True copy_precedence (int)  copy precedence value of storage policy copy default: None from_time (str)  time to retore the contents after format: YYYY-MM-DD HH:MM:SS default: None to_time (str)  time to retore the contents before format: YYYY-MM-DD HH:MM:SS default: None common_options_dict (dict)  dictionary for all the common options options: unconditionalOverwrite : overwrite the files during restore even if they exist recoverWait : Specifies whether this restore operation must wait until resources become available if a database recovery is already taking place recoverZap : Specifies whether the IBM Domino must change the DBIID associated with the restored database recoverZapReplica : Specifies whether the restore operation changes the replica id of the restored database recoverZapIfNecessary : Specifies whether the IBM Domino can change the DBIID associated with the restored database if necessary doNotReplayTransactLogs : option to skip restoring or replaying logs Disaster Recovery special options: skipErrorsAndContinue : enables a data recovery operation to continue despite media errors disasterRecovery : run disaster recovery lndb_restore_options (dict)  dictionary for all options specific to an lndb restore options: disableReplication : disable relpication on database disableBackgroundAgents : disable background agents Returns: object - instance of the Job class for this restore job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.lotusnotes.lndbsubclient.LNDbSubclient.restore_out_of_place",
-"url":195,
+"url":196,
 "doc":"Restores the files/folders specified in the input paths list to the input client, at the specified destionation location. Args: client (str/object)  either the name of the client or the instance of the Client destination_path (str)  full path of the restore location on client paths (list)  list of full paths of files/folders to restore overwrite (bool)  unconditional overwrite files during restore default: True restore_data_and_acl (bool)  restore data and ACL files default: True copy_precedence (int)  copy precedence value of storage policy copy default: None from_time (str)  time to retore the contents after format: YYYY-MM-DD HH:MM:SS default: None to_time (str)  time to retore the contents before format: YYYY-MM-DD HH:MM:SS default: None common_options_dict (dict)  dictionary for all the common options options: unconditionalOverwrite : overwrite the files during restore even if they exist recoverWait : Specifies whether this restore operation must wait until resources become available if a database recovery is already taking place recoverZap : Specifies whether the IBM Domino must change the DBIID associated with the restored database recoverZapReplica : Specifies whether the restore operation changes the replica id of the restored database recoverZapIfNecessary : Specifies whether the IBM Domino can change the DBIID associated with the restored database if necessary doNotReplayTransactLogs : option to skip restoring or replaying logs Disaster Recovery special options: skipErrorsAndContinue : enables a data recovery operation to continue despite media errors disasterRecovery : run disaster recovery lndb_restore_options (dict)  dictionary for all options specific to an lndb restore options: disableReplication : disable relpication on database disableBackgroundAgents : disable background agents Returns: object - instance of the Job class for this restore job Raises: SDKException: if client is not a string or Client instance if destination_path is not a string if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.lotusnotes.lndbsubclient.LNDbSubclient.backup",
-"url":196,
+"url":197,
 "doc":"Returns the JSON request to pass to the API as per the options selected by the user. Args: backup_level (str)  level of backup the user wish to run Full / Incremental / Differential / Synthetic_full incremental_backup (bool)  run incremental backup only applicable in case of Synthetic_full backup incremental_level (str)  run incremental backup before/after synthetic full BEFORE_SYNTH / AFTER_SYNTH only applicable in case of Synthetic_full backup schedule_pattern (dict)  scheduling options to be included for the task Please refer schedules.schedulePattern.createSchedule() doc for the types of Jsons Returns: dict - JSON request to pass to the API",
 "func":1
 },
@@ -31916,29 +32083,29 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.lotusnotes.lndmsubclient",
-"url":197,
+"url":198,
 "doc":"File for operating on a Domino Mailbox Archiver Subclient. LNDmSubclient is the only class defined in this file. LNDmSubclient: Derived class from Subclient Base class. Represents a domino mailbox archiver subclient, and performs operations on that subclient LNDmSubclient: restore_in_place()  performs an in place restore of the subclient restore_out_of_place()  performs and out of place restore of the subclient backup()  run a backup job for the subclient"
 },
 {
 "ref":"cvpysdk.subclients.lotusnotes.lndmsubclient.LNDmSubclient",
-"url":197,
+"url":198,
 "doc":"Derived class from LNSubclient Base class, representing a LNDM subclient, and to perform operations on that subclient. Initialise the Subclient object. Args: backupset_object (object)  instance of the Backupset class subclient_name (str)  name of the subclient subclient_id (str)  id of the subclient default: None Returns: object - instance of the Subclient class"
 },
 {
 "ref":"cvpysdk.subclients.lotusnotes.lndmsubclient.LNDmSubclient.restore_in_place",
-"url":197,
+"url":198,
 "doc":"Restores the files/folders specified in the input paths list to the same location. Args: paths (list)  list of full paths of files/folders to restore overwrite (bool)  unconditional overwrite files during restore default: True restore_data_and_acl (bool)  restore data and ACL files default: True copy_precedence (int)  copy precedence value of storage policy copy default: None from_time (str)  time to retore the contents after format: YYYY-MM-DD HH:MM:SS default: None to_time (str)  time to retore the contents before format: YYYY-MM-DD HH:MM:SS default: None common_options_dict (dict)  dictionary for all the common options options: append : append documents to the database default: False skip : skip if already present default: False unconditionalOverwrite : overwrite the documents default: False restoreOnlyStubExists : restore only if it is a stub default: False Returns: object - instance of the Job class for this restore job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.lotusnotes.lndmsubclient.LNDmSubclient.restore_out_of_place",
-"url":197,
+"url":198,
 "doc":"Restores the files/folders specified in the input paths list to the input client, at the specified destionation location. Args: client (str/object)  either the name of the client or the instance of the Client destination_path (str)  full path of the restore location on client paths (list)  list of full paths of files/folders to restore overwrite (bool)  unconditional overwrite files during restore default: True restore_data_and_acl (bool)  restore data and ACL files default: True copy_precedence (int)  copy precedence value of storage policy copy default: None from_time (str)  time to retore the contents after format: YYYY-MM-DD HH:MM:SS default: None to_time (str)  time to retore the contents before format: YYYY-MM-DD HH:MM:SS default: None common_options_dict (dict)  dictionary for all the common options options: append : append documents to the database default: False skip : skip if already present default: False unconditionalOverwrite : overwrite the documents default: False restoreOnlyStubExists : restore only if it is a stub default: False Returns: object - instance of the Job class for this restore job Raises: SDKException: if client is not a string or Client instance if destination_path is not a string if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.lotusnotes.lndmsubclient.LNDmSubclient.backup",
-"url":196,
+"url":197,
 "doc":"Returns the JSON request to pass to the API as per the options selected by the user. Args: backup_level (str)  level of backup the user wish to run Full / Incremental / Differential / Synthetic_full incremental_backup (bool)  run incremental backup only applicable in case of Synthetic_full backup incremental_level (str)  run incremental backup before/after synthetic full BEFORE_SYNTH / AFTER_SYNTH only applicable in case of Synthetic_full backup schedule_pattern (dict)  scheduling options to be included for the task Please refer schedules.schedulePattern.createSchedule() doc for the types of Jsons Returns: dict - JSON request to pass to the API",
 "func":1
 },
@@ -32187,29 +32354,29 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.lotusnotes.lndocsubclient",
-"url":198,
+"url":199,
 "doc":"File for operating on a Notes Document Subclient. LNDocSubclient is the only class defined in this file. LNDocSubclient: Derived class from LNSubclient Base class. Represents a notes document subclient, and performs operations on that subclient LNDocSubclient: restore_in_place()  performs an in place restore of the subclient restore_out_of_place()  performs and out of place restore of the subclient"
 },
 {
 "ref":"cvpysdk.subclients.lotusnotes.lndocsubclient.LNDocSubclient",
-"url":198,
+"url":199,
 "doc":"Derived class from Subclient Base class, representing a LNDOC subclient, and to perform operations on that subclient. Initialise the Subclient object. Args: backupset_object (object)  instance of the Backupset class subclient_name (str)  name of the subclient subclient_id (str)  id of the subclient default: None Returns: object - instance of the Subclient class"
 },
 {
 "ref":"cvpysdk.subclients.lotusnotes.lndocsubclient.LNDocSubclient.restore_in_place",
-"url":198,
+"url":199,
 "doc":"Restores the files/folders specified in the input paths list to the same location. Args: paths (list)  list of full paths of files/folders to restore overwrite (bool)  unconditional overwrite files during restore default: True restore_data_and_acl (bool)  restore data and ACL files default: True copy_precedence (int)  copy precedence value of storage policy copy default: None from_time (str)  time to retore the contents after format: YYYY-MM-DD HH:MM:SS default: None to_time (str)  time to retore the contents before format: YYYY-MM-DD HH:MM:SS default: None common_options_dict (dict)  dictionary for all the common options options: unconditionalOverwrite : overwrite the files during restore even if they exist recoverWait : Specifies whether this restore operation must wait until resources become available if a document recovery is already taking place recoverZap : Specifies whether the IBM Domino must change the DBIID associated with the restored document recoverZapReplica : Specifies whether the restore operation changes the replica id of the restored document recoverZapIfNecessary : Specifies whether the IBM Domino can change the DBIID associated with the restored document if necessary doNotReplayTransactLogs : option to skip restoring or replaying logs Disaster Recovery special options: skipErrorsAndContinue : enables a data recovery operation to continue despite media errors disasterRecovery : run disaster recovery Returns: object - instance of the Job class for this restore job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.lotusnotes.lndocsubclient.LNDocSubclient.restore_out_of_place",
-"url":198,
+"url":199,
 "doc":"Restores the files/folders specified in the input paths list to the input client, at the specified destionation location. Args: client (str/object)  either the name of the client or the instance of the Client destination_path (str)  full path of the restore location on client paths (list)  list of full paths of files/folders to restore overwrite (bool)  unconditional overwrite files during restore default: True restore_data_and_acl (bool)  restore data and ACL files default: True copy_precedence (int)  copy precedence value of storage policy copy default: None from_time (str)  time to retore the contents after format: YYYY-MM-DD HH:MM:SS default: None to_time (str)  time to retore the contents before format: YYYY-MM-DD HH:MM:SS default: None common_options_dict (dict)  dictionary for all the common options options: overwriteDBLinks : overwrite the db links default: False overwriteDesignDoc : overwrite design documents default: False overwriteDataDoc : overwrite the data documents default: False dbLinksOnly : overwrite the db links only default: False Returns: object - instance of the Job class for this restore job Raises: SDKException: if client is not a string or Client instance if destination_path is not a string if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.lotusnotes.lndocsubclient.LNDocSubclient.backup",
-"url":196,
+"url":197,
 "doc":"Returns the JSON request to pass to the API as per the options selected by the user. Args: backup_level (str)  level of backup the user wish to run Full / Incremental / Differential / Synthetic_full incremental_backup (bool)  run incremental backup only applicable in case of Synthetic_full backup incremental_level (str)  run incremental backup before/after synthetic full BEFORE_SYNTH / AFTER_SYNTH only applicable in case of Synthetic_full backup schedule_pattern (dict)  scheduling options to be included for the task Please refer schedules.schedulePattern.createSchedule() doc for the types of Jsons Returns: dict - JSON request to pass to the API",
 "func":1
 },
@@ -32458,29 +32625,29 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.lotusnotes.lnsubclient",
-"url":196,
+"url":197,
 "doc":"Main file for operating on any Lotus Notes Subclient. LNSubclient is the only class defined in this file. LNSubclient: Class for representing all the Lotus Notes iDAs and performing operations on them"
 },
 {
 "ref":"cvpysdk.subclients.lotusnotes.lnsubclient.LNSubclient",
-"url":196,
+"url":197,
 "doc":"Derived class from Subclient Base class, representing an LN subclient, and to perform operations on that subclient. Initialise the Subclient object. Args: backupset_object (object)  instance of the Backupset class subclient_name (str)  name of the subclient subclient_id (str)  id of the subclient default: None Returns: object - instance of the Subclient class"
 },
 {
 "ref":"cvpysdk.subclients.lotusnotes.lnsubclient.LNSubclient.restore_in_place",
-"url":196,
+"url":197,
 "doc":"Restores the files/folders specified in the input paths list to the same location. Args: paths (list)  list of full paths of files/folders to restore overwrite (bool)  unconditional overwrite files during restore default: True restore_data_and_acl (bool)  restore data and ACL files default: True copy_precedence (int)  copy precedence value of storage policy copy default: None from_time (str)  time to retore the contents after format: YYYY-MM-DD HH:MM:SS default: None to_time (str)  time to retore the contents before format: YYYY-MM-DD HH:MM:SS default: None Returns: object - instance of the Job class for this restore job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.lotusnotes.lnsubclient.LNSubclient.restore_out_of_place",
-"url":196,
+"url":197,
 "doc":"Restores the files/folders specified in the input paths list to the input client, at the specified destionation location. Args: client (str/object)  either the name of the client or the instance of the Client destination_path (str)  full path of the restore location on client paths (list)  list of full paths of files/folders to restore overwrite (bool)  unconditional overwrite files during restore default: True restore_data_and_acl (bool)  restore data and ACL files default: True copy_precedence (int)  copy precedence value of storage policy copy default: None from_time (str)  time to retore the contents after format: YYYY-MM-DD HH:MM:SS default: None to_time (str)  time to retore the contents before format: YYYY-MM-DD HH:MM:SS default: None Returns: object - instance of the Job class for this restore job Raises: SDKException: if client is not a string or Client instance if destination_path is not a string if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.lotusnotes.lnsubclient.LNSubclient.backup",
-"url":196,
+"url":197,
 "doc":"Returns the JSON request to pass to the API as per the options selected by the user. Args: backup_level (str)  level of backup the user wish to run Full / Incremental / Differential / Synthetic_full incremental_backup (bool)  run incremental backup only applicable in case of Synthetic_full backup incremental_level (str)  run incremental backup before/after synthetic full BEFORE_SYNTH / AFTER_SYNTH only applicable in case of Synthetic_full backup schedule_pattern (dict)  scheduling options to be included for the task Please refer schedules.schedulePattern.createSchedule() doc for the types of Jsons Returns: dict - JSON request to pass to the API",
 "func":1
 },
@@ -32729,43 +32896,43 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.mysqlsubclient",
-"url":199,
+"url":200,
 "doc":"File for operating on a MYSQL Subclient MYSQLSubclient is the only class defined in this file. MYSQLSubclient: Derived class from Subclient Base class, representing a MYSQL subclient, and to perform operations on that subclient MYSQLSubclient: __init__()  constructor for the class is_failover_to_production()  Sets the isFailOverToProduction flag for the subclient as the value provided as input _backup_request_json()  prepares the json for the backup request _get_subclient_properties()  Gets the subclient related properties of MYSQL subclient _get_subclient_properties_json()  get the all subclient related properties of this subclient content()  Creates the list of content JSON to pass to the API to add/update content of a MYSQL Subclient backup()  Runs a backup job for the subclient of the level specified restore_in_place()  Restores the mysql data/log files specified in the input paths list to the same location MYSQLSubclient instance Attributes:                  =  is_blocklevel_backup_enabled  Returns True if block level backup is enabled else returns false  is_proxy_enabled  Returns True if proxy is enabled in the subclient  is_failover_to_production  Returns the isFailOverToProduction flag of the subclient  content  Returns the appropriate content from the Subclient relevant to the user"
 },
 {
 "ref":"cvpysdk.subclients.mysqlsubclient.MYSQLSubclient",
-"url":199,
+"url":200,
 "doc":"Derived class from Subclient Base class, representing a MYSQL subclient, and to perform operations on that subclient. Initialise the Subclient object. Args: backupset_object (object)  instance of the Backupset class subclient_name (str)  name of the subclient subclient_id (str)  id of the subclient default: None Returns: object - instance of the MYSQLSubclient class"
 },
 {
 "ref":"cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.is_blocklevel_backup_enabled",
-"url":199,
+"url":200,
 "doc":"returns True if block level backup is enabled else returns false Returns: (bool) - boolean value based on blocklevel enable status True if block level is enabled False if block level is not enabled"
 },
 {
 "ref":"cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.is_proxy_enabled",
-"url":199,
+"url":200,
 "doc":"Returns True if proxy is enabled in the subclient Returns: (bool) - boolean value based on proxy enable status True if proxy is enabled False if proxy is not enabled"
 },
 {
 "ref":"cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.is_failover_to_production",
-"url":199,
+"url":200,
 "doc":"Returns the isFailOverToProduction flag of the subclient. Returns: (bool)  True if flag is set False if the flag is not set"
 },
 {
 "ref":"cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.content",
-"url":199,
+"url":200,
 "doc":"Returns the appropriate content from the Subclient relevant to the user. Returns: list - list of content associated with the subclient"
 },
 {
 "ref":"cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.backup",
-"url":199,
+"url":200,
 "doc":"Runs a backup job for the subclient of the level specified. Args: backup_level (str)  level of backup the user wish to run Full / Incremental / Differential / Synthetic_full default: Differential inc_with_data (bool)  flag to determine if the incremental backup includes data or not truncate_logs_on_source (bool)  flag to determine if the logs to be truncated on master client default: False do_not_truncate_logs (bool)  flag to determine if the proxy logs needs to be truncated or not default: False schedule_pattern (dict)  scheduling options to be included for the task Please refer schedules.schedulePattern.createSchedule() doc for the types of Jsons Returns: object - instance of the Job class for this backup job if its an immediate Job instance of the Schedule class for the backup job if its a scheduled Job Raises: SDKException: if backup level specified is not correct if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.mysqlsubclient.MYSQLSubclient.restore_in_place",
-"url":199,
+"url":200,
 "doc":"Restores the mysql data/log files specified in the input paths list to the same location. Args: paths (list)  list of database/databases to be restored staging (str)  staging location for mysql logs during restores dest_client_name (str)  destination client name where files are to be restored dest_instance_name (str)  destination mysql instance name of destination client data_restore (bool)  for data only/data+log restore log_restore (bool)  for log only/data+log restore overwrite (bool)  unconditional overwrite files during restore default: True copy_precedence (int)  copy precedence value of storage policy copy default: None from_time (str)  time to retore the contents after format: YYYY-MM-DD HH:MM:SS default: None to_time (str)  time to retore the contents before format: YYYY-MM-DD HH:MM:SS default: None media_agent (str)  media agent associated default: None table_level_restore (bool)  Table level restore flag default: False clone_env (bool)  boolean to specify whether the database should be cloned or not default: False clone_options (dict)  clone restore options passed in a dict default: None Accepted format: { \"stagingLocaion\": \"/gk_snap\", \"forceCleanup\": True, \"port\": \"5595\", \"libDirectory\":  , \"isInstanceSelected\": True, \"reservationPeriodS\": 3600, \"user\":  , \"binaryDirectory\": \"/usr/bin\" } redirect_enabled (bool)  boolean to specify if redirect restore is enabled default: False redirect_path (str)  Path specified in advanced restore options in order to perform redirect restore default: None browse_jobid (int)  Browse jobid to browse and restore from default: None Returns: object - instance of the Job class for this restore job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
@@ -33015,29 +33182,29 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.nassubclient",
-"url":200,
+"url":201,
 "doc":"File for operating on a NAS Subclient NASSubclient is the only class defined in this file. NASSubclient: Derived class from Subclient Base class, representing a nas subclient, and to perform operations on that subclient NASSubclient: _get_subclient_properties()  gets the subclient related properties of NAS subclient. _get_subclient_properties_json()  gets all the subclient related properties of NAS subclient. content()  update the content of the subclient filter_content()  update the filter content of the subclient content()  update the content of the subclient backup()  run a backup job for the subclient restore_in_place()  run a restore in place for the subclient restore_out_of_place()  run a restore out of place for the subclient"
 },
 {
 "ref":"cvpysdk.subclients.nassubclient.NASSubclient",
-"url":200,
+"url":201,
 "doc":"Derived class from Subclient Base class, representing a nas subclient, and to perform operations on that subclient. Initialise the Subclient object. Args: backupset_object (object)  instance of the Backupset class subclient_name (str)  name of the subclient subclient_id (str)  id of the subclient default: None Returns: object - instance of the Subclient class"
 },
 {
 "ref":"cvpysdk.subclients.nassubclient.NASSubclient.backup",
-"url":200,
+"url":201,
 "doc":"Runs a backup job for the subclient of the level specified. Args: backup_level (str)  level of backup the user wish to run Full / Incremental / Differential / Synthetic_full default: Incremental incremental_backup (bool)  run incremental backup only applicable in case of Synthetic_full backup default: False incremental_level (str)  run incremental backup before/after synthetic full BEFORE_SYNTH / AFTER_SYNTH only applicable in case of Synthetic_full backup default: BEFORE_SYNTH on_demand_input (str)  input file location for on demand backupset default: None snap_name (str)  input for snap_name backup_offline_data (bool)  input for advanced NAS backup option backupOfflineData volume_based_backup (bool)  input for advanced NAS backup option volumeBasedBackup Returns: object - instance of the Job class for this backup job Raises: SDKException: if backup level specified is not correct if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.nassubclient.NASSubclient.restore_in_place",
-"url":200,
+"url":201,
 "doc":"Runs a restore job for the subclient . Args: paths (list)  list of full paths of files/folders to restore overwrite (bool)  unconditional overwrite files during restore default: None restore_data_and_acl (bool)  restore data and ACL files default: True copy_precedence (int)  copy precedence value of storage policy copy default: None from_time (str)  time to retore the contents after format: YYYY-MM-DD HH:MM:SS default: None to_time (str)  time to retore the contents before format: YYYY-MM-DD HH:MM:SS default: None fs_options (dict)  dictionary that includes all advanced options options: all_versions : if set to True restores all the versions of the specified file versions : list of version numbers to be backed up validate_only : To validate data backed up for restore schedule_pattern (dict)  scheduling options to be included for the task Please refer schedules.schedulePattern.createSchedule() doc for the types of Jsons proxy_client (str)  Proxy client used during FS under NAS operations advanced_options (dict)  Advanced restore options synth_restore (bool)  Advance NAS restore option SynthRestore DAR (bool)  Advance NAS restore option DAR noRecursive (bool)  Advance NAS restore option Recursive Options: job_description (str)  Restore job description timezone (str)  Timezone to be used for restore  Note make use of TIMEZONES dict in constants.py to pass timezone Returns: object - instance of the Job class for this restore job if its an immediate Job instance of the Schedule class for this restore job if its a scheduled Job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.nassubclient.NASSubclient.restore_out_of_place",
-"url":200,
+"url":201,
 "doc":"Runs a restore job for the subclient . Args: paths (list)  list of full paths of files/folders to restore overwrite (bool)  unconditional overwrite files during restore default: True restore_data_and_acl (bool)  restore data and ACL files default: True copy_precedence (int)  copy precedence value of storage policy copy default: None from_time (str)  time to retore the contents after format: YYYY-MM-DD HH:MM:SS default: None to_time (str)  time to retore the contents before format: YYYY-MM-DD HH:MM:SS default: None fs_options (dict)  dictionary that includes all advanced options options: all_versions : if set to True restores all the versions of the specified file versions : list of version numbers to be backed up validate_only : To validate data backed up for restore schedule_pattern (dict)  scheduling options to be included for the task Please refer schedules.schedulePattern.createSchedule() doc for the types of Jsons proxy_client (str)  Proxy client used during FS under NAS operations advanced_options (dict)  Advanced restore options synth_restore (bool)  Advance NAS restore option SynthRestore DAR (bool)  Advance NAS restore option DAR noRecursive (bool)  Advance NAS restore option Recursive Options: job_description (str)  Restore job description timezone (str)  Timezone to be used for restore  Note make use of TIMEZONES dict in constants.py to pass timezone Returns: object - instance of the Job class for this restore job if its an immediate Job instance of the Schedule class for this restore job if its a scheduled Job Raises: SDKException: if paths is not a list if failed to initialize job if response is empty if response is not success",
 "func":1
 },
@@ -33551,23 +33718,23 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.o365apps_subclient",
-"url":201,
+"url":177,
 "doc":"Main file for common operations for the Office 365 Apps Subclient O365AppsSubclient: Derived class from CloudAppsSubclient Base class, for common sub-client functionalities pertaining to the Office 365 Apps O365AppsSubclient Attributes:                _prepare_web_search_browse_json()  Prepare the JSON for the web search based browse _process_web_search_response()  Process the response received from the do web search browse do_web_search()  Perform a search of the backed up contents process_index_retention()  Run the retention thread for Office 365 Apps on the INdex Server"
 },
 {
 "ref":"cvpysdk.subclients.o365apps_subclient.O365AppsSubclient",
-"url":201,
+"url":177,
 "doc":"Parent class representing the Office 365 Apps based sub-clients. Supported agents: Dynamics 365 CRM, SharePoint online, OneDrive for Business and MS Teams Initialize the Sub client object for the given O365Apps Subclient. Args: backupset_object (object)  instance of the backup-set class subclient_name (str)  subclient name subclient_id (int)  subclient id"
 },
 {
 "ref":"cvpysdk.subclients.o365apps_subclient.O365AppsSubclient.do_web_search",
-"url":201,
+"url":177,
 "doc":"Method to perform a web search using the /Search endpoint. Default browse endpoint for new O365 agents. Arguments: kwargs: Dictionary of arguments to be used for the browse",
 "func":1
 },
 {
 "ref":"cvpysdk.subclients.o365apps_subclient.O365AppsSubclient.process_index_retention",
-"url":201,
+"url":177,
 "doc":"Run the retention thread for Dynamics 365/ Office 365 Apps sub-client Args: index_server_client_id (int)  client id of index server Raises: SDKException: if response is empty if response is not success",
 "func":1
 },
@@ -33937,7 +34104,7 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.oraclesubclient.OracleSubclient.log_backup_storage_policy",
-"url":183,
+"url":184,
 "doc":"Treats the subclient description as a property of the Subclient class."
 },
 {
@@ -34223,7 +34390,7 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.postgressubclient.PostgresSubclient.log_backup_storage_policy",
-"url":183,
+"url":184,
 "doc":"Treats the subclient description as a property of the Subclient class."
 },
 {
@@ -36262,7 +36429,7 @@ INDEX=[
 },
 {
 "ref":"cvpysdk.subclients.sqlsubclient.SQLServerSubclient.log_backup_storage_policy",
-"url":183,
+"url":184,
 "doc":"Treats the subclient description as a property of the Subclient class."
 },
 {
@@ -46362,7 +46529,7 @@ INDEX=[
 {
 "ref":"cvpysdk.workflow.WorkFlows.get",
 "url":239,
-"doc":"Returns a workflow object if workflow name matches specified name We check if specified name matches any of the existing workflow names. Args: workflow_name (str)  name of the workflow Returns: object - instance of the Workflow class for the given workflow name Raises: SDKException: if type of the workflow name argument is not string if no workflow exists with the given name",
+"doc":"Returns a workflow object if workflow name matches specified name We check if specified name matches any of the existing workflow names. Args: workflow_name (str)  name of the workflow \\ \\ kwargs (dict)  Optional arguments. Available kwargs Options: get_properties (bool)  Fetches workflow properties based on value passed Returns: object - instance of the Workflow class for the given workflow name Raises: SDKException: if type of the workflow name argument is not string if no workflow exists with the given name",
 "func":1
 },
 {
@@ -46414,7 +46581,7 @@ INDEX=[
 {
 "ref":"cvpysdk.workflow.WorkFlow",
 "url":239,
-"doc":"Class for representing a workflow on a commcell. Initialize the WorkFlow class instance for performing workflow related operations. Args: commcell_object (object)  instance of the Commcell class workflow_name (str)  Name of the workflow workflow_id (str)  id of the workflow default: None Returns: object - instance of the WorkFlow class"
+"doc":"Class for representing a workflow on a commcell. Initialize the WorkFlow class instance for performing workflow related operations. Args: commcell_object (object)  instance of the Commcell class workflow_name (str)  Name of the workflow workflow_id (str)  id of the workflow default: None \\ \\ kwargs (dict)  Optional arguments. Available kwargs Options: get_properties (bool)  Fetches workflow properties based on value passed Returns: object - instance of the WorkFlow class"
 },
 {
 "ref":"cvpysdk.workflow.WorkFlow.set_workflow_configuration",
