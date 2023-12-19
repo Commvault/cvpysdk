@@ -124,6 +124,13 @@ class DRJob(Job):
         Job._initialize_job_properties(self)
         self._replication_job_stats = self._get_replication_job_stats()
 
+    def blobs_retained(self):
+        """Returns True if blobs to be retained chosen in failover job for Azure destination"""
+        task_details_json = self.task_details
+        dr_opts = task_details_json['subTasks'][0]['options']['adminOpts'].get('drOrchestrationOption')
+        blobs_retained = dr_opts.get('retainIntegritySnapshot') if dr_opts else None
+        return blobs_retained
+
     def get_phases(self):
         """
         Gets the DR phases of the job

@@ -71,7 +71,7 @@ class VSBackupset(Backupset):
         for name, _class in classes:
             if issubclass(_class, Backupset) and _class.__module__.rsplit(".", 1)[-1] == instance_name:
                 return object.__new__(_class)
-            
+
     @property
     def hidden_subclient(self):
         """Creates the object for the hidden subclient
@@ -235,7 +235,7 @@ class VSBackupset(Backupset):
                         mod_time = time.strftime('%d/%m/%Y %H:%M:%S', mod_time)
                     else:
                         mod_time = None
-                    
+
                     if 'backupTime' in result['advancedData'] and int(result['advancedData']['backupTime']) > 0:
                         bkp_time = time.localtime(int(result['advancedData']['backupTime']))
                         bkp_time = time.strftime('%d/%m/%Y %H:%M:%S', bkp_time)
@@ -338,7 +338,6 @@ class VSBackupset(Backupset):
         }
 
         self._process_update_reponse(request_json)
-
 
     @property
     def vm_filter(self):

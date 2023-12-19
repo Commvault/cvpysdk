@@ -968,10 +968,12 @@ class SamlApp(object):
             'GET', self._redirecturl % user_email
         )
         if flag:
-            if response.json() and 'error' in response.json() and 'errorCode' in response.json()['error']:
-                if response.json()['error']['errorCode'] == 0:
-                    if 'AvailableRedirects' in response.json():
+            if response.json():
+                if 'AvailableRedirects' in response.json():
+                    if len(response.json()['AvailableRedirects']) > 0:
                         return response.json()['AvailableRedirects'][0].get('redirectUrl')
+                    else:
+                        return None
                 else:
                     raise SDKException(
                         'IdentityManagement',

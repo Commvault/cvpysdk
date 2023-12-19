@@ -802,7 +802,7 @@ class Plans(object):
 
                     index_content       (bool)      --  Speifies whether to index content or not to index server
 
-                    content_analyzer    (list)      --  list of Content analyzer cloud name
+                    content_analyzer    (list)      --  list of Content analyzer client name
 
                     entity_list         (list)      --  list of entities which needs to be extracted
 
@@ -870,11 +870,11 @@ class Plans(object):
                 raise SDKException('Plan', '103')
             ca_list = []
             for ca in kwargs.get('content_analyzer', []):
-                ca_cloud_id = self._commcell_object.content_analyzers.get(ca).cloud_id
+                ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
                 ca_list.append({
-                    'cloudId': ca_cloud_id
+                    'clientId': ca_client_id
                 })
-            request_json['plan']['eDiscoveryInfo']['contentAnalyzerCloud'] = ca_list
+            request_json['plan']['eDiscoveryInfo']['contentAnalyzerClient'] = ca_list
             if 'entity_list' not in kwargs and 'classifier_list' not in kwargs:
                 raise SDKException('Plan', '104')
             activate_obj = self._commcell_object.activate
@@ -2235,7 +2235,7 @@ class Plan(object):
 
                     index_content       (bool)      --  Speifies whether to index content or not to index server
 
-                    content_analyzer    (list)      --  list of Content analyzer cloud name
+                    content_analyzer    (list)      --  list of Content analyzer client name
 
                     entity_list         (list)      --  list of entities which needs to be extracted
 
@@ -2277,12 +2277,12 @@ class Plan(object):
                 if 'content_analyzer' in kwargs:
                     ca_list = []
                     for ca in kwargs.get('content_analyzer', []):
-                        ca_cloud_id = self._commcell_object.content_analyzers.get(ca).cloud_id
+                        ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
                         ca_list.append({
-                            'cloudId': ca_cloud_id
+                            'clientId': ca_client_id
                         })
                     request_json['eDiscoveryInfo'] = {
-                        'contentAnalyzerCloud': ca_list}
+                        'contentAnalyzerClient': ca_list}
                 if 'entity_list' in kwargs or 'classifier_list' in kwargs:
                     entity_mgr_obj = activate_obj.entity_manager()
                     # classifier is also an activate entity with type alone different so
@@ -2354,6 +2354,48 @@ class Plan(object):
             
         return result
     
+    def update_content_policy(self, content):
+        """
+        Args:
+            content (dict)  :  dictionary with backup content details. 
+            
+            example:
+                content = {
+                    "windowsIncludedPaths": ["Desktop"],
+                    "windowsExcludedPaths": ["Music"],
+                    "windowsFilterToExcludePaths": ["Videos"],
+                    "unixIncludedPaths": ["Desktop"],
+                    "unixExcludedPaths": ["Music"],
+                    "unixFilterToExcludePaths": ["Videos"],
+                    "macIncludedPaths": ["Desktop"],
+                    "macExcludedPaths": ["Music"],
+                    "macFilterToExcludePaths": ["Videos"],
+                    "backupSystemState": True,
+                    "useVSSForSystemState": True,
+                    "backupSystemStateOnlyWithFullBackup": False
+                }
+
+            For unix and mac, replace key name with respective os name, **IncludedPaths, **ExcludedPaths, **FilterToExcludePaths
+
+        """
+        
+        request_json = {
+            'backupContent' : content
+        }
+
+        request_url = self._commcell_object._services['V4_SERVER_PLAN'] % self.plan_id
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('PUT', request_url, request_json)
+
+        if flag:
+            if response.json():
+                if response.json()['errorCode']:
+                    raise SDKException('Plan', 102, response.json()['errorMessage'])
+            else:
+                raise SDKException('Plan', 102, 'Failed to update backup content')
+        else:
+            raise SDKException('Plan', 102, response.text)
+
     def update_backup_content(self, content, request_type = 'OVERWRITE'):
         """
         Args:
@@ -2374,9 +2416,22 @@ class Plan(object):
                         'Content' : ['/%Pictures%'],
                         'Exclude' : ['/%Documents%']
                     }
+                }
                     
             request_type (str)      :  Supported values 'OVERWRITE' (default), 'UPDATE', 'DELETE'. 
-        }
+
+            For plans created from SP32, Please use below format of content
+            example:
+                content = {
+                    "windowsIncludedPaths": ["Desktop"],
+                    "windowsExcludedPaths": ["Music"],
+                    "windowsFilterToExcludePaths": ["Videos"],
+                    "backupSystemState": True,
+                    "useVSSForSystemState": True,
+                    "backupSystemStateOnlyWithFullBackup": False
+                }
+
+            For unix and mac, replace key name with respective os name, **IncludedPaths, **ExcludedPaths, **FilterToExcludePaths
         """
         
         update_request_type = {
@@ -2386,6 +2441,10 @@ class Plan(object):
         }
         
         subclients = self.policy_subclient_ids()
+
+        if not subclients:
+            self.update_content_policy(content)
+            return
         
         for os, value in content.items():
             request_json = {

@@ -82,6 +82,8 @@ UserGroup:
 
     _update_usergroup_props()       --  Updates the properties of this usergroup
 
+    _v4_update_usergroup_props()    --  Uses V4 API to update properties of a usergroup
+
     users()                         --  returns users who are members of this usergroup
 
     usergroups()                    --  returns external usergroups who are members of this
@@ -108,6 +110,8 @@ UserGroup:
     disable_tfa()                   --  Disables tfa for this user group
 
     update_navigation_preferences   --  Updates user group navigation preferences
+
+    allow_multiple_company_members  --  Sets/Gets the value for allowing multiple members for a company
 
 """
 
@@ -517,6 +521,7 @@ class UserGroup(object):
         self._usergroup_status = None
         self._company_id = None
         self._company_name = None
+        self._allow_multiple_company_members = False
         self.refresh()
 
     def __repr__(self):
@@ -559,6 +564,8 @@ class UserGroup(object):
 
                 if 'enabled' in self._properties:
                     self._usergroup_status = self._properties['enabled']
+
+                self._allow_multiple_company_members = self._properties.get('allowMultiCompanyMembers', False)
 
                 if 'email' in self._properties:
                     self._email = self._properties['email']
@@ -653,6 +660,29 @@ class UserGroup(object):
             }]
         }
         self._update_usergroup_props(request_json)
+
+    @property
+    def allow_multiple_company_members(self):
+        """
+        Returns the status of user group on this commcell
+        Returns:
+            Bool    -   True for allowing multiple company members
+                        False otherwise
+        """
+        return self._allow_multiple_company_members
+
+    @allow_multiple_company_members.setter
+    def allow_multiple_company_members(self, flag=True):
+        """
+        Allows Multiple Company Members to be part of this commcell user group
+        Args:
+            flag(bool)      -   True if multiple company members to be allowed,
+                                False otherwise
+        """
+        if not isinstance(flag, bool):
+            raise SDKException('UserGroup', '101')
+        request_json = {"allowMultipleCompanyMembers": flag}
+        self._v4_update_usergroup_props(request_json)
 
     @property
     def users(self):
@@ -926,6 +956,36 @@ class UserGroup(object):
 
         self._update_usergroup_props(request_json)
 
+    def _v4_update_usergroup_props(self, properties_dict):
+        """Updates the properties of this usergroup
+
+            Args:
+                properties_dict (dict)  --  user property dict which is to be updated
+
+            Raises:
+                SDKException:
+                    if arguments passed are of incorrect types
+                    if failed to update user group properties
+                    if response is empty
+                    if response is not success
+        """
+        if not isinstance(properties_dict, dict):
+            raise SDKException('UserGroup', '101')
+        usergroup_request = self._commcell_object._services['USERGROUP_V4'] % (self._user_group_id)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'PUT', usergroup_request, properties_dict
+        )
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', 0)
+                if error_code != 0:
+                    raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+                self.refresh()
+                return
+            raise SDKException('Response', '102')
+        raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+
     def _update_usergroup_props(self, properties_dict):
         """Updates the properties of this usergroup
 
@@ -959,3 +1019,4 @@ class UserGroup(object):
             raise SDKException('Response', '101', response_string)
 
         self.refresh()
+

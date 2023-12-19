@@ -67,6 +67,8 @@ StoragePolicy:
 
     _initialize_storage_policy_properties() --  initializes storage policy properties
 
+    edit_block_size_on_gdsp                 --  edits the sidb block size on GDSP
+
     has_copy()                              --  checks if copy with given name exists
 
     create_secondary_copy()                 --  creates a storage policy copy
@@ -1053,6 +1055,53 @@ class StoragePolicy(object):
                     "isDefault": is_default_copy
                 }
                 self._copies[copy_name] = temp
+
+    def edit_block_size_on_gdsp(self,
+                                size=512):
+        """
+        edit the block size on the gdsp
+
+        Args:
+                size (int) - SIDB block size to be changed to
+
+
+        Raises:
+            SDKException:
+                    if error in response
+
+                    if response received is empty
+
+                    if response is not success
+        """
+        request_json = {
+                        "App_UpdateStoragePolicyReq": {
+                            "StoragePolicy": {
+                                "storagePolicyName": self._storage_policy_name
+                            },
+                            "sidbBlockSizeKB": size
+                          }
+                        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'error' in response.json():
+                    error_code = int(response.json()['error']['errorCode'])
+                    if error_code != 0:
+                        if 'errorMessage' in response.json()['error']:
+                            error_message = "Failed to update block size factor on gdsp with error \
+                                    {0}".format(str(response.json()['error']['errorMessage']))
+                        else:
+                            error_message = "Failed to update block size factor on gdsp"
+                        raise SDKException('Storage', '102', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def has_copy(self, copy_name):
         """Checks if a storage policy copy exists for this storage
@@ -2151,6 +2200,7 @@ class StoragePolicy(object):
                 total_jobs_to_process    (int)  -- Total number jobs to process for the auxcopy job
 
                 **kwargs    --  dict of keyword arguments as follows:
+                ignore_dv_failed_jobs  (bool)  -- Ignore DV failed jobs
                 job_description     (str)      -- Description for Job
 
             Returns:
@@ -2187,6 +2237,10 @@ class StoragePolicy(object):
             storage_policy_copy_name = ""
             media_agent = ""
 
+        ignore_dv_failed_jobs = False
+        if kwargs.get('ignore_dv_failed_jobs') is True:
+            ignore_dv_failed_jobs = True
+
         request_json = {
             "taskInfo": {
                 "associations": [
@@ -2218,6 +2272,7 @@ class StoragePolicy(object):
                                         "useMaximumStreams": use_max_streams,
                                         "useScallableResourceManagement": use_scale,
                                         "totalJobsToProcess": total_jobs_to_process,
+                                        "ignoreDataVerificationFailedJobs": ignore_dv_failed_jobs,
                                         "allCopies": all_copies,
                                         "mediaAgent": {
                                             "mediaAgentName": media_agent

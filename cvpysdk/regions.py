@@ -29,6 +29,10 @@ Regions:
     get_region()                    --  Gets the Region associated to an Entity
     calculate_region()              --  Calculates the Region to be associated to an Entity
 
+Attributes:
+
+    ***all_regions***               --  returns dict of details about region such as id
+
 Region:
 =======
     _get_region_id()                --  Returns the region id
@@ -129,13 +133,15 @@ class Regions:
                                                     MEDIAAGENT,
                                                     STORAGE_POOL, etc
                                             )
-            entity_id           (int)   :   unique id of the entity
+            entity_id           (int/str):   unique id of the entity
 
             entity_region_type  (str)   :   Type of the region
                                             (WORKLOAD or BACKUP)
 
             region_id           (int)   :   ID of the region from app_regions
         """
+        if isinstance(region_id,str):
+            region_id = int(region_id)
         request = {
             "entityRegionType": entity_region_type,
             "region":
@@ -244,6 +250,11 @@ class Regions:
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    @property
+    def all_regions(self):
+        """Returns dict consisting of all regions details such as id"""
+        return self._regions
 
 
 
