@@ -437,6 +437,8 @@ SERVICES_DICT_TEMPLATE = {
     'GET_SALESFORCE_CLIENTS': '{0}Salesforce/Organization',
     'CLOUD_DISCOVERY': '{0}Instance/%s/CloudDiscovery?clientId=%s&appType=%s',
     'SET_USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/SetUserPolicyAssociation',
+    'CUSTOM_CATEGORY': '{0}Office365/SubClient/%s/CustomCategory',
+    'INSTANCE_PROPERTIES': '{0}instance/%s',
     'USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/UserPolicyAssociation',
     'UPDATE_USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/UpdateUserPolicyAssociation',
     'OFFICE365_MOVE_JOB_RESULT_DIRECTORY': '{0}Office365/MoveJobResultsDirectory',
@@ -531,6 +533,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_RECOVERY_TARGET': '{0}/VMAllocationPolicy/%s',
 
     'RETIRE': '{0}Client/%s/Retire',
+    'GET_REMOTE_CACHE_CLIENTS': '{0}RemoteCacheClients',
 
     'DATASOURCE_ACTIONS': '{0}EDiscoveryClients/Datasources/Actions',
     'CLOUD_CREATE': '{0}cloud/create',

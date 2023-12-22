@@ -40,6 +40,8 @@ FSBackupset:
 
     run_bmr_restore()           --  Triggers the VIrtualize Me to VMWare job
 
+    _get_cs_login_details()     --  Get the cs login information.
+
     _restore_aix_1touch_admin_json()    --Returns the restore JSON required for BMR operations.
 
     run_bmr_aix_restore()               --Triggers the Aix 1-touch restore Job
@@ -587,7 +589,8 @@ class FSBackupset(Backupset):
         ipconfig = response['responseFile']['clients'][0]['netconfig']['ipinfo']
         cs_user = response['responseFile']['csinfo']['creds']['userName']
         cs_pwd = response['responseFile']['csinfo']['creds']['password']
-        return hwconfig, ipconfig,cs_user,cs_pwd
+        cs_token = response['responseFile']['csinfo']['creds']['password'][5:]
+        return hwconfig, ipconfig,cs_user,cs_pwd,cs_token
 
     def run_bmr_restore(self, **restore_options):
         """
@@ -835,6 +838,44 @@ class FSBackupset(Backupset):
 
         return self._process_restore_response(response_json)
 
+    def _get_cs_login_details(self):
+        """Get the cs login information.
+
+        Returns :
+            (dict, dict) - CS login details
+
+        """
+        request = {
+            "CVGui_GetResponseFilesReq": {
+                "entity": {
+                    "_type_": "6",
+                    "appName": "File System",
+                    "applicationId": self._agent_object.agent_id,
+                    "backupsetId": self.backupset_id,
+                    "backupsetName": self.backupset_name,
+                    "clientId": self._agent_object._client_object.client_id,
+                    "clientName": self._agent_object._client_object.client_name,
+                    "commCellId": "0",
+                    "commCellName": "",
+                    "instanceId": "1",
+                    "instanceName": ""
+                },
+                "RecoveryTime": "",
+                "platform": "1",
+                "virtualizeME": "1"
+            }
+        }
+
+        response = self._commcell_object._qoperation_execute(request)
+        cs_user = response['responseFile']['csinfo']['creds']['userName']
+        cs_pwd = response['responseFile']['csinfo']['creds']['password']
+        cs_token = response['responseFile']['csinfo']['creds']['token']
+        cs_name = self._commcell_object.commserv_name
+        cs_hostname = self._commcell_object.commserv_hostname
+        cs_ip_address = socket.gethostbyname(self._commcell_object.commserv_hostname)
+
+        return cs_name, cs_hostname, cs_ip_address, cs_user, cs_pwd, cs_token
+
     def _restore_aix_1touch_admin_json(self):
         """"setter for the BMR options required  for 1-touch restore
 
@@ -929,7 +970,7 @@ class FSBackupset(Backupset):
                                 "hostName": "", "clientName": ""
                             }, "creds": {
                                 "password": "", "domainName": "",
-                                "confirmPassword": "", "userName": ""
+                                "confirmPassword": "", "userName": "", "token":""
                             }
                         }, "hwconfig": {
                             "minMemoryMB": 0, "vmName": "", "magicno": "", "enableDynamicMemory": False,
@@ -1001,6 +1042,7 @@ class FSBackupset(Backupset):
             'oneTouchRestoreOption'] = restore_json_aix_system_state
         hwconfig_aix = restore_json_aix_system_state['responseData'][0]['hwconfig']
         ipconfig_aix = restore_json_aix_system_state['responseData'][0]['clients'][0]['netconfig']['ipinfo']
+        cs_name, cs_hostname, cs_ip_address, cs_user, cs_pwd, cs_token = self._get_cs_login_details()
         vmjson = self._restore_bmr_admin_json(ipconfig_aix, hwconfig_aix)
         request_json['taskInfo']['subTasks'][0]['options']['adminOpts'] = vmjson
         is_clone = restore_options.get('clone', None)
@@ -1012,11 +1054,14 @@ class FSBackupset(Backupset):
             'systemStateBackup' : True,
             'copyToObjectStore' :False,
             'restoreToDisk' : False,
-            'skipIfExists' : False,
+            'skipIfExists' : restore_options.get('run_FS_restore', False),
             'SyncRestore' : False
         }
-        onetouch_restore_option = {
-            "responseData": [{
+        one_touch_option = {
+            'fromTime': restore_options.get('fromTime', 0),
+            'toTime': restore_options.get('toTime', 0)
+        }
+        response_data = {
                 "clients": [{
                     "clone": is_clone,
                     "netconfig": {
@@ -1045,20 +1090,20 @@ class FSBackupset(Backupset):
                 }],
                 "csinfo": {
                     "ip": {
-                        "address": restore_options.get('CS_IP', None)
+                        "address": cs_ip_address
                     },
                     "commservInfo": {
-                        "hostName": restore_options.get('CS_Hostname'),
-                        "clientName": restore_options.get('CS_ClientName', None)
+                        "hostName": cs_hostname,
+                        "clientName": cs_name
                     },
                     "creds": {
-                        "password": restore_options.get('CS_Password', None),
-                        "confirmPassword": restore_options.get('CS_Password', None),
-                        "userName": restore_options.get('CS_Username', None)
+                        "password": cs_pwd,
+                        "confirmPassword": cs_pwd,
+                        "userName": cs_user,
+                        "token":  cs_token
                     }
                 },
-            }]
-        }
+            }
         request_json['taskInfo']['subTasks'][0]['subTask'] = subtask_json
         request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['commonOptions'] = common_options
         request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['destination']['destPath'] = (
@@ -1067,12 +1112,14 @@ class FSBackupset(Backupset):
             'destClient']['clientName'] = restore_options.get('onetouch_server', None)
         request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
             'oneTouchRestoreOption']['automaticClientReboot'] = restore_options.get('automaticClientReboot', None)
+
         if is_clone:
             request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['oneTouchRestoreOption'][
                 'responseData'][0]['clients'][0]['netconfig'][
                     'dns']['nameservers'][0]['address'] = restore_options.get('dns_ip', None)
         request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['oneTouchRestoreOption']['responseData'][
-            0] = onetouch_restore_option
+            0] = response_data
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['oneTouchOption'] = one_touch_option
         return self._process_restore_response(request_json)
 
     @property

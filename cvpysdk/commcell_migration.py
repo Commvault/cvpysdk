@@ -306,10 +306,23 @@ class CommCellMigration(object):
                     podcell_id=2, podcell_guid=self._commcell_object.commserv_guid
                 ).values())
                 for client in client_list:
+<<<<<<< HEAD
                     if client not in exportable_clients:
                         raise SDKException(
                             'CommCellMigration', '107', 
                             f'Please choose from list -> {exportable_clients}'
+=======
+                    if not self._commcell_object.clients.has_client(client):
+                        raise SDKException(
+                            'CommCellMigration', '107',
+                            f'Client {client} not found'
+                        )
+                    agents = self._commcell_object.clients.get(client).agents.all_agents
+                    if not agents:
+                        raise SDKException(
+                            'CommCellMigration', '107',
+                            f'Client {client} does not have any agents'
+>>>>>>> 363dd5d3630a18588d9bc3292e93d15adcf7e75c
                         )
                     temp_dic = {'clientName': client, 'commCellName': self._commcell_name}
                     sub_dict.append(temp_dic)

@@ -391,10 +391,22 @@ class KeyManagementServers(KeyManagementServerConstants):
             :return:
                 Object of KeyManagementServer class for the newly created KMS.
         """
+        payload = None
+        is_bring_your_own_key = 0
+        keys = []
+
         if "AZURE_KEY_VAULT_KEY_LENGTH" not in kms_details:
             kms_details['AZURE_KEY_VAULT_KEY_LENGTH'] = 3072
 
-        payload = None
+        if "BringYourOwnKey" in kms_details:
+            if kms_details["BringYourOwnKey"]:
+                if "KEYS" not in kms_details:
+                    raise SDKException('KeyManagementServer', 107)
+                if type(kms_details['KEYS']) != list :
+                    raise SDKException('Storage', 101)
+                is_bring_your_own_key = 1
+                for k in kms_details['KEYS']:
+                    keys.append({"keyId": k})
 
         if "ACCESS_NODE_NAME" in kms_details:
             payload = {
@@ -430,7 +442,8 @@ class KeyManagementServers(KeyManagementServerConstants):
                             "keyVaultCredential": {
                                 "resourceName": kms_details['AZURE_KEY_VAULT_NAME']
                             },
-                            "bringYourOwnKey": 0
+                            "bringYourOwnKey": is_bring_your_own_key,
+                            "keys": keys
                             }
                         }
                     }
@@ -478,8 +491,8 @@ class KeyManagementServers(KeyManagementServerConstants):
             kms_details = {
                 "KEY_PROVIDER_TYPE": "KEY_PROVIDER_AWS_KMS",
                 "KMS_NAME": "KMS1" ,
-                "AWS_ACCESS_KEY":"1234",
-                "AWS_SECRET_KEY": "1234",
+                "AWS_ACCESS_KEY":"",
+                "AWS_SECRET_KEY": "",
                 "AWS_REGION_NAME": "Asia Pacific (Mumbai)",  -- Optional Value. Default is "Asia Pacific (Mumbai)"
                 "KEY_PROVIDER_AUTH_TYPE": "AWS_KEYS"
             }
@@ -488,66 +501,96 @@ class KeyManagementServers(KeyManagementServerConstants):
             kms_details = {
                 "KEY_PROVIDER_TYPE": "KEY_PROVIDER_AWS_KMS",
                 "AWS_REGION_NAME": "US East (Ohio)",    -- Optional Value. Default is "Asia Pacific (Mumbai)"
-                "ACCESS_NODE_NAME": "ma1",
-                "KMS_NAME": "kms1"",
+                "ACCESS_NODE_NAME": "",
+                "KMS_NAME": "",
+                "KEY_PROVIDER_AUTH_TYPE": "",
+                "AWS_ACCESS_KEY": "",
+                "AWS_SECRET_KEY": ""     -- Base64 encoded
+            }
+            
+        input dictionary for creating AWS KMS with access node ( key based authentication ) and by enabling Bring Your Own Key.
+            kms_details = {
+                "KEY_PROVIDER_TYPE": "KEY_PROVIDER_AWS_KMS",
+                "AWS_REGION_NAME": "US East (Ohio)",    -- Optional Value. Default is "Asia Pacific (Mumbai)"
+                "ACCESS_NODE_NAME": "",
+                "KMS_NAME": "",
                 "KEY_PROVIDER_AUTH_TYPE": "AWS_KEYS",
-                "AWS_ACCESS_KEY": "1234",
-                "AWS_SECRET_KEY": "1234"     -- Base64 encoded
+                "AWS_ACCESS_KEY": "",
+                "AWS_SECRET_KEY": "",     -- Base64 encoded
+                "BringYourOwnKey": True,
+                "KEYS": []
             }
 
         input dictionary for creating AWS KMS with access node ( credential template file based authentication )
             kms_details = {
                 "KEY_PROVIDER_TYPE": "KEY_PROVIDER_AWS_KMS",
                 "AWS_REGION_NAME": "US East (Ohio)",    -- Optional Value. Default is "Asia Pacific (Mumbai)"
-                "ACCESS_NODE_NAME": "client1",
+                "ACCESS_NODE_NAME": "",
                 "KMS_NAME": "AWS_KMS_NAME",
                 "KEY_PROVIDER_AUTH_TYPE": "AWS_CREDENTIALS_FILE",
-                "AWS_CREDENTIALS_FILE_PROFILE_NAME": "AWSProfile1"
+                "AWS_CREDENTIALS_FILE_PROFILE_NAME": ""
             }
 
         input dictionary for creating AWS KMS with access Node ( IAM based authentication )
             kms_details = {
                 "KEY_PROVIDER_TYPE": "KEY_PROVIDER_AWS_KMS",
-                "ACCESS_NODE_NAME": "MA1",
-                "KMS_NAME": "aws_kms_name",
+                "ACCESS_NODE_NAME": "",
+                "KMS_NAME": "",
                 "KEY_PROVIDER_AUTH_TYPE": "AWS_IAM"
             }
+            
+        
 
         input dictionary for creating Azure KMS with access Node ( certificate based authentication )
             kms_details = {
                 "KEY_PROVIDER_TYPE": "KEY_PROVIDER_AZURE_KEY_VAULT",
-                "ACCESS_NODE_NAME": "MediaAgent1",
-                "KMS_NAME": "Azure_KMS_1",
+                "ACCESS_NODE_NAME": "",
+                "KMS_NAME": "",
                 "KEY_PROVIDER_AUTH_TYPE": "AZURE_KEY_VAULT_CERTIFICATE",
                 "AZURE_KEY_VAULT_KEY_LENGTH":2048,     -- Optional Value. Default is 3072
-                "AZURE_KEY_VAULT_NAME":"MyCompanyKeyVault",
-                "AZURE_TENANT_ID":"123",
-                "AZURE_APP_ID":"456",
-                "AZURE_CERTIFICATE_PATH":"c:\\cert.pfx",
-                "AZURE_CERTIFICATE_THUMBPRINT":"789",
-                "AZURE_CERTIFICATE_PASSWORD": "password123",    -- Base64 encoded
+                "AZURE_KEY_VAULT_NAME":"",
+                "AZURE_TENANT_ID":"",
+                "AZURE_APP_ID":"",
+                "AZURE_CERTIFICATE_PATH":"",
+                "AZURE_CERTIFICATE_THUMBPRINT":"",
+                "AZURE_CERTIFICATE_PASSWORD": "",    -- Base64 encoded
             }
 
         input dictionary for creating Azure KMS with access Node ( IAM managed identity based authentication )
             kms_details = {
                 "KEY_PROVIDER_TYPE": "KEY_PROVIDER_AZURE_KEY_VAULT",
-                "ACCESS_NODE_NAME": "ma1",
-                "KMS_NAME": "MyKMS",
+                "ACCESS_NODE_NAME": "",
+                "KMS_NAME": "",
                 "KEY_PROVIDER_AUTH_TYPE": "AZURE_KEY_VAULT_IAM",
-                "AZURE_KEY_VAULT_NAME":"MyKeyVaultName",
+                "AZURE_KEY_VAULT_NAME":"",
             }
 
         input dictionary for creating Azure KMS without access Node ( certificate based authentication )
             kms_details = {
                 "KEY_PROVIDER_TYPE": "KEY_PROVIDER_AZURE_KEY_VAULT",
-                "KMS_NAME": "MyKMS",
+                "KMS_NAME": "",
                 "KEY_PROVIDER_AUTH_TYPE": "AZURE_KEY_VAULT_CERTIFICATE",
-                "AZURE_KEY_VAULT_NAME":"MyKeyVaultName",
-                "AZURE_TENANT_ID": "1234",
-                "AZURE_APP_ID": "1234"",
-                "AZURE_CERTIFICATE_PATH": "c:\\cert.pfx",
-                "AZURE_CERTIFICATE_THUMBPRINT": "1234",
-                "AZURE_CERTIFICATE_PASSWORD": "1234XYZ==",    -- Base64 encoded
+                "AZURE_KEY_VAULT_NAME":"",
+                "AZURE_TENANT_ID": "",
+                "AZURE_APP_ID": "",
+                "AZURE_CERTIFICATE_PATH": "",
+                "AZURE_CERTIFICATE_THUMBPRINT": "",
+                "AZURE_CERTIFICATE_PASSWORD": "",    -- Base64 encoded
+            }
+            
+        input dictionary for creating KMIP KMS with access Node ( certificate based authentication )
+            kms_details = {
+                "KEY_PROVIDER_TYPE": "KEY_PROVIDER_KMIP",
+                "ACCESS_NODE_NAME": "",
+                "KMS_NAME": "",
+                "KEY_PROVIDER_AUTH_TYPE": "KMIP_CERTIFICATE",
+                "KMIP_CERTIFICATE_PATH": "",
+                "KMIP_CERTIFICATE_KEY_PATH": "",
+                "KMIP_CA_CERTIFICATE_PATH": "",
+                "KMIP_CERTIFICATE_PASS": "", -- Base64 encoded
+                "KMIP_HOST": "",
+                "KMIP_PORT": "",
+                "KMIP_ENC_KEY_LENGTH":256           -- Optional Value. Default is 256
             }
             
         input dictionary for creating KMIP KMS with access Node ( certificate based authentication )
@@ -565,7 +608,27 @@ class KeyManagementServers(KeyManagementServerConstants):
                 "KMIP_ENC_KEY_LENGTH":256           -- Optional Value. Default is 256
             }
 
+        input dictionary for Azure KMS with access Node ( certificate based authentication ) with Bring Your Own Key enabled
+            self.kms_details = {
+                "KEY_PROVIDER_TYPE": "KEY_PROVIDER_AZURE_KEY_VAULT",
+                "ACCESS_NODE_NAME": "",
+                "KMS_NAME": "MyKMS",
+                "KEY_PROVIDER_AUTH_TYPE": "AZURE_KEY_VAULT_CERTIFICATE",
+                "AZURE_KEY_VAULT_KEY_LENGTH": 2072,
+                "AZURE_KEY_VAULT_NAME": "",
+                "AZURE_TENANT_ID": "",
+                "AZURE_APP_ID": "",
+                "AZURE_CERTIFICATE_PATH": "",
+                "AZURE_CERTIFICATE_THUMBPRINT": "",
+                "AZURE_CERTIFICATE_PASSWORD": "",    -- Base64 encoded
+                "BringYourOwnKey": True,
+                "KEYS": ["KeyID1/KeyVersion1", "KeyID2/KeyVersion2", "KeyID3/KeyVersion3"]
+            }
+            
+        
+            
         """
+        
         KeyManagementServers._validate_input(kms_details, dict)
 
         if kms_details['KEY_PROVIDER_TYPE'] not in self._KMS_TYPE.values():
@@ -749,6 +812,18 @@ class KeyManagementServers(KeyManagementServerConstants):
         KeyManagementServers._validate_input(kms_name, str)
 
         payload = None
+        is_bring_your_own_key = 0
+        keys = []
+
+        if "BringYourOwnKey" in kms_details:
+            if kms_details.get("BringYourOwnKey"):
+                if "KEYS" not in kms_details:
+                    raise SDKException('KeyManagementServer', 107)
+                if type(kms_details['KEYS']) != list :
+                    raise SDKException('Storage', 101)
+                is_bring_your_own_key = 1
+                for k in kms_details['KEYS']:
+                    keys.append({"keyId": k})
 
         if kms_details == None or "ACCESS_NODE_NAME" not in kms_details:
 
@@ -802,7 +877,8 @@ class KeyManagementServers(KeyManagementServerConstants):
 						        }
 					        }
 				            ],
-				            "bringYourOwnKey": "0",
+				            "bringYourOwnKey": str(is_bring_your_own_key),
+                            "keys": keys,
 				            "regionName": aws_region_name if aws_region_name!=None else kms_details['AWS_REGION_NAME']
 			            },
 			            "provider": {

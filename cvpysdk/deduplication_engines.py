@@ -95,6 +95,8 @@ Store:
     config_only_move_partition()    - performs config-only ddb move operation on specified substore
 
     move_partition()            - performs normal ddb move operation on specified substore
+    
+    add_partition()     -       Adding a partition to this store
 
 Attributes
 ----------
@@ -150,7 +152,7 @@ from enum import Enum
 
 from .exception import SDKException
 from .job import Job
-
+from .storage import MediaAgent
 
 class StoreFlags(Enum):
     IDX_SIDBSTORE_FLAGS_PRUNING_ENABLED = 536870912
@@ -269,6 +271,9 @@ class DeduplicationEngines(object):
                 SDKException:
                     if type of the storage policy and copy name arguments are not string
         """
+        
+        self.refresh()
+        
         if not isinstance(storage_policy_name, str) and not isinstance(copy_name, str):
             raise SDKException('Storage', '101')
         return self._engines and (storage_policy_name.lower(), copy_name.lower()) in self._engines
@@ -578,6 +583,39 @@ class Store(object):
         """refreshes all the deduplication store properties"""
         self._initialize_store_properties()
 
+    def add_partition(self, path, media_agent):
+        """Adding a partition to this store
+
+        Args:
+
+            path (str)   - path of the new deduplication database
+
+            media_agent (str)  - MediaAgent name of the new deduplication database
+
+        """
+        payload = None
+
+        if not isinstance(path, str):
+            raise SDKException("Storage","101")
+
+        if not isinstance(media_agent, str) and not isinstance(media_agent, MediaAgent):
+            raise SDKException("Storage", "101")
+
+        if isinstance(media_agent, str):
+            media_agent = MediaAgent(self._commcell_object, media_agent)
+
+        payload = """
+        <EVGui_ParallelDedupConfigReq commCellId="2" copyId="{0}" operation="15">
+        <SIDBStore SIDBStoreId="{1}"/>
+        <dedupconfigItem commCellId="0">
+        <maInfoList><clientInfo id="{2}" name="{3}"/>
+        <subStoreList><accessPath path="{4}"/>
+        </subStoreList></maInfoList></dedupconfigItem>
+        </EVGui_ParallelDedupConfigReq>
+        """.format(self.copy_id, self._store_id, media_agent.media_agent_id, media_agent.media_agent_name, path)
+
+        self._commcell_object._qoperation_execute(payload)
+        
     @property
     def all_substores(self):
         """returns list of all substores present on a deduplication store"""
@@ -891,7 +929,8 @@ class Store(object):
         response_string = self._commcell_object._update_response_(response.text)
         raise SDKException('Response', '101', response_string)
 
-    def run_space_reclaimation(self, level=3, clean_orphan_data=False, use_scalable_resource=True, num_streams="max"):
+    def run_space_reclaimation(self, level=3, clean_orphan_data=False, use_scalable_resource=True, num_streams="max",
+                               defragmentation=True):
         """
         runs DDB Space reclaimation job with provided level
 
@@ -906,6 +945,9 @@ class Store(object):
                         Default: True
 
             num_streams (str)   -- Number of streams with which job will run.
+
+            defragmentation(bool) - run space reclamation with Defragmentation or not (True/False)
+                        Default : True
         Returns:
              object - instance of Job class for DDB Verification job
 
@@ -923,6 +965,9 @@ class Store(object):
             raise SDKException('Storage', '101')
 
         if not isinstance(use_scalable_resource, bool):
+            raise SDKException('Storage', '101')
+
+        if not isinstance(defragmentation, bool):
             raise SDKException('Storage', '101')
 
         use_max_streams = "true"
@@ -979,7 +1024,7 @@ class Store(object):
                                     "backupLevel": "FULL",
                                     "defragmentationPercentage": level_map.get(level),
                                     "ocl": clean_orphan_data,
-                                    "runDefrag": "true"
+                                    "runDefrag": defragmentation
                                 }
                             }
                         },
@@ -1006,7 +1051,11 @@ class Store(object):
         raise SDKException('Response', '101', response_string)
 
     def run_ddb_verification(self, incremental_verification=True, quick_verification=True,
+<<<<<<< HEAD
                              use_scalable_resource=True, max_streams=0):
+=======
+                             use_scalable_resource=True, max_streams=0, total_jobs_to_process=1000):
+>>>>>>> 363dd5d3630a18588d9bc3292e93d15adcf7e75c
         """
         runs deduplication data verification(dv2) job with verification type and dv2 option
 
@@ -1020,7 +1069,15 @@ class Store(object):
             use_scalable_resource (bool)    - Use Scalable Resource Allocation while running DDB Verification Job
                                             Default: True
 
+<<<<<<< HEAD
             max_streams (int)           - DV2 job option, maximum number of streams to use. By default, job uses max streams.
+=======
+            max_streams (int)               - DV2 job option, maximum number of streams to use.
+                                              By default, job uses max streams.
+
+            total_jobs_to_process    (int)  - Batch size for number of backup jobs to be picked for verification simultaneously
+                                              Default: 1000 jobs per batch
+>>>>>>> 363dd5d3630a18588d9bc3292e93d15adcf7e75c
 
         Returns:
              object - instance of Job class for DDB Verification job
@@ -1076,6 +1133,10 @@ class Store(object):
                                     "auxcopyJobOption": {
                                         "useMaximumStreams": f"{use_max_streams}",
                                         "maxNumberOfStreams": f"{max_streams}",
+<<<<<<< HEAD
+=======
+                                        "totalJobsToProcess": total_jobs_to_process,
+>>>>>>> 363dd5d3630a18588d9bc3292e93d15adcf7e75c
                                         "allCopies": "true",
                                         "mediaAgent": {
                                             "mediaAgentName": ""

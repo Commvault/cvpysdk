@@ -864,8 +864,12 @@ class VirtualServerSubclient(Subclient):
             }
 
             # setting nics for azureRM instance
-            if value.get('destination_instance') == 'azure resource manager':
-                if "networkDisplayName" in value and 'networkrsg' in value and 'destsubid' in value:
+            if value.get('destination_instance').lower() == HypervisorType.AZURE_V2.value.lower():
+                if value.get('subnet_id'):
+                    nics["subnetId"] = value.get('subnet_id')
+                    nics["networkName"] = value.get('subnet_id').split('/')[0]
+                    nics["networkDisplayName"] = nics["networkName"] + '\\' + value.get('subnet_id').split('/')[-1]
+                elif "networkDisplayName" in value and 'networkrsg' in value and 'destsubid' in value:
                     nics["networkDisplayName"] = value["networkDisplayName"]
                     nics["networkName"] = value["networkDisplayName"].split('\\')[0]
                     modify_nics = value.get('subnetId', nics['subnetId']).split('/')

@@ -2187,8 +2187,6 @@ class Organization:
             'POST', self._services['GENERATE_AUTH_CODE'] % self.organization_id
         )
 
-        self.refresh()
-
         if flag:
             if response.json():
                 error_code = response.json()['error']['errorCode']
@@ -2205,7 +2203,7 @@ class Organization:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-        return self.auth_code
+        return response.json()['organizationProperties']['authCode']
 
     def disable_auth_code(self):
         """Executes the request on the server to disable Auth Code Generation for the Organization.

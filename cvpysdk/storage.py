@@ -1193,9 +1193,8 @@ class DiskLibraries(Libraries):
         """
         return self._libraries
 
-
     def add(self, library_name, media_agent, mount_path, username="", password="", servertype=0,
-            saved_credential_name=""):
+            saved_credential_name="", **kwargs):
         """Adds a new Disk Library to the Commcell.
 
             Args:
@@ -1216,6 +1215,13 @@ class DiskLibraries(Libraries):
 
                 saved_credential_name   (str)   --  name of the saved credential
                     default: ""
+
+                \*\*kwargs      (dict)  --  optional arguments
+
+                Available kwargs Options:
+
+                    proxy_password (str) -- plain text password of proxy server
+                        default: ""
 
             Returns:
                 object - instance of the DiskLibrary class, if created successfully
@@ -1251,6 +1257,8 @@ class DiskLibraries(Libraries):
         else:
             raise SDKException('Storage', '103')
 
+        proxy_password = kwargs.get('proxy_password', '')
+
         request_json = {
             "isConfigRequired": 1,
             "library": {
@@ -1272,6 +1280,9 @@ class DiskLibraries(Libraries):
 
             if saved_credential_name:
                 request_json["library"]["password"] = b64encode("XXXXX".encode()).decode()
+
+            if proxy_password != "":
+                request_json["library"]["proxyPassword"] = b64encode(proxy_password.encode()).decode()
 
             if servertype == 59:
                 request_json["library"]["HybridCloudOption"] = {

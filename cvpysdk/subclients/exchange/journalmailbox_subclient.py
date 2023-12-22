@@ -161,8 +161,10 @@ class JournalMailboxSubclient(ExchangeSubclient):
                         'user_guid': user_guid,
                         'is_auto_discover_user': is_auto_discover_user,
                         'journal_policy': journal_policy,
-                        'retention_policy': retention_policy
+                        'retention_policy': retention_policy,
                     }
+                    if child['plan'].get('planName', None):
+                        temp_dict['plan']= child['plan']['planName']
 
                     users.append(temp_dict)
 
@@ -217,15 +219,13 @@ class JournalMailboxSubclient(ExchangeSubclient):
         """Returns the list of journal users associated with JournalMailbox subclient."""
         return self._journal_users
 
-    def set_journal_user_assocaition(self, subclient_content):
-        """Create Journal assocaition for JournalMailboxSubclient.
+    def _association_json(self, subclient_content):
+        """Constructs association json to create assocaition in UserMailbox Subclient.
 
             Args:
-                subclient_content   (dict)  --  dict of the Users to add to the subclient
-
-                    subclient_content = {
-
-                        'mailboxNames' : ["AutoCi2"],
+                subclient_content (dict)  --  dict of the Users to add to the subclient
+                                             (dict of only policies in case of office 365 groups)
+                subclient_content = {
 
                         'archive_policy' : "CIPLAN Archiving policy",
 
@@ -234,9 +234,10 @@ class JournalMailboxSubclient(ExchangeSubclient):
                         'retention_policy': 'CIPLAN Retention policy'
                     }
 
-        """
-        users = []
 
+            Returns:
+                dict -- Association JSON request to pass to the API
+        """
         if not isinstance(subclient_content, dict):
             raise SDKException('Subclient', '101')
 
@@ -294,7 +295,7 @@ class JournalMailboxSubclient(ExchangeSubclient):
                 "subclientEntity": self._subClientEntity,
                 "emailDiscoverinfo": {
                     "discoverByType": 5,
-                    "mailBoxes": users
+                    "mailBoxes": None
                 },
                 "policies": {
                     "emailPolicies": [
@@ -336,7 +337,108 @@ class JournalMailboxSubclient(ExchangeSubclient):
             }
         }
 
-        self._set_association_request(associations_json)
+        return associations_json
+
+    def _association_json_with_plan(self, plan_details):
+        """Constructs association json with plan to create association in UserMailbox Subclient.
+
+            Args: plan_details = {
+                    'plan_name': Plan Name,
+                    'plan_id': int or None (Optional)
+                    }
+                 Returns:
+                    dict -- Association JSON request to pass to the API
+        """
+
+        try:
+            if not self._commcell_object.plans.has_plan(plan_details['plan_name']):
+                raise SDKException('Subclient', '102',
+                                   'Plan Name {} not found'.format(plan_details['plan_name']))
+            if 'plan_id' not in plan_details or plan_details['plan_id'] is None:
+                plan_id = self._commcell_object.plans[plan_details['plan_name'].lower()]
+            else:
+                plan_id = plan_details['plan_id']
+
+        except KeyError as err:
+            raise SDKException('Subclient', '102', '{} not given in content'.format(err))
+
+        plan_details = {
+            'planId': int(plan_id)
+        }
+
+        association_json = {
+            "emailAssociation": {
+                "subclientEntity": self._subClientEntity,
+                "plan": plan_details
+            }
+        }
+        return association_json
+
+    def set_journal_user_assocaition(self, subclient_content, use_policies=True):
+        """Create Journal assocaition for JournalMailboxSubclient.
+
+            Args:
+                subclient_content   (dict)  --  dict of the Users to add to the subclient
+
+                    subclient_content = {
+
+                        'mailboxNames' : ["AutoCi2"],
+
+                        'archive_policy' : "CIPLAN Archiving policy",
+
+                        'cleanup_policy' : 'CIPLAN Clean-up policy',
+
+                        'retention_policy': 'CIPLAN Retention policy',
+
+                        -- if use_policies is False --
+
+                        'plan_name': 'Exchange Plan Name',
+
+                        'plan_id': int or None (Optional)
+                    }
+
+                user_policies   (bool)  --  Use policies or plans for association
+                    Default: True
+
+        """
+        users = []
+
+
+
+        try:
+            discover_journal_users = self.discover_journal_users
+
+            for mailbox_item in subclient_content['mailboxNames']:
+
+                for mb_item in discover_journal_users:
+
+                    if mailbox_item.lower() == mb_item['aliasName'].lower():
+                        mailbox_dict = {
+                            'smtpAdrress': mb_item['smtpAdrress'],
+                            'aliasName': mb_item['aliasName'],
+                            'mailBoxType': mb_item['mailBoxType'],
+                            'displayName': mb_item['displayName'],
+                            'exchangeServer': mb_item['exchangeServer'],
+                            'isAutoDiscoveredUser': mb_item['isAutoDiscoveredUser'],
+                            "associated": False,
+                            'databaseName': mb_item['databaseName'],
+                            'user': {
+                                '_type_': 13,
+                                'userGUID': mb_item['user']['userGUID']
+                            }
+                        }
+                        users.append(mailbox_dict)
+
+        except KeyError as err:
+            raise SDKException('Subclient', '102', '{} not given in content'.format(err))
+
+        if use_policies:
+            _association_json_ = self._association_json(subclient_content)
+            _association_json_["emailAssociation"]["emailDiscoverinfo"]["mailBoxes"] = users
+        else:
+            _association_json_ = self._association_json_with_plan(subclient_content)
+            _association_json_["emailAssociation"]["emailDiscoverinfo"] = {"discoverByType":5, "mailBoxes" : users}
+        self._set_association_request(_association_json_)
 
     def set_pst_assocaition(self, subclient_content):
         """Create PST assocaition for JournalMailboxSubclient.

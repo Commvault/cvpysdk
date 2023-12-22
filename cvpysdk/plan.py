@@ -57,6 +57,8 @@ Plans
     add_data_classification_plan()-  Adds data classification plan to the commcell
 
     get_supported_solutions()   --  returns the supported solutions for plans
+
+    add_exchange_plan()         --  Adds a new exchange plan to the commcell
     
 Attributes
 ----------
@@ -507,6 +509,124 @@ class Plans(object):
                     'No plan exists with name: {0}'.format(plan_name)
                 )
 
+    def add_exchange_plan(self, plan_name: str, plan_sub_type: str = 'ExchangeUser', **kwargs):
+        """Adds a new exchange plan to the commcell.
+
+            Args:
+                plan_name           (str)   --  name of the new plan to add
+
+                plan_sub_type       (str)   --  Type of plan to add - ExchangeUser or ExchangeJournal
+                    Default: ExchangeUser
+
+                kwargs              (dict)  --  Optional parameters for creating a plan
+                    Accepted Values:
+                        retain_msgs_received_time           (int)   -- Retain messages based on received time
+                        retain_msgs_deletion_time           (int)   -- Retain messages based on deletion time
+                        enable_cleanup_archive_mailbox      (bool)  -- Enable cleanup on archive mailbox
+                        cleanup_msg_older_than              (int)   -- Cleanup messages older than
+                        cleanup_msg_larger_than             (int)   -- Cleanup messages larger than
+                        enable_content_search               (bool)  -- Enable content indexing
+                        enable_archive_on_archive_mailbox   (bool)  -- Enable archive on archived mailbox
+                        create_stubs                        (bool)  -- Create stubs during cleanup
+                        prune_stubs                         (bool)  -- Prune stubs during cleanup
+                        prune_msgs                          (bool)  -- Prune messages during cleanup
+                        number_of_days_src_pruning          (int)   -- Number of days for source pruning
+                        include_msgs_older_than             (int)   -- Include messages older than for archiving
+                        include_msgs_larger_than            (int)   -- Inlcude messages larger than for archiving
+
+            Returns:
+                Plan object of the created plan
+
+            Raises:
+                SDKException:
+                    if input parameters are incorrect
+
+                    if Plan already exists
+
+                    if error in creating the plan
+
+        """
+        if plan_sub_type not in ['ExchangeUser', 'ExchangeJournal']:
+            raise SDKException('Plan', '101', "Plan subtype should be ExchangeUser or ExchangeJournal.")
+        elif self.has_plan(plan_name):
+                raise SDKException('Plan', '102', 'Plan "{0}" already exists'.format(plan_name))
+        request_json = self._get_plan_template(plan_sub_type)
+        request_json['plan']['summary']['plan']['planName'] = plan_name
+        exch_retention = request_json['plan']['exchange']['mbRetention']['detail']['emailPolicy']['retentionPolicy']
+        exch_retention['numOfDaysForMediaPruning'] = kwargs.get('retain_msgs_received_time', -1)
+        if plan_sub_type == 'ExchangeUser':
+            exch_arch = request_json['plan']['exchange']['mbArchiving']['detail']['emailPolicy']['archivePolicy']
+            exch_cleanup = request_json['plan']['exchange']['mbCleanup']['detail']['emailPolicy']['cleanupPolicy']
+            exch_cleanup['excludeFolderFilter']['folderPatternsSelected'].remove('Drafts')
+            exch_cleanup['excludeFolderFilter']['folderPatternsAvailable'].append('Drafts')
+            exch_cleanup['archiveMailbox'] = kwargs.get('enable_cleanup_archive_mailbox', False)
+            exch_cleanup['collectMsgsDaysAfter'] = kwargs.get('cleanup_msg_older_than', 0)
+            exch_cleanup['collectMsgsLargerThan'] = kwargs.get('cleanup_msg_larger_than', 0)
+            exch_cleanup['skipUnreadMsgs'] = kwargs.get('skip_unread_msgs', False)
+            exch_cleanup['collectMsgWithAttach'] = kwargs.get('collect_msg_with_attach', False)
+            exch_cleanup['createStubs'] = kwargs.get('create_stubs', True)
+            exch_cleanup['pruneStubs'] = kwargs.get('prune_stubs', False)
+            exch_cleanup['pruneMsgs'] = kwargs.get('prune_msgs', False)
+            exch_cleanup['numOfDaysForSourcePruning'] = kwargs.get('number_of_days_src_pruning', 0)
+            exch_arch['backupDeletedItemRetention'] = kwargs.get('backup_deleted_item_retention', False)
+            if 'includeDiscoveryHoldsFolder' in kwargs:
+                exch_arch['includeDiscoveryHoldsFolder'] = kwargs.get('include_discovery_holds_folder')
+            if 'includePurgesFolder' in kwargs:
+                exch_arch['includePurgesFolder'] = kwargs.get('include_purges_folder')
+            if 'includeVersionsFolder' in kwargs:
+                exch_arch['includeVersionsFolder'] = kwargs.get('include_versions_folder')
+            exch_arch['includeOnlyMsgsWithAttachemts'] = kwargs.get('include_only_msgs_with_attachemts', False)
+            exch_arch['includeMsgsOlderThan'] = kwargs.get('include_msgs_older_than', 0)
+            exch_arch['includeMsgsLargerThan'] = kwargs.get('include_msgs_larger_than', 0)
+            exch_arch['archiveMailbox'] = kwargs.get('enable_archive_on_archive_mailbox', False)
+            if 'retain_msgs_deletion_time' in kwargs and kwargs.get('retain_msgs_deletion_time') > 0:
+                exch_retention['type'] = 1
+                exch_retention['numOfDaysForMediaPruning'] = kwargs.get('retain_msgs_deletion_time', 0)
+        else:
+            exch_arch = request_json['plan']['exchange']['mbJournal']['detail']['emailPolicy']['journalPolicy']
+        exch_arch['contentIndexProps']['enableContentIndex'] = kwargs.get('enable_content_search', False)
+
+        headers = self._commcell_object._headers.copy()
+        headers['LookupNames'] = 'False'
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._PLANS, request_json, headers=headers
+        )
+
+        if flag:
+            if response.json():
+                response_value = response.json()
+                error_message = None
+                error_code = None
+
+                if 'errors' in response_value:
+                    error_code = response_value['errors'][0]['status']['errorCode']
+                    error_message = response_value['errors'][0]['status']['errorMessage']
+
+                if error_code > 1:
+                    o_str = 'Failed to create new Plan\nError: "{0}"'.format(
+                        error_message
+                    )
+                    raise SDKException('Plan', '102', o_str)
+
+                if 'plan' in response_value:
+                    plan_name = response_value['plan']['summary']['plan']['planName']
+
+                    self.refresh()
+                    self._commcell_object.storage_policies.refresh()
+                    return self.get(plan_name)
+                else:
+                    o_str = ('Failed to create new plan due to error code: "{0}"\n'
+                             'Please check the documentation for '
+                             'more details on the error').format(error_code)
+
+                    raise SDKException('Plan', '102', o_str)
+            else:
+                raise SDKException('Response', 102)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     def add(self,
             plan_name,
             plan_sub_type,
@@ -576,16 +696,13 @@ class Plans(object):
                 raise SDKException(
                     'Plan', '102', 'Plan "{0}" already exists'.format(plan_name)
                 )
-        if not plan_sub_type == 'ExchangeUser':
-            storage_pool_obj = self._commcell_object.storage_pools.get(
-                storage_pool_name)
-            is_dedupe = True
-            if 'dedupDBDetailsList' \
-                    not in storage_pool_obj._storage_pool_properties['storagePoolDetails']:
-                is_dedupe = False
+        storage_pool_obj = self._commcell_object.storage_pools.get(
+            storage_pool_name)
+        is_dedupe = True
+        if 'dedupDBDetailsList' not in storage_pool_obj._storage_pool_properties['storagePoolDetails']:
+            is_dedupe = False
 
         request_json = self._get_plan_template(plan_sub_type, "MSP")
-
         request_json['plan']['summary']['rpoInMinutes'] = sla_in_minutes
         request_json['plan']['summary']['description'] = "Created from CvPySDK."
         request_json['plan']['summary']['plan']['planName'] = plan_name
@@ -603,22 +720,21 @@ class Plans(object):
             request_json['plan']['schedule']['subTasks'][synth_full_index]['options']['commonOpts'][
                 'automaticSchedulePattern']['ignoreOpWindowPastMaxInterval'] = True
         del request_json['plan']['schedule']['task']['taskName']
-        if plan_sub_type != 'ExchangeUser':
-            request_json['plan']['storage']['copy'][0]['useGlobalPolicy'] = {
-                "storagePolicyId": int(storage_pool_obj.storage_pool_id)
-            }
-            if is_dedupe:
-                request_json['plan']['storage']['copy'][0]['dedupeFlags'][
-                    'useGlobalDedupStore'] = 1
-            else:
-                del request_json['plan']['storage']['copy'][0]['storagePolicyFlags']
-                del request_json['plan']['storage']['copy'][0]['dedupeFlags'][
-                    'enableDeduplication']
-                del request_json['plan']['storage']['copy'][0]['dedupeFlags'][
-                    'enableClientSideDedup']
-                del request_json['plan']['storage']['copy'][0]['DDBPartitionInfo']
-                request_json['plan']['storage']['copy'][0]['extendedFlags'] = {
-                    'useGlobalStoragePolicy': 1
+        request_json['plan']['storage']['copy'][0]['useGlobalPolicy'] = {
+            "storagePolicyId": int(storage_pool_obj.storage_pool_id)
+        }
+        if is_dedupe:
+            request_json['plan']['storage']['copy'][0]['dedupeFlags'][
+                'useGlobalDedupStore'] = 1
+        else:
+            del request_json['plan']['storage']['copy'][0]['storagePolicyFlags']
+            del request_json['plan']['storage']['copy'][0]['dedupeFlags'][
+                'enableDeduplication']
+            del request_json['plan']['storage']['copy'][0]['dedupeFlags'][
+                'enableClientSideDedup']
+            del request_json['plan']['storage']['copy'][0]['DDBPartitionInfo']
+            request_json['plan']['storage']['copy'][0]['extendedFlags'] = {
+                'useGlobalStoragePolicy': 1
                 }
 
         # Configurations for database and snap addons

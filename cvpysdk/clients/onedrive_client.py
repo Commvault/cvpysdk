@@ -33,6 +33,11 @@ in_place_restore()  --  Run an inplace restore of specified users for OneDrive f
 out_of_place_restore()  --  Run an out-of-place restore of specified users for OneDrive for business client (v2)
 
 disk_restore()  --  Runs disk restore of specified users for OneDrive for business client (v2)
+
+modify_server_plan()  --  Method to Modify Server Plan Associated to Client
+
+modify_job_results_directory()  --  Method to modify job results directory
+
 """
 
 from ..client import Client
@@ -168,3 +173,36 @@ class OneDriveClient(Client):
                                                         destination_path,
                                                         skip_file_permissions=skip_file_permissions)
         return restore_job
+
+    def modify_server_plan(self,old_plan,new_plan):
+        """
+           Method to Modify Server Plan Associated to Client
+
+           Arguments:
+                old_plan        (str)   --     existing server plan name
+                new_plan        (str)   --     new server plan name
+        """
+
+        from ..plan import Plan
+        entities=[{
+            "clientName" : self.client_name
+        }]
+        self.plan_obj = Plan(self._commcell_object, old_plan)
+        self.plan_obj.edit_association(entities, new_plan)
+
+
+    def modify_job_results_directory(self,modified_shared_jr_directory):
+        """
+        Method to modify job results directory
+
+        modified_shared_jr_directory  (str)   --     new job results directory
+        """
+        jr_update_dict={
+                "client": {
+                    "jobResulsDir": {
+                        "path": modified_shared_jr_directory
+                    }
+                }
+        }
+
+        self.update_properties(properties_dict=jr_update_dict)

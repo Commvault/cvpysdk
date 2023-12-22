@@ -582,7 +582,8 @@ EXCEPTION_DICT = {
         '103': 'Key Management Server type is not valid',
         '104': 'Key Management Server type not found',
         '105': 'Invalid key provider authentication type',
-        '106': 'Invalid KMS name'
+        '106': 'Invalid KMS name',
+        '107': 'Key list is missing for Bring Your Own Key'
     },
     'Region': {
         '101': 'Entity type not found.',
