@@ -592,21 +592,6 @@ class KeyManagementServers(KeyManagementServerConstants):
                 "KMIP_PORT": "",
                 "KMIP_ENC_KEY_LENGTH":256           -- Optional Value. Default is 256
             }
-            
-        input dictionary for creating KMIP KMS with access Node ( certificate based authentication )
-            kms_details = {
-                "KEY_PROVIDER_TYPE": "KEY_PROVIDER_KMIP",
-                "ACCESS_NODE_NAME": "client1",
-                "KMS_NAME": "MyKMS",
-                "KEY_PROVIDER_AUTH_TYPE": "KMIP_CERTIFICATE",
-                "KMIP_CERTIFICATE_PATH": "C:\\certificate\\signed.crt",
-                "KMIP_CERTIFICATE_KEY_PATH": "C:\\certificate\\clientkey.key",
-                "KMIP_CA_CERTIFICATE_PATH": "C:\\certificate\\myCompany.pem",
-                "KMIP_CERTIFICATE_PASS": "abcdxyz", -- Base64 encoded
-                "KMIP_HOST": "123.123.123.123",
-                "KMIP_PORT": "9002",
-                "KMIP_ENC_KEY_LENGTH":256           -- Optional Value. Default is 256
-            }
 
         input dictionary for Azure KMS with access Node ( certificate based authentication ) with Bring Your Own Key enabled
             self.kms_details = {

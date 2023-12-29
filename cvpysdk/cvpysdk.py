@@ -65,6 +65,7 @@ from xml.parsers.expat import ExpatError
 
 import requests
 import xmltodict
+import urllib3
 
 try:
     # Python 2 import
@@ -82,17 +83,20 @@ class CVPySDK(object):
         Also contains common method for running all HTTP requests.
     """
 
-    def __init__(self, commcell_object, certificate_path=None):
+    def __init__(self, commcell_object, certificate_path=None, verify_ssl=True):
         """Initialize the CVPySDK object for running various operations.
 
             Args:
                 commcell_object     (object)    --  instance of the Commcell class
 
 
-                certificate_path        (str)   --  path of the CA_BUNDLE or directory with
+                certificate_path     (str)   --  path of the CA_BUNDLE or directory with
                 certificates of trusted CAs (including trusted self-signed certificates)
 
                     default: None
+
+                verify_ssl           (str)   --  verify ssl while making requests
+                    default: True
 
             Returns:
                 object  -   instance of the CVPySDK class
@@ -100,6 +104,10 @@ class CVPySDK(object):
         """
         self._commcell_object = commcell_object
         self._certificate_path = certificate_path
+        self._verify_ssl = verify_ssl
+
+        if not self._verify_ssl:
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     def _is_valid_service(self):
         """Checks if the service url is a valid url or not.
@@ -276,8 +284,8 @@ class CVPySDK(object):
         """
         if self._certificate_path and self._commcell_object._web_service.startswith('https'):
             return requests.request(verify=self._certificate_path, **kwargs)
-
-        return requests.request(**kwargs)
+        else:
+            return requests.request(verify=self._verify_ssl, **kwargs)
 
     def who_am_i(self, authtoken=None):
         """Get the username of the user, to whom the Authtoken belongs to.

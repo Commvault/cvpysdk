@@ -1203,7 +1203,7 @@ class FSBackupset(Backupset):
     def index_pruning_cycles_retention(self):
         """Returns number of cycles to be maintained in index by index pruning for the backupset"""
 
-        return self._properties["indexSettings"]["indexRetCycle"]
+        return self._properties["indexSettings"]["indexRetCycles"]
 
     @index_pruning_type.setter
     def index_pruning_type(self, value):

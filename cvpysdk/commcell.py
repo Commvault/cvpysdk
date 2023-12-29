@@ -426,7 +426,8 @@ class Commcell(object):
             authtoken=None,
             force_https=False,
             certificate_path=None,
-            is_service_commcell=None):
+            is_service_commcell=None,
+            verify_ssl = True):
         """Initialize the Commcell object with the values required for doing the API operations.
 
             Commcell Username and Password can be None, if QSDK / SAML token is being given
@@ -459,6 +460,10 @@ class Commcell(object):
                 authtoken               (str)   --  QSDK / SAML token for log in to the console
 
                     default: None
+
+                verify_ssl               (str)   --  Pass this choose to verify SSL requests to commcell
+
+                    default: True
 
             **Note** : If SAML token is to be used to login to service commcell please set is_service_commcell=True
 
@@ -523,7 +528,7 @@ class Commcell(object):
         self._device_id = socket.getfqdn()
         self._is_service_commcell = is_service_commcell
 
-        self._cvpysdk_object = CVPySDK(self, certificate_path)
+        self._cvpysdk_object = CVPySDK(self, certificate_path, verify_ssl)
 
         # Checks if the service is running or not
         for service in web_service:

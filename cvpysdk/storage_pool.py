@@ -82,6 +82,8 @@ StoragePool instance attributes
 
 **storage_policy_id**           --  returns the storage pool id
 
+enable_worm_storage_lock()      --  sets the hardware WORM storage lock on storage pool.
+
 
 # TODO: check with MM API team to get the response in JSON
 
@@ -352,7 +354,7 @@ class StoragePools:
         self.refresh()
         return self.get(storage_pool_name)
 
-    def add(self, storage_pool_name, mountpath, media_agent, ddb_ma, dedup_path):
+    def add(self, storage_pool_name, mountpath, media_agent, ddb_ma, dedup_path, **kwargs):
         """
         Adds a new storage pool to commcell
 
@@ -367,24 +369,28 @@ class StoragePools:
 
             dedup_path          (str)       --  path where the DDB should be stored
 
+            **kwargs:
+                username        (str)       --  username to access the mountpath
+
+                password        (str)       --  password to access the mountpath
+
+                credential_name (str)       --  name of the credential as in credential manager
+
+                cloud_server_type (int)     --  cloud server type of the cloud vendor (required)
         Returns:
             StoragePool object if creation is successful
 
         Raises:
             Exception if creation is unsuccessful
         """
-        # from urllib.parse import urlencode
+        username = kwargs.get('username', None)
+        password = kwargs.get('password', None)
+        credential_name = kwargs.get('credential_name', None)
+        cloud_server_type = int(kwargs.get('cloud_server_type', 0))
 
         if ((dedup_path is not None and not isinstance(dedup_path, str)) or
                 not (isinstance(storage_pool_name, str) or not isinstance(mountpath, str))):
             raise SDKException('Storage', '101')
-
-        # if isinstance(library, DiskLibrary):
-        #     disk_library = library
-        # elif isinstance(library, str):
-        #     disk_library = DiskLibrary(self._commcell_object, library)
-        # else:
-        #     raise SDKException('Storage', '104')
 
         if isinstance(media_agent, MediaAgent):
             media_agent = media_agent
@@ -412,7 +418,8 @@ class StoragePools:
                         "mediaAgentId": int(media_agent.media_agent_id),
                         "mediaAgentName": media_agent.media_agent_name
                     },
-                    "credentials": {}
+                    "credentials": {},
+                    "savedCredential": {}
                 }
             ],
             "storagePolicyCopyInfo": {
@@ -455,6 +462,19 @@ class StoragePools:
                 }
             }
         }
+
+        if cloud_server_type > 0:
+            request_json["storage"][0]["deviceType"] = cloud_server_type
+
+        if username is not None:
+            request_json["storage"][0]["credentials"]["userName"] = username
+
+        if password is not None:
+            request_json["storage"][0]["credentials"]["password"] = password
+
+        if credential_name is not None:
+            request_json["storage"][0]["savedCredential"]["credentialName"] = credential_name
+
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._add_storage_pool_api, request_json
         )
@@ -475,6 +495,7 @@ class StoragePools:
             raise SDKException('Response', '101', response_string)
 
         self.refresh()
+        self._commcell_object.disk_libraries.refresh()
         return self.get(storage_pool_name)
 
     def add_azure_storage_pool(self, storage_pool_name, container_name, media_agents, dedup_paths, **kwargs):
@@ -952,3 +973,44 @@ class StoragePool(object):
                                                                                    user=isUser,
                                                                                    request_type=request_type,
                                                                                    externalGroup=externalGroup)
+    
+    def enable_worm_storage_lock(self, days):
+        """
+        Sets hardware worm setting on Storage Pool copy with given retention
+        
+        Args:
+            days    (int)   -- number of days of retention on WORM copy.
+        
+        Raises:
+            SDKException:
+                if response is not success.
+
+                if reponse is empty.
+        """
+
+        request_json = {
+            "storagePolicyCopyInfo":{
+                "copyFlags":{
+                    "wormCopy":1
+                },
+                "retentionRules":{
+                    "retainBackupDataForDays":days
+                }
+            },
+            "isWormStorage":True,
+            "forceCopyToFollowPoolRetention":True
+        }
+        
+        _STORAGE_POOL_COPY = self._commcell_object._services['STORAGE_POLICY_COPY'] % (
+            self._storage_pool_id, str(self.copy_id))
+        flag, response = self._commcell_object._cvpysdk_object.make_request('PUT', _STORAGE_POOL_COPY, request_json)
+
+        if flag:
+            if response.json():
+                response = response.json()
+                if "error" in response and response.get("error", {}).get("errorCode") != 0:
+                    error_message = response.get("error", {}).get("errorMessage")
+                    raise SDKException('Response', '102', error_message)
+            else:
+                raise SDKException('Response', '101')
+

@@ -114,6 +114,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_LIBRARY_PROPERTIES': '{0}Library/%s',
     'DETECT_TAPE_LIBRARY': '{0}Library?Action=detect',
     'CONFIGURE_TAPE_LIBRARY': '{0}Library?Action=configureTape',
+    'EDIT_CLOUD_CONTROLLER':'{0}V4/Storage/Cloud/0/Bucket/%s/AccessPath/%s',
 
     'GET_MOVE_MOUNTPATH_DETAILS': '{0}MountPath/%s/Move',
     'MOVE_MOUNTPATH': '{0}MountPath/Move',

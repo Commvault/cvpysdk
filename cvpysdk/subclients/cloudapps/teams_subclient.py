@@ -1117,17 +1117,10 @@ class TeamsSubclient(CloudAppsSubclient):
 
                     Returns:
                         obj   --  Instance of job.
-<<<<<<< HEAD
 
                     Raises:
                         SDKException:
 
-=======
-
-                    Raises:
-                        SDKException:
-
->>>>>>> 363dd5d3630a18588d9bc3292e93d15adcf7e75c
                             If restore failed to run.
                             If response is empty.
                             If response is not success.
