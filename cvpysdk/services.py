@@ -47,6 +47,7 @@ SERVICES_DICT_TEMPLATE = {
     'COMMSERV': '{0}CommServ',
     'GET_SAML_TOKEN': '{0}Commcell/SamlToken?validityInMins=%s',
     'WHO_AM_I': '{0}WhoAmI',
+    'CREATE_RC': '{0}V4/SoftwareCache',
 
     'TFA': '{0}Commcell/Properties/TwoFactorAuth',
     'TFA_ENABLE': '{0}Commcell/Properties/TwoFactorAuth/Action/Enable',
@@ -72,7 +73,7 @@ SERVICES_DICT_TEMPLATE = {
     'CHECK_READINESS': '{0}Client/%s/CheckReadiness?network=%s&resourceCapacity=%s'
                        '&NeedXmlResp=true&includeDisabledClients=%s&CSCCNetworkCheck=%s'
                        '&applicationCheck=%s&additionalResources=%s',
-
+    'MONGODB_CHECK_READINESS' : '{0}/clients/mongodb/status',
     'GET_ALL_AGENTS': '{0}Agent?clientId=%s',
     'AGENT': '{0}Agent',
     'GET_AGENT': '{0}Agent?clientId=%s&applicationId=%s&propertyLevel=30',
@@ -306,6 +307,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'PLANS': '{0}V2/Plan',
     'PLAN': '{0}V2/Plan/%s',
+    'PLAN_SUMMARY': '{0}v4/Plan/Summary?%s',
     'DELETE_PLAN': '{0}V2/Plan/%s?confirmDelete=True',
     'ADD_USERS_TO_PLAN': '{0}V2/Plan/%s/Users',
     'GET_PLAN_TEMPLATE': '{0}V2/Plan/template?type=%s&subType=%s',

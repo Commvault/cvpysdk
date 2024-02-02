@@ -340,6 +340,7 @@ Client Attributes
     **is_ready**                    --  returns boolean value specifying whether services on the
     client are running or not, and whether the CommServ is able to communicate with the client
 
+    **is_mongodb_ready**            -- returns boolean value specifying whether mongoDB is working fine or not
 
     **set_encryption_prop**         --    Set encryption properties on a client
 
@@ -5217,6 +5218,21 @@ class Client(object):
         """
         return self.readiness_details.is_ready()
 
+    @property
+    def is_mongodb_ready(self):
+        """
+        Checks the status mongoDB
+
+            Returns:
+                True : if the MongoDB is working fine
+                False : if there is any error in mongoDB
+
+            Raises:
+                SDKException:
+                    if response is not success
+        """
+        return self.readiness_details.is_mongodb_ready()
+
     def upload_file(self, source_file_path, destination_folder):
         """Upload the specified source file to destination path on the client machine
 
@@ -6779,6 +6795,7 @@ class _Readiness:
         self._detail = None
         self._status = None
         self._dict = None
+        self._response = None
 
     def __fetch_readiness_details(
             self,
@@ -6872,6 +6889,26 @@ class _Readiness:
                                         application_check, additional_resources)
         return self._status == "Ready."
 
+    def is_mongodb_ready(self):
+        """
+        mongodb_readiness (bool) - performs mongoDB check readiness by calling mongodb readiness API
+
+        Returns:
+            (bool) - True if ready else False
+        """
+        flag, response = self.__commcell._cvpysdk_object.make_request(
+            "GET",self.__commcell._services["MONGODB_CHECK_READINESS"])
+        if flag:
+            self._response = response.json()
+            if response.json():
+                if not (self._response.get('response', [])[0].get('errorString', '') and
+                        self._response.get('response', [])[0].get('errorCode', None)):
+                    return True
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self.__commcell._update_response_(response.text))
+
     def __check_reason(self):
         try:
             self._reason = self._dict['summary'][0]['reason']
@@ -6908,3 +6945,9 @@ class _Readiness:
         if not self._dict:
             self.__fetch_readiness_details()
         return self._detail
+
+    def get_mongodb_failure_reason(self):
+        """Retrieve mongoDB readiness failure details"""
+        if not self._response:
+            self.is_mongodb_ready()
+        return self._response

@@ -234,7 +234,8 @@ class Install(object):
 
             **kwargs: (dict) -- Key value pairs for supporting conditional initializations
                 Supported -
-                schedule_pattern (dict)           -- Request JSON for scheduling the operation
+                schedule_pattern        (dict)      -- Request JSON for scheduling the operation
+                install_update_options  (int)       -- Refer InstallUpdateOptions from deploymentconstants module
 
         Returns:
             object - instance of the Job/Task class for this download
@@ -265,6 +266,10 @@ class Install(object):
                     client_computers,
                     client_computer_groups]):
             raise SDKException('Install', '101')
+        
+        install_update_options = kwargs.get('install_update_options', None)
+        if install_update_options and not isinstance(install_update_options, int):
+            raise SDKException("Install", "101")
 
         commcell_client_computers = self.commcell_object.clients.all_clients
         commcell_client_computer_groups = self.commcell_object.client_groups.all_clientgroups
@@ -337,6 +342,10 @@ class Install(object):
 
         if schedule_pattern:
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+
+        if install_update_options:
+            adminOpts = request_json['taskInfo']['subTasks'][0]['options']['adminOpts']
+            adminOpts['updateOption']['installUpdateOptions'] = install_update_options
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['CREATE_TASK'], request_json

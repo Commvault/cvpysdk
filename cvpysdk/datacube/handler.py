@@ -308,17 +308,20 @@ class Handlers(object):
             'POST', self._create_handler, request_json
         )
         if flag:
-            if response.json() and 'error' in response.json():
-                if(response.json()['error'] == 'None' or response.json()['error'] is None):
+            if response.json():
+                if 'error' in response.json() and (response.json()['error'] == 'None' or response.json()['error'] is None):
                     self.refresh()  # reload new list.
                     return
-                error_code = response.json()['error']['errorCode']
-                if error_code == 0:
-                    self.refresh()  # reload new list.
-                    return
-                error_message = response.json()['error']['errLogMessage']
-                o_str = 'Failed to create handler\nError: "{0}"'.format(error_message)
-                raise SDKException('Response', '102', o_str)
+                elif 'error' in response.json():
+                    error_code = response.json()['error'].get('errorCode',0)
+                    if error_code == 0:
+                        self.refresh()  # reload new list.
+                        return
+                    error_message = response.json()['error']['errLogMessage']
+                    o_str = 'Failed to create handler\nError: "{0}"'.format(error_message)
+                    raise SDKException('Response', '102', o_str)
+                self.refresh()  # reload new list.
+                return
             raise SDKException('Response', '102')
         response_string = self.commcell_obj._update_response_(
             response.text)

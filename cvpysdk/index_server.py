@@ -156,6 +156,8 @@ IndexServer Attributes
 
     **plan_name**                       --  Returns the plan name associated with index server
 
+    **fs_collection**                   --  Returns the multinode collection name of File System Index
+
 
 IndexNode
 =========
@@ -287,7 +289,7 @@ class IndexServers(object):
                 for item in response.json()['listOfCIServer']:
                     if item['cloudID'] in self._all_index_servers:
                         # Add only unique roles to list
-                        if item['version'] not in self._all_index_servers[item['cloudID']]['version']:
+                        if 'version' in item and item['version'] not in self._all_index_servers[item['cloudID']]['version']:
                             self._all_index_servers[item['cloudID']]['version'].append(item['version'])
                         # check whether we have populated node details earlier. if not, add it to
                         # exisitng respective fields
@@ -1312,6 +1314,17 @@ class IndexServer(object):
     def index_server_client_id(self):
         """Returns the index server client id of index server"""
         return self._properties[IndexServerConstants.INDEX_SERVER_CLIENT_ID]
+
+    @property
+    def fs_collection(self):
+        """Returns the multinode collection name of File System Index
+
+            Returns:
+
+                str --  File System index multinode collection name
+
+        """
+        return f'fsindex_{"".join(letter for letter in self.cloud_name if letter.isalnum())}_multinode'
 
 
 class IndexNode(object):

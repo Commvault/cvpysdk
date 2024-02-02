@@ -1079,6 +1079,30 @@ class Plans(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def get_plans_summary(self)->dict:
+        """Returns plan summary in response
+
+        Returns:
+            list - plans summary
+        """
+        params = "fl=plans.missingEntities%2Cplans.numAssocEntities%2Cplans.numCopies%2Cplans.parent" \
+                 "%2Cplans.permissions%2Cplans.plan.planId%2Cplans.plan.planName%2Cplans.planStatusFlag%2Cplans.restrictions%2C" \
+                 "plans.rpoInMinutes%2Cplans.subtype%2Cplans.type%2Cplans.targetApps%2Cplans.storageResourcePoolMaps.resources.resourcePool" \
+                 "&hardRefresh=true"
+        request_url = self._services['PLAN_SUMMARY']%(params)
+
+        flags,response = self._cvpysdk_object.make_request('GET',request_url)
+
+        if flags:
+            if response.json() :
+                plans_summary = {entry.get("plan",{}).get("name",None): entry.get("associatedEntities",None) for entry in response.json()["plans"]}
+                return plans_summary
+            else:
+                raise SDKException("Plan", "102", "Failed to get plans summary")
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
 
 class Plan(object):
     """Class for performing operations for a specific Plan."""
@@ -2630,4 +2654,3 @@ class Plan(object):
             raise SDKException('Plan', 102, 'Failed to update Applicable Solutions for Plan')
                 
         self.refresh()
-                        

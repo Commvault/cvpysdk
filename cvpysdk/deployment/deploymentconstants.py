@@ -135,3 +135,15 @@ class OSNameIDMapping(Enum):
     UNIX_SOLARIS_SPARC = 22
     UNIX_SOLARIS_SPARC86 = 30
     UNIX_LINUX64LE = 32
+
+class InstallUpdateOptions(Enum):
+    """
+    Enum with list of all options available under Upgrade software
+    """
+    UPDATE_INSTALL_CV = 1
+    UPDATE_INSTALL_SQL = 2
+    UPDATE_INSTALL_WINOS = 4
+    UPDATE_INSTALL_FREL_OS_UPDATES = 8
+    UPDATE_INSTALL_HYPERSCALE_OS_UPDATES = 16
+    UPDATE_INSTALL_HSX_STORAGE_UPDATES = 32
+    UPDATE_INSTALL_HSX_STORAGE_UPDATES_DISRUPTIVE_MODE = 64
