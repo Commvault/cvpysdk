@@ -1264,7 +1264,7 @@ class WorkFlow(object):
 
         if flag:
             if response.json():
-                output = response.json().get("outputs", {})
+                output = response.json()
 
                 if "jobId" in response.json():
                     if response.json()["jobId"] == 0:

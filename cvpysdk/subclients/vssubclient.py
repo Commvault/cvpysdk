@@ -846,6 +846,8 @@ class VirtualServerSubclient(Subclient):
                 if value.get('project_id') is not None:
                     network_card_dict['subnetId'] = value.get('subnetwork_nic')
                     network_card_dict['sourceNetwork'] = value.get('networks_nic')
+                    network_card_dict['publicIPaddress'] = value.get('publicIPaddress')
+                    network_card_dict['privateIPaddress'] = value.get('privateIPaddress')
 
             _destnetwork = value.get("destination_network",
                                      value.get('network',
@@ -859,6 +861,8 @@ class VirtualServerSubclient(Subclient):
                                                "") + _destnetwork) if self._instance_object.instance_name ==
                                                                       HypervisorType.GOOGLE_CLOUD.value.lower() and _destnetwork else
                 network_card_dict['label'],
+                "publicIPaddress": network_card_dict.get("publicIPaddress",""),
+                "privateIPaddress": network_card_dict.get("privateIPaddress",""),
                 "networkName": _destnetwork if _destnetwork else '',
                 "destinationNetwork": _destnetwork if _destnetwork else network_card_dict['name']
             }
@@ -1975,7 +1979,7 @@ class VirtualServerSubclient(Subclient):
 
     def _get_subclient_proxies(self):
         """
-        get the list of all the proxies on a selected subclient
+        Get the list of all the proxies on a selected subclient
 
         Returns:
             associated_proxies   (List)  --  returns the proxies list

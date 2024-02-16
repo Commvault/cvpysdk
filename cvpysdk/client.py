@@ -5458,7 +5458,7 @@ class Client(object):
         flag, response = self._cvpysdk_object.make_request(
             'GET', self._services['GET_NETWORK_SUMMARY'].replace('%s', self.client_id))
         if flag:
-            if "No Network Config found" in response.text:
+            if "No Network Config found" in response.text or "No Network Configuration Found" in response.text:
                 return ""
             return response.text
         raise SDKException('Response', '101', self._update_response_(response.text))

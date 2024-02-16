@@ -1891,6 +1891,10 @@ class StoragePolicy(object):
                                                           ocum server
             enable_selective_copy                 (int)   -- Enable selective copy option based on input value
 
+            disassociate_sc_from_backup_copy    (bool)    -- Associate\Disassociate subclient from backup copy
+                                                                True: Disassociate subclient
+                                                                False: Associate subclient
+
         """
         enable_backup_copy = options['enable_backup_copy']
         enable_snapshot_catalog = options['enable_snapshot_catalog']
@@ -1921,19 +1925,77 @@ class StoragePolicy(object):
 
         update_snapshot_tab_service = self._commcell_object._services['EXECUTE_QCOMMAND']
 
-        request_xml = """
-                    <EVGui_SetSnapOpPropsReq deferredCatalogOperation="{0}" snapshotToTapeOperation="{1}">
-                        <header localeId="0" userId="0" />
-                        <snapshotToTapeProps archGroupId="{2}" calendarId="1" dayNumber="0" deferredDays="0"
-                            enable="{3}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
-                            sourceCopyId="{4}" startTime="0" type="{7}" />
-                        <deferredCatalogProps archGroupId="{2}" calendarId="1" dayNumber="0" deferredDays="0"
-                            enable="{5}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
-                            sourceCopyId="{6}" startTime="0" type="0" />
-                    </EVGui_SetSnapOpPropsReq>
-        """.format(defferred_catalog_value, backup_copy_value, self.storage_policy_id,
-                   int(enable_backup_copy), source_copy_for_snap_to_tape_id,
-                   int(enable_snapshot_catalog), source_copy_for_snapshot_catalog_id, selective_type)
+        if options['disassociate_sc_from_backup_copy']:
+            disass_sc_xml = f"""
+                               <archGroupToAppListWithExclude _type_="2">
+           	                    <flags include="1"/>
+                               </archGroupToAppListWithExclude>
+                               <archGroupToAppListWithExclude _type_="27">
+           	                    <flags include="1"/>
+                               </archGroupToAppListWithExclude>
+                           <archGroupToAppListWithExclude _type_="7" 
+                           appName="{options['appName']}" applicationId="{options['applicationId']}"
+                                backupsetId="{options['backupsetId']}" backupsetName="{options['backupsetName']}" 
+                                clientId="{options['clientId']}" clientName="{options['clientName']}" instanceId="1" 
+                                instanceName="DefaultInstanceName" 
+                                subclientId="{options['subclientId']}" subclientName="{options['subclientName']}">
+           	                <flags exclude="1"/>
+                           </archGroupToAppListWithExclude>"""
+
+            request_xml = f"""
+                        <EVGui_SetSnapOpPropsReq deferredCatalogOperation="{defferred_catalog_value}" snapshotToTapeOperation="{backup_copy_value}">
+                            <header localeId="0" userId="0" />
+                            <snapshotToTapeProps archGroupId="{self.storage_policy_id}" calendarId="1" dayNumber="0" deferredDays="0"
+                                enable="{int(enable_backup_copy)}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
+                                sourceCopyId="{source_copy_for_snap_to_tape_id}" startTime="0" type="{selective_type}" > """.format(
+                                    defferred_catalog_value,
+                                    backup_copy_value,
+                                    self.storage_policy_id,
+                                    int(enable_backup_copy),
+                                    source_copy_for_snap_to_tape_id, selective_type) + \
+                          f"""{disass_sc_xml}
+                            </snapshotToTapeProps>                           
+                        </EVGui_SetSnapOpPropsReq>
+                           """
+
+        elif not options['disassociate_sc_from_backup_copy']:
+            disass_sc_xml = f"""
+                            <archGroupToAppListWithExclude _type_="2">
+                       	                    <flags include="1"/>
+                                           </archGroupToAppListWithExclude>
+                                           <archGroupToAppListWithExclude _type_="27">
+                       	                    <flags include="1"/>
+                                           </archGroupToAppListWithExclude>"""
+
+            request_xml = """
+                        <EVGui_SetSnapOpPropsReq deferredCatalogOperation="{0}" snapshotToTapeOperation="{1}">
+                                           <header localeId="0" userId="0" />
+                                           <snapshotToTapeProps archGroupId="{2}" calendarId="1" dayNumber="0" deferredDays="0"
+                                               enable="{3}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
+                                               sourceCopyId="{4}" startTime="0" type="{5}" > """.format(
+                        defferred_catalog_value,
+                        backup_copy_value, self.storage_policy_id,
+                        int(enable_backup_copy), source_copy_for_snap_to_tape_id, selective_type) + \
+                        f"""{disass_sc_xml}
+                                        </snapshotToTapeProps>                                                                    
+                                    </EVGui_SetSnapOpPropsReq>
+                           """
+        else:
+            request_xml = """
+                        <EVGui_SetSnapOpPropsReq deferredCatalogOperation="{0}" snapshotToTapeOperation="{1}">
+                                               <header localeId="0" userId="0" />
+                                               <snapshotToTapeProps archGroupId="{2}" calendarId="1" dayNumber="0" deferredDays="0"
+                                                   enable="{3}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
+                                                   sourceCopyId="{4}" startTime="0" type="{7}" />
+                                               <deferredCatalogProps archGroupId="{2}" calendarId="1" dayNumber="0" deferredDays="0"
+                                                   enable="{5}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
+                                                   sourceCopyId="{6}" startTime="0" type="0" />
+                                           </EVGui_SetSnapOpPropsReq>
+                               """.format(defferred_catalog_value, backup_copy_value, self.storage_policy_id,
+                                          int(enable_backup_copy), source_copy_for_snap_to_tape_id,
+                                          int(enable_snapshot_catalog), source_copy_for_snapshot_catalog_id,
+                                          selective_type)
+
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', update_snapshot_tab_service, request_xml
@@ -4545,3 +4607,4 @@ class StoragePolicyCopy(object):
         else:
             error_message = response.json().get("errorMessage")
             raise SDKException('Response', '111', error_message)
+
