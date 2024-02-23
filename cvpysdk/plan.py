@@ -748,12 +748,15 @@ class Plans(object):
                 'useGlobalPolicy'] = {
                     "storagePolicyId": int(storage_pool_obj.storage_pool_id)
                 }
-            request_json['plan']['storage']['copy'][1]['extendedFlags'] = {
-                'useGlobalStoragePolicy': 1
-            }
-            request_json['plan']['storage']['copy'][1]['useGlobalPolicy'] = {
-                "storagePolicyId": int(storage_pool_obj.storage_pool_id)
-            }
+            
+            # From SP36, snap copy wont be created by default during plan creation or present in the template
+            if len(request_json['plan']['storage']['copy']) > 1:
+                request_json['plan']['storage']['copy'][1]['extendedFlags'] = {
+                    'useGlobalStoragePolicy': 1
+                }
+                request_json['plan']['storage']['copy'][1]['useGlobalPolicy'] = {
+                    "storagePolicyId": int(storage_pool_obj.storage_pool_id)
+                }
 
         # Enable full backup schedule
         for subtask in request_json['plan']['schedule']['subTasks']:

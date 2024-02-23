@@ -79,6 +79,7 @@ class UnixDownloadFeatures(Enum):
     CONTENT_ANALYZER = 1108
     DB2_AGENT = 1207
     INFORMIX = 1201
+    SYBASE = 1202
 
 
 class WindowsDownloadFeatures(Enum):

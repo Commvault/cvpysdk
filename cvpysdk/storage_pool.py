@@ -92,12 +92,10 @@ enable_worm_storage_lock()      --  sets the hardware WORM storage lock on stora
 import copy
 
 import xmltodict
+from enum import Enum
 
 from .exception import SDKException
 
-# from .job import Job
-
-from .storage import DiskLibrary
 from .storage import MediaAgent
 from .security.security_association import SecurityAssociation
 from .constants import StoragePoolConstants
@@ -354,7 +352,7 @@ class StoragePools:
         self.refresh()
         return self.get(storage_pool_name)
 
-    def add(self, storage_pool_name, mountpath, media_agent, ddb_ma, dedup_path, **kwargs):
+    def add(self, storage_pool_name, mountpath, media_agent, ddb_ma=None, dedup_path=None, **kwargs):
         """
         Adds a new storage pool to commcell
 
@@ -388,7 +386,7 @@ class StoragePools:
         credential_name = kwargs.get('credential_name', None)
         cloud_server_type = int(kwargs.get('cloud_server_type', 0))
 
-        if ((dedup_path is not None and not isinstance(dedup_path, str)) or
+        if ((ddb_ma is not None and not isinstance(dedup_path, str)) or
                 not (isinstance(storage_pool_name, str) or not isinstance(mountpath, str))):
             raise SDKException('Storage', '101')
 
@@ -399,16 +397,17 @@ class StoragePools:
         else:
             raise SDKException('Storage', '103')
 
-        if isinstance(ddb_ma, MediaAgent):
-            ddb_ma = ddb_ma
-        elif isinstance(ddb_ma, str):
-            ddb_ma = MediaAgent(self._commcell_object, ddb_ma)
-        else:
-            raise SDKException('Storage', '103')
+        if ddb_ma is not None:
+            if isinstance(ddb_ma, MediaAgent):
+                ddb_ma = ddb_ma
+            elif isinstance(ddb_ma, str):
+                ddb_ma = MediaAgent(self._commcell_object, ddb_ma)
+            else:
+                raise SDKException('Storage', '103')
 
         request_json = {
             "storagePolicyName": storage_pool_name,
-            "type": 1,
+            "type": "CVA_REGULAR_SP",
             "copyName": "Primary",
             "numberOfCopies": 1,
             "storage": [
@@ -417,44 +416,25 @@ class StoragePools:
                     "mediaAgent": {
                         "mediaAgentId": int(media_agent.media_agent_id),
                         "mediaAgentName": media_agent.media_agent_name
-                    },
-                    "credentials": {},
-                    "savedCredential": {}
+                    }
                 }
             ],
             "storagePolicyCopyInfo": {
-                "copyType": 1,
+                "copyType": "SYNCHRONOUS",
                 "isFromGui": True,
-                "active": 1,
-                "isDefault": 1,
-                "dedupeFlags": {
-                    "enableDASHFull": 1,
-                    "hostGlobalDedupStore": 1,
-                    "enableDeduplication": 1
-                },
-                "storagePolicyFlags": {
-                    "blockLevelDedup": 1,
-                    "enableGlobalDeduplication": 1
-                },
-                "DDBPartitionInfo": {
-                    "maInfoList": [
-                        {
-                            "mediaAgent": {
-                                "mediaAgentId": int(ddb_ma.media_agent_id),
-                                "mediaAgentName": ddb_ma.media_agent_name
-                            },
-                            "subStoreList": [
-                                {
-                                    "accessPath": {
-                                        "path": dedup_path
-                                    }
-                                }
-                            ]
-                        }
-                    ]
+                "active": "SET_TRUE",
+                "isDefault": "SET_TRUE",
+                "numberOfStreamsToCombine": 1,
+                "retentionRules": {
+                    "retentionFlags": {
+                        "enableDataAging": "SET_TRUE"
+                    },
+                    "retainBackupDataForDays": -1,
+                    "retainBackupDataForCycles": -1,
+                    "retainArchiverDataForDays": -1
                 },
                 "library": {
-                    "libraryName": mountpath,
+                    "libraryId": 0,
                 },
                 "mediaAgent": {
                     "mediaAgentId": int(media_agent.media_agent_id),
@@ -467,14 +447,55 @@ class StoragePools:
             request_json["storage"][0]["deviceType"] = cloud_server_type
 
         if username is not None:
-            request_json["storage"][0]["credentials"]["userName"] = username
+            request_json["storage"][0]["credentials"] = {"userName": username}
 
         if password is not None:
             request_json["storage"][0]["credentials"]["password"] = password
 
         if credential_name is not None:
-            request_json["storage"][0]["savedCredential"]["credentialName"] = credential_name
+            request_json["storage"][0]["savedCredential"] = {"credentialName": credential_name}
 
+        if ddb_ma is not None or dedup_path is not None:
+            request_json["storagePolicyCopyInfo"].update({
+                "storagePolicyFlags": {
+                    "blockLevelDedup": "SET_TRUE",
+                    "enableGlobalDeduplication": "SET_TRUE"
+                },
+                "dedupeFlags": {
+                    "enableDeduplication": "SET_TRUE",
+                    "enableDASHFull": "SET_TRUE",
+                    "hostGlobalDedupStore": "SET_TRUE"
+                },
+                "DDBPartitionInfo": {
+                    "maInfoList": [
+                        {
+                            "mediaAgent": {
+                                "mediaAgentId": int(ddb_ma.media_agent_id),
+                                "mediaAgentName": ddb_ma.media_agent_name
+                            },
+                            "subStoreList": [
+                                {
+                                    "accessPath": {
+                                        "path": dedup_path
+                                    },
+                                    "diskFreeThresholdMB": 5120,
+                                    "diskFreeWarningThreshholdMB": 10240
+                                }]
+                        }]
+                }
+            })
+        else:
+            request_json["storagePolicyCopyInfo"].update({
+                "storagePolicyFlags": {
+                    "globalStoragePolicy": "SET_TRUE"
+                },
+                "copyFlags": {
+                    "preserveEncryptionModeAsInSource": "SET_TRUE"
+                },
+                "extendedFlags": {
+                    "globalStoragePolicy": "SET_TRUE"
+                }
+            })
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._add_storage_pool_api, request_json
         )
@@ -642,6 +663,14 @@ class StoragePools:
         self._storage_pools = self._get_storage_pools()
 
 
+class StoragePoolType(Enum):
+    """Class Enum to represent different storage pool types"""
+    DEDUPLICATION = 1,
+    SECONDARY_COPY = 2,
+    NON_DEDUPLICATION = 3,
+    SCALE_OUT = 4
+
+
 class StoragePool(object):
     """Class for individual storage pools"""
 
@@ -728,11 +757,16 @@ class StoragePool(object):
     def copy_name(self):
         """Treats copy name as a read only attribute"""
         return self._copy_name
-        
+
     @property
     def copy_id(self):
         """Treats copy ID as a read only attribute"""
         return self._copy_id
+
+    @property
+    def storage_pool_type(self):
+        """Treats storage type as a read only attribute"""
+        return self._storage_pool_properties["storagePoolDetails"]["storagePoolType"]
 
     def get_copy(self):
         """ Returns the StoragePolicyCopy object of Storage Pool copy"""
