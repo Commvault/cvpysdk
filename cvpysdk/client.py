@@ -495,8 +495,11 @@ class Clients(object):
             except IndexError:
                 raise IndexError('No client exists with the given Name / Id')
 
-    def _get_clients(self):
+    def _get_clients(self, hard=False):
         """Gets all the clients associated with the commcell
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
 
             Returns:
                 dict    -   consists of all clients in the commcell
@@ -530,6 +533,8 @@ class Clients(object):
         """
         attempts = 0
         while attempts < 5:
+            if hard:
+                self._cvpysdk_object.make_request('GET', self._services["HARD_REFRESH_CACHE"] % 'Client')
             flag, response = self._cvpysdk_object.make_request('GET', self._CLIENTS)
             attempts += 1
 
@@ -3558,9 +3563,14 @@ class Clients(object):
                     'Client', '102', 'No client exists with name: {0}'.format(client_name)
                 )
 
-    def refresh(self):
-        """Refresh the clients associated with the Commcell."""
-        self._clients = self._get_clients()
+    def refresh(self, hard=False):
+        """
+        Refresh the clients associated with the Commcell.
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+        """
+        self._clients = self._get_clients(hard)
         self._hidden_clients = self._get_hidden_clients()
         self._virtualization_clients = self._get_virtualization_clients()
         self._virtualization_access_nodes = self._get_virtualization_access_nodes()

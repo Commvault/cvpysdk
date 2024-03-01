@@ -404,8 +404,11 @@ class Organizations:
         except IndexError:
             raise IndexError('No organization exists with the given Name / Id')
 
-    def _get_organizations(self):
+    def _get_organizations(self, hard=False):
         """Gets all the organizations associated with the Commcell environment.
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
 
             Returns:
                 dict    -   consists of all organizations added to the commcell
@@ -423,6 +426,8 @@ class Organizations:
                     if response is not success
 
         """
+        if hard:
+            self._cvpysdk_object.make_request('GET', self._services["HARD_REFRESH_CACHE"] % 'organization')
         flag, response = self._cvpysdk_object.make_request('GET', self._organizations_api, headers=self._get_headers())
         if flag:
             organizations = {}
@@ -1026,10 +1031,15 @@ class Organizations:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def refresh(self):
-        """Refresh the list of organizations associated to the Commcell."""
+    def refresh(self, hard=False):
+        """
+        Refresh the list of organizations associated to the Commcell.
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+        """
         self._adv_config = None
-        self._organizations = self._get_organizations()
+        self._organizations = self._get_organizations(hard)
 
 
 class Organization:

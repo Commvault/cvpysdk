@@ -152,8 +152,11 @@ class Users(object):
             self._commcell_object.commserv_name
         )
 
-    def _get_users(self):
+    def _get_users(self, hard=False):
         """Returns the list of users configured on this commcell
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
 
             Returns:
                 dict of all the users on this commcell
@@ -162,6 +165,10 @@ class Users(object):
                     }
 
         """
+        if hard:
+            self._commcell_object._headers['mode']='EdgeMode'
+            self._commcell_object._cvpysdk_object.make_request('GET', self._commcell_object._services["HARD_REFRESH_CACHE"]%'user',
+                                                               header=self._commcell_object._headers)
         get_all_user_service = self._commcell_object._services['USERS']
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -535,9 +542,14 @@ class Users(object):
         return self._users_on_service
 
 
-    def refresh(self):
-        """Refresh the list of Users on this commcell."""
-        self._users = self._get_users()
+    def refresh(self, hard=False):
+        """
+        Refresh the list of Users on this commcell.
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+        """
+        self._users = self._get_users(hard)
         self._users_on_service = None
 
     @property

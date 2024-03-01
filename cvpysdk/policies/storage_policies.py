@@ -205,6 +205,10 @@ StoragePolicyCopy:
     
     rotate_encryption_master_key()          -- Rotates the encryption key for this copy
 
+    enable_compliance_lock()                -- Sets compliance lock (wormCopy flag)
+
+    disable_compliance_lock()               -- Unsets compliance lock (wormCopy flag)
+
 Attributes
 ----------
     **override_pool_retention**                 --  Returns if Override Pool Retention flag is set or not
@@ -226,6 +230,8 @@ Attributes
     ***is_active***                             --  Returns/Sets the 'Active' Property of the Copy
 
     ***network_throttle_bandwidth***            --  Returns/Sets the value of Network Throttle Bandwidth
+
+    ***is_compliance_lock_enabled***            --  Checks whether compliance lock on copy is enabled or not
 """
 
 from __future__ import absolute_import
@@ -4608,3 +4614,35 @@ class StoragePolicyCopy(object):
             error_message = response.json().get("errorMessage")
             raise SDKException('Response', '111', error_message)
 
+    @property
+    def is_compliance_lock_enabled(self):
+        """Checks whether compliance lock on copy is enabled or not"""
+        return 'wormCopy' in self._copy_flags
+
+    def enable_compliance_lock(self):
+        """Sets compliance lock (wormCopy flag)
+
+        Raises:
+            SDKException:
+                if response is not success.
+                if response is empty.
+        """
+        self._copy_properties['copyFlags']['wormCopy'] = 1
+        self._set_copy_properties()
+
+        if not self.is_compliance_lock_enabled:
+            raise SDKException('Response', '101', 'Failed to set compliance lock')
+
+    def disable_compliance_lock(self):
+        """Unsets compliance lock (wormCopy flag)
+
+        Raises:
+            SDKException:
+                if response is not success.
+                if response is empty.
+        """
+        self._copy_properties['copyFlags']['wormCopy'] = 0
+        self._set_copy_properties()
+
+        if self.is_compliance_lock_enabled:
+            raise SDKException('Response', '101', 'Failed to unset compliance lock')

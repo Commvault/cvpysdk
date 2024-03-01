@@ -347,6 +347,14 @@ EXCEPTION_DICT = {
         '109': 'Failed to mark review as complete as it has non-reviewed documents',
         '110': 'Failed to request approval as review is not in completed state'
     },
+    'ComplianceSearch': {
+        '101': 'Provided user or user group name does not exist',
+        '102': 'Invalid permission name provided',
+        '103': 'Export not found under the export set',
+        '104': 'Export deletion failed with error',
+        '105': 'Failed to get the export set with provided export set name',
+        '106': 'Export Set not found'
+    },
     'Salesforce': {
         '101': 'Neither Sync Database enabled nor user provided database details for restore',
         '102': ''

@@ -247,6 +247,9 @@ Commcell instance Attributes
     **activate**                --  returns the instance of the `Activate` class,
     to interact with activate apps on the Commcell
 
+    **export_sets**             --  returns the instance of the `ExportSets` class
+    to interact with compliance search export sets on the Commcell
+
     **plans**                   --  returns the instance of the `Plans` class,
     to interact with the plans associated with the Commcell
 
@@ -351,6 +354,7 @@ from requests.exceptions import Timeout
 from requests.exceptions import ConnectionError as RequestsConnectionError
 
 from .activate import Activate
+from .activateapps.compliance_utils import ExportSets
 from .services import get_services
 from .cvpysdk import CVPySDK
 from .client import Clients
@@ -615,6 +619,7 @@ class Commcell(object):
         self._global_filters = None
         self._datacube = None
         self._activate = None
+        self._export_sets = None
         self._content_analyzers = None
         self._plans = None
         self._job_controller = None
@@ -1366,6 +1371,16 @@ class Commcell(object):
                 self._activate = Activate(self)
 
             return self._activate
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def export_sets(self):
+        """Returns the instance of the ExportSets class."""
+        try:
+            if self._export_sets is None:
+                self._export_sets = ExportSets(self)
+            return self._export_sets
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
 

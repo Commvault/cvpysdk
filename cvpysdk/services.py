@@ -227,7 +227,13 @@ SERVICES_DICT_TEMPLATE = {
     'ADD_INSTANCE': '{0}Instance',
     'MASKING_POLICY': '{0}MaskingPolicy',
 
-
+    'DO_COMPLIANCE_SEARCH': '{0}doWebSearch',
+    'GET_EXPORT_SETS': '{0}GetContainers',
+    'GET_EXPORTS': '{0}getContainerItems',
+    'ADD_EXPORT_SET': '{0}PerformContainerOperation',
+    'DELETE_EXPORT_SET': '{0}Containers/Action/Delete',
+    'EXPORT_ITEM_TO_SET': '{0}Download',
+    'DOWNLOAD_EXPORT_ITEMS': '{0}DownloadFile',
     'GET_ANALYTICS_ENGINES': '{0}dcube/getAnalyticsEngine',
     'GET_ALL_DATASOURCES': '{0}dcube/GetDataSources?summary=1',
     'GET_DATASOURCE': '{0}dcube/getDataSource/%s',
@@ -580,7 +586,8 @@ SERVICES_DICT_TEMPLATE = {
     'LAUNCH_O365_LICENSING': '{0}Office365/License',
 
     'VM_GROUP': '{0}V4/VmGroup/%s',
-    'VSA_HIDDEN_SUBCLIENT': '{0}GetId?clientname=%s&agent=Virtual Server&backupset=%s&subclient=Do Not Backup'
+    'VSA_HIDDEN_SUBCLIENT': '{0}GetId?clientname=%s&agent=Virtual Server&backupset=%s&subclient=Do Not Backup',
+    'HARD_REFRESH_CACHE': '{0}/%s?hardRefresh=true'
 }
 
 

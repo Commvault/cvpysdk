@@ -36,6 +36,8 @@ EdiscoveryConstants             -       Maintains constants for Ediscovery clien
 
 RequestConstants                -       Maintains constants for request manager in Activate
 
+ComplianceConstants             -       Maintains constants for Compliance Search in Activate
+
 """
 import copy
 from enum import Enum
@@ -917,6 +919,66 @@ class TagConstants:
                     }
                 }
 
+            ]
+        }
+    }
+
+
+class ComplianceConstants:
+    """Class to maintain all the Compliance search related constants"""
+
+    VIEW_PERMISSION = {
+        "permissionId": 31,
+        "_type_": 122,
+        "permissionName": "View"
+    }
+
+    ADD_PERMISSION = {
+        "permissionId": 34,
+        "_type_": 122,
+        "permissionName": "Add/Append"
+    }
+
+    DOWNLOAD_PERMISSION = {
+        "_type_": 122,
+        "permissionId": 36,
+        "permissionName": "Download"
+    }
+
+    DELETE_PERMISSION = {
+        "permissionId": 35,
+        "permissionName": "Delete",
+        "_type_": 122
+    }
+
+    PERMISSIONS = {
+        "Add": ADD_PERMISSION,
+        "Delete": DELETE_PERMISSION,
+        "Download": DOWNLOAD_PERMISSION,
+        "View": VIEW_PERMISSION
+    }
+
+    EXPORT_SET_SHARE_REQUEST_JSON = {
+        "entityAssociated": {
+            "entity": [
+                {
+                    "entityType": 9503,
+                    "downloadSetId": None,
+                    "_type_": 9503}
+            ]
+        },
+        "securityAssociations": {
+            "associationsOperationType": 2,
+            "associations": [
+                {
+                    "userOrGroup": None,
+                    "properties": {
+                        "permissions": [
+                            VIEW_PERMISSION,
+                            DOWNLOAD_PERMISSION
+                        ]
+                    }
+                }
             ]
         }
     }

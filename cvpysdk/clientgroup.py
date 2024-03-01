@@ -244,8 +244,11 @@ class ClientGroups(object):
             except IndexError:
                 raise IndexError('No client group exists with the given Name / Id')
 
-    def _get_clientgroups(self):
+    def _get_clientgroups(self,hard=False):
         """Gets all the clientgroups associated with the commcell
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
 
             Returns:
                 dict - consists of all clientgroups of the commcell
@@ -260,6 +263,8 @@ class ClientGroups(object):
 
                     if response is not success
         """
+        if hard:
+            self._commcell_object._cvpysdk_object.make_request('GET', self._commcell_object._services["HARD_REFRESH_CACHE"]%'clientgroup')
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._CLIENTGROUPS
         )
@@ -862,9 +867,14 @@ class ClientGroups(object):
                     'No ClientGroup exists with name: "{0}"'.format(clientgroup_name)
                 )
 
-    def refresh(self):
-        """Refresh the client groups associated with the Commcell."""
-        self._clientgroups = self._get_clientgroups()
+    def refresh(self, hard=False):
+        """
+        Refresh the client groups associated with the Commcell.
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+        """
+        self._clientgroups = self._get_clientgroups(hard)
 
 
 class ClientGroup(object):

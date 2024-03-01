@@ -236,8 +236,11 @@ class Plans(object):
             except IndexError:
                 raise IndexError('No plan exists with the given Name / Id')
 
-    def _get_plans(self):
+    def _get_plans(self, hard=False):
         """Gets all the plans associated with the commcell
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
 
             Returns:
                 dict - consists of all plans in the commcell
@@ -252,6 +255,8 @@ class Plans(object):
 
                         if response is not success
         """
+        if hard:
+            self._cvpysdk_object.make_request('GET', self._services["HARD_REFRESH_CACHE"] % 'plan')
         flag, response = self._cvpysdk_object.make_request('GET', self._PLANS)
 
         if flag:
@@ -900,9 +905,15 @@ class Plans(object):
         else:
             raise SDKException('Response', '102')
         
-    def refresh(self):
-        """Refresh the plans associated with the Commcell."""
-        self._plans = self._get_plans()
+    def refresh(self, hard=False):
+        """
+        Refresh the plans associated with the Commcell.
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+
+        """
+        self._plans = self._get_plans(hard)
 
     def add_data_classification_plan(self, plan_name, index_server, target_app=TargetApps.FSO, **kwargs):
         """Adds data classification plan to the commcell
