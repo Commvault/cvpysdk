@@ -1895,6 +1895,8 @@ class Subclient(object):
         advanced_options_dict = {}
 
         if advanced_options:
+            if advanced_options.get('impersonate_gui'):
+                request_json['taskInfo']['task']['initiatedFrom'] = 1
             advanced_options_dict = self._advanced_backup_options(
                 advanced_options)
 

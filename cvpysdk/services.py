@@ -324,6 +324,12 @@ SERVICES_DICT_TEMPLATE = {
     'APPLICABLE_SOLNS_DISABLE': '{0}V4/ServerPlan/%s/ApplicableSolutions/Restrict/Disable',
     'PLAN_SUPPORTED_SOLUTIONS': '{0}V4/Solutions?filter=PLAN_SUPPORTED_SOLUTIONS',
     'V4_SERVER_PLAN': '{0}V4/ServerPlan/%s',
+    'V4_SERVER_PLANS': '{0}V4/ServerPlan',
+    'V4_SERVER_PLAN_BACKUP_DESTINATION': '{0}V4/ServerPlan/%s/BackupDestination',
+    'V4_SERVER_PLAN_COPY': '{0}V4/ServerPlan/%s/BackupDestination/%s',
+    'V5_SERVER_PLAN_COPY': '{0}V5/ServerPlan/%s/BackupDestination/%s',
+    'SERVER_PLAN_REGIONS': '{0}V4/ServerPlan/%s/storageRegion/%s?isRegionIdList=true',
+    'SERVER_PLAN_RPO': '{0}V4/ServerPlan/%s/RPO',
 
     'DOMAIN_CONTROLER': '{0}CommCell/DomainController',
     'DELETE_DOMAIN_CONTROLER': '{0}CommCell/DomainController/%s',

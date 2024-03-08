@@ -119,7 +119,7 @@ class Regions:
 
         if self.has_region(name):
             return Region(self._commcell_object, name, self._regions[name])
-        raise SDKException('Region', '103',"Region not present in commcell")
+        raise SDKException('Region', '101',"Region not present in commcell")
 
     def set_region(self, entity_type, entity_id, entity_region_type, region_id):
         """

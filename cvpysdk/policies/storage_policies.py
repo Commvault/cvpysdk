@@ -1550,6 +1550,8 @@ class StoragePolicy(object):
                 job_retention       (bool)  -- if true job based retention will be set
                 default : False
 
+                enable_selective_copy (int) -- Enable selective copy with value selectiveRule
+
             Raises:
                 SDKException:
                     if type of inputs in not string
@@ -1594,7 +1596,10 @@ class StoragePolicy(object):
 
         job_based_retention = kwargs.get('job_based_retention', False)
         job_retention = 1 if job_based_retention else 0
-        request_xml = """
+
+        selectiveRule = kwargs.get('enable_selective_copy', None)
+        if selectiveRule is None:
+            request_xml = """
                     <App_CreateStoragePolicyCopyReq copyName="{0}">
                         <storagePolicyCopyInfo active="1" isMirrorCopy="{1}" isSnapCopy="{2}" provisioningPolicyName="{3}">
                             <StoragePolicyCopy _type_="18" copyName="{0}" storagePolicyName="{4}" />
@@ -1612,6 +1617,25 @@ class StoragePolicy(object):
                     """.format(copy_name, is_mirror_copy, is_snap_copy, provisioning_policy,
                                self.storage_policy_name, arrayReplicaCopy, useOfflineReplication,
                                library_name, media_agent_name, source_copy, resource_pool, job_retention, isNetAppSnapCloudTargetCopy)
+        else:
+            request_xml = """
+                                        <App_CreateStoragePolicyCopyReq copyName="{0}">
+                                            <storagePolicyCopyInfo copyType="2" description="" isMirrorCopy="{1}" isSnapCopy="{2}">
+                                                <StoragePolicyCopy copyName="{0}" storagePolicyName="{4}" />
+                                                <extendedFlags arrayReplicaCopy="{5}" isNetAppSnapCloudTargetCopy="{12}" useOfflineArrayReplication="{6}" />
+                                                <library  libraryName="{7}" />
+                                                <mediaAgent _type_="11" mediaAgentName="{8}" />
+                                                <retentionRules jobs="8" retainArchiverDataForDays="-1" retainBackupDataForCycles="5" retainBackupDataForDays="1">
+                                                <retentionFlags jobBasedRetention="{11}" />
+                                                </retentionRules>
+                                                <sourceCopy _type_="18" copyName="{9}" storagePolicyName="{4}" />
+                                                <selectiveCopyRules selectiveRule="{13}"/>
+                                                </storagePolicyCopyInfo>
+                                        </App_CreateStoragePolicyCopyReq>
+                                        """.format(copy_name, is_mirror_copy, is_snap_copy, provisioning_policy,
+                                                   self.storage_policy_name, arrayReplicaCopy, useOfflineReplication,
+                                                   library_name, media_agent_name, source_copy, resource_pool,
+                                                   job_retention, isNetAppSnapCloudTargetCopy, selectiveRule)
 
         create_copy_service = self._commcell_object._services['CREATE_STORAGE_POLICY_COPY']
 
