@@ -1955,7 +1955,7 @@ class StoragePolicy(object):
 
         update_snapshot_tab_service = self._commcell_object._services['EXECUTE_QCOMMAND']
 
-        if options['disassociate_sc_from_backup_copy']:
+        if options['disassociate_sc_from_backup_copy'] == True:
             disass_sc_xml = f"""
                                <archGroupToAppListWithExclude _type_="2">
            	                    <flags include="1"/>
@@ -1988,7 +1988,7 @@ class StoragePolicy(object):
                         </EVGui_SetSnapOpPropsReq>
                            """
 
-        elif not options['disassociate_sc_from_backup_copy']:
+        elif options['disassociate_sc_from_backup_copy'] == False:
             disass_sc_xml = f"""
                             <archGroupToAppListWithExclude _type_="2">
                        	                    <flags include="1"/>
@@ -2010,7 +2010,7 @@ class StoragePolicy(object):
                                         </snapshotToTapeProps>                                                                    
                                     </EVGui_SetSnapOpPropsReq>
                            """
-        else:
+        elif options['disassociate_sc_from_backup_copy'] is None:
             request_xml = """
                         <EVGui_SetSnapOpPropsReq deferredCatalogOperation="{0}" snapshotToTapeOperation="{1}">
                                                <header localeId="0" userId="0" />

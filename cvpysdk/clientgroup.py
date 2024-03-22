@@ -124,6 +124,8 @@ ClientGroup:
 
     add_additional_setting()        -- adds registry key to client group property
 
+    delete_additional_setting()     -- Delete registry key from client group property
+
     is_auto_discover_enabled()      -- gets the autodiscover option for the Organization
 
     enable_auto_discover()          -- enables  autodiscover option at client group level
@@ -1935,6 +1937,33 @@ class ClientGroup(object):
                               "type": data_type,
                               "value": value,
                               "enabled": enabled}]
+        }
+
+        self.update_properties(properties_dict)
+
+    def delete_additional_setting(
+            self,
+            category=None,
+            key_name=None):
+        """Delete registry key from the client group property
+
+            Args:
+                category        (str)           -- Category of registry key
+
+                key_name        (str)           -- Name of the registry key
+
+            Raises:
+                SDKException:
+                    if failed to add
+
+                    if response is empty
+
+                    if response code is not as expected"""
+
+        properties_dict = {
+            "registryKeys": [{"deleted": 1,
+                              "relativepath": category,
+                              "keyName": key_name}]
         }
 
         self.update_properties(properties_dict)

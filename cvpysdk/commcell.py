@@ -399,6 +399,7 @@ from .name_change import NameChange
 from .backup_network_pairs import BackupNetworkPairs
 from .reports import report
 from .recovery_targets import RecoveryTargets
+from .cleanroom.recovery_groups import RecoveryGroups
 from .drorchestration.replication_groups import ReplicationGroups
 from .drorchestration.failovergroups import FailoverGroups
 from .drorchestration.blr_pairs import BLRPairs
@@ -647,6 +648,7 @@ class Commcell(object):
         self._replication_groups = None
         self._failover_groups = None
         self._recovery_targets = None
+        self._recovery_groups = None
         self._blr_pairs = None
         self._job_management = None
         self._index_servers = None
@@ -1667,6 +1669,18 @@ class Commcell(object):
                 self._recovery_targets = RecoveryTargets(self)
 
             return self._recovery_targets
+
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def cleanroom_recovery_groups(self):
+        """Returns the instance of RecoveryGroups class"""
+        try:
+            if self._recovery_groups is None:
+                self._recovery_groups = RecoveryGroups(self)
+
+            return self._recovery_groups
 
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE

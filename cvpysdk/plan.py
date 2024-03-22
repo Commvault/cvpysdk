@@ -1124,6 +1124,9 @@ class Plans(object):
             is_dedupe = False
 
         request_json = self._get_plan_template(plan_sub_type, "MSP")
+        if plan_sub_type == "Laptop":
+            del request_json['plan']['laptop']['accessPolicies']
+            
         request_json['plan']['summary']['rpoInMinutes'] = sla_in_minutes
         request_json['plan']['summary']['description'] = "Created from CvPySDK."
         request_json['plan']['summary']['plan']['planName'] = plan_name
@@ -1180,24 +1183,25 @@ class Plans(object):
                 }
 
         # Enable full backup schedule
-        for subtask in request_json['plan']['schedule']['subTasks']:
-            if 'flags' in subtask['subTask'] and subtask['subTask']['flags'] == 65536:
-                import copy
-                full_schedule = copy.deepcopy(subtask)
-                del copy
-                full_schedule['subTask'].update({
-                    'subTaskName': 'Full backup schedule',
-                    'flags': 4194304
-                })
-                full_schedule['pattern'].update({
-                    'freq_type': 4,
-                    'freq_interval': 1,
-                    'name': 'Full backup schedule',
-                    'active_end_time': 0
-                })
-                full_schedule['options']['backupOpts']['backupLevel'] = 'FULL'
-                request_json['plan']['schedule']['subTasks'].append(full_schedule)
-                break
+        if plan_sub_type != "Laptop":
+            for subtask in request_json['plan']['schedule']['subTasks']:
+                if 'flags' in subtask['subTask'] and subtask['subTask']['flags'] == 65536:
+                    import copy
+                    full_schedule = copy.deepcopy(subtask)
+                    del copy
+                    full_schedule['subTask'].update({
+                        'subTaskName': 'Full backup schedule',
+                        'flags': 4194304
+                    })
+                    full_schedule['pattern'].update({
+                        'freq_type': 4,
+                        'freq_interval': 1,
+                        'name': 'Full backup schedule',
+                        'active_end_time': 0
+                    })
+                    full_schedule['options']['backupOpts']['backupLevel'] = 'FULL'
+                    request_json['plan']['schedule']['subTasks'].append(full_schedule)
+                    break
 
         if isinstance(override_entities, dict):
             request_json['plan']['summary']['restrictions'] = 0
@@ -3048,9 +3052,12 @@ class Plan(object):
     def refresh(self):
         """Refresh the properties of the Plan."""
         self._properties = self._get_plan_properties()
-        self._v4_plan_properties = self._get_v4_plan_properties()
 
-    def associate_user(self, userlist):
+        # fetch v4 properties for server plans
+        if self.subtype == 33554437:
+            self._v4_plan_properties = self._get_v4_plan_properties()
+
+    def associate_user(self, userlist, send_invite=True):
         """associates the users to the plan.
             # TODO: Need to handle user groups.
 
@@ -3071,7 +3078,7 @@ class Plan(object):
                 temp = self._commcell_object.users.get(user)
 
                 temp_dict = {
-                    'sendInvite': True,
+                    'sendInvite': send_invite,
                     'user': {
                         'userName': temp.user_name,
                         'userId': int(temp.user_id)

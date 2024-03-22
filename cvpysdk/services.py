@@ -593,7 +593,11 @@ SERVICES_DICT_TEMPLATE = {
 
     'VM_GROUP': '{0}V4/VmGroup/%s',
     'VSA_HIDDEN_SUBCLIENT': '{0}GetId?clientname=%s&agent=Virtual Server&backupset=%s&subclient=Do Not Backup',
-    'HARD_REFRESH_CACHE': '{0}/%s?hardRefresh=true'
+    'HARD_REFRESH_CACHE': '{0}/%s?hardRefresh=true',
+
+    'ALL_RECOVERY_GROUPS': '{0}RecoveryGroups',
+    'RECOVERY_GROUP': '{0}RecoveryGroup/%s?getEntityDetails=true',
+    'RECOVERY_GROUP_RECOVER': '{0}RecoveryGroup/%s/Recover',
 }
 
 

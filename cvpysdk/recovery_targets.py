@@ -324,9 +324,9 @@ class RecoveryTarget:
                 vm_name_edit_string = self._recovery_target_properties.get('vmNameEditString')
                 vm_name_edit_type = self._recovery_target_properties.get('vmNameEditType', 1)
                 if vm_name_edit_string and vm_name_edit_type == 2:
-                    self._vm_suffix = self._recovery_target_properties.get('vmNameEditString')
+                    self._vm_suffix = self._recovery_target_properties.get('vmNameEditString', "")
                 elif vm_name_edit_string and vm_name_edit_type == 1:
-                    self._vm_prefix = self._recovery_target_properties.get('vmNameEditString')
+                    self._vm_prefix = self._recovery_target_properties.get('vmNameEditString', "")
                 self._access_node = self._recovery_target_properties.get('proxyClientEntity', {}).get('clientName')
                 self._access_node_client_group = (self._recovery_target_properties.get('proxyClientGroupEntity', {})
                                                   .get('clientGroupName'))

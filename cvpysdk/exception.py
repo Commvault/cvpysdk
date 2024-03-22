@@ -596,6 +596,10 @@ EXCEPTION_DICT = {
     'Region': {
         '101': 'Entity type not found.',
         '102': ''
+    },
+    'RecoveryGroup': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': ''
     }
 }
 
