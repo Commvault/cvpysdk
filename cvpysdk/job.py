@@ -2004,7 +2004,7 @@ class Job(object):
         self._JOB = self._services['JOB'] % (self.job_id)
 
         if not self._is_valid_job():
-            raise SDKException('Job', '103')
+            raise SDKException('Job', '102', f'No job exists with the specified Job ID: {self.job_id}')
 
         self._JOB_DETAILS = self._services['JOB_DETAILS']
         self.ADVANCED_JOB_DETAILS = AdvancedJobDetailType

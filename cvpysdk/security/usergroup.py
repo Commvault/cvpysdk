@@ -581,10 +581,8 @@ class UserGroup(object):
                 if 'email' in self._properties:
                     self._email = self._properties['email']
 
-                if 'userGroupEntity' in self._properties:
-                    if 'entityInfo' in self._properties['userGroupEntity']:
-                        self._company_name = self._properties['userGroupEntity']['entityInfo'].get('companyName')
-                        self._company_id = self._properties['userGroupEntity']['entityInfo'].get('companyId')
+                self._company_id = self._properties.get('groupSecurity', {}).get('tagWithCompany', {}).get('providerId')
+                self._company_name = self._properties.get('groupSecurity', {}).get('tagWithCompany', {}).get('providerDomainName')
 
                 security_properties = self._properties.get('securityAssociations', {}).get(
                     'associations', {})

@@ -76,10 +76,10 @@ from cvpysdk.exception import SDKException
 
 class RecoveryTargets:
 
-    """Class for representing all the clients associated with the commcell."""
+    """ Class for representing all the recovery targets"""
 
     def __init__(self, commcell_object):
-        """Initialize object of the Clients class.
+        """Initialize object of the RecoveryTargets class.
 
             Args:
                 commcell_object (object)  --  instance of the Commcell class
@@ -90,7 +90,7 @@ class RecoveryTargets:
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
         self._update_response_ = commcell_object._update_response_
-        self._RECOVERY_TARGETS = self._services['GET_ALL_RECOVERY_TARGETS']
+        self._RECOVERY_TARGETS_API = self._services['GET_ALL_RECOVERY_TARGETS']
 
         self._recovery_targets = None
         self.refresh()
@@ -102,7 +102,7 @@ class RecoveryTargets:
                 str     -   string of all the targets
 
         """
-        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'RecoverTargets')
+        representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'RecoveryTargets')
 
         for index, recovery_target in enumerate(self._recovery_targets):
             sub_str = '{:^5}\t{:20}\n'.format(
@@ -131,16 +131,15 @@ class RecoveryTargets:
                     if response is not success
 
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._RECOVERY_TARGETS)
-
+        flag, response = self._cvpysdk_object.make_request('GET', self._RECOVERY_TARGETS_API)
         if flag:
-            if response.json() and 'policy' in response.json():
+            if response.json() and 'recoveryTargets' in response.json():
 
                 recovery_target_dict = {}
-
-                for dictionary in response.json()['policy']:
-                    temp_name = dictionary['entity']['vmAllocPolicyName'].lower()
-                    recovery_target_dict[temp_name] = str(dictionary['entity']['vmAllocPolicyId'])
+                for recoveryTarget in response.json()['recoveryTargets']:
+                    if recoveryTarget['applicationType'] != "CLEAN_ROOM":
+                        temp_name = recoveryTarget['name'].lower()
+                        recovery_target_dict[temp_name] = str(recoveryTarget['id'])
 
                 return recovery_target_dict
             else:
@@ -186,7 +185,7 @@ class RecoveryTargets:
         """Returns a target object.
 
             Args:
-                target_name (str)  --  name of the target
+                recovery_target_name (str)  --  name of the target
 
             Returns:
                 object - instance of the target class for the given target name
@@ -216,7 +215,7 @@ class RecoveryTargets:
 
 class RecoveryTarget:
 
-    """Class for performing target operations"""
+    """ Class for a single recovery target selected, and to perform operations on that recovery target"""
 
     def __init__(self, commcell_object, recovery_target_name, recovery_target_id=None):
         """Initialize the instance of the RecoveryTarget class.
@@ -224,12 +223,9 @@ class RecoveryTarget:
             Args:
                 commcell_object   (object)    --  instance of the Commcell class
 
-                target_name      (str)       --  name of the target
+                recovery_target_name      (str)       --  name of the target
 
-                target_id        (str)       --  id of the target
-
-                    default: None
-
+                recovery_target_id        (str)       --  id of the target -- default: None
         """
         self._commcell_object = commcell_object
 
@@ -244,7 +240,7 @@ class RecoveryTarget:
         else:
             # Get the target id if target id is not provided
             self._recovery_target_id = self._get_recovery_target_id()
-        self._RECOVERY_TARGET = self._services['GET_RECOVERY_TARGET'] %(self._recovery_target_id)
+        self._RECOVERY_TARGET_API = self._services['GET_RECOVERY_TARGET'] %self._recovery_target_id
 
         self._recovery_target_properties = None
 
@@ -302,7 +298,20 @@ class RecoveryTarget:
 
         """
         target = RecoveryTargets(self._commcell_object)
-        return target.get(self._recovery_target_name)
+        return target.all_targets[self.recovery_target_name]
+
+    def _set_policy_type(self, policy_type):
+        """Sets the policy type"""
+        if policy_type == "AMAZON":
+            self._policy_type = 1
+        elif policy_type == "MICROSOFT":
+            self._policy_type = 2
+        elif policy_type == "AZURE_RESOURCE_MANAGER":
+            self._policy_type = 7
+        elif policy_type in ["VMW_BACKUP_LABTEMPLATE", "VMW_LIVEMOUNT"]:
+            self._policy_type = 13
+        else:
+            self._policy_type = -1
 
     def _get_recovery_target_properties(self):
         """Gets the target properties of this target.
@@ -314,84 +323,75 @@ class RecoveryTarget:
                     if response is not success
 
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._RECOVERY_TARGET)
-
+        flag, response = self._cvpysdk_object.make_request('GET', self._RECOVERY_TARGET_API)
         if flag:
-            if response.json() and 'policy' in response.json():
-                self._recovery_target_properties = response.json()['policy'][0]
-                self._application_type = self._recovery_target_properties['vmPolicyAppType']
-                self._destination_hypervisor = self._recovery_target_properties['destinationHyperV']['clientName']
-                vm_name_edit_string = self._recovery_target_properties.get('vmNameEditString')
-                vm_name_edit_type = self._recovery_target_properties.get('vmNameEditType', 1)
-                if vm_name_edit_string and vm_name_edit_type == 2:
-                    self._vm_suffix = self._recovery_target_properties.get('vmNameEditString', "")
-                elif vm_name_edit_string and vm_name_edit_type == 1:
-                    self._vm_prefix = self._recovery_target_properties.get('vmNameEditString', "")
-                self._access_node = self._recovery_target_properties.get('proxyClientEntity', {}).get('clientName')
+            if response.json() and 'entity' in response.json():
+                self._recovery_target_properties = response.json()
+                self._application_type = self._recovery_target_properties['entity']['applicationType']
+                self._destination_hypervisor = self._recovery_target_properties['entity']['destinationHypervisor']['name']
+                self._vm_suffix = self._recovery_target_properties["vmDisplayName"].get("suffix", "")
+                self._vm_prefix = self._recovery_target_properties["vmDisplayName"].get("prefix", "")
+                self._access_node = self._recovery_target_properties["accessNode"].get("type", "")
                 self._access_node_client_group = (self._recovery_target_properties.get('proxyClientGroupEntity', {})
                                                   .get('clientGroupName'))
-                self._users = self._recovery_target_properties.get('securityAssociations', {}).get('users')
-                self._user_groups = self._recovery_target_properties.get('securityAssociations', {}).get('userGroups')
-                self._policy_type = self._recovery_target_properties.get("entity", {}).get("policyType")
+                self._users = self._recovery_target_properties.get('securityOptions', {}).get('users', [])
+                self._user_groups = self._recovery_target_properties.get('securityOptions', {}).get('userGroups', [])
+                policy_type = self._recovery_target_properties["entity"].get("policyType", "")
+                self._set_policy_type(policy_type)
 
                 if self._policy_type == 1:
-                    self._availability_zone = (self._recovery_target_properties.get('amazonPolicy',{}).get('availabilityZones', [{}])[0].get('availabilityZoneName', None))
-                    self._volume_type = self._recovery_target_properties.get('amazonPolicy', {}).get('volumeType', None)
-                    self._encryption_key = self._recovery_target_properties.get('amazonPolicy', {}).get('encryptionOption',{}).get('encryptionKeyName', 'Auto')
-                    self._iam_role_name = self._recovery_target_properties.get('roleInfo', {}).get('name')
-                    self._iam_role_id = self._recovery_target_properties.get('roleInfo', {}).get('id')
-                    self._destination_network = self._recovery_target_properties.get('networkList', [{}])[0].get('name', None)
-                    self._security_group = self._recovery_target_properties.get('securityGroups', [{}])[0].get('name', '')
-                    self._instance_type = (self._recovery_target_properties.get('amazonPolicy', {}).get('instanceType', [{}])[0].get('instanceType', {}).get('vmInstanceTypeName',''))
-                    
-                    expiry_hours = self._recovery_target_properties.get("minutesRetainUntil", None)
-                    expiry_days = self._recovery_target_properties.get("daysRetainUntil", None)
+                    self._availability_zone = self._recovery_target_properties.get('cloudDestinationOptions',{}).get('availabilityZone')
+                    self._volume_type = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('volumeType')
+                    self._encryption_key = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('encryptionOption',{}).get('encryptionKeyName', 'Auto')
+                    self._iam_role_name = self._recovery_target_properties.get('destinationOptions', {}).get('iamRole', {}).get('name')
+                    self._iam_role_id = self._recovery_target_properties.get('destinationOptions', {}).get('iamRole', {}).get('id')
+                    self._destination_network = self._recovery_target_properties.get("networkOptions", {}).get("networkCard", {}).get("destinationNetworks", [])
+                    self._security_group = self._recovery_target_properties.get('securityOptions', {}).get('securityGroups', [{}])[0].get('name', '')
+                    self._instance_type = self._recovery_target_properties.get('amazonPolicy', {}).get('instanceType', [{}])[0].get('instanceType', {}).get('vmInstanceTypeName','')
+                    expiry_hours = self._recovery_target_properties.get("liveMountOptions", {}).get("expirationTime", {}).get("minutesRetainUntil", "")
+                    expiry_days = self._recovery_target_properties.get("liveMountOptions", {}).get("expirationTime", {}).get("daysRetainUntil", "")
                     if expiry_hours:
                         self._expiration_time = f'{expiry_hours} hours'
                     elif expiry_days:
                         self._expiration_time = f'{expiry_days} days'
-                    self._test_virtual_network = self._recovery_target_properties.get('networkInfo', [{}])[0].get('label', None)
-                    self._test_security_group = self._recovery_target_properties.get('testSecurityGroups', [{}])[0].get('name', '')
+                    self._test_virtual_network = self._recovery_target_properties.get('networkOptions', {}).get('cloudNetwork', {}).get('label')
+                    self._test_security_group = self._recovery_target_properties.get('securityOptions', {}).get('testSecurityGroups', [{}])[0].get('name', '')
                     self._test_vm_size = (self._recovery_target_properties.get('amazonPolicy', {}).get('vmInstanceTypes', [{}])[0].get('vmInstanceTypeName',''))
 
                 elif self._policy_type == 2:
-                    self._vm_folder = self._recovery_target_properties['dataStores'][0]['dataStoreName']
-                    self._destination_network = self._recovery_target_properties['networkList'][0]['networkName']
-                    self._destination_host = self._recovery_target_properties['proxyClientEntity']['hostName']
+                    self._vm_folder = self._recovery_target_properties.get("destinationOptions", {}).get("vmFolder", "")
+                    self._destination_network = self._recovery_target_properties.get("networkOptions", {}).get("networkCard", {}).get("destinationNetworks", [])
+                    self._destination_host = self._recovery_target_properties.get("destinationOptions", {}).get("destinationHost", "")
                 elif self._policy_type == 7:
-                    self._resource_group = self._recovery_target_properties['esxServers'][0]['esxServerName']
-                    self._region = self._recovery_target_properties['region']
-                    self._availability_zone = (self._recovery_target_properties['amazonPolicy']
-                                               ['availabilityZones'][0]['availabilityZoneName'])
-                    self._storage_account = self._recovery_target_properties['dataStores'][0]['dataStoreName']
+                    self._region = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('region', {}).get('name')
+                    self._availability_zone = self._recovery_target_properties.get('cloudDestinationOptions',{}).get('availabilityZone')
+                    self._storage_account = self._recovery_target_properties.get("destinationOptions", {}).get("dataStore", "")
 
-                    self._vm_size = (self._recovery_target_properties['amazonPolicy']['vmInstanceTypes']
-                                     [0]['vmInstanceTypeName'])
-                    self._disk_type = self._recovery_target_properties['amazonPolicy']['volumeType']
-                    self._virtual_network = self._recovery_target_properties['networkList'][0]['networkDisplayName']
-                    self._security_group = self._recovery_target_properties['securityGroups'][0]['name']
-                    self._create_public_ip = self._recovery_target_properties['isPublicIPSettingsAllowed']
-                    self._restore_as_managed_vm = self._recovery_target_properties['restoreAsManagedVM']
+                    self._vm_size = (self._recovery_target_properties.get('amazonPolicy', {}).get('vmInstanceTypes', [{}])[0].get('vmInstanceTypeName',''))
+                    self._disk_type = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('volumeType')
+                    self._virtual_network = self._recovery_target_properties.get('networkOptions', {}).get('networkCard', {}).get('networkDisplayName')
+                    self._security_group = self._recovery_target_properties.get('securityOptions', {}).get('securityGroups', [{}])[0].get('name', '')
+                    self._create_public_ip = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('publicIP')
+                    self._restore_as_managed_vm = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('restoreAsManagedVM')
 
-                    expiry_hours = self._recovery_target_properties.get("minutesRetainUntil")
-                    expiry_days = self._recovery_target_properties.get("daysRetainUntil")
+                    expiry_hours = self._recovery_target_properties.get("liveMountOptions", {}).get("expirationTime", {}).get("minutesRetainUntil", "")
+                    expiry_days = self._recovery_target_properties.get("liveMountOptions", {}).get("expirationTime", {}).get("daysRetainUntil", "")
                     if expiry_hours:
                         self._expiration_time = f'{expiry_hours} hours'
                     elif expiry_days:
                         self._expiration_time = f'{expiry_days} days'
-                    self._test_virtual_network = self._recovery_target_properties['networkInfo'][0]['label']
-                    self._test_vm_size = (self._recovery_target_properties['amazonPolicy']['instanceType'][0]
-                                          ['instanceType']['vmInstanceTypeName'])
+                    self._test_virtual_network = self._recovery_target_properties.get('networkOptions', {}).get('cloudNetwork', {}).get('label')
+                    self._test_vm_size = (self._recovery_target_properties.get('amazonPolicy', {}).get('vmInstanceTypes', [{}])[0].get('vmInstanceTypeName',''))
                 elif self._policy_type == 13:
-                    self._destination_host = self._recovery_target_properties['esxServers'][0]['esxServerName']
-                    self._datastore = self._recovery_target_properties['dataStores'][0]['dataStoreName']
-                    self._resource_pool = self._recovery_target_properties['resourcePoolPath']
-                    self._vm_folder = self._recovery_target_properties['folderPath']
-                    self._destination_network = self._recovery_target_properties['networkList'][0]['destinationNetwork']
+                    self._destination_host = self._recovery_target_properties.get("destinationOptions", {}).get("destinationHost", "")
+                    self._datastore = self._recovery_target_properties.get("destinationOptions", {}).get("dataStore", "")
+                    self._resource_pool = self._recovery_target_properties.get("destinationOptions", {}).get("resourcePoolPath", "")
+                    self._vm_folder = self._recovery_target_properties.get("destinationOptions", {}).get("vmFolder", "")
+                    self._destination_network = self._recovery_target_properties.get("networkOptions", {}).get("networkCard", {}).get("destinationNetworks", [])
 
-                    self._vm_storage_policy = self._recovery_target_properties.get('vmStoragePolicyName')
-                    expiry_hours = self._recovery_target_properties.get("minutesRetainUntil")
-                    expiry_days = self._recovery_target_properties.get("daysRetainUntil")
+                    self._vm_storage_policy = self._recovery_target_properties.get('vmStoragePolicyName') or "VMware"
+                    expiry_hours = self._recovery_target_properties.get("liveMountOptions", {}).get("expirationTime", {}).get("minutesRetainUntil", "")
+                    expiry_days = self._recovery_target_properties.get("liveMountOptions", {}).get("expirationTime", {}).get("daysRetainUntil", "")
                     if expiry_hours:
                         self._expiration_time = f'{expiry_hours} hours'
                     elif expiry_days:
@@ -399,7 +399,7 @@ class RecoveryTarget:
                     if self._recovery_target_properties.get('mediaAgent', {}):
                         self._failover_ma = self._recovery_target_properties['mediaAgent']['clientName']
 
-                    self._isolated_network = self._recovery_target_properties.get("createIsolatedNetwork")
+                    self._isolated_network = self._recovery_target_properties.get("virtualLabOptions", {}).get("configureIsolatedNetwork")
 
                     self._no_of_cpu = self._recovery_target_properties.get('maxCores')
                     self._no_of_vm = self._recovery_target_properties.get('maxVMQuota')

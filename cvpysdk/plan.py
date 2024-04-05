@@ -609,73 +609,60 @@ class Plans(object):
         """
         return self._plans
     
-    def filter_plans(self, plan_type, company_name = None):
+    def filter_plans(self, plan_type, company_name=None):
         """
         Returns the dictionary consisting of specified type and company plans.
 
         Args:
             plan_type (str)      --      Type of plan ['DLO', 'Server', 'Laptop', 'Database', 'FSServer', 'FSIBMiVTL', 'Snap', 'VSAServer', 'VSAReplication', 
                                                         'ExchangeUser', 'ExchangeJournal', 'Office365', 'Dynamics365', 'DataClassification', 'Archiver']
-
-            company_name (str)    --     To filter plans based on company. For Commcell, company_name = "". Default will return all plans
+            company_name (str)    --     To filter plans based on the company. For Commcell, company_name = 'Commcell'. Default will return all plans
 
         Returns:
             dict - consists of all the plans with specified types configured on the commcell
-
                 {
                     "plan1_name": plan1_id,
-
                     "plan2_name": plan2_id
                 }
 
         Raises:
             SDKException:
                 if input data type is not valid
-                
-                if invalid plan type is passed as parameter
-
+                if an invalid plan type is passed as a parameter
                 if failed to get the response
         """
-        plan_type_subtype = {
-                "dlo" : ("1", "16777223"),
-                "server" : ("2", "33554437"),
-                "laptop" : ("2", "33554439"),
-                "database" : ("2", "33579013"),
-                "fsserver" : ("3", "50331655"),
-                "fsibmivtl" : ("3", "50331653"),
-                "snap" : ("4", "67108869"),
-                "vsaserver" : ("5", "83886085"),
-                "vsareplication" : ("5", "83918853"),
-                "exchangeuser" : ("6", "100859907"),
-                "exchangejournal" : ("6", "100794372"),
-                "office365" : ("6", "100859937"),
-                "dynamics365" : ("6", "100794391"),
-                "dataclassification" : ("7", "117506053"),
-                "archiver" : ("9", "150994951")
-        }
-        
         if not isinstance(plan_type, str):
             raise SDKException('Plan', '101')
-        elif plan_type.lower() not in plan_type_subtype:
+        
+        plan_type_lower = plan_type.lower()
+        
+        if plan_type_lower not in ["dlo", "server", "laptop", "database", "fsserver", "fsibmivtl", "snap", 
+                                    "vsaserver", "vsareplication", "exchangeuser", "exchangejournal", 
+                                    "office365", "dynamics365", "dataclassification", "archiver"]:
             raise SDKException('Plan', '102', 'Invalid Plan Type Passed as Parameter')
+
+        params = f"fq=plans.subtype%3Ain%3A{plan_type}&fl=plans.plan.planId%2Cplans.plan.planName%2Cplans.subtype%2Cplans.type"
+
+        if company_name:
+            company_id = (
+                self._commcell_object.organizations.get(company_name).organization_id 
+                if company_name != 'Commcell' else 0
+            )
+            params += f"&fq=companyId%3Aeq%3A{company_id}"
+
+        template_url = self._services['PLAN_SUMMARY'] % params
+
+        flag, response = self._cvpysdk_object.make_request('GET', template_url)
+
+        if flag:
+            result = dict()
+            if 'plans' in response.json():
+                for plan in response.json()['plans']:
+                    result[plan['plan']['name']] = plan['plan']['id']
+            return result
         else:
-            template_url = self._services['GET_PLANS'] % plan_type_subtype[plan_type.lower()]
-
-            flag, response = self._cvpysdk_object.make_request('GET', template_url)
-
-            if flag:
-                result = dict()
-                if 'plans' in response.json():
-                    for plan in response.json()['plans']:
-                        if company_name is None:
-                            result[plan['plan']['planName']] = plan['plan']['planId']
-                        else:
-                            if plan['plan']['entityInfo']['companyName'].lower() == company_name.lower():
-                                result[plan['plan']['planName']] = plan['plan']['planId'] 
-                return result
-            else:
-                response_string = self._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def has_plan(self, plan_name):
         """Checks if a plan exists in the commcell with the input plan name.

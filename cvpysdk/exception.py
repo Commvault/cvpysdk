@@ -133,7 +133,8 @@ EXCEPTION_DICT = {
         '103': 'Class object should be an instance of Agent / Instance class',
         '104': 'Invalid pruning type. Valid inputs "days_based" or "cycles_based".',
         '105': 'Invalid days/cycles value. Please provide an integer value >= 2.',
-        '106': 'IndexServer value should be a client object'
+        '106': 'IndexServer value should be a client object',
+        '107': 'No result found for the given input'
     },
     'Instance': {
         '101': 'Data type of the input(s) is not valid',

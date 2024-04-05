@@ -377,7 +377,9 @@ class Role(object):
                 self._role_id = role_properties['role'].get('roleId')
                 self._role_name = role_properties['role'].get('roleName')
                 self._role_status = role_properties['role']['flags'].get('disabled')
-                if 'entityInfo' in role_properties['role']: self._company_name = role_properties['role']['entityInfo'].get('companyName')
+
+                self._company_name = role_properties.get('securityAssociations', {}).get('tagWithCompany', {}).get('providerDomainName', None)
+
                 category_list = []
                 permission_list = []
 

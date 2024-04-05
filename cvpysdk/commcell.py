@@ -87,6 +87,8 @@ Commcell:
     enable_auth_code()              --  executes the request on the server to enable Auth Code
     for installation on the commcell
 
+    disable_auth_code()             --  disables auth code requirement for installation on the commcell
+
     enable_shared_laptop()          --   Executes the request on the server to enable Shared Laptop on commcell
 
     disable_shared_laptop()         --  Executes the request on the server to disable Shared Laptop on commcell
@@ -150,6 +152,8 @@ Commcell:
     get_sla_configuration()         --  gets the sla configuration details at commcell level
 
     get_workload_region()           --  gets the current workload region
+
+    set_workload_region()           --  sets the workload region at commcell level
 
     get_user_suggestions()          --  gets details of entities matching given term
 
@@ -2632,6 +2636,51 @@ class Commcell(object):
 
         return response.json()['organizationProperties']['authCode']
 
+    def disable_auth_code(self):
+        """
+        Disables authcode requirement at Commcell level
+
+        Raises:
+            SDKException:
+                if failed to enable auth code generation
+
+                if response is empty
+
+                if response is not success
+        """
+        request_json = {
+            "organizationInfo": {
+                "organization": {
+                    "shortName": {
+                        "id": 0
+                    }
+                },
+                "organizationProperties": {
+                    "enableAuthCodeGen": False
+                }
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', self._services['ORGANIZATIONS'], request_json
+        )
+
+        if flag:
+            if response.json():
+                error_code = response.json()['error']['errorCode']
+
+                if error_code != 0:
+                    raise SDKException(
+                        'Commcell', '108', 'Failed to disable authcode: "{0}"'.format(
+                            response.json()['error']['errorMessage']
+                        )
+                    )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     def enable_shared_laptop(self):
         """Executes the request on the server to enable Shared Laptop on commcell
 
@@ -2835,6 +2884,8 @@ class Commcell(object):
 
                     enable_ssl(boolean) --  option to represent whether ssl is supported for the EMail Server
                                             Default value: False
+                    start_tls (boolean) --  option to represent whether tls is supported for the EMail Server
+                                            Default value: False
                     smtp_port(int)      --  Port number to be used by Email Server
                                             Default value: 25
                     username(str)       --  Username to be used
@@ -2857,6 +2908,7 @@ class Commcell(object):
             raise SDKException("Commcell", "101")
 
         enable_ssl = kwargs.get("enable_ssl", False)
+        start_tls = kwargs.get("start_tls", False)
         smtp_port = kwargs.get("smtp_port", 25)
         username = kwargs.get("username", "")
         password = kwargs.get("password", "")
@@ -2867,6 +2919,7 @@ class Commcell(object):
 
         request_json = {"smtpInfo":
                             {"enableSSL": enable_ssl,
+                             "startTLS": start_tls,
                              "smtpServer": smtp_server,
                              "smtpPort": smtp_port,
                              "useAuthentication": False,
@@ -3795,17 +3848,21 @@ class Commcell(object):
         """Returns the default timezone used for all the operations performed via cvpysdk"""
         return 'UTC' if self.is_linux_commserv else '(UTC) Coordinated Universal Time'
 
-    def enable_tfa(self, user_groups=None):
+    def enable_tfa(self, user_groups=None, usernameless=False, passwordless=False):
         """
         Enables two factor authentication option on this commcell.
 
         Args:
             user_groups     (list)  --  user group names for which tfa needs to be enabled.
+            usernameless    (bool)  --  allow usernameless login if True
+            passwordless    (bool)  --  allow passwordless login if True
 
         Returns:
             None
         """
-        self.two_factor_authentication.enable_tfa(user_groups=user_groups)
+        self.two_factor_authentication.enable_tfa(
+            user_groups=user_groups, usernameless=usernameless, passwordless=passwordless
+        )
 
     def disable_tfa(self):
         """
@@ -3952,33 +4009,31 @@ class Commcell(object):
             raise SDKException('Response', '101', self._update_response_(response.text))
 
     def get_workload_region(self):
-        """Makes a rest api call to get commserve workload region
+        """Gets the workload region set at commcell level
 
             Returns:
-                dict    -   with region id,name
-                example:
-                    {
-                        'regionId': 2, 
-                        'displayName': 'Asia', 
-                        'regionName': 'Asia'
-                    }
-
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
-
+                str     -   name of commcell level workload region set
+                None    -   if no region set or region name not found
+                example: 'US - east'
         """
-        flag, response = self._cvpysdk_object.make_request('GET', self._services['WORKLOAD_REGION'] % self.commcell_id)
+        region_id = self.regions.get_region('COMMCELL', self.commcell_id, 'WORKLOAD')
+        for reg_name, reg_id in self.regions.all_regions.items():
+            if reg_id == region_id:
+                return reg_name
 
-        if flag:
-            if response.ok and response.json():
-                return response.json()
-            else:
-                raise SDKException('Response', '102')
+    def set_workload_region(self, region_name):
+        """Sets the workload region set at commcell level
+
+            Args:
+                region_name (str)   -   name of region (None to set no region)
+        """
+        if region_name:
+            if not self.regions.has_region(region_name):
+                raise SDKException('Region', '102', 'Given region not found!')
+            region_id = self.regions.all_regions[region_name]
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            region_id = 0
+        self.regions.set_region('COMMCELL', self.commcell_id, 'WORKLOAD', region_id)
 
     def get_user_suggestions(self, term: str)->list:
         """Makes a multicommcell api call to get user suggestions for entities

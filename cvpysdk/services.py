@@ -184,6 +184,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'CLIENTGROUPS': '{0}ClientGroup',
     'CLIENTGROUP': '{0}ClientGroup/%s',
+    'SERVERGROUPS_V4': '{0}V4/ServerGroup',
 
     'USERGROUPS': '{0}UserGroup?includeSystemCreated=true',
     'USERGROUP': '{0}UserGroup/%s',
@@ -543,9 +544,8 @@ SERVICES_DICT_TEMPLATE = {
     'BACKUP_NETWORK_PAIRS': '{0}CommServ/DataInterfacePairs?ClientId=%s',
     'BACKUP_NETWORK_PAIR': '{0}CommServ/DataInterfacePairs',
 
-    'GET_ALL_RECOVERY_TARGETS':
-        '{0}/VMAllocationPolicy?showResourceGroupPolicy=true&showNonResourceGroupPolicy=false&deep=true',
-    'GET_RECOVERY_TARGET': '{0}/VMAllocationPolicy/%s',
+    'GET_ALL_RECOVERY_TARGETS': '{0}V4/RecoveryTargets',
+    'GET_RECOVERY_TARGET': '{0}V4/RecoveryTarget/%s',
 
     'RETIRE': '{0}Client/%s/Retire',
     'GET_REMOTE_CACHE_CLIENTS': '{0}RemoteCacheClients',
@@ -592,12 +592,29 @@ SERVICES_DICT_TEMPLATE = {
     'LAUNCH_O365_LICENSING': '{0}Office365/License',
 
     'VM_GROUP': '{0}V4/VmGroup/%s',
+
     'VSA_HIDDEN_SUBCLIENT': '{0}GetId?clientname=%s&agent=Virtual Server&backupset=%s&subclient=Do Not Backup',
+
     'HARD_REFRESH_CACHE': '{0}/%s?hardRefresh=true',
 
     'ALL_RECOVERY_GROUPS': '{0}RecoveryGroups',
     'RECOVERY_GROUP': '{0}RecoveryGroup/%s?getEntityDetails=true',
     'RECOVERY_GROUP_RECOVER': '{0}RecoveryGroup/%s/Recover',
+
+
+     'ADCOMPAREID': '{0}/ActiveDirectory/Subclient/%s/Comparison',
+     'ADSTARTCOMPAREJOB': '{0}/CreateTask',
+      'ADCOMPARESTATUSCHECK':'{0}/ActiveDirectory/Comparison/%s',
+    'ADCOMPAREVIEWRESULTS':'{0}/ActiveDirectory/Compare',
+
+
+    'LIST_BACKUP_JOBS': '{0}Jobs/Calendar?dateListResponse=false&agedJobs=false&subclientId=&instanceId=&backupsetId=%s'
+                        '&clientId=%s&jobTypeList=Backup,SYNTHFULL&fromStartTime=%s&toStartTime=%s&applicationIdList'
+                        '=&statusList=%s&clientIdList=%s&isArchiverClient=false&lastBackup=false',
+    
+    'VIEW_PROPERTIES': '{0}/Recall?at=%s&si=%s&op=%s&appId=%s&ec=%s',
+
+
 }
 
 

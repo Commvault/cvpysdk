@@ -2764,28 +2764,24 @@ class Organization:
 
                     if response is not success
         """
-        organization_name = self._organization_name.lower()
         if self._client_groups is None:
+            query_params = f"?fq=companyId%3Aeq%3A{self._organization_id}&fl=groups.clientGroup%2Cgroups.Id%2Cgroups.name"
+            
             flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'GET', self._services['CLIENTGROUPS']
-            )
+                'GET', self._services['SERVERGROUPS_V4'] + query_params
+            ) # fetch all client groups associated with the organization
 
             if flag:
-                if response.json() and 'groups' in response.json():
-                    client_groups = response.json()['groups']
-                    clientgroups_dict = {}
+                if response.json() and 'serverGroups' in response.json():
+                    client_groups = response.json()['serverGroups']
+                    self._client_groups = {}
 
                     for client_group in client_groups:
                         temp_name = client_group['name'].lower()
-                        temp_id = str(client_group['Id']).lower()
-                        company_name = client_group['clientGroup']['entityInfo']['companyName'].lower()
-                        if company_name in clientgroups_dict.keys():
-                            clientgroups_dict[company_name][temp_name] = temp_id
-                        else:
-                            clientgroups_dict[company_name] = {temp_name: temp_id}
-                    self._client_groups = clientgroups_dict[organization_name]
+                        temp_id = str(client_group['id']).lower()
+                        self._client_groups[temp_name] = temp_id
                 else:
-                    self._client_groups = []
+                    self._client_groups = {}
             else:
                 response_string = self._commcell_object._update_response_(response.text)
                 raise SDKException('Response', '101', response_string)
