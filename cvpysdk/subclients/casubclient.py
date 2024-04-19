@@ -48,6 +48,7 @@ class CloudAppsSubclient(Subclient):
         from .cloudapps.dynamics365_subclient import MSDynamics365Subclient
         from .cloudapps.teams_subclient import TeamsSubclient
         from .cloudapps.spanner_subclient import GoogleSpannerSubclient
+        from .cloudapps.onedrive_subclient import OneDriveSubclient
 
         instance_types = {
             1: GoogleSubclient,
@@ -56,7 +57,7 @@ class CloudAppsSubclient(Subclient):
             4: CloudDatabaseSubclient,  # Amazon RDS Subclient
             5: CloudStorageSubclient,  # AmazonS3 Subclient
             6: CloudStorageSubclient,  # AzureBlob Subclient
-            7: GoogleSubclient,  # OneDrive Subclient. GoogleSuclient class is used for OneDrive too
+            7: OneDriveSubclient,  # OneDrive Subclient.
             14: CloudStorageSubclient,  # OracleCloud Subclient
             15: CloudStorageSubclient,  # Openstack Subclient
             20: CloudStorageSubclient,  # Google Cloud Instance

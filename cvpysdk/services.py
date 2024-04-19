@@ -595,6 +595,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'VSA_HIDDEN_SUBCLIENT': '{0}GetId?clientname=%s&agent=Virtual Server&backupset=%s&subclient=Do Not Backup',
 
+
     'HARD_REFRESH_CACHE': '{0}/%s?hardRefresh=true',
 
     'ALL_RECOVERY_GROUPS': '{0}RecoveryGroups',
@@ -607,12 +608,19 @@ SERVICES_DICT_TEMPLATE = {
       'ADCOMPARESTATUSCHECK':'{0}/ActiveDirectory/Comparison/%s',
     'ADCOMPAREVIEWRESULTS':'{0}/ActiveDirectory/Compare',
 
-
     'LIST_BACKUP_JOBS': '{0}Jobs/Calendar?dateListResponse=false&agedJobs=false&subclientId=&instanceId=&backupsetId=%s'
                         '&clientId=%s&jobTypeList=Backup,SYNTHFULL&fromStartTime=%s&toStartTime=%s&applicationIdList'
                         '=&statusList=%s&clientIdList=%s&isArchiverClient=false&lastBackup=false',
     
     'VIEW_PROPERTIES': '{0}/Recall?at=%s&si=%s&op=%s&appId=%s&ec=%s',
+
+
+    'AD_PointInTimeRestore':'{0}/CreateTask'
+
+    'COMMSERVE_RECOVERY': '{0}cvdrbackup/csrecovery',
+    'GET_BACKUPSET_INFO': '{0}cvdrbackup/info?csGuid=%s',
+    'GET_COMMSERVE_RECOVERY_LICENSE_DETAILS': '{0}cvdrbackup/csrecovery/quota?csGuid=%s',
+    'GET_COMMSERVE_RECOVERY_RETENTION_DETAILS': '{0}cvdrbackup/cleanup/lock?csGuid=%s',
 
 
 }

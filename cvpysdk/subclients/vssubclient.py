@@ -2293,8 +2293,8 @@ class VirtualServerSubclient(Subclient):
         Returns:
              security_group    (dict)  -- security group dict
         """
-        match1 = re.search('secGroupId=\"(\S*)\"', xml_str)
-        match2 = re.search('secGroupName=\"(\S*)\"', xml_str)
+        match1 = re.search(r'secGroupId=\"(\S*)\"', xml_str)
+        match2 = re.search(r'secGroupName=\"(\S*)\"', xml_str)
         security_group = [
             {
                 "groupId": match1.group(1),
@@ -2312,8 +2312,8 @@ class VirtualServerSubclient(Subclient):
         Returns:
              keypair_list	(dict) -- keypair list dict
         """
-        match1 = re.search('keyPairId=\"(\S*)\"', xml_str)
-        match2 = re.search('keyPairName=\"(\S*)\"', xml_str)
+        match1 = re.search(r'keyPairId=\"(\S*)\"', xml_str)
+        match2 = re.search(r'keyPairName=\"(\S*)\"', xml_str)
         keypair_list = [
             {
                 "keyId": match1.group(1),

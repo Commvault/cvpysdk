@@ -1907,7 +1907,8 @@ class EdiscoveryDataSources():
             "propertyValue": inventory_resp['operatingSystem'] if not is_server_group else ""
         })
         if is_commvault_client:
-            del request_json['datasources'][0]['accessNodes']
+            if 'access_node' not in kwargs:
+                del request_json['datasources'][0]['accessNodes']
             request_json['datasources'][0]['properties'].append({
                 "propertyName": "ClientId",
                 "propertyValue": str(self._commcell_object.clients.get(server_name).client_id)
@@ -1949,7 +1950,7 @@ class EdiscoveryDataSources():
                     "propertyValue": str(EdiscoveryConstants.CrawlType.BACKUP_V2.value)
                 })
         else:
-            if not is_commvault_client:
+            if not is_commvault_client or 'access_node' in kwargs:
                 request_json['datasources'][0]['properties'].append({
                     "propertyName": "username",
                     "propertyValue": kwargs.get('user_name', '')

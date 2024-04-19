@@ -161,6 +161,8 @@ FileSystemSubclient Instance Attributes:
 	**backup_nodes**                      --  Sets backup nodes for FS Agent under Network Share clients.
 
 	**impersonate_user**                  --  Impersonation information for the subclient.
+    
+    **plan**                              -- Set plan without/with overriding Plan's default content.
 
 
 """
@@ -2615,3 +2617,79 @@ class FileSystemSubclient(Subclient):
             update_properties["impersonateUser"]["password"] = b64encode(value["password"].encode()).decode()
 
         self.update_properties(update_properties)
+
+    @property
+    def plan(self):
+        """Returns the name of the plan associated with the subclient.
+           Returns None if no plan is associated
+        """
+        return super().plan
+
+    @plan.setter
+    def plan(self, value):
+        """Associates a plan to the subclient.
+
+            Args:
+                value   (object)    --  the Plan object which is to be associated
+                                        with the subclient
+
+                value   (str)       --  name of the plan to be associated
+                
+                value   (list)      --  associate subclient with Plan and override the content of Plan on subclient
+                                        Example-1 ( with Plan name ): subclient_object.plan = ["plan_name",["content_path1","content_path2"]]
+                                        Example-2 ( with Plan Object ): subclient_object.plan = [plan_object,["content_path1","content_path2"]]
+
+                value   (None)      --  set value to None to remove plan associations
+                
+
+            Raises:
+                SDKException:
+                    if the type of input is incorrect
+
+                    if the plan association is unsuccessful
+        """
+        
+        from ..plan import Plan
+        if isinstance(value, Plan):
+            if self._commcell_object.plans.has_plan(value.plan_name):
+                self.update_properties({
+                    'planEntity': {
+                        'planName': value.plan_name
+                    },
+                    "useContentFromPlan": True
+                })
+            else:
+                raise SDKException('Subclient', '102', 'Plan does not exist')
+                
+        elif isinstance(value, str):
+            if self._commcell_object.plans.has_plan(value):
+                self.update_properties({
+                    'planEntity': {
+                        'planName': value
+                    },
+                    "useContentFromPlan": True
+                })
+            else:
+                raise SDKException('Subclient', '102', 'Plan does not exist')
+                
+        elif isinstance(value, list):
+            if not isinstance(value[0], Plan) and not isinstance(value[0], str):
+                raise SDKException('Subclient', '102', 'Expecting Plan object or str')
+            if not isinstance(value[1], list):
+                raise SDKException('Subclient', '102', 'Expecting List of contents')
+           
+            self.update_properties({
+                     "content": [{"path":p} for p in value[1]],
+                    "useContentFromPlan": False,
+                    "fsContentOperationType": 1,
+                    'planEntity': {
+                        'planName': value[0].plan_name if isinstance(value[0], Plan) else value[0]
+                    }
+                })
+                
+        elif value is None:
+            self.update_properties({
+                'removePlanAssociation': True
+            })
+        else:
+            raise SDKException('Subclient', '101')

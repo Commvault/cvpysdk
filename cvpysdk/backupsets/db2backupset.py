@@ -244,7 +244,7 @@ class DB2Backupset(Backupset):
                 tables_path             (list)   -- List of tables path
                     Example:
                         Unix:  ['/+tblview+/instance_name/database_name/schema_name/table_name/**']
-                        Windows: ["\+tblview+\instance_name\database_name\schema_name\table_name\**"]
+                        Windows: ["\\+tblview+\\instance_name\\database_name\\schema_name\\table_name\\**"]
 
                 copy_precedence         (int)   --  copy precedence value of storage policy copy
                     default: None

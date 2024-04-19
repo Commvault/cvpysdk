@@ -1017,7 +1017,7 @@ class Clients(object):
         display_name_occurence = 0
         client_name = None
         for client in self.all_clients:
-            if self.all_clients[client]['displayName'] == display_name:
+            if self.all_clients[client]['displayName'] == display_name.lower():
                 display_name_occurence += 1
                 client_name = client
             if display_name_occurence > 1:
@@ -5481,7 +5481,7 @@ class Client(object):
             Arguments:
                 new_directory_path    (str)   -- The new JR directory
                     Example:
-                        C:\ JR
+                        C:\\JR
                         or
                         <UNC-PATH>
 
@@ -5561,7 +5561,7 @@ class Client(object):
                 Arguments:
                     new_directory_path   (str)   -- The new JR directory
                         Example:
-                            C:\ JR
+                            C:\\JR
                             or
                             <UNC-PATH>
 
@@ -6736,7 +6736,7 @@ class Client(object):
             Arguments:
                 new_directory_path   (str)   -- The new JR directory
                     Example:
-                        \\vm1.example-active-directory.com\TestFolder1\JobResults
+                        \\vm1.example-active-directory.com\\TestFolder1\\JobResults
 
                 username    (str)   --
                     username of the machine, if new JobResults directory is a shared/ UNC path.

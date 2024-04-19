@@ -625,7 +625,7 @@ class WorkFlows(object):
             Args:
                 workflow_name (str)  --  name of the workflow
 
-            \*\*kwargs  (dict)  --  Optional arguments.
+                kwargs  (dict)  --  Optional arguments.
 
                 Available kwargs Options:
 
@@ -852,7 +852,7 @@ class WorkFlow(object):
                 workflow_id          (str)      --  id of the workflow
                     default: None
 
-            \*\*kwargs  (dict)  --  Optional arguments.
+                kwargs  (dict)  --  Optional arguments.
 
                 Available kwargs Options:
 

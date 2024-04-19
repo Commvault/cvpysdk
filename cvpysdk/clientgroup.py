@@ -132,6 +132,8 @@ ClientGroup:
 
     disable_auto_discover()         -- disables  autodiscover option at client group level
 
+    refresh_clients()               -- force refreshes clients in a client group
+
 ClientGroup Attributes
 -----------------------
 
@@ -2023,6 +2025,28 @@ class ClientGroup(object):
         self._initialize_clientgroup_properties()
         self._networkprop = Network(self)
         self._network_throttle = None
+
+    def refresh_clients(self):
+        """Refreshes the clients of a client group"""
+        refresh_client_api = self._services['SERVERGROUPS_V4'] + f"/{self._clientgroup_id}/Refresh"
+
+        flag, response = self._cvpysdk_object.make_request("PUT", refresh_client_api)
+
+        if not flag:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        response_json = response.json()
+        if not response_json:
+            raise SDKException('Response', '102')
+
+        error_code = response_json.get("errorCode")
+        error_message = response_json.get("errorMessage")
+
+        if error_code:
+            raise SDKException("ClientGroup", '102', error_message)
+
+        self.refresh()
 
     def change_company(self, target_company_name):
         """

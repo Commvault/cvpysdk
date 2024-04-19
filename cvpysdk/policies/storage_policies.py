@@ -1921,7 +1921,7 @@ class StoragePolicy(object):
                                                           ocum server
             enable_selective_copy                 (int)   -- Enable selective copy option based on input value
 
-            disassociate_sc_from_backup_copy    (bool)    -- Associate\Disassociate subclient from backup copy
+            disassociate_sc_from_backup_copy    (bool)    -- Associate/Disassociate subclient from backup copy
                                                                 True: Disassociate subclient
                                                                 False: Associate subclient
 

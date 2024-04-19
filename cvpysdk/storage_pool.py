@@ -386,7 +386,7 @@ class StoragePools:
         credential_name = kwargs.get('credential_name', None)
         cloud_server_type = int(kwargs.get('cloud_server_type', 0))
 
-        if ((ddb_ma is not None and not isinstance(dedup_path, str)) or
+        if ((ddb_ma is not None and not (isinstance(dedup_path, str) or isinstance(dedup_path, list))) or
                 not (isinstance(storage_pool_name, str) or not isinstance(mountpath, str))):
             raise SDKException('Storage', '101')
 
@@ -397,13 +397,25 @@ class StoragePools:
         else:
             raise SDKException('Storage', '103')
 
+        if (isinstance(ddb_ma, str) or isinstance(ddb_ma, MediaAgent)) and isinstance(dedup_path, str):
+            ddb_ma = [ddb_ma]
+            dedup_path = [dedup_path]
+
+        if isinstance(ddb_ma, list) and isinstance(dedup_path, list):
+            if len(ddb_ma) != len(dedup_path):
+                raise SDKException('Storage', '101')
+
+        if ddb_ma is not None and (len(ddb_ma) > 6 or len(dedup_path) > 6):
+            raise  SDKException('Storage', '110')
+
         if ddb_ma is not None:
-            if isinstance(ddb_ma, MediaAgent):
-                ddb_ma = ddb_ma
-            elif isinstance(ddb_ma, str):
-                ddb_ma = MediaAgent(self._commcell_object, ddb_ma)
-            else:
-                raise SDKException('Storage', '103')
+            for i in range(len(ddb_ma)):
+                if isinstance(ddb_ma[i], MediaAgent):
+                    ddb_ma[i] = ddb_ma[i]
+                if isinstance(ddb_ma[i], str):
+                    ddb_ma[i] = MediaAgent(self._commcell_object, ddb_ma[i])
+                else:
+                    raise SDKException('Storage', '103')
 
         request_json = {
             "storagePolicyName": storage_pool_name,
@@ -456,6 +468,23 @@ class StoragePools:
             request_json["storage"][0]["savedCredential"] = {"credentialName": credential_name}
 
         if ddb_ma is not None or dedup_path is not None:
+            maInfoList = []
+            for ma, path in zip(ddb_ma, dedup_path):
+                maInfoList.append({
+                    "mediaAgent": {
+                        "mediaAgentId": int(ma.media_agent_id),
+                        "mediaAgentName": ma.media_agent_name
+                    },
+                    "subStoreList": [
+                        {
+                            "accessPath": {
+                                "path": path
+                            },
+                            "diskFreeThresholdMB": 5120,
+                            "diskFreeWarningThreshholdMB": 10240
+                        }]
+                })
+
             request_json["storagePolicyCopyInfo"].update({
                 "storagePolicyFlags": {
                     "blockLevelDedup": "SET_TRUE",
@@ -467,21 +496,7 @@ class StoragePools:
                     "hostGlobalDedupStore": "SET_TRUE"
                 },
                 "DDBPartitionInfo": {
-                    "maInfoList": [
-                        {
-                            "mediaAgent": {
-                                "mediaAgentId": int(ddb_ma.media_agent_id),
-                                "mediaAgentName": ddb_ma.media_agent_name
-                            },
-                            "subStoreList": [
-                                {
-                                    "accessPath": {
-                                        "path": dedup_path
-                                    },
-                                    "diskFreeThresholdMB": 5120,
-                                    "diskFreeWarningThreshholdMB": 10240
-                                }]
-                        }]
+                    "maInfoList": maInfoList
                 }
             })
         else:

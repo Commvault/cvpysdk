@@ -34,6 +34,8 @@ Class:
         checkcompare_result_generated  --    Method to check AD compare report generated
 
         generate_compare_report        --    Method to generate AD compare report
+
+        restore_job                    --    Method to do AD point in time restore
 ADSubclient:
     content() -- method to get AD agent subclient content
 
@@ -45,7 +47,6 @@ from __future__ import unicode_literals
 from ..exception import SDKException
 from ..subclient import Subclient
 import time
-
 
 class ADSubclient(Subclient):
     """Class for AD agent related subclient """
@@ -118,8 +119,8 @@ class ADSubclient(Subclient):
             content_ad.append((contententry, shortdn))
         return content_ad
 
-    def compare_id(self, left_set_time, right_set_time,
-                   source_item, comparison_name):
+    def compare_id(self,left_set_time,right_set_time,
+                   source_item,comparison_name):
         """
         Generate Commvault AD Compare Comparison id
         Args:
@@ -132,8 +133,8 @@ class ADSubclient(Subclient):
         Exception:
                 Response was not a success
         """
-        client_id = int(self._client_object.client_id)
-        subclient_id = int(self.subclient_id)
+        client_id=int(self._client_object.client_id)
+        subclient_id=int(self.subclient_id)
 
         payload = {
             "adCompareOptions": {"adCompareType": 0, "comparisonName": comparison_name,
@@ -149,11 +150,11 @@ class ADSubclient(Subclient):
         generate_comparison_id = self._services['ADCOMPAREID'] % (subclient_id)
 
         flag, response = self._cvpysdk_object.make_request(
-            method='POST', url=generate_comparison_id, payload=payload
+           method= 'POST',url= generate_comparison_id,payload= payload
         )
 
         if flag:
-            response_dict = response.json()
+            response_dict=response.json()
             comp_id = response_dict['adCompareDetails'][0]['comparisonId']
 
 
@@ -163,10 +164,10 @@ class ADSubclient(Subclient):
 
         return comp_id
 
-    def trigger_compare_job(self, left_set_time,
+    def trigger_compare_job(self,left_set_time,
                             right_set_time,
-                            display_name, client_name,
-                            comp_id, source_item, comparison_name):
+                            display_name,client_name,
+                            comp_id,source_item,comparison_name):
         """
         Triggers Commvault AD compare job
         Args:
@@ -183,12 +184,12 @@ class ADSubclient(Subclient):
                 Response was not a success
         """
         client_id = int(self._client_object.client_id)
-        backupset_id = int(self._backupset_object._get_backupset_id())
+        backupset_id=int(self._backupset_object._get_backupset_id())
 
         subclient_id = int(self.subclient_id)
 
-        trigger_compare_job = self._services['ADSTARTCOMPAREJOB']
-        request_time = int(time.time())
+        trigger_compare_job=self._services['ADSTARTCOMPAREJOB']
+        request_time=int(time.time())
         payload = {"taskInfo": {"associations": [
             {"subclientId": (subclient_id), "displayName":
                 display_name, "clientId": (client_id),
@@ -196,35 +197,36 @@ class ADSubclient(Subclient):
                  client_name, "backupsetId": (backupset_id),
              "_type_": "SUBCLIENT_ENTITY"}],
             "task": {"taskType": 1}, "subTasks": [
-                {"subTask": {"subTaskType": 1, "operationType": 4025},
-                 "options": {"backupOpts": {},
-                             "commonOpts": {"notifyUserOnJobCompletion": False},
-                             "adComparisonOption": {"adCompareType": 0,
-                                                    "comparisonName": comparison_name,
-                                                    "subClientId": (subclient_id),
-                                                    "appTypeId": 41,
-                                                    "clientId": (client_id),
-                                                    "nodeClientId": (client_id),
-                                                    "leftSetTime": left_set_time,
-                                                    "rightSetTime": right_set_time,
-                                                    "status": 0,
-                                                    "adComparisonJobType": 0,
-                                                    "selectedItems": {"sourceItem": [source_item]},
-                                                    "includeUnchangedItems": False,
-                                                    "excludeFrequentlyChanged": True,
-                                                    "comparisonId": (comp_id),
-                                                    "requestTime": request_time,
-                                                    "selectionHash": "D51A0DDBBFF582EEFA23A750DB90F1A46F6E90CE"}}}]}}
+            {"subTask": {"subTaskType": 1, "operationType": 4025},
+             "options": {"backupOpts": {},
+                         "commonOpts": {"notifyUserOnJobCompletion": False},
+                         "adComparisonOption": {"adCompareType": 0,
+                                                "comparisonName": comparison_name,
+                                                "subClientId": (subclient_id),
+                                                "appTypeId": 41,
+                                                "clientId": (client_id),
+                                                "nodeClientId": (client_id),
+                                                "leftSetTime": left_set_time,
+                                                "rightSetTime": right_set_time,
+                                                "status": 0,
+                                                "adComparisonJobType": 0,
+                                                "selectedItems": {"sourceItem": [source_item]},
+                                                "includeUnchangedItems": False,
+                                                "excludeFrequentlyChanged": True,
+                                                "comparisonId": (comp_id),
+                                                "requestTime":request_time ,
+                            "selectionHash": "D51A0DDBBFF582EEFA23A750DB90F1A46F6E90CE"}}}]}}
+
 
         flag, response = self._cvpysdk_object.make_request(method='POST',
-                                                           url=trigger_compare_job,
-                                                           payload=payload)
+                                                                   url=trigger_compare_job,
+                                                                     payload=payload)
 
         if not flag:
             raise SDKException('Response', '101',
                                self._commcell_object._update_response_(response.text))
 
-    def checkcompare_result_generated(self, comp_id):
+    def checkcompare_result_generated(self,comp_id):
         """
         Function to check AD comparison result generated and returns comparison cache path
         Args:
@@ -239,7 +241,7 @@ class ADSubclient(Subclient):
         while True:
 
             flag, response = self._cvpysdk_object.make_request(method='GET',
-                                                               url=compare_result)
+                                                                       url=compare_result)
 
             if flag:
 
@@ -251,6 +253,7 @@ class ADSubclient(Subclient):
                 if (error_message == "" and status == 0 and comparison_cache_path != ""):
                     return comparison_cache_path
                 if error_message != "":
+
                     raise SDKException('Response', '101',
                                        self._commcell_objectj._update_response_(response.text))
 
@@ -259,7 +262,7 @@ class ADSubclient(Subclient):
                 raise SDKException('Response', '101',
                                    self._commcell_object._update_response_(response.text))
 
-    def generate_compare_report(self, comp_id, comparison_cache_path, op_type=2):
+    def generate_compare_report(self,comp_id,comparison_cache_path,op_type=2):
         """
         Return AD Compare report
             Args:
@@ -274,16 +277,17 @@ class ADSubclient(Subclient):
         subclient_id = int(self.subclient_id)
         ad_comp_url = self._services['ADCOMPAREVIEWRESULTS']
         payload = {"isEnterprise": True, "discoverySentTypes": [24],
-                   "subclientDetails": {"subclientId": (subclient_id), "appTypeId": 41,
-                                        "clientId": (client_id)},
-                   "adComparisonBrowseReq": {"pageNumber": 0, "comparisonId": comp_id,
-                                             "opType": op_type, "browseItemId": 0,
-                                             "pageSize": 15, "comparisonCachePath":
-                                                 comparison_cache_path,
-                                             "searches": [{"masks": ["2", "1", "0"], "searchType": 2}]}}
+                     "subclientDetails": {"subclientId": (subclient_id), "appTypeId": 41,
+                                          "clientId": (client_id)},
+                     "adComparisonBrowseReq": {"pageNumber": 0, "comparisonId": comp_id,
+                                               "opType": op_type, "browseItemId": 0,
+                                               "pageSize": 15, "comparisonCachePath":
+                                                   comparison_cache_path,
+                                               "searches":[{"masks":["2","1","0"],"searchType":2}]}}
+
 
         flag, response = self._cvpysdk_object.make_request(method='POST', url=ad_comp_url,
-                                                           payload=payload)
+                                                                       payload=payload)
 
         if not flag:
             raise SDKException('Response', '101',
@@ -291,3 +295,77 @@ class ADSubclient(Subclient):
 
         return response.json()
 
+    def restore_job(self,display_name,client_name,subclient_name,to_time,restore_path):
+        """
+        Triggers AD restore job and waits for its completion
+        Args:
+              display_name(str) displayName of the client
+              client_name(str) name of the client
+              subclient_name(str) name of the subclient
+              to_time(int) time from where to restore
+              restore_path(str)  restore path
+        Return:
+             None
+        Exception:
+             Response was not a success
+        """
+        client_id = int(self._client_object.client_id)
+        subclient_id = int(self.subclient_id)
+        backupset_id = int(self._backupset_object._get_backupset_id())
+        client_guid=self._client_object.client_guid
+        commcell_id=int(self._commcell_object.commcell_id)
+        instance_id=int(self._instance_object.instance_id)
+
+        payload={"taskInfo":{"associations":[{"subclientId":subclient_id,
+                                              "displayName":display_name,
+                                              "clientId":client_id,
+                                              "entityInfo":{"companyId":0,"companyName":""},
+                                              "instanceName":"DefaultInstanceName",
+                                              "applicationId":41,
+                                              "clientName":client_name,
+                                              "backupsetId":backupset_id,
+                                              "instanceId":instance_id,
+                                              "clientGUID":client_guid,
+                                              "subclientName":subclient_name,
+                                              "backupsetName":"defaultBackupSet","_type_":7}],
+                                              "task":{"taskType":1,"initiatedFrom":1},
+                                              "subTasks":[{"subTask":
+                                              {"subTaskType":3,"operationType":1001},
+                                              "options":{"commonOpts":{
+                                              "notifyUserOnJobCompletion":False,
+                                              "jobMetadata":[{"selectedItems":
+                                              [{"itemName":"","itemType":""}],
+                                              "jobOptionItems":[]}]},
+                                              "restoreOptions":{"browseOption":
+                                              {"commCellId":commcell_id,
+                                              "noImage":False,"useExactIndex":False,
+                                              "listMedia":False,"backupset":
+                                              {"backupsetId":backupset_id,
+                                              "clientId":client_id},
+                                              "timeRange":{"toTime":to_time},
+                                              "mediaOption":{"copyPrecedence":
+                                              {"copyPrecedenceApplicable":False}}},
+                                              "destination":{"inPlace":True,"destClient":
+                                              {"clientId":client_id,"clientName":client_name}},
+                                              "fileOption":{"sourceItem":[restore_path]},
+                                              "activeDirectoryRstOption":{},
+                                              "commonOptions":{"detectRegularExpression":True,
+                                              "preserveLevel":1,"restoreACLs":True}}}}]}}
+
+        trigger_response=self._services['AD_PointInTimeRestore']
+        flag, response =self._cvpysdk_object.make_request(method='POST', url=trigger_response,
+                                                                   payload=payload)
+        if not flag:
+            raise SDKException('Response', '101',
+                               self._commcell_object._update_response_(response.text))
+        if not response:
+            raise SDKException('Response', '101',
+                               self._commcell_object._update_response_(response.text))
+        response = response.json()
+        if "errorCode" in response:
+            raise SDKException('Response', '101',
+                               self._commcell_object._update_response_(response.text))
+        # get restore job and wait for its completion
+        job_id = response["jobIds"][0]
+        job = self._commcell_object.job_controller.get(job_id)
+        job.wait_for_completion()

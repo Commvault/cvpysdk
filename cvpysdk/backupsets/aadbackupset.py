@@ -44,7 +44,7 @@ Class:
         _process_browse_repsonse : process the browse result
 
         azuread_get_metadata : create azure ad object meta data information
-
+        
         __prepare_search_json : Prepare search json for search api request
 
         get_search_response : Get search response from search api
@@ -54,7 +54,6 @@ Class:
         get_view_attribute_response : Get view attribute response from view attribute url
 
 """
-
 
 from __future__ import unicode_literals
 import base64
@@ -357,7 +356,7 @@ class AzureAdBackupset(Backupset):
                                             "attribute": "attribute to perform search "}
             Return:     (dict)      view properties
         """
-        options["subclient_id"] = self.subclients.get("default").subclient_id
+        options["subclient_id"] = self.subclients.all_subclients['default']['id']
 
         request_json = {
             "mode": 4,
@@ -536,7 +535,7 @@ class AzureAdBackupset(Backupset):
             The URL for viewing attributes.
         """
 
-        subclient_id = self.subclients.get("default").subclient_id
+        subclient_id = self.subclients.all_subclients['default']['id']
 
         try:
             search_response = self.get_search_response(job_time=job_time, attribute=display_name)

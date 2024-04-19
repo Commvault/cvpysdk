@@ -1220,7 +1220,7 @@ class DiskLibraries(Libraries):
                 saved_credential_name   (str)   --  name of the saved credential
                     default: ""
 
-                \*\*kwargs      (dict)  --  optional arguments
+                kwargs      (dict)  --  optional arguments
 
                 Available kwargs Options:
 
@@ -2348,7 +2348,7 @@ class DiskLibrary(object):
 
             new_mount_path  (int)   -- Mount path to be shared
 
-            \*\*kwargs  (dict)  --  Optional arguments
+                kwargs  (dict)  --  Optional arguments
 
                     Available kwargs Options:
 

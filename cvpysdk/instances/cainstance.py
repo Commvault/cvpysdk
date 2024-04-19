@@ -72,6 +72,8 @@ class CloudAppsInstance(Instance):
         from .cloudapps.dynamics365_instance import MSDynamics365Instance
         from .cloudapps.teams_instance import TeamsInstance
         from .cloudapps.spanner_instance import GoogleSpannerInstance
+        from .cloudapps.onedrive_instance import OneDriveInstance
+
         instance_type = {
             1: GoogleInstance,
             2: GoogleInstance,
@@ -79,8 +81,7 @@ class CloudAppsInstance(Instance):
             4: AmazonRDSInstance,     # Amazon RDS Instance
             5: CloudStorageInstance,  # AmazonS3 Instance
             6: CloudStorageInstance,  # AzureBlob Instance
-            # OneDrive Instance, GoogleInstance class is used for OneDrive instance too.
-            7: GoogleInstance,
+            7: OneDriveInstance,      # OneDrive Instance
             14: CloudStorageInstance,  # OracleCloud Instance
             15: CloudStorageInstance,  # Openstack Instance
             20: CloudStorageInstance,  # Google Cloud Instance

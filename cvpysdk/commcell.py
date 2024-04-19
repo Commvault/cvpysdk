@@ -415,6 +415,7 @@ from .deduplication_engines import DeduplicationEngines
 from .metallic import Metallic
 from .key_management_server import KeyManagementServers
 from .regions import Regions
+from urllib.parse import urlparse
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
 USER_DOES_NOT_HAVE_PERMISSION = "User does not have permission on commcell properties"
@@ -436,7 +437,8 @@ class Commcell(object):
             force_https=False,
             certificate_path=None,
             is_service_commcell=None,
-            verify_ssl = True):
+            verify_ssl = True,
+            **kwargs):
         """Initialize the Commcell object with the values required for doing the API operations.
 
             Commcell Username and Password can be None, if QSDK / SAML token is being given
@@ -502,6 +504,9 @@ class Commcell(object):
 
             **Note** In case of Multicommcell Login, if we wanted to login into child commcell (Service commcell)
                         set is_service_commcell to True
+                
+                **kwargs:
+                    web_service_url      (str)   --  url of webservice for the api requests
 
             Returns:
                 object  -   instance of this class
@@ -513,15 +518,28 @@ class Commcell(object):
                     if no token is received upon log in
 
         """
-        web_service = [
-            r'https://{0}/webconsole/api/'.format(webconsole_hostname)
-        ]
-
+        web_service_url = kwargs.get("web_service_url", None)
+        web_service = []
+        
         if certificate_path:
             force_https = True
+            
+        if not web_service_url:
+            web_service = [
+				r'https://{0}/webconsole/api/'.format(webconsole_hostname)
+			]
 
-        if force_https is False:
-            web_service.append(r'http://{0}/webconsole/api/'.format(webconsole_hostname))
+            if force_https is False:
+                web_service.append(r'http://{0}/webconsole/api/'.format(webconsole_hostname))
+        else:
+            web_service = []
+            if web_service_url.startswith("https://") or web_service_url.startswith("http://"):
+                web_service.append(r'{0}/'.format(web_service_url))
+            else:
+                web_service.append(r'https://{0}/'.format(web_service_url))
+                if force_https is False:
+                    web_service.append(r'http://{0}/'.format(web_service_url))
+                
 
         self._user = commcell_username
 
@@ -533,6 +551,10 @@ class Commcell(object):
             'Content-type': 'application/json',
             'Authtoken': None
         }
+        
+        if web_service_url:
+            parsed_web_service_url = urlparse(web_service_url)
+            self._headers['Host'] = f"{parsed_web_service_url.netloc}"
 
         self._device_id = socket.getfqdn()
         self._is_service_commcell = is_service_commcell
@@ -2362,7 +2384,7 @@ class Commcell(object):
                             to authenticate the cache
 
                             >>> commcell_obj.copy_software(
-                            media_loc = "\\subdomain.company.com\Media",
+                            media_loc = "\\subdomain.company.com\\Media",
                             username = "domainone\\userone",
                             password = "base64encoded password"
                             )

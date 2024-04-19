@@ -263,11 +263,10 @@ class RecoveryGroup:
                 if response is not success
 
         """
-        return self._recover_entities([
-            entity['id']
-            for entity in self.entities
-            if entity['recoveryStatus'] != RecoveryStatus.NOT_READY
-        ])
+        eligible_entities = [entity['id'] for entity in self.entities if
+                             entity['recoveryStatus'] not in [RecoveryStatus.NOT_READY.value,
+                                                              RecoveryStatus.IN_PROGRESS.value]]
+        return self._recover_entities(eligible_entities)
 
     def refresh(self):
         """Refresh the recovery group"""

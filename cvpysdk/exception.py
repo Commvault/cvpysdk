@@ -601,6 +601,12 @@ EXCEPTION_DICT = {
     'RecoveryGroup': {
         '101': 'Data type of the input(s) is not valid',
         '102': ''
+    },
+    'CommserveRecovery': {
+        '101': 'User is not authorized',
+        '102': 'Given commcell does not have an active license',
+        '103': 'Given request id is not in active requests',
+        '104': 'Requested backupset is not available for recovery'
     }
 }
 

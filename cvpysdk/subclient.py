@@ -3276,6 +3276,7 @@ c
                 value   (str)       --  name of the plan to be associated
 
                 value   (None)      --  set value to None to remove plan associations
+                
 
             Raises:
                 SDKException:
@@ -3304,6 +3305,7 @@ c
                 })
             else:
                 raise SDKException('Subclient', '102', 'Plan does not exist')
+                
         elif value is None:
             self.update_properties({
                 'removePlanAssociation': True
