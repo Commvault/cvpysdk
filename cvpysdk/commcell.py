@@ -368,6 +368,7 @@ from .storage import DiskLibraries
 from .storage import TapeLibraries
 from .security.usergroup import UserGroups, UserGroup
 from .domains import Domains, Domain
+from .tags import Tags
 from .workflow import WorkFlows
 from .exception import SDKException
 from .clientgroup import ClientGroups
@@ -526,11 +527,11 @@ class Commcell(object):
             
         if not web_service_url:
             web_service = [
-				r'https://{0}/webconsole/api/'.format(webconsole_hostname)
+				r'https://{0}/commandcenter/api/'.format(webconsole_hostname)
 			]
 
             if force_https is False:
-                web_service.append(r'http://{0}/webconsole/api/'.format(webconsole_hostname))
+                web_service.append(r'http://{0}/commandcenter/api/'.format(webconsole_hostname))
         else:
             web_service = []
             if web_service_url.startswith("https://") or web_service_url.startswith("http://"):
@@ -688,6 +689,7 @@ class Commcell(object):
         self._privacy = None
         self._commcell_properties = None
         self._regions = None
+        self._tags = None
         self.refresh()
 
         del self._password
@@ -792,6 +794,7 @@ class Commcell(object):
         del self._tfa
         del self._metallic
         del self._kms
+        del self._tags
         del self
 
     def _get_commserv_details(self):
@@ -1490,6 +1493,17 @@ class Commcell(object):
             return USER_LOGGED_OUT_MESSAGE
 
     @property
+    def tags(self):
+        """Returns the instance of the tags class."""
+        try:
+            if self._tags is None:
+                self._tags = Tags(self)
+
+            return self._tags
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
     def storage_pools(self):
         """Returns the instance of the StoragePools class."""
         try:
@@ -1989,6 +2003,7 @@ class Commcell(object):
         self._index_pools = None
         self._deduplication_engines = None
         self._tfa = None
+        self._tags = None
 
     def get_remote_cache(self, client_name):
         """Returns the instance of the RemoteCache  class."""

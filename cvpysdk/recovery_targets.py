@@ -16,7 +16,7 @@
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-"""Main file for performing Recovery Target specific operations.
+"""Main file for performing Replication Target specific operations (Auto Recovery).
 
 RecoveryTargets and RecoveryTarget are 2 classes defined in this file.
 
@@ -327,13 +327,12 @@ class RecoveryTarget:
         if flag:
             if response.json() and 'entity' in response.json():
                 self._recovery_target_properties = response.json()
-                self._application_type = self._recovery_target_properties['entity']['applicationType']
-                self._destination_hypervisor = self._recovery_target_properties['entity']['destinationHypervisor']['name']
-                self._vm_suffix = self._recovery_target_properties["vmDisplayName"].get("suffix", "")
-                self._vm_prefix = self._recovery_target_properties["vmDisplayName"].get("prefix", "")
-                self._access_node = self._recovery_target_properties["accessNode"].get("type", "")
-                self._access_node_client_group = (self._recovery_target_properties.get('proxyClientGroupEntity', {})
-                                                  .get('clientGroupName'))
+                self._application_type = self._recovery_target_properties.get('entity', {}).get('applicationType')
+                self._destination_hypervisor = self._recovery_target_properties.get('entity', {}).get('destinationHypervisor', {}).get('name')
+                self._vm_suffix = self._recovery_target_properties.get('vmDisplayName', {}).get("suffix", "")
+                self._vm_prefix = self._recovery_target_properties.get('vmDisplayName', {}).get("prefix", "")
+                self._access_node = self._recovery_target_properties.get('accessNode', {}).get("name", "")
+                self._access_node_client_group = self._access_node if self._recovery_target_properties.get('accessNode', {}).get("type", "") == 'Group' else ''
                 self._users = self._recovery_target_properties.get('securityOptions', {}).get('users', [])
                 self._user_groups = self._recovery_target_properties.get('securityOptions', {}).get('userGroups', [])
                 policy_type = self._recovery_target_properties["entity"].get("policyType", "")

@@ -386,6 +386,7 @@ class ClientGroups(object):
             'contains': 10,
             'starts with': 14,
             'ends with': 15,
+            'does not contain': 11,
             }
         prop_id_dict = {
             'Name': 1,
@@ -458,6 +459,9 @@ class ClientGroups(object):
             'Client CIDR Address Range': 81,
             'HAC Cluster': 85,
             'Client Display Name': 116,
+            'Clients associated to any company': 158,
+            'VMs not in any Subclient Content': 166,
+            'Pseudo Clients': 115,
             }
         ptype_dict = {
             'Name': 2,
@@ -530,6 +534,9 @@ class ClientGroups(object):
             'Client CIDR Address Range': 10,
             'HAC Cluster': 1,
             'Client Display Name': 2,
+            'Clients associated to any company': 1,
+            'VMs not in any Subclient Content': 1,
+            'Pseudo Clients': 1,
             }
 
         rule_mk = {

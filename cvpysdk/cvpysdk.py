@@ -129,7 +129,7 @@ class CVPySDK(object):
             response = self._request(
                 method='GET',
                 url=self._commcell_object._web_service,
-                timeout=184
+                timeout=10
             )
 
             # Valid service if the status code is 200 and response is True

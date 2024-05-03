@@ -262,6 +262,9 @@ SERVICES_DICT_TEMPLATE = {
     'ACTIVATE_ENTITY': '{0}dcube/entity/%s',
     'ACTIVATE_ENTITY_CONTAINER': '{0}EntityExtractionRules?getDisabled=true',
     'GET_TAGS': '{0}EDiscovery/Tags',
+    'GET_ENTITY_TAGS': '{0}V4/Tags/AssociatedEntities',
+    'CREATE_ENTITY_TAGS': '{0}EDiscovery/Tags',
+    'DELETE_ENTITY_TAGS': '{0}V4/EntityTags/%s',
     'ADD_CONTAINER': '{0}PerformContainerOperation',
     'DELETE_CONTAINER': '{0}Containers/Action/Delete',
     'CA_UPLOAD_FILE': '{0}ContentAnalyzer/%s/action/uploadFile',
@@ -326,6 +329,7 @@ SERVICES_DICT_TEMPLATE = {
     'PLAN_SUPPORTED_SOLUTIONS': '{0}V4/Solutions?filter=PLAN_SUPPORTED_SOLUTIONS',
     'V4_SERVER_PLAN': '{0}V4/ServerPlan/%s',
     'V4_SERVER_PLANS': '{0}V4/ServerPlan',
+    'V4_GLOBAL_SERVER_PLANS': '{0}/V4/Global/ServerPlan',
     'V4_SERVER_PLAN_BACKUP_DESTINATION': '{0}V4/ServerPlan/%s/BackupDestination',
     'V4_SERVER_PLAN_COPY': '{0}V4/ServerPlan/%s/BackupDestination/%s',
     'V5_SERVER_PLAN_COPY': '{0}V5/ServerPlan/%s/BackupDestination/%s',
@@ -604,7 +608,7 @@ SERVICES_DICT_TEMPLATE = {
 
 
      'ADCOMPAREID': '{0}/ActiveDirectory/Subclient/%s/Comparison',
-     'ADSTARTCOMPAREJOB': '{0}/CreateTask',
+
       'ADCOMPARESTATUSCHECK':'{0}/ActiveDirectory/Comparison/%s',
     'ADCOMPAREVIEWRESULTS':'{0}/ActiveDirectory/Compare',
 
@@ -615,7 +619,7 @@ SERVICES_DICT_TEMPLATE = {
     'VIEW_PROPERTIES': '{0}/Recall?at=%s&si=%s&op=%s&appId=%s&ec=%s',
 
 
-    'AD_PointInTimeRestore':'{0}/CreateTask'
+
 
     'COMMSERVE_RECOVERY': '{0}cvdrbackup/csrecovery',
     'GET_BACKUPSET_INFO': '{0}cvdrbackup/info?csGuid=%s',

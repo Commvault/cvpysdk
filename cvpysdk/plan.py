@@ -209,6 +209,7 @@ class _PayloadGeneratorPlanV4:
                     - 'retentionPeriodDays' (int): Retention days for the copy (Default: 30 days)
                     - 'backupDestinationName' (str): Name of the copy (Default: 'Primary')
                     - 'region_name' (str, optional): Name of the region
+                    - 'storageTemplateTags' (dict): To indentify storage based on tags (Needed only for Global Plans)
 
                 Note: Additional properties can be sent in the input to update the payload with the same exact key names.
                     
@@ -218,11 +219,10 @@ class _PayloadGeneratorPlanV4:
                 dict: Copy details as a dictionary.
         """
         # validate the input
-        if 'storage_name' not in copy_details:
-            raise SDKException('Plan', '102', 'storage_name is required for copy configuration.')
+        if 'storageTemplateTags' not in copy_details and 'storage_name' not in copy_details:
+            raise SDKException('Plan', '102', 'Storage details is required for copy configuration.')
         
         temp_dict = copy_details.copy() # make a copy of the input to avoid modifying the original input
-        storage_pool = self.__commcell.storage_pools.get(copy_details["storage_name"])
 
         payload = {
             "backupDestinationName": copy_details.get("backupDestinationName", "Primary"),
@@ -230,12 +230,16 @@ class _PayloadGeneratorPlanV4:
             "useExtendedRetentionRules": False,
             "overrideRetentionSettings": True,
             "backupStartTime": -1,
-            "storagePool": {
+        }
+
+        # If storage_name is provided, update the payload with storage details
+        if 'storage_name' in copy_details:
+            storage_pool = self.__commcell.storage_pools.get(copy_details["storage_name"])
+            payload['storagePool'] = {
                 "id": int(storage_pool.storage_pool_id),
                 "name": storage_pool.storage_pool_name
-            },
-            "storageType": storage_pool.storage_pool_properties['storagePoolDetails']['libraryList'][0]['model'].upper()
-        }
+            }
+            payload['storageType'] = storage_pool.storage_pool_properties['storagePoolDetails']['libraryList'][0]['model'].upper()
 
         # Add aux copy specific properties
         if is_aux_copy:
@@ -457,6 +461,7 @@ class Plans(object):
 
         self._PLANS = self._services['PLANS']
         self._V4_PLANS = self._services['V4_SERVER_PLANS']
+        self._V4_GLOBAL_PLANS = self._services['V4_GLOBAL_SERVER_PLANS']
         self._plans = None
         self.refresh()
 
@@ -990,6 +995,41 @@ class Plans(object):
                         backup_copy_rpo_mins (int, optional): RPO for backup copy in minutes.
                         snap_retention_days (int, optional): Retention period in days.
                         snap_recovery_points (int, optional): Snap recovery point.
+                        gcm_options (dict, optional): Global Configuration Manager options
+                            commcells (list): List of commcell IDs to apply the plan (If not specified, applies to all commcells)
+
+                        For Global Plans, backup_destinations input should be in the following format:
+
+                        Example #1: For Single Copy
+                            backup_destinations = {
+                                "storageTemplateTags": [
+                                    {
+                                        "name": "Tag Name",
+                                        "value": "Tag Value"
+                                    }
+                                ]
+                            }
+
+                        Example #2: For Multiple Copies
+                        backup_destinations = [
+                            {
+                                'storageTemplateTags': [
+                                    {
+                                        'name': 'Tag Name 1', 
+                                        'value': 'Tag Value 1'
+                                    }
+                                ]
+                            }, 
+                            {
+                                'backupDestinationName': 'Aux Copy Name', 
+                                'storageTemplateTags': [
+                                    {
+                                        'name': 'Tag Name 2', 
+                                        'value': 'Tag Value 2'
+                                    }
+                                ]
+                            }
+                        ]
 
         """
         if schedules is None:
@@ -1008,7 +1048,21 @@ class Plans(object):
             plan_name, backup_destinations, schedules, **additional_params
         )
 
-        flag, response = self._cvpysdk_object.make_request('POST', self._V4_PLANS, request_json)
+        if gcm_options := additional_params.get('gcm_options'):
+            service_commcell_ids = gcm_options.get('commcells', [])  # [{'id': 1}, {'id': 2}]
+            apply_on_all_commcells = False if service_commcell_ids else True
+            request_json = {
+            "globalConfigInfo": {
+                "commcells": service_commcell_ids,
+                "scope": "",
+                "scopeFilterQuery": "",
+                "applyOnAllCommCells": apply_on_all_commcells
+            },
+            "plan": request_json
+            }
+
+        endpoint = self._V4_GLOBAL_PLANS if gcm_options else self._V4_PLANS
+        flag, response = self._cvpysdk_object.make_request('POST', endpoint, request_json)
 
         if flag:
             if response.json():

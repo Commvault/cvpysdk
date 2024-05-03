@@ -1012,6 +1012,12 @@ class VirtualServerSubclient(Subclient):
             self._advanced_option_restore_json["roleInfo"] = {
                 "name": value["iamRole"]
             }
+        if value.get("serviceAccount").get("email"):
+            self._advanced_option_restore_json["roleInfo"] = {
+                "email": value.get("serviceAccount").get("email"),
+                "name": value.get("serviceAccount").get("displayName"),
+                "id": value.get("serviceAccount").get("uniqueId")
+            }
         if self._instance_object.instance_name == 'openstack':
             if "securityGroups" in value and value["securityGroups"] is not None:
                 self._advanced_option_restore_json["securityGroups"] = [{"groupName": value["securityGroups"]}]
@@ -2186,7 +2192,8 @@ class VirtualServerSubclient(Subclient):
         restore_option["disks"] = vm_disks
 
         # prepare nics info json
-        if "nics" not in restore_option or self._instance_object.instance_name == HypervisorType.GOOGLE_CLOUD.value.lower():
+        if "nics" not in restore_option or \
+                self._instance_object.instance_name == HypervisorType.GOOGLE_CLOUD.value.lower():
             nics_list = self._json_nics_advancedRestoreOptions(vm_to_restore, restore_option)
             restore_option["nics"] = nics_list
             if restore_option.get('source_ip') and restore_option.get('destination_ip'):

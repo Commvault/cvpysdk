@@ -269,6 +269,13 @@ EXCEPTION_DICT = {
         '106': 'Unable to find given tag name in this tagset',
         '107': 'Unable to do TagSet security association in the commcell'
     },
+    'EntityTags': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Unable to create entity tag with the given name',
+        '104': 'Unable to delete entity tag with the given name',
+        '105': 'Unable to find entity tag with given name for user'
+    },
     'EntityManager': {
         '101': 'Data type of the input(s) is not valid',
         '102': ''

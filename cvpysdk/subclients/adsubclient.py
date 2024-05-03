@@ -188,7 +188,7 @@ class ADSubclient(Subclient):
 
         subclient_id = int(self.subclient_id)
 
-        trigger_compare_job=self._services['ADSTARTCOMPAREJOB']
+        trigger_compare_job=self._services['CREATE_TASK']
         request_time=int(time.time())
         payload = {"taskInfo": {"associations": [
             {"subclientId": (subclient_id), "displayName":
@@ -352,7 +352,7 @@ class ADSubclient(Subclient):
                                               "commonOptions":{"detectRegularExpression":True,
                                               "preserveLevel":1,"restoreACLs":True}}}}]}}
 
-        trigger_response=self._services['AD_PointInTimeRestore']
+        trigger_response=self._services['CREATE_TASK']
         flag, response =self._cvpysdk_object.make_request(method='POST', url=trigger_response,
                                                                    payload=payload)
         if not flag:

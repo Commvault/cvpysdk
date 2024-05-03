@@ -65,7 +65,7 @@ class Regions:
         if flag:
             if response.json() and 'regions' in response.json():
                 for region in response.json()['regions']:
-                    name = region['name']
+                    name = region['name'].lower()
                     id = region['id']
                     self._regions[name] = id
 
@@ -97,7 +97,7 @@ class Regions:
         if not isinstance(name, str):
             raise SDKException('Region', '103')
 
-        return self._regions and (name in self._regions)
+        return self._regions and (name.lower() in self._regions)
 
     def get(self, name):
         """
