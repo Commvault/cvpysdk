@@ -615,7 +615,7 @@ SERVICES_DICT_TEMPLATE = {
     'LIST_BACKUP_JOBS': '{0}Jobs/Calendar?dateListResponse=false&agedJobs=false&subclientId=&instanceId=&backupsetId=%s'
                         '&clientId=%s&jobTypeList=Backup,SYNTHFULL&fromStartTime=%s&toStartTime=%s&applicationIdList'
                         '=&statusList=%s&clientIdList=%s&isArchiverClient=false&lastBackup=false',
-    
+
     'VIEW_PROPERTIES': '{0}/Recall?at=%s&si=%s&op=%s&appId=%s&ec=%s',
 
 

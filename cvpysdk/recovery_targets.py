@@ -362,11 +362,12 @@ class RecoveryTarget:
                     self._destination_network = self._recovery_target_properties.get("networkOptions", {}).get("networkCard", {}).get("destinationNetworks", [])
                     self._destination_host = self._recovery_target_properties.get("destinationOptions", {}).get("destinationHost", "")
                 elif self._policy_type == 7:
+                    self._resource_group = self._recovery_target_properties.get("destinationOptions", {}).get("destinationHost", "")
                     self._region = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('region', {}).get('name')
                     self._availability_zone = self._recovery_target_properties.get('cloudDestinationOptions',{}).get('availabilityZone')
                     self._storage_account = self._recovery_target_properties.get("destinationOptions", {}).get("dataStore", "")
 
-                    self._vm_size = (self._recovery_target_properties.get('amazonPolicy', {}).get('vmInstanceTypes', [{}])[0].get('vmInstanceTypeName',''))
+                    self._vm_size = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('vmInstanceType')
                     self._disk_type = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('volumeType')
                     self._virtual_network = self._recovery_target_properties.get('networkOptions', {}).get('networkCard', {}).get('networkDisplayName')
                     self._security_group = self._recovery_target_properties.get('securityOptions', {}).get('securityGroups', [{}])[0].get('name', '')

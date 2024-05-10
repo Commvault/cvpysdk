@@ -169,6 +169,7 @@ class VSBackupset(Backupset):
         browse_result = None
         error_message = None
         options['retry_count'] = options['retry_count'] + 1
+        show_deleted = options.get('show_deleted', False)
 
         if flag:
             response_json = response.json()
@@ -219,7 +220,7 @@ class VSBackupset(Backupset):
                     raise SDKException('Backupset', '110', "Failed to browse for subclient backup content")
 
                 if 'all_versions' in options['operation']:
-                    return self._process_browse_all_versions_response(result_set)
+                    return self._process_browse_all_versions_response(result_set,options)
 
                 for result in result_set:
                     name = result.get('displayName')
@@ -254,6 +255,11 @@ class VSBackupset(Backupset):
                         size = result['size']
                     else:
                         size = None
+                        
+                    if show_deleted and 'deleted' in result.get('flags'):
+                        deleted = True if result['flags'].get('deleted') in (True, '1') else False
+                    else:
+                        deleted = None
 
                     paths_dict[path] = {
                         'name': name,
@@ -262,7 +268,8 @@ class VSBackupset(Backupset):
                         'modified_time': mod_time,
                         'type': file_or_folder,
                         'backup_time': bkp_time,
-                        'advanced_data': result['advancedData']
+                        'advanced_data': result['advancedData'],
+                        'deleted': deleted
                     }
 
                     paths.append(path)

@@ -560,12 +560,17 @@ class Commcell(object):
         self._device_id = socket.getfqdn()
         self._is_service_commcell = is_service_commcell
 
-        self._cvpysdk_object = CVPySDK(self, certificate_path, verify_ssl)
-
         # Checks if the service is running or not
         for service in web_service:
             self._web_service = service
             try:
+                if service.startswith("http:"):
+                    # if force_https is false and if verify_ssl is true, we still allow HTTP calls to be made.
+                    # since verify_ssl is set, the calls for http is failing. Below change allow http calls to be made
+                    verify_ssl = False
+                    self._cvpysdk_object = CVPySDK(self, certificate_path, verify_ssl)
+                else:
+                    self._cvpysdk_object = CVPySDK(self, certificate_path, verify_ssl)
                 if self._cvpysdk_object._is_valid_service():
                     break
             except (RequestsConnectionError, SSLError, Timeout):

@@ -1445,7 +1445,7 @@ class Backupset(object):
             },
             "paths": [{"path": path} for path in paths],
             "options": {
-                "showDeletedFiles": options['show_deleted'],
+                "showDeletedFiles": options.get('show_deleted', False),
                 "restoreIndex": options['restore_index'],
                 "vsDiskBrowse": options['vm_disk_browse'],
                 "vsFileBrowse": options.get('vs_file_browse', False),
@@ -1542,11 +1542,15 @@ class Backupset(object):
 
         return request_json
 
-    def _process_browse_all_versions_response(self, result_set):
+    def _process_browse_all_versions_response(self, result_set, options):
         """Retrieves the items from browse response.
 
         Args:
             result_set  (list of dict)  --  browse response dict obtained from server
+            options     (dict)          --  The browse options dictionary
+											{
+												"show_deleted": True,
+											}
 
         Returns:
             dict - Dictionary of the specified file with list of all the file versions and
@@ -1562,6 +1566,7 @@ class Backupset(object):
         """
         path = None
         versions_list = []
+        show_deleted = options.get('show_deleted', False)
 
         for result in result_set:
             name = result['displayName']
@@ -1597,6 +1602,11 @@ class Backupset(object):
             else:
                 version = None
 
+            if show_deleted and 'deleted' in result.get('flags'):
+                deleted = True if result['flags'].get('deleted') in (True, '1') else False
+            else:
+                deleted = None
+                    
             paths_dict = {
                 'name': name,
                 'version': version,
@@ -1604,7 +1614,8 @@ class Backupset(object):
                 'modified_time': mod_time,
                 'type': file_or_folder,
                 'backup_time': bkp_time,
-                'advanced_data': result['advancedData']
+                'advanced_data': result['advancedData'],
+                'deleted': deleted
             }
 
             versions_list.append(paths_dict)
@@ -1654,6 +1665,8 @@ class Backupset(object):
 
         exception_code = operation_types[options['operation']][0]
         exception_message = operation_types[options['operation']][1]
+        
+        show_deleted = options.get('show_deleted', False)
 
         if flag:
 
@@ -1693,7 +1706,7 @@ class Backupset(object):
                     result_set = [result_set]
 
                 if 'all_versions' in options['operation']:
-                    return self._process_browse_all_versions_response(result_set)
+                    return self._process_browse_all_versions_response(result_set, options)
 
                 for result in result_set:
                     name = result.get('displayName')
@@ -1728,6 +1741,11 @@ class Backupset(object):
                         size = result['size']
                     else:
                         size = None
+                        
+                    if show_deleted and 'deleted' in result.get('flags'):
+                        deleted = True if result['flags'].get('deleted') in (True, '1') else False
+                    else:
+                        deleted = None
 
                     paths_dict[path] = {
                         'name': name,
@@ -1736,7 +1754,8 @@ class Backupset(object):
                         'modified_time': mod_time,
                         'type': file_or_folder,
                         'backup_time': bkp_time,
-                        'advanced_data': result['advancedData']
+                        'advanced_data': result['advancedData'],
+                        'deleted': deleted
                     }
 
                     paths.append(path)

@@ -361,7 +361,9 @@ EXCEPTION_DICT = {
         '103': 'Export not found under the export set',
         '104': 'Export deletion failed with error',
         '105': 'Failed to get the export set with provided export set name',
-        '106': 'Export Set not found'
+        '106': 'Export Set not found',
+        '107': 'Invalid Application type provided',
+        '108': 'Invalid export type provided'
     },
     'Salesforce': {
         '101': 'Neither Sync Database enabled nor user provided database details for restore',
