@@ -363,9 +363,10 @@ class StoragePools:
 
             media_agent         (str/object)--  name or instance of media agent
 
-            ddb_ma              (str/object)--  name or instance of dedupe media agent
+            ddb_ma              (list<str/object>/str/object)   --  list of (name of name or instance)
+                                                                        or name or instance of dedupe media agent
 
-            dedup_path          (str)       --  path where the DDB should be stored
+            dedup_path          (list<str>/str)       --  list of paths or path where the DDB should be stored
 
             **kwargs:
                 username        (str)       --  username to access the mountpath
@@ -406,13 +407,13 @@ class StoragePools:
                 raise SDKException('Storage', '101')
 
         if ddb_ma is not None and (len(ddb_ma) > 6 or len(dedup_path) > 6):
-            raise  SDKException('Storage', '110')
+            raise SDKException('Storage', '110')
 
         if ddb_ma is not None:
             for i in range(len(ddb_ma)):
                 if isinstance(ddb_ma[i], MediaAgent):
                     ddb_ma[i] = ddb_ma[i]
-                if isinstance(ddb_ma[i], str):
+                elif isinstance(ddb_ma[i], str):
                     ddb_ma[i] = MediaAgent(self._commcell_object, ddb_ma[i])
                 else:
                     raise SDKException('Storage', '103')

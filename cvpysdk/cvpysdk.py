@@ -190,6 +190,12 @@ class CVPySDK(object):
                     else:
                         error_message = response.json()['errList'][0]['errLogMessage']
                         err_msg = 'Error: "{0}"'.format(error_message)
+                        if response.json().get('isAccountLocked', False) and response.json().get('remainingLockTime',0) > 0:
+                            locktime = response.json().get('remainingLockTime',0)
+                            lock_hours = locktime // 3600
+                            rem_secs = locktime % 3600
+                            lock_mins = rem_secs // 60
+                            err_msg = 'Error: "User account is locked for {0} hour(s) {1} minute(s)."'.format(lock_hours,lock_mins)
                         raise SDKException('CVPySDK', '101', err_msg)
                 else:
                     raise SDKException('Response', '102')

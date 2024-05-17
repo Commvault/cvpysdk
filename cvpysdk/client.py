@@ -2161,7 +2161,7 @@ class Clients(object):
             client_name,
             index_server,
             clients_list,
-            storage_policy,
+            server_plan,
             recall_service_url,
             job_result_dir,
             exchange_servers,
@@ -2182,7 +2182,7 @@ class Clients(object):
                 clients_list            (list)  --  list containing client names / client objects,
                 to associate with the Virtual Client
 
-                storage_policy          (str)   --  storage policy to associate with the client
+                server_plan          (str)   --  server_plan to associate with the client
 
                 recall_service_url      (str)   --  recall service for client
 
@@ -2242,7 +2242,7 @@ class Clients(object):
             raise SDKException('Client', '101')
 
         index_server_dict = {}
-        storage_policy_dict = {}
+        server_plan_dict = {}
 
         if self.has_client(index_server):
             index_server_cloud = self.get(index_server)
@@ -2254,12 +2254,11 @@ class Clients(object):
                     "mediaAgentName": index_server_cloud.client_name
                 }
 
-        if self._commcell_object.storage_policies.has_policy(storage_policy):
-            storage_policy_object = self._commcell_object.storage_policies.get(storage_policy)
+        if self._commcell_object.plans.has_plan(server_plan):
+            server_plan_object = self._commcell_object.plans.get(server_plan)
 
-            storage_policy_dict = {
-                "storagePolicyName": storage_policy_object.storage_policy_name,
-                "storagePolicyId": int(storage_policy_object.storage_policy_id)
+            server_plan_dict = {
+                "planId": int(server_plan_object.plan_id)
             }
 
         account_list = []
@@ -2301,6 +2300,7 @@ class Clients(object):
         request_json = {
             "clientInfo": {
                 "clientType": 25,
+                "plan": server_plan_dict,
                 "exchangeOnePassClientProperties": {
                     "backupSetTypeToCreate" : backupset_type_to_create,
                     "recallService": recall_service_url,
@@ -2316,7 +2316,6 @@ class Clients(object):
                         "memberServers": member_servers
                     },
                     "indexServer": index_server_dict,
-                    "dataArchiveGroup": storage_policy_dict,
                     "jobResulsDir": {
                         "path": job_result_dir
                     }
@@ -2333,7 +2332,9 @@ class Clients(object):
                                 {
                                     "azureDirectoryId": azure_tenant_name,
                                     "azureAppKeyValue": azure_app_key_secret,
-                                    "azureAppId": azure_app_key_id
+                                    "azureAppId": azure_app_key_id,
+                                    "appStatus": 1,
+                                    "azureAppType": 1
                                 }
                             ]
                         }
