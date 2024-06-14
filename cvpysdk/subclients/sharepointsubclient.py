@@ -935,8 +935,8 @@ class SharepointSubclient(SharepointSuperSubclient):
 
                  paths     (list)   --  list of sites or webs to be restored
                  Example: [
-                    "MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\Contents\Shared Documents",
-                    "MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\Contents\Test Automation List"
+                    "MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\\Contents\\Shared Documents",
+                    "MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\\Contents\\Test Automation List"
                     ]
 
              Returns:
@@ -1224,8 +1224,8 @@ class SharepointV1Subclient(SharepointSuperSubclient):
 
                  paths     (list)   --  list of sites or webs to be restored
                  Example: [
-                    "MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\Contents\Shared Documents",
-                    "MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\Contents\Test Automation List"
+                    "MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\\Contents\\Shared Documents",
+                    "MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\\Contents\\Test Automation List"
                     ]
 
              Returns:

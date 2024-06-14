@@ -2570,8 +2570,12 @@ class Job(object):
         if wait_for_job_to_resume is True:
             self._wait_for_status("RUNNING")
 
-    def resubmit(self):
+    def resubmit(self, start_suspended=None):
         """Resubmits the job
+
+        Args:
+            start_suspended (bool)  -   whether to start the new job in suspended state or not
+                                        default: None, the new job starts same as this job started
 
         Returns:
             object  -   Job class object for the given job id
@@ -2583,10 +2587,16 @@ class Job(object):
                     if response is not success
 
         """
+        if start_suspended not in [True, False, None]:
+            raise SDKException('Job', '108')
+
         if not self.is_finished:
             raise SDKException('Job', '102', 'Cannot resubmit the Job, the Job is still running')
 
-        flag, response = self._cvpysdk_object.make_request('POST', self._RESUBMIT)
+        url = self._RESUBMIT
+        if start_suspended is not None:
+            url += f'?startInSuspendedState={start_suspended}'
+        flag, response = self._cvpysdk_object.make_request('POST', url)
 
         if flag:
             if response.json():

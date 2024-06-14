@@ -347,6 +347,14 @@ EXCEPTION_DICT = {
         '109': 'Failed to mark review as complete as it has non-reviewed documents',
         '110': 'Failed to request approval as review is not in completed state'
     },
+    'ComplianceSearch': {
+        '101': 'Provided user or user group name does not exist',
+        '102': 'Invalid permission name provided',
+        '103': 'Export not found under the export set',
+        '104': 'Export deletion failed with error',
+        '105': 'Failed to get the export set with provided export set name',
+        '106': 'Export Set not found'
+    },
     'Salesforce': {
         '101': 'Neither Sync Database enabled nor user provided database details for restore',
         '102': ''
@@ -582,11 +590,22 @@ EXCEPTION_DICT = {
         '103': 'Key Management Server type is not valid',
         '104': 'Key Management Server type not found',
         '105': 'Invalid key provider authentication type',
-        '106': 'Invalid KMS name'
+        '106': 'Invalid KMS name',
+        '107': 'Key list is missing for Bring Your Own Key'
     },
     'Region': {
         '101': 'Entity type not found.',
         '102': ''
+    },
+    'RecoveryGroup': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': ''
+    },
+    'CommserveRecovery': {
+        '101': 'User is not authorized',
+        '102': 'Given commcell does not have an active license',
+        '103': 'Given request id is not in active requests',
+        '104': 'Requested backupset is not available for recovery'
     }
 }
 

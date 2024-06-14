@@ -846,6 +846,8 @@ class VirtualServerSubclient(Subclient):
                 if value.get('project_id') is not None:
                     network_card_dict['subnetId'] = value.get('subnetwork_nic')
                     network_card_dict['sourceNetwork'] = value.get('networks_nic')
+                    network_card_dict['publicIPaddress'] = value.get('publicIPaddress')
+                    network_card_dict['privateIPaddress'] = value.get('privateIPaddress')
 
             _destnetwork = value.get("destination_network",
                                      value.get('network',
@@ -859,13 +861,19 @@ class VirtualServerSubclient(Subclient):
                                                "") + _destnetwork) if self._instance_object.instance_name ==
                                                                       HypervisorType.GOOGLE_CLOUD.value.lower() and _destnetwork else
                 network_card_dict['label'],
+                "publicIPaddress": network_card_dict.get("publicIPaddress",""),
+                "privateIPaddress": network_card_dict.get("privateIPaddress",""),
                 "networkName": _destnetwork if _destnetwork else '',
                 "destinationNetwork": _destnetwork if _destnetwork else network_card_dict['name']
             }
 
             # setting nics for azureRM instance
-            if value.get('destination_instance') == 'azure resource manager':
-                if "networkDisplayName" in value and 'networkrsg' in value and 'destsubid' in value:
+            if value.get('destination_instance').lower() == HypervisorType.AZURE_V2.value.lower():
+                if value.get('subnet_id'):
+                    nics["subnetId"] = value.get('subnet_id')
+                    nics["networkName"] = value.get('subnet_id').split('/')[0]
+                    nics["networkDisplayName"] = nics["networkName"] + '\\' + value.get('subnet_id').split('/')[-1]
+                elif "networkDisplayName" in value and 'networkrsg' in value and 'destsubid' in value:
                     nics["networkDisplayName"] = value["networkDisplayName"]
                     nics["networkName"] = value["networkDisplayName"].split('\\')[0]
                     modify_nics = value.get('subnetId', nics['subnetId']).split('/')
@@ -1971,7 +1979,7 @@ class VirtualServerSubclient(Subclient):
 
     def _get_subclient_proxies(self):
         """
-        get the list of all the proxies on a selected subclient
+        Get the list of all the proxies on a selected subclient
 
         Returns:
             associated_proxies   (List)  --  returns the proxies list
@@ -2285,8 +2293,8 @@ class VirtualServerSubclient(Subclient):
         Returns:
              security_group    (dict)  -- security group dict
         """
-        match1 = re.search('secGroupId=\"(\S*)\"', xml_str)
-        match2 = re.search('secGroupName=\"(\S*)\"', xml_str)
+        match1 = re.search(r'secGroupId=\"(\S*)\"', xml_str)
+        match2 = re.search(r'secGroupName=\"(\S*)\"', xml_str)
         security_group = [
             {
                 "groupId": match1.group(1),
@@ -2304,8 +2312,8 @@ class VirtualServerSubclient(Subclient):
         Returns:
              keypair_list	(dict) -- keypair list dict
         """
-        match1 = re.search('keyPairId=\"(\S*)\"', xml_str)
-        match2 = re.search('keyPairName=\"(\S*)\"', xml_str)
+        match1 = re.search(r'keyPairId=\"(\S*)\"', xml_str)
+        match2 = re.search(r'keyPairName=\"(\S*)\"', xml_str)
         keypair_list = [
             {
                 "keyId": match1.group(1),

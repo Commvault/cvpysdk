@@ -157,6 +157,10 @@ DiskLibrary:
 
     change_device_access_type()  -- to change device access type
 
+    modify_cloud_access_type()   -- To change device access type for cloud mount path
+
+    update_device_controller()   -- To update device controller properties.
+
     verify_media()              --  To perform verify media operation on media
 
     set_mountpath_preferred_on_mediaagent() --  Sets select preferred mountPath according to mediaagent setting on the
@@ -1193,9 +1197,8 @@ class DiskLibraries(Libraries):
         """
         return self._libraries
 
-
     def add(self, library_name, media_agent, mount_path, username="", password="", servertype=0,
-            saved_credential_name=""):
+            saved_credential_name="", **kwargs):
         """Adds a new Disk Library to the Commcell.
 
             Args:
@@ -1216,6 +1219,13 @@ class DiskLibraries(Libraries):
 
                 saved_credential_name   (str)   --  name of the saved credential
                     default: ""
+
+                kwargs      (dict)  --  optional arguments
+
+                Available kwargs Options:
+
+                    proxy_password (str) -- plain text password of proxy server
+                        default: ""
 
             Returns:
                 object - instance of the DiskLibrary class, if created successfully
@@ -1251,6 +1261,8 @@ class DiskLibraries(Libraries):
         else:
             raise SDKException('Storage', '103')
 
+        proxy_password = kwargs.get('proxy_password', '')
+
         request_json = {
             "isConfigRequired": 1,
             "library": {
@@ -1272,6 +1284,9 @@ class DiskLibraries(Libraries):
 
             if saved_credential_name:
                 request_json["library"]["password"] = b64encode("XXXXX".encode()).decode()
+
+            if proxy_password != "":
+                request_json["library"]["proxyPassword"] = b64encode(proxy_password.encode()).decode()
 
             if servertype == 59:
                 request_json["library"]["HybridCloudOption"] = {
@@ -1997,6 +2012,150 @@ class DiskLibrary(object):
         }
         self._commcell_object.qoperation_execute(request_json)
 
+    def modify_cloud_access_type(self, mountpath_id, device_controller_id,
+                                  device_access_type, enabled=True):
+        """
+        To change device access type for cloud mount path
+            Args:
+                mountpath_id (int)  -- Mount Path Id
+
+                device_controller_id (int) -- Device Controller Id
+
+                device_access_type (int)    --  Device access type
+                                        Possible values:
+                                                Access type     Value
+                                                Read              4
+                                                Read and Write    6
+
+                                        **by default preferred access (preferred = 8) will be set
+        """
+
+        if not all([isinstance(mountpath_id, int), isinstance(device_controller_id, int),
+                    isinstance(device_access_type, int)]):
+            raise SDKException('Storage', '101')
+
+        access = ""
+        if device_access_type == 4:
+            access = "READ"
+        else:
+            access = "READ_AND_WRITE"
+
+        payload = {
+            "access": access,
+            "enable": enabled
+        }
+
+        EDIT_CLOUD_CONTROLLER = self._commcell_object._services['EDIT_CLOUD_CONTROLLER'] % (mountpath_id, device_controller_id)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request('PUT', EDIT_CLOUD_CONTROLLER, payload)
+
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json():
+                    error_code = int(response.json().get('errorCode'))
+                    if error_code != 0:
+                        error_message = response.json().get('errorMessage')
+                        raise SDKException('Storage', '102', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            _stdout = 'Failed to modify cloud access type with error: \n [{0}]'
+            _stderr = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', _stdout.format(_stderr))
+
+
+    def update_device_controller(self, mountpath_id, device_id, device_controller_id, media_agent_id,
+                                 device_access_type, **kwargs):
+        """
+        To update device controller properties.
+            Args:
+                mountpath_id (int)  -- Mount Path Id
+
+                device_id (int)     -- Device Id
+
+                device_controller_id (int) -- Device Controller Id
+
+                media_agent_id (int)    --   Media Agent Id
+
+                device_access_type (int)    --  Device access type
+                                        Regular:
+                                                Access type     Value
+                                                Read              4
+                                                Read and Write    6
+                                                Preferred         8
+
+                                        IP:
+                                                Access type     Value
+                                                Read             20
+                                                Read/ Write      22
+
+                                        Fibre Channel (FC)
+                                                Access type     Value
+                                                Read             36
+                                                Read and Write   38
+
+                                        iSCSi
+                                                Access type     Value
+                                                Read             132
+                                                Read and Write   134
+
+                **kwargs  (dict)  --  Optional arguments
+
+                        Available kwargs Options:
+
+                        username     (str)     -- username for the device
+                                                  ** in case of cloud library username needs to be in the following format
+                                                  ** <vendorURL>//__CVCRED__
+
+                        password     (str)     -- password for the device
+                                                  ** if credential name is used then use a dummy password
+
+                        credential_name (str)  -- credential name as in the credential manager
+
+                        path                   -- accessing path for media agent local / UNC
+
+        """
+
+        if not all([isinstance(mountpath_id, int), isinstance(device_id, int), isinstance(device_controller_id, int),
+                    isinstance(media_agent_id, int), isinstance(device_access_type, int)]):
+            raise SDKException('Storage', '101')
+
+        username = kwargs.get("username", "")
+        password = kwargs.get("password", "")
+        credential_name = kwargs.get("credential_name", "")
+        path = kwargs.get("path", self.mount_path)
+        enabled = 1
+        if not kwargs.get('enabled', True):
+            enabled = 0
+        request_json = {
+            "EVGui_MMDevicePathInfoReq":
+                {
+                    "mountpathId": mountpath_id,
+                    "infoList": {
+                        "password": password,
+                        "accessType": device_access_type,
+                        "deviceId": device_id,
+                        "deviceControllerId": device_controller_id,
+                        "path": path,
+                        "enabled": enabled,
+                        "numWriters": -1,
+                        "opType": 2,
+                        "autoPickTransportType": 0,
+                        "protocolType": 679,
+                        "mediaAgent": {
+                            "id": media_agent_id
+                        },
+                        "savedCredential": {
+                            "credentialName": credential_name
+                        },
+                        "userName": username
+                    }
+                }
+        }
+
+        self._commcell_object.qoperation_execute(request_json)
+
+
     def verify_media(self, media_name, location_id):
         """
             To perform verify media operation on media
@@ -2181,7 +2340,7 @@ class DiskLibrary(object):
 
     def share_mount_path(self, new_media_agent, new_mount_path, **kwargs):
         """
-        Method to share a mountpath to a disklibrary
+        Method to share a mountpath
 
         Args:
 
@@ -2189,7 +2348,7 @@ class DiskLibrary(object):
 
             new_mount_path  (int)   -- Mount path to be shared
 
-            \*\*kwargs  (dict)  --  Optional arguments
+                kwargs  (dict)  --  Optional arguments
 
                     Available kwargs Options:
 
@@ -2230,6 +2389,12 @@ class DiskLibrary(object):
 
                         password        (str)   -- Password to access the mount path, if UNC
 
+                        credential_name  (str)  -- credential name for the credential manager
+                                                   ** For cloud if you use credential_name update the username parameter
+                                                   ** in the format of "<vendorURL>//__CVCRED__"
+                                                   ** For example, "s3.amazonaws.com//__CVCRED__"
+                                                   ** Update a dummy value for password parameter
+
         Returns:
             None
 
@@ -2250,6 +2415,7 @@ class DiskLibrary(object):
         access_type = kwargs.get('access_type', 22)
         username = kwargs.get('username', '')
         password = kwargs.get('password', '')
+        credential_name = kwargs.get('credential_name', '')
 
         self._EXECUTE = self._commcell_object._services['EXECUTE_QCOMMAND']
         self.library = {
@@ -2264,7 +2430,11 @@ class DiskLibrary(object):
             "loginName": username,
             "mediaAgentName": new_media_agent,
             "mountPath": "{}".format(new_mount_path),
-            "proxyPassword": ""}
+            "proxyPassword": "",
+            "savedCredential": {
+                "credentialName": credential_name
+            }
+        }
         request_json = {
             "EVGui_ConfigureStorageLibraryReq":
                 {

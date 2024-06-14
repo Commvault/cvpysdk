@@ -52,6 +52,8 @@ from .activateapps.request_manager import Requests
 
 from .activateapps.entity_manager import EntityManagerTypes, ActivateEntities, Tags, Classifiers
 
+from .activateapps.compliance_utils import ComplianceSearchUtils
+
 
 class Activate(object):
     """Class for representing activate apps in the commcell."""
@@ -75,6 +77,7 @@ class Activate(object):
         self._fso_server_groups = None
         self._sdg_projects = None
         self._req_mgr = None
+        self._compliance_search = None
 
     def __del__(self):
         """Destructor method to delete all instances of apps referenced by this class"""
@@ -86,6 +89,12 @@ class Activate(object):
         del self._fso_server_groups
         del self._sdg_projects
         del self._req_mgr
+
+    def compliance_search(self):
+        """Returns the Compliance Search utility class object from activate apps"""
+        if self._compliance_search is None:
+            self._compliance_search = ComplianceSearchUtils(self._commcell_object)
+        return self._compliance_search
 
     def inventory_manager(self):
         """Returns the Inventories class object from inventory manager app from activate apps"""

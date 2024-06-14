@@ -195,7 +195,7 @@ class AmazonRDSInstance(CloudDatabaseInstance):
         rds_restore_json['rdsRestoreOptions']['targetParameterGroupName'] = \
             restore_options.get('options', {}).get('targetParameterGroupName', '')
 
-        rds_restore_json['rdsRestoreOptions']['targetSubnetGroup'] = \
+        rds_restore_json['rdsRestoreOptions']['targetSecurityGroupValue'] = \
             restore_options.get('options', {}).get('targetSubnetGroup', '')
 
         rds_restore_json['rdsRestoreOptions']['targetDBInstanceClass'] = \
@@ -527,8 +527,7 @@ class AmazonDynamoDBInstance(CloudDatabaseInstance):
         else:
             restore_options.update(kwargs)
 
-        source_backupset_id = int(self._agent_object.backupsets.get
-                                  ('defaultBackupSet')._get_backupset_id())
+        source_backupset_id = int(self.backupsets.all_backupsets['defaultbackupset']['id'])
         dynamodb_restore_option = {
             "dynamoDbRestoreOptions": {
                 'tempWriteThroughput': restore_options.get('adjust_write_capacity', ''),

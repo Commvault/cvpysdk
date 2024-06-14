@@ -51,6 +51,12 @@ class TeamsConstants:
         "user": None
     }
 
+    ADD_GROUP_JSON = {
+        "associated": False,
+        "name": None,
+        "id": None
+    }
+
     ADD_REQUEST_JSON = {
         "LaunchAutoDiscovery": False,
         "cloudAppAssociation": {
@@ -108,9 +114,26 @@ class TeamsConstants:
         "options": {
             "backupOpts": {
                 "backupLevel": 2,
-                "cloudAppOptions": {"userAccounts": []}
+                "cloudAppOptions": {"forceFullBackup": False, "userAccounts": []}
             },
-            "commonOpts": {"notifyUserOnJobCompletion": False}
+            "commonOpts": {
+                "notifyUserOnJobCompletion": False,
+                "jobMetadata": [
+                    {
+                        "jobOptionItems": [
+                            {
+                                "value": "Disabled",
+                                "option": "Convert job to full"
+                            },
+                            {
+                                "value": "Disabled",
+                                "option": "Total running time"
+                            }
+                        ],
+                        "selectedItems": []
+                    }
+                ]
+            }
         }
     }
 
@@ -134,4 +157,32 @@ class TeamsConstants:
     RESTORE_SUBTASK_JSON = {
         "subTaskType": 3,
         "operationType": 1001
+    }
+
+    CUSTOM_CATEGORY_JSON = {
+        "subclientEntity": {
+            "subclientId": None
+        },
+        "planEntity": {
+            "planId": None,
+            "planName": ""
+        },
+        "status": 0,
+        "categoryName": None,
+        "categoryQuery": {
+            "conditions": []
+        },
+        "office365V2AutoDiscover": {
+            "launchAutoDiscover": True,
+            "appType": 134,
+            "clientId": None,
+            "instanceId": None,
+            "instanceType": 36
+        }
+    }
+
+    ClOUD_APP_EDISCOVER_TYPE = {
+        "Teams": 8,
+        "Users": 7,
+        "Groups": 22
     }

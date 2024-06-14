@@ -191,11 +191,23 @@ StoragePolicyCopy:
 
     is_dedupe_enabled()                     --  checks whether deduplication is enabled for the copy
 
-    set_encryption_properties()                   --  configures copy encryption settings as per user input
+    set_encryption_properties()             --  configures copy encryption settings as per user input
 
     set_key_management_server()             --  sets the Key Management Server to this copy
 
-    set_multiplexing_factor()               --  sets/unset the multiplexing factor for the storage policy copy 
+    set_multiplexing_factor()               --  sets/unset the multiplexing factor for the storage policy copy
+
+    delete_datapath()                       --  delete datapath from storage policy copy
+
+    set_default_datapath()                  --  sets default data path
+
+    set_ddb_resiliency()                    -- set/unset ddb resiliency for storage policy copy
+    
+    rotate_encryption_master_key()          -- Rotates the encryption key for this copy
+
+    enable_compliance_lock()                -- Sets compliance lock (wormCopy flag)
+
+    disable_compliance_lock()               -- Unsets compliance lock (wormCopy flag)
 
 Attributes
 ----------
@@ -213,9 +225,13 @@ Attributes
 
     **store_priming**                    --  Sets the value of DDB store priming under copy dedupe properties
 
+    **ddb_resiliency**                          -- Returns whether ddb resiliency is set or not
+
     ***is_active***                             --  Returns/Sets the 'Active' Property of the Copy
 
     ***network_throttle_bandwidth***            --  Returns/Sets the value of Network Throttle Bandwidth
+
+    ***is_compliance_lock_enabled***            --  Checks whether compliance lock on copy is enabled or not
 """
 
 from __future__ import absolute_import
@@ -1167,16 +1183,16 @@ class StoragePolicy(object):
                 err_msg = f'Storage Policy copy "{copy_name}" already exists.'
                 raise SDKException('Storage', '102', err_msg)
 
-            if not self._commcell_object.storage_policies.has_policy(global_policy):
+            if not self._commcell_object.storage_pools.has_storage_pool(global_policy):
                 err_msg = f'No Global Storage Policy "{global_policy}" exists.'
-                raise SDKException('Storage', '102')
+                raise SDKException('Storage', '102', err_msg)
 
-            global_policy = self._commcell_object.storage_policies.get(global_policy)
+            global_policy = self._commcell_object.storage_pools.get(global_policy)
 
-            global_policy_copy = global_policy.get_copy(list(global_policy.copies.keys())[0])
+            global_policy_copy = StoragePolicyCopy (self._commcell_object, global_policy.storage_pool_name, global_policy.copy_name)
 
             is_global_dedupe_policy = global_policy_copy._dedupe_flags.get('enableDeduplication', 0)
-
+            
             request = {
                        "copyName": copy_name,
                        "storagePolicyCopyInfo": {
@@ -1199,7 +1215,7 @@ class StoragePolicy(object):
                               "useGlobalDedupStore": is_global_dedupe_policy
                           },
                            "useGlobalPolicy":{
-                               "storagePolicyName": global_policy.name
+                               "storagePolicyName": global_policy.storage_pool_name
                            }
                        }
                     }
@@ -1534,6 +1550,8 @@ class StoragePolicy(object):
                 job_retention       (bool)  -- if true job based retention will be set
                 default : False
 
+                enable_selective_copy (int) -- Enable selective copy with value selectiveRule
+
             Raises:
                 SDKException:
                     if type of inputs in not string
@@ -1578,7 +1596,10 @@ class StoragePolicy(object):
 
         job_based_retention = kwargs.get('job_based_retention', False)
         job_retention = 1 if job_based_retention else 0
-        request_xml = """
+
+        selectiveRule = kwargs.get('enable_selective_copy', None)
+        if selectiveRule is None:
+            request_xml = """
                     <App_CreateStoragePolicyCopyReq copyName="{0}">
                         <storagePolicyCopyInfo active="1" isMirrorCopy="{1}" isSnapCopy="{2}" provisioningPolicyName="{3}">
                             <StoragePolicyCopy _type_="18" copyName="{0}" storagePolicyName="{4}" />
@@ -1596,6 +1617,25 @@ class StoragePolicy(object):
                     """.format(copy_name, is_mirror_copy, is_snap_copy, provisioning_policy,
                                self.storage_policy_name, arrayReplicaCopy, useOfflineReplication,
                                library_name, media_agent_name, source_copy, resource_pool, job_retention, isNetAppSnapCloudTargetCopy)
+        else:
+            request_xml = """
+                                        <App_CreateStoragePolicyCopyReq copyName="{0}">
+                                            <storagePolicyCopyInfo copyType="2" description="" isMirrorCopy="{1}" isSnapCopy="{2}">
+                                                <StoragePolicyCopy copyName="{0}" storagePolicyName="{4}" />
+                                                <extendedFlags arrayReplicaCopy="{5}" isNetAppSnapCloudTargetCopy="{12}" useOfflineArrayReplication="{6}" />
+                                                <library  libraryName="{7}" />
+                                                <mediaAgent _type_="11" mediaAgentName="{8}" />
+                                                <retentionRules jobs="8" retainArchiverDataForDays="-1" retainBackupDataForCycles="5" retainBackupDataForDays="1">
+                                                <retentionFlags jobBasedRetention="{11}" />
+                                                </retentionRules>
+                                                <sourceCopy _type_="18" copyName="{9}" storagePolicyName="{4}" />
+                                                <selectiveCopyRules selectiveRule="{13}"/>
+                                                </storagePolicyCopyInfo>
+                                        </App_CreateStoragePolicyCopyReq>
+                                        """.format(copy_name, is_mirror_copy, is_snap_copy, provisioning_policy,
+                                                   self.storage_policy_name, arrayReplicaCopy, useOfflineReplication,
+                                                   library_name, media_agent_name, source_copy, resource_pool,
+                                                   job_retention, isNetAppSnapCloudTargetCopy, selectiveRule)
 
         create_copy_service = self._commcell_object._services['CREATE_STORAGE_POLICY_COPY']
 
@@ -1881,6 +1921,10 @@ class StoragePolicy(object):
                                                           ocum server
             enable_selective_copy                 (int)   -- Enable selective copy option based on input value
 
+            disassociate_sc_from_backup_copy    (bool)    -- Associate/Disassociate subclient from backup copy
+                                                                True: Disassociate subclient
+                                                                False: Associate subclient
+
         """
         enable_backup_copy = options['enable_backup_copy']
         enable_snapshot_catalog = options['enable_snapshot_catalog']
@@ -1911,19 +1955,77 @@ class StoragePolicy(object):
 
         update_snapshot_tab_service = self._commcell_object._services['EXECUTE_QCOMMAND']
 
-        request_xml = """
-                    <EVGui_SetSnapOpPropsReq deferredCatalogOperation="{0}" snapshotToTapeOperation="{1}">
-                        <header localeId="0" userId="0" />
-                        <snapshotToTapeProps archGroupId="{2}" calendarId="1" dayNumber="0" deferredDays="0"
-                            enable="{3}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
-                            sourceCopyId="{4}" startTime="0" type="{7}" />
-                        <deferredCatalogProps archGroupId="{2}" calendarId="1" dayNumber="0" deferredDays="0"
-                            enable="{5}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
-                            sourceCopyId="{6}" startTime="0" type="0" />
-                    </EVGui_SetSnapOpPropsReq>
-        """.format(defferred_catalog_value, backup_copy_value, self.storage_policy_id,
-                   int(enable_backup_copy), source_copy_for_snap_to_tape_id,
-                   int(enable_snapshot_catalog), source_copy_for_snapshot_catalog_id, selective_type)
+        if options['disassociate_sc_from_backup_copy'] == True:
+            disass_sc_xml = f"""
+                               <archGroupToAppListWithExclude _type_="2">
+           	                    <flags include="1"/>
+                               </archGroupToAppListWithExclude>
+                               <archGroupToAppListWithExclude _type_="27">
+           	                    <flags include="1"/>
+                               </archGroupToAppListWithExclude>
+                           <archGroupToAppListWithExclude _type_="7" 
+                           appName="{options['appName']}" applicationId="{options['applicationId']}"
+                                backupsetId="{options['backupsetId']}" backupsetName="{options['backupsetName']}" 
+                                clientId="{options['clientId']}" clientName="{options['clientName']}" instanceId="1" 
+                                instanceName="DefaultInstanceName" 
+                                subclientId="{options['subclientId']}" subclientName="{options['subclientName']}">
+           	                <flags exclude="1"/>
+                           </archGroupToAppListWithExclude>"""
+
+            request_xml = f"""
+                        <EVGui_SetSnapOpPropsReq deferredCatalogOperation="{defferred_catalog_value}" snapshotToTapeOperation="{backup_copy_value}">
+                            <header localeId="0" userId="0" />
+                            <snapshotToTapeProps archGroupId="{self.storage_policy_id}" calendarId="1" dayNumber="0" deferredDays="0"
+                                enable="{int(enable_backup_copy)}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
+                                sourceCopyId="{source_copy_for_snap_to_tape_id}" startTime="0" type="{selective_type}" > """.format(
+                                    defferred_catalog_value,
+                                    backup_copy_value,
+                                    self.storage_policy_id,
+                                    int(enable_backup_copy),
+                                    source_copy_for_snap_to_tape_id, selective_type) + \
+                          f"""{disass_sc_xml}
+                            </snapshotToTapeProps>                           
+                        </EVGui_SetSnapOpPropsReq>
+                           """
+
+        elif options['disassociate_sc_from_backup_copy'] == False:
+            disass_sc_xml = f"""
+                            <archGroupToAppListWithExclude _type_="2">
+                       	                    <flags include="1"/>
+                                           </archGroupToAppListWithExclude>
+                                           <archGroupToAppListWithExclude _type_="27">
+                       	                    <flags include="1"/>
+                                           </archGroupToAppListWithExclude>"""
+
+            request_xml = """
+                        <EVGui_SetSnapOpPropsReq deferredCatalogOperation="{0}" snapshotToTapeOperation="{1}">
+                                           <header localeId="0" userId="0" />
+                                           <snapshotToTapeProps archGroupId="{2}" calendarId="1" dayNumber="0" deferredDays="0"
+                                               enable="{3}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
+                                               sourceCopyId="{4}" startTime="0" type="{5}" > """.format(
+                        defferred_catalog_value,
+                        backup_copy_value, self.storage_policy_id,
+                        int(enable_backup_copy), source_copy_for_snap_to_tape_id, selective_type) + \
+                        f"""{disass_sc_xml}
+                                        </snapshotToTapeProps>                                                                    
+                                    </EVGui_SetSnapOpPropsReq>
+                           """
+        elif options['disassociate_sc_from_backup_copy'] is None:
+            request_xml = """
+                        <EVGui_SetSnapOpPropsReq deferredCatalogOperation="{0}" snapshotToTapeOperation="{1}">
+                                               <header localeId="0" userId="0" />
+                                               <snapshotToTapeProps archGroupId="{2}" calendarId="1" dayNumber="0" deferredDays="0"
+                                                   enable="{3}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
+                                                   sourceCopyId="{4}" startTime="0" type="{7}" />
+                                               <deferredCatalogProps archGroupId="{2}" calendarId="1" dayNumber="0" deferredDays="0"
+                                                   enable="{5}" flags="0" infoFlags="0" numOfReaders="0" numPeriod="1"
+                                                   sourceCopyId="{6}" startTime="0" type="0" />
+                                           </EVGui_SetSnapOpPropsReq>
+                               """.format(defferred_catalog_value, backup_copy_value, self.storage_policy_id,
+                                          int(enable_backup_copy), source_copy_for_snap_to_tape_id,
+                                          int(enable_snapshot_catalog), source_copy_for_snapshot_catalog_id,
+                                          selective_type)
+
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', update_snapshot_tab_service, request_xml
@@ -4395,4 +4497,176 @@ class StoragePolicyCopy(object):
         self._copy_properties['mediaProperties'] = {
             "multiplexingFactor" : mux_factor
         }
+        self._set_copy_properties()    
+
+    @property
+    def ddb_resiliency(self):
+        """Treats the Resiliency Flag as a read-only attribute.
+            Returns:
+                (bool) : Value of Resiliency Flag
+        """
+        return bool(self._dedupe_flags.get('allowJobsToRunWithoutAllPartitions'))
+
+    def set_ddb_resiliency(self, is_enabled, min_num_partitions):
+        """Sets Resiliency On or Off, and set partition threshold for Resiliency
+            Args:
+                is_enabled  (Boolean) -- True or False to enable and disable resiliency respectively.
+                min_num_partitions (int) -- Number of partitions required to be online for Resiliency to take affect.
+            Raises SDKException:
+                If input is not valid
+                If min_num_partitions < 1
+                If API response is not successful
+        """
+        if isinstance(is_enabled, bool) or isinstance(min_num_partitions, int):
+            SDKException('Storage', '101')
+        if is_enabled:
+            if min_num_partitions < 1:
+                SDKException('Storage', '102', "error min_num_partitions should be greater than or equal to 1")
+            self._copy_properties['minimumNumberOfPartitionsForJobsToRun'] = min_num_partitions
+            self._dedupe_flags['allowJobsToRunWithoutAllPartitions'] = 1
+            self._set_copy_properties()
+        else:
+            self._dedupe_flags['allowJobsToRunWithoutAllPartitions'] = 0
+            self._set_copy_properties()
+
+    def delete_datapath(self, library_name, media_agent_name):
+        """
+        Delete DataPath from the storage policy copy
+
+            Args:
+                library_name    (str)   --   name of the library
+
+                media_agent_name(str)   --   name of the media agent
+
+            Raises:
+                SDKException:
+                    - If type of required input parameters is not string
+                    - If API response is not successful
+        """
+        if not (isinstance(media_agent_name, str)) and isinstance(library_name):
+            raise SDKException('Storage', '101')
+
+        request_json = {
+            "storagePolicyCopyInfo": {
+                "dataPathProperties": [
+                    {
+                        "operationFlags": {
+                            "removeDataPath": True
+                        },
+                        "mediaAgent": {
+                            "mediaAgentName": media_agent_name
+                        },
+                        "library": {
+                            "libraryName": library_name
+                        }
+                    }
+                ]
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request('PUT', self._STORAGE_POLICY_COPY,
+                                                           request_json)
+        self.refresh()
+        if flag:
+            if response.json():
+                response = response.json()
+                if "error" in response and response.get("error", {}).get("errorCode") != 0:
+                    error_message = response.get("error", {}).get("errorMessage")
+                    raise SDKException('Response', '101', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            error_message = response.json().get("errorMessage")
+            raise SDKException('Response', '111', error_message)
+
+    def rotate_encryption_master_key(self):
+        """
+        Rotates the encryption key for this copy
+        """
+        self._copy_properties["dataEncryption"] = {
+            "rotateMasterKey": True
+        }
         self._set_copy_properties()
+        
+    def set_default_datapath(self, library_name, media_agent_name):
+        """
+        Set default data path for that storage policy copy.
+
+            Args:
+                library_name    (str)   --   name of the library
+
+                media_agent_name(str)   --   name of the media agent
+
+            Raises:
+                SDKException:
+                    - If type of required input parameters is not string
+                    - If API response is not successful
+        """
+        if not (isinstance(media_agent_name, str)) and isinstance(library_name):
+            raise SDKException('Storage', '101')
+
+        request_json = {
+            "storagePolicyCopyInfo": {
+                "dataPathProperties": [
+                    {
+                        "operationFlags": {
+                            "setDefault": True
+                        },
+                        "mediaAgent": {
+                            "mediaAgentName": media_agent_name
+                        },
+                        "library": {
+                            "libraryName": library_name
+                        }
+                    }
+                ]
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request('PUT', self._STORAGE_POLICY_COPY,
+                                                           request_json)
+        self.refresh()
+        if flag:
+            if response.json():
+                response = response.json()
+                if "error" in response and response.get("error", {}).get("errorCode") != 0:
+                    error_message = response.get("error", {}).get("errorMessage")
+                    raise SDKException('Response', '101', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            error_message = response.json().get("errorMessage")
+            raise SDKException('Response', '111', error_message)
+
+    @property
+    def is_compliance_lock_enabled(self):
+        """Checks whether compliance lock on copy is enabled or not"""
+        return 'wormCopy' in self._copy_flags
+
+    def enable_compliance_lock(self):
+        """Sets compliance lock (wormCopy flag)
+
+        Raises:
+            SDKException:
+                if response is not success.
+                if response is empty.
+        """
+        self._copy_properties['copyFlags']['wormCopy'] = 1
+        self._set_copy_properties()
+
+        if not self.is_compliance_lock_enabled:
+            raise SDKException('Response', '101', 'Failed to set compliance lock')
+
+    def disable_compliance_lock(self):
+        """Unsets compliance lock (wormCopy flag)
+
+        Raises:
+            SDKException:
+                if response is not success.
+                if response is empty.
+        """
+        self._copy_properties['copyFlags']['wormCopy'] = 0
+        self._set_copy_properties()
+
+        if self.is_compliance_lock_enabled:
+            raise SDKException('Response', '101', 'Failed to unset compliance lock')

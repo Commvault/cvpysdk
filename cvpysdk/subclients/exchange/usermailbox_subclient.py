@@ -225,7 +225,7 @@ class UsermailboxSubclient(ExchangeSubclient):
 
     def _association_json_with_plan(self, plan_details):
         """Constructs association json with plan to create association in UserMailbox Subclient.
-        
+
             Args: plan_details = {
                     'plan_name': Plan Name,
                     'plan_id': int or None (Optional)
@@ -1031,7 +1031,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         _assocaition_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
         self._set_association_request(_assocaition_json_)
 
-    def set_adgroup_associations(self, subclient_content):
+    def set_adgroup_associations(self, subclient_content, use_policies=True):
         """Create Ad groups assocaition for UserMailboxSubclient.
 
             Args:
@@ -1081,7 +1081,10 @@ class UsermailboxSubclient(ExchangeSubclient):
             "discoverByType": 3,
             "adGroups": adgroups
         }
-        _assocaition_json_ = self._association_json(subclient_content)
+        if use_policies:
+            _assocaition_json_ = self._association_json(subclient_content)
+        else:
+            _assocaition_json_ = self._association_json_with_plan(subclient_content)
         _assocaition_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
         self._set_association_request(_assocaition_json_)
 
@@ -1287,7 +1290,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         _assocaition_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
         self._update_association_request(_assocaition_json_)
 
-    def delete_adgroup_assocaition(self, subclient_content):
+    def delete_adgroup_assocaition(self, subclient_content, use_policies=True):
         """Deletes Ad groups assocaition for UserMailboxSubclient.
 
             Args:
@@ -1337,9 +1340,12 @@ class UsermailboxSubclient(ExchangeSubclient):
             "discoverByType": 3,
             "adGroups": adgroups
         }
-        _assocaition_json_ = self._association_json(subclient_content)
+        if use_policies:
+            _assocaition_json_ = self._association_json(subclient_content)
+        else:
+            _assocaition_json_ = self._association_json_with_plan(subclient_content)
         _assocaition_json_["emailAssociation"]["emailStatus"] = 1
-        _assocaition_json_["emailAssociation"]["advanceOptions"]["enableAutoDiscovery"] = subclient_content[
+        _assocaition_json_["emailAssociation"]["enableAutoDiscovery"] = subclient_content[
             "is_auto_discover_user"]
         _assocaition_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
         self._set_association_request(_assocaition_json_)

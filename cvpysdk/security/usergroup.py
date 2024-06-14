@@ -161,8 +161,11 @@ class UserGroups(object):
             self._commcell_object.commserv_name
         )
 
-    def _get_user_groups(self):
+    def _get_user_groups(self, hard=False):
         """Gets all the user groups associated with the commcell
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
 
             Returns:
                 dict - consists of all user group in the commcell
@@ -177,6 +180,9 @@ class UserGroups(object):
 
                     if response is not success
         """
+        if hard:
+            self._commcell_object._cvpysdk_object.make_request('GET', self._commcell_object._services["HARD_REFRESH_CACHE"]%
+                                                               ('usergroup'))
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._user_group
         )
@@ -468,9 +474,14 @@ class UserGroups(object):
 
         self._user_groups = self._get_user_groups()
 
-    def refresh(self):
-        """Refresh the user groups associated with the Commcell."""
-        self._user_groups = self._get_user_groups()
+    def refresh(self, hard=False):
+        """
+        Refresh the user groups associated with the Commcell.
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+        """
+        self._user_groups = self._get_user_groups(hard)
 
     @property
     def all_user_groups(self):
@@ -570,10 +581,8 @@ class UserGroup(object):
                 if 'email' in self._properties:
                     self._email = self._properties['email']
 
-                if 'userGroupEntity' in self._properties:
-                    if 'entityInfo' in self._properties['userGroupEntity']:
-                        self._company_name = self._properties['userGroupEntity']['entityInfo'].get('companyName')
-                        self._company_id = self._properties['userGroupEntity']['entityInfo'].get('companyId')
+                self._company_id = self._properties.get('groupSecurity', {}).get('tagWithCompany', {}).get('providerId')
+                self._company_name = self._properties.get('groupSecurity', {}).get('tagWithCompany', {}).get('providerDomainName')
 
                 security_properties = self._properties.get('securityAssociations', {}).get(
                     'associations', {})

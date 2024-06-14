@@ -310,7 +310,7 @@ class Download(object):
                             to authenticate the cache
 
                             >>> commcell_obj.copy_software(
-                            media_loc = "\\subdomain.company.com\Media",
+                            media_loc = "\\\\subdomain.company.com\\Media",
                             username = "domainone\\userone",
                             password = "base64encoded password"
                             )

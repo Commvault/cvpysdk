@@ -114,8 +114,15 @@ class Roles(object):
             self._commcell_object.commserv_name
         )
 
-    def _get_roles(self):
-        """Returns the list of roles configured on this commcell"""
+    def _get_roles(self, hard= False):
+        """
+        Returns the list of roles configured on this commcell
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+        """
+        if hard:
+            self._commcell_object._cvpysdk_object.make_request('GET', self._commcell_object._services["HARD_REFRESH_CACHE"]%'security/roles')
         get_all_roles_service = self._commcell_object._services['ROLES']
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -295,13 +302,20 @@ class Roles(object):
             raise SDKException('Response', '101', response_string)
         self.refresh()
 
-    def refresh(self):
-        """Refresh the list of Roles on this commcell."""
-        self._roles = self._get_roles()
+    def refresh(self, hard=False):
+        """
+        Refresh the list of Roles on this commcell.
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+        """
+        self._roles = self._get_roles(hard)
 
     @property
     def all_roles(self):
-        """"Returns all the roles present in the commcell"""
+        """
+        Returns all the roles present in the commcell
+        """
         return self._get_roles()
 
 class Role(object):
@@ -363,7 +377,9 @@ class Role(object):
                 self._role_id = role_properties['role'].get('roleId')
                 self._role_name = role_properties['role'].get('roleName')
                 self._role_status = role_properties['role']['flags'].get('disabled')
-                if 'entityInfo' in role_properties['role']: self._company_name = role_properties['role']['entityInfo'].get('companyName')
+
+                self._company_name = role_properties.get('securityAssociations', {}).get('tagWithCompany', {}).get('providerDomainName', None)
+
                 category_list = []
                 permission_list = []
 

@@ -195,7 +195,7 @@ class Credentials(object):
         """Creates credential account on this commcell
 
             Args:
-                record_type     (str)   -- type of credential record to be created (windows\linux)
+                record_type     (str)   -- type of credential record to be created (windows/linux)
 
                 credential_name (str)   --  name to be given to credential account
 

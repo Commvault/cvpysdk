@@ -340,6 +340,7 @@ Client Attributes
     **is_ready**                    --  returns boolean value specifying whether services on the
     client are running or not, and whether the CommServ is able to communicate with the client
 
+    **is_mongodb_ready**            -- returns boolean value specifying whether mongoDB is working fine or not
 
     **set_encryption_prop**         --    Set encryption properties on a client
 
@@ -494,8 +495,11 @@ class Clients(object):
             except IndexError:
                 raise IndexError('No client exists with the given Name / Id')
 
-    def _get_clients(self):
+    def _get_clients(self, hard=False):
         """Gets all the clients associated with the commcell
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
 
             Returns:
                 dict    -   consists of all clients in the commcell
@@ -529,6 +533,8 @@ class Clients(object):
         """
         attempts = 0
         while attempts < 5:
+            if hard:
+                self._cvpysdk_object.make_request('GET', self._services["HARD_REFRESH_CACHE"] % 'Client')
             flag, response = self._cvpysdk_object.make_request('GET', self._CLIENTS)
             attempts += 1
 
@@ -1011,7 +1017,7 @@ class Clients(object):
         display_name_occurence = 0
         client_name = None
         for client in self.all_clients:
-            if self.all_clients[client]['displayName'] == display_name:
+            if self.all_clients[client]['displayName'] == display_name.lower():
                 display_name_occurence += 1
                 client_name = client
             if display_name_occurence > 1:
@@ -2155,7 +2161,7 @@ class Clients(object):
             client_name,
             index_server,
             clients_list,
-            storage_policy,
+            server_plan,
             recall_service_url,
             job_result_dir,
             exchange_servers,
@@ -2164,7 +2170,7 @@ class Clients(object):
             azure_tenant_name,
             azure_app_key_id,
             environment_type,
-            backupset_type_to_create = 1,
+            backupset_type_to_create=1,
             **kwargs):
         """Adds a new Exchange Mailbox Client to the Commcell.
 
@@ -2176,7 +2182,7 @@ class Clients(object):
                 clients_list            (list)  --  list containing client names / client objects,
                 to associate with the Virtual Client
 
-                storage_policy          (str)   --  storage policy to associate with the client
+                server_plan          (str)   --  storage policy to associate with the client
 
                 recall_service_url      (str)   --  recall service for client
 
@@ -2236,7 +2242,7 @@ class Clients(object):
             raise SDKException('Client', '101')
 
         index_server_dict = {}
-        storage_policy_dict = {}
+        server_plan_dict = {}
 
         if self.has_client(index_server):
             index_server_cloud = self.get(index_server)
@@ -2248,12 +2254,11 @@ class Clients(object):
                     "mediaAgentName": index_server_cloud.client_name
                 }
 
-        if self._commcell_object.storage_policies.has_policy(storage_policy):
-            storage_policy_object = self._commcell_object.storage_policies.get(storage_policy)
+        if self._commcell_object.plans.has_plan(server_plan):
+            server_plan_object = self._commcell_object.plans.get(server_plan)
 
-            storage_policy_dict = {
-                "storagePolicyName": storage_policy_object.storage_policy_name,
-                "storagePolicyId": int(storage_policy_object.storage_policy_id)
+            server_plan_dict = {
+                "planId": int(server_plan_object.plan_id)
             }
 
         account_list = []
@@ -2295,8 +2300,9 @@ class Clients(object):
         request_json = {
             "clientInfo": {
                 "clientType": 25,
+                "plan": server_plan_dict,
                 "exchangeOnePassClientProperties": {
-                    "backupSetTypeToCreate" : backupset_type_to_create,
+                    "backupSetTypeToCreate": backupset_type_to_create,
                     "recallService": recall_service_url,
                     "onePassProp": {
                         "environmentType": environment_type,
@@ -2310,7 +2316,6 @@ class Clients(object):
                         "memberServers": member_servers
                     },
                     "indexServer": index_server_dict,
-                    "dataArchiveGroup": storage_policy_dict,
                     "jobResulsDir": {
                         "path": job_result_dir
                     }
@@ -3557,9 +3562,14 @@ class Clients(object):
                     'Client', '102', 'No client exists with name: {0}'.format(client_name)
                 )
 
-    def refresh(self):
-        """Refresh the clients associated with the Commcell."""
-        self._clients = self._get_clients()
+    def refresh(self, hard=False):
+        """
+        Refresh the clients associated with the Commcell.
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+        """
+        self._clients = self._get_clients(hard)
         self._hidden_clients = self._get_hidden_clients()
         self._virtualization_clients = self._get_virtualization_clients()
         self._virtualization_access_nodes = self._get_virtualization_access_nodes()
@@ -5217,6 +5227,21 @@ class Client(object):
         """
         return self.readiness_details.is_ready()
 
+    @property
+    def is_mongodb_ready(self):
+        """
+        Checks the status mongoDB
+
+            Returns:
+                True : if the MongoDB is working fine
+                False : if there is any error in mongoDB
+
+            Raises:
+                SDKException:
+                    if response is not success
+        """
+        return self.readiness_details.is_mongodb_ready()
+
     def upload_file(self, source_file_path, destination_folder):
         """Upload the specified source file to destination path on the client machine
 
@@ -5442,7 +5467,7 @@ class Client(object):
         flag, response = self._cvpysdk_object.make_request(
             'GET', self._services['GET_NETWORK_SUMMARY'].replace('%s', self.client_id))
         if flag:
-            if "No Network Config found" in response.text:
+            if "No Network Config found" in response.text or "No Network Configuration Found" in response.text:
                 return ""
             return response.text
         raise SDKException('Response', '101', self._update_response_(response.text))
@@ -5455,7 +5480,7 @@ class Client(object):
             Arguments:
                 new_directory_path    (str)   -- The new JR directory
                     Example:
-                        C:\ JR
+                        C:\\JR
                         or
                         <UNC-PATH>
 
@@ -5535,7 +5560,7 @@ class Client(object):
                 Arguments:
                     new_directory_path   (str)   -- The new JR directory
                         Example:
-                            C:\ JR
+                            C:\\JR
                             or
                             <UNC-PATH>
 
@@ -6710,7 +6735,7 @@ class Client(object):
             Arguments:
                 new_directory_path   (str)   -- The new JR directory
                     Example:
-                        \\vm1.example-active-directory.com\TestFolder1\JobResults
+                        \\vm1.example-active-directory.com\\TestFolder1\\JobResults
 
                 username    (str)   --
                     username of the machine, if new JobResults directory is a shared/ UNC path.
@@ -6779,6 +6804,7 @@ class _Readiness:
         self._detail = None
         self._status = None
         self._dict = None
+        self._response = None
 
     def __fetch_readiness_details(
             self,
@@ -6872,6 +6898,26 @@ class _Readiness:
                                         application_check, additional_resources)
         return self._status == "Ready."
 
+    def is_mongodb_ready(self):
+        """
+        mongodb_readiness (bool) - performs mongoDB check readiness by calling mongodb readiness API
+
+        Returns:
+            (bool) - True if ready else False
+        """
+        flag, response = self.__commcell._cvpysdk_object.make_request(
+            "GET",self.__commcell._services["MONGODB_CHECK_READINESS"])
+        if flag:
+            self._response = response.json()
+            if response.json():
+                if not (self._response.get('response', [])[0].get('errorString', '') and
+                        self._response.get('response', [])[0].get('errorCode', None)):
+                    return True
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self.__commcell._update_response_(response.text))
+
     def __check_reason(self):
         try:
             self._reason = self._dict['summary'][0]['reason']
@@ -6908,3 +6954,9 @@ class _Readiness:
         if not self._dict:
             self.__fetch_readiness_details()
         return self._detail
+
+    def get_mongodb_failure_reason(self):
+        """Retrieve mongoDB readiness failure details"""
+        if not self._response:
+            self.is_mongodb_ready()
+        return self._response

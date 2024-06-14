@@ -151,8 +151,8 @@ class IndexServerSubclient(BigDataAppsSubclient):
 
                 core_name               (list)  --  list of solr core name which needs to be restore.
                     default:None (all cores)
-                            Format : [role name\core name]
-                            Example : [r'Data Analytics\cvcorefla0']
+                            Format : [role name/core name]
+                            Example : ['Data Analytics\\cvcorefla0']
 
                 overwrite               (bool)  --  unconditional overwrite files during restore
                     default: True
@@ -219,8 +219,8 @@ class IndexServerSubclient(BigDataAppsSubclient):
 
                 core_name               (list)  --  list of solr core name which needs to be restore.
                     default:None (all cores)
-                            Format : [role name\core name]
-                            Example : [r'Data Analytics\cvcorefla0']
+                            Format : [role name/core name]
+                            Example : ['Data Analytics\\cvcorefla0']
 
                 overwrite               (bool)  --  unconditional overwrite files during restore
                     default: True

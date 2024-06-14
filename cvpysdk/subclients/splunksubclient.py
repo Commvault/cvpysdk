@@ -36,13 +36,14 @@ subclient_content()     --      sets backup content at subclient level
 """
 from cvpysdk.subclients.bigdataappssubclient import BigDataAppsSubclient
 
+
 class SplunkSubclient(BigDataAppsSubclient):
     """
     Derived class from BigDataAppsSubclient, representing splunk subclient,
     and to perform operations on that subclient
     """
 
-    def restore_in_place(self, index_list, copy_precedence=None):
+    def restore_in_place(self, index_list, copy_precedence=None, from_time=None, to_time=None):
         """
         Performs a restore job on the splunk subclient
 
@@ -67,7 +68,8 @@ class SplunkSubclient(BigDataAppsSubclient):
         instance_obj = self._instance_object
 
         instance_obj._restore_association = self._subClientEntity
-        parameter_dict = self._restore_json(paths=index_list, copy_precedence = copy_precedence)
+        parameter_dict = self._restore_json(paths=index_list, copy_precedence=copy_precedence, from_time=from_time,
+                                            to_time=to_time)
         parameter_dict["taskInfo"]["associations"] \
             [0]["subclientId"] = subclient_id
         parameter_dict["taskInfo"]["associations"] \

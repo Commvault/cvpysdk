@@ -679,7 +679,8 @@ class Instances(object):
                             'sa_username': '',
                             'sa_password': '',
                             'localadmin_username': '',
-                            'localadmin_password': ''
+                            'localadmin_password': '',
+                            'masterkey_password':''
                         }
             Raises:
                 SDKException:
@@ -725,6 +726,9 @@ class Instances(object):
                     "_type_": 5,
                     "applicationId": 5
                 },
+                "planEntity": {
+                    "planName": sybase_options["storage_policy"]
+                },
                 "sybaseInstance": {
                     "sybaseOCS": sybase_options["sybase_ocs"],
                     "sybaseBlockSize": 65536,
@@ -734,17 +738,18 @@ class Instances(object):
                     "configFile": sybase_options["config_file"],
                     "enableAutoDiscovery": enable_auto_discovery,
                     "sharedMemoryDirectory": sybase_options["shared_memory_directory"],
-                    "defaultDatabaseStoragePolicy": {
-                        "storagePolicyName": sybase_options["storage_policy"]
-                    },
                     "saUser": {"password": sa_password, "userName": sybase_options["sa_username"]},
                     "localAdministrator": {
-                        "password": localadmin_password,
+                        "password": sybase_options["localadmin_password"],
                         "userName": sybase_options["localadmin_username"]
                     }
                 }
             }
         }
+        if "masterkey_password" in sybase_options.keys():
+            masterkey_password = b64encode(sybase_options["masterkey_password"].encode()).decode()
+            request_json["instanceProperties"]["sybaseInstance"]["masterKeyPwd"]=masterkey_password
+
         if "localadmin_password" in sybase_options.keys():
             localadmin_password = b64encode(sybase_options["localadmin_password"].encode()).decode()
             request_json['instanceProperties']['sybaseInstance']['localAdministrator']['password'] = localadmin_password

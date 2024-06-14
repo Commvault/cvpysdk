@@ -124,6 +124,8 @@ ClientGroup:
 
     add_additional_setting()        -- adds registry key to client group property
 
+    delete_additional_setting()     -- Delete registry key from client group property
+
     is_auto_discover_enabled()      -- gets the autodiscover option for the Organization
 
     enable_auto_discover()          -- enables  autodiscover option at client group level
@@ -244,8 +246,11 @@ class ClientGroups(object):
             except IndexError:
                 raise IndexError('No client group exists with the given Name / Id')
 
-    def _get_clientgroups(self):
+    def _get_clientgroups(self,hard=False):
         """Gets all the clientgroups associated with the commcell
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
 
             Returns:
                 dict - consists of all clientgroups of the commcell
@@ -260,6 +265,8 @@ class ClientGroups(object):
 
                     if response is not success
         """
+        if hard:
+            self._commcell_object._cvpysdk_object.make_request('GET', self._commcell_object._services["HARD_REFRESH_CACHE"]%'clientgroup')
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._CLIENTGROUPS
         )
@@ -862,9 +869,14 @@ class ClientGroups(object):
                     'No ClientGroup exists with name: "{0}"'.format(clientgroup_name)
                 )
 
-    def refresh(self):
-        """Refresh the client groups associated with the Commcell."""
-        self._clientgroups = self._get_clientgroups()
+    def refresh(self, hard=False):
+        """
+        Refresh the client groups associated with the Commcell.
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+        """
+        self._clientgroups = self._get_clientgroups(hard)
 
 
 class ClientGroup(object):
@@ -1925,6 +1937,33 @@ class ClientGroup(object):
                               "type": data_type,
                               "value": value,
                               "enabled": enabled}]
+        }
+
+        self.update_properties(properties_dict)
+
+    def delete_additional_setting(
+            self,
+            category=None,
+            key_name=None):
+        """Delete registry key from the client group property
+
+            Args:
+                category        (str)           -- Category of registry key
+
+                key_name        (str)           -- Name of the registry key
+
+            Raises:
+                SDKException:
+                    if failed to add
+
+                    if response is empty
+
+                    if response code is not as expected"""
+
+        properties_dict = {
+            "registryKeys": [{"deleted": 1,
+                              "relativepath": category,
+                              "keyName": key_name}]
         }
 
         self.update_properties(properties_dict)

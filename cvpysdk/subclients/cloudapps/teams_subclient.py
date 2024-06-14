@@ -86,11 +86,13 @@ class TeamsSubclient(CloudAppsSubclient):
         subclient_entity_json['applicationId'] = int(self._subClientEntity['applicationId'])
         return subclient_entity_json
 
-    def discover(self, refresh_cache=True):
+    def discover(self, discovery_type=8, refresh_cache=True):
         """Launches Discovery and returns the discovered teams.
 
             Args:
-                refresh_cache   --  Refreshes Discover cache information.
+                discovery_type (int)  --  Type of the discovery
+                        Example(Teams-8,users-7,groups-22).
+                refresh_cache   --  Refreshes Discover cache information if True.
                     default:    True
 
             Returns:
@@ -104,13 +106,15 @@ class TeamsSubclient(CloudAppsSubclient):
 
         """
 
-        return self._instance_object.discover(refresh_cache=refresh_cache)
+        return self._instance_object.discover(discovery_type, refresh_cache=refresh_cache)
 
-    def content(self, teams, o365_plan):
+    def content(self, entities, o365_plan,  discovery_type):
         """Add teams, discover() must be called before teams added using this method.
             Args:
-                teams       (list)  --  List of team Email IDs.
+                entities       (list or dict)  --  List of team or user or group Email IDs or custom category conditions
+                                dict.
                 o365_plan   (str)   --  Name of the Office 365 plan.
+                discovery_type  (Enum) --  Type of discovery (Example: Teams,Users,Groups etc)
 
             Raises:
                 SDKException:
@@ -120,41 +124,91 @@ class TeamsSubclient(CloudAppsSubclient):
 
         """
 
-        discovered_teams = self.discover()
-        teams = [discovered_teams[team] for team in teams]
-
         url = self._services['SET_USER_POLICY_ASSOCIATION']
+        subclient_entity_json = self._json_subclient_entity()
+        request_json = deepcopy(const.ADD_REQUEST_JSON)
+        request_json['cloudAppAssociation']['subclientEntity'] = subclient_entity_json
+        useraccounts = []
+        groups = []
+        request_json['cloudAppAssociation']['plan']['planId'] = int(
+            self._commcell_object.plans.get(o365_plan).plan_id)
 
-        for team in teams:
+        if discovery_type.value == 13:
+            groups.append({
+                "name": "All teams"
+            })
+            request_json['cloudAppAssociation']['cloudAppDiscoverinfo']['groups'] = groups
 
-            subclient_entity_json = self._json_subclient_entity()
+        elif discovery_type.value == 29:
+            groups.append({
+                "name": "All Users"
+            })
+            request_json['cloudAppAssociation']['cloudAppDiscoverinfo']['groups'] = groups
 
-            user_json = copy(const.ADD_USER_JSON)
-            user_json['_type_'] = team['user']['_type_']
-            user_json['userGUID'] = team['user']['userGUID']
+        elif discovery_type.value == 12:
+            discovered_teams = self.discover(discovery_type=const.ClOUD_APP_EDISCOVER_TYPE['Teams'])
+            entities = [discovered_teams[team] for team in entities]
+            for team in entities:
+                user_json = copy(const.ADD_USER_JSON)
+                user_json['_type_'] = team['user']['_type_']
+                user_json['userGUID'] = team['user']['userGUID']
 
-            user_account_json = deepcopy(const.ADD_TEAM_JSON)
-            user_account_json['displayName'] = team['displayName']
-            user_account_json['smtpAddress'] = team['smtpAddress']
-            user_account_json['msTeamsInfo']['teamsCreatedTime'] = team['msTeamsInfo']['teamsCreatedTime']
-            user_account_json['user'] = user_json
+                user_account_json = deepcopy(const.ADD_TEAM_JSON)
+                user_account_json['displayName'] = team['displayName']
+                user_account_json['smtpAddress'] = team['smtpAddress']
+                user_account_json['msTeamsInfo']['teamsCreatedTime'] = team['msTeamsInfo']['teamsCreatedTime']
+                user_account_json['user'] = user_json
+                useraccounts.append(user_account_json)
+            request_json['cloudAppAssociation']['cloudAppDiscoverinfo']['userAccounts'] = useraccounts
 
-            request_json = deepcopy(const.ADD_REQUEST_JSON)
-            request_json['cloudAppAssociation']['subclientEntity'] = subclient_entity_json
-            request_json['cloudAppAssociation']['cloudAppDiscoverinfo']['userAccounts'].append(user_account_json)
+        elif discovery_type.value == 28:
+            discovered_teams = self.discover(discovery_type=const.ClOUD_APP_EDISCOVER_TYPE['Users'])
+            entities = [discovered_teams[team] for team in entities]
+            for user in entities:
+                user_json = copy(const.ADD_USER_JSON)
+                user_json['_type_'] = user['user']['_type_']
+                user_json['userGUID'] = user['user']['userGUID']
 
-            request_json['cloudAppAssociation']['plan']['planId'] = int(
-                self._commcell_object.plans.get(o365_plan).plan_id)
-            flag, response = self._cvpysdk_object.make_request('POST', url, request_json)
+                user_account_json = deepcopy(const.ADD_TEAM_JSON)
+                user_account_json['displayName'] = user['displayName']
+                user_account_json['smtpAddress'] = user['smtpAddress']
+                user_account_json['user'] = user_json
+                useraccounts.append(user_account_json)
+            request_json['cloudAppAssociation']['cloudAppDiscoverinfo']['userAccounts'] = useraccounts
 
-            if not flag:
-                response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+        elif discovery_type.value == 27:
+            discovered_teams = self.discover(discovery_type=const.ClOUD_APP_EDISCOVER_TYPE['Groups'])
+            entities = [discovered_teams[team] for team in entities]
+            for Group in entities:
+                user_account_json = deepcopy(const.ADD_GROUP_JSON)
+                user_account_json['name'] = Group['name']
+                user_account_json['id'] = Group['id']
+                groups.append(user_account_json)
+            request_json['cloudAppAssociation']['cloudAppDiscoverinfo']['groups'] = groups
 
-    def backup(self, teams=None):
-        """Run an Incremental backup.
+        elif discovery_type.value == 100:
+            url = self._services['CUSTOM_CATEGORY'] % (subclient_entity_json['subclientId'])
+            custom_category_json = deepcopy(const.CUSTOM_CATEGORY_JSON)
+            custom_category_json['subclientEntity']['subclientId'] = subclient_entity_json['subclientId']
+            custom_category_json['planEntity']['planId'] = int(self._commcell_object.plans.get(o365_plan).plan_id)
+            custom_category_json['categoryName'] = entities['name']
+            custom_category_json['categoryQuery']['conditions'] = entities['conditions']
+            custom_category_json['office365V2AutoDiscover']['clientId'] = subclient_entity_json['clientId']
+            custom_category_json['office365V2AutoDiscover']['instanceId'] = subclient_entity_json['instanceId']
+            request_json = custom_category_json
+
+        flag, response = self._cvpysdk_object.make_request('POST', url, request_json)
+
+        if not flag:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def backup(self, teams=None, convert_job_to_full=False):
+        """Run an Incremental  or Full backup.
             Args:
                 teams               (list)  --  List of team Email IDs.
+                convert_job_to_full (bool)  --  True if we need to convert job to full otherwise False
+                            Default --  False
 
             Returns:
                 obj   --  Instance of job.
@@ -189,13 +243,17 @@ class TeamsSubclient(CloudAppsSubclient):
                         "itemName": team['displayName'], "itemType": "Team"
                     }
                 })
-            backup_subtask_json['options']['commonOpts']['selectedItems'] = selected_items_json
+            backup_subtask_json['options']['commonOpts']['jobMetadata'][0]['selectedItems'] = selected_items_json
             backup_subtask_json['options']['backupOpts']['cloudAppOptions']['userAccounts'] = team_json_list
         else:
-            backup_subtask_json['options']['commonOpts']['selectedItems']= [{
+            backup_subtask_json['options']['commonOpts']['jobMetadata'][0]['selectedItems']= [{
                 "itemName": "All%20teams", "itemType": "All teams"
             }]
             backup_subtask_json['options']['backupOpts'].pop('cloudAppOptions', None)
+
+        if convert_job_to_full:
+            backup_subtask_json['options']['backupOpts']['cloudAppOptions']["forceFullBackup"] = convert_job_to_full
+            backup_subtask_json['options']['commonOpts']['jobMetadata'][0]['jobOptionItems'][0]['value'] = "Enabled"
         request_json['taskInfo']['subTasks'].append(backup_subtask_json)
         flag, response = self._cvpysdk_object.make_request('POST', url, request_json)
 

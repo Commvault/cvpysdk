@@ -47,6 +47,7 @@ SERVICES_DICT_TEMPLATE = {
     'COMMSERV': '{0}CommServ',
     'GET_SAML_TOKEN': '{0}Commcell/SamlToken?validityInMins=%s',
     'WHO_AM_I': '{0}WhoAmI',
+    'CREATE_RC': '{0}V4/SoftwareCache',
 
     'TFA': '{0}Commcell/Properties/TwoFactorAuth',
     'TFA_ENABLE': '{0}Commcell/Properties/TwoFactorAuth/Action/Enable',
@@ -72,7 +73,7 @@ SERVICES_DICT_TEMPLATE = {
     'CHECK_READINESS': '{0}Client/%s/CheckReadiness?network=%s&resourceCapacity=%s'
                        '&NeedXmlResp=true&includeDisabledClients=%s&CSCCNetworkCheck=%s'
                        '&applicationCheck=%s&additionalResources=%s',
-
+    'MONGODB_CHECK_READINESS' : '{0}/clients/mongodb/status',
     'GET_ALL_AGENTS': '{0}Agent?clientId=%s',
     'AGENT': '{0}Agent',
     'GET_AGENT': '{0}Agent?clientId=%s&applicationId=%s&propertyLevel=30',
@@ -114,6 +115,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_LIBRARY_PROPERTIES': '{0}Library/%s',
     'DETECT_TAPE_LIBRARY': '{0}Library?Action=detect',
     'CONFIGURE_TAPE_LIBRARY': '{0}Library?Action=configureTape',
+    'EDIT_CLOUD_CONTROLLER':'{0}V4/Storage/Cloud/0/Bucket/%s/AccessPath/%s',
 
     'GET_MOVE_MOUNTPATH_DETAILS': '{0}MountPath/%s/Move',
     'MOVE_MOUNTPATH': '{0}MountPath/Move',
@@ -182,6 +184,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'CLIENTGROUPS': '{0}ClientGroup',
     'CLIENTGROUP': '{0}ClientGroup/%s',
+    'SERVERGROUPS_V4': '{0}V4/ServerGroup',
 
     'USERGROUPS': '{0}UserGroup?includeSystemCreated=true',
     'USERGROUP': '{0}UserGroup/%s',
@@ -225,7 +228,13 @@ SERVICES_DICT_TEMPLATE = {
     'ADD_INSTANCE': '{0}Instance',
     'MASKING_POLICY': '{0}MaskingPolicy',
 
-
+    'DO_COMPLIANCE_SEARCH': '{0}doWebSearch',
+    'GET_EXPORT_SETS': '{0}GetContainers',
+    'GET_EXPORTS': '{0}getContainerItems',
+    'ADD_EXPORT_SET': '{0}PerformContainerOperation',
+    'DELETE_EXPORT_SET': '{0}Containers/Action/Delete',
+    'EXPORT_ITEM_TO_SET': '{0}Download',
+    'DOWNLOAD_EXPORT_ITEMS': '{0}DownloadFile',
     'GET_ANALYTICS_ENGINES': '{0}dcube/getAnalyticsEngine',
     'GET_ALL_DATASOURCES': '{0}dcube/GetDataSources?summary=1',
     'GET_DATASOURCE': '{0}dcube/getDataSource/%s',
@@ -305,6 +314,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'PLANS': '{0}V2/Plan',
     'PLAN': '{0}V2/Plan/%s',
+    'PLAN_SUMMARY': '{0}v4/Plan/Summary?%s',
     'DELETE_PLAN': '{0}V2/Plan/%s?confirmDelete=True',
     'ADD_USERS_TO_PLAN': '{0}V2/Plan/%s/Users',
     'GET_PLAN_TEMPLATE': '{0}V2/Plan/template?type=%s&subType=%s',
@@ -315,6 +325,12 @@ SERVICES_DICT_TEMPLATE = {
     'APPLICABLE_SOLNS_DISABLE': '{0}V4/ServerPlan/%s/ApplicableSolutions/Restrict/Disable',
     'PLAN_SUPPORTED_SOLUTIONS': '{0}V4/Solutions?filter=PLAN_SUPPORTED_SOLUTIONS',
     'V4_SERVER_PLAN': '{0}V4/ServerPlan/%s',
+    'V4_SERVER_PLANS': '{0}V4/ServerPlan',
+    'V4_SERVER_PLAN_BACKUP_DESTINATION': '{0}V4/ServerPlan/%s/BackupDestination',
+    'V4_SERVER_PLAN_COPY': '{0}V4/ServerPlan/%s/BackupDestination/%s',
+    'V5_SERVER_PLAN_COPY': '{0}V5/ServerPlan/%s/BackupDestination/%s',
+    'SERVER_PLAN_REGIONS': '{0}V4/ServerPlan/%s/storageRegion/%s?isRegionIdList=true',
+    'SERVER_PLAN_RPO': '{0}V4/ServerPlan/%s/RPO',
 
     'DOMAIN_CONTROLER': '{0}CommCell/DomainController',
     'DELETE_DOMAIN_CONTROLER': '{0}CommCell/DomainController/%s',
@@ -437,6 +453,8 @@ SERVICES_DICT_TEMPLATE = {
     'GET_SALESFORCE_CLIENTS': '{0}Salesforce/Organization',
     'CLOUD_DISCOVERY': '{0}Instance/%s/CloudDiscovery?clientId=%s&appType=%s',
     'SET_USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/SetUserPolicyAssociation',
+    'CUSTOM_CATEGORY': '{0}Office365/SubClient/%s/CustomCategory',
+    'INSTANCE_PROPERTIES': '{0}instance/%s',
     'USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/UserPolicyAssociation',
     'UPDATE_USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/UpdateUserPolicyAssociation',
     'OFFICE365_MOVE_JOB_RESULT_DIRECTORY': '{0}Office365/MoveJobResultsDirectory',
@@ -526,11 +544,11 @@ SERVICES_DICT_TEMPLATE = {
     'BACKUP_NETWORK_PAIRS': '{0}CommServ/DataInterfacePairs?ClientId=%s',
     'BACKUP_NETWORK_PAIR': '{0}CommServ/DataInterfacePairs',
 
-    'GET_ALL_RECOVERY_TARGETS':
-        '{0}/VMAllocationPolicy?showResourceGroupPolicy=true&showNonResourceGroupPolicy=false&deep=true',
-    'GET_RECOVERY_TARGET': '{0}/VMAllocationPolicy/%s',
+    'GET_ALL_RECOVERY_TARGETS': '{0}V4/RecoveryTargets',
+    'GET_RECOVERY_TARGET': '{0}V4/RecoveryTarget/%s',
 
     'RETIRE': '{0}Client/%s/Retire',
+    'GET_REMOTE_CACHE_CLIENTS': '{0}RemoteCacheClients',
 
     'DATASOURCE_ACTIONS': '{0}EDiscoveryClients/Datasources/Actions',
     'CLOUD_CREATE': '{0}cloud/create',
@@ -574,7 +592,19 @@ SERVICES_DICT_TEMPLATE = {
     'LAUNCH_O365_LICENSING': '{0}Office365/License',
 
     'VM_GROUP': '{0}V4/VmGroup/%s',
-    'VSA_HIDDEN_SUBCLIENT': '{0}GetId?clientname=%s&agent=Virtual Server&backupset=%s&subclient=Do Not Backup'
+
+    'VSA_HIDDEN_SUBCLIENT': '{0}GetId?clientname=%s&agent=Virtual Server&backupset=%s&subclient=Do Not Backup',
+
+    'HARD_REFRESH_CACHE': '{0}/%s?hardRefresh=true',
+
+    'ALL_RECOVERY_GROUPS': '{0}RecoveryGroups',
+    'RECOVERY_GROUP': '{0}RecoveryGroup/%s?getEntityDetails=true',
+    'RECOVERY_GROUP_RECOVER': '{0}RecoveryGroup/%s/Recover',
+    'COMMSERVE_RECOVERY': '{0}cvdrbackup/csrecovery',
+    'GET_BACKUPSET_INFO': '{0}cvdrbackup/info?csGuid=%s',
+    'GET_COMMSERVE_RECOVERY_LICENSE_DETAILS': '{0}cvdrbackup/csrecovery/quota?csGuid=%s',
+    'GET_COMMSERVE_RECOVERY_RETENTION_DETAILS': '{0}cvdrbackup/cleanup/lock?csGuid=%s',
+
 }
 
 

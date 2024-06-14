@@ -29,6 +29,10 @@ GoogleSubclient:
 
     _get_subclient_properties_json()    --  gets the properties JSON of Google Subclient
 
+    _task_json_for_onedrive_backup()    --  Json for onedrive backup for selected users
+
+    _association_users_json             --  user association
+
     content()                           --  gets the content of the subclient
 
     groups()                            --  gets the groups associated with the subclient
@@ -51,6 +55,14 @@ GoogleSubclient:
 
     in_place_restore_v2()               --  Runs in-place restore of selected users for OneDrive for Business Client
 
+    point_in_time_in_place_restore_onedrive_v2()  -- Runs PIT in-place restore of selected users
+
+    point_in_time_out_of_place_restore_onedrive_v2()  -- Runs PIT out of place restore of selected users
+
+    run_user_level_backup_onedrive_v2()     --  Runs the backup for the users in users list
+
+    _get_user_details()                --   gets user details from discovery
+
     _get_user_guids()                   --  Retrieve GUIDs for users specified
 
     process_index_retention_rules()     --  Makes API call to process index retention rules
@@ -63,7 +75,6 @@ from ...exception import SDKException
 import time
 from ..casubclient import CloudAppsSubclient
 from ...constants import AppIDAType
-
 
 class GoogleSubclient(CloudAppsSubclient):
     """Derived class from CloudAppsSubclient Base class, representing a GMail/GDrive/OneDrive subclient,
@@ -102,6 +113,63 @@ class GoogleSubclient(CloudAppsSubclient):
         """
 
         return {'subClientProperties': self._subclient_properties}
+
+    def _association_users_json(self, users_list):
+        """
+            Args:
+                users_list (list) : list of SMTP addresses of users
+            Returns:
+                users_json(list): Required details of users to backup
+        """
+        users_json = []
+        for user_smtp in users_list:
+            user_details=self._get_user_details(user_smtp)
+            user_info={
+                      "user": {
+                        "userGUID": user_details[0].get('user', {}).get('userGUID')
+                      }
+            }
+            users_json.append(user_info)
+        return users_json
+
+    def _task_json_for_onedrive_backup(self, users_list):
+        """
+        Json for onedrive backup for selected users
+
+        Args:
+                users_list (list) : list of SMTP addresses of users
+        """
+        associated_users_json = self._association_users_json(users_list)
+        advanced_options_dict = {
+            'cloudAppOptions': {
+                'userAccounts': associated_users_json
+            }
+        }
+
+        selected_items=[]
+        for user_smtp in users_list:
+            details=self._get_user_details(user_smtp)
+            item={
+                "itemName": details[0].get('displayName'),
+                "itemType": "User"
+            }
+            selected_items.append(item)
+
+        common_options_dict={
+            "jobMetadata": [
+                {
+                    "selectedItems": selected_items,
+                    "jobOptionItems": [
+                        {
+                            "option": "Total running time",
+                            "value": "Disabled"
+                        }
+                    ]
+                }
+            ]
+        }
+        task_json = self._backup_json(backup_level='INCREMENTAL',incremental_backup=False,incremental_level='BEFORE_SYNTH',advanced_options=advanced_options_dict,common_backup_options=common_options_dict)
+        return task_json
 
     @property
     def content(self):
@@ -725,6 +793,145 @@ class GoogleSubclient(CloudAppsSubclient):
         }
         restore_json = self._instance_object._prepare_restore_json_v2(source_user_list, **kwargs)
         return self._process_restore_response(restore_json)
+
+    def point_in_time_in_place_restore_onedrive_v2(self, users, end_time, **kwargs):
+        """ Runs an in-place point in time restore job for specified users on OneDrive for business client
+            By default restore skips the files already present in destination
+
+            Args:
+                users (list) :  List of SMTP addresses of users
+                end_time (int) : Backup job end time
+                **kwargs (dict) : Additional parameters
+                    overwrite (bool) : unconditional overwrite files during restore (default: False)
+                    restore_as_copy (bool) : restore files as copy during restore (default: False)
+                    skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+
+                    if overwrite and restore as copy file options are both selected
+        """
+
+        overwrite = kwargs.get('overwrite', False)
+        restore_as_copy = kwargs.get('restore_as_copy', False)
+        skip_file_permissions = kwargs.get('skip_file_permissions', False)
+
+        if overwrite and restore_as_copy:
+            raise SDKException('Subclient', '102', 'Either select overwrite or restore as copy for file options')
+
+        self._instance_object._restore_association = self._subClientEntity
+        source_user_list = self._get_user_guids(users)
+        kwargs = {
+            'overwrite': overwrite,
+            'restore_as_copy': restore_as_copy,
+            'skip_file_permissions': skip_file_permissions
+        }
+
+        restore_json = self._instance_object._prepare_restore_json_onedrive_v2(source_user_list, **kwargs)
+
+        adv_search_bkp_time_dict={
+                "field": "BACKUPTIME",
+                "fieldValues": {
+                    "values": [
+                        "0",
+                        str(end_time)
+                    ]
+                },
+                "intraFieldOp": "FTOr"
+            }
+
+
+        add_to_time=restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"]
+        add_to_time["timeRange"]={"toTime":end_time}
+        add_backup_time=restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"]["googleRestoreOptions"]["findQuery"]["advSearchGrp"]["fileFilter"][0]["filter"]["filters"]
+        add_backup_time.append(adv_search_bkp_time_dict)
+
+        return self._instance_object._process_restore_response(restore_json)
+
+    def point_in_time_out_of_place_restore_onedrive_v2(self, users, end_time, destination_path, **kwargs):
+        """ Runs an out-of-place point in time restore job for specified users on OneDrive for business client
+            By default restore skips the files already present in destination
+
+            Args:
+                users (list) : list of SMTP addresses of users
+                end_time (int) : Backup job end time
+                destination_path (str) : SMTP address of destination user
+                **kwargs (dict) : Additional parameters
+                    overwrite (bool) : unconditional overwrite files during restore (default: False)
+                    restore_as_copy (bool) : restore files as copy during restore (default: False)
+                    skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+
+                    if overwrite and restore as copy file options are both selected
+        """
+        overwrite = kwargs.get('overwrite', False)
+        restore_as_copy = kwargs.get('restore_as_copy', False)
+        skip_file_permissions = kwargs.get('skip_file_permissions', False)
+
+        if overwrite and restore_as_copy:
+            raise SDKException('Subclient', '102', 'Either select overwrite or restore as copy for file options')
+
+        self._instance_object._restore_association = self._subClientEntity
+        source_user_list = self._get_user_guids(users)
+        kwargs = {
+            'out_of_place': True,
+            'destination_path': destination_path,
+            'overwrite': overwrite,
+            'restore_as_copy': restore_as_copy,
+            'skip_file_permissions': skip_file_permissions
+        }
+        restore_json = self._instance_object._prepare_restore_json_onedrive_v2(source_user_list, **kwargs)
+
+        adv_search_bkp_time_dict = {
+            "field": "BACKUPTIME",
+            "fieldValues": {
+                "values": [
+                    "0",
+                    str(end_time)
+                ]
+            },
+            "intraFieldOp": "FTOr"
+        }
+
+        add_to_time=restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"]
+        add_to_time["timeRange"]={"toTime":end_time}
+        add_backup_time=restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"]["googleRestoreOptions"]["findQuery"]["advSearchGrp"]["fileFilter"][0]["filter"]["filters"]
+        add_backup_time.append(adv_search_bkp_time_dict)
+
+        return self._process_restore_response(restore_json)
+
+    def run_user_level_backup_onedrive_v2(self,users_list):
+        """
+        Runs the backup for the users in users list
+        Args:
+                users_list (list) : list of SMTP addresses of users
+        """
+        task_json = self._task_json_for_onedrive_backup(users_list)
+        create_task = self._services['CREATE_TASK']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', create_task, task_json
+        )
+        return self._process_backup_response(flag, response)
+
+    def _get_user_details(self,user):
+        """
+        gets user details from discovery
+        Args:
+                user (str) : SMTP address of user
+        """
+        user_details=self.search_for_user(user)
+        if len(user_details)!=0:
+            return user_details
+        else:
+            raise SDKException('Subclient', '102', 'User details not found in discovered data')
+
 
     def _get_user_guids(self, users):
         """ Retrieve GUIDs for users specified

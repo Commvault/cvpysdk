@@ -35,6 +35,8 @@ CommServeCache
 
     commit_cache()                        --  commits CS cache
 
+    get_remote_cache_clients()            --  fetches the list of Remote Cache configured for a particular Admin/Tenant
+
 RemoteCache
 ==============
 
@@ -74,6 +76,8 @@ class CommServeCache(object):
 
         self.commcell_object = commcell_object
         self.request_xml = CommServeCache.get_request_xml()
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
 
     @staticmethod
     def get_request_xml():
@@ -180,6 +184,29 @@ class CommServeCache(object):
                 'Error Code:"{0}"\nError Message: "{1}"'.format(response.get('errorCode'), error_message)
             )
 
+    def get_remote_cache_clients(self):
+        """
+        Fetches the List of Remote Cache configured for a particular Admin/Tenant
+        :return: List of Remote Cache configured
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._services['GET_REMOTE_CACHE_CLIENTS'])
+
+        if flag:
+            rc_client_names = []
+            if response.ok:
+                xml_tree = ET.fromstring(response.text)
+                if xml_tree.findall(".//client"):
+                    # Find all 'client' elements
+                    client_elements = xml_tree.findall('.//client')
+                    # Extract the client names
+                    rc_client_names = [client.get('clientName') for client in client_elements]
+                    rc_client_names.remove(self.commcell_object.commserv_name)
+                return rc_client_names
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
+
 
 class RemoteCache(object):
     """"class for downloading software packages"""
@@ -242,25 +269,55 @@ class RemoteCache(object):
 
             - Response is incorrect
         """
-        root = ET.fromstring(self.request_xml)
-        uaInfo = root.find(".//uaInfo")
-        uaInfo.set('uaCachePath', cache_path)
-        uaInfo.set('uaOpCode', "5")
-        uaInfo.attrib.pop("uaPackageCacheStatus")
-        uaInfo.attrib.pop('uaUpdateCacheStatus')
-        root.find("./uaInfo/uaName").set("id", self.client_object.client_id)
-        root.find("./uaInfo/uaName").set("name", self.client_object.client_name)
 
-        response = self.commcell.qoperation_execute(ET.tostring(root))
-        if response.get('errorCode') != 0:
-            error_message = "Failed with error: [{0}]".format(
-                response.get('errorMessage')
+        # using API to configure RC from SP34
+        if self.commcell.commserv_version >= 34:
+            request_json = {
+                "cacheDirectory": cache_path,
+                "associations": [],
+                "cache": {
+                    "name": self.client_object.client_name
+                }
+            }
+
+            flag, response = self._cvpysdk_object.make_request(
+                'POST', self._services['CREATE_RC'], request_json
             )
-            raise SDKException(
-                'Response',
-                '101',
-                'Error Code:"{0}"\nError Message: "{1}"'.format(response.get('errorCode'), error_message)
-            )
+
+            if flag:
+                if response.json():
+                    errorCode = response.json()['errorCode']
+                    if errorCode != 0:
+                        raise SDKException(
+                            'Response',
+                            '101',
+                            'Error Code: "{0}"'.format(errorCode)
+                        )
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '101')
+
+        # using qscript to configure machine as RC before SP34
+        else:
+            root = ET.fromstring(self.request_xml)
+            uaInfo = root.find(".//uaInfo")
+            uaInfo.set('uaCachePath', cache_path)
+            uaInfo.set('uaOpCode', "5")
+            uaInfo.attrib.pop("uaPackageCacheStatus")
+            uaInfo.attrib.pop('uaUpdateCacheStatus')
+            root.find("./uaInfo/uaName").set("id", self.client_object.client_id)
+            root.find("./uaInfo/uaName").set("name", self.client_object.client_name)
+            response = self.commcell.qoperation_execute(ET.tostring(root))
+            if response.get('errorCode') != 0:
+                error_message = "Failed with error: [{0}]".format(
+                    response.get('errorMessage')
+                )
+                raise SDKException(
+                    'Response',
+                    '101',
+                    'Error Code:"{0}"\nError Message: "{1}"'.format(response.get('errorCode'), error_message)
+                )
 
     def configure_packages_to_sync(self, win_os=None, win_package_list=None, unix_os=None,
                                    unix_package_list=None):

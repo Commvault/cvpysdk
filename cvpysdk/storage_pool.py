@@ -60,7 +60,6 @@ Attributes
 
     **all_storage_pools**   --  returns dict of all the storage pools on commcell
 
-
 StoragePool
 ===========
 
@@ -74,12 +73,16 @@ __repr__()                      --  returns a string representation of the
 
 refresh()		                        --	Refresh the properties of the StoragePool
 
+get_copy()                      --  Returns the StoragePolicyCopy object of Storage Pool copy
+
 StoragePool instance attributes
 ================================
 
 **storage_policy_name**         --  returns the name of the StoragePool as seen on GUI
 
 **storage_policy_id**           --  returns the storage pool id
+
+enable_worm_storage_lock()      --  sets the hardware WORM storage lock on storage pool.
 
 
 # TODO: check with MM API team to get the response in JSON
@@ -89,15 +92,14 @@ StoragePool instance attributes
 import copy
 
 import xmltodict
+from enum import Enum
 
 from .exception import SDKException
 
-# from .job import Job
-
-from .storage import DiskLibrary
 from .storage import MediaAgent
 from .security.security_association import SecurityAssociation
 from .constants import StoragePoolConstants
+from .policies.storage_policies import StoragePolicyCopy
 
 
 class StoragePools:
@@ -350,7 +352,7 @@ class StoragePools:
         self.refresh()
         return self.get(storage_pool_name)
 
-    def add(self, storage_pool_name, mountpath, media_agent, ddb_ma, dedup_path):
+    def add(self, storage_pool_name, mountpath, media_agent, ddb_ma=None, dedup_path=None, **kwargs):
         """
         Adds a new storage pool to commcell
 
@@ -365,24 +367,28 @@ class StoragePools:
 
             dedup_path          (str)       --  path where the DDB should be stored
 
+            **kwargs:
+                username        (str)       --  username to access the mountpath
+
+                password        (str)       --  password to access the mountpath
+
+                credential_name (str)       --  name of the credential as in credential manager
+
+                cloud_server_type (int)     --  cloud server type of the cloud vendor (required)
         Returns:
             StoragePool object if creation is successful
 
         Raises:
             Exception if creation is unsuccessful
         """
-        # from urllib.parse import urlencode
+        username = kwargs.get('username', None)
+        password = kwargs.get('password', None)
+        credential_name = kwargs.get('credential_name', None)
+        cloud_server_type = int(kwargs.get('cloud_server_type', 0))
 
-        if ((dedup_path is not None and not isinstance(dedup_path, str)) or
+        if ((ddb_ma is not None and not isinstance(dedup_path, str)) or
                 not (isinstance(storage_pool_name, str) or not isinstance(mountpath, str))):
             raise SDKException('Storage', '101')
-
-        # if isinstance(library, DiskLibrary):
-        #     disk_library = library
-        # elif isinstance(library, str):
-        #     disk_library = DiskLibrary(self._commcell_object, library)
-        # else:
-        #     raise SDKException('Storage', '104')
 
         if isinstance(media_agent, MediaAgent):
             media_agent = media_agent
@@ -391,16 +397,17 @@ class StoragePools:
         else:
             raise SDKException('Storage', '103')
 
-        if isinstance(ddb_ma, MediaAgent):
-            ddb_ma = ddb_ma
-        elif isinstance(ddb_ma, str):
-            ddb_ma = MediaAgent(self._commcell_object, ddb_ma)
-        else:
-            raise SDKException('Storage', '103')
+        if ddb_ma is not None:
+            if isinstance(ddb_ma, MediaAgent):
+                ddb_ma = ddb_ma
+            elif isinstance(ddb_ma, str):
+                ddb_ma = MediaAgent(self._commcell_object, ddb_ma)
+            else:
+                raise SDKException('Storage', '103')
 
         request_json = {
             "storagePolicyName": storage_pool_name,
-            "type": 1,
+            "type": "CVA_REGULAR_SP",
             "copyName": "Primary",
             "numberOfCopies": 1,
             "storage": [
@@ -409,23 +416,55 @@ class StoragePools:
                     "mediaAgent": {
                         "mediaAgentId": int(media_agent.media_agent_id),
                         "mediaAgentName": media_agent.media_agent_name
-                    },
-                    "credentials": {}
+                    }
                 }
             ],
             "storagePolicyCopyInfo": {
-                "copyType": 1,
+                "copyType": "SYNCHRONOUS",
                 "isFromGui": True,
-                "active": 1,
-                "isDefault": 1,
-                "dedupeFlags": {
-                    "enableDASHFull": 1,
-                    "hostGlobalDedupStore": 1,
-                    "enableDeduplication": 1
+                "active": "SET_TRUE",
+                "isDefault": "SET_TRUE",
+                "numberOfStreamsToCombine": 1,
+                "retentionRules": {
+                    "retentionFlags": {
+                        "enableDataAging": "SET_TRUE"
+                    },
+                    "retainBackupDataForDays": -1,
+                    "retainBackupDataForCycles": -1,
+                    "retainArchiverDataForDays": -1
                 },
+                "library": {
+                    "libraryId": 0,
+                },
+                "mediaAgent": {
+                    "mediaAgentId": int(media_agent.media_agent_id),
+                    "mediaAgentName": media_agent.media_agent_name
+                }
+            }
+        }
+
+        if cloud_server_type > 0:
+            request_json["storage"][0]["deviceType"] = cloud_server_type
+
+        if username is not None:
+            request_json["storage"][0]["credentials"] = {"userName": username}
+
+        if password is not None:
+            request_json["storage"][0]["credentials"]["password"] = password
+
+        if credential_name is not None:
+            request_json["storage"][0]["savedCredential"] = {"credentialName": credential_name}
+
+        if ddb_ma is not None or dedup_path is not None:
+            request_json["storagePolicyCopyInfo"].update({
                 "storagePolicyFlags": {
-                    "blockLevelDedup": 1,
-                    "enableGlobalDeduplication": 1
+                    "blockLevelDedup": "SET_TRUE",
+                    "enableGlobalDeduplication": "SET_TRUE"
+                },
+                "dedupeFlags": {
+                    "enableDeduplication": "SET_TRUE",
+                    "enableDASHFull": "SET_TRUE",
+                    "hostGlobalDedupStore": "SET_TRUE"
                 },
                 "DDBPartitionInfo": {
                     "maInfoList": [
@@ -438,21 +477,25 @@ class StoragePools:
                                 {
                                     "accessPath": {
                                         "path": dedup_path
-                                    }
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "library": {
-                    "libraryName": mountpath,
-                },
-                "mediaAgent": {
-                    "mediaAgentId": int(media_agent.media_agent_id),
-                    "mediaAgentName": media_agent.media_agent_name
+                                    },
+                                    "diskFreeThresholdMB": 5120,
+                                    "diskFreeWarningThreshholdMB": 10240
+                                }]
+                        }]
                 }
-            }
-        }
+            })
+        else:
+            request_json["storagePolicyCopyInfo"].update({
+                "storagePolicyFlags": {
+                    "globalStoragePolicy": "SET_TRUE"
+                },
+                "copyFlags": {
+                    "preserveEncryptionModeAsInSource": "SET_TRUE"
+                },
+                "extendedFlags": {
+                    "globalStoragePolicy": "SET_TRUE"
+                }
+            })
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._add_storage_pool_api, request_json
         )
@@ -473,6 +516,7 @@ class StoragePools:
             raise SDKException('Response', '101', response_string)
 
         self.refresh()
+        self._commcell_object.disk_libraries.refresh()
         return self.get(storage_pool_name)
 
     def add_azure_storage_pool(self, storage_pool_name, container_name, media_agents, dedup_paths, **kwargs):
@@ -619,6 +663,14 @@ class StoragePools:
         self._storage_pools = self._get_storage_pools()
 
 
+class StoragePoolType(Enum):
+    """Class Enum to represent different storage pool types"""
+    DEDUPLICATION = 1,
+    SECONDARY_COPY = 2,
+    NON_DEDUPLICATION = 3,
+    SCALE_OUT = 4
+
+
 class StoragePool(object):
     """Class for individual storage pools"""
 
@@ -640,6 +692,9 @@ class StoragePool(object):
         self._commcell_object = commcell_object
         self._storage_pool_properties = None
         self._storage_pool_id = None
+        self._copy_id = None
+        self._copy_name = None
+        
         if storage_pool_id:
             self._storage_pool_id = str(storage_pool_id)
         else:
@@ -647,6 +702,9 @@ class StoragePool(object):
 
         self._STORAGE_POOL = self._commcell_object._services['GET_STORAGE_POOL'] % (self.storage_pool_id)
         self.refresh()
+        
+        self._copy_id = self._storage_pool_properties.get("storagePoolDetails",{}).get("copyInfo",{}).get("StoragePolicyCopy",{}).get("copyId")
+        self._copy_name = self._storage_pool_properties.get("storagePoolDetails", {}).get("copyInfo", {}).get("StoragePolicyCopy", {}).get("copyName")
 
     def __repr__(self):
         """String representation of the instance of this class"""
@@ -695,6 +753,25 @@ class StoragePool(object):
         """Returns the global policy corresponding to the storage pool"""
         return self._storage_pool_properties["storagePoolDetails"]["copyInfo"]["StoragePolicyCopy"]["storagePolicyName"]
 
+    @property
+    def copy_name(self):
+        """Treats copy name as a read only attribute"""
+        return self._copy_name
+
+    @property
+    def copy_id(self):
+        """Treats copy ID as a read only attribute"""
+        return self._copy_id
+
+    @property
+    def storage_pool_type(self):
+        """Treats storage type as a read only attribute"""
+        return self._storage_pool_properties["storagePoolDetails"]["storagePoolType"]
+
+    def get_copy(self):
+        """ Returns the StoragePolicyCopy object of Storage Pool copy"""
+        return StoragePolicyCopy(self._commcell_object, self.storage_pool_name, self.copy_name)
+        
     def hyperscale_add_nodes(self, media_agents):
         """
         Add 3 new nodes to an existing storage pool
@@ -930,3 +1007,44 @@ class StoragePool(object):
                                                                                    user=isUser,
                                                                                    request_type=request_type,
                                                                                    externalGroup=externalGroup)
+    
+    def enable_worm_storage_lock(self, days):
+        """
+        Sets hardware worm setting on Storage Pool copy with given retention
+        
+        Args:
+            days    (int)   -- number of days of retention on WORM copy.
+        
+        Raises:
+            SDKException:
+                if response is not success.
+
+                if reponse is empty.
+        """
+
+        request_json = {
+            "storagePolicyCopyInfo":{
+                "copyFlags":{
+                    "wormCopy":1
+                },
+                "retentionRules":{
+                    "retainBackupDataForDays":days
+                }
+            },
+            "isWormStorage":True,
+            "forceCopyToFollowPoolRetention":True
+        }
+        
+        _STORAGE_POOL_COPY = self._commcell_object._services['STORAGE_POLICY_COPY'] % (
+            self._storage_pool_id, str(self.copy_id))
+        flag, response = self._commcell_object._cvpysdk_object.make_request('PUT', _STORAGE_POOL_COPY, request_json)
+
+        if flag:
+            if response.json():
+                response = response.json()
+                if "error" in response and response.get("error", {}).get("errorCode") != 0:
+                    error_message = response.get("error", {}).get("errorMessage")
+                    raise SDKException('Response', '102', error_message)
+            else:
+                raise SDKException('Response', '101')
+

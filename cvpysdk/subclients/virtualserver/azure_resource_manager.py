@@ -31,13 +31,13 @@ AzureRMSubclient:
 
     full_vm_restore_in_place()              --  restores the VM specified by the
                                                     user to the same location
-    
+
     full_vm_conversion_azurestack()         -- converts azure vm to azurestack
-    
+
     full_vm_conversion_amazon()             -- converts azure vm to amazon
-     
+
     full_vm_conversion_hyperv()             -- converts azure vm to hyperv
-    
+
     full_vm_conversion_vmware()             -- converts azure vm to vmware
 """
 
@@ -76,6 +76,8 @@ class AzureRMSubclient(VirtualServerSubclient):
                                      copy_precedence=0,
                                      disk_type=None,
                                      restore_option=None,
+                                     destination_client=None,
+                                     subnet_id=None,
                                      **kwargs):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
             at the specified destination location.
@@ -107,10 +109,12 @@ class AzureRMSubclient(VirtualServerSubclient):
                 poweron
                         default:False   (bool)      --  power on the  restored VM
 
-
                 restore_option      (dict)     --  complete dictionary with all advanced optio
                     default: {}
 
+                destination_client      (str)       -- destination client name
+
+                subnet_id               (str)       -- subnet id to which vm must be connected
                 **kwargs                         : Arbitrary keyword arguments Properties as of
                                                      full_vm_restore_out_of_place
                     eg:
@@ -148,6 +152,7 @@ class AzureRMSubclient(VirtualServerSubclient):
         self._set_restore_inputs(
             restore_option,
             vm_to_restore=self._set_vm_to_restore(vm_to_restore),
+            vcenter_client=destination_client,
             unconditional_overwrite=overwrite,
             power_on=power_on,
             copy_precedence=copy_precedence,
@@ -161,7 +166,8 @@ class AzureRMSubclient(VirtualServerSubclient):
             restoreAsManagedVM=restore_as_managed,
             disk_type=disk_type,
             instanceSize=instance_size,
-            restore_new_name=restore_new_name
+            restore_new_name=restore_new_name,
+            subnet_id=subnet_id
         )
 
         # set attr for all the option in restore xml from user inputs

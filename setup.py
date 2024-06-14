@@ -57,7 +57,7 @@ setup(
     packages=find_packages(),
     keywords='commvault, python, sdk, cv, simpana, commcell, cvlt, webconsole',
     include_package_data=True,
-    install_requires=['requests', 'future', 'xmltodict'],
+    install_requires=['requests', 'xmltodict', 'pycryptodomex'],
     zip_safe=False,
     project_urls={
         'Bug Tracker': 'https://github.com/Commvault/cvpysdk/issues',

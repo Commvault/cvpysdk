@@ -1662,6 +1662,7 @@ class FileSystemSubclient(Subclient):
                             skip_catalog            :   skip catalog for intellisnap operation
                             start_new_media         :   enables the option to start new media for the job
                             media_agent_name        :   to run backup via this media agent
+                            impersonate_gui         :   sets the initiatedFrom property to GUI if True
 
                 common_backup_options      (dict)  --  advanced job options to be included while
                                                         making request

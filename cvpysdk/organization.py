@@ -404,8 +404,11 @@ class Organizations:
         except IndexError:
             raise IndexError('No organization exists with the given Name / Id')
 
-    def _get_organizations(self):
+    def _get_organizations(self, hard=False):
         """Gets all the organizations associated with the Commcell environment.
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
 
             Returns:
                 dict    -   consists of all organizations added to the commcell
@@ -423,6 +426,8 @@ class Organizations:
                     if response is not success
 
         """
+        if hard:
+            self._cvpysdk_object.make_request('GET', self._services["HARD_REFRESH_CACHE"] % 'organization')
         flag, response = self._cvpysdk_object.make_request('GET', self._organizations_api, headers=self._get_headers())
         if flag:
             organizations = {}
@@ -1026,10 +1031,15 @@ class Organizations:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def refresh(self):
-        """Refresh the list of organizations associated to the Commcell."""
+    def refresh(self, hard=False):
+        """
+        Refresh the list of organizations associated to the Commcell.
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+        """
         self._adv_config = None
-        self._organizations = self._get_organizations()
+        self._organizations = self._get_organizations(hard)
 
 
 class Organization:
@@ -2187,8 +2197,6 @@ class Organization:
             'POST', self._services['GENERATE_AUTH_CODE'] % self.organization_id
         )
 
-        self.refresh()
-
         if flag:
             if response.json():
                 error_code = response.json()['error']['errorCode']
@@ -2205,7 +2213,7 @@ class Organization:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-        return self.auth_code
+        return response.json()['organizationProperties']['authCode']
 
     def disable_auth_code(self):
         """Executes the request on the server to disable Auth Code Generation for the Organization.
@@ -2756,28 +2764,24 @@ class Organization:
 
                     if response is not success
         """
-        organization_name = self._organization_name.lower()
         if self._client_groups is None:
+            query_params = f"?fq=companyId%3Aeq%3A{self._organization_id}&fl=groups.clientGroup%2Cgroups.Id%2Cgroups.name"
+            
             flag, response = self._commcell_object._cvpysdk_object.make_request(
-                'GET', self._services['CLIENTGROUPS']
-            )
+                'GET', self._services['SERVERGROUPS_V4'] + query_params
+            ) # fetch all client groups associated with the organization
 
             if flag:
-                if response.json() and 'groups' in response.json():
-                    client_groups = response.json()['groups']
-                    clientgroups_dict = {}
+                if response.json() and 'serverGroups' in response.json():
+                    client_groups = response.json()['serverGroups']
+                    self._client_groups = {}
 
                     for client_group in client_groups:
                         temp_name = client_group['name'].lower()
-                        temp_id = str(client_group['Id']).lower()
-                        company_name = client_group['clientGroup']['entityInfo']['companyName'].lower()
-                        if company_name in clientgroups_dict.keys():
-                            clientgroups_dict[company_name][temp_name] = temp_id
-                        else:
-                            clientgroups_dict[company_name] = {temp_name: temp_id}
-                    self._client_groups = clientgroups_dict[organization_name]
+                        temp_id = str(client_group['id']).lower()
+                        self._client_groups[temp_name] = temp_id
                 else:
-                    self._client_groups = []
+                    self._client_groups = {}
             else:
                 response_string = self._commcell_object._update_response_(response.text)
                 raise SDKException('Response', '101', response_string)

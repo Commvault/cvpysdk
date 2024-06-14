@@ -82,6 +82,8 @@ Commcell:
 
     install_software()              --  triggers the install Software job with the given options
 
+    remote_cache_clients()      --  fetches the list of Remote Cache configured for a particular Admin/Tenant
+
     enable_auth_code()              --  executes the request on the server to enable Auth Code
     for installation on the commcell
 
@@ -214,7 +216,7 @@ Commcell instance Attributes
 
     **tape_libraries**          --  returns the instance of the `TapeLibraries` class,
     to interact with the tape libraries added on the Commcell
-
+    
     **storage_policies**        --  returns the instance of the `StoragePolicies` class,
     to interact with the storage policies available on the Commcell
 
@@ -244,6 +246,9 @@ Commcell instance Attributes
 
     **activate**                --  returns the instance of the `Activate` class,
     to interact with activate apps on the Commcell
+
+    **export_sets**             --  returns the instance of the `ExportSets` class
+    to interact with compliance search export sets on the Commcell
 
     **plans**                   --  returns the instance of the `Plans` class,
     to interact with the plans associated with the Commcell
@@ -349,6 +354,7 @@ from requests.exceptions import Timeout
 from requests.exceptions import ConnectionError as RequestsConnectionError
 
 from .activate import Activate
+from .activateapps.compliance_utils import ExportSets
 from .services import get_services
 from .cvpysdk import CVPySDK
 from .client import Clients
@@ -393,6 +399,7 @@ from .name_change import NameChange
 from .backup_network_pairs import BackupNetworkPairs
 from .reports import report
 from .recovery_targets import RecoveryTargets
+from .cleanroom.recovery_groups import RecoveryGroups
 from .drorchestration.replication_groups import ReplicationGroups
 from .drorchestration.failovergroups import FailoverGroups
 from .drorchestration.blr_pairs import BLRPairs
@@ -404,6 +411,7 @@ from .deduplication_engines import DeduplicationEngines
 from .metallic import Metallic
 from .key_management_server import KeyManagementServers
 from .regions import Regions
+from urllib.parse import urlparse
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
 USER_DOES_NOT_HAVE_PERMISSION = "User does not have permission on commcell properties"
@@ -424,7 +432,9 @@ class Commcell(object):
             authtoken=None,
             force_https=False,
             certificate_path=None,
-            is_service_commcell=None):
+            is_service_commcell=None,
+            verify_ssl = True,
+            **kwargs):
         """Initialize the Commcell object with the values required for doing the API operations.
 
             Commcell Username and Password can be None, if QSDK / SAML token is being given
@@ -458,6 +468,10 @@ class Commcell(object):
 
                     default: None
 
+                verify_ssl               (str)   --  Pass this choose to verify SSL requests to commcell
+
+                    default: True
+
             **Note** : If SAML token is to be used to login to service commcell please set is_service_commcell=True
 
 
@@ -486,6 +500,9 @@ class Commcell(object):
 
             **Note** In case of Multicommcell Login, if we wanted to login into child commcell (Service commcell)
                         set is_service_commcell to True
+                
+                **kwargs:
+                    web_service_url      (str)   --  url of webservice for the api requests
 
             Returns:
                 object  -   instance of this class
@@ -497,15 +514,28 @@ class Commcell(object):
                     if no token is received upon log in
 
         """
-        web_service = [
-            r'https://{0}/webconsole/api/'.format(webconsole_hostname)
-        ]
-
+        web_service_url = kwargs.get("web_service_url", None)
+        web_service = []
+        
         if certificate_path:
             force_https = True
+            
+        if not web_service_url:
+            web_service = [
+				r'https://{0}/commandcenter/api/'.format(webconsole_hostname)
+			]
 
-        if force_https is False:
-            web_service.append(r'http://{0}/webconsole/api/'.format(webconsole_hostname))
+            if force_https is False:
+                web_service.append(r'http://{0}/commandcenter/api/'.format(webconsole_hostname))
+        else:
+            web_service = []
+            if web_service_url.startswith("https://") or web_service_url.startswith("http://"):
+                web_service.append(r'{0}/'.format(web_service_url))
+            else:
+                web_service.append(r'https://{0}/'.format(web_service_url))
+                if force_https is False:
+                    web_service.append(r'http://{0}/'.format(web_service_url))
+                
 
         self._user = commcell_username
 
@@ -517,11 +547,15 @@ class Commcell(object):
             'Content-type': 'application/json',
             'Authtoken': None
         }
+        
+        if web_service_url:
+            parsed_web_service_url = urlparse(web_service_url)
+            self._headers['Host'] = f"{parsed_web_service_url.netloc}"
 
         self._device_id = socket.getfqdn()
         self._is_service_commcell = is_service_commcell
 
-        self._cvpysdk_object = CVPySDK(self, certificate_path)
+        self._cvpysdk_object = CVPySDK(self, certificate_path, verify_ssl)
 
         # Checks if the service is running or not
         for service in web_service:
@@ -608,6 +642,7 @@ class Commcell(object):
         self._global_filters = None
         self._datacube = None
         self._activate = None
+        self._export_sets = None
         self._content_analyzers = None
         self._plans = None
         self._job_controller = None
@@ -635,6 +670,7 @@ class Commcell(object):
         self._replication_groups = None
         self._failover_groups = None
         self._recovery_targets = None
+        self._recovery_groups = None
         self._blr_pairs = None
         self._job_management = None
         self._index_servers = None
@@ -1363,6 +1399,16 @@ class Commcell(object):
             return USER_LOGGED_OUT_MESSAGE
 
     @property
+    def export_sets(self):
+        """Returns the instance of the ExportSets class."""
+        try:
+            if self._export_sets is None:
+                self._export_sets = ExportSets(self)
+            return self._export_sets
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
     def plans(self):
         """Returns the instance of the Plans class."""
         try:
@@ -1645,6 +1691,18 @@ class Commcell(object):
                 self._recovery_targets = RecoveryTargets(self)
 
             return self._recovery_targets
+
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def cleanroom_recovery_groups(self):
+        """Returns the instance of RecoveryGroups class"""
+        try:
+            if self._recovery_groups is None:
+                self._recovery_groups = RecoveryGroups(self)
+
+            return self._recovery_groups
 
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
@@ -2322,7 +2380,7 @@ class Commcell(object):
                             to authenticate the cache
 
                             >>> commcell_obj.copy_software(
-                            media_loc = "\\subdomain.company.com\Media",
+                            media_loc = "\\subdomain.company.com\\Media",
                             username = "domainone\\userone",
                             password = "base64encoded password"
                             )
@@ -2540,6 +2598,21 @@ class Commcell(object):
             storage_policy_name=storage_policy_name,
             sw_cache_client=sw_cache_client,
             **kwargs)
+
+    @property
+    def remote_cache_clients(self):
+        """
+            Fetches the List of Remote Cache configured for a particular Admin/Tenant
+            :return: List of Remote Cache configured
+        """
+        try:
+            if self._commserv_cache is None:
+                self._commserv_cache = CommServeCache(self)
+
+            return self._commserv_cache.get_remote_cache_clients()
+
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
 
     def enable_auth_code(self):
         """Executes the request on the server to enable Auth Code for installation on commcell
@@ -3313,12 +3386,14 @@ class Commcell(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def unregister_commcell(self, commcell_name):
+    def unregister_commcell(self, commcell_name, force=False):
         """Unregisters a commcell
 
         Args:
 
             commcell_name       (str) - Name of the service commcell that has to be unregistered
+
+            force   (bool)  -   if True, will perform forced unregistration
 
         Raises:
 
@@ -3337,14 +3412,16 @@ class Commcell(object):
                     <commcell ccClientId="{0}" ccClientName="{1}" interfaceName="{2}">
                         <commCell _type_="{3}" commCellId="{4}" csGUID="{5}"/>
                     </commcell>
+                    <forceUnregister>{6}</forceUnregister>
                 </EVGui_CN2RemoveCellRegReq>
                 """.format(
-                    self._registered_commcells[commcell_name]['ccClientId'],
-                    self._registered_commcells[commcell_name]['ccClientName'],
-                    self._registered_commcells[commcell_name]['interfaceName'],
-                    self._registered_commcells[commcell_name]['commCell']['_type_'],
-                    self._registered_commcells[commcell_name]['commCell']['commCellId'],
-                    self._registered_commcells[commcell_name]['commCell']['csGUID']
+                    self.registered_commcells[commcell_name]['ccClientId'],
+                    self.registered_commcells[commcell_name]['ccClientName'],
+                    self.registered_commcells[commcell_name]['interfaceName'],
+                    self.registered_commcells[commcell_name]['commCell']['_type_'],
+                    self.registered_commcells[commcell_name]['commCell']['commCellId'],
+                    self.registered_commcells[commcell_name]['commCell']['csGUID'],
+                    int(force)
                 )
 
                 flag, response = self._cvpysdk_object.make_request(

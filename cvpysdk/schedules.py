@@ -2265,11 +2265,18 @@ class Schedule:
         self._pattern = schedule_pattern.create_schedule_pattern(pattern_json)
         self._modify_task_properties()
 
-    def run_now(self):
+    def run_now(self, return_multiple_jobs=False):
         """
         Triggers the schedule to run immediately
 
-        Returns: job id
+        Returns: job id/ Job IDs.
+
+        Args: return_multiple_jobs (bool) -- if set to True, return multiple jobs, default: False.
+
+        Raises:
+            SDKException:
+                Response received is empty.
+                If no job id is found.
         """
         request_json = {
             "TMMsg_TaskOperationReq":
@@ -2297,7 +2304,11 @@ class Schedule:
         )
         if response.json():
             if "jobIds" in response.json():
-                job_id = str(response.json()["jobIds"][0])
+                if(return_multiple_jobs):
+                    job_id = [int(i) for i in response.json()['jobIds']]
+                else:
+                    job_id = str(response.json()["jobIds"][0])
+
                 return job_id
             else:
                 raise SDKException(
