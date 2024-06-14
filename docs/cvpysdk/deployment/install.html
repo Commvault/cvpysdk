@@ -38,7 +38,7 @@ install_software                 --  Installs the features selected on the machi
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/deployment/install.py#L1-L713" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/deployment/install.py#L1-L722" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -276,7 +276,8 @@ class Install(object):
 
             **kwargs: (dict) -- Key value pairs for supporting conditional initializations
                 Supported -
-                schedule_pattern (dict)           -- Request JSON for scheduling the operation
+                schedule_pattern        (dict)      -- Request JSON for scheduling the operation
+                install_update_options  (int)       -- Refer InstallUpdateOptions from deploymentconstants module
 
         Returns:
             object - instance of the Job/Task class for this download
@@ -307,6 +308,10 @@ class Install(object):
                     client_computers,
                     client_computer_groups]):
             raise SDKException(&#39;Install&#39;, &#39;101&#39;)
+        
+        install_update_options = kwargs.get(&#39;install_update_options&#39;, None)
+        if install_update_options and not isinstance(install_update_options, int):
+            raise SDKException(&#34;Install&#34;, &#34;101&#34;)
 
         commcell_client_computers = self.commcell_object.clients.all_clients
         commcell_client_computer_groups = self.commcell_object.client_groups.all_clientgroups
@@ -379,6 +384,10 @@ class Install(object):
 
         if schedule_pattern:
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+
+        if install_update_options:
+            adminOpts = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;]
+            adminOpts[&#39;updateOption&#39;][&#39;installUpdateOptions&#39;] = install_update_options
 
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
@@ -780,7 +789,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/deployment/install.py#L42-L713" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/deployment/install.py#L42-L722" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Install(object):
     &#34;&#34;&#34;&#34;class for installing software packages&#34;&#34;&#34;
@@ -977,7 +986,8 @@ instance of the Commcell class</p>
 
             **kwargs: (dict) -- Key value pairs for supporting conditional initializations
                 Supported -
-                schedule_pattern (dict)           -- Request JSON for scheduling the operation
+                schedule_pattern        (dict)      -- Request JSON for scheduling the operation
+                install_update_options  (int)       -- Refer InstallUpdateOptions from deploymentconstants module
 
         Returns:
             object - instance of the Job/Task class for this download
@@ -1008,6 +1018,10 @@ instance of the Commcell class</p>
                     client_computers,
                     client_computer_groups]):
             raise SDKException(&#39;Install&#39;, &#39;101&#39;)
+        
+        install_update_options = kwargs.get(&#39;install_update_options&#39;, None)
+        if install_update_options and not isinstance(install_update_options, int):
+            raise SDKException(&#34;Install&#34;, &#34;101&#34;)
 
         commcell_client_computers = self.commcell_object.clients.all_clients
         commcell_client_computer_groups = self.commcell_object.client_groups.all_clientgroups
@@ -1080,6 +1094,10 @@ instance of the Commcell class</p>
 
         if schedule_pattern:
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+
+        if install_update_options:
+            adminOpts = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;]
+            adminOpts[&#39;updateOption&#39;][&#39;installUpdateOptions&#39;] = install_update_options
 
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
@@ -1624,7 +1642,7 @@ not both
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/deployment/install.py#L361-L713" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/deployment/install.py#L370-L722" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def install_software(
         self,
@@ -2018,8 +2036,12 @@ maintenance release of that client FR, if present in cache</p>
 <dt><strong><code>**kwargs</code></strong></dt>
 <dd>(dict) &ndash; Key value pairs for supporting conditional initializations
 Supported -
-schedule_pattern (dict)
-&ndash; Request JSON for scheduling the operation</dd>
+schedule_pattern
+(dict)
+&ndash; Request JSON for scheduling the operation
+install_update_options
+(int)
+&ndash; Refer InstallUpdateOptions from deploymentconstants module</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job/Task class for this download</p>
@@ -2038,7 +2060,7 @@ if another download job is already running
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/deployment/install.py#L195-L359" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/deployment/install.py#L195-L368" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def push_servicepack_and_hotfix(
         self,
@@ -2082,7 +2104,8 @@ if another download job is already running
 
         **kwargs: (dict) -- Key value pairs for supporting conditional initializations
             Supported -
-            schedule_pattern (dict)           -- Request JSON for scheduling the operation
+            schedule_pattern        (dict)      -- Request JSON for scheduling the operation
+            install_update_options  (int)       -- Refer InstallUpdateOptions from deploymentconstants module
 
     Returns:
         object - instance of the Job/Task class for this download
@@ -2113,6 +2136,10 @@ if another download job is already running
                 client_computers,
                 client_computer_groups]):
         raise SDKException(&#39;Install&#39;, &#39;101&#39;)
+    
+    install_update_options = kwargs.get(&#39;install_update_options&#39;, None)
+    if install_update_options and not isinstance(install_update_options, int):
+        raise SDKException(&#34;Install&#34;, &#34;101&#34;)
 
     commcell_client_computers = self.commcell_object.clients.all_clients
     commcell_client_computer_groups = self.commcell_object.client_groups.all_clientgroups
@@ -2186,6 +2213,10 @@ if another download job is already running
     if schedule_pattern:
         request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
+    if install_update_options:
+        adminOpts = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;]
+        adminOpts[&#39;updateOption&#39;][&#39;installUpdateOptions&#39;] = install_update_options
+
     flag, response = self._cvpysdk_object.make_request(
         &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
     )
@@ -2249,7 +2280,7 @@ client computer will be repaired</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/deployment/install.py#L60-L193" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/deployment/install.py#L60-L193" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def repair_software(self,
                     client=None,

@@ -56,7 +56,7 @@ overwrites imported clients in podcell grc schedule</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/commcell_migration.py#L1-L847" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/commcell_migration.py#L1-L853" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # --------------------------------------------------------------------------
@@ -366,10 +366,16 @@ class CommCellMigration(object):
                     podcell_id=2, podcell_guid=self._commcell_object.commserv_guid
                 ).values())
                 for client in client_list:
-                    if client not in exportable_clients:
+                    if not self._commcell_object.clients.has_client(client):
                         raise SDKException(
-                            &#39;CommCellMigration&#39;, &#39;107&#39;, 
-                            f&#39;Please choose from list -&gt; {exportable_clients}&#39;
+                            &#39;CommCellMigration&#39;, &#39;107&#39;,
+                            f&#39;Client {client} not found&#39;
+                        )
+                    agents = self._commcell_object.clients.get(client).agents.all_agents
+                    if not agents:
+                        raise SDKException(
+                            &#39;CommCellMigration&#39;, &#39;107&#39;,
+                            f&#39;Client {client} does not have any agents&#39;
                         )
                     temp_dic = {&#39;clientName&#39;: client, &#39;commCellName&#39;: self._commcell_name}
                     sub_dict.append(temp_dic)
@@ -930,7 +936,7 @@ class GlobalRepositoryCell:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/commcell_migration.py#L55-L556" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/commcell_migration.py#L55-L562" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CommCellMigration(object):
     &#34;&#34;&#34;Class for representing the commcell export &amp; import operations from commcell. &#34;&#34;&#34;
@@ -1186,10 +1192,16 @@ class GlobalRepositoryCell:
                     podcell_id=2, podcell_guid=self._commcell_object.commserv_guid
                 ).values())
                 for client in client_list:
-                    if client not in exportable_clients:
+                    if not self._commcell_object.clients.has_client(client):
                         raise SDKException(
-                            &#39;CommCellMigration&#39;, &#39;107&#39;, 
-                            f&#39;Please choose from list -&gt; {exportable_clients}&#39;
+                            &#39;CommCellMigration&#39;, &#39;107&#39;,
+                            f&#39;Client {client} not found&#39;
+                        )
+                    agents = self._commcell_object.clients.get(client).agents.all_agents
+                    if not agents:
+                        raise SDKException(
+                            &#39;CommCellMigration&#39;, &#39;107&#39;,
+                            f&#39;Client {client} does not have any agents&#39;
                         )
                     temp_dic = {&#39;clientName&#39;: client, &#39;commCellName&#39;: self._commcell_name}
                     sub_dict.append(temp_dic)
@@ -1518,7 +1530,7 @@ if invalid inputs are passed.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/commcell_migration.py#L75-L329" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/commcell_migration.py#L75-L335" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def commcell_export(self, export_location, client_list=None, options_dictionary=None, other_entities=None):
     &#34;&#34;&#34; Starts the Commcell Export job.
@@ -1754,10 +1766,16 @@ if invalid inputs are passed.
                 podcell_id=2, podcell_guid=self._commcell_object.commserv_guid
             ).values())
             for client in client_list:
-                if client not in exportable_clients:
+                if not self._commcell_object.clients.has_client(client):
                     raise SDKException(
-                        &#39;CommCellMigration&#39;, &#39;107&#39;, 
-                        f&#39;Please choose from list -&gt; {exportable_clients}&#39;
+                        &#39;CommCellMigration&#39;, &#39;107&#39;,
+                        f&#39;Client {client} not found&#39;
+                    )
+                agents = self._commcell_object.clients.get(client).agents.all_agents
+                if not agents:
+                    raise SDKException(
+                        &#39;CommCellMigration&#39;, &#39;107&#39;,
+                        f&#39;Client {client} does not have any agents&#39;
                     )
                 temp_dic = {&#39;clientName&#39;: client, &#39;commCellName&#39;: self._commcell_name}
                 sub_dict.append(temp_dic)
@@ -1820,7 +1838,7 @@ if invalid inputs are passed.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/commcell_migration.py#L331-L474" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/commcell_migration.py#L337-L480" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def commcell_import(self, import_location, options_dictionary):
     &#34;&#34;&#34; Starts the Commcell Import job.
@@ -1991,7 +2009,7 @@ drive pool id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/commcell_migration.py#L476-L556" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/commcell_migration.py#L482-L562" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def tape_import(self, library_id, medias_id, drive_pool_id):
 
@@ -2094,7 +2112,7 @@ Commcell class instance</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/commcell_migration.py#L558-L847" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/commcell_migration.py#L564-L853" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class GlobalRepositoryCell:
     &#34;&#34;&#34;Class for representing the GRC feature from commcell&#34;&#34;&#34;
@@ -2425,7 +2443,7 @@ Z: "clienta"
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/commcell_migration.py#L715-L744" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/commcell_migration.py#L721-L750" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_clients_for_migration(self, podcell_name: str = None, podcell_id: int = None, podcell_guid: str = None):
     &#34;&#34;&#34;
@@ -2483,7 +2501,7 @@ or Client objects (of pod cell)</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/commcell_migration.py#L780-L847" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/commcell_migration.py#L786-L853" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def modify_monitored_clients(self, podcell_name: str = None, podcell_id: int = None, clients: list = None):
     &#34;&#34;&#34;

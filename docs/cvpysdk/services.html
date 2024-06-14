@@ -37,7 +37,7 @@ dictionary, for their usage, and the value will be in the format:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/services.py#L1-L595" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/services.py#L1-L625" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -88,6 +88,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;COMMSERV&#39;: &#39;{0}CommServ&#39;,
     &#39;GET_SAML_TOKEN&#39;: &#39;{0}Commcell/SamlToken?validityInMins=%s&#39;,
     &#39;WHO_AM_I&#39;: &#39;{0}WhoAmI&#39;,
+    &#39;CREATE_RC&#39;: &#39;{0}V4/SoftwareCache&#39;,
 
     &#39;TFA&#39;: &#39;{0}Commcell/Properties/TwoFactorAuth&#39;,
     &#39;TFA_ENABLE&#39;: &#39;{0}Commcell/Properties/TwoFactorAuth/Action/Enable&#39;,
@@ -113,7 +114,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;CHECK_READINESS&#39;: &#39;{0}Client/%s/CheckReadiness?network=%s&amp;resourceCapacity=%s&#39;
                        &#39;&amp;NeedXmlResp=true&amp;includeDisabledClients=%s&amp;CSCCNetworkCheck=%s&#39;
                        &#39;&amp;applicationCheck=%s&amp;additionalResources=%s&#39;,
-
+    &#39;MONGODB_CHECK_READINESS&#39; : &#39;{0}/clients/mongodb/status&#39;,
     &#39;GET_ALL_AGENTS&#39;: &#39;{0}Agent?clientId=%s&#39;,
     &#39;AGENT&#39;: &#39;{0}Agent&#39;,
     &#39;GET_AGENT&#39;: &#39;{0}Agent?clientId=%s&amp;applicationId=%s&amp;propertyLevel=30&#39;,
@@ -155,6 +156,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;GET_LIBRARY_PROPERTIES&#39;: &#39;{0}Library/%s&#39;,
     &#39;DETECT_TAPE_LIBRARY&#39;: &#39;{0}Library?Action=detect&#39;,
     &#39;CONFIGURE_TAPE_LIBRARY&#39;: &#39;{0}Library?Action=configureTape&#39;,
+    &#39;EDIT_CLOUD_CONTROLLER&#39;:&#39;{0}V4/Storage/Cloud/0/Bucket/%s/AccessPath/%s&#39;,
 
     &#39;GET_MOVE_MOUNTPATH_DETAILS&#39;: &#39;{0}MountPath/%s/Move&#39;,
     &#39;MOVE_MOUNTPATH&#39;: &#39;{0}MountPath/Move&#39;,
@@ -223,6 +225,7 @@ SERVICES_DICT_TEMPLATE = {
 
     &#39;CLIENTGROUPS&#39;: &#39;{0}ClientGroup&#39;,
     &#39;CLIENTGROUP&#39;: &#39;{0}ClientGroup/%s&#39;,
+    &#39;SERVERGROUPS_V4&#39;: &#39;{0}V4/ServerGroup&#39;,
 
     &#39;USERGROUPS&#39;: &#39;{0}UserGroup?includeSystemCreated=true&#39;,
     &#39;USERGROUP&#39;: &#39;{0}UserGroup/%s&#39;,
@@ -266,7 +269,13 @@ SERVICES_DICT_TEMPLATE = {
     &#39;ADD_INSTANCE&#39;: &#39;{0}Instance&#39;,
     &#39;MASKING_POLICY&#39;: &#39;{0}MaskingPolicy&#39;,
 
-
+    &#39;DO_COMPLIANCE_SEARCH&#39;: &#39;{0}doWebSearch&#39;,
+    &#39;GET_EXPORT_SETS&#39;: &#39;{0}GetContainers&#39;,
+    &#39;GET_EXPORTS&#39;: &#39;{0}getContainerItems&#39;,
+    &#39;ADD_EXPORT_SET&#39;: &#39;{0}PerformContainerOperation&#39;,
+    &#39;DELETE_EXPORT_SET&#39;: &#39;{0}Containers/Action/Delete&#39;,
+    &#39;EXPORT_ITEM_TO_SET&#39;: &#39;{0}Download&#39;,
+    &#39;DOWNLOAD_EXPORT_ITEMS&#39;: &#39;{0}DownloadFile&#39;,
     &#39;GET_ANALYTICS_ENGINES&#39;: &#39;{0}dcube/getAnalyticsEngine&#39;,
     &#39;GET_ALL_DATASOURCES&#39;: &#39;{0}dcube/GetDataSources?summary=1&#39;,
     &#39;GET_DATASOURCE&#39;: &#39;{0}dcube/getDataSource/%s&#39;,
@@ -346,6 +355,7 @@ SERVICES_DICT_TEMPLATE = {
 
     &#39;PLANS&#39;: &#39;{0}V2/Plan&#39;,
     &#39;PLAN&#39;: &#39;{0}V2/Plan/%s&#39;,
+    &#39;PLAN_SUMMARY&#39;: &#39;{0}v4/Plan/Summary?%s&#39;,
     &#39;DELETE_PLAN&#39;: &#39;{0}V2/Plan/%s?confirmDelete=True&#39;,
     &#39;ADD_USERS_TO_PLAN&#39;: &#39;{0}V2/Plan/%s/Users&#39;,
     &#39;GET_PLAN_TEMPLATE&#39;: &#39;{0}V2/Plan/template?type=%s&amp;subType=%s&#39;,
@@ -356,6 +366,12 @@ SERVICES_DICT_TEMPLATE = {
     &#39;APPLICABLE_SOLNS_DISABLE&#39;: &#39;{0}V4/ServerPlan/%s/ApplicableSolutions/Restrict/Disable&#39;,
     &#39;PLAN_SUPPORTED_SOLUTIONS&#39;: &#39;{0}V4/Solutions?filter=PLAN_SUPPORTED_SOLUTIONS&#39;,
     &#39;V4_SERVER_PLAN&#39;: &#39;{0}V4/ServerPlan/%s&#39;,
+    &#39;V4_SERVER_PLANS&#39;: &#39;{0}V4/ServerPlan&#39;,
+    &#39;V4_SERVER_PLAN_BACKUP_DESTINATION&#39;: &#39;{0}V4/ServerPlan/%s/BackupDestination&#39;,
+    &#39;V4_SERVER_PLAN_COPY&#39;: &#39;{0}V4/ServerPlan/%s/BackupDestination/%s&#39;,
+    &#39;V5_SERVER_PLAN_COPY&#39;: &#39;{0}V5/ServerPlan/%s/BackupDestination/%s&#39;,
+    &#39;SERVER_PLAN_REGIONS&#39;: &#39;{0}V4/ServerPlan/%s/storageRegion/%s?isRegionIdList=true&#39;,
+    &#39;SERVER_PLAN_RPO&#39;: &#39;{0}V4/ServerPlan/%s/RPO&#39;,
 
     &#39;DOMAIN_CONTROLER&#39;: &#39;{0}CommCell/DomainController&#39;,
     &#39;DELETE_DOMAIN_CONTROLER&#39;: &#39;{0}CommCell/DomainController/%s&#39;,
@@ -478,6 +494,8 @@ SERVICES_DICT_TEMPLATE = {
     &#39;GET_SALESFORCE_CLIENTS&#39;: &#39;{0}Salesforce/Organization&#39;,
     &#39;CLOUD_DISCOVERY&#39;: &#39;{0}Instance/%s/CloudDiscovery?clientId=%s&amp;appType=%s&#39;,
     &#39;SET_USER_POLICY_ASSOCIATION&#39;: &#39;{0}Office365/CloudApps/SetUserPolicyAssociation&#39;,
+    &#39;CUSTOM_CATEGORY&#39;: &#39;{0}Office365/SubClient/%s/CustomCategory&#39;,
+    &#39;INSTANCE_PROPERTIES&#39;: &#39;{0}instance/%s&#39;,
     &#39;USER_POLICY_ASSOCIATION&#39;: &#39;{0}Office365/CloudApps/UserPolicyAssociation&#39;,
     &#39;UPDATE_USER_POLICY_ASSOCIATION&#39;: &#39;{0}Office365/CloudApps/UpdateUserPolicyAssociation&#39;,
     &#39;OFFICE365_MOVE_JOB_RESULT_DIRECTORY&#39;: &#39;{0}Office365/MoveJobResultsDirectory&#39;,
@@ -567,11 +585,11 @@ SERVICES_DICT_TEMPLATE = {
     &#39;BACKUP_NETWORK_PAIRS&#39;: &#39;{0}CommServ/DataInterfacePairs?ClientId=%s&#39;,
     &#39;BACKUP_NETWORK_PAIR&#39;: &#39;{0}CommServ/DataInterfacePairs&#39;,
 
-    &#39;GET_ALL_RECOVERY_TARGETS&#39;:
-        &#39;{0}/VMAllocationPolicy?showResourceGroupPolicy=true&amp;showNonResourceGroupPolicy=false&amp;deep=true&#39;,
-    &#39;GET_RECOVERY_TARGET&#39;: &#39;{0}/VMAllocationPolicy/%s&#39;,
+    &#39;GET_ALL_RECOVERY_TARGETS&#39;: &#39;{0}V4/RecoveryTargets&#39;,
+    &#39;GET_RECOVERY_TARGET&#39;: &#39;{0}V4/RecoveryTarget/%s&#39;,
 
     &#39;RETIRE&#39;: &#39;{0}Client/%s/Retire&#39;,
+    &#39;GET_REMOTE_CACHE_CLIENTS&#39;: &#39;{0}RemoteCacheClients&#39;,
 
     &#39;DATASOURCE_ACTIONS&#39;: &#39;{0}EDiscoveryClients/Datasources/Actions&#39;,
     &#39;CLOUD_CREATE&#39;: &#39;{0}cloud/create&#39;,
@@ -615,7 +633,19 @@ SERVICES_DICT_TEMPLATE = {
     &#39;LAUNCH_O365_LICENSING&#39;: &#39;{0}Office365/License&#39;,
 
     &#39;VM_GROUP&#39;: &#39;{0}V4/VmGroup/%s&#39;,
-    &#39;VSA_HIDDEN_SUBCLIENT&#39;: &#39;{0}GetId?clientname=%s&amp;agent=Virtual Server&amp;backupset=%s&amp;subclient=Do Not Backup&#39;
+
+    &#39;VSA_HIDDEN_SUBCLIENT&#39;: &#39;{0}GetId?clientname=%s&amp;agent=Virtual Server&amp;backupset=%s&amp;subclient=Do Not Backup&#39;,
+
+    &#39;HARD_REFRESH_CACHE&#39;: &#39;{0}/%s?hardRefresh=true&#39;,
+
+    &#39;ALL_RECOVERY_GROUPS&#39;: &#39;{0}RecoveryGroups&#39;,
+    &#39;RECOVERY_GROUP&#39;: &#39;{0}RecoveryGroup/%s?getEntityDetails=true&#39;,
+    &#39;RECOVERY_GROUP_RECOVER&#39;: &#39;{0}RecoveryGroup/%s/Recover&#39;,
+    &#39;COMMSERVE_RECOVERY&#39;: &#39;{0}cvdrbackup/csrecovery&#39;,
+    &#39;GET_BACKUPSET_INFO&#39;: &#39;{0}cvdrbackup/info?csGuid=%s&#39;,
+    &#39;GET_COMMSERVE_RECOVERY_LICENSE_DETAILS&#39;: &#39;{0}cvdrbackup/csrecovery/quota?csGuid=%s&#39;,
+    &#39;GET_COMMSERVE_RECOVERY_RETENTION_DETAILS&#39;: &#39;{0}cvdrbackup/cleanup/lock?csGuid=%s&#39;,
+
 }
 
 
@@ -660,7 +690,7 @@ services dict consisting of all APIs</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/services.py#L581-L595" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/services.py#L611-L625" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_services(web_service):
     &#34;&#34;&#34;Initializes the SERVICES DICT with the web service for APIs.

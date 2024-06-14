@@ -196,7 +196,7 @@ refresh the properties of the instance</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L1-L3101" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L1-L3106" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -879,7 +879,8 @@ class Instances(object):
                             &#39;sa_username&#39;: &#39;&#39;,
                             &#39;sa_password&#39;: &#39;&#39;,
                             &#39;localadmin_username&#39;: &#39;&#39;,
-                            &#39;localadmin_password&#39;: &#39;&#39;
+                            &#39;localadmin_password&#39;: &#39;&#39;,
+                            &#39;masterkey_password&#39;:&#39;&#39;
                         }
             Raises:
                 SDKException:
@@ -925,6 +926,9 @@ class Instances(object):
                     &#34;_type_&#34;: 5,
                     &#34;applicationId&#34;: 5
                 },
+                &#34;planEntity&#34;: {
+                    &#34;planName&#34;: sybase_options[&#34;storage_policy&#34;]
+                },
                 &#34;sybaseInstance&#34;: {
                     &#34;sybaseOCS&#34;: sybase_options[&#34;sybase_ocs&#34;],
                     &#34;sybaseBlockSize&#34;: 65536,
@@ -934,17 +938,18 @@ class Instances(object):
                     &#34;configFile&#34;: sybase_options[&#34;config_file&#34;],
                     &#34;enableAutoDiscovery&#34;: enable_auto_discovery,
                     &#34;sharedMemoryDirectory&#34;: sybase_options[&#34;shared_memory_directory&#34;],
-                    &#34;defaultDatabaseStoragePolicy&#34;: {
-                        &#34;storagePolicyName&#34;: sybase_options[&#34;storage_policy&#34;]
-                    },
                     &#34;saUser&#34;: {&#34;password&#34;: sa_password, &#34;userName&#34;: sybase_options[&#34;sa_username&#34;]},
                     &#34;localAdministrator&#34;: {
-                        &#34;password&#34;: localadmin_password,
+                        &#34;password&#34;: sybase_options[&#34;localadmin_password&#34;],
                         &#34;userName&#34;: sybase_options[&#34;localadmin_username&#34;]
                     }
                 }
             }
         }
+        if &#34;masterkey_password&#34; in sybase_options.keys():
+            masterkey_password = b64encode(sybase_options[&#34;masterkey_password&#34;].encode()).decode()
+            request_json[&#34;instanceProperties&#34;][&#34;sybaseInstance&#34;][&#34;masterKeyPwd&#34;]=masterkey_password
+
         if &#34;localadmin_password&#34; in sybase_options.keys():
             localadmin_password = b64encode(sybase_options[&#34;localadmin_password&#34;].encode()).decode()
             request_json[&#39;instanceProperties&#39;][&#39;sybaseInstance&#39;][&#39;localAdministrator&#39;][&#39;password&#39;] = localadmin_password
@@ -3336,7 +3341,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L1720-L3101" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L1725-L3106" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Instance(object):
     &#34;&#34;&#34;Class for performing instance operations for a specific instance.&#34;&#34;&#34;
@@ -4748,7 +4753,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L2624-L2627" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L2629-L2632" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_id(self):
@@ -4762,7 +4767,7 @@ def instance_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L2629-L2632" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L2634-L2637" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_name(self):
@@ -4776,7 +4781,7 @@ def instance_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L2595-L2598" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L2600-L2603" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -4790,7 +4795,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L2590-L2593" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L2595-L2598" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -4848,7 +4853,7 @@ Refer <code>default_browse_options</code>_ for all the supported options.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L2634-L2690" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L2639-L2695" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, *args, **kwargs):
     &#34;&#34;&#34;Browses the content of the Instance.
@@ -4968,7 +4973,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L2692-L2758" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L2697-L2763" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find(self, *args, **kwargs):
     &#34;&#34;&#34;Searches a file/folder in the backed up content of the instance,
@@ -5047,7 +5052,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L3095-L3101" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L3100-L3106" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Instance.&#34;&#34;&#34;
@@ -5082,7 +5087,7 @@ need to change and use the update_properties method to set the properties</p></d
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L2560-L2588" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L2565-L2593" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;Updates the instance properties
@@ -5133,7 +5138,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L160-L1717" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L160-L1722" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Instances(object):
     &#34;&#34;&#34;Class for getting all the instances associated with a client.&#34;&#34;&#34;
@@ -5657,7 +5662,8 @@ instance of the Agent class</p>
                             &#39;sa_username&#39;: &#39;&#39;,
                             &#39;sa_password&#39;: &#39;&#39;,
                             &#39;localadmin_username&#39;: &#39;&#39;,
-                            &#39;localadmin_password&#39;: &#39;&#39;
+                            &#39;localadmin_password&#39;: &#39;&#39;,
+                            &#39;masterkey_password&#39;:&#39;&#39;
                         }
             Raises:
                 SDKException:
@@ -5703,6 +5709,9 @@ instance of the Agent class</p>
                     &#34;_type_&#34;: 5,
                     &#34;applicationId&#34;: 5
                 },
+                &#34;planEntity&#34;: {
+                    &#34;planName&#34;: sybase_options[&#34;storage_policy&#34;]
+                },
                 &#34;sybaseInstance&#34;: {
                     &#34;sybaseOCS&#34;: sybase_options[&#34;sybase_ocs&#34;],
                     &#34;sybaseBlockSize&#34;: 65536,
@@ -5712,17 +5721,18 @@ instance of the Agent class</p>
                     &#34;configFile&#34;: sybase_options[&#34;config_file&#34;],
                     &#34;enableAutoDiscovery&#34;: enable_auto_discovery,
                     &#34;sharedMemoryDirectory&#34;: sybase_options[&#34;shared_memory_directory&#34;],
-                    &#34;defaultDatabaseStoragePolicy&#34;: {
-                        &#34;storagePolicyName&#34;: sybase_options[&#34;storage_policy&#34;]
-                    },
                     &#34;saUser&#34;: {&#34;password&#34;: sa_password, &#34;userName&#34;: sybase_options[&#34;sa_username&#34;]},
                     &#34;localAdministrator&#34;: {
-                        &#34;password&#34;: localadmin_password,
+                        &#34;password&#34;: sybase_options[&#34;localadmin_password&#34;],
                         &#34;userName&#34;: sybase_options[&#34;localadmin_username&#34;]
                     }
                 }
             }
         }
+        if &#34;masterkey_password&#34; in sybase_options.keys():
+            masterkey_password = b64encode(sybase_options[&#34;masterkey_password&#34;].encode()).decode()
+            request_json[&#34;instanceProperties&#34;][&#34;sybaseInstance&#34;][&#34;masterKeyPwd&#34;]=masterkey_password
+
         if &#34;localadmin_password&#34; in sybase_options.keys():
             localadmin_password = b64encode(sybase_options[&#34;localadmin_password&#34;].encode()).decode()
             request_json[&#39;instanceProperties&#39;][&#39;sybaseInstance&#39;][&#39;localAdministrator&#39;][&#39;password&#39;] = localadmin_password
@@ -6707,7 +6717,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L306-L317" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L306-L317" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_instances(self):
@@ -6748,7 +6758,7 @@ if cannot retrieve cluster type from default Instance</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L898-L1005" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L903-L1010" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_big_data_apps_instance(self, distributed_options):
     &#34;&#34;&#34;
@@ -6967,7 +6977,7 @@ SDKException :</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L1007-L1184" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L1012-L1189" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_cloud_storage_instance(self, cloud_options):
     &#34;&#34;&#34;Returns the JSON request to pass to the API for adding a cloud storage instance
@@ -7176,7 +7186,7 @@ if None value in db2 options</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L780-L896" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L785-L901" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_db2_instance(self, db2_options):
     &#34;&#34;&#34;
@@ -7328,7 +7338,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L420-L534" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L420-L534" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_informix_instance(self, informix_options):
     &#34;&#34;&#34;Adds new Informix Instance to given Client
@@ -7485,7 +7495,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L1534-L1623" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L1539-L1628" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_mysql_instance(self, instance_name, database_options):
     &#34;&#34;&#34;Adds new mysql Instance to given Client
@@ -7647,7 +7657,7 @@ Given storage policies do not exist in Commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L1625-L1713" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L1630-L1718" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_oracle_instance(self, instance_name, **oracle_options):
     &#34;&#34;&#34;Adds new oracle instance for the given client
@@ -7792,7 +7802,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L1306-L1363" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L1311-L1368" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_postgresql_instance(self, instance_name, **kwargs):
     &#34;&#34;&#34;Adds new postgresql instance to given client
@@ -7914,7 +7924,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L1186-L1304" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L1191-L1309" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_salesforce_instance(
         self, instance_name, access_node,
@@ -8071,7 +8081,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L536-L596" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L536-L596" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_sap_hana_instance(self, **kwargs):
     &#34;&#34;&#34;Adds new sap hana instance to given client
@@ -8157,7 +8167,8 @@ sybase_options = {
 'sa_username': '',
 'sa_password': '',
 'localadmin_username': '',
-'localadmin_password': ''
+'localadmin_password': '',
+'masterkey_password':''
 }</p>
 <h2 id="raises">Raises</h2>
 <p>SDKException:
@@ -8169,7 +8180,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L663-L778" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L663-L783" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_sybase_instance(self, sybase_options):
     &#34;&#34;&#34;
@@ -8190,7 +8201,8 @@ if given storage policy does not exists in commcell
                         &#39;sa_username&#39;: &#39;&#39;,
                         &#39;sa_password&#39;: &#39;&#39;,
                         &#39;localadmin_username&#39;: &#39;&#39;,
-                        &#39;localadmin_password&#39;: &#39;&#39;
+                        &#39;localadmin_password&#39;: &#39;&#39;,
+                        &#39;masterkey_password&#39;:&#39;&#39;
                     }
         Raises:
             SDKException:
@@ -8236,6 +8248,9 @@ if given storage policy does not exists in commcell
                 &#34;_type_&#34;: 5,
                 &#34;applicationId&#34;: 5
             },
+            &#34;planEntity&#34;: {
+                &#34;planName&#34;: sybase_options[&#34;storage_policy&#34;]
+            },
             &#34;sybaseInstance&#34;: {
                 &#34;sybaseOCS&#34;: sybase_options[&#34;sybase_ocs&#34;],
                 &#34;sybaseBlockSize&#34;: 65536,
@@ -8245,17 +8260,18 @@ if given storage policy does not exists in commcell
                 &#34;configFile&#34;: sybase_options[&#34;config_file&#34;],
                 &#34;enableAutoDiscovery&#34;: enable_auto_discovery,
                 &#34;sharedMemoryDirectory&#34;: sybase_options[&#34;shared_memory_directory&#34;],
-                &#34;defaultDatabaseStoragePolicy&#34;: {
-                    &#34;storagePolicyName&#34;: sybase_options[&#34;storage_policy&#34;]
-                },
                 &#34;saUser&#34;: {&#34;password&#34;: sa_password, &#34;userName&#34;: sybase_options[&#34;sa_username&#34;]},
                 &#34;localAdministrator&#34;: {
-                    &#34;password&#34;: localadmin_password,
+                    &#34;password&#34;: sybase_options[&#34;localadmin_password&#34;],
                     &#34;userName&#34;: sybase_options[&#34;localadmin_username&#34;]
                 }
             }
         }
     }
+    if &#34;masterkey_password&#34; in sybase_options.keys():
+        masterkey_password = b64encode(sybase_options[&#34;masterkey_password&#34;].encode()).decode()
+        request_json[&#34;instanceProperties&#34;][&#34;sybaseInstance&#34;][&#34;masterKeyPwd&#34;]=masterkey_password
+
     if &#34;localadmin_password&#34; in sybase_options.keys():
         localadmin_password = b64encode(sybase_options[&#34;localadmin_password&#34;].encode()).decode()
         request_json[&#39;instanceProperties&#39;][&#39;sybaseInstance&#39;][&#39;localAdministrator&#39;][&#39;password&#39;] = localadmin_password
@@ -8312,7 +8328,7 @@ if no instance exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L598-L661" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L598-L661" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, instance_name):
     &#34;&#34;&#34;Deletes the instance specified by the instance_name from the agent.
@@ -8399,7 +8415,7 @@ if type of the instance name argument is not string or Int</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L337-L369" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L337-L369" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, instance_name):
     &#34;&#34;&#34;Returns a instance object of the specified instance name.
@@ -8453,7 +8469,7 @@ if type of the instance name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L319-L335" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L319-L335" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_instance(self, instance_name):
     &#34;&#34;&#34;Checks if a instance exists for the agent with the input instance name.
@@ -8482,7 +8498,7 @@ if type of the instance name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instance.py#L1715-L1717" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L1720-L1722" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the instances associated with the Agent of the selected Client.&#34;&#34;&#34;

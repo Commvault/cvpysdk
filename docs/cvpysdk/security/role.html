@@ -85,7 +85,7 @@ modify_capability()     --  modifying permissions of the role
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/role.py#L1-L763" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/role.py#L1-L779" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -203,8 +203,15 @@ class Roles(object):
             self._commcell_object.commserv_name
         )
 
-    def _get_roles(self):
-        &#34;&#34;&#34;Returns the list of roles configured on this commcell&#34;&#34;&#34;
+    def _get_roles(self, hard= False):
+        &#34;&#34;&#34;
+        Returns the list of roles configured on this commcell
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+        &#34;&#34;&#34;
+        if hard:
+            self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, self._commcell_object._services[&#34;HARD_REFRESH_CACHE&#34;]%&#39;security/roles&#39;)
         get_all_roles_service = self._commcell_object._services[&#39;ROLES&#39;]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -384,13 +391,20 @@ class Roles(object):
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
         self.refresh()
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the list of Roles on this commcell.&#34;&#34;&#34;
-        self._roles = self._get_roles()
+    def refresh(self, hard=False):
+        &#34;&#34;&#34;
+        Refresh the list of Roles on this commcell.
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+        &#34;&#34;&#34;
+        self._roles = self._get_roles(hard)
 
     @property
     def all_roles(self):
-        &#34;&#34;&#34;&#34;Returns all the roles present in the commcell&#34;&#34;&#34;
+        &#34;&#34;&#34;
+        Returns all the roles present in the commcell
+        &#34;&#34;&#34;
         return self._get_roles()
 
 class Role(object):
@@ -452,7 +466,9 @@ class Role(object):
                 self._role_id = role_properties[&#39;role&#39;].get(&#39;roleId&#39;)
                 self._role_name = role_properties[&#39;role&#39;].get(&#39;roleName&#39;)
                 self._role_status = role_properties[&#39;role&#39;][&#39;flags&#39;].get(&#39;disabled&#39;)
-                if &#39;entityInfo&#39; in role_properties[&#39;role&#39;]: self._company_name = role_properties[&#39;role&#39;][&#39;entityInfo&#39;].get(&#39;companyName&#39;)
+
+                self._company_name = role_properties.get(&#39;securityAssociations&#39;, {}).get(&#39;tagWithCompany&#39;, {}).get(&#39;providerDomainName&#39;, None)
+
                 category_list = []
                 permission_list = []
 
@@ -884,7 +900,7 @@ default: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/role.py#L307-L763" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/role.py#L321-L779" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Role(object):
     &#34;&#34;&#34;&#34;Class for representing a particular role configured on this commcell&#34;&#34;&#34;
@@ -945,7 +961,9 @@ default: None</p></div>
                 self._role_id = role_properties[&#39;role&#39;].get(&#39;roleId&#39;)
                 self._role_name = role_properties[&#39;role&#39;].get(&#39;roleName&#39;)
                 self._role_status = role_properties[&#39;role&#39;][&#39;flags&#39;].get(&#39;disabled&#39;)
-                if &#39;entityInfo&#39; in role_properties[&#39;role&#39;]: self._company_name = role_properties[&#39;role&#39;][&#39;entityInfo&#39;].get(&#39;companyName&#39;)
+
+                self._company_name = role_properties.get(&#39;securityAssociations&#39;, {}).get(&#39;tagWithCompany&#39;, {}).get(&#39;providerDomainName&#39;, None)
+
                 category_list = []
                 permission_list = []
 
@@ -1358,7 +1376,7 @@ empty string, if usergroup belongs to Commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/role.py#L724-L731" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/role.py#L740-L747" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def company_name(self):
@@ -1376,7 +1394,7 @@ def company_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/role.py#L756-L759" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/role.py#L772-L775" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def permissions(self):
@@ -1390,7 +1408,7 @@ def permissions(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/role.py#L719-L722" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/role.py#L735-L738" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def role_description(self):
@@ -1404,7 +1422,7 @@ def role_description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/role.py#L714-L717" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/role.py#L730-L733" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def role_id(self):
@@ -1418,7 +1436,7 @@ def role_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/role.py#L701-L704" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/role.py#L717-L720" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def role_name(self):
@@ -1432,7 +1450,7 @@ def role_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/role.py#L741-L744" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/role.py#L757-L760" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def status(self):
@@ -1465,7 +1483,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/role.py#L489-L553" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/role.py#L505-L569" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def associate_user(self, rolename, username):
     &#34;&#34;&#34;Updates the user who can manage this role with the permission provided
@@ -1556,7 +1574,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/role.py#L555-L621" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/role.py#L571-L637" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def associate_usergroup(self, rolename, usergroupname):
     &#34;&#34;&#34;Updates the usergroup who can manage this role with the permission provided
@@ -1660,7 +1678,7 @@ Raises:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/role.py#L623-L699" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/role.py#L639-L715" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def modify_capability(self, request_type, permission_list=&#34;&#34;, categoryname_list=&#34;&#34;):
     &#34;&#34;&#34;Updates role capabilities
@@ -1749,7 +1767,7 @@ Raises:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/role.py#L761-L763" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/role.py#L777-L779" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Roles.&#34;&#34;&#34;
@@ -1774,7 +1792,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/role.py#L82-L305" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/role.py#L82-L319" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Roles(object):
     &#34;&#34;&#34;Class for maintaining all the configured role on this commcell&#34;&#34;&#34;
@@ -1811,8 +1829,15 @@ instance of the Commcell class</p>
             self._commcell_object.commserv_name
         )
 
-    def _get_roles(self):
-        &#34;&#34;&#34;Returns the list of roles configured on this commcell&#34;&#34;&#34;
+    def _get_roles(self, hard= False):
+        &#34;&#34;&#34;
+        Returns the list of roles configured on this commcell
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+        &#34;&#34;&#34;
+        if hard:
+            self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, self._commcell_object._services[&#34;HARD_REFRESH_CACHE&#34;]%&#39;security/roles&#39;)
         get_all_roles_service = self._commcell_object._services[&#39;ROLES&#39;]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -1992,28 +2017,37 @@ instance of the Commcell class</p>
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
         self.refresh()
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the list of Roles on this commcell.&#34;&#34;&#34;
-        self._roles = self._get_roles()
+    def refresh(self, hard=False):
+        &#34;&#34;&#34;
+        Refresh the list of Roles on this commcell.
+
+            Args:
+                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+        &#34;&#34;&#34;
+        self._roles = self._get_roles(hard)
 
     @property
     def all_roles(self):
-        &#34;&#34;&#34;&#34;Returns all the roles present in the commcell&#34;&#34;&#34;
+        &#34;&#34;&#34;
+        Returns all the roles present in the commcell
+        &#34;&#34;&#34;
         return self._get_roles()</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
 <dt id="cvpysdk.security.role.Roles.all_roles"><code class="name">var <span class="ident">all_roles</span></code></dt>
 <dd>
-<div class="desc"><p>"Returns all the roles present in the commcell</p></div>
+<div class="desc"><p>Returns all the roles present in the commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/role.py#L302-L305" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/role.py#L314-L319" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_roles(self):
-    &#34;&#34;&#34;&#34;Returns all the roles present in the commcell&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Returns all the roles present in the commcell
+    &#34;&#34;&#34;
     return self._get_roles()</code></pre>
 </details>
 </dd>
@@ -2051,7 +2085,7 @@ Raises:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/role.py#L160-L234" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/role.py#L167-L241" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, rolename, permission_list=&#34;&#34;, categoryname_list=&#34;&#34;):
     &#34;&#34;&#34;creates new role
@@ -2149,7 +2183,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/role.py#L254-L296" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/role.py#L261-L303" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, role_name):
     &#34;&#34;&#34;Deletes the role object for specified role name
@@ -2213,7 +2247,7 @@ if role doesn't exist with specified name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/role.py#L236-L252" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/role.py#L243-L259" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, role_name):
     &#34;&#34;&#34;Returns the role object for the specified role name
@@ -2253,7 +2287,7 @@ if data type of input is invalid</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/role.py#L141-L158" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/role.py#L148-L165" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_role(self, role_name):
     &#34;&#34;&#34;Checks if any role with specified name exists on this commcell
@@ -2276,18 +2310,26 @@ if data type of input is invalid</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.security.role.Roles.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self, hard=False)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh the list of Roles on this commcell.</p></div>
+<div class="desc"><p>Refresh the list of Roles on this commcell.</p>
+<pre><code>Args:
+    hard    (bool)      --      flag to hard refresh mongo cache for this entity
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/security/role.py#L298-L300" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/role.py#L305-L312" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refresh the list of Roles on this commcell.&#34;&#34;&#34;
-    self._roles = self._get_roles()</code></pre>
+<pre><code class="python">def refresh(self, hard=False):
+    &#34;&#34;&#34;
+    Refresh the list of Roles on this commcell.
+
+        Args:
+            hard    (bool)      --      flag to hard refresh mongo cache for this entity
+    &#34;&#34;&#34;
+    self._roles = self._get_roles(hard)</code></pre>
 </details>
 </dd>
 </dl>

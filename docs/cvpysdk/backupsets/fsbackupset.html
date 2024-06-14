@@ -51,6 +51,9 @@ Returns the 1-touch response file for that backupset</p>
 <p>run_bmr_restore()
 &ndash;
 Triggers the VIrtualize Me to VMWare job</p>
+<p>_get_cs_login_details()
+&ndash;
+Get the cs login information.</p>
 <p>_restore_aix_1touch_admin_json()
 &ndash;Returns the restore JSON required for BMR operations.</p>
 <p>run_bmr_aix_restore()
@@ -91,7 +94,7 @@ It returns browse volume guid</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/fsbackupset.py#L1-L1629" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/fsbackupset.py#L1-L1676" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -134,6 +137,8 @@ FSBackupset:
     _get_responsefile()          --  Returns the 1-touch response file for that backupset
 
     run_bmr_restore()           --  Triggers the VIrtualize Me to VMWare job
+
+    _get_cs_login_details()     --  Get the cs login information.
 
     _restore_aix_1touch_admin_json()    --Returns the restore JSON required for BMR operations.
 
@@ -682,7 +687,8 @@ class FSBackupset(Backupset):
         ipconfig = response[&#39;responseFile&#39;][&#39;clients&#39;][0][&#39;netconfig&#39;][&#39;ipinfo&#39;]
         cs_user = response[&#39;responseFile&#39;][&#39;csinfo&#39;][&#39;creds&#39;][&#39;userName&#39;]
         cs_pwd = response[&#39;responseFile&#39;][&#39;csinfo&#39;][&#39;creds&#39;][&#39;password&#39;]
-        return hwconfig, ipconfig,cs_user,cs_pwd
+        cs_token = response[&#39;responseFile&#39;][&#39;csinfo&#39;][&#39;creds&#39;][&#39;password&#39;][5:]
+        return hwconfig, ipconfig,cs_user,cs_pwd,cs_token
 
     def run_bmr_restore(self, **restore_options):
         &#34;&#34;&#34;
@@ -930,6 +936,44 @@ class FSBackupset(Backupset):
 
         return self._process_restore_response(response_json)
 
+    def _get_cs_login_details(self):
+        &#34;&#34;&#34;Get the cs login information.
+
+        Returns :
+            (dict, dict) - CS login details
+
+        &#34;&#34;&#34;
+        request = {
+            &#34;CVGui_GetResponseFilesReq&#34;: {
+                &#34;entity&#34;: {
+                    &#34;_type_&#34;: &#34;6&#34;,
+                    &#34;appName&#34;: &#34;File System&#34;,
+                    &#34;applicationId&#34;: self._agent_object.agent_id,
+                    &#34;backupsetId&#34;: self.backupset_id,
+                    &#34;backupsetName&#34;: self.backupset_name,
+                    &#34;clientId&#34;: self._agent_object._client_object.client_id,
+                    &#34;clientName&#34;: self._agent_object._client_object.client_name,
+                    &#34;commCellId&#34;: &#34;0&#34;,
+                    &#34;commCellName&#34;: &#34;&#34;,
+                    &#34;instanceId&#34;: &#34;1&#34;,
+                    &#34;instanceName&#34;: &#34;&#34;
+                },
+                &#34;RecoveryTime&#34;: &#34;&#34;,
+                &#34;platform&#34;: &#34;1&#34;,
+                &#34;virtualizeME&#34;: &#34;1&#34;
+            }
+        }
+
+        response = self._commcell_object._qoperation_execute(request)
+        cs_user = response[&#39;responseFile&#39;][&#39;csinfo&#39;][&#39;creds&#39;][&#39;userName&#39;]
+        cs_pwd = response[&#39;responseFile&#39;][&#39;csinfo&#39;][&#39;creds&#39;][&#39;password&#39;]
+        cs_token = response[&#39;responseFile&#39;][&#39;csinfo&#39;][&#39;creds&#39;][&#39;token&#39;]
+        cs_name = self._commcell_object.commserv_name
+        cs_hostname = self._commcell_object.commserv_hostname
+        cs_ip_address = socket.gethostbyname(self._commcell_object.commserv_hostname)
+
+        return cs_name, cs_hostname, cs_ip_address, cs_user, cs_pwd, cs_token
+
     def _restore_aix_1touch_admin_json(self):
         &#34;&#34;&#34;&#34;setter for the BMR options required  for 1-touch restore
 
@@ -1024,7 +1068,7 @@ class FSBackupset(Backupset):
                                 &#34;hostName&#34;: &#34;&#34;, &#34;clientName&#34;: &#34;&#34;
                             }, &#34;creds&#34;: {
                                 &#34;password&#34;: &#34;&#34;, &#34;domainName&#34;: &#34;&#34;,
-                                &#34;confirmPassword&#34;: &#34;&#34;, &#34;userName&#34;: &#34;&#34;
+                                &#34;confirmPassword&#34;: &#34;&#34;, &#34;userName&#34;: &#34;&#34;, &#34;token&#34;:&#34;&#34;
                             }
                         }, &#34;hwconfig&#34;: {
                             &#34;minMemoryMB&#34;: 0, &#34;vmName&#34;: &#34;&#34;, &#34;magicno&#34;: &#34;&#34;, &#34;enableDynamicMemory&#34;: False,
@@ -1096,6 +1140,7 @@ class FSBackupset(Backupset):
             &#39;oneTouchRestoreOption&#39;] = restore_json_aix_system_state
         hwconfig_aix = restore_json_aix_system_state[&#39;responseData&#39;][0][&#39;hwconfig&#39;]
         ipconfig_aix = restore_json_aix_system_state[&#39;responseData&#39;][0][&#39;clients&#39;][0][&#39;netconfig&#39;][&#39;ipinfo&#39;]
+        cs_name, cs_hostname, cs_ip_address, cs_user, cs_pwd, cs_token = self._get_cs_login_details()
         vmjson = self._restore_bmr_admin_json(ipconfig_aix, hwconfig_aix)
         request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;] = vmjson
         is_clone = restore_options.get(&#39;clone&#39;, None)
@@ -1107,11 +1152,14 @@ class FSBackupset(Backupset):
             &#39;systemStateBackup&#39; : True,
             &#39;copyToObjectStore&#39; :False,
             &#39;restoreToDisk&#39; : False,
-            &#39;skipIfExists&#39; : False,
+            &#39;skipIfExists&#39; : restore_options.get(&#39;run_FS_restore&#39;, False),
             &#39;SyncRestore&#39; : False
         }
-        onetouch_restore_option = {
-            &#34;responseData&#34;: [{
+        one_touch_option = {
+            &#39;fromTime&#39;: restore_options.get(&#39;fromTime&#39;, 0),
+            &#39;toTime&#39;: restore_options.get(&#39;toTime&#39;, 0)
+        }
+        response_data = {
                 &#34;clients&#34;: [{
                     &#34;clone&#34;: is_clone,
                     &#34;netconfig&#34;: {
@@ -1140,20 +1188,20 @@ class FSBackupset(Backupset):
                 }],
                 &#34;csinfo&#34;: {
                     &#34;ip&#34;: {
-                        &#34;address&#34;: restore_options.get(&#39;CS_IP&#39;, None)
+                        &#34;address&#34;: cs_ip_address
                     },
                     &#34;commservInfo&#34;: {
-                        &#34;hostName&#34;: restore_options.get(&#39;CS_Hostname&#39;),
-                        &#34;clientName&#34;: restore_options.get(&#39;CS_ClientName&#39;, None)
+                        &#34;hostName&#34;: cs_hostname,
+                        &#34;clientName&#34;: cs_name
                     },
                     &#34;creds&#34;: {
-                        &#34;password&#34;: restore_options.get(&#39;CS_Password&#39;, None),
-                        &#34;confirmPassword&#34;: restore_options.get(&#39;CS_Password&#39;, None),
-                        &#34;userName&#34;: restore_options.get(&#39;CS_Username&#39;, None)
+                        &#34;password&#34;: cs_pwd,
+                        &#34;confirmPassword&#34;: cs_pwd,
+                        &#34;userName&#34;: cs_user,
+                        &#34;token&#34;:  cs_token
                     }
                 },
-            }]
-        }
+            }
         request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;subTask&#39;] = subtask_json
         request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;commonOptions&#39;] = common_options
         request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][&#39;destPath&#39;] = (
@@ -1162,12 +1210,14 @@ class FSBackupset(Backupset):
             &#39;destClient&#39;][&#39;clientName&#39;] = restore_options.get(&#39;onetouch_server&#39;, None)
         request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
             &#39;oneTouchRestoreOption&#39;][&#39;automaticClientReboot&#39;] = restore_options.get(&#39;automaticClientReboot&#39;, None)
+
         if is_clone:
             request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;oneTouchRestoreOption&#39;][
                 &#39;responseData&#39;][0][&#39;clients&#39;][0][&#39;netconfig&#39;][
                     &#39;dns&#39;][&#39;nameservers&#39;][0][&#39;address&#39;] = restore_options.get(&#39;dns_ip&#39;, None)
         request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;oneTouchRestoreOption&#39;][&#39;responseData&#39;][
-            0] = onetouch_restore_option
+            0] = response_data
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;oneTouchOption&#39;] = one_touch_option
         return self._process_restore_response(request_json)
 
     @property
@@ -1251,7 +1301,7 @@ class FSBackupset(Backupset):
     def index_pruning_cycles_retention(self):
         &#34;&#34;&#34;Returns number of cycles to be maintained in index by index pruning for the backupset&#34;&#34;&#34;
 
-        return self._properties[&#34;indexSettings&#34;][&#34;indexRetCycle&#34;]
+        return self._properties[&#34;indexSettings&#34;][&#34;indexRetCycles&#34;]
 
     @index_pruning_type.setter
     def index_pruning_type(self, value):
@@ -1760,7 +1810,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/fsbackupset.py#L80-L1629" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/fsbackupset.py#L82-L1676" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class FSBackupset(Backupset):
     &#34;&#34;&#34;Derived class from Backupset Base class, representing a fs backupset,
@@ -2272,7 +2322,8 @@ default: None</p>
         ipconfig = response[&#39;responseFile&#39;][&#39;clients&#39;][0][&#39;netconfig&#39;][&#39;ipinfo&#39;]
         cs_user = response[&#39;responseFile&#39;][&#39;csinfo&#39;][&#39;creds&#39;][&#39;userName&#39;]
         cs_pwd = response[&#39;responseFile&#39;][&#39;csinfo&#39;][&#39;creds&#39;][&#39;password&#39;]
-        return hwconfig, ipconfig,cs_user,cs_pwd
+        cs_token = response[&#39;responseFile&#39;][&#39;csinfo&#39;][&#39;creds&#39;][&#39;password&#39;][5:]
+        return hwconfig, ipconfig,cs_user,cs_pwd,cs_token
 
     def run_bmr_restore(self, **restore_options):
         &#34;&#34;&#34;
@@ -2520,6 +2571,44 @@ default: None</p>
 
         return self._process_restore_response(response_json)
 
+    def _get_cs_login_details(self):
+        &#34;&#34;&#34;Get the cs login information.
+
+        Returns :
+            (dict, dict) - CS login details
+
+        &#34;&#34;&#34;
+        request = {
+            &#34;CVGui_GetResponseFilesReq&#34;: {
+                &#34;entity&#34;: {
+                    &#34;_type_&#34;: &#34;6&#34;,
+                    &#34;appName&#34;: &#34;File System&#34;,
+                    &#34;applicationId&#34;: self._agent_object.agent_id,
+                    &#34;backupsetId&#34;: self.backupset_id,
+                    &#34;backupsetName&#34;: self.backupset_name,
+                    &#34;clientId&#34;: self._agent_object._client_object.client_id,
+                    &#34;clientName&#34;: self._agent_object._client_object.client_name,
+                    &#34;commCellId&#34;: &#34;0&#34;,
+                    &#34;commCellName&#34;: &#34;&#34;,
+                    &#34;instanceId&#34;: &#34;1&#34;,
+                    &#34;instanceName&#34;: &#34;&#34;
+                },
+                &#34;RecoveryTime&#34;: &#34;&#34;,
+                &#34;platform&#34;: &#34;1&#34;,
+                &#34;virtualizeME&#34;: &#34;1&#34;
+            }
+        }
+
+        response = self._commcell_object._qoperation_execute(request)
+        cs_user = response[&#39;responseFile&#39;][&#39;csinfo&#39;][&#39;creds&#39;][&#39;userName&#39;]
+        cs_pwd = response[&#39;responseFile&#39;][&#39;csinfo&#39;][&#39;creds&#39;][&#39;password&#39;]
+        cs_token = response[&#39;responseFile&#39;][&#39;csinfo&#39;][&#39;creds&#39;][&#39;token&#39;]
+        cs_name = self._commcell_object.commserv_name
+        cs_hostname = self._commcell_object.commserv_hostname
+        cs_ip_address = socket.gethostbyname(self._commcell_object.commserv_hostname)
+
+        return cs_name, cs_hostname, cs_ip_address, cs_user, cs_pwd, cs_token
+
     def _restore_aix_1touch_admin_json(self):
         &#34;&#34;&#34;&#34;setter for the BMR options required  for 1-touch restore
 
@@ -2614,7 +2703,7 @@ default: None</p>
                                 &#34;hostName&#34;: &#34;&#34;, &#34;clientName&#34;: &#34;&#34;
                             }, &#34;creds&#34;: {
                                 &#34;password&#34;: &#34;&#34;, &#34;domainName&#34;: &#34;&#34;,
-                                &#34;confirmPassword&#34;: &#34;&#34;, &#34;userName&#34;: &#34;&#34;
+                                &#34;confirmPassword&#34;: &#34;&#34;, &#34;userName&#34;: &#34;&#34;, &#34;token&#34;:&#34;&#34;
                             }
                         }, &#34;hwconfig&#34;: {
                             &#34;minMemoryMB&#34;: 0, &#34;vmName&#34;: &#34;&#34;, &#34;magicno&#34;: &#34;&#34;, &#34;enableDynamicMemory&#34;: False,
@@ -2686,6 +2775,7 @@ default: None</p>
             &#39;oneTouchRestoreOption&#39;] = restore_json_aix_system_state
         hwconfig_aix = restore_json_aix_system_state[&#39;responseData&#39;][0][&#39;hwconfig&#39;]
         ipconfig_aix = restore_json_aix_system_state[&#39;responseData&#39;][0][&#39;clients&#39;][0][&#39;netconfig&#39;][&#39;ipinfo&#39;]
+        cs_name, cs_hostname, cs_ip_address, cs_user, cs_pwd, cs_token = self._get_cs_login_details()
         vmjson = self._restore_bmr_admin_json(ipconfig_aix, hwconfig_aix)
         request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;] = vmjson
         is_clone = restore_options.get(&#39;clone&#39;, None)
@@ -2697,11 +2787,14 @@ default: None</p>
             &#39;systemStateBackup&#39; : True,
             &#39;copyToObjectStore&#39; :False,
             &#39;restoreToDisk&#39; : False,
-            &#39;skipIfExists&#39; : False,
+            &#39;skipIfExists&#39; : restore_options.get(&#39;run_FS_restore&#39;, False),
             &#39;SyncRestore&#39; : False
         }
-        onetouch_restore_option = {
-            &#34;responseData&#34;: [{
+        one_touch_option = {
+            &#39;fromTime&#39;: restore_options.get(&#39;fromTime&#39;, 0),
+            &#39;toTime&#39;: restore_options.get(&#39;toTime&#39;, 0)
+        }
+        response_data = {
                 &#34;clients&#34;: [{
                     &#34;clone&#34;: is_clone,
                     &#34;netconfig&#34;: {
@@ -2730,20 +2823,20 @@ default: None</p>
                 }],
                 &#34;csinfo&#34;: {
                     &#34;ip&#34;: {
-                        &#34;address&#34;: restore_options.get(&#39;CS_IP&#39;, None)
+                        &#34;address&#34;: cs_ip_address
                     },
                     &#34;commservInfo&#34;: {
-                        &#34;hostName&#34;: restore_options.get(&#39;CS_Hostname&#39;),
-                        &#34;clientName&#34;: restore_options.get(&#39;CS_ClientName&#39;, None)
+                        &#34;hostName&#34;: cs_hostname,
+                        &#34;clientName&#34;: cs_name
                     },
                     &#34;creds&#34;: {
-                        &#34;password&#34;: restore_options.get(&#39;CS_Password&#39;, None),
-                        &#34;confirmPassword&#34;: restore_options.get(&#39;CS_Password&#39;, None),
-                        &#34;userName&#34;: restore_options.get(&#39;CS_Username&#39;, None)
+                        &#34;password&#34;: cs_pwd,
+                        &#34;confirmPassword&#34;: cs_pwd,
+                        &#34;userName&#34;: cs_user,
+                        &#34;token&#34;:  cs_token
                     }
                 },
-            }]
-        }
+            }
         request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;subTask&#39;] = subtask_json
         request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;commonOptions&#39;] = common_options
         request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][&#39;destPath&#39;] = (
@@ -2752,12 +2845,14 @@ default: None</p>
             &#39;destClient&#39;][&#39;clientName&#39;] = restore_options.get(&#39;onetouch_server&#39;, None)
         request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
             &#39;oneTouchRestoreOption&#39;][&#39;automaticClientReboot&#39;] = restore_options.get(&#39;automaticClientReboot&#39;, None)
+
         if is_clone:
             request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;oneTouchRestoreOption&#39;][
                 &#39;responseData&#39;][0][&#39;clients&#39;][0][&#39;netconfig&#39;][
                     &#39;dns&#39;][&#39;nameservers&#39;][0][&#39;address&#39;] = restore_options.get(&#39;dns_ip&#39;, None)
         request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;oneTouchRestoreOption&#39;][&#39;responseData&#39;][
-            0] = onetouch_restore_option
+            0] = response_data
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;oneTouchOption&#39;] = one_touch_option
         return self._process_restore_response(request_json)
 
     @property
@@ -2841,7 +2936,7 @@ default: None</p>
     def index_pruning_cycles_retention(self):
         &#34;&#34;&#34;Returns number of cycles to be maintained in index by index pruning for the backupset&#34;&#34;&#34;
 
-        return self._properties[&#34;indexSettings&#34;][&#34;indexRetCycle&#34;]
+        return self._properties[&#34;indexSettings&#34;][&#34;indexRetCycles&#34;]
 
     @index_pruning_type.setter
     def index_pruning_type(self, value):
@@ -3329,13 +3424,13 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/fsbackupset.py#L1155-L1159" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/fsbackupset.py#L1202-L1206" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_pruning_cycles_retention(self):
     &#34;&#34;&#34;Returns number of cycles to be maintained in index by index pruning for the backupset&#34;&#34;&#34;
 
-    return self._properties[&#34;indexSettings&#34;][&#34;indexRetCycle&#34;]</code></pre>
+    return self._properties[&#34;indexSettings&#34;][&#34;indexRetCycles&#34;]</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.backupsets.fsbackupset.FSBackupset.index_pruning_days_retention"><code class="name">var <span class="ident">index_pruning_days_retention</span></code></dt>
@@ -3344,7 +3439,7 @@ def index_pruning_cycles_retention(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/fsbackupset.py#L1149-L1153" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/fsbackupset.py#L1196-L1200" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_pruning_days_retention(self):
@@ -3359,7 +3454,7 @@ def index_pruning_days_retention(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/fsbackupset.py#L1144-L1147" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/fsbackupset.py#L1191-L1194" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_pruning_type(self):
@@ -3373,7 +3468,7 @@ def index_pruning_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/fsbackupset.py#L1078-L1091" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/fsbackupset.py#L1125-L1138" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_server(self):
@@ -3436,7 +3531,7 @@ arcp
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/fsbackupset.py#L1399-L1477" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/fsbackupset.py#L1446-L1524" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_fsblr_replication_pair(self, srcclientid, destclientid, srcguid, destguid,
                                   rpstoreid=None, replicationtype=None, **replication_options):
@@ -3549,7 +3644,7 @@ Replication Subclient id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/fsbackupset.py#L1481-L1606" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/fsbackupset.py#L1528-L1653" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_granular_replica_copy(self, srcclientid, destclientid, scid, blrid, srcguid, dstguid, restoreguid,
                                  **replication_options):
@@ -3706,7 +3801,7 @@ Replication Subclient id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/fsbackupset.py#L1243-L1349" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/fsbackupset.py#L1290-L1396" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_replica_copy(self, srcclientid, destclientid, scid, blrid,
                         srcguid, dstguid, **replication_options):
@@ -3830,7 +3925,7 @@ blocklevel replication id.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/fsbackupset.py#L1352-L1360" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/fsbackupset.py#L1399-L1407" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_replication_pair(self, blrid):
     &#34;&#34;&#34;&#34;Delete replication pair
@@ -3878,7 +3973,7 @@ additional metadata retrieved from browse</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/fsbackupset.py#L300-L337" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/fsbackupset.py#L302-L339" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find_all_versions(self, *args, **kwargs):
     &#34;&#34;&#34;Searches the content of a Subclient, and returns all versions available for the content.
@@ -3930,7 +4025,7 @@ additional metadata retrieved from browse</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/fsbackupset.py#L1609-L1629" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/fsbackupset.py#L1656-L1676" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_browse_volume_guid(self):
 
@@ -3968,7 +4063,7 @@ additional metadata retrieved from browse</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/fsbackupset.py#L1362-L1372" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/fsbackupset.py#L1409-L1419" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_mount_path_guid(self, volume):
     &#34;&#34;&#34;
@@ -4003,7 +4098,7 @@ subclient_id
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/fsbackupset.py#L1374-L1396" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/fsbackupset.py#L1421-L1443" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_recovery_points(self, client_id, subclient_id):
     &#34;&#34;&#34; Get all recovery points for the BLR pair from the associated RPStore.
@@ -4112,7 +4207,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/fsbackupset.py#L84-L175" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/fsbackupset.py#L86-L177" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -4313,7 +4408,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/fsbackupset.py#L177-L298" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/fsbackupset.py#L179-L300" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -4472,7 +4567,7 @@ returns the task object</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/fsbackupset.py#L964-L1076" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/fsbackupset.py#L1005-L1123" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_bmr_aix_restore(self, **restore_options):
     &#34;&#34;&#34;
@@ -4514,6 +4609,7 @@ returns the task object</p></div>
         &#39;oneTouchRestoreOption&#39;] = restore_json_aix_system_state
     hwconfig_aix = restore_json_aix_system_state[&#39;responseData&#39;][0][&#39;hwconfig&#39;]
     ipconfig_aix = restore_json_aix_system_state[&#39;responseData&#39;][0][&#39;clients&#39;][0][&#39;netconfig&#39;][&#39;ipinfo&#39;]
+    cs_name, cs_hostname, cs_ip_address, cs_user, cs_pwd, cs_token = self._get_cs_login_details()
     vmjson = self._restore_bmr_admin_json(ipconfig_aix, hwconfig_aix)
     request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;] = vmjson
     is_clone = restore_options.get(&#39;clone&#39;, None)
@@ -4525,11 +4621,14 @@ returns the task object</p></div>
         &#39;systemStateBackup&#39; : True,
         &#39;copyToObjectStore&#39; :False,
         &#39;restoreToDisk&#39; : False,
-        &#39;skipIfExists&#39; : False,
+        &#39;skipIfExists&#39; : restore_options.get(&#39;run_FS_restore&#39;, False),
         &#39;SyncRestore&#39; : False
     }
-    onetouch_restore_option = {
-        &#34;responseData&#34;: [{
+    one_touch_option = {
+        &#39;fromTime&#39;: restore_options.get(&#39;fromTime&#39;, 0),
+        &#39;toTime&#39;: restore_options.get(&#39;toTime&#39;, 0)
+    }
+    response_data = {
             &#34;clients&#34;: [{
                 &#34;clone&#34;: is_clone,
                 &#34;netconfig&#34;: {
@@ -4558,20 +4657,20 @@ returns the task object</p></div>
             }],
             &#34;csinfo&#34;: {
                 &#34;ip&#34;: {
-                    &#34;address&#34;: restore_options.get(&#39;CS_IP&#39;, None)
+                    &#34;address&#34;: cs_ip_address
                 },
                 &#34;commservInfo&#34;: {
-                    &#34;hostName&#34;: restore_options.get(&#39;CS_Hostname&#39;),
-                    &#34;clientName&#34;: restore_options.get(&#39;CS_ClientName&#39;, None)
+                    &#34;hostName&#34;: cs_hostname,
+                    &#34;clientName&#34;: cs_name
                 },
                 &#34;creds&#34;: {
-                    &#34;password&#34;: restore_options.get(&#39;CS_Password&#39;, None),
-                    &#34;confirmPassword&#34;: restore_options.get(&#39;CS_Password&#39;, None),
-                    &#34;userName&#34;: restore_options.get(&#39;CS_Username&#39;, None)
+                    &#34;password&#34;: cs_pwd,
+                    &#34;confirmPassword&#34;: cs_pwd,
+                    &#34;userName&#34;: cs_user,
+                    &#34;token&#34;:  cs_token
                 }
             },
-        }]
-    }
+        }
     request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;subTask&#39;] = subtask_json
     request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;commonOptions&#39;] = common_options
     request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;destination&#39;][&#39;destPath&#39;] = (
@@ -4580,12 +4679,14 @@ returns the task object</p></div>
         &#39;destClient&#39;][&#39;clientName&#39;] = restore_options.get(&#39;onetouch_server&#39;, None)
     request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
         &#39;oneTouchRestoreOption&#39;][&#39;automaticClientReboot&#39;] = restore_options.get(&#39;automaticClientReboot&#39;, None)
+
     if is_clone:
         request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;oneTouchRestoreOption&#39;][
             &#39;responseData&#39;][0][&#39;clients&#39;][0][&#39;netconfig&#39;][
                 &#39;dns&#39;][&#39;nameservers&#39;][0][&#39;address&#39;] = restore_options.get(&#39;dns_ip&#39;, None)
     request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;oneTouchRestoreOption&#39;][&#39;responseData&#39;][
-        0] = onetouch_restore_option
+        0] = response_data
+    request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;oneTouchOption&#39;] = one_touch_option
     return self._process_restore_response(request_json)</code></pre>
 </details>
 </dd>
@@ -4633,7 +4734,7 @@ returns the task object</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/fsbackupset.py#L592-L836" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/fsbackupset.py#L595-L839" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_bmr_restore(self, **restore_options):
     &#34;&#34;&#34;

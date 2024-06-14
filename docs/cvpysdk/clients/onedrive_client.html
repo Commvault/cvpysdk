@@ -39,10 +39,16 @@ Run an out-of-place restore of specified users for OneDrive for business client 
 <p>disk_restore()
 &ndash;
 Runs disk restore of specified users for OneDrive for business client (v2)</p>
+<p>modify_server_plan()
+&ndash;
+Method to Modify Server Plan Associated to Client</p>
+<p>modify_job_results_directory()
+&ndash;
+Method to modify job results directory</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/clients/onedrive_client.py#L1-L170" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/clients/onedrive_client.py#L1-L208" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -79,6 +85,11 @@ in_place_restore()  --  Run an inplace restore of specified users for OneDrive f
 out_of_place_restore()  --  Run an out-of-place restore of specified users for OneDrive for business client (v2)
 
 disk_restore()  --  Runs disk restore of specified users for OneDrive for business client (v2)
+
+modify_server_plan()  --  Method to Modify Server Plan Associated to Client
+
+modify_job_results_directory()  --  Method to modify job results directory
+
 &#34;&#34;&#34;
 
 from ..client import Client
@@ -213,7 +224,40 @@ class OneDriveClient(Client):
                                                         destination_client,
                                                         destination_path,
                                                         skip_file_permissions=skip_file_permissions)
-        return restore_job</code></pre>
+        return restore_job
+
+    def modify_server_plan(self,old_plan,new_plan):
+        &#34;&#34;&#34;
+           Method to Modify Server Plan Associated to Client
+
+           Arguments:
+                old_plan        (str)   --     existing server plan name
+                new_plan        (str)   --     new server plan name
+        &#34;&#34;&#34;
+
+        from ..plan import Plan
+        entities=[{
+            &#34;clientName&#34; : self.client_name
+        }]
+        self.plan_obj = Plan(self._commcell_object, old_plan)
+        self.plan_obj.edit_association(entities, new_plan)
+
+
+    def modify_job_results_directory(self,modified_shared_jr_directory):
+        &#34;&#34;&#34;
+        Method to modify job results directory
+
+        modified_shared_jr_directory  (str)   --     new job results directory
+        &#34;&#34;&#34;
+        jr_update_dict={
+                &#34;client&#34;: {
+                    &#34;jobResulsDir&#34;: {
+                        &#34;path&#34;: modified_shared_jr_directory
+                    }
+                }
+        }
+
+        self.update_properties(properties_dict=jr_update_dict)</code></pre>
 </details>
 </section>
 <section>
@@ -250,7 +294,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/clients/onedrive_client.py#L41-L170" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/clients/onedrive_client.py#L46-L208" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class OneDriveClient(Client):
     def __init__(self, commcell_object, client_name, client_id=None):
@@ -381,7 +425,40 @@ default: None</p>
                                                         destination_client,
                                                         destination_path,
                                                         skip_file_permissions=skip_file_permissions)
-        return restore_job</code></pre>
+        return restore_job
+
+    def modify_server_plan(self,old_plan,new_plan):
+        &#34;&#34;&#34;
+           Method to Modify Server Plan Associated to Client
+
+           Arguments:
+                old_plan        (str)   --     existing server plan name
+                new_plan        (str)   --     new server plan name
+        &#34;&#34;&#34;
+
+        from ..plan import Plan
+        entities=[{
+            &#34;clientName&#34; : self.client_name
+        }]
+        self.plan_obj = Plan(self._commcell_object, old_plan)
+        self.plan_obj.edit_association(entities, new_plan)
+
+
+    def modify_job_results_directory(self,modified_shared_jr_directory):
+        &#34;&#34;&#34;
+        Method to modify job results directory
+
+        modified_shared_jr_directory  (str)   --     new job results directory
+        &#34;&#34;&#34;
+        jr_update_dict={
+                &#34;client&#34;: {
+                    &#34;jobResulsDir&#34;: {
+                        &#34;path&#34;: modified_shared_jr_directory
+                    }
+                }
+        }
+
+        self.update_properties(properties_dict=jr_update_dict)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -399,7 +476,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/clients/onedrive_client.py#L72-L79" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/clients/onedrive_client.py#L77-L84" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup_all_users_in_client(self):
     &#34;&#34;&#34; Run backup for all users present in OneDrive client
@@ -435,7 +512,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/clients/onedrive_client.py#L138-L170" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/clients/onedrive_client.py#L143-L175" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_restore(self,
                  users,
@@ -498,7 +575,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/clients/onedrive_client.py#L81-L107" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/clients/onedrive_client.py#L86-L112" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def in_place_restore(self, users, **kwargs):
     &#34;&#34;&#34; Run an inplace restore of specified users for OneDrive for business client
@@ -529,6 +606,73 @@ if response is not success
     return restore_job</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.clients.onedrive_client.OneDriveClient.modify_job_results_directory"><code class="name flex">
+<span>def <span class="ident">modify_job_results_directory</span></span>(<span>self, modified_shared_jr_directory)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to modify job results directory</p>
+<p>modified_shared_jr_directory
+(str)
+&ndash;
+new job results directory</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/clients/onedrive_client.py#L194-L208" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def modify_job_results_directory(self,modified_shared_jr_directory):
+    &#34;&#34;&#34;
+    Method to modify job results directory
+
+    modified_shared_jr_directory  (str)   --     new job results directory
+    &#34;&#34;&#34;
+    jr_update_dict={
+            &#34;client&#34;: {
+                &#34;jobResulsDir&#34;: {
+                    &#34;path&#34;: modified_shared_jr_directory
+                }
+            }
+    }
+
+    self.update_properties(properties_dict=jr_update_dict)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.clients.onedrive_client.OneDriveClient.modify_server_plan"><code class="name flex">
+<span>def <span class="ident">modify_server_plan</span></span>(<span>self, old_plan, new_plan)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to Modify Server Plan Associated to Client</p>
+<h2 id="arguments">Arguments</h2>
+<p>old_plan
+(str)
+&ndash;
+existing server plan name
+new_plan
+(str)
+&ndash;
+new server plan name</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/clients/onedrive_client.py#L177-L191" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def modify_server_plan(self,old_plan,new_plan):
+    &#34;&#34;&#34;
+       Method to Modify Server Plan Associated to Client
+
+       Arguments:
+            old_plan        (str)   --     existing server plan name
+            new_plan        (str)   --     new server plan name
+    &#34;&#34;&#34;
+
+    from ..plan import Plan
+    entities=[{
+        &#34;clientName&#34; : self.client_name
+    }]
+    self.plan_obj = Plan(self._commcell_object, old_plan)
+    self.plan_obj.edit_association(entities, new_plan)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.clients.onedrive_client.OneDriveClient.out_of_place_restore"><code class="name flex">
 <span>def <span class="ident">out_of_place_restore</span></span>(<span>self, users, destination_path, **kwargs)</span>
 </code></dt>
@@ -555,7 +699,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/clients/onedrive_client.py#L109-L136" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/clients/onedrive_client.py#L114-L141" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def out_of_place_restore(self, users, destination_path, **kwargs):
     &#34;&#34;&#34; Run an out-of-place restore of specified users for OneDrive for business client
@@ -651,6 +795,7 @@ if response is not success
 <li><code><a title="cvpysdk.client.Client.is_data_management_enabled" href="../client.html#cvpysdk.client.Client.is_data_management_enabled">is_data_management_enabled</a></code></li>
 <li><code><a title="cvpysdk.client.Client.is_data_recovery_enabled" href="../client.html#cvpysdk.client.Client.is_data_recovery_enabled">is_data_recovery_enabled</a></code></li>
 <li><code><a title="cvpysdk.client.Client.is_intelli_snap_enabled" href="../client.html#cvpysdk.client.Client.is_intelli_snap_enabled">is_intelli_snap_enabled</a></code></li>
+<li><code><a title="cvpysdk.client.Client.is_mongodb_ready" href="../client.html#cvpysdk.client.Client.is_mongodb_ready">is_mongodb_ready</a></code></li>
 <li><code><a title="cvpysdk.client.Client.is_privacy_enabled" href="../client.html#cvpysdk.client.Client.is_privacy_enabled">is_privacy_enabled</a></code></li>
 <li><code><a title="cvpysdk.client.Client.is_ready" href="../client.html#cvpysdk.client.Client.is_ready">is_ready</a></code></li>
 <li><code><a title="cvpysdk.client.Client.is_restore_enabled" href="../client.html#cvpysdk.client.Client.is_restore_enabled">is_restore_enabled</a></code></li>
@@ -773,6 +918,8 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.clients.onedrive_client.OneDriveClient.backup_all_users_in_client" href="#cvpysdk.clients.onedrive_client.OneDriveClient.backup_all_users_in_client">backup_all_users_in_client</a></code></li>
 <li><code><a title="cvpysdk.clients.onedrive_client.OneDriveClient.disk_restore" href="#cvpysdk.clients.onedrive_client.OneDriveClient.disk_restore">disk_restore</a></code></li>
 <li><code><a title="cvpysdk.clients.onedrive_client.OneDriveClient.in_place_restore" href="#cvpysdk.clients.onedrive_client.OneDriveClient.in_place_restore">in_place_restore</a></code></li>
+<li><code><a title="cvpysdk.clients.onedrive_client.OneDriveClient.modify_job_results_directory" href="#cvpysdk.clients.onedrive_client.OneDriveClient.modify_job_results_directory">modify_job_results_directory</a></code></li>
+<li><code><a title="cvpysdk.clients.onedrive_client.OneDriveClient.modify_server_plan" href="#cvpysdk.clients.onedrive_client.OneDriveClient.modify_server_plan">modify_server_plan</a></code></li>
 <li><code><a title="cvpysdk.clients.onedrive_client.OneDriveClient.out_of_place_restore" href="#cvpysdk.clients.onedrive_client.OneDriveClient.out_of_place_restore">out_of_place_restore</a></code></li>
 </ul>
 </li>

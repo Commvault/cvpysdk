@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.10.0" />
 <title>cvpysdk.recovery_targets API documentation</title>
-<meta name="description" content="Main file for performing Recovery Target specific operations …" />
+<meta name="description" content="Main file for performing Replication Target specific operations (Auto Recovery) …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -23,7 +23,7 @@
 <h1 class="title">Module <code>cvpysdk.recovery_targets</code></h1>
 </header>
 <section id="section-intro">
-<p>Main file for performing Recovery Target specific operations.</p>
+<p>Main file for performing Replication Target specific operations (Auto Recovery).</p>
 <p>RecoveryTargets and RecoveryTarget are 2 classes defined in this file.</p>
 <p>RecoveryTargets:
 Class for representing all the recovery targets</p>
@@ -78,7 +78,7 @@ refresh the object properties</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L1-L633" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L1-L633" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -98,7 +98,7 @@ refresh the object properties</p>
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-&#34;&#34;&#34;Main file for performing Recovery Target specific operations.
+&#34;&#34;&#34;Main file for performing Replication Target specific operations (Auto Recovery).
 
 RecoveryTargets and RecoveryTarget are 2 classes defined in this file.
 
@@ -158,10 +158,10 @@ from cvpysdk.exception import SDKException
 
 class RecoveryTargets:
 
-    &#34;&#34;&#34;Class for representing all the clients associated with the commcell.&#34;&#34;&#34;
+    &#34;&#34;&#34; Class for representing all the recovery targets&#34;&#34;&#34;
 
     def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialize object of the Clients class.
+        &#34;&#34;&#34;Initialize object of the RecoveryTargets class.
 
             Args:
                 commcell_object (object)  --  instance of the Commcell class
@@ -172,7 +172,7 @@ class RecoveryTargets:
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
         self._update_response_ = commcell_object._update_response_
-        self._RECOVERY_TARGETS = self._services[&#39;GET_ALL_RECOVERY_TARGETS&#39;]
+        self._RECOVERY_TARGETS_API = self._services[&#39;GET_ALL_RECOVERY_TARGETS&#39;]
 
         self._recovery_targets = None
         self.refresh()
@@ -184,7 +184,7 @@ class RecoveryTargets:
                 str     -   string of all the targets
 
         &#34;&#34;&#34;
-        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;RecoverTargets&#39;)
+        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;RecoveryTargets&#39;)
 
         for index, recovery_target in enumerate(self._recovery_targets):
             sub_str = &#39;{:^5}\t{:20}\n&#39;.format(
@@ -213,16 +213,15 @@ class RecoveryTargets:
                     if response is not success
 
         &#34;&#34;&#34;
-        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._RECOVERY_TARGETS)
-
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._RECOVERY_TARGETS_API)
         if flag:
-            if response.json() and &#39;policy&#39; in response.json():
+            if response.json() and &#39;recoveryTargets&#39; in response.json():
 
                 recovery_target_dict = {}
-
-                for dictionary in response.json()[&#39;policy&#39;]:
-                    temp_name = dictionary[&#39;entity&#39;][&#39;vmAllocPolicyName&#39;].lower()
-                    recovery_target_dict[temp_name] = str(dictionary[&#39;entity&#39;][&#39;vmAllocPolicyId&#39;])
+                for recoveryTarget in response.json()[&#39;recoveryTargets&#39;]:
+                    if recoveryTarget[&#39;applicationType&#39;] != &#34;CLEAN_ROOM&#34;:
+                        temp_name = recoveryTarget[&#39;name&#39;].lower()
+                        recovery_target_dict[temp_name] = str(recoveryTarget[&#39;id&#39;])
 
                 return recovery_target_dict
             else:
@@ -268,7 +267,7 @@ class RecoveryTargets:
         &#34;&#34;&#34;Returns a target object.
 
             Args:
-                target_name (str)  --  name of the target
+                recovery_target_name (str)  --  name of the target
 
             Returns:
                 object - instance of the target class for the given target name
@@ -298,7 +297,7 @@ class RecoveryTargets:
 
 class RecoveryTarget:
 
-    &#34;&#34;&#34;Class for performing target operations&#34;&#34;&#34;
+    &#34;&#34;&#34; Class for a single recovery target selected, and to perform operations on that recovery target&#34;&#34;&#34;
 
     def __init__(self, commcell_object, recovery_target_name, recovery_target_id=None):
         &#34;&#34;&#34;Initialize the instance of the RecoveryTarget class.
@@ -306,12 +305,9 @@ class RecoveryTarget:
             Args:
                 commcell_object   (object)    --  instance of the Commcell class
 
-                target_name      (str)       --  name of the target
+                recovery_target_name      (str)       --  name of the target
 
-                target_id        (str)       --  id of the target
-
-                    default: None
-
+                recovery_target_id        (str)       --  id of the target -- default: None
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
 
@@ -326,7 +322,7 @@ class RecoveryTarget:
         else:
             # Get the target id if target id is not provided
             self._recovery_target_id = self._get_recovery_target_id()
-        self._RECOVERY_TARGET = self._services[&#39;GET_RECOVERY_TARGET&#39;] %(self._recovery_target_id)
+        self._RECOVERY_TARGET_API = self._services[&#39;GET_RECOVERY_TARGET&#39;] %self._recovery_target_id
 
         self._recovery_target_properties = None
 
@@ -384,7 +380,20 @@ class RecoveryTarget:
 
         &#34;&#34;&#34;
         target = RecoveryTargets(self._commcell_object)
-        return target.get(self._recovery_target_name)
+        return target.all_targets[self.recovery_target_name]
+
+    def _set_policy_type(self, policy_type):
+        &#34;&#34;&#34;Sets the policy type&#34;&#34;&#34;
+        if policy_type == &#34;AMAZON&#34;:
+            self._policy_type = 1
+        elif policy_type == &#34;MICROSOFT&#34;:
+            self._policy_type = 2
+        elif policy_type == &#34;AZURE_RESOURCE_MANAGER&#34;:
+            self._policy_type = 7
+        elif policy_type in [&#34;VMW_BACKUP_LABTEMPLATE&#34;, &#34;VMW_LIVEMOUNT&#34;]:
+            self._policy_type = 13
+        else:
+            self._policy_type = -1
 
     def _get_recovery_target_properties(self):
         &#34;&#34;&#34;Gets the target properties of this target.
@@ -396,84 +405,75 @@ class RecoveryTarget:
                     if response is not success
 
         &#34;&#34;&#34;
-        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._RECOVERY_TARGET)
-
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._RECOVERY_TARGET_API)
         if flag:
-            if response.json() and &#39;policy&#39; in response.json():
-                self._recovery_target_properties = response.json()[&#39;policy&#39;][0]
-                self._application_type = self._recovery_target_properties[&#39;vmPolicyAppType&#39;]
-                self._destination_hypervisor = self._recovery_target_properties[&#39;destinationHyperV&#39;][&#39;clientName&#39;]
-                vm_name_edit_string = self._recovery_target_properties.get(&#39;vmNameEditString&#39;)
-                vm_name_edit_type = self._recovery_target_properties.get(&#39;vmNameEditType&#39;, 1)
-                if vm_name_edit_string and vm_name_edit_type == 2:
-                    self._vm_suffix = self._recovery_target_properties.get(&#39;vmNameEditString&#39;)
-                elif vm_name_edit_string and vm_name_edit_type == 1:
-                    self._vm_prefix = self._recovery_target_properties.get(&#39;vmNameEditString&#39;)
-                self._access_node = self._recovery_target_properties.get(&#39;proxyClientEntity&#39;, {}).get(&#39;clientName&#39;)
-                self._access_node_client_group = (self._recovery_target_properties.get(&#39;proxyClientGroupEntity&#39;, {})
-                                                  .get(&#39;clientGroupName&#39;))
-                self._users = self._recovery_target_properties.get(&#39;securityAssociations&#39;, {}).get(&#39;users&#39;)
-                self._user_groups = self._recovery_target_properties.get(&#39;securityAssociations&#39;, {}).get(&#39;userGroups&#39;)
-                self._policy_type = self._recovery_target_properties.get(&#34;entity&#34;, {}).get(&#34;policyType&#34;)
+            if response.json() and &#39;entity&#39; in response.json():
+                self._recovery_target_properties = response.json()
+                self._application_type = self._recovery_target_properties.get(&#39;entity&#39;, {}).get(&#39;applicationType&#39;)
+                self._destination_hypervisor = self._recovery_target_properties.get(&#39;entity&#39;, {}).get(&#39;destinationHypervisor&#39;, {}).get(&#39;name&#39;)
+                self._vm_suffix = self._recovery_target_properties.get(&#39;vmDisplayName&#39;, {}).get(&#34;suffix&#34;, &#34;&#34;)
+                self._vm_prefix = self._recovery_target_properties.get(&#39;vmDisplayName&#39;, {}).get(&#34;prefix&#34;, &#34;&#34;)
+                self._access_node = self._recovery_target_properties.get(&#39;accessNode&#39;, {}).get(&#34;name&#34;, &#34;&#34;)
+                self._access_node_client_group = self._access_node if self._recovery_target_properties.get(&#39;accessNode&#39;, {}).get(&#34;type&#34;, &#34;&#34;) == &#39;Group&#39; else &#39;&#39;
+                self._users = self._recovery_target_properties.get(&#39;securityOptions&#39;, {}).get(&#39;users&#39;, [])
+                self._user_groups = self._recovery_target_properties.get(&#39;securityOptions&#39;, {}).get(&#39;userGroups&#39;, [])
+                policy_type = self._recovery_target_properties[&#34;entity&#34;].get(&#34;policyType&#34;, &#34;&#34;)
+                self._set_policy_type(policy_type)
 
                 if self._policy_type == 1:
-                    self._availability_zone = (self._recovery_target_properties.get(&#39;amazonPolicy&#39;,{}).get(&#39;availabilityZones&#39;, [{}])[0].get(&#39;availabilityZoneName&#39;, None))
-                    self._volume_type = self._recovery_target_properties.get(&#39;amazonPolicy&#39;, {}).get(&#39;volumeType&#39;, None)
-                    self._encryption_key = self._recovery_target_properties.get(&#39;amazonPolicy&#39;, {}).get(&#39;encryptionOption&#39;,{}).get(&#39;encryptionKeyName&#39;, &#39;Auto&#39;)
-                    self._iam_role_name = self._recovery_target_properties.get(&#39;roleInfo&#39;, {}).get(&#39;name&#39;)
-                    self._iam_role_id = self._recovery_target_properties.get(&#39;roleInfo&#39;, {}).get(&#39;id&#39;)
-                    self._destination_network = self._recovery_target_properties.get(&#39;networkList&#39;, [{}])[0].get(&#39;name&#39;, None)
-                    self._security_group = self._recovery_target_properties.get(&#39;securityGroups&#39;, [{}])[0].get(&#39;name&#39;, &#39;&#39;)
-                    self._instance_type = (self._recovery_target_properties.get(&#39;amazonPolicy&#39;, {}).get(&#39;instanceType&#39;, [{}])[0].get(&#39;instanceType&#39;, {}).get(&#39;vmInstanceTypeName&#39;,&#39;&#39;))
-                    
-                    expiry_hours = self._recovery_target_properties.get(&#34;minutesRetainUntil&#34;, None)
-                    expiry_days = self._recovery_target_properties.get(&#34;daysRetainUntil&#34;, None)
+                    self._availability_zone = self._recovery_target_properties.get(&#39;cloudDestinationOptions&#39;,{}).get(&#39;availabilityZone&#39;)
+                    self._volume_type = self._recovery_target_properties.get(&#39;cloudDestinationOptions&#39;, {}).get(&#39;volumeType&#39;)
+                    self._encryption_key = self._recovery_target_properties.get(&#39;cloudDestinationOptions&#39;, {}).get(&#39;encryptionOption&#39;,{}).get(&#39;encryptionKeyName&#39;, &#39;Auto&#39;)
+                    self._iam_role_name = self._recovery_target_properties.get(&#39;destinationOptions&#39;, {}).get(&#39;iamRole&#39;, {}).get(&#39;name&#39;)
+                    self._iam_role_id = self._recovery_target_properties.get(&#39;destinationOptions&#39;, {}).get(&#39;iamRole&#39;, {}).get(&#39;id&#39;)
+                    self._destination_network = self._recovery_target_properties.get(&#34;networkOptions&#34;, {}).get(&#34;networkCard&#34;, {}).get(&#34;destinationNetworks&#34;, [])
+                    self._security_group = self._recovery_target_properties.get(&#39;securityOptions&#39;, {}).get(&#39;securityGroups&#39;, [{}])[0].get(&#39;name&#39;, &#39;&#39;)
+                    self._instance_type = self._recovery_target_properties.get(&#39;amazonPolicy&#39;, {}).get(&#39;instanceType&#39;, [{}])[0].get(&#39;instanceType&#39;, {}).get(&#39;vmInstanceTypeName&#39;,&#39;&#39;)
+                    expiry_hours = self._recovery_target_properties.get(&#34;liveMountOptions&#34;, {}).get(&#34;expirationTime&#34;, {}).get(&#34;minutesRetainUntil&#34;, &#34;&#34;)
+                    expiry_days = self._recovery_target_properties.get(&#34;liveMountOptions&#34;, {}).get(&#34;expirationTime&#34;, {}).get(&#34;daysRetainUntil&#34;, &#34;&#34;)
                     if expiry_hours:
                         self._expiration_time = f&#39;{expiry_hours} hours&#39;
                     elif expiry_days:
                         self._expiration_time = f&#39;{expiry_days} days&#39;
-                    self._test_virtual_network = self._recovery_target_properties.get(&#39;networkInfo&#39;, [{}])[0].get(&#39;label&#39;, None)
-                    self._test_security_group = self._recovery_target_properties.get(&#39;testSecurityGroups&#39;, [{}])[0].get(&#39;name&#39;, &#39;&#39;)
+                    self._test_virtual_network = self._recovery_target_properties.get(&#39;networkOptions&#39;, {}).get(&#39;cloudNetwork&#39;, {}).get(&#39;label&#39;)
+                    self._test_security_group = self._recovery_target_properties.get(&#39;securityOptions&#39;, {}).get(&#39;testSecurityGroups&#39;, [{}])[0].get(&#39;name&#39;, &#39;&#39;)
                     self._test_vm_size = (self._recovery_target_properties.get(&#39;amazonPolicy&#39;, {}).get(&#39;vmInstanceTypes&#39;, [{}])[0].get(&#39;vmInstanceTypeName&#39;,&#39;&#39;))
 
                 elif self._policy_type == 2:
-                    self._vm_folder = self._recovery_target_properties[&#39;dataStores&#39;][0][&#39;dataStoreName&#39;]
-                    self._destination_network = self._recovery_target_properties[&#39;networkList&#39;][0][&#39;networkName&#39;]
-                    self._destination_host = self._recovery_target_properties[&#39;proxyClientEntity&#39;][&#39;hostName&#39;]
+                    self._vm_folder = self._recovery_target_properties.get(&#34;destinationOptions&#34;, {}).get(&#34;dataStore&#34;, &#34;&#34;)
+                    self._destination_network = self._recovery_target_properties.get(&#34;networkOptions&#34;, {}).get(&#34;networkCard&#34;, {}).get(&#34;destinationNetworks&#34;, [])
+                    self._destination_host = self._recovery_target_properties.get(&#34;destinationOptions&#34;, {}).get(&#34;destinationHost&#34;, &#34;&#34;)
                 elif self._policy_type == 7:
-                    self._resource_group = self._recovery_target_properties[&#39;esxServers&#39;][0][&#39;esxServerName&#39;]
-                    self._region = self._recovery_target_properties[&#39;region&#39;]
-                    self._availability_zone = (self._recovery_target_properties[&#39;amazonPolicy&#39;]
-                                               [&#39;availabilityZones&#39;][0][&#39;availabilityZoneName&#39;])
-                    self._storage_account = self._recovery_target_properties[&#39;dataStores&#39;][0][&#39;dataStoreName&#39;]
+                    self._resource_group = self._recovery_target_properties.get(&#34;destinationOptions&#34;, {}).get(&#34;destinationHost&#34;, &#34;&#34;)
+                    self._region = self._recovery_target_properties.get(&#39;cloudDestinationOptions&#39;, {}).get(&#39;region&#39;, {}).get(&#39;name&#39;)
+                    self._availability_zone = self._recovery_target_properties.get(&#39;cloudDestinationOptions&#39;,{}).get(&#39;availabilityZone&#39;)
+                    self._storage_account = self._recovery_target_properties.get(&#34;destinationOptions&#34;, {}).get(&#34;dataStore&#34;, &#34;&#34;)
 
-                    self._vm_size = (self._recovery_target_properties[&#39;amazonPolicy&#39;][&#39;vmInstanceTypes&#39;]
-                                     [0][&#39;vmInstanceTypeName&#39;])
-                    self._disk_type = self._recovery_target_properties[&#39;amazonPolicy&#39;][&#39;volumeType&#39;]
-                    self._virtual_network = self._recovery_target_properties[&#39;networkList&#39;][0][&#39;networkDisplayName&#39;]
-                    self._security_group = self._recovery_target_properties[&#39;securityGroups&#39;][0][&#39;name&#39;]
-                    self._create_public_ip = self._recovery_target_properties[&#39;isPublicIPSettingsAllowed&#39;]
-                    self._restore_as_managed_vm = self._recovery_target_properties[&#39;restoreAsManagedVM&#39;]
+                    self._vm_size = self._recovery_target_properties.get(&#39;cloudDestinationOptions&#39;, {}).get(&#39;vmInstanceType&#39;)
+                    self._disk_type = self._recovery_target_properties.get(&#39;cloudDestinationOptions&#39;, {}).get(&#39;volumeType&#39;)
+                    self._virtual_network = self._recovery_target_properties.get(&#39;networkOptions&#39;, {}).get(&#39;networkCard&#39;, {}).get(&#39;networkDisplayName&#39;)
+                    self._security_group = self._recovery_target_properties.get(&#39;securityOptions&#39;, {}).get(&#39;securityGroups&#39;, [{}])[0].get(&#39;name&#39;, &#39;&#39;)
+                    self._create_public_ip = self._recovery_target_properties.get(&#39;cloudDestinationOptions&#39;, {}).get(&#39;publicIP&#39;)
+                    self._restore_as_managed_vm = self._recovery_target_properties.get(&#39;cloudDestinationOptions&#39;, {}).get(&#39;restoreAsManagedVM&#39;)
 
-                    expiry_hours = self._recovery_target_properties.get(&#34;minutesRetainUntil&#34;)
-                    expiry_days = self._recovery_target_properties.get(&#34;daysRetainUntil&#34;)
+                    expiry_hours = self._recovery_target_properties.get(&#34;liveMountOptions&#34;, {}).get(&#34;expirationTime&#34;, {}).get(&#34;minutesRetainUntil&#34;, &#34;&#34;)
+                    expiry_days = self._recovery_target_properties.get(&#34;liveMountOptions&#34;, {}).get(&#34;expirationTime&#34;, {}).get(&#34;daysRetainUntil&#34;, &#34;&#34;)
                     if expiry_hours:
                         self._expiration_time = f&#39;{expiry_hours} hours&#39;
                     elif expiry_days:
                         self._expiration_time = f&#39;{expiry_days} days&#39;
-                    self._test_virtual_network = self._recovery_target_properties[&#39;networkInfo&#39;][0][&#39;label&#39;]
-                    self._test_vm_size = (self._recovery_target_properties[&#39;amazonPolicy&#39;][&#39;instanceType&#39;][0]
-                                          [&#39;instanceType&#39;][&#39;vmInstanceTypeName&#39;])
+                    self._test_virtual_network = self._recovery_target_properties.get(&#39;networkOptions&#39;, {}).get(&#39;cloudNetwork&#39;, {}).get(&#39;label&#39;)
+                    self._test_vm_size = (self._recovery_target_properties.get(&#39;amazonPolicy&#39;, {}).get(&#39;vmInstanceTypes&#39;, [{}])[0].get(&#39;vmInstanceTypeName&#39;,&#39;&#39;))
                 elif self._policy_type == 13:
-                    self._destination_host = self._recovery_target_properties[&#39;esxServers&#39;][0][&#39;esxServerName&#39;]
-                    self._datastore = self._recovery_target_properties[&#39;dataStores&#39;][0][&#39;dataStoreName&#39;]
-                    self._resource_pool = self._recovery_target_properties[&#39;resourcePoolPath&#39;]
-                    self._vm_folder = self._recovery_target_properties[&#39;folderPath&#39;]
-                    self._destination_network = self._recovery_target_properties[&#39;networkList&#39;][0][&#39;destinationNetwork&#39;]
+                    self._destination_host = self._recovery_target_properties.get(&#34;destinationOptions&#34;, {}).get(&#34;destinationHost&#34;, &#34;&#34;)
+                    self._datastore = self._recovery_target_properties.get(&#34;destinationOptions&#34;, {}).get(&#34;dataStore&#34;, &#34;&#34;)
+                    self._resource_pool = self._recovery_target_properties.get(&#34;destinationOptions&#34;, {}).get(&#34;resourcePoolPath&#34;, &#34;&#34;)
+                    self._vm_folder = self._recovery_target_properties.get(&#34;destinationOptions&#34;, {}).get(&#34;vmFolder&#34;, &#34;&#34;)
+                    self._destination_network = self._recovery_target_properties.get(&#34;networkOptions&#34;, {}).get(&#34;networkCard&#34;, {}).get(&#34;destinationNetworks&#34;, [])
 
                     self._vm_storage_policy = self._recovery_target_properties.get(&#39;vmStoragePolicyName&#39;)
-                    expiry_hours = self._recovery_target_properties.get(&#34;minutesRetainUntil&#34;)
-                    expiry_days = self._recovery_target_properties.get(&#34;daysRetainUntil&#34;)
+                    expiry_hours = self._recovery_target_properties.get(&#34;liveMountOptions&#34;, {}).get(&#34;expirationTime&#34;, {}).get(&#34;minutesRetainUntil&#34;, &#34;&#34;)
+                    expiry_days = self._recovery_target_properties.get(&#34;liveMountOptions&#34;, {}).get(&#34;expirationTime&#34;, {}).get(&#34;daysRetainUntil&#34;, &#34;&#34;)
                     if expiry_hours:
                         self._expiration_time = f&#39;{expiry_hours} hours&#39;
                     elif expiry_days:
@@ -481,7 +481,7 @@ class RecoveryTarget:
                     if self._recovery_target_properties.get(&#39;mediaAgent&#39;, {}):
                         self._failover_ma = self._recovery_target_properties[&#39;mediaAgent&#39;][&#39;clientName&#39;]
 
-                    self._isolated_network = self._recovery_target_properties.get(&#34;createIsolatedNetwork&#34;)
+                    self._isolated_network = self._recovery_target_properties.get(&#34;virtualLabOptions&#34;, {}).get(&#34;configureIsolatedNetwork&#34;)
 
                     self._no_of_cpu = self._recovery_target_properties.get(&#39;maxCores&#39;)
                     self._no_of_vm = self._recovery_target_properties.get(&#39;maxVMQuota&#39;)
@@ -729,31 +729,29 @@ class RecoveryTarget:
 <span>(</span><span>commcell_object, recovery_target_name, recovery_target_id=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for performing target operations</p>
+<div class="desc"><p>Class for a single recovery target selected, and to perform operations on that recovery target</p>
 <p>Initialize the instance of the RecoveryTarget class.</p>
 <h2 id="args">Args</h2>
 <p>commcell_object
 (object)
 &ndash;
 instance of the Commcell class</p>
-<p>target_name
+<p>recovery_target_name
 (str)
 &ndash;
 name of the target</p>
-<p>target_id
+<p>recovery_target_id
 (str)
 &ndash;
-id of the target</p>
-<pre><code>default: None
-</code></pre></div>
+id of the target &ndash; default: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L217-L633" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L216-L633" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class RecoveryTarget:
 
-    &#34;&#34;&#34;Class for performing target operations&#34;&#34;&#34;
+    &#34;&#34;&#34; Class for a single recovery target selected, and to perform operations on that recovery target&#34;&#34;&#34;
 
     def __init__(self, commcell_object, recovery_target_name, recovery_target_id=None):
         &#34;&#34;&#34;Initialize the instance of the RecoveryTarget class.
@@ -761,12 +759,9 @@ id of the target</p>
             Args:
                 commcell_object   (object)    --  instance of the Commcell class
 
-                target_name      (str)       --  name of the target
+                recovery_target_name      (str)       --  name of the target
 
-                target_id        (str)       --  id of the target
-
-                    default: None
-
+                recovery_target_id        (str)       --  id of the target -- default: None
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
 
@@ -781,7 +776,7 @@ id of the target</p>
         else:
             # Get the target id if target id is not provided
             self._recovery_target_id = self._get_recovery_target_id()
-        self._RECOVERY_TARGET = self._services[&#39;GET_RECOVERY_TARGET&#39;] %(self._recovery_target_id)
+        self._RECOVERY_TARGET_API = self._services[&#39;GET_RECOVERY_TARGET&#39;] %self._recovery_target_id
 
         self._recovery_target_properties = None
 
@@ -839,7 +834,20 @@ id of the target</p>
 
         &#34;&#34;&#34;
         target = RecoveryTargets(self._commcell_object)
-        return target.get(self._recovery_target_name)
+        return target.all_targets[self.recovery_target_name]
+
+    def _set_policy_type(self, policy_type):
+        &#34;&#34;&#34;Sets the policy type&#34;&#34;&#34;
+        if policy_type == &#34;AMAZON&#34;:
+            self._policy_type = 1
+        elif policy_type == &#34;MICROSOFT&#34;:
+            self._policy_type = 2
+        elif policy_type == &#34;AZURE_RESOURCE_MANAGER&#34;:
+            self._policy_type = 7
+        elif policy_type in [&#34;VMW_BACKUP_LABTEMPLATE&#34;, &#34;VMW_LIVEMOUNT&#34;]:
+            self._policy_type = 13
+        else:
+            self._policy_type = -1
 
     def _get_recovery_target_properties(self):
         &#34;&#34;&#34;Gets the target properties of this target.
@@ -851,84 +859,75 @@ id of the target</p>
                     if response is not success
 
         &#34;&#34;&#34;
-        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._RECOVERY_TARGET)
-
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._RECOVERY_TARGET_API)
         if flag:
-            if response.json() and &#39;policy&#39; in response.json():
-                self._recovery_target_properties = response.json()[&#39;policy&#39;][0]
-                self._application_type = self._recovery_target_properties[&#39;vmPolicyAppType&#39;]
-                self._destination_hypervisor = self._recovery_target_properties[&#39;destinationHyperV&#39;][&#39;clientName&#39;]
-                vm_name_edit_string = self._recovery_target_properties.get(&#39;vmNameEditString&#39;)
-                vm_name_edit_type = self._recovery_target_properties.get(&#39;vmNameEditType&#39;, 1)
-                if vm_name_edit_string and vm_name_edit_type == 2:
-                    self._vm_suffix = self._recovery_target_properties.get(&#39;vmNameEditString&#39;)
-                elif vm_name_edit_string and vm_name_edit_type == 1:
-                    self._vm_prefix = self._recovery_target_properties.get(&#39;vmNameEditString&#39;)
-                self._access_node = self._recovery_target_properties.get(&#39;proxyClientEntity&#39;, {}).get(&#39;clientName&#39;)
-                self._access_node_client_group = (self._recovery_target_properties.get(&#39;proxyClientGroupEntity&#39;, {})
-                                                  .get(&#39;clientGroupName&#39;))
-                self._users = self._recovery_target_properties.get(&#39;securityAssociations&#39;, {}).get(&#39;users&#39;)
-                self._user_groups = self._recovery_target_properties.get(&#39;securityAssociations&#39;, {}).get(&#39;userGroups&#39;)
-                self._policy_type = self._recovery_target_properties.get(&#34;entity&#34;, {}).get(&#34;policyType&#34;)
+            if response.json() and &#39;entity&#39; in response.json():
+                self._recovery_target_properties = response.json()
+                self._application_type = self._recovery_target_properties.get(&#39;entity&#39;, {}).get(&#39;applicationType&#39;)
+                self._destination_hypervisor = self._recovery_target_properties.get(&#39;entity&#39;, {}).get(&#39;destinationHypervisor&#39;, {}).get(&#39;name&#39;)
+                self._vm_suffix = self._recovery_target_properties.get(&#39;vmDisplayName&#39;, {}).get(&#34;suffix&#34;, &#34;&#34;)
+                self._vm_prefix = self._recovery_target_properties.get(&#39;vmDisplayName&#39;, {}).get(&#34;prefix&#34;, &#34;&#34;)
+                self._access_node = self._recovery_target_properties.get(&#39;accessNode&#39;, {}).get(&#34;name&#34;, &#34;&#34;)
+                self._access_node_client_group = self._access_node if self._recovery_target_properties.get(&#39;accessNode&#39;, {}).get(&#34;type&#34;, &#34;&#34;) == &#39;Group&#39; else &#39;&#39;
+                self._users = self._recovery_target_properties.get(&#39;securityOptions&#39;, {}).get(&#39;users&#39;, [])
+                self._user_groups = self._recovery_target_properties.get(&#39;securityOptions&#39;, {}).get(&#39;userGroups&#39;, [])
+                policy_type = self._recovery_target_properties[&#34;entity&#34;].get(&#34;policyType&#34;, &#34;&#34;)
+                self._set_policy_type(policy_type)
 
                 if self._policy_type == 1:
-                    self._availability_zone = (self._recovery_target_properties.get(&#39;amazonPolicy&#39;,{}).get(&#39;availabilityZones&#39;, [{}])[0].get(&#39;availabilityZoneName&#39;, None))
-                    self._volume_type = self._recovery_target_properties.get(&#39;amazonPolicy&#39;, {}).get(&#39;volumeType&#39;, None)
-                    self._encryption_key = self._recovery_target_properties.get(&#39;amazonPolicy&#39;, {}).get(&#39;encryptionOption&#39;,{}).get(&#39;encryptionKeyName&#39;, &#39;Auto&#39;)
-                    self._iam_role_name = self._recovery_target_properties.get(&#39;roleInfo&#39;, {}).get(&#39;name&#39;)
-                    self._iam_role_id = self._recovery_target_properties.get(&#39;roleInfo&#39;, {}).get(&#39;id&#39;)
-                    self._destination_network = self._recovery_target_properties.get(&#39;networkList&#39;, [{}])[0].get(&#39;name&#39;, None)
-                    self._security_group = self._recovery_target_properties.get(&#39;securityGroups&#39;, [{}])[0].get(&#39;name&#39;, &#39;&#39;)
-                    self._instance_type = (self._recovery_target_properties.get(&#39;amazonPolicy&#39;, {}).get(&#39;instanceType&#39;, [{}])[0].get(&#39;instanceType&#39;, {}).get(&#39;vmInstanceTypeName&#39;,&#39;&#39;))
-                    
-                    expiry_hours = self._recovery_target_properties.get(&#34;minutesRetainUntil&#34;, None)
-                    expiry_days = self._recovery_target_properties.get(&#34;daysRetainUntil&#34;, None)
+                    self._availability_zone = self._recovery_target_properties.get(&#39;cloudDestinationOptions&#39;,{}).get(&#39;availabilityZone&#39;)
+                    self._volume_type = self._recovery_target_properties.get(&#39;cloudDestinationOptions&#39;, {}).get(&#39;volumeType&#39;)
+                    self._encryption_key = self._recovery_target_properties.get(&#39;cloudDestinationOptions&#39;, {}).get(&#39;encryptionOption&#39;,{}).get(&#39;encryptionKeyName&#39;, &#39;Auto&#39;)
+                    self._iam_role_name = self._recovery_target_properties.get(&#39;destinationOptions&#39;, {}).get(&#39;iamRole&#39;, {}).get(&#39;name&#39;)
+                    self._iam_role_id = self._recovery_target_properties.get(&#39;destinationOptions&#39;, {}).get(&#39;iamRole&#39;, {}).get(&#39;id&#39;)
+                    self._destination_network = self._recovery_target_properties.get(&#34;networkOptions&#34;, {}).get(&#34;networkCard&#34;, {}).get(&#34;destinationNetworks&#34;, [])
+                    self._security_group = self._recovery_target_properties.get(&#39;securityOptions&#39;, {}).get(&#39;securityGroups&#39;, [{}])[0].get(&#39;name&#39;, &#39;&#39;)
+                    self._instance_type = self._recovery_target_properties.get(&#39;amazonPolicy&#39;, {}).get(&#39;instanceType&#39;, [{}])[0].get(&#39;instanceType&#39;, {}).get(&#39;vmInstanceTypeName&#39;,&#39;&#39;)
+                    expiry_hours = self._recovery_target_properties.get(&#34;liveMountOptions&#34;, {}).get(&#34;expirationTime&#34;, {}).get(&#34;minutesRetainUntil&#34;, &#34;&#34;)
+                    expiry_days = self._recovery_target_properties.get(&#34;liveMountOptions&#34;, {}).get(&#34;expirationTime&#34;, {}).get(&#34;daysRetainUntil&#34;, &#34;&#34;)
                     if expiry_hours:
                         self._expiration_time = f&#39;{expiry_hours} hours&#39;
                     elif expiry_days:
                         self._expiration_time = f&#39;{expiry_days} days&#39;
-                    self._test_virtual_network = self._recovery_target_properties.get(&#39;networkInfo&#39;, [{}])[0].get(&#39;label&#39;, None)
-                    self._test_security_group = self._recovery_target_properties.get(&#39;testSecurityGroups&#39;, [{}])[0].get(&#39;name&#39;, &#39;&#39;)
+                    self._test_virtual_network = self._recovery_target_properties.get(&#39;networkOptions&#39;, {}).get(&#39;cloudNetwork&#39;, {}).get(&#39;label&#39;)
+                    self._test_security_group = self._recovery_target_properties.get(&#39;securityOptions&#39;, {}).get(&#39;testSecurityGroups&#39;, [{}])[0].get(&#39;name&#39;, &#39;&#39;)
                     self._test_vm_size = (self._recovery_target_properties.get(&#39;amazonPolicy&#39;, {}).get(&#39;vmInstanceTypes&#39;, [{}])[0].get(&#39;vmInstanceTypeName&#39;,&#39;&#39;))
 
                 elif self._policy_type == 2:
-                    self._vm_folder = self._recovery_target_properties[&#39;dataStores&#39;][0][&#39;dataStoreName&#39;]
-                    self._destination_network = self._recovery_target_properties[&#39;networkList&#39;][0][&#39;networkName&#39;]
-                    self._destination_host = self._recovery_target_properties[&#39;proxyClientEntity&#39;][&#39;hostName&#39;]
+                    self._vm_folder = self._recovery_target_properties.get(&#34;destinationOptions&#34;, {}).get(&#34;dataStore&#34;, &#34;&#34;)
+                    self._destination_network = self._recovery_target_properties.get(&#34;networkOptions&#34;, {}).get(&#34;networkCard&#34;, {}).get(&#34;destinationNetworks&#34;, [])
+                    self._destination_host = self._recovery_target_properties.get(&#34;destinationOptions&#34;, {}).get(&#34;destinationHost&#34;, &#34;&#34;)
                 elif self._policy_type == 7:
-                    self._resource_group = self._recovery_target_properties[&#39;esxServers&#39;][0][&#39;esxServerName&#39;]
-                    self._region = self._recovery_target_properties[&#39;region&#39;]
-                    self._availability_zone = (self._recovery_target_properties[&#39;amazonPolicy&#39;]
-                                               [&#39;availabilityZones&#39;][0][&#39;availabilityZoneName&#39;])
-                    self._storage_account = self._recovery_target_properties[&#39;dataStores&#39;][0][&#39;dataStoreName&#39;]
+                    self._resource_group = self._recovery_target_properties.get(&#34;destinationOptions&#34;, {}).get(&#34;destinationHost&#34;, &#34;&#34;)
+                    self._region = self._recovery_target_properties.get(&#39;cloudDestinationOptions&#39;, {}).get(&#39;region&#39;, {}).get(&#39;name&#39;)
+                    self._availability_zone = self._recovery_target_properties.get(&#39;cloudDestinationOptions&#39;,{}).get(&#39;availabilityZone&#39;)
+                    self._storage_account = self._recovery_target_properties.get(&#34;destinationOptions&#34;, {}).get(&#34;dataStore&#34;, &#34;&#34;)
 
-                    self._vm_size = (self._recovery_target_properties[&#39;amazonPolicy&#39;][&#39;vmInstanceTypes&#39;]
-                                     [0][&#39;vmInstanceTypeName&#39;])
-                    self._disk_type = self._recovery_target_properties[&#39;amazonPolicy&#39;][&#39;volumeType&#39;]
-                    self._virtual_network = self._recovery_target_properties[&#39;networkList&#39;][0][&#39;networkDisplayName&#39;]
-                    self._security_group = self._recovery_target_properties[&#39;securityGroups&#39;][0][&#39;name&#39;]
-                    self._create_public_ip = self._recovery_target_properties[&#39;isPublicIPSettingsAllowed&#39;]
-                    self._restore_as_managed_vm = self._recovery_target_properties[&#39;restoreAsManagedVM&#39;]
+                    self._vm_size = self._recovery_target_properties.get(&#39;cloudDestinationOptions&#39;, {}).get(&#39;vmInstanceType&#39;)
+                    self._disk_type = self._recovery_target_properties.get(&#39;cloudDestinationOptions&#39;, {}).get(&#39;volumeType&#39;)
+                    self._virtual_network = self._recovery_target_properties.get(&#39;networkOptions&#39;, {}).get(&#39;networkCard&#39;, {}).get(&#39;networkDisplayName&#39;)
+                    self._security_group = self._recovery_target_properties.get(&#39;securityOptions&#39;, {}).get(&#39;securityGroups&#39;, [{}])[0].get(&#39;name&#39;, &#39;&#39;)
+                    self._create_public_ip = self._recovery_target_properties.get(&#39;cloudDestinationOptions&#39;, {}).get(&#39;publicIP&#39;)
+                    self._restore_as_managed_vm = self._recovery_target_properties.get(&#39;cloudDestinationOptions&#39;, {}).get(&#39;restoreAsManagedVM&#39;)
 
-                    expiry_hours = self._recovery_target_properties.get(&#34;minutesRetainUntil&#34;)
-                    expiry_days = self._recovery_target_properties.get(&#34;daysRetainUntil&#34;)
+                    expiry_hours = self._recovery_target_properties.get(&#34;liveMountOptions&#34;, {}).get(&#34;expirationTime&#34;, {}).get(&#34;minutesRetainUntil&#34;, &#34;&#34;)
+                    expiry_days = self._recovery_target_properties.get(&#34;liveMountOptions&#34;, {}).get(&#34;expirationTime&#34;, {}).get(&#34;daysRetainUntil&#34;, &#34;&#34;)
                     if expiry_hours:
                         self._expiration_time = f&#39;{expiry_hours} hours&#39;
                     elif expiry_days:
                         self._expiration_time = f&#39;{expiry_days} days&#39;
-                    self._test_virtual_network = self._recovery_target_properties[&#39;networkInfo&#39;][0][&#39;label&#39;]
-                    self._test_vm_size = (self._recovery_target_properties[&#39;amazonPolicy&#39;][&#39;instanceType&#39;][0]
-                                          [&#39;instanceType&#39;][&#39;vmInstanceTypeName&#39;])
+                    self._test_virtual_network = self._recovery_target_properties.get(&#39;networkOptions&#39;, {}).get(&#39;cloudNetwork&#39;, {}).get(&#39;label&#39;)
+                    self._test_vm_size = (self._recovery_target_properties.get(&#39;amazonPolicy&#39;, {}).get(&#39;vmInstanceTypes&#39;, [{}])[0].get(&#39;vmInstanceTypeName&#39;,&#39;&#39;))
                 elif self._policy_type == 13:
-                    self._destination_host = self._recovery_target_properties[&#39;esxServers&#39;][0][&#39;esxServerName&#39;]
-                    self._datastore = self._recovery_target_properties[&#39;dataStores&#39;][0][&#39;dataStoreName&#39;]
-                    self._resource_pool = self._recovery_target_properties[&#39;resourcePoolPath&#39;]
-                    self._vm_folder = self._recovery_target_properties[&#39;folderPath&#39;]
-                    self._destination_network = self._recovery_target_properties[&#39;networkList&#39;][0][&#39;destinationNetwork&#39;]
+                    self._destination_host = self._recovery_target_properties.get(&#34;destinationOptions&#34;, {}).get(&#34;destinationHost&#34;, &#34;&#34;)
+                    self._datastore = self._recovery_target_properties.get(&#34;destinationOptions&#34;, {}).get(&#34;dataStore&#34;, &#34;&#34;)
+                    self._resource_pool = self._recovery_target_properties.get(&#34;destinationOptions&#34;, {}).get(&#34;resourcePoolPath&#34;, &#34;&#34;)
+                    self._vm_folder = self._recovery_target_properties.get(&#34;destinationOptions&#34;, {}).get(&#34;vmFolder&#34;, &#34;&#34;)
+                    self._destination_network = self._recovery_target_properties.get(&#34;networkOptions&#34;, {}).get(&#34;networkCard&#34;, {}).get(&#34;destinationNetworks&#34;, [])
 
                     self._vm_storage_policy = self._recovery_target_properties.get(&#39;vmStoragePolicyName&#39;)
-                    expiry_hours = self._recovery_target_properties.get(&#34;minutesRetainUntil&#34;)
-                    expiry_days = self._recovery_target_properties.get(&#34;daysRetainUntil&#34;)
+                    expiry_hours = self._recovery_target_properties.get(&#34;liveMountOptions&#34;, {}).get(&#34;expirationTime&#34;, {}).get(&#34;minutesRetainUntil&#34;, &#34;&#34;)
+                    expiry_days = self._recovery_target_properties.get(&#34;liveMountOptions&#34;, {}).get(&#34;expirationTime&#34;, {}).get(&#34;daysRetainUntil&#34;, &#34;&#34;)
                     if expiry_hours:
                         self._expiration_time = f&#39;{expiry_hours} hours&#39;
                     elif expiry_days:
@@ -936,7 +935,7 @@ id of the target</p>
                     if self._recovery_target_properties.get(&#39;mediaAgent&#39;, {}):
                         self._failover_ma = self._recovery_target_properties[&#39;mediaAgent&#39;][&#39;clientName&#39;]
 
-                    self._isolated_network = self._recovery_target_properties.get(&#34;createIsolatedNetwork&#34;)
+                    self._isolated_network = self._recovery_target_properties.get(&#34;virtualLabOptions&#34;, {}).get(&#34;configureIsolatedNetwork&#34;)
 
                     self._no_of_cpu = self._recovery_target_properties.get(&#39;maxCores&#39;)
                     self._no_of_vm = self._recovery_target_properties.get(&#39;maxVMQuota&#39;)
@@ -1177,7 +1176,7 @@ id of the target</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L449-L452" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L449-L452" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def access_node(self):
@@ -1191,7 +1190,7 @@ def access_node(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L454-L457" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L454-L457" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def access_node_client_group(self):
@@ -1207,7 +1206,7 @@ def access_node_client_group(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L436-L442" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L436-L442" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def application_type(self):
@@ -1224,7 +1223,7 @@ def application_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L551-L554" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L551-L554" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def availability_zone(self):
@@ -1238,7 +1237,7 @@ def availability_zone(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L581-L584" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L581-L584" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def create_public_ip(self):
@@ -1252,7 +1251,7 @@ def create_public_ip(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L484-L487" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L484-L487" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def datastore(self):
@@ -1266,7 +1265,7 @@ def datastore(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L474-L477" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L474-L477" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination_host(self):
@@ -1280,7 +1279,7 @@ def destination_host(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L444-L447" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L444-L447" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination_hypervisor(self):
@@ -1294,7 +1293,7 @@ def destination_hypervisor(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L499-L502" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L499-L502" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination_network(self):
@@ -1308,7 +1307,7 @@ def destination_network(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L566-L569" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L566-L569" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def disk_type(self):
@@ -1322,7 +1321,7 @@ def disk_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L611-L614" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L611-L614" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def encryption_key(self):
@@ -1337,7 +1336,7 @@ eg: 4 hours or 3 days</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L504-L509" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L504-L509" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def expiration_time(self):
@@ -1353,7 +1352,7 @@ def expiration_time(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L511-L514" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L511-L514" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def failover_ma(self):
@@ -1367,7 +1366,7 @@ def failover_ma(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L616-L619" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L616-L619" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def iam_role_id(self):
@@ -1381,7 +1380,7 @@ def iam_role_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L621-L624" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L621-L624" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def iam_role_name(self):
@@ -1395,7 +1394,7 @@ def iam_role_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L626-L629" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L626-L629" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_type(self):
@@ -1409,7 +1408,7 @@ def instance_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L521-L524" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L521-L524" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def iso_path(self):
@@ -1423,7 +1422,7 @@ def iso_path(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L516-L519" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L516-L519" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def isolated_network(self):
@@ -1437,7 +1436,7 @@ def isolated_network(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L531-L534" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L531-L534" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def no_of_cpu(self):
@@ -1451,7 +1450,7 @@ def no_of_cpu(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L536-L539" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L536-L539" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def no_of_vm(self):
@@ -1472,7 +1471,7 @@ def no_of_vm(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L426-L434" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L426-L434" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def policy_type(self):
@@ -1491,7 +1490,7 @@ def policy_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L416-L419" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L416-L419" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def recovery_target_id(self):
@@ -1505,7 +1504,7 @@ def recovery_target_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L421-L424" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L421-L424" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def recovery_target_name(self):
@@ -1519,7 +1518,7 @@ def recovery_target_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L546-L549" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L546-L549" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def region(self):
@@ -1533,7 +1532,7 @@ def region(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L541-L544" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L541-L544" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def resource_group(self):
@@ -1547,7 +1546,7 @@ def resource_group(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L489-L492" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L489-L492" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def resource_pool(self):
@@ -1561,7 +1560,7 @@ def resource_pool(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L586-L589" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L586-L589" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def restore_as_managed_vm(self):
@@ -1575,7 +1574,7 @@ def restore_as_managed_vm(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L576-L579" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L576-L579" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def security_group(self):
@@ -1589,7 +1588,7 @@ def security_group(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L459-L462" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L459-L462" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def security_user_names(self):
@@ -1603,7 +1602,7 @@ def security_user_names(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L526-L529" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L526-L529" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def server_group(self):
@@ -1617,7 +1616,7 @@ def server_group(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L556-L559" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L556-L559" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_account(self):
@@ -1631,7 +1630,7 @@ def storage_account(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L596-L599" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L596-L599" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def test_security_group(self):
@@ -1645,7 +1644,7 @@ def test_security_group(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L591-L594" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L591-L594" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def test_virtual_network(self):
@@ -1659,7 +1658,7 @@ def test_virtual_network(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L601-L604" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L601-L604" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def test_vm_size(self):
@@ -1673,7 +1672,7 @@ def test_vm_size(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L571-L574" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L571-L574" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def virtual_network(self):
@@ -1687,7 +1686,7 @@ def virtual_network(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L494-L497" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L494-L497" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_folder(self):
@@ -1701,7 +1700,7 @@ def vm_folder(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L464-L467" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L464-L467" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_prefix(self):
@@ -1715,7 +1714,7 @@ def vm_prefix(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L561-L564" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L561-L564" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_size(self):
@@ -1729,7 +1728,7 @@ def vm_size(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L479-L482" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L479-L482" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_storage_policy(self):
@@ -1743,7 +1742,7 @@ def vm_storage_policy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L469-L472" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L469-L472" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_suffix(self):
@@ -1757,7 +1756,7 @@ def vm_suffix(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L606-L609" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L606-L609" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def volume_type(self):
@@ -1776,7 +1775,7 @@ def volume_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L631-L633" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L631-L633" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Recovery Target.&#34;&#34;&#34;
@@ -1790,8 +1789,8 @@ def volume_type(self):
 <span>(</span><span>commcell_object)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing all the clients associated with the commcell.</p>
-<p>Initialize object of the Clients class.</p>
+<div class="desc"><p>Class for representing all the recovery targets</p>
+<p>Initialize object of the RecoveryTargets class.</p>
 <h2 id="args">Args</h2>
 <p>commcell_object (object)
 &ndash;
@@ -1799,14 +1798,14 @@ instance of the Commcell class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L77-L214" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L77-L213" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class RecoveryTargets:
 
-    &#34;&#34;&#34;Class for representing all the clients associated with the commcell.&#34;&#34;&#34;
+    &#34;&#34;&#34; Class for representing all the recovery targets&#34;&#34;&#34;
 
     def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialize object of the Clients class.
+        &#34;&#34;&#34;Initialize object of the RecoveryTargets class.
 
             Args:
                 commcell_object (object)  --  instance of the Commcell class
@@ -1817,7 +1816,7 @@ instance of the Commcell class</p></div>
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
         self._update_response_ = commcell_object._update_response_
-        self._RECOVERY_TARGETS = self._services[&#39;GET_ALL_RECOVERY_TARGETS&#39;]
+        self._RECOVERY_TARGETS_API = self._services[&#39;GET_ALL_RECOVERY_TARGETS&#39;]
 
         self._recovery_targets = None
         self.refresh()
@@ -1829,7 +1828,7 @@ instance of the Commcell class</p></div>
                 str     -   string of all the targets
 
         &#34;&#34;&#34;
-        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;RecoverTargets&#39;)
+        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;RecoveryTargets&#39;)
 
         for index, recovery_target in enumerate(self._recovery_targets):
             sub_str = &#39;{:^5}\t{:20}\n&#39;.format(
@@ -1858,16 +1857,15 @@ instance of the Commcell class</p></div>
                     if response is not success
 
         &#34;&#34;&#34;
-        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._RECOVERY_TARGETS)
-
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._RECOVERY_TARGETS_API)
         if flag:
-            if response.json() and &#39;policy&#39; in response.json():
+            if response.json() and &#39;recoveryTargets&#39; in response.json():
 
                 recovery_target_dict = {}
-
-                for dictionary in response.json()[&#39;policy&#39;]:
-                    temp_name = dictionary[&#39;entity&#39;][&#39;vmAllocPolicyName&#39;].lower()
-                    recovery_target_dict[temp_name] = str(dictionary[&#39;entity&#39;][&#39;vmAllocPolicyId&#39;])
+                for recoveryTarget in response.json()[&#39;recoveryTargets&#39;]:
+                    if recoveryTarget[&#39;applicationType&#39;] != &#34;CLEAN_ROOM&#34;:
+                        temp_name = recoveryTarget[&#39;name&#39;].lower()
+                        recovery_target_dict[temp_name] = str(recoveryTarget[&#39;id&#39;])
 
                 return recovery_target_dict
             else:
@@ -1913,7 +1911,7 @@ instance of the Commcell class</p></div>
         &#34;&#34;&#34;Returns a target object.
 
             Args:
-                target_name (str)  --  name of the target
+                recovery_target_name (str)  --  name of the target
 
             Returns:
                 object - instance of the target class for the given target name
@@ -1957,7 +1955,7 @@ consists of all targets</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L151-L164" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L150-L163" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_targets(self):
@@ -1984,7 +1982,7 @@ def all_targets(self):
 <dd>
 <div class="desc"><p>Returns a target object.</p>
 <h2 id="args">Args</h2>
-<p>target_name (str)
+<p>recovery_target_name (str)
 &ndash;
 name of the target</p>
 <h2 id="returns">Returns</h2>
@@ -1997,13 +1995,13 @@ if type of the target name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L185-L210" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L184-L209" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, recovery_target_name):
     &#34;&#34;&#34;Returns a target object.
 
         Args:
-            target_name (str)  --  name of the target
+            recovery_target_name (str)  --  name of the target
 
         Returns:
             object - instance of the target class for the given target name
@@ -2044,7 +2042,7 @@ if type of the target name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L166-L183" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L165-L182" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_recovery_target(self, target_name):
     &#34;&#34;&#34;Checks if a target is present in the commcell.
@@ -2074,7 +2072,7 @@ if type of the target name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/recovery_targets.py#L212-L214" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/recovery_targets.py#L211-L213" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the recovery targets&#34;&#34;&#34;

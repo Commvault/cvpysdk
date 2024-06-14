@@ -50,7 +50,7 @@ user to the same location</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L1-L665" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L1-L671" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -85,13 +85,13 @@ AzureRMSubclient:
 
     full_vm_restore_in_place()              --  restores the VM specified by the
                                                     user to the same location
-    
+
     full_vm_conversion_azurestack()         -- converts azure vm to azurestack
-    
+
     full_vm_conversion_amazon()             -- converts azure vm to amazon
-     
+
     full_vm_conversion_hyperv()             -- converts azure vm to hyperv
-    
+
     full_vm_conversion_vmware()             -- converts azure vm to vmware
 &#34;&#34;&#34;
 
@@ -130,6 +130,8 @@ class AzureRMSubclient(VirtualServerSubclient):
                                      copy_precedence=0,
                                      disk_type=None,
                                      restore_option=None,
+                                     destination_client=None,
+                                     subnet_id=None,
                                      **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
             at the specified destination location.
@@ -161,10 +163,12 @@ class AzureRMSubclient(VirtualServerSubclient):
                 poweron
                         default:False   (bool)      --  power on the  restored VM
 
-
                 restore_option      (dict)     --  complete dictionary with all advanced optio
                     default: {}
 
+                destination_client      (str)       -- destination client name
+
+                subnet_id               (str)       -- subnet id to which vm must be connected
                 **kwargs                         : Arbitrary keyword arguments Properties as of
                                                      full_vm_restore_out_of_place
                     eg:
@@ -202,6 +206,7 @@ class AzureRMSubclient(VirtualServerSubclient):
         self._set_restore_inputs(
             restore_option,
             vm_to_restore=self._set_vm_to_restore(vm_to_restore),
+            vcenter_client=destination_client,
             unconditional_overwrite=overwrite,
             power_on=power_on,
             copy_precedence=copy_precedence,
@@ -215,7 +220,8 @@ class AzureRMSubclient(VirtualServerSubclient):
             restoreAsManagedVM=restore_as_managed,
             disk_type=disk_type,
             instanceSize=instance_size,
-            restore_new_name=restore_new_name
+            restore_new_name=restore_new_name,
+            subnet_id=subnet_id
         )
 
         # set attr for all the option in restore xml from user inputs
@@ -746,7 +752,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L49-L665" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L49-L671" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AzureRMSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient  Base class, representing a
@@ -778,6 +784,8 @@ backupset class, subclient name, subclient id</p></div>
                                      copy_precedence=0,
                                      disk_type=None,
                                      restore_option=None,
+                                     destination_client=None,
+                                     subnet_id=None,
                                      **kwargs):
         &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
             at the specified destination location.
@@ -809,10 +817,12 @@ backupset class, subclient name, subclient id</p></div>
                 poweron
                         default:False   (bool)      --  power on the  restored VM
 
-
                 restore_option      (dict)     --  complete dictionary with all advanced optio
                     default: {}
 
+                destination_client      (str)       -- destination client name
+
+                subnet_id               (str)       -- subnet id to which vm must be connected
                 **kwargs                         : Arbitrary keyword arguments Properties as of
                                                      full_vm_restore_out_of_place
                     eg:
@@ -850,6 +860,7 @@ backupset class, subclient name, subclient id</p></div>
         self._set_restore_inputs(
             restore_option,
             vm_to_restore=self._set_vm_to_restore(vm_to_restore),
+            vcenter_client=destination_client,
             unconditional_overwrite=overwrite,
             power_on=power_on,
             copy_precedence=copy_precedence,
@@ -863,7 +874,8 @@ backupset class, subclient name, subclient id</p></div>
             restoreAsManagedVM=restore_as_managed,
             disk_type=disk_type,
             instanceSize=instance_size,
-            restore_new_name=restore_new_name
+            restore_new_name=restore_new_name,
+            subnet_id=subnet_id
         )
 
         # set attr for all the option in restore xml from user inputs
@@ -1419,7 +1431,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L334-L445" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L340-L451" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_amazon(
         self,
@@ -1586,7 +1598,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L237-L332" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L243-L338" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_azurestack(
         self,
@@ -1737,7 +1749,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L448-L540" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L454-L546" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_hyperv(
         self,
@@ -1903,7 +1915,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L543-L665" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L549-L671" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_vmware(
         self,
@@ -2085,7 +2097,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L172-L235" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L178-L241" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(self,
                              vm_to_restore=None,
@@ -2154,7 +2166,7 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.subclients.virtualserver.azure_resource_manager.AzureRMSubclient.full_vm_restore_out_of_place"><code class="name flex">
-<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, resource_group=None, storage_account=None, datacenter=None, proxy_client=None, restore_new_name=None, overwrite=True, power_on=True, instance_size=None, public_ip=False, restore_as_managed=False, copy_precedence=0, disk_type=None, restore_option=None, **kwargs)</span>
+<span>def <span class="ident">full_vm_restore_out_of_place</span></span>(<span>self, vm_to_restore=None, resource_group=None, storage_account=None, datacenter=None, proxy_client=None, restore_new_name=None, overwrite=True, power_on=True, instance_size=None, public_ip=False, restore_as_managed=False, copy_precedence=0, disk_type=None, restore_option=None, destination_client=None, subnet_id=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified
@@ -2207,7 +2219,13 @@ restored VM</p>
 &ndash;
 complete dictionary with all advanced optio
 default: {}</p>
-<p>**kwargs
+<p>destination_client
+(str)
+&ndash; destination client name</p>
+<p>subnet_id
+(str)
+&ndash; subnet id to which vm must be connected
+**kwargs
 : Arbitrary keyword arguments Properties as of
 full_vm_restore_out_of_place
 eg:
@@ -2230,7 +2248,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L64-L170" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/virtualserver/azure_resource_manager.py#L64-L176" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(self,
                                  vm_to_restore=None,
@@ -2247,6 +2265,8 @@ if response is not success
                                  copy_precedence=0,
                                  disk_type=None,
                                  restore_option=None,
+                                 destination_client=None,
+                                 subnet_id=None,
                                  **kwargs):
     &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
         at the specified destination location.
@@ -2278,10 +2298,12 @@ if response is not success
             poweron
                     default:False   (bool)      --  power on the  restored VM
 
-
             restore_option      (dict)     --  complete dictionary with all advanced optio
                 default: {}
 
+            destination_client      (str)       -- destination client name
+
+            subnet_id               (str)       -- subnet id to which vm must be connected
             **kwargs                         : Arbitrary keyword arguments Properties as of
                                                  full_vm_restore_out_of_place
                 eg:
@@ -2319,6 +2341,7 @@ if response is not success
     self._set_restore_inputs(
         restore_option,
         vm_to_restore=self._set_vm_to_restore(vm_to_restore),
+        vcenter_client=destination_client,
         unconditional_overwrite=overwrite,
         power_on=power_on,
         copy_precedence=copy_precedence,
@@ -2332,7 +2355,8 @@ if response is not success
         restoreAsManagedVM=restore_as_managed,
         disk_type=disk_type,
         instanceSize=instance_size,
-        restore_new_name=restore_new_name
+        restore_new_name=restore_new_name,
+        subnet_id=subnet_id
     )
 
     # set attr for all the option in restore xml from user inputs

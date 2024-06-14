@@ -68,7 +68,7 @@ and return the flag specifying success/fail, and response</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/cvpysdk.py#L1-L466" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/cvpysdk.py#L1-L480" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -137,6 +137,7 @@ from xml.parsers.expat import ExpatError
 
 import requests
 import xmltodict
+import urllib3
 
 try:
     # Python 2 import
@@ -154,17 +155,20 @@ class CVPySDK(object):
         Also contains common method for running all HTTP requests.
     &#34;&#34;&#34;
 
-    def __init__(self, commcell_object, certificate_path=None):
+    def __init__(self, commcell_object, certificate_path=None, verify_ssl=True):
         &#34;&#34;&#34;Initialize the CVPySDK object for running various operations.
 
             Args:
                 commcell_object     (object)    --  instance of the Commcell class
 
 
-                certificate_path        (str)   --  path of the CA_BUNDLE or directory with
+                certificate_path     (str)   --  path of the CA_BUNDLE or directory with
                 certificates of trusted CAs (including trusted self-signed certificates)
 
                     default: None
+
+                verify_ssl           (str)   --  verify ssl while making requests
+                    default: True
 
             Returns:
                 object  -   instance of the CVPySDK class
@@ -172,6 +176,10 @@ class CVPySDK(object):
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._certificate_path = certificate_path
+        self._verify_ssl = verify_ssl
+
+        if not self._verify_ssl:
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     def _is_valid_service(self):
         &#34;&#34;&#34;Checks if the service url is a valid url or not.
@@ -193,7 +201,7 @@ class CVPySDK(object):
             response = self._request(
                 method=&#39;GET&#39;,
                 url=self._commcell_object._web_service,
-                timeout=184
+                timeout=10
             )
 
             # Valid service if the status code is 200 and response is True
@@ -254,6 +262,12 @@ class CVPySDK(object):
                     else:
                         error_message = response.json()[&#39;errList&#39;][0][&#39;errLogMessage&#39;]
                         err_msg = &#39;Error: &#34;{0}&#34;&#39;.format(error_message)
+                        if response.json().get(&#39;isAccountLocked&#39;, False) and response.json().get(&#39;remainingLockTime&#39;,0) &gt; 0:
+                            locktime = response.json().get(&#39;remainingLockTime&#39;,0)
+                            lock_hours = locktime // 3600
+                            rem_secs = locktime % 3600
+                            lock_mins = rem_secs // 60
+                            err_msg = &#39;Error: &#34;User account is locked for {0} hour(s) {1} minute(s).&#34;&#39;.format(lock_hours,lock_mins)
                         raise SDKException(&#39;CVPySDK&#39;, &#39;101&#39;, err_msg)
                 else:
                     raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -348,8 +362,8 @@ class CVPySDK(object):
         &#34;&#34;&#34;
         if self._certificate_path and self._commcell_object._web_service.startswith(&#39;https&#39;):
             return requests.request(verify=self._certificate_path, **kwargs)
-
-        return requests.request(**kwargs)
+        else:
+            return requests.request(verify=self._verify_ssl, **kwargs)
 
     def who_am_i(self, authtoken=None):
         &#34;&#34;&#34;Get the username of the user, to whom the Authtoken belongs to.
@@ -549,7 +563,7 @@ class CVPySDK(object):
 <dl>
 <dt id="cvpysdk.cvpysdk.CVPySDK"><code class="flex name class">
 <span>class <span class="ident">CVPySDK</span></span>
-<span>(</span><span>commcell_object, certificate_path=None)</span>
+<span>(</span><span>commcell_object, certificate_path=None, verify_ssl=True)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Helper class for login, and logout operations.</p>
@@ -567,6 +581,11 @@ path of the CA_BUNDLE or directory with
 certificates of trusted CAs (including trusted self-signed certificates)</p>
 <pre><code>default: None
 </code></pre>
+<p>verify_ssl
+(str)
+&ndash;
+verify ssl while making requests
+default: True</p>
 <h2 id="returns">Returns</h2>
 <p>object
 -
@@ -574,7 +593,7 @@ instance of the CVPySDK class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/cvpysdk.py#L79-L466" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/cvpysdk.py#L80-L480" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CVPySDK(object):
     &#34;&#34;&#34;Helper class for login, and logout operations.
@@ -582,17 +601,20 @@ instance of the CVPySDK class</p></div>
         Also contains common method for running all HTTP requests.
     &#34;&#34;&#34;
 
-    def __init__(self, commcell_object, certificate_path=None):
+    def __init__(self, commcell_object, certificate_path=None, verify_ssl=True):
         &#34;&#34;&#34;Initialize the CVPySDK object for running various operations.
 
             Args:
                 commcell_object     (object)    --  instance of the Commcell class
 
 
-                certificate_path        (str)   --  path of the CA_BUNDLE or directory with
+                certificate_path     (str)   --  path of the CA_BUNDLE or directory with
                 certificates of trusted CAs (including trusted self-signed certificates)
 
                     default: None
+
+                verify_ssl           (str)   --  verify ssl while making requests
+                    default: True
 
             Returns:
                 object  -   instance of the CVPySDK class
@@ -600,6 +622,10 @@ instance of the CVPySDK class</p></div>
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._certificate_path = certificate_path
+        self._verify_ssl = verify_ssl
+
+        if not self._verify_ssl:
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     def _is_valid_service(self):
         &#34;&#34;&#34;Checks if the service url is a valid url or not.
@@ -621,7 +647,7 @@ instance of the CVPySDK class</p></div>
             response = self._request(
                 method=&#39;GET&#39;,
                 url=self._commcell_object._web_service,
-                timeout=184
+                timeout=10
             )
 
             # Valid service if the status code is 200 and response is True
@@ -682,6 +708,12 @@ instance of the CVPySDK class</p></div>
                     else:
                         error_message = response.json()[&#39;errList&#39;][0][&#39;errLogMessage&#39;]
                         err_msg = &#39;Error: &#34;{0}&#34;&#39;.format(error_message)
+                        if response.json().get(&#39;isAccountLocked&#39;, False) and response.json().get(&#39;remainingLockTime&#39;,0) &gt; 0:
+                            locktime = response.json().get(&#39;remainingLockTime&#39;,0)
+                            lock_hours = locktime // 3600
+                            rem_secs = locktime % 3600
+                            lock_mins = rem_secs // 60
+                            err_msg = &#39;Error: &#34;User account is locked for {0} hour(s) {1} minute(s).&#34;&#39;.format(lock_hours,lock_mins)
                         raise SDKException(&#39;CVPySDK&#39;, &#39;101&#39;, err_msg)
                 else:
                     raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -776,8 +808,8 @@ instance of the CVPySDK class</p></div>
         &#34;&#34;&#34;
         if self._certificate_path and self._commcell_object._web_service.startswith(&#39;https&#39;):
             return requests.request(verify=self._certificate_path, **kwargs)
-
-        return requests.request(**kwargs)
+        else:
+            return requests.request(verify=self._verify_ssl, **kwargs)
 
     def who_am_i(self, authtoken=None):
         &#34;&#34;&#34;Get the username of the user, to whom the Authtoken belongs to.
@@ -1048,7 +1080,7 @@ requests.exceptions.ConnectionError</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/cvpysdk.py#L322-L466" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/cvpysdk.py#L336-L480" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def make_request(
         self,
@@ -1217,7 +1249,7 @@ if no user mapping found</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/cvpysdk.py#L282-L320" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/cvpysdk.py#L296-L334" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def who_am_i(self, authtoken=None):
     &#34;&#34;&#34;Get the username of the user, to whom the Authtoken belongs to.

@@ -152,7 +152,7 @@ The Virtual Server 'Hyper-V' is named as 'hyperv.py'
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L1-L2976" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L1-L2984" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -1002,6 +1002,8 @@ class VirtualServerSubclient(Subclient):
                 if value.get(&#39;project_id&#39;) is not None:
                     network_card_dict[&#39;subnetId&#39;] = value.get(&#39;subnetwork_nic&#39;)
                     network_card_dict[&#39;sourceNetwork&#39;] = value.get(&#39;networks_nic&#39;)
+                    network_card_dict[&#39;publicIPaddress&#39;] = value.get(&#39;publicIPaddress&#39;)
+                    network_card_dict[&#39;privateIPaddress&#39;] = value.get(&#39;privateIPaddress&#39;)
 
             _destnetwork = value.get(&#34;destination_network&#34;,
                                      value.get(&#39;network&#39;,
@@ -1015,13 +1017,19 @@ class VirtualServerSubclient(Subclient):
                                                &#34;&#34;) + _destnetwork) if self._instance_object.instance_name ==
                                                                       HypervisorType.GOOGLE_CLOUD.value.lower() and _destnetwork else
                 network_card_dict[&#39;label&#39;],
+                &#34;publicIPaddress&#34;: network_card_dict.get(&#34;publicIPaddress&#34;,&#34;&#34;),
+                &#34;privateIPaddress&#34;: network_card_dict.get(&#34;privateIPaddress&#34;,&#34;&#34;),
                 &#34;networkName&#34;: _destnetwork if _destnetwork else &#39;&#39;,
                 &#34;destinationNetwork&#34;: _destnetwork if _destnetwork else network_card_dict[&#39;name&#39;]
             }
 
             # setting nics for azureRM instance
-            if value.get(&#39;destination_instance&#39;) == &#39;azure resource manager&#39;:
-                if &#34;networkDisplayName&#34; in value and &#39;networkrsg&#39; in value and &#39;destsubid&#39; in value:
+            if value.get(&#39;destination_instance&#39;).lower() == HypervisorType.AZURE_V2.value.lower():
+                if value.get(&#39;subnet_id&#39;):
+                    nics[&#34;subnetId&#34;] = value.get(&#39;subnet_id&#39;)
+                    nics[&#34;networkName&#34;] = value.get(&#39;subnet_id&#39;).split(&#39;/&#39;)[0]
+                    nics[&#34;networkDisplayName&#34;] = nics[&#34;networkName&#34;] + &#39;\\&#39; + value.get(&#39;subnet_id&#39;).split(&#39;/&#39;)[-1]
+                elif &#34;networkDisplayName&#34; in value and &#39;networkrsg&#39; in value and &#39;destsubid&#39; in value:
                     nics[&#34;networkDisplayName&#34;] = value[&#34;networkDisplayName&#34;]
                     nics[&#34;networkName&#34;] = value[&#34;networkDisplayName&#34;].split(&#39;\\&#39;)[0]
                     modify_nics = value.get(&#39;subnetId&#39;, nics[&#39;subnetId&#39;]).split(&#39;/&#39;)
@@ -2127,7 +2135,7 @@ class VirtualServerSubclient(Subclient):
 
     def _get_subclient_proxies(self):
         &#34;&#34;&#34;
-        get the list of all the proxies on a selected subclient
+        Get the list of all the proxies on a selected subclient
 
         Returns:
             associated_proxies   (List)  --  returns the proxies list
@@ -2441,8 +2449,8 @@ class VirtualServerSubclient(Subclient):
         Returns:
              security_group    (dict)  -- security group dict
         &#34;&#34;&#34;
-        match1 = re.search(&#39;secGroupId=\&#34;(\S*)\&#34;&#39;, xml_str)
-        match2 = re.search(&#39;secGroupName=\&#34;(\S*)\&#34;&#39;, xml_str)
+        match1 = re.search(r&#39;secGroupId=\&#34;(\S*)\&#34;&#39;, xml_str)
+        match2 = re.search(r&#39;secGroupName=\&#34;(\S*)\&#34;&#39;, xml_str)
         security_group = [
             {
                 &#34;groupId&#34;: match1.group(1),
@@ -2460,8 +2468,8 @@ class VirtualServerSubclient(Subclient):
         Returns:
              keypair_list       (dict) -- keypair list dict
         &#34;&#34;&#34;
-        match1 = re.search(&#39;keyPairId=\&#34;(\S*)\&#34;&#39;, xml_str)
-        match2 = re.search(&#39;keyPairName=\&#34;(\S*)\&#34;&#39;, xml_str)
+        match1 = re.search(r&#39;keyPairId=\&#34;(\S*)\&#34;&#39;, xml_str)
+        match2 = re.search(r&#39;keyPairName=\&#34;(\S*)\&#34;&#39;, xml_str)
         keypair_list = [
             {
                 &#34;keyId&#34;: match1.group(1),
@@ -3165,7 +3173,7 @@ subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L162-L2976" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L162-L2984" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VirtualServerSubclient(Subclient):
     &#34;&#34;&#34;Derived class from Subclient Base class, representing a virtual server subclient,
@@ -3854,6 +3862,8 @@ subclient id</p></div>
                 if value.get(&#39;project_id&#39;) is not None:
                     network_card_dict[&#39;subnetId&#39;] = value.get(&#39;subnetwork_nic&#39;)
                     network_card_dict[&#39;sourceNetwork&#39;] = value.get(&#39;networks_nic&#39;)
+                    network_card_dict[&#39;publicIPaddress&#39;] = value.get(&#39;publicIPaddress&#39;)
+                    network_card_dict[&#39;privateIPaddress&#39;] = value.get(&#39;privateIPaddress&#39;)
 
             _destnetwork = value.get(&#34;destination_network&#34;,
                                      value.get(&#39;network&#39;,
@@ -3867,13 +3877,19 @@ subclient id</p></div>
                                                &#34;&#34;) + _destnetwork) if self._instance_object.instance_name ==
                                                                       HypervisorType.GOOGLE_CLOUD.value.lower() and _destnetwork else
                 network_card_dict[&#39;label&#39;],
+                &#34;publicIPaddress&#34;: network_card_dict.get(&#34;publicIPaddress&#34;,&#34;&#34;),
+                &#34;privateIPaddress&#34;: network_card_dict.get(&#34;privateIPaddress&#34;,&#34;&#34;),
                 &#34;networkName&#34;: _destnetwork if _destnetwork else &#39;&#39;,
                 &#34;destinationNetwork&#34;: _destnetwork if _destnetwork else network_card_dict[&#39;name&#39;]
             }
 
             # setting nics for azureRM instance
-            if value.get(&#39;destination_instance&#39;) == &#39;azure resource manager&#39;:
-                if &#34;networkDisplayName&#34; in value and &#39;networkrsg&#39; in value and &#39;destsubid&#39; in value:
+            if value.get(&#39;destination_instance&#39;).lower() == HypervisorType.AZURE_V2.value.lower():
+                if value.get(&#39;subnet_id&#39;):
+                    nics[&#34;subnetId&#34;] = value.get(&#39;subnet_id&#39;)
+                    nics[&#34;networkName&#34;] = value.get(&#39;subnet_id&#39;).split(&#39;/&#39;)[0]
+                    nics[&#34;networkDisplayName&#34;] = nics[&#34;networkName&#34;] + &#39;\\&#39; + value.get(&#39;subnet_id&#39;).split(&#39;/&#39;)[-1]
+                elif &#34;networkDisplayName&#34; in value and &#39;networkrsg&#39; in value and &#39;destsubid&#39; in value:
                     nics[&#34;networkDisplayName&#34;] = value[&#34;networkDisplayName&#34;]
                     nics[&#34;networkName&#34;] = value[&#34;networkDisplayName&#34;].split(&#39;\\&#39;)[0]
                     modify_nics = value.get(&#39;subnetId&#39;, nics[&#39;subnetId&#39;]).split(&#39;/&#39;)
@@ -4979,7 +4995,7 @@ subclient id</p></div>
 
     def _get_subclient_proxies(self):
         &#34;&#34;&#34;
-        get the list of all the proxies on a selected subclient
+        Get the list of all the proxies on a selected subclient
 
         Returns:
             associated_proxies   (List)  --  returns the proxies list
@@ -5293,8 +5309,8 @@ subclient id</p></div>
         Returns:
              security_group    (dict)  -- security group dict
         &#34;&#34;&#34;
-        match1 = re.search(&#39;secGroupId=\&#34;(\S*)\&#34;&#39;, xml_str)
-        match2 = re.search(&#39;secGroupName=\&#34;(\S*)\&#34;&#39;, xml_str)
+        match1 = re.search(r&#39;secGroupId=\&#34;(\S*)\&#34;&#39;, xml_str)
+        match2 = re.search(r&#39;secGroupName=\&#34;(\S*)\&#34;&#39;, xml_str)
         security_group = [
             {
                 &#34;groupId&#34;: match1.group(1),
@@ -5312,8 +5328,8 @@ subclient id</p></div>
         Returns:
              keypair_list       (dict) -- keypair list dict
         &#34;&#34;&#34;
-        match1 = re.search(&#39;keyPairId=\&#34;(\S*)\&#34;&#39;, xml_str)
-        match2 = re.search(&#39;keyPairName=\&#34;(\S*)\&#34;&#39;, xml_str)
+        match1 = re.search(r&#39;keyPairId=\&#34;(\S*)\&#34;&#39;, xml_str)
+        match2 = re.search(r&#39;keyPairName=\&#34;(\S*)\&#34;&#39;, xml_str)
         keypair_list = [
             {
                 &#34;keyId&#34;: match1.group(1),
@@ -6028,7 +6044,7 @@ True/False</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L602-L611" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L602-L611" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def cbtvalue(self):
@@ -6050,7 +6066,7 @@ def cbtvalue(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L247-L261" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L247-L261" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def content(self):
@@ -6079,7 +6095,7 @@ Proxy at instane</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L273-L281" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L273-L281" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_proxy(self):
@@ -6098,7 +6114,7 @@ def instance_proxy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L563-L570" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L563-L570" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def live_sync(self):
@@ -6118,7 +6134,7 @@ Default: False for subclient which doesnt have the property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L336-L348" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L336-L348" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def metadata(self):
@@ -6144,7 +6160,7 @@ True/False</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L2954-L2963" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L2962-L2971" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def quiesce_file_system(self):
@@ -6168,7 +6184,7 @@ Proxies at the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L263-L271" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L263-L271" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_proxy(self):
@@ -6189,7 +6205,7 @@ def subclient_proxy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L298-L334" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L298-L334" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_diskfilter(self):
@@ -6238,7 +6254,7 @@ def vm_diskfilter(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L283-L296" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L283-L296" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_filter(self):
@@ -6275,7 +6291,7 @@ dictionary with all VM restore options</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L2317-L2352" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L2325-L2360" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def amazon_defaults(self, vm_to_restore, restore_option):
     &#34;&#34;&#34;
@@ -6373,7 +6389,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L2669-L2744" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L2677-L2752" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(self,
            backup_level=&#34;Incremental&#34;,
@@ -6500,7 +6516,7 @@ if failed to browse content</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L1190-L1268" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L1198-L1276" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, vm_path=&#39;\\&#39;,
            show_deleted_files=False,
@@ -6664,7 +6680,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L1360-L1443" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L1368-L1451" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse_in_time(
         self,
@@ -6809,7 +6825,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L1445-L1517" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L1453-L1525" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_level_browse(self, vm_path=&#39;\\&#39;,
                       show_deleted_files=False,
@@ -6907,7 +6923,7 @@ nics info for that vm</dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L1313-L1358" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L1321-L1366" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_nics_from_browse(self, copy_precedence=0):
     &#34;&#34;&#34;
@@ -6970,7 +6986,7 @@ dictionary of guest file restores options</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L1654-L1768" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L1662-L1776" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def guest_file_restore(self, *args, **kwargs):
     &#34;&#34;&#34;perform Guest file restore of the provided path
@@ -7152,7 +7168,7 @@ if from date value is incorrect</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L1519-L1587" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L1527-L1595" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def guest_files_browse(
         self,
@@ -7247,7 +7263,7 @@ if input parameter is not proper</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L1270-L1311" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L1278-L1319" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def parse_nics_xml(self, input_xml):
     &#34;&#34;&#34;
@@ -7304,7 +7320,7 @@ if input parameter is not proper</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L2931-L2952" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L2939-L2960" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def preview_content(self):
     &#34;&#34;&#34;
@@ -7358,7 +7374,7 @@ name                        - name of the VM to be restored
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L2208-L2277" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L2216-L2285" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_advanced_attach_disk_restore_options(self, vm_to_restore, restore_option):
     &#34;&#34;&#34;
@@ -7462,7 +7478,7 @@ name                        - name of the VM to be restored
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L2065-L2206" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L2073-L2214" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_advanced_vm_restore_options(self, vm_to_restore, restore_option):
     &#34;&#34;&#34;
@@ -7620,7 +7636,7 @@ dict of all propterties of subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L627-L638" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L627-L638" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;
@@ -7678,7 +7694,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L1770-L1802" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L1778-L1810" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def vm_files_browse(self, vm_path=&#39;\\&#39;, show_deleted_files=False, operation=&#39;browse&#39;, copy_precedence=0):
     &#34;&#34;&#34;Browses the Files and Folders of a Virtual Machine.
@@ -7771,7 +7787,7 @@ if from date value is incorrect</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/subclients/vssubclient.py#L1804-L1863" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/vssubclient.py#L1812-L1871" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def vm_files_browse_in_time(
         self,

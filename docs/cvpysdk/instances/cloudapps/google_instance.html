@@ -40,10 +40,16 @@ instance properties as well</p>
 <p>restore_out_of_place()
 &ndash;
 runs out-of-place restore for the instance</p>
+<p>modify_index_server()
+&ndash;
+Method to modify the index server</p>
+<p>modify_accessnodes()
+&ndash;
+Method to modify accessnodes</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/cloudapps/google_instance.py#L1-L442" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L1-L521" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -81,12 +87,17 @@ GoogleInstance:
 
     restore_out_of_place()      --  runs out-of-place restore for the instance
 
+    modify_index_server()       --  Method to modify the index server
+
+    modify_accessnodes()        --  Method to modify accessnodes
+
 &#34;&#34;&#34;
 
 from __future__ import unicode_literals
 from ...exception import SDKException
 from ..cainstance import CloudAppsInstance
 from ...constants import AppIDAType
+from base64 import b64encode
 
 
 class GoogleInstance(CloudAppsInstance):
@@ -486,7 +497,81 @@ class GoogleInstance(CloudAppsInstance):
     def _get_instance_properties_json(self):
         &#34;&#34;&#34;Returns the instance properties json.&#34;&#34;&#34;
 
-        return {&#39;instanceProperties&#39;: self._properties}</code></pre>
+        return {&#39;instanceProperties&#39;: self._properties}
+
+    def modify_index_server(self, modified_index_server):
+        &#34;&#34;&#34;
+            Method to modify the index server
+
+            Arguments:
+                modified_index_server        (str)--     new index server name
+        &#34;&#34;&#34;
+        update_dict = {
+            &#34;instance&#34;: {
+                &#34;instanceId&#34;: int(self.instance_id),
+                &#34;clientId&#34;: int(self._agent_object._client_object.client_id),
+                &#34;applicationId&#34;: int(self._agent_object.agent_id)
+            },
+                &#34;cloudAppsInstance&#34;: {
+                    &#34;instanceType&#34;: self.ca_instance_type,
+                    &#34;oneDriveInstance&#34;: {
+                    },
+                    &#34;generalCloudProperties&#34;: {
+                        &#34;indexServer&#34;: {
+                            &#34;clientName&#34;: modified_index_server
+                        }
+                    }
+                }
+            }
+
+        self.update_properties(properties_dict=update_dict)
+
+    def modify_accessnodes(self,modified_accessnodes_list,modified_user_name,modified_user_password):
+        &#34;&#34;&#34;
+                   Method to modify accessnodes
+
+                   Arguments:
+                       modified_accessnodes_list     (list)  --     list of new accessnodes
+                       modified_user_name            (str)   --     new user account name
+                       modified_user_password        (str)   --     new user account password
+        &#34;&#34;&#34;
+        member_servers=[]
+        for client in modified_accessnodes_list:
+            client_dict = {
+                &#34;client&#34;: {
+                    &#34;clientName&#34;: client
+                }
+            }
+            member_servers.append(client_dict)
+
+        update_dict = {
+            &#34;instance&#34;: {
+                &#34;instanceId&#34;: int(self.instance_id),
+                &#34;clientId&#34;: int(self._agent_object._client_object.client_id),
+                &#34;applicationId&#34;: int(self._agent_object.agent_id)
+            },
+            &#34;cloudAppsInstance&#34;: {
+                &#34;instanceType&#34;: self.ca_instance_type,
+                &#34;oneDriveInstance&#34;: {
+                    &#34;serviceAccounts&#34;: {
+                        &#34;accounts&#34;: [
+                            {
+                                &#34;serviceType&#34;: &#34;SYSTEM_ACCOUNT&#34;,
+                                &#34;userAccount&#34;: {
+                                    &#34;userName&#34;: modified_user_name,
+                                    &#34;password&#34;: b64encode(modified_user_password.encode()).decode(),
+                                }
+                            }
+                        ]
+                    }
+                },
+                &#34;generalCloudProperties&#34;: {
+                    &#34;memberServers&#34;: member_servers
+                }
+            }
+        }
+
+        self.update_properties(properties_dict=update_dict)</code></pre>
 </details>
 </section>
 <section>
@@ -524,7 +609,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/cloudapps/google_instance.py#L45-L442" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L50-L521" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class GoogleInstance(CloudAppsInstance):
     &#34;&#34;&#34;Class for representing an Instance of the GMail/Gdrive instance type.&#34;&#34;&#34;
@@ -923,7 +1008,81 @@ default: None</p>
     def _get_instance_properties_json(self):
         &#34;&#34;&#34;Returns the instance properties json.&#34;&#34;&#34;
 
-        return {&#39;instanceProperties&#39;: self._properties}</code></pre>
+        return {&#39;instanceProperties&#39;: self._properties}
+
+    def modify_index_server(self, modified_index_server):
+        &#34;&#34;&#34;
+            Method to modify the index server
+
+            Arguments:
+                modified_index_server        (str)--     new index server name
+        &#34;&#34;&#34;
+        update_dict = {
+            &#34;instance&#34;: {
+                &#34;instanceId&#34;: int(self.instance_id),
+                &#34;clientId&#34;: int(self._agent_object._client_object.client_id),
+                &#34;applicationId&#34;: int(self._agent_object.agent_id)
+            },
+                &#34;cloudAppsInstance&#34;: {
+                    &#34;instanceType&#34;: self.ca_instance_type,
+                    &#34;oneDriveInstance&#34;: {
+                    },
+                    &#34;generalCloudProperties&#34;: {
+                        &#34;indexServer&#34;: {
+                            &#34;clientName&#34;: modified_index_server
+                        }
+                    }
+                }
+            }
+
+        self.update_properties(properties_dict=update_dict)
+
+    def modify_accessnodes(self,modified_accessnodes_list,modified_user_name,modified_user_password):
+        &#34;&#34;&#34;
+                   Method to modify accessnodes
+
+                   Arguments:
+                       modified_accessnodes_list     (list)  --     list of new accessnodes
+                       modified_user_name            (str)   --     new user account name
+                       modified_user_password        (str)   --     new user account password
+        &#34;&#34;&#34;
+        member_servers=[]
+        for client in modified_accessnodes_list:
+            client_dict = {
+                &#34;client&#34;: {
+                    &#34;clientName&#34;: client
+                }
+            }
+            member_servers.append(client_dict)
+
+        update_dict = {
+            &#34;instance&#34;: {
+                &#34;instanceId&#34;: int(self.instance_id),
+                &#34;clientId&#34;: int(self._agent_object._client_object.client_id),
+                &#34;applicationId&#34;: int(self._agent_object.agent_id)
+            },
+            &#34;cloudAppsInstance&#34;: {
+                &#34;instanceType&#34;: self.ca_instance_type,
+                &#34;oneDriveInstance&#34;: {
+                    &#34;serviceAccounts&#34;: {
+                        &#34;accounts&#34;: [
+                            {
+                                &#34;serviceType&#34;: &#34;SYSTEM_ACCOUNT&#34;,
+                                &#34;userAccount&#34;: {
+                                    &#34;userName&#34;: modified_user_name,
+                                    &#34;password&#34;: b64encode(modified_user_password.encode()).decode(),
+                                }
+                            }
+                        ]
+                    }
+                },
+                &#34;generalCloudProperties&#34;: {
+                    &#34;memberServers&#34;: member_servers
+                }
+            }
+        }
+
+        self.update_properties(properties_dict=update_dict)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -938,7 +1097,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/cloudapps/google_instance.py#L151-L154" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L156-L159" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def app_email_id(self):
@@ -952,7 +1111,7 @@ def app_email_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/cloudapps/google_instance.py#L146-L149" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L151-L154" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def auto_discovery_mode(self):
@@ -966,7 +1125,7 @@ def auto_discovery_mode(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/cloudapps/google_instance.py#L141-L144" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L146-L149" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def auto_discovery_status(self):
@@ -980,7 +1139,7 @@ def auto_discovery_status(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/cloudapps/google_instance.py#L125-L134" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L130-L139" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def ca_instance_type(self):
@@ -1000,7 +1159,7 @@ def ca_instance_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/cloudapps/google_instance.py#L156-L159" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L161-L164" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def google_admin_id(self):
@@ -1014,7 +1173,7 @@ def google_admin_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/cloudapps/google_instance.py#L166-L169" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L171-L174" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def google_client_id(self):
@@ -1028,7 +1187,7 @@ def google_client_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/cloudapps/google_instance.py#L161-L164" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L166-L169" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def key_file_path(self):
@@ -1042,7 +1201,7 @@ def key_file_path(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/cloudapps/google_instance.py#L136-L139" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L141-L144" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def manage_content_automatically(self):
@@ -1056,7 +1215,7 @@ def manage_content_automatically(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/cloudapps/google_instance.py#L171-L174" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L176-L179" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def onedrive_client_id(self):
@@ -1070,7 +1229,7 @@ def onedrive_client_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/cloudapps/google_instance.py#L176-L179" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L181-L184" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def onedrive_tenant(self):
@@ -1084,7 +1243,7 @@ def onedrive_tenant(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/cloudapps/google_instance.py#L181-L184" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L186-L189" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def proxy_client(self):
@@ -1111,7 +1270,7 @@ GROUP
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/cloudapps/google_instance.py#L405-L437" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L410-L442" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_auto_discovery(self, mode=&#39;REGEX&#39;):
     &#34;&#34;&#34;Enables auto discovery on instance.
@@ -1146,6 +1305,119 @@ GROUP
 
     self._set_instance_properties(&#34;_properties[&#39;cloudAppsInstance&#39;]&#34;, instance_prop)
     self.refresh()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.instances.cloudapps.google_instance.GoogleInstance.modify_accessnodes"><code class="name flex">
+<span>def <span class="ident">modify_accessnodes</span></span>(<span>self, modified_accessnodes_list, modified_user_name, modified_user_password)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to modify accessnodes</p>
+<h2 id="arguments">Arguments</h2>
+<p>modified_accessnodes_list
+(list)
+&ndash;
+list of new accessnodes
+modified_user_name
+(str)
+&ndash;
+new user account name
+modified_user_password
+(str)
+&ndash;
+new user account password</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L476-L521" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def modify_accessnodes(self,modified_accessnodes_list,modified_user_name,modified_user_password):
+    &#34;&#34;&#34;
+               Method to modify accessnodes
+
+               Arguments:
+                   modified_accessnodes_list     (list)  --     list of new accessnodes
+                   modified_user_name            (str)   --     new user account name
+                   modified_user_password        (str)   --     new user account password
+    &#34;&#34;&#34;
+    member_servers=[]
+    for client in modified_accessnodes_list:
+        client_dict = {
+            &#34;client&#34;: {
+                &#34;clientName&#34;: client
+            }
+        }
+        member_servers.append(client_dict)
+
+    update_dict = {
+        &#34;instance&#34;: {
+            &#34;instanceId&#34;: int(self.instance_id),
+            &#34;clientId&#34;: int(self._agent_object._client_object.client_id),
+            &#34;applicationId&#34;: int(self._agent_object.agent_id)
+        },
+        &#34;cloudAppsInstance&#34;: {
+            &#34;instanceType&#34;: self.ca_instance_type,
+            &#34;oneDriveInstance&#34;: {
+                &#34;serviceAccounts&#34;: {
+                    &#34;accounts&#34;: [
+                        {
+                            &#34;serviceType&#34;: &#34;SYSTEM_ACCOUNT&#34;,
+                            &#34;userAccount&#34;: {
+                                &#34;userName&#34;: modified_user_name,
+                                &#34;password&#34;: b64encode(modified_user_password.encode()).decode(),
+                            }
+                        }
+                    ]
+                }
+            },
+            &#34;generalCloudProperties&#34;: {
+                &#34;memberServers&#34;: member_servers
+            }
+        }
+    }
+
+    self.update_properties(properties_dict=update_dict)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.instances.cloudapps.google_instance.GoogleInstance.modify_index_server"><code class="name flex">
+<span>def <span class="ident">modify_index_server</span></span>(<span>self, modified_index_server)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to modify the index server</p>
+<h2 id="arguments">Arguments</h2>
+<p>modified_index_server
+(str)&ndash;
+new index server name</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L449-L474" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def modify_index_server(self, modified_index_server):
+    &#34;&#34;&#34;
+        Method to modify the index server
+
+        Arguments:
+            modified_index_server        (str)--     new index server name
+    &#34;&#34;&#34;
+    update_dict = {
+        &#34;instance&#34;: {
+            &#34;instanceId&#34;: int(self.instance_id),
+            &#34;clientId&#34;: int(self._agent_object._client_object.client_id),
+            &#34;applicationId&#34;: int(self._agent_object.agent_id)
+        },
+            &#34;cloudAppsInstance&#34;: {
+                &#34;instanceType&#34;: self.ca_instance_type,
+                &#34;oneDriveInstance&#34;: {
+                },
+                &#34;generalCloudProperties&#34;: {
+                    &#34;indexServer&#34;: {
+                        &#34;clientName&#34;: modified_index_server
+                    }
+                }
+            }
+        }
+
+    self.update_properties(properties_dict=update_dict)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.instances.cloudapps.google_instance.GoogleInstance.restore_out_of_place"><code class="name flex">
@@ -1219,7 +1491,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/cloudapps/google_instance.py#L290-L403" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L295-L408" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -1434,6 +1706,8 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.instances.cloudapps.google_instance.GoogleInstance.google_client_id" href="#cvpysdk.instances.cloudapps.google_instance.GoogleInstance.google_client_id">google_client_id</a></code></li>
 <li><code><a title="cvpysdk.instances.cloudapps.google_instance.GoogleInstance.key_file_path" href="#cvpysdk.instances.cloudapps.google_instance.GoogleInstance.key_file_path">key_file_path</a></code></li>
 <li><code><a title="cvpysdk.instances.cloudapps.google_instance.GoogleInstance.manage_content_automatically" href="#cvpysdk.instances.cloudapps.google_instance.GoogleInstance.manage_content_automatically">manage_content_automatically</a></code></li>
+<li><code><a title="cvpysdk.instances.cloudapps.google_instance.GoogleInstance.modify_accessnodes" href="#cvpysdk.instances.cloudapps.google_instance.GoogleInstance.modify_accessnodes">modify_accessnodes</a></code></li>
+<li><code><a title="cvpysdk.instances.cloudapps.google_instance.GoogleInstance.modify_index_server" href="#cvpysdk.instances.cloudapps.google_instance.GoogleInstance.modify_index_server">modify_index_server</a></code></li>
 <li><code><a title="cvpysdk.instances.cloudapps.google_instance.GoogleInstance.onedrive_client_id" href="#cvpysdk.instances.cloudapps.google_instance.GoogleInstance.onedrive_client_id">onedrive_client_id</a></code></li>
 <li><code><a title="cvpysdk.instances.cloudapps.google_instance.GoogleInstance.onedrive_tenant" href="#cvpysdk.instances.cloudapps.google_instance.GoogleInstance.onedrive_tenant">onedrive_tenant</a></code></li>
 <li><code><a title="cvpysdk.instances.cloudapps.google_instance.GoogleInstance.proxy_client" href="#cvpysdk.instances.cloudapps.google_instance.GoogleInstance.proxy_client">proxy_client</a></code></li>

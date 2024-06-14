@@ -73,7 +73,7 @@ perform operations on that instance</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/cloudapps/amazon_instance.py#L1-L562" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/amazon_instance.py#L1-L561" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -272,7 +272,7 @@ class AmazonRDSInstance(CloudDatabaseInstance):
         rds_restore_json[&#39;rdsRestoreOptions&#39;][&#39;targetParameterGroupName&#39;] = \
             restore_options.get(&#39;options&#39;, {}).get(&#39;targetParameterGroupName&#39;, &#39;&#39;)
 
-        rds_restore_json[&#39;rdsRestoreOptions&#39;][&#39;targetSubnetGroup&#39;] = \
+        rds_restore_json[&#39;rdsRestoreOptions&#39;][&#39;targetSecurityGroupValue&#39;] = \
             restore_options.get(&#39;options&#39;, {}).get(&#39;targetSubnetGroup&#39;, &#39;&#39;)
 
         rds_restore_json[&#39;rdsRestoreOptions&#39;][&#39;targetDBInstanceClass&#39;] = \
@@ -604,8 +604,7 @@ class AmazonDynamoDBInstance(CloudDatabaseInstance):
         else:
             restore_options.update(kwargs)
 
-        source_backupset_id = int(self._agent_object.backupsets.get
-                                  (&#39;defaultBackupSet&#39;)._get_backupset_id())
+        source_backupset_id = int(self.backupsets.all_backupsets[&#39;defaultbackupset&#39;][&#39;id&#39;])
         dynamodb_restore_option = {
             &#34;dynamoDbRestoreOptions&#34;: {
                 &#39;tempWriteThroughput&#39;: restore_options.get(&#39;adjust_write_capacity&#39;, &#39;&#39;),
@@ -674,7 +673,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/cloudapps/amazon_instance.py#L353-L478" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/amazon_instance.py#L353-L478" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AmazonDocumentDBInstance(CloudDatabaseInstance):
     &#34;&#34;&#34;Class for representing an Instance of the Amazon DocumentDB&#34;&#34;&#34;
@@ -853,7 +852,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/cloudapps/amazon_instance.py#L480-L562" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/amazon_instance.py#L480-L561" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AmazonDynamoDBInstance(CloudDatabaseInstance):
     &#34;&#34;&#34;Class for representing an Instance of the Amazon DynamoDB&#34;&#34;&#34;
@@ -905,8 +904,7 @@ default: None</p>
         else:
             restore_options.update(kwargs)
 
-        source_backupset_id = int(self._agent_object.backupsets.get
-                                  (&#39;defaultBackupSet&#39;)._get_backupset_id())
+        source_backupset_id = int(self.backupsets.all_backupsets[&#39;defaultbackupset&#39;][&#39;id&#39;])
         dynamodb_restore_option = {
             &#34;dynamoDbRestoreOptions&#34;: {
                 &#39;tempWriteThroughput&#39;: restore_options.get(&#39;adjust_write_capacity&#39;, &#39;&#39;),
@@ -989,7 +987,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/cloudapps/amazon_instance.py#L78-L210" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/amazon_instance.py#L78-L210" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AmazonRDSInstance(CloudDatabaseInstance):
     &#34;&#34;&#34;Class for representing an Instance of Amazon RDS&#34;&#34;&#34;
@@ -1111,7 +1109,7 @@ default: None</p>
         rds_restore_json[&#39;rdsRestoreOptions&#39;][&#39;targetParameterGroupName&#39;] = \
             restore_options.get(&#39;options&#39;, {}).get(&#39;targetParameterGroupName&#39;, &#39;&#39;)
 
-        rds_restore_json[&#39;rdsRestoreOptions&#39;][&#39;targetSubnetGroup&#39;] = \
+        rds_restore_json[&#39;rdsRestoreOptions&#39;][&#39;targetSecurityGroupValue&#39;] = \
             restore_options.get(&#39;options&#39;, {}).get(&#39;targetSubnetGroup&#39;, &#39;&#39;)
 
         rds_restore_json[&#39;rdsRestoreOptions&#39;][&#39;targetDBInstanceClass&#39;] = \
@@ -1175,7 +1173,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/instances/cloudapps/amazon_instance.py#L213-L350" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/amazon_instance.py#L213-L350" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AmazonRedshiftInstance(CloudDatabaseInstance):
     &#34;&#34;&#34;Class for representing an Instance of the Amazon Redshift&#34;&#34;&#34;

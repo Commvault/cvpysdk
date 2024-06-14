@@ -42,7 +42,7 @@ The Virtual Server 'Hyper-V' is named as 'hyperv.py'
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/vsbackupset.py#L1-L383" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/vsbackupset.py#L1-L390" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -215,6 +215,7 @@ class VSBackupset(Backupset):
         browse_result = None
         error_message = None
         options[&#39;retry_count&#39;] = options[&#39;retry_count&#39;] + 1
+        show_deleted = options.get(&#39;show_deleted&#39;, False)
 
         if flag:
             response_json = response.json()
@@ -265,7 +266,7 @@ class VSBackupset(Backupset):
                     raise SDKException(&#39;Backupset&#39;, &#39;110&#39;, &#34;Failed to browse for subclient backup content&#34;)
 
                 if &#39;all_versions&#39; in options[&#39;operation&#39;]:
-                    return self._process_browse_all_versions_response(result_set)
+                    return self._process_browse_all_versions_response(result_set,options)
 
                 for result in result_set:
                     name = result.get(&#39;displayName&#39;)
@@ -300,6 +301,11 @@ class VSBackupset(Backupset):
                         size = result[&#39;size&#39;]
                     else:
                         size = None
+                        
+                    if show_deleted and &#39;deleted&#39; in result.get(&#39;flags&#39;):
+                        deleted = True if result[&#39;flags&#39;].get(&#39;deleted&#39;) in (True, &#39;1&#39;) else False
+                    else:
+                        deleted = None
 
                     paths_dict[path] = {
                         &#39;name&#39;: name,
@@ -308,7 +314,8 @@ class VSBackupset(Backupset):
                         &#39;modified_time&#39;: mod_time,
                         &#39;type&#39;: file_or_folder,
                         &#39;backup_time&#39;: bkp_time,
-                        &#39;advanced_data&#39;: result[&#39;advancedData&#39;]
+                        &#39;advanced_data&#39;: result[&#39;advancedData&#39;],
+                        &#39;deleted&#39;: deleted
                     }
 
                     paths.append(path)
@@ -465,7 +472,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/vsbackupset.py#L55-L383" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/vsbackupset.py#L55-L390" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VSBackupset(Backupset):
     &#34;&#34;&#34;Derived class from Backupset Base class, representing a vs backupset,
@@ -584,6 +591,7 @@ default: None</p>
         browse_result = None
         error_message = None
         options[&#39;retry_count&#39;] = options[&#39;retry_count&#39;] + 1
+        show_deleted = options.get(&#39;show_deleted&#39;, False)
 
         if flag:
             response_json = response.json()
@@ -634,7 +642,7 @@ default: None</p>
                     raise SDKException(&#39;Backupset&#39;, &#39;110&#39;, &#34;Failed to browse for subclient backup content&#34;)
 
                 if &#39;all_versions&#39; in options[&#39;operation&#39;]:
-                    return self._process_browse_all_versions_response(result_set)
+                    return self._process_browse_all_versions_response(result_set,options)
 
                 for result in result_set:
                     name = result.get(&#39;displayName&#39;)
@@ -669,6 +677,11 @@ default: None</p>
                         size = result[&#39;size&#39;]
                     else:
                         size = None
+                        
+                    if show_deleted and &#39;deleted&#39; in result.get(&#39;flags&#39;):
+                        deleted = True if result[&#39;flags&#39;].get(&#39;deleted&#39;) in (True, &#39;1&#39;) else False
+                    else:
+                        deleted = None
 
                     paths_dict[path] = {
                         &#39;name&#39;: name,
@@ -677,7 +690,8 @@ default: None</p>
                         &#39;modified_time&#39;: mod_time,
                         &#39;type&#39;: file_or_folder,
                         &#39;backup_time&#39;: bkp_time,
-                        &#39;advanced_data&#39;: result[&#39;advancedData&#39;]
+                        &#39;advanced_data&#39;: result[&#39;advancedData&#39;],
+                        &#39;deleted&#39;: deleted
                     }
 
                     paths.append(path)
@@ -811,7 +825,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/vsbackupset.py#L75-L95" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/vsbackupset.py#L75-L95" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def hidden_subclient(self):
@@ -842,7 +856,7 @@ def hidden_subclient(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/vsbackupset.py#L275-L288" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/vsbackupset.py#L282-L295" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_server(self):
@@ -868,7 +882,7 @@ def index_server(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/vsbackupset.py#L364-L370" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/vsbackupset.py#L371-L377" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_disk_filter(self):
@@ -887,7 +901,7 @@ def vm_disk_filter(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/vsbackupset.py#L342-L349" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/vsbackupset.py#L349-L356" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_filter(self):
@@ -944,7 +958,7 @@ from browse operation
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/backupsets/vsbackupset.py#L97-L141" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/vsbackupset.py#L97-L141" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, *args, **kwargs):
     &#34;&#34;&#34;Browses the content of the Backupset.

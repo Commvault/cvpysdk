@@ -295,7 +295,7 @@ disable()                       --  Disable an error rule for a specific iDA usi
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1-L3078" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1-L3088" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # pylint: disable=W0104, R0205, R1710
@@ -2869,8 +2869,12 @@ class Job(object):
         if wait_for_job_to_resume is True:
             self._wait_for_status(&#34;RUNNING&#34;)
 
-    def resubmit(self):
+    def resubmit(self, start_suspended=None):
         &#34;&#34;&#34;Resubmits the job
+
+        Args:
+            start_suspended (bool)  -   whether to start the new job in suspended state or not
+                                        default: None, the new job starts same as this job started
 
         Returns:
             object  -   Job class object for the given job id
@@ -2882,10 +2886,16 @@ class Job(object):
                     if response is not success
 
         &#34;&#34;&#34;
+        if start_suspended not in [True, False, None]:
+            raise SDKException(&#39;Job&#39;, &#39;108&#39;)
+
         if not self.is_finished:
             raise SDKException(&#39;Job&#39;, &#39;102&#39;, &#39;Cannot resubmit the Job, the Job is still running&#39;)
 
-        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._RESUBMIT)
+        url = self._RESUBMIT
+        if start_suspended is not None:
+            url += f&#39;?startInSuspendedState={start_suspended}&#39;
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, url)
 
         if flag:
             if response.json():
@@ -3414,7 +3424,7 @@ if job id is not an integer</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1970-L2803" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1970-L2813" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Job(object):
     &#34;&#34;&#34;Class for performing client operations for a specific client.&#34;&#34;&#34;
@@ -4019,8 +4029,12 @@ if job id is not an integer</p>
         if wait_for_job_to_resume is True:
             self._wait_for_status(&#34;RUNNING&#34;)
 
-    def resubmit(self):
+    def resubmit(self, start_suspended=None):
         &#34;&#34;&#34;Resubmits the job
+
+        Args:
+            start_suspended (bool)  -   whether to start the new job in suspended state or not
+                                        default: None, the new job starts same as this job started
 
         Returns:
             object  -   Job class object for the given job id
@@ -4032,10 +4046,16 @@ if job id is not an integer</p>
                     if response is not success
 
         &#34;&#34;&#34;
+        if start_suspended not in [True, False, None]:
+            raise SDKException(&#39;Job&#39;, &#39;108&#39;)
+
         if not self.is_finished:
             raise SDKException(&#39;Job&#39;, &#39;102&#39;, &#39;Cannot resubmit the Job, the Job is still running&#39;)
 
-        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._RESUBMIT)
+        url = self._RESUBMIT
+        if start_suspended is not None:
+            url += f&#39;?startInSuspendedState={start_suspended}&#39;
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, url)
 
         if flag:
             if response.json():
@@ -4263,7 +4283,7 @@ if job id is not an integer</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2341-L2345" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2341-L2345" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def agent_name(self):
@@ -4278,7 +4298,7 @@ def agent_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2431-L2435" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2431-L2435" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def attempts(self):
@@ -4293,7 +4313,7 @@ def attempts(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2383-L2387" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2383-L2387" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_level(self):
@@ -4308,7 +4328,7 @@ def backup_level(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2353-L2357" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2353-L2357" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backupset_name(self):
@@ -4323,7 +4343,7 @@ def backupset_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2335-L2339" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2335-L2339" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_name(self):
@@ -4338,7 +4358,7 @@ def client_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2409-L2415" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2409-L2415" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def delay_reason(self):
@@ -4355,7 +4375,7 @@ def delay_reason(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2453-L2457" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2453-L2457" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def details(self):
@@ -4370,7 +4390,7 @@ def details(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2404-L2407" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2404-L2407" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def end_time(self):
@@ -4384,7 +4404,7 @@ def end_time(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2399-L2402" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2399-L2402" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def end_timestamp(self):
@@ -4398,7 +4418,7 @@ def end_timestamp(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2347-L2351" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2347-L2351" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_name(self):
@@ -4417,7 +4437,7 @@ boolean that represents whether the job has finished or not</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2312-L2333" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2312-L2333" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_finished(self):
@@ -4449,7 +4469,7 @@ def is_finished(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2373-L2376" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2373-L2376" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def job_id(self):
@@ -4463,7 +4483,7 @@ def job_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2378-L2381" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2378-L2381" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def job_type(self):
@@ -4479,7 +4499,7 @@ def job_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2465-L2472" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2465-L2472" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def media_size(self):
@@ -4497,7 +4517,7 @@ def media_size(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2474-L2478" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2474-L2478" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def num_of_files_transferred(self):
@@ -4512,7 +4532,7 @@ def num_of_files_transferred(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2417-L2422" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2417-L2422" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pending_reason(self):
@@ -4528,7 +4548,7 @@ def pending_reason(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2424-L2429" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2424-L2429" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def phase(self):
@@ -4544,7 +4564,7 @@ def phase(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2459-L2463" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2459-L2463" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def size_of_application(self):
@@ -4559,7 +4579,7 @@ def size_of_application(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2389-L2392" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2389-L2392" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def start_time(self):
@@ -4573,7 +4593,7 @@ def start_time(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2394-L2397" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2394-L2397" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def start_timestamp(self):
@@ -4587,7 +4607,7 @@ def start_timestamp(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2480-L2484" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2480-L2484" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def state(self):
@@ -4604,7 +4624,7 @@ please refer status section in above doc link for complete list of status availa
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2365-L2371" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2365-L2371" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def status(self):
@@ -4621,7 +4641,7 @@ def status(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2359-L2363" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2359-L2363" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_name(self):
@@ -4636,7 +4656,7 @@ def subclient_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2437-L2441" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2437-L2441" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def summary(self):
@@ -4651,7 +4671,7 @@ def summary(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2486-L2491" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2486-L2491" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def task_details(self):
@@ -4667,7 +4687,7 @@ def task_details(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2448-L2451" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2448-L2451" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def userid(self):
@@ -4681,7 +4701,7 @@ def userid(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2443-L2446" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2443-L2446" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def username(self):
@@ -4714,7 +4734,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2655-L2690" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2665-L2700" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def advanced_job_details(self, info_type):
     &#34;&#34;&#34;Returns advanced properties for the job
@@ -4766,7 +4786,7 @@ List of child jobs</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2791-L2803" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2801-L2813" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_child_jobs(self):
     &#34;&#34;&#34; Get the child jobs details for the current job
@@ -4835,7 +4855,7 @@ Example </code></dt>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2692-L2746" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2702-L2756" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_events(self):
     &#34;&#34;&#34; gets the commserv events associated with this job
@@ -4939,7 +4959,7 @@ VM: {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2748-L2789" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2758-L2799" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_vm_list(self):
     &#34;&#34;&#34;
@@ -5005,7 +5025,7 @@ if failed to kill job</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2610-L2648" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2620-L2658" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def kill(self, wait_for_job_to_kill=False):
     &#34;&#34;&#34;Kills the job.
@@ -5068,7 +5088,7 @@ if failed to suspend job</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2493-L2531" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2493-L2531" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def pause(self, wait_for_job_to_pause=False):
     &#34;&#34;&#34;Suspends the job.
@@ -5119,7 +5139,7 @@ if failed to suspend job</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2650-L2653" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2660-L2663" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Job.&#34;&#34;&#34;
@@ -5128,10 +5148,15 @@ if failed to suspend job</p>
 </details>
 </dd>
 <dt id="cvpysdk.job.Job.resubmit"><code class="name flex">
-<span>def <span class="ident">resubmit</span></span>(<span>self)</span>
+<span>def <span class="ident">resubmit</span></span>(<span>self, start_suspended=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Resubmits the job</p>
+<h2 id="args">Args</h2>
+<p>start_suspended (bool)
+-
+whether to start the new job in suspended state or not
+default: None, the new job starts same as this job started</p>
 <h2 id="returns">Returns</h2>
 <p>object
 -
@@ -5144,10 +5169,14 @@ if job is already running</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2573-L2608" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2573-L2618" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def resubmit(self):
+<pre><code class="python">def resubmit(self, start_suspended=None):
     &#34;&#34;&#34;Resubmits the job
+
+    Args:
+        start_suspended (bool)  -   whether to start the new job in suspended state or not
+                                    default: None, the new job starts same as this job started
 
     Returns:
         object  -   Job class object for the given job id
@@ -5159,10 +5188,16 @@ if job is already running</p>
                 if response is not success
 
     &#34;&#34;&#34;
+    if start_suspended not in [True, False, None]:
+        raise SDKException(&#39;Job&#39;, &#39;108&#39;)
+
     if not self.is_finished:
         raise SDKException(&#39;Job&#39;, &#39;102&#39;, &#39;Cannot resubmit the Job, the Job is still running&#39;)
 
-    flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._RESUBMIT)
+    url = self._RESUBMIT
+    if start_suspended is not None:
+        url += f&#39;?startInSuspendedState={start_suspended}&#39;
+    flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, url)
 
     if flag:
         if response.json():
@@ -5204,7 +5239,7 @@ if failed to resume job</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2533-L2571" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2533-L2571" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def resume(self, wait_for_job_to_resume=False):
     &#34;&#34;&#34;Resumes the job.
@@ -5281,7 +5316,7 @@ if the job had finished successfully</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L2243-L2310" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L2243-L2310" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def wait_for_completion(self, timeout=30, **kwargs):
     &#34;&#34;&#34;Waits till the job is not finished; i.e.; till the value of job.is_finished is not True.
@@ -5372,7 +5407,7 @@ instance of Commcell class to get the jobs of</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L295-L939" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L295-L939" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class JobController(object):
     &#34;&#34;&#34;Class for controlling all the jobs associated with the commcell.&#34;&#34;&#34;
@@ -6120,7 +6155,7 @@ if client name is given, and no client exists with the given name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L712-L810" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L712-L810" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def active_jobs(self, client_name=None, lookup_time=1, job_filter=None, **options):
     &#34;&#34;&#34;Returns the dict consisting of all the active jobs currently being executed on the
@@ -6312,7 +6347,7 @@ if client name is given, and no client exists with the given name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L621-L710" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L621-L710" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def all_jobs(self, client_name=None, lookup_time=5, job_filter=None, **options):
     &#34;&#34;&#34;Returns the dict consisting of all the jobs executed on the Commcell within the number
@@ -6504,7 +6539,7 @@ if client name is given, and no client exists with the given name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L812-L911" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L812-L911" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def finished_jobs(self, client_name=None, lookup_time=24, job_filter=None, **options):
     &#34;&#34;&#34;Returns the dict consisting of all the finished jobs on the Commcell within the number
@@ -6628,7 +6663,7 @@ if no job with specified job id exists</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L925-L939" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L925-L939" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, job_id):
     &#34;&#34;&#34;Returns the job object for the given job id.
@@ -6655,7 +6690,7 @@ if no job with specified job id exists</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L921-L923" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L921-L923" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def kill_all_jobs(self):
     &#34;&#34;&#34; Kills all the jobs on the commserver &#34;&#34;&#34;
@@ -6670,7 +6705,7 @@ if no job with specified job id exists</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L917-L919" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L917-L919" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def resume_all_jobs(self):
     &#34;&#34;&#34; Resumes all the jobs on the commserver &#34;&#34;&#34;
@@ -6685,7 +6720,7 @@ if no job with specified job id exists</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L913-L915" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L913-L915" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def suspend_all_jobs(self):
     &#34;&#34;&#34; Suspends all the jobs on the commserver &#34;&#34;&#34;
@@ -6710,7 +6745,7 @@ Returns:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L942-L1967" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L942-L1967" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class JobManagement(object):
     &#34;&#34;&#34;Class for performing job management operations. &#34;&#34;&#34;
@@ -7748,7 +7783,7 @@ else returns false</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1319-L1325" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1319-L1325" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def allow_running_jobs_to_complete_past_operation_window(self):
@@ -7766,7 +7801,7 @@ else returns False</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1510-L1516" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1510-L1516" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backups_preempts_auxilary_copy(self):
@@ -7784,7 +7819,7 @@ else returns False</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1617-L1623" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1617-L1623" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backups_preempts_other_backups(self):
@@ -7802,7 +7837,7 @@ else returns False</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1644-L1650" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1644-L1650" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def do_not_start_backups_on_disabled_client(self):
@@ -7820,7 +7855,7 @@ else returns false</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1402-L1408" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1402-L1408" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def enable_job_throttle_at_client_level(self):
@@ -7838,7 +7873,7 @@ else returns False</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1429-L1435" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1429-L1435" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def enable_multiplexing_for_db_agents(self):
@@ -7856,7 +7891,7 @@ else returns False</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1564-L1570" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1564-L1570" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def enable_multiplexing_for_oracle(self):
@@ -7873,7 +7908,7 @@ def enable_multiplexing_for_oracle(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L962-L966" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L962-L966" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def error_rules(self):
@@ -7892,7 +7927,7 @@ The general settings</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1922-L1928" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1922-L1928" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def general_settings(self):
@@ -7913,7 +7948,7 @@ interval in minutes</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1346-L1353" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1346-L1353" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def job_alive_check_interval_in_minutes(self):
@@ -7935,7 +7970,7 @@ type of job priority precedence is set.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1227-L1239" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1227-L1239" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def job_priority_precedence(self):
@@ -7958,7 +7993,7 @@ def job_priority_precedence(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1591-L1596" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1591-L1596" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def job_stream_high_water_mark_level(self):
@@ -7978,7 +8013,7 @@ The priority settings.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1939-L1946" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1939-L1946" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def priority_settings(self):
@@ -7997,7 +8032,7 @@ else returns False</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1483-L1489" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1483-L1489" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def queue_jobs_if_activity_disabled(self):
@@ -8015,7 +8050,7 @@ else returns false</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1456-L1462" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1456-L1462" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def queue_jobs_if_conflicting_jobs_active(self):
@@ -8033,7 +8068,7 @@ else returns false</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1374-L1380" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1374-L1380" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def queue_scheduled_jobs(self):
@@ -8054,7 +8089,7 @@ The restart settings.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1930-L1937" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1930-L1937" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def restart_settings(self):
@@ -8073,7 +8108,7 @@ else returns False</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1537-L1543" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1537-L1543" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def restore_preempts_other_jobs(self):
@@ -8094,7 +8129,7 @@ interval in minutes.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1264-L1271" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1264-L1271" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def start_phase_retry_interval(self):
@@ -8116,7 +8151,7 @@ interval in minutes</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1292-L1299" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1292-L1299" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def state_update_interval_for_continuous_data_replicator(self):
@@ -8138,7 +8173,7 @@ The update settings.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1948-L1955" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1948-L1955" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def update_settings(self):
@@ -8269,7 +8304,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1758-L1886" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1758-L1886" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_priority_setting(self, jobtype):
     &#34;&#34;&#34;
@@ -8486,7 +8521,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1671-L1756" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1671-L1756" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_restart_setting(self, jobtype):
     &#34;&#34;&#34;
@@ -8604,7 +8639,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1888-L1920" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1888-L1920" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_update_setting(self, jobtype):
     &#34;&#34;&#34;
@@ -8649,7 +8684,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1029-L1037" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1029-L1037" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;
@@ -8697,7 +8732,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1039-L1073" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1039-L1073" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_general_settings(self, settings):
     &#34;&#34;&#34;
@@ -8751,7 +8786,7 @@ key/value pairs can be set.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1957-L1967" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1957-L1967" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_job_error_threshold(self, error_threshold_dict):
     &#34;&#34;&#34;
@@ -8813,7 +8848,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1075-L1137" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1075-L1137" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_priority_settings(self, settings):
     &#34;&#34;&#34;
@@ -8922,7 +8957,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1139-L1187" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1139-L1187" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_restart_settings(self, settings):
     &#34;&#34;&#34;
@@ -9004,7 +9039,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/f1b869bfdbbeeadc5afb6212882168e26fa82324/cvpysdk/job.py#L1189-L1225" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/job.py#L1189-L1225" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_update_settings(self, settings):
     &#34;&#34;&#34;
