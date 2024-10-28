@@ -191,6 +191,9 @@ class Backupsets(object):
         if self._agent_object:
             self._BACKUPSETS += '&applicationId=' + self._agent_object.agent_id
 
+        if self._instance_object:
+            self._BACKUPSETS += '&instanceId=' + self._instance_object.instance_id
+
         if self._agent_object.agent_name in ['cloud apps', 'sql server', 'sap hana']:
             self._BACKUPSETS += '&excludeHidden=0'
 

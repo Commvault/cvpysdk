@@ -141,6 +141,21 @@ Instance:
 
     refresh()                       --  refresh the properties of the instance
 
+Instance Attributes
+-----------------
+
+    **instance_id**          --  returns the instance id
+
+    **instance_name**        --  returns the instance name
+
+    **name**                 --  returns the instance display name
+
+    **properties**           --  returns the properties of the instance
+
+    **subclients**           --  returns the configured subclients for the instance
+
+    **backupsets**           --  returns the backupsets associated with the instance
+
 """
 
 from __future__ import absolute_import
@@ -1824,8 +1839,8 @@ class Instance(object):
         # Restore json instance var
         self._commonopts_restore_json = {}
 
-        self.backupsets = None
-        self.subclients = None
+        self._backupsets = None
+        self._subclients = None
         self.refresh()
 
     def _get_instance_id(self):
@@ -2593,6 +2608,27 @@ class Instance(object):
         self._process_update_request(request_json)
 
     @property
+    def backupsets(self):
+        """Returns the instance of the Backupsets class representing the list of Backupsets
+        installed / configured on the Client for the selected Instance.
+        """
+        if self._backupsets is None:
+            from .backupset import Backupsets
+            self._backupsets = Backupsets(self)
+
+        return self._backupsets
+
+    @property
+    def subclients(self):
+        """Returns the instance of the Subclients class representing the list of Subclients
+        installed / configured on the Client for the selected Instance.
+        """
+        if self._subclients is None:
+            self._subclients = Subclients(self)
+
+        return self._subclients
+
+    @property
     def properties(self):
         """Returns the instance properties"""
         return copy.deepcopy(self._properties)
@@ -3099,8 +3135,6 @@ class Instance(object):
 
     def refresh(self):
         """Refresh the properties of the Instance."""
-        from .backupset import Backupsets
-
         self._get_instance_properties()
-        self.backupsets = Backupsets(self)
-        self.subclients = Subclients(self)
+        self._backupsets = None
+        self._subclients = None
