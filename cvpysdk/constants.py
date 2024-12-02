@@ -540,6 +540,8 @@ class AppIDAName(Enum):
     """Class to maintain the app IDA names"""
     FILE_SYSTEM = 'File System'
     VIRTUAL_SERVER = 'Virtual Server'
+    BIG_DATA_APPS = 'big data apps'
+
 
 class VSAObjects(Enum):
     """Mapping for VSA Objects."""
@@ -673,6 +675,9 @@ class ApplicationGroup(Enum):
 class StoragePoolConstants:
     """Class to maintain storage policy constants"""
 
+    """
+    Defines the JSON structure for Azure Cloud Storage request.
+    """
     AZURE_STORAGE_REQ_JSON = {
         "type": "CVA_REGULAR_SP",
         "numberOfCopies": 1,
@@ -758,6 +763,27 @@ class StoragePoolConstants:
         ]
     }
 
+    AIR_GAP_PROTECT_STORAGE_TYPES = {
+        "MICROSOFT AZURE STORAGE": {
+            "HOT": {
+                "vendorId": 3,
+                "displayVendorId": 401,
+            },
+
+            "COOL": {
+                "vendorId": 3,
+                "displayVendorId": 402,
+            },
+        },
+
+        "ORACLE CLOUD INFRASTRUCTURE OBJECT STORAGE": {
+            "INFREQUENT ACCESS": {
+                "vendorId": 26,
+                "displayVendorId": 404,
+            },
+        }
+    }
+
 
 class CommcellEntity(Enum):
     """Class to maintain Commcell Entity types"""
@@ -835,3 +861,19 @@ class Credential_Type(Enum):
     AZUREACCOUNT = 4
     VMWAREACCOUNT = 5
     MICROSOFT_AZURE = 103
+
+
+class ResourcePoolAppType(Enum):
+    """Class to maintain ResourcePool AppType"""
+    O365 = 1
+    EXCHANGE = 3
+    SHAREPOINT = 4
+    ONEDRIVE = 5
+    TEAMS = 6
+
+
+class OSType(Enum):
+    """Class to maintain OS Types"""
+    WINDOWS = 1
+    UNIX = 2
+

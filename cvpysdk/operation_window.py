@@ -146,6 +146,7 @@ OPERATION_MAPPING = {"FULL_DATA_MANAGEMENT": 1,
                      "DATA_ANALYTICS": 65536,
                      "DATA_PRUNING": 131072,
                      "BACKUP_COPY": 262144,
+                     "UPDATE_SOFTWARE": 2097152,
                      "CLEANUP_OPERATION": 524288,
                      "ALL": 1048576}
 

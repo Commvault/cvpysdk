@@ -49,6 +49,7 @@ class CloudAppsSubclient(Subclient):
         from .cloudapps.teams_subclient import TeamsSubclient
         from .cloudapps.spanner_subclient import GoogleSpannerSubclient
         from .cloudapps.onedrive_subclient import OneDriveSubclient
+        from .cloudapps.azure_cosmosdb_subclient import AzureCosmosDBSubclient
 
         instance_types = {
             1: GoogleSubclient,
@@ -69,7 +70,8 @@ class CloudAppsSubclient(Subclient):
             22: CloudDatabaseSubclient,  # Amazon DynamoDB subclient
             35: MSDynamics365Subclient,  # Office 365 Apps -> MS Dynamics 365 Subclient
             36: TeamsSubclient,  # Office 365 Apps -> MS Teams
-            37: GoogleSpannerSubclient  # Google Cloud Spanner Subclient
+            37: GoogleSpannerSubclient,  # Google Cloud Spanner Subclient
+            44: AzureCosmosDBSubclient # Azure Cosmos DB Cloud Apps Instance
         }
 
         cloud_apps_instance_type = backupset_object._instance_object._properties[

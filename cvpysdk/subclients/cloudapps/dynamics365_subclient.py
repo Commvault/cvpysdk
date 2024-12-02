@@ -997,11 +997,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
             is_out_of_place_restore=True,
             destination_environment=destination_environment)
 
-        restore_endpoint = self._services['CREATE_TASK']
-
-        flag, response = self._commcell_object._cvpysdk_object.make_request("POST", restore_endpoint, _restore_json)
-
-        return self._process_restore_response(flag, response)
+        return self._process_restore_response(_restore_json)
 
     def browse(self,
                browse_path: list[str] = None,

@@ -119,6 +119,8 @@ StoragePolicy:
     get_secondary_copies()                  --  Returns all the secondary copies in the storage policy sorted
     by copy precedence
 
+    delete_job()                            --  Deletes a job on Storage Policy
+
     mark_for_recovery()                     --  Marks Deduplication store for recovery
 
     run_recon()                             --  Runs non-mem DB Reconstruction job
@@ -204,6 +206,8 @@ StoragePolicyCopy:
     set_ddb_resiliency()                    -- set/unset ddb resiliency for storage policy copy
     
     rotate_encryption_master_key()          -- Rotates the encryption key for this copy
+
+    get_store_seal_frequency()              -- Gets the store seal frequency for this copy
 
     enable_compliance_lock()                -- Sets compliance lock (wormCopy flag)
 
@@ -689,6 +693,7 @@ class StoragePolicies(object):
         # thus defining request_json
 
         if extra_arguments["global_policy_name"] is not None and extra_arguments["global_dedup_policy"] is True:
+            pool_obj = self._commcell_object.storage_pools.get(extra_arguments["global_policy_name"])
             request_json = {
                 "storagePolicyCopyInfo": {
                     "useGlobalPolicy": {
@@ -702,6 +707,9 @@ class StoragePolicies(object):
                         "enableClientSideDedup": 1,
                         "enableDASHFull": 1,
                         "enableDeduplication": 1
+                    },
+                    "extendedFlags": {
+                        "overRideGACPRetention": "SET_FALSE" if pool_obj.is_worm_storage_lock_enabled else "SET_TRUE"
                     }
                 },
                 "storagePolicyName": storage_policy_name
@@ -1148,7 +1156,8 @@ class StoragePolicy(object):
                               drive_pool_id=None,
                               spare_pool_id=None,
                               snap_copy=False,
-                              global_policy=None):
+                              global_policy=None,
+                              retention_days=30):
         """Creates Synchronous copy for this storage policy
 
             Args:
@@ -1208,7 +1217,7 @@ class StoragePolicy(object):
                           "retentionRules": {
                              "retainArchiverDataForDays": -1,
                              "retainBackupDataForCycles": 1,
-                             "retainBackupDataForDays": 30
+                             "retainBackupDataForDays": retention_days
                           },
                           "dedupeFlags": {
                               "enableDeduplication": is_global_dedupe_policy,
@@ -1216,6 +1225,9 @@ class StoragePolicy(object):
                           },
                            "useGlobalPolicy":{
                                "storagePolicyName": global_policy.storage_pool_name
+                           },
+                           "extendedFlags":{
+                               "useGlobalStoragePolicy": 1
                            }
                        }
                     }
@@ -3052,6 +3064,35 @@ class StoragePolicy(object):
 
         return result
 
+    def delete_job(self, job_id, commcell_id=2):
+        """Deletes a job on Storage Policy
+
+            Args:
+                job_id          (str)   --  ID for the job to be deleted
+
+                commcell_id     (str)   --  The commcell ID of the job to be deleted
+
+            Raises:
+                SDKException:
+                    if type of input parameters is not string
+
+        """
+
+        if not isinstance(job_id, str):
+            raise SDKException('Storage', '101')
+
+        job_list_tag = ''
+        for copy_name, copy_info in self.copies.items():
+            job_list_tag += f"""<jobList appType="" commCellId="{commcell_id}" jobId="{job_id}">
+            <copyInfo copyName="{copy_name}" storagePolicyName="{self.storage_policy_name}"/></jobList>"""
+
+        request_xml = f"""<App_JobOperationCopyReq operationType="2">{job_list_tag}
+        <commCellInfo commCellId="{commcell_id}"/>
+        </App_JobOperationCopyReq>
+        """
+
+        self._commcell_object._qoperation_execute(request_xml)
+
     def mark_for_recovery(self, store_id, sub_store_id, media_agent_name, dedupe_path):
         """ Marks Deduplication store for recovery
 
@@ -3511,7 +3552,8 @@ class StoragePolicyCopy(object):
             else:
                 raise SDKException('Response', '111')
         else:
-            raise SDKException('Response', '101')
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     @property
     def copy_name(self):
@@ -4643,6 +4685,38 @@ class StoragePolicyCopy(object):
         """Checks whether compliance lock on copy is enabled or not"""
         return 'wormCopy' in self._copy_flags
 
+    def get_store_seal_frequency(self):
+        """Gets the store seal frequency for the copy
+
+        Returns:
+            dict -- store seal frequency for the copy
+                    Eg: {'size': 0, 'days': 2, 'months': 0}
+        """
+        request_json = {
+            "EVGui_StoragePolicySummaryReq": {
+                "spId": self.storage_policy_id,
+                "spCopyId": self.copy_id,
+                "reportType": 5 # storage policy copy's dedup information summary
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services['EXECUTE_QCOMMAND'], request_json
+        )
+        if flag:
+            if response and response.json():
+                dedup_summary = response.json()
+                dedup_options = dedup_summary['options']['dedupOptions']
+                seal_frequency_dict = {
+                    'size': dedup_options['storeCreationSize'],
+                    'days': dedup_options['storeCreationDays'],
+                    'months': dedup_options['storeCreationMonths']
+                }
+                return seal_frequency_dict
+            raise SDKException('Response', '102')
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException('Response', '101', response_string)
+
     def enable_compliance_lock(self):
         """Sets compliance lock (wormCopy flag)
 
@@ -4665,8 +4739,39 @@ class StoragePolicyCopy(object):
                 if response is not success.
                 if response is empty.
         """
-        self._copy_properties['copyFlags']['wormCopy'] = 0
-        self._set_copy_properties()
+
+        disable_compliance_lock_url = self._services['DISABLE_STORAGE_POLICY_COMPLIANCE_LOCK'] % (
+            self.storage_policy_id, self.copy_id)
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', disable_compliance_lock_url
+        )
+
+        # Adding a refresh to ensure we have the latest properties to verify if the compliance lock is disabled.
+        self.refresh()
+
+        if flag:
+            if response.json():
+                if ('genericError' in response.json()) and ('errorCode' in response.json()['genericError']):
+                    error_code = int(response.json()['genericError']['errorCode'])
+                    if error_code != 0:
+                        error_message = "Failed to disable compliance lock"
+                        if "errorMessage" in response.json()["copies"][0]['genericError']:
+                            error_message = response.json()["copies"][0]['genericError']["errorMessage"]
+                        raise SDKException('Storage', '111', error_message)
+                else:
+                    if "error" in response.json():
+                        warning_message = ""
+                        if "warningMessage" in response.json()["error"]:
+                            warning_message = response.json()["error"]["warningMessage"]
+                        raise SDKException('Storage', '111', warning_message)
+                    else:
+                        raise SDKException('Storage', '111')
+            else:
+                raise SDKException('Storage', '111')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
         if self.is_compliance_lock_enabled:
             raise SDKException('Response', '101', 'Failed to unset compliance lock')

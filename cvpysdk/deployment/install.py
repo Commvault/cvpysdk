@@ -35,7 +35,7 @@ Download
 
 from ..job import Job
 from ..exception import SDKException
-from ..deployment.deploymentconstants import UnixDownloadFeatures, WindowsDownloadFeatures
+from ..deployment.deploymentconstants import UnixDownloadFeatures, WindowsDownloadFeatures, InstallUpdateOptions
 from ..schedules import SchedulePattern, Schedules
 
 
@@ -255,6 +255,7 @@ class Install(object):
         **NOTE:** push_serivcepack_and_hotfixes cannot be used for revision upgrades
 
         """
+        version = self.commcell_object.commserv_version
         selected_clients = []
         selected_client_groups = []
         schedule_pattern = kwargs.get('schedule_pattern', None)
@@ -278,83 +279,117 @@ class Install(object):
             client_computers = [x.lower() for x in client_computers]
             if not set(client_computers).issubset(commcell_client_computers):
                 raise SDKException('Install', '102')
-
-            selected_clients = [{'clientName': client} for client in client_computers]
+            if version >= 36:
+                for client in client_computers:
+                    selected_clients.append({"id": int(commcell_client_computers[client]['id']),
+                                            "type": "CLIENT_ENTITY"})
+            else:
+                selected_clients = [{'clientName': client} for client in client_computers]
 
         if client_computer_groups is not None:
             client_computer_groups = [x.lower() for x in client_computer_groups]
             if not set(client_computer_groups).issubset(commcell_client_computer_groups):
                 raise SDKException('Install', '103')
 
-            selected_client_groups = [{'clientGroupName': client}
-                                      for client in client_computer_groups]
+            if version >= 36:
+                for client_group in client_computer_groups:
+                    selected_client_groups.append({"id": int(commcell_client_computer_groups[client_group]),
+                                                    "type": "CLIENT_GROUP_ENTITY"})
+            else:
+                selected_client_groups = [{'clientGroupName': client}
+                                          for client in client_computer_groups]
 
-        if all_client_computers:
+        install_diagnostic_updates = kwargs.get('install_diagnostic_updates', False)
+
+        if all_client_computers and version < 36:
             selected_clients = [{"_type_": 2}]
 
-        if all_client_computer_groups:
+        if all_client_computer_groups and version < 36:
             selected_client_groups = [{"_type_": 27}]
 
         all_clients = selected_clients + selected_client_groups
-
-        request_json = {
-            "taskInfo": {
-                "task": {
-                    "taskType": 1,
-                    "initiatedFrom": 2,
-                    "policyType": 0,
-                    "alert": {
-                        "alertName": ""
-                    },
-                    "taskFlags": {
-                        "isEdgeDrive": False,
-                        "disabled": False
-                    }
-                },
-                "subTasks": [
-                    {
-                        "subTaskOperation": 1,
-                        "subTask": {
-                            "subTaskType": 1,
-                            "operationType": 4020
-                        },
-                        "options": {
-                            "adminOpts": {
-                                "updateOption": {
-                                    "removeIntersectingDiag": True,
-                                    "restartExplorerPlugin": True,
-                                    "rebootClient": reboot_client,
-                                    "runDBMaintenance": run_db_maintenance,
-                                    "maintenanceReleaseOnly": maintenance_release_only,
-                                    "clientAndClientGroups": all_clients,
-                                    "installUpdatesJobType": {
-                                        "upgradeClients": False,
-                                        "undoUpdates": False,
-                                        "installUpdates": True
-                                    }
-                                }
-                            },
-                        }
-                    }
-                ]
+        if version >= 36:
+            request_json = {
+                "rebootIfRequired": reboot_client,
+                "runDBMaintenance": run_db_maintenance,
+                "installDiagnosticUpdates": install_diagnostic_updates,
+                "notifyWhenJobCompletes": False,
+                "entities": all_clients
             }
-        }
+        else:
+            request_json = {
+                "taskInfo": {
+                    "task": {
+                        "taskType": 1,
+                        "initiatedFrom": 2,
+                        "policyType": 0,
+                        "alert": {
+                            "alertName": ""
+                        },
+                        "taskFlags": {
+                            "isEdgeDrive": False,
+                            "disabled": False
+                        }
+                    },
+                    "subTasks": [
+                        {
+                            "subTaskOperation": 1,
+                            "subTask": {
+                                "subTaskType": 1,
+                                "operationType": 4020
+                            },
+                            "options": {
+                                "adminOpts": {
+                                    "updateOption": {
+                                        "removeIntersectingDiag": True,
+                                        "restartExplorerPlugin": True,
+                                        "rebootClient": reboot_client,
+                                        "runDBMaintenance": run_db_maintenance,
+                                        "maintenanceReleaseOnly": maintenance_release_only,
+                                        "clientAndClientGroups": all_clients,
+                                        "installUpdatesJobType": {
+                                            "upgradeClients": False,
+                                            "undoUpdates": False,
+                                            "installUpdates": True
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    ]
+                }
+            }
 
         if schedule_pattern:
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
         if install_update_options:
-            adminOpts = request_json['taskInfo']['subTasks'][0]['options']['adminOpts']
-            adminOpts['updateOption']['installUpdateOptions'] = install_update_options
+            if version >= 36:
+                update_os = bool(install_update_options & InstallUpdateOptions.UPDATE_INSTALL_HYPERSCALE_OS_UPDATES.value)
+                update_cvfs = bool(install_update_options & InstallUpdateOptions.UPDATE_INSTALL_HSX_STORAGE_UPDATES.value)
+                mode = "NON_DISRUPTIVE"
+                if install_update_options & InstallUpdateOptions.UPDATE_INSTALL_HSX_STORAGE_UPDATES_DISRUPTIVE_MODE.value:
+                    mode = "DISRUPTIVE"
+                
+                request_json['installOSUpdates'] = update_os
+                request_json['installStorageUpdates'] = update_cvfs
+                request_json['hyperscalePlatformUpgradeMode'] = mode
+            else:
+                adminOpts = request_json['taskInfo']['subTasks'][0]['options']['adminOpts']
+                adminOpts['updateOption']['installUpdateOptions'] = install_update_options
+
+        method = 'PUT' if version >= 36 else 'POST'
+        url = self._services['UPGRADE_SOFTWARE'] if version >= 36 else self._services['CREATE_TASK']
 
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['CREATE_TASK'], request_json
+            method, url, request_json
         )
 
         if flag:
             if response.json():
-                if "jobIds" in response.json():
-                    return Job(self.commcell_object, response.json()['jobIds'][0])
+                if "jobIds" in response.json() or "jobId" in response.json():
+                    return Job(self.commcell_object, response.json()['jobId']) if version >= 36 \
+                        else Job(self.commcell_object, response.json()['jobIds'][0])
 
                 elif schedule_pattern and "taskId" in response.json():
                     return Schedules(self.commcell_object).get(task_id=response.json()['taskId'])

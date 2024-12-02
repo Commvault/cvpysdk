@@ -83,8 +83,11 @@ class AzureRMInstance(VirtualServerInstance):
         super(AzureRMInstance, self)._get_instance_properties()
         self._server_name = []
         if 'virtualServerInstance' in self._properties:
-            _member_servers = self._properties["virtualServerInstance"] \
+            if self._properties["virtualServerInstance"]["associatedClients"].get("memberServers"):
+                _member_servers = self._properties["virtualServerInstance"] \
                                                 ["associatedClients"]["memberServers"]
+            else:
+                _member_servers=[]
             for _each_client in _member_servers:
                 client = _each_client['client']
                 if 'clientName' in client.keys():

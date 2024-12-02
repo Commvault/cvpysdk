@@ -1279,3 +1279,35 @@ class Alert(object):
     def refresh(self):
         """Refresh the properties of the Alert."""
         self._get_alert_properties()
+
+    def trigger_test_alert(self):
+        """
+        Method to trigger the test alert
+
+        Raises:
+            SDKException:
+                if failed to trigger test alert
+
+                if response is empty
+
+                if response is not success
+        """
+        test_request = self._services['ALERT_TEST'] % (self.alert_id)
+
+        flag, response = self._cvpysdk_object.make_request('POST', test_request)
+
+        if not flag:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        if not response.json():
+            raise SDKException('Response', '102')
+
+        error_code = response.json().get('errorCode', -1)
+
+        if error_code != 0:
+            error_message = response.json().get('errorMessage', '')
+
+            raise SDKException(
+                'Alert', '102', f'Failed to trigger the test Alert. Error: ["{error_message}"]'
+            )

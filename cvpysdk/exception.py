@@ -235,6 +235,17 @@ EXCEPTION_DICT = {
         '103': 'Failed to get the list of analytics engines',
         '104': 'Failed to get the datasources'
     },
+    'ThreatIndicators': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Failed to get list of threat indicators from CS',
+        '104': 'Failed to get list of anomaly records for this client',
+        '105': 'Given server name is not in threat indicators list',
+        '106': 'Failed to clear anomalies for this client',
+        '107': 'Storage pool name is missing in inputs',
+        '108': 'Index server name is missing in inputs',
+        '109': 'Failed to start threat anomaly scan on client'
+    },
     'ContentAnalyzer': {
         '101': 'Data type of the input(s) is not valid',
         '102': '',
@@ -363,7 +374,8 @@ EXCEPTION_DICT = {
         '105': 'Failed to get the export set with provided export set name',
         '106': 'Export Set not found',
         '107': 'Invalid Application type provided',
-        '108': 'Invalid export type provided'
+        '108': 'Invalid export type provided',
+        '109': 'CosmosDB file download fail'
     },
     'Salesforce': {
         '101': 'Neither Sync Database enabled nor user provided database details for restore',
@@ -433,7 +445,8 @@ EXCEPTION_DICT = {
                 'Add plan to the Organization, and then set it as the default'),
         '112': 'Failed to activate organization',
         '113': 'Failed to deactivate organization',
-        '114': 'Input is not provided in expected manner'
+        '114': 'Input is not provided in expected manner',
+        '115': 'Failed to extend organization'
     },
     'RemoteOrganization': {
         '101': 'Failed to update organization operators remotely',
@@ -445,7 +458,8 @@ EXCEPTION_DICT = {
         '107': 'Email address is not valid',
         '108': 'Organization already exists',
         '109': 'Failed to add organization remotely',
-        '110': 'No organization exists with the given name in workloads or idp'
+        '110': 'No organization exists with the given name in workloads or idp',
+        '111': 'Failed to extend organization remotely'
     },
     'StoragePool': {
         '101': 'Data type of the input(s) is not valid',
@@ -552,9 +566,6 @@ EXCEPTION_DICT = {
         '102': '',
         '103': 'Failed to unregister commcell',
         '104': 'Datatype of the input is not valid',
-        '105': 'Failed to reach remote commcell.',
-        '106': 'Failed to authenticate remote commcell. Invalid user name and password.',
-        '107': 'Insufficient permissions'
     },
     'LiveSync': {
         '101': 'Data type of the input(s) is not valid',

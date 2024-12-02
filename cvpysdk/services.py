@@ -48,6 +48,8 @@ SERVICES_DICT_TEMPLATE = {
     'GET_SAML_TOKEN': '{0}Commcell/SamlToken?validityInMins=%s',
     'WHO_AM_I': '{0}WhoAmI',
     'CREATE_RC': '{0}V4/SoftwareCache',
+    'DOWNLOAD_SOFTWARE': '{0}V4/DownloadSoftware',
+    'UPGRADE_SOFTWARE': '{0}V4/UpgradeSoftware',
 
     'TFA': '{0}Commcell/Properties/TwoFactorAuth',
     'TFA_ENABLE': '{0}Commcell/Properties/TwoFactorAuth/Action/Enable',
@@ -134,11 +136,12 @@ SERVICES_DICT_TEMPLATE = {
     'MEDIA_AGENT': '{0}MediaAgent/%s',
     'CLOUD_MEDIA_AGENT': '{0}MediaAgent/%s/CloudVMPowerManagement',
     'STORAGE_POLICY_COPY': '{0}V2/StoragePolicy/%s/Copy/%s',
+    'DISABLE_STORAGE_POLICY_COMPLIANCE_LOCK': '{0}V4/StoragePolicy/%s/Copy/%s/ComplianceLock/Disable',
     'STORAGE_POLICY_INFRASTRUCTUREPOOL': '{0}/StoragePolicy/Infrastructurepool?planId=%s',
     'RECOVERY_ENABLERS': '{0}MediaAgent/RecoveryEnabler?osType=CLIENT_PLATFORM_OSTYPE_UNIX ',
-
     'GET_ALL_ALERTS': '{0}AlertRule',
     'ALERT': '{0}AlertRule/%s',
+    'ALERT_TEST': '{0}AlertRule/%s/Test',
     'CREATE_BLR_PAIR': '{0}Replications/Groups',
     'DELETE_BLR_PAIR': '{0}Replications/Monitors/continuous/%s',
     'GET_BLR_PAIRS': '{0}Replications/Monitors/continuous',
@@ -186,7 +189,7 @@ SERVICES_DICT_TEMPLATE = {
     'CLIENTGROUP': '{0}ClientGroup/%s',
     'SERVERGROUPS_V4': '{0}V4/ServerGroup',
 
-    'USERGROUPS': '{0}UserGroup?includeSystemCreated=true',
+    'USERGROUPS': '{0}UserGroup?includeSystemCreated=%s',
     'USERGROUP': '{0}UserGroup/%s',
     'USERGROUP_V4': '{0}V4/UserGroup/%s',
     'DELETE_USERGROUP': '{0}UserGroup/%s?newUserId=%s&newUserGroupId=%s',
@@ -194,8 +197,11 @@ SERVICES_DICT_TEMPLATE = {
 
     'BROWSE': '{0}DoBrowse',
     'RESTORE': '{0}CreateTask',
+    'DELETE': '{0}DeleteDocuments',
     'SQL_CLONES': '{0}sql/clones',
+    'SQL_DATABASE': '{0}sql/databases?instance=%s&databaseName=%s',
     'SQL_DATABASES': '{0}sql/databases?databaseName=%s',
+    'SQL_DATABASE_LIST': '{0}sql/databases?instance=%s',
     'SQL_DATABASE_DETAILS': '{0}sql/instance/%s/database/%s',
     'SQL_AG_GROUPS': '{0}v2/sql/availabilityGroups/client/%s/instance/%s',
     'SQL_AG_GROUP_REPLICAS': '{0}v2/sql/availabilityGroupReplicas/client/%s/instance/%s/availabilityGroup/%s',
@@ -364,6 +370,7 @@ SERVICES_DICT_TEMPLATE = {
     'PROTECTED_VMS': "{0}VM?propertyLevel=AllProperties&status=1&fromTime=%s&toTime=%s&Limit=%s",
     'CONTINUOUS_REPLICATION_MONITOR': "{0}Replications/Monitors/continuous",
     'USERS': '{0}User',
+    'V4_USERS': '{0}v4/user?additionalProperties=true',
     'USER': '{0}User/%s?Level=50',
     'DELETE_USER': '{0}User/%s?newUserId=%s&newUserGroupId=%s',
     'OTP': '{0}User/%s/preferences/OTP',
@@ -377,6 +384,8 @@ SERVICES_DICT_TEMPLATE = {
     'ONE_CREDENTIAL': '{0}/CommCell/Credentials/%s?propertyLevel=30',
     'CREDENTIAL':   '{0}/Commcell/Credentials',
     'DELETE_RECORD': '{0}/Commcell/Credentials/action/delete',
+
+    'ADD_CREDENTIALS': '{0}V4/Credential',
 
     'GET_SECURITY_ROLES': '{0}Security/Roles',
     'SECURITY_ASSOCIATION': '{0}Security',
@@ -402,6 +411,8 @@ SERVICES_DICT_TEMPLATE = {
     'ENABLE_PRIVACY_COMPANY_DATA': '{0}V2/Organization/%s/Privacy/Action/Lock',
     'DISABLE_PRIVACY_COMPANY_DATA': '{0}V2/Organization/%s/Privacy/Action/Unlock',
     'ORGANIZATION_THEME': '{0}V2/Organization/%s/Customization',
+    'GET_ORGANIZATION_THEME': '{0}Organization/%s/Customization',
+    'EXTEND_ORGANIZATION': '{0}ThirdParty/App/Company/Extend',
     'ORGANIZATION_TAGS' : '{0}Tags',
     'GET_ORGANIZATION_TAGS' : '{0}Tags/PROVIDER_ENTITY/%s',
     'COMPANY_PASSKEY' : '{0}Company/%s/Passkey',
@@ -417,6 +428,7 @@ SERVICES_DICT_TEMPLATE = {
     'DELETE_STORAGE_POOL': '{0}StoragePool/%s',
     'EDIT_STORAGE_POOL': '{0}StoragePool?Action=edit',
     'REPLACE_DISK_STORAGE_POOL': '{0}StoragePool?action=diskOperation',
+    'GET_METALLIC_STORAGE_DETAILS': '{0}metallic/storage',
 
     'KEY_MANAGEMENT_SERVER_ADD_GET': '{0}CommCell/KeyManagementServers',
     'KEY_MANAGEMENT_SERVER_DELETE': '{0}CommCell/KeyManagementServers/%s',
@@ -451,6 +463,8 @@ SERVICES_DICT_TEMPLATE = {
     'RPSTORE': '{0}Replications/RPStore',
 
     'CREATE_PSEUDO_CLIENT': '{0}pseudoClient',
+    'CREATE_YUGABYTE_CLIENT': '{0}Client/YugabyteDB',
+    'CREATE_COUCHBASE_CLIENT': '{0}Client/Couchbase',
     'CREATE_NAS_CLIENT': '{0}NASClient',
     'GET_OFFICE_365_ENTITIES': '{0}Office365/entities',
     'GET_DYNAMICS_365_CLIENTS': '{0}Office365/entities?agentType=5',
@@ -458,9 +472,12 @@ SERVICES_DICT_TEMPLATE = {
     'CLOUD_DISCOVERY': '{0}Instance/%s/CloudDiscovery?clientId=%s&appType=%s',
     'SET_USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/SetUserPolicyAssociation',
     'CUSTOM_CATEGORY': '{0}Office365/SubClient/%s/CustomCategory',
+    'CUSTOM_CATEGORIES': '{0}Office365/SubClient/%s/CustomCategories',
     'INSTANCE_PROPERTIES': '{0}instance/%s',
     'USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/UserPolicyAssociation',
     'UPDATE_USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/UpdateUserPolicyAssociation',
+    'GDRIVE_UPDATE_USERS': '{0}GoogleWorkspace/GDrive/UpdateUsers',
+    'GMAIL_UPDATE_USERS': '{0}GoogleWorkspace/GMail/UpdateUsers',
     'OFFICE365_MOVE_JOB_RESULT_DIRECTORY': '{0}Office365/MoveJobResultsDirectory',
     'OFFICE365_PROCESS_INDEX_RETENTION_RULES': '{0}Office365/ProcessIdxRetentionRules',
     'ADD_EXCHANGE': '{0}pseudoClient',
@@ -473,13 +490,14 @@ SERVICES_DICT_TEMPLATE = {
     'EMAIL_DISCOVERY_WITHOUT_REFRESH': '{0}Backupset/%s/mailboxDiscover?discoveryType=%s&refreshMailboxDb=false',
     'GET_EMAIL_POLICY_ASSOCIATIONS': '{0}Subclient/%s/EmailPolicyAssociation?discoveryType=%s',
     'SET_EMAIL_POLICY_ASSOCIATIONS': '{0}/Subclient/EmailPolicyAssociation',
+    'DELETE_DOCUMENTS': '{0}/DeleteDocuments',
 
     'CREATE_NUTANIX_CLIENT': '{0}Client/Nutanix',
 
     'GET_EVENTS': '{0}Events',
     'GET_EVENT': '{0}Events/%s',
 
-    'GET_ACTIVITY_CONTROL': '{0}CommCell/ActivityControl',
+    'GET_ACTIVITY_CONTROL': '{0}V4/CommCell/ActivityControl',
     'SET_ACTIVITY_CONTROL': '{0}CommCell/ActivityControl/%s/Action/%s',
     'SET_COMMCELL_PROPERTIES': '{0}Commcell/properties',
 
@@ -526,12 +544,14 @@ SERVICES_DICT_TEMPLATE = {
 
     'REGISTRATION': '{0}/RegFrgnCell',
     'UNREGISTRATION': '{0}/UnRegisterCommCell',
+    'SERVICE_REGISTER': '{0}/ServiceCommcells/Register',
     'GET_REGISTERED_COMMCELLS': '{0}/CommCell/registered',
-    'GET_REGISTERED_ROUTER_COMMCELLS': '{0}/CommCell/registered?getOnlyServiceCommcells=true',
+    'GET_REGISTERED_ROUTER_COMMCELLS': '{0}/ServiceCommcells',
     'GET_USERSPACE_SERVICE': '{0}/ServiceCommcell/UserSpace',
     'POLL_USER_SERVICE': '{0}/ServiceCommcell/IsUserPresent?userName=%s',
     'POLL_MAIL_SERVICE': '{0}/ServiceCommcell/IsUserPresent?email=%s',
     'POLL_REQUEST_ROUTER': '{0}/CommcellRedirect/RedirectListforUser?user=%s&getDistinctSAMLAppType=true',
+    'MULTI_COMMCELL_SWITCHER': '{0}/CommcellRedirect/MultiCommcell',
     'MULTI_COMMCELL_DROP_DOWN': '{0}/MultiCommcellsForUser',
     'SERVICE_COMMCELL_ASSOC': '{0}/Security/MultiCommcell',
     'SYNC_SERVICE_COMMCELL': '{0}/RouterCommcell/SyncUserSpace?commcellGUID=%s',
@@ -562,6 +582,10 @@ SERVICES_DICT_TEMPLATE = {
     'CLOUD_NODE_UPDATE': '{0}cloud/node/update',
     'GET_ALL_INDEX_SERVERS': '{0}dcube/getAnalyticsEngine?retrieveall=true',
     'GET_ALL_ROLES': '{0}IndexingGateway/GetAnalyticsRolesInfo',
+    'GET_THREAT_INDICATORS': '{0}/Client/Anomaly',
+    'GET_ALL_CLIENT_ANOMALIES': '{0}/Client/AnomalyRecord?filter=%s&clients=%s',
+    'CLEAR_ANOMALIES': '{0}/Client/PruneAnomalyRecord',
+    'RUN_ANOMALY_SCAN': '{0}/EDiscoveryClients/OnDemandAnalytics',
     'GET_SWAGGER': '{0}swagger/V3/swagger.json',
 
     'COMMCELL_METADATA': '{0}Commcell/MetaData',
@@ -575,6 +599,7 @@ SERVICES_DICT_TEMPLATE = {
     'EDIT_SAML': '{0}/v4/SAML/%s',
 
     'REGIONS': '{0}/v4/Regions',
+    'REGION': '{0}/v4/Regions/%s',
     'EDIT_REGION': '{0}/entity/%s/%s/region',
     'GET_REGION': '{0}/entity/%s/%s/region?entityRegionType=%s',
     'CALCULATE_REGION': '{0}/entity/%s/%s/region?calculate=True&entityRegionType=%s',
@@ -599,9 +624,6 @@ SERVICES_DICT_TEMPLATE = {
 
     'VSA_HIDDEN_SUBCLIENT': '{0}GetId?clientname=%s&agent=Virtual Server&backupset=%s&subclient=Do Not Backup',
 
-
-    'HARD_REFRESH_CACHE': '{0}/%s?hardRefresh=true',
-
     'ALL_RECOVERY_GROUPS': '{0}RecoveryGroups',
     'RECOVERY_GROUP': '{0}RecoveryGroup/%s?getEntityDetails=true',
     'RECOVERY_GROUP_RECOVER': '{0}RecoveryGroup/%s/Recover',
@@ -625,8 +647,23 @@ SERVICES_DICT_TEMPLATE = {
     'GET_BACKUPSET_INFO': '{0}cvdrbackup/info?csGuid=%s',
     'GET_COMMSERVE_RECOVERY_LICENSE_DETAILS': '{0}cvdrbackup/csrecovery/quota?csGuid=%s',
     'GET_COMMSERVE_RECOVERY_RETENTION_DETAILS': '{0}cvdrbackup/cleanup/lock?csGuid=%s',
+    'ADDASHBOARD':'{0}/ActiveDirectory/Overview',
+    'ADDAZURECLIENT':'{0}/v4/ActiveDirectory/AzureAD',
+    'ADCLIENTS':'{0}/ActiveDirectory/Clients?apptypeId=0',
+    'ADAPPS':'{0}/v4/ActiveDirectory/Apps',
+
+    'ENABLE_DATA_AGING': '{0}/V5/ServerPlan/%s/BackupDestination/%s',
 
 
+    'LICENSE_COLLECTION': '{0}Office365/License',
+
+    'NAVIGATION_SETTINGS': '{0}/NavigationSettings',
+
+    'COCKROACHDB': '{0}/Client/CockroachDB',
+
+    'ALL_RPStores': '{0}Library?libraryType=RPSTORE',
+
+    'RESET_TENANT_PASSWORD': '{0}/user/Password/Forgot',
 }
 
 

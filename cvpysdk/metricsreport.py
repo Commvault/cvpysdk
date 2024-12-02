@@ -508,7 +508,7 @@ class PrivateMetrics(_Metrics):
                                                                                   port)
 
     def _update_private_upload_url(self, hostname, port, protocol):
-        self._cloud['uploadURL'] = '{0}://{1}:{2}/webconsole/'.format(protocol, hostname, port)
+        self._cloud['uploadURL'] = '{0}://{1}:{2}/commandcenter/'.format(protocol, hostname, port)
 
     def _update_chargeback_flags(self, daily, weekly, monthly):
         flags = 0

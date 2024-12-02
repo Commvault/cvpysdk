@@ -108,7 +108,7 @@ class OneDriveClient(Client):
 
         """
         _subclient_object = self._get_subclient()
-        restore_job = _subclient_object.in_place_restore_onedrive_v2(users, **kwargs)
+        restore_job = _subclient_object.in_place_restore_onedrive_for_business_client(users, **kwargs)
         return restore_job
 
     def out_of_place_restore(self, users, destination_path, **kwargs):
@@ -137,7 +137,7 @@ class OneDriveClient(Client):
 
         """
         _subclient_object = self._get_subclient()
-        restore_job = _subclient_object.out_of_place_restore_onedrive_v2(users, destination_path, **kwargs)
+        restore_job = _subclient_object.out_of_place_restore_onedrive_for_business_client(users, destination_path, **kwargs)
         return restore_job
 
     def disk_restore(self,
@@ -168,7 +168,7 @@ class OneDriveClient(Client):
 
         """
         _subclient_object = self._get_subclient()
-        restore_job = _subclient_object.disk_restore_onedrive_v2(users,
+        restore_job = _subclient_object.disk_restore_onedrive_for_business_client(users,
                                                         destination_client,
                                                         destination_path,
                                                         skip_file_permissions=skip_file_permissions)

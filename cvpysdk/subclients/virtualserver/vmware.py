@@ -297,6 +297,11 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
 
                     revert              (bool)      --  Revert option
 
+                    volume_level_restore (bool)     -- Restore option type for LR: Default is None
+
+                    redirectWritesToDatastore (str) -- Datastore name to redirect writes for LR restore: Default " "
+
+                    delayMigrationMinutes   (Int)  -- Migrations delay in minutes: Default '0'
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -310,13 +315,13 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                     if response is empty
 
                     if response is not success
-
         """
-
         restore_option = {}
         extra_options = ['source_ip', 'destination_ip', 'network', 'destComputerName',
                          'source_subnet', 'source_gateway', 'destination_subnet',
-                         'destination_gateway', 'folder_path', 'media_agent', 'v2_details', 'revert']
+                         'destination_gateway', 'folder_path', 'media_agent', 'v2_details', 'revert',
+                         'volume_level_restore','redirectWritesToDatastore','delayMigrationMinutes']
+
         for key in extra_options:
             if key in kwargs:
                 restore_option[key] = kwargs[key]

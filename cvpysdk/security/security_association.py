@@ -98,6 +98,16 @@ class SecurityAssociation(object):
                 }]
             }
 
+        from ..workflow import WorkFlow
+        if isinstance(class_object, WorkFlow):
+            self._entity_list = {
+                "entity": [{
+                    "workflowId": int(class_object.workflow_id),
+                    "_type_": 83,
+                    "entityType": 83
+                }]
+            }
+
         self._roles = self._get_security_roles()
 
     def __str__(self):

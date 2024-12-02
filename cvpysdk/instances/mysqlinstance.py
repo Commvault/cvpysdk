@@ -35,6 +35,9 @@ MYSQLInstance:
     restore_in_place()              -- Restores the mysql data/log files specified in the
     input paths list to the same location
 
+    restore_out_of_place()          -- method to perform out of place restore of MySQL data/log/recurring files to the
+    destination client.
+
     _restore_browse_option_json()   -- setter for  browse option  property in restore
 
     _restore_common_options_json()  -- setter for common options property in restore
@@ -89,6 +92,7 @@ MYSQLInstance instance Attributes:
 from __future__ import unicode_literals
 from ..instance import Instance
 from ..exception import SDKException
+from ..credential_manager import Credential
 
 
 class MYSQLInstance(Instance):
@@ -139,7 +143,8 @@ class MYSQLInstance(Instance):
             (str)   --  MySql server SA username
 
         """
-        return self._properties.get('mySqlInstance', {}).get('SAUser', {}).get('userName', None)
+        credential_name = self._properties.get('credentialEntity', {}).get('credentialName', None)
+        return Credential(self._commcell_object, credential_name).credential_user_name
 
     @property
     def nt_username(self):
@@ -237,6 +242,20 @@ class MYSQLInstance(Instance):
 
         """
         return self._properties.get('mySqlInstance', {}).get('EnableAutoDiscovery', False)
+
+    @autodiscovery_enabled.setter
+    def autodiscovery_enabled(self, value):
+        """
+        Sets the auto discovery attribute to True or False
+        value (bool)   --  True or False
+
+        """
+        properties = self._properties
+        update = {
+            "EnableAutoDiscovery": value
+        }
+        properties['mySqlInstance'] = update
+        self.update_properties(properties)
 
     @property
     def xtrabackup_bin_path(self):
@@ -556,6 +575,108 @@ class MYSQLInstance(Instance):
 
         return self._process_restore_response(request_json)
 
+    def restore_out_of_place(
+            self,
+            path=None,
+            staging=None,
+            dest_client_name=None,
+            dest_instance_name=None,
+            data_restore=True,
+            log_restore=False,
+            overwrite=True,
+            copy_precedence=None,
+            from_time=None,
+            to_time=None,
+            media_agent=None,
+            table_level_restore=False,
+            clone_env=False,
+            clone_options=None,
+            redirect_enabled=False,
+            redirect_path=None,
+            browse_jobid=None,
+            recurringRestore=False):
+        """
+        Method to perform out of place restore of MySQL data/log/recurring files to the destination client location.
+
+            Args:
+                path                    (list)  --  list of database/databases to be restored
+                staging                 (str)   --  staging location for mysql logs during restores
+                dest_client_name        (str)   --  destination client name where files are to be restored
+                dest_instance_name      (str)   --  destination mysql instance name of destination client
+                data_restore            (bool)  --  for data only/data+log restore
+                log_restore             (bool)  --  for log only/data+log restore
+                overwrite               (bool)  --  unconditional overwrite files during restore
+                copy_precedence         (int)   --  copy precedence value of storage policy copy
+                from_time               (str)   --  time to restore the contents after
+                        format: YYYY-MM-DD HH:MM:SS
+                to_time                 (str)   --  time to restore the contents before
+                        format: YYYY-MM-DD HH:MM:SS
+                media_agent             (str)   --  media agent associated
+                table_level_restore     (bool)  --  Table level restore flag
+                clone_env               (bool)  --  boolean to specify whether the database should be cloned or not
+                clone_options           (dict)  --  clone restore options passed in a dict
+                redirect_enabled         (bool)  --  boolean to specify if redirect restore is enabled
+                redirect_path           (str)   --  Path specified in advanced restore options
+                in order to perform redirect restore
+                browse_jobid           (int)   --  Browse jobid to browse and restore from
+                recurringRestore       (bool)  --  for Recurring restore
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if destination client name is empty
+
+                    if destination Instance name empty
+
+                    if response is empty
+
+                    if response is not success
+        """
+        if not (isinstance(path, list) and
+                isinstance(overwrite, bool)):
+            raise SDKException('Instance', '101')
+
+        if path == []:
+            raise SDKException('Instance', '104')
+
+        if dest_client_name is None:
+            raise SDKException('Client', '102',
+                               "The destination client name is missing. "
+                               "Please provide a valid destination client name to proceed")
+
+        if dest_instance_name is None:
+            raise SDKException('Instance', '102',
+                               "The destination Instance name is missing. "
+                               "Please provide a valid destination Instance name to proceed")
+
+        request_json = self._restore_json(
+            paths=path,
+            staging=staging,
+            dest_client_name=dest_client_name,
+            dest_instance_name=dest_instance_name,
+            data_restore=data_restore,
+            log_restore=log_restore,
+            overwrite=overwrite,
+            copy_precedence=copy_precedence,
+            from_time=from_time,
+            to_time=to_time,
+            media_agent=media_agent,
+            table_level_restore=table_level_restore,
+            clone_env=clone_env,
+            clone_options=clone_options,
+            redirect_enabled=redirect_enabled,
+            redirect_path=redirect_path,
+            browse_jobid=browse_jobid,
+            recurringRestore=recurringRestore)
+
+        return self._process_restore_response(request_json)
+
     def _restore_browse_option_json(self, value):
         """setter for the Browse options for restore in Json"""
 
@@ -636,7 +757,7 @@ class MYSQLInstance(Instance):
             "destinationFolder": "",
             "data": value.get("data_restore", True),
             "log": value.get("log_restore", True),
-            "recurringRestore": False,
+            "recurringRestore": value.get("recurringRestore", False),
             "temporaryStagingLocation": value.get("staging", ""),
             "dataStagingLocation": "",
             "logRestoreType": 0,

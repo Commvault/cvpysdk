@@ -69,6 +69,14 @@ Organizations
 
     _get_headers()              --  returns headers required for remote operations
 
+    _get_fl_parameters()        --  Returns the fl parameters to be passed in the mongodb caching api call
+
+    _get_sort_parameters()      --  Returns the sort parameters to be passed in the mongodb caching api call
+
+    _get_fq_parameters()        --  Returns the fq parameters based on the fq list passed
+
+    get_organizations_cache()   --  Gets all the organizations present in CommcellEntityCache DB.
+
     has_organization()          --  checks whether the organization with given name exists or not
 
     add()                       --  adds a new organization to the commcell
@@ -94,6 +102,7 @@ Organizations Attributes
 
     **fanout**              --  determines if remote operations will be performed, returns current fanout set
 
+    **all_organizations_cache** --  Returns the dictionary consisting of all the organizations cache present in mongoDB
 
 Organization
 ============
@@ -199,31 +208,31 @@ Organization Attributes
 
         **sender_name**             -- returns email sender name
 
-        **sender_email**             -- returns email adress of sender
+        **sender_email**            -- returns email adress of sender
 
         **default_plan**            --  returns the default plan associated with the organization
 
         **plans**                   --  returns the list of plans associated with the organization
 
-        **operator_role**             -- returns the operator role assigned to an user
+        **operator_role**           -- returns the operator role assigned to an user
 
-        **tenant_operator**             -- returns the operators associated with the organization
+        **tenant_operator**         -- returns the operators associated with the organization
 
-         **is_auto_discover_enabled**-- returns the autodiscover option for the Organization
+        **is_auto_discover_enabled**-- returns the autodiscover option for the Organization
 
-        **is_backup_disabled**       -- returns the backup activity status for the Organization
+        **is_backup_disabled**      -- returns the backup activity status for the Organization
 
-        **is_restore_disabled**      -- returns the restore activity status for the Organization
+        **is_restore_disabled**     -- returns the restore activity status for the Organization
 
-        **is_login_disabled**        -- returns the Login activity status for the Organization
+        **is_login_disabled**       -- returns the Login activity status for the Organization
 
-        **password_age_days**        -- returns the password age days for the Organization
+        **password_age_days**       -- returns the password age days for the Organization
         
         **is_download_software_from_internet_enabled**  --  returns the status of download software option for the Organization
 
-         **is_tfa_enabled**          -- returns the status of tfa for the organization.
+        **is_tfa_enabled**          -- returns the status of tfa for the organization.
 
-         **tfa_enabled_user_groups**    --  returns list of user groups names for which tfa is enabled.
+        **tfa_enabled_user_groups** --  returns list of user groups names for which tfa is enabled.
 
          **is_using_upn**           -- returns if organization is using upn or not
 
@@ -239,7 +248,7 @@ Organization Attributes
 
          **job_start_time**         -- returns the job start time associated with the organization
 
-        **client_groups**          -- returns clientgroups associated with the organization
+        **client_groups**           -- returns clientgroups associated with the organization
 
         **file_exceptions**         -- returns dictionary consisting Global File exceptions for the Organisation
 
@@ -260,7 +269,11 @@ Organization Attributes
 
         **company_theme**           --  Returns the company level theme if it exists
 
-       **user_session_timeout**     -- Returns the time after which user session expires for company users
+        **user_session_timeout**    --  Returns the time after which user session expires for company users
+
+        **geo_info**                --  returns the regions this org is extended to
+
+        **provder_guid**            --  returns the GUID for this organization
 
 RemoteOrganization
 ============
@@ -283,7 +296,7 @@ RemoteOrganization
     get_entity_counts()         --  To get the counts of associated entities for company
 
 
-Organization Attributes
+RemoteOrganization Attributes
 -----------------------
 
     Following attributes are available for an instance of the RemoteOrganization class:
@@ -293,6 +306,12 @@ Organization Attributes
         **organization_name**       --  returns the name of the organization
 
         **homecell**                --  returns the commserve name of the service commcell of this org
+
+        **workloads**               --  returns the commcells this org is present in
+
+        **geo_info**                --  returns the regions this org is extended to
+
+        **provder_guid**            --  returns the GUID for this organization
 
         **organization_name**       --  returns the name of the organization
 
@@ -347,6 +366,7 @@ class Organizations:
 
         self._organizations_api = self._services['ORGANIZATIONS']
         self._organizations = None
+        self._organizations_cache = None
         self._fanout = False
 
         self.refresh()
@@ -404,11 +424,8 @@ class Organizations:
         except IndexError:
             raise IndexError('No organization exists with the given Name / Id')
 
-    def _get_organizations(self, hard=False):
+    def _get_organizations(self):
         """Gets all the organizations associated with the Commcell environment.
-
-            Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
 
             Returns:
                 dict    -   consists of all organizations added to the commcell
@@ -426,27 +443,34 @@ class Organizations:
                     if response is not success
 
         """
-        if hard:
-            self._cvpysdk_object.make_request('GET', self._services["HARD_REFRESH_CACHE"] % 'organization')
         flag, response = self._cvpysdk_object.make_request('GET', self._organizations_api, headers=self._get_headers())
         if flag:
             organizations = {}
             self._adv_config = {}
             if response.json() and 'providers' in response.json():
                 for provider in response.json()['providers']:
-                    if self._fanout and "idpCompanyDetails" in provider:
-                        continue # to avoid dummy companies
                     name = provider['connectName'].lower()
+                    if self._fanout and "idpCompanyDetails" in provider:
+                        marked_workloads = self._adv_config.get(name, {}).get('workloads', [])
+                        this_workload = provider.get('commcell', {}).get('commCellName')
+                        self._adv_config[name] = self._adv_config.get(name, {}) | {
+                            'workloads': marked_workloads + [this_workload]
+                        }
+                        continue
+                        # using dummy company to store workload commcells only
                     organization_id = provider['shortName']['id']
                     organization_guid = provider['providerGUID']
                     cloud_service_organizations = provider.get("organizationCloudServiceDetails", [{}])[0].\
                         get("cloudService", {}).get('redirectUrl')
                     organizations[name] = organization_id
-                    self._adv_config[name] = {
+                    self._adv_config[name] = self._adv_config.get(name, {}) | {
                         'GUID': organization_guid,
                         'redirect_url': cloud_service_organizations,
-                        'home_commcell':provider.get('commcell',{}).get('commCellName'),
+                        'home_commcell': provider.get('commcell', {}).get('commCellName'),
+                        'parent_company': provider.get('ownerCompanyName'),
                     }
+                    if 'workloads' not in self._adv_config[name]:
+                        self._adv_config[name]['workloads'] = []
 
             self._get_associated_entities_count()
 
@@ -511,6 +535,184 @@ class Organizations:
             headers['Comet-Commcells'] = target
         return headers
 
+    def _get_fl_parameters(self, fl: list = None) -> str:
+        """
+        Returns the fl parameters to be passed in the mongodb caching api call
+
+        Args:
+            fl    (list)  --   list of columns to be passed in API request
+
+        Returns:
+            fl_parameters(str) -- fl parameter string
+        """
+        self.valid_columns = {
+            'connectName': 'providers.connectName',
+            'id': 'providers.shortname.id',
+            'fullName': 'providers.primaryContacts.fullName',
+            'associatedEntitiesCount': 'providers.associatedEntitiesCount',
+            'status': 'providers.status',
+            'providerGUID': 'providers.providerGUID',
+            'tags': 'providers.provider.tags'
+        }
+        default_columns = 'providers.connectName,providers.shortName'
+
+        if fl:
+            if all(col in self.valid_columns for col in fl):
+                fl_parameters = f"&fl={default_columns},{','.join(self.valid_columns[column] for column in fl)}"
+            else:
+                raise SDKException('Organization', '102', 'Invalid column name passed')
+        else:
+            fl_parameters = f"&fl={default_columns},{','.join(column for column in self.valid_columns.values())}"
+        return fl_parameters
+
+    def _get_sort_parameters(self, sort: list = None) -> str:
+        """
+        Returns the sort parameters to be passed in the mongodb caching api call
+
+        Args:
+            sort  (list)  --   contains the name of the column on which sorting will be performed and type of sort
+                                valid sor type -- 1 for ascending and -1 for descending
+                                e.g. sort = ['columnName','1']
+
+        Returns:
+            sort_parameters(str) -- sort parameter string
+        """
+        sort_type = str(sort[1])
+        col = sort[0]
+        if col in self.valid_columns.keys() and sort_type in ['1', '-1']:
+            sort_parameter = '&sort=' + self.valid_columns[col] + ':' + sort_type
+        else:
+            raise SDKException('Organization', '102', 'Invalid column_name/ sort_type passed')
+        return sort_parameter
+
+    def _get_fq_parameters(self, fq: list = None) -> str:
+        """
+        Returns the fq parameters based on the fq list passed
+        Args:
+             fq     (list) --   contains the columnName, condition and value
+                    e.g. fq = [['connectName','contains','test'],['status','equals','active']]
+
+        Returns:
+            fq_parameters(str) -- fq parameter string
+        """
+        conditions = ['contains', 'notContain', 'eq', 'neq', 'gt', 'lt']
+        params = ["&fq=providers.status:eq:ACTIVE"]
+        if fq:
+            for param in fq:
+                if param[0] in self.valid_columns.keys():
+                    if param[0] == 'tags':
+                        params.append(f"&fq=providers.provider.tags.name:contains:{param[2]}")
+                    elif param[1] in conditions:
+                        params.append(f"&fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}")
+                    elif param[1] == 'isEmpty' and len(param) == 2:
+                        params.append(f"&fq={self.valid_columns[param[0]]}:in:null,")
+                    elif param[1] == 'between' and '-' in param[2]:
+                        ranges = param[2].split('-')
+                        params.append(f"&fq={self.valid_columns[param[0]]}:gteq:{ranges[0]}")
+                        params.append(f"&fq={self.valid_columns[param[0]]}:lteq:{ranges[1]}")
+                    else:
+                        raise SDKException('Organization', '102', 'Invalid condition passed')
+                else:
+                    raise SDKException('Organization', '102', 'Invalid column Name passed')
+        if params:
+            return "".join(params)
+
+    def get_organizations_cache(self, hard: bool = False, **kwargs) -> dict:
+        """
+        Gets all the organizations present in CommcellEntityCache DB.
+
+        Args:
+            hard  (bool)      --   Flag to perform hard refresh on organization cache.
+            **kwargs (dict):
+                fl    (list)  --   list of columns to return in response (default: None).
+                sort  (list)  --   contains the name of the column on which sorting will be performed and type of sort
+                                        valid sor type: 1 for ascending and -1 for descending
+                                        e.g. sort = ['connectName','1'] (default: None).
+                limit (list)  --   contains the start and limit parameter value
+                                        limit = [<startValue>,<limitValue>]
+                                        default ['0','25']
+                search (str)  --   contains the string to search in the commcell entity cache (default: None).
+                fq     (list) --   contains the columnName, condition and value as a sublist of a list (default: None).
+                                        e.g. fq = [['connectName','contains','test'],['status','equals','active']]
+                enum   (bool) --    flag to return enums in the response (default: True).
+
+        Returns:
+            dict: Dictionary of all the properties present in response.
+        """
+        headers = self._commcell_object._headers.copy()
+        if kwargs.get('enum', True):
+            headers['EnumNames'] = 'True'
+
+        fl_parameters = self._get_fl_parameters(kwargs.get('fl', None))
+        fq_parameters = self._get_fq_parameters(kwargs.get('fq', None))
+        limit = kwargs.get('limit', ['0', '100'])
+        limit_parameters = f'start={limit[0]}&limit={limit[1]}'
+        hard_refresh = '&hardRefresh=true' if hard else ''
+        sort_parameters = self._get_sort_parameters(kwargs.get('sort', None)) if kwargs.get('sort', None) else ''
+        search_parameter = f'&search={",".join(self.valid_columns.values())}:contains:{kwargs.get("search", None)}' if kwargs.get(
+            'search', None) else ''
+
+        request_url = (
+                self._organizations_api + "?" + limit_parameters + sort_parameters + fl_parameters +
+                hard_refresh + search_parameter + fq_parameters
+        )
+        flag, response = self._cvpysdk_object.make_request("GET", request_url, headers=headers)
+
+        if not flag:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        organizations_cache = {}
+        if response.json() and 'providers' in response.json():
+            for provider in response.json()['providers']:
+                name = provider['connectName'].lower()
+                organization_config = {
+                    'id': provider.get('shortName', {}).get('id'),
+                    'providerGUID': provider.get('providerGUID'),
+                    'status': provider.get('status'),
+                    'associatedEntitiesCount': provider.get('associatedEntitiesCount')
+                }
+                if 'primaryContacts' in provider:
+                    organization_config['fullName'] = [
+                        contact.get('fullName') for contact in provider.get('primaryContacts')
+                    ]
+                if provider.get('provider') is not None and 'tags' in provider['provider']:
+                    organization_config['tags'] = provider.get('provider', {}).get('tags')
+                organization_config = {key: value for key, value in organization_config.items() if value is not None}
+                organizations_cache[name] = organization_config
+            return organizations_cache
+        else:
+            raise SDKException('Response', '102')
+
+    @property
+    def all_organizations_cache(self):
+        """Returns the dictionary consisting of all the organizations cache present in mongoDB
+
+                    dict - consists of all the organizations configured on the commcell
+
+                        {
+                        "organization1_name":
+                         {
+                         id : <organization's id>,
+                         domainName : <domain name of the organization>,
+                         GUID : <GUID of the company>,
+                         status: <status of the organization>,
+                         associatedEntityCount: <associated Entities Count>
+                         },
+
+                        "organization2_name":
+                        {
+                         id : <organization's id>,
+                         domainName : <domain name of the organization>,
+                         GUID : <GUID of the company>,
+                         status: <status of the organization>,
+                         associatedEntityCount: <associated Entities Count>
+                         },
+                    }
+
+                """
+        return self._organizations_cache
+
     @property
     def all_organizations(self):
         """Returns the dictionary consisting of all the organizations and their info.
@@ -538,6 +740,8 @@ class Organizations:
                      GUID : "49DADF71-247E-4D59-8BD8-CF7BFDF7DB28",
                      redirect_url: "<Webconsole url>",
                      home_commcell: "<commserve name>",
+                     parent_company: "<company name>",
+                     workloads: ['cs1', 'cs2']
                      count: 11
                      },
 
@@ -546,6 +750,8 @@ class Organizations:
                     GUID : "49DADF71-247E-4D59-8BD8-CF7BFDF7DB27",
                     redirect_url: None,
                     home_commcell: "<commserve name>",
+                    parent_company: "<company name>",
+                    workloads: ['cs4']
                     count: 8
                     }
                 }
@@ -973,7 +1179,8 @@ class Organizations:
                 self._commcell_object,
                 name,
                 self._organizations[name],
-                self._adv_config[name]['home_commcell']
+                homecell=self._adv_config[name]['home_commcell'],
+                workloads=self._adv_config[name]['workloads']
             )
         raise SDKException('RemoteOrganization', '110')
 
@@ -1007,7 +1214,7 @@ class Organizations:
         else:
             org = self.get(name)
             target = None
-            
+
         if deactivate: org.deactivate()
 
         organization_id = self._organizations[name.lower()]
@@ -1031,15 +1238,22 @@ class Organizations:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def refresh(self, hard=False):
+    def refresh(self, **kwargs):
         """
-        Refresh the list of organizations associated to the Commcell.
+        Refresh the list of organization on this commcell.
 
             Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+                **kwargs (dict):
+                    mongodb (bool)  -- Flag to fetch organization cache from MongoDB (default: False).
+                    hard (bool)     -- Flag to hard refresh MongoDB cache for this entity (default: False).
         """
+        mongodb = kwargs.get('mongodb', False)
+        hard = kwargs.get('hard', False)
+
         self._adv_config = None
-        self._organizations = self._get_organizations(hard)
+        self._organizations = self._get_organizations()
+        if mongodb:
+            self._organizations_cache = self.get_organizations_cache(hard=hard)
 
 
 class Organization:
@@ -1239,8 +1453,11 @@ class Organization:
         organizations = Organizations(self._commcell_object)
         return organizations.get(self.organization_name).organization_id
 
-    def _get_properties(self):
+    def _get_properties(self, **params):
         """Gets the properties of this Organization.
+        
+            Args:
+                params  (dict)  --  dictionary of query parameters
 
             Returns:
                 dict    -   dictionary consisting of the properties of this organization
@@ -1252,8 +1469,16 @@ class Organization:
                     if response is not success
 
         """
+        url = self._services['ORGANIZATION'] % self.organization_id
+
+        if params:
+            url += '?'
+            for key, value in params.items():
+                url += f'{key}={value}&'
+            url = url[:-1]
+
         flag, response = self._cvpysdk_object.make_request(
-            'GET', self._services['ORGANIZATION'] % self.organization_id
+            'GET', url
         )
 
         if flag:
@@ -1265,6 +1490,7 @@ class Organization:
 
                 self._description = organization['description']
                 self._email_domain_names = organization.get('emailDomainNames')
+                self._organization_name = organization.get('connectName')
                 self._domain_name = organization['shortName']['domainName']
                 self._backup_disabled = organization['deactivateOptions']['disableBackup']
                 self._restore_disabled = organization['deactivateOptions']['disableRestore']
@@ -1293,7 +1519,7 @@ class Organization:
                     self._company_privacy = privacy.get("enableDataSecurity")
 
                 self._retire_laptops = organization_properties.get('autoRetireDevices', {})
-                
+
                 job_time_enabled = organization_properties.get('isJobStartTimeEnabled')
                 if job_time_enabled:
                     job_time_epoch = organization_properties.get('jobStartTime', None)
@@ -1341,7 +1567,6 @@ class Organization:
                     os_type_map = {1: 'Windows', 2: 'Unix'}
                     self._file_exceptions[os_type_map[file_filter['operatingSystemType']]] = \
                         file_filter['globalFilters'].get('filters', [])
-                self._theme = json.loads(organization_properties.get('customization', '{}'))
 
                 return self._organization_info
             else:
@@ -1592,7 +1817,6 @@ class Organization:
         self._update_props = req_json
         self._update_properties()
 
-
     @property
     def description(self):
         """Returns the description for this Organization."""
@@ -1634,7 +1858,6 @@ class Organization:
         self._update_props = req_json
         self._update_properties()
 
-
     @property
     def auth_code(self):
         """Returns the value of the Auth Code for this Organization."""
@@ -1669,7 +1892,7 @@ class Organization:
     def password_age_days(self):
         """Returns the password age days for the organisation"""
         return self._password_age
-        
+
     @property
     def is_download_software_from_internet_enabled(self):
         """Returns boolean indicating whether download software from the internet is enabled"""
@@ -2163,13 +2386,17 @@ class Organization:
         self._properties['planDetailsOperationType'] = 3
         self._update_properties(update_plan_details=True)
 
-    def refresh(self):
-        """Refresh the properties of the Organization."""
+    def refresh(self, **params):
+        """Refresh the properties of the Organization.
+        
+            Args:
+                params  (dict)  --  dictionary of query parameters
+        """
         self._default_plan = []
         self._contacts = {}
         self._plans = {}
         self._update_props['organizationProperties'] = {}
-        self._properties = self._get_properties()
+        self._properties = self._get_properties(**params)
         self._user_groups = self._get_company_usergroup()
         self._tfa_obj.refresh()
 
@@ -2766,7 +2993,7 @@ class Organization:
         """
         if self._client_groups is None:
             query_params = f"?fq=companyId%3Aeq%3A{self._organization_id}&fl=groups.clientGroup%2Cgroups.Id%2Cgroups.name"
-            
+
             flag, response = self._commcell_object._cvpysdk_object.make_request(
                 'GET', self._services['SERVERGROUPS_V4'] + query_params
             ) # fetch all client groups associated with the organization
@@ -3073,7 +3300,24 @@ class Organization:
                 iconColor: '#0B2E44'
             }
         """
-        return self._theme
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['GET_ORGANIZATION_THEME'] % self.organization_id
+        )
+        if flag:
+            if response.json():
+                if 'error' in response.json():
+                    error_code = response.json()['error']['errorCode']
+                    if error_code != 0:
+                        error_message = response.json()['error']['errorMessage']
+                        raise SDKException('Organization', '102', 'Error: {0}'.format(error_message))
+                theme = response.json().get('organizationInfo', {}).get('organizationProperties', {})
+                theme = theme.get('customization', '{}')
+                return json.loads(theme)
+            else:
+                raise SDKException('Organization', '102', 'Empty Response')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     @company_theme.setter
     def company_theme(self, theme_colors:dict)->None:
@@ -3101,9 +3345,6 @@ class Organization:
             SDKException:
                 If it fails to Set theme for an Organisation
         """
-        if self._theme == theme_colors:
-            return
-
         request_json = {
             "organizationInfo": {
                 "organizationProperties": {
@@ -3295,11 +3536,38 @@ class Organization:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    @property
+    def geo_info(self) -> tuple[str, list[str]]:
+        """
+        The regions this company is mapped to
+
+        Returns:
+            idp_region          (str)   -   region name of idp
+            workload_regions    (list)  -   list of region names of workloads
+        """
+        geo_info = self._organization_info.get('organizationProperties', {}).get('companyGeoInfo', [])
+        workloads = []
+        idp = None
+        for region in geo_info:
+            region_name = region.get('companyRegion', {}).get('regionName')
+            if region.get('isIdPRegion'):
+                idp = region_name
+            else:
+                workloads.append(region_name)
+        return idp, workloads
+
+    @property
+    def provider_guid(self) -> str:
+        """
+        provider GUID for this organization
+        """
+        return self._organization_info.get('organization', {}).get('providerGUID')
+
 
 class RemoteOrganization:
     """Class for performing remote operations on an Organization."""
 
-    def __init__(self, commcell_object, organization_name:str, organization_id:str=None, homecell:str=None):
+    def __init__(self, commcell_object, organization_name: str, organization_id: str = None, **kwargs):
         """Initialise the RemoteOrganization instance.
 
             Args:
@@ -3311,8 +3579,9 @@ class RemoteOrganization:
                     default: None
 
                 homecell            (str)       --  the belonging service commcell of this organization
-
                     default: None
+
+                workloads           (list)      --  list of workloads this organization is extended to
 
             Returns:
                 object  -   instance of the RemoteOrganization class
@@ -3322,16 +3591,16 @@ class RemoteOrganization:
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
         self._update_response_ = commcell_object._update_response_
-        self._homecell = homecell
-        if not homecell:
-            self._homecell = self._get_homecell()
+
+        self._organization_name = organization_name
+
+        self._homecell = kwargs.get('homecell') or self._get_homecell()
+        self._workloads = kwargs.get('workloads') or self._get_workloads()
 
         self._headers = self._commcell_object._headers.copy()
         self._headers['CVContext']='Comet'
         self._headers['_cn'] = self._homecell
         self._headers['Comet-Commcells'] = self._homecell
-
-        self._organization_name = organization_name
 
         if organization_id:
             self._organization_id = str(organization_id)
@@ -3351,9 +3620,9 @@ class RemoteOrganization:
 
     @property
     def reseller_enabled(self)->bool:
-        """ 
-        Returns if reseller is enabled 
-        
+        """
+        Returns if reseller is enabled
+
         Returns:
             bool - True if reseller mode is enabled for the company
         """
@@ -3386,6 +3655,17 @@ class RemoteOrganization:
         organizations = Organizations(self._commcell_object)
         organizations.fanout = True
         return organizations.get_remote_org(self.organization_name).homecell
+
+    def _get_workloads(self) -> list[str]:
+        """
+        Gets the list of workloads this company is extended/associated to
+
+        Returns:
+            list    -   list of commcell names
+        """
+        organizations = Organizations(self._commcell_object)
+        organizations.fanout = True
+        return organizations.all_organizations_props[self._organization_name]['workloads']
 
     def _get_properties(self)->dict:
         """Gets the properties of this Organization.
@@ -3432,8 +3712,8 @@ class RemoteOrganization:
     @property
     def name(self)->str:
         """
-        Returns the Organization display name 
-        
+        Returns the Organization display name
+
         Returns:
             str     -   name of this organization
         """
@@ -3443,10 +3723,10 @@ class RemoteOrganization:
     def organization_id(self)->str:
         """
         Returns the value of the id for this Organization.
-        
+
         Returns:
             str     -   id of this organization (in given commcell)
-        
+
         """
         return self._organization_id
 
@@ -3454,17 +3734,55 @@ class RemoteOrganization:
     def homecell(self)->str:
         """
         Returns the service commcell name of this Organization.
-        
+
         Returns:
             str     -   commserve name where this organization exists
         """
         return self._homecell
 
     @property
+    def workloads(self) -> list[str]:
+        """
+        Returns the list of commcells this company has extensions in
+
+        Returns:
+            workloads   (list)  -   list of commcell names
+        """
+        return self._workloads
+
+    @property
+    def geo_info(self) -> tuple[str, list[str]]:
+        """
+        The regions this company is mapped to
+
+        Returns:
+            idp_region          (str)   -   region name of idp
+            workload_regions    (list)  -   list of region names of workloads
+        """
+        geo_info = self._organization_info.get('organizationProperties', {}).get('companyGeoInfo', [])
+        workloads = []
+        idp = None
+        for region in geo_info:
+            region_name = region.get('companyRegion', {}).get('regionName')
+            if region.get('isIdPRegion'):
+                idp = region_name
+            else:
+                workloads.append(region_name)
+        return idp, workloads
+
+    @property
+    def provider_guid(self) -> str:
+        """
+        Returns:
+            provider GUID for this organization
+        """
+        return self._organization_info.get('organization', {}).get('providerGUID')
+
+    @property
     def organization_name(self)->str:
         """
         Returns the value of the name for this Organization.
-        
+
         Returns:
             str     -   organization name
         """
@@ -3474,7 +3792,7 @@ class RemoteOrganization:
     def domain_name(self)->str:
         """
         Returns the value of the domain name for this Organization.
-        
+
         Returns:
             str     -   alias name/domain name of this organization
 
@@ -3488,13 +3806,13 @@ class RemoteOrganization:
 
         Returns:
             dict    -   parent company details
-        
+
         Example: {
-            '_type_': <entity type id>, 
-            'providerId': <company id>, 
+            '_type_': <entity type id>,
+            'providerId': <company id>,
             'providerDomainName': '<company name>'
             }
-        
+
         """
         return self._parent_company
 
@@ -3502,10 +3820,10 @@ class RemoteOrganization:
     def is_backup_disabled(self)->bool:
         """
         Returns boolean whether backup is disabled for this organisation
-        
+
         Returns:
             bool    -   True if backup is disabled
-        
+
         """
         return self._backup_disabled
 
@@ -3513,10 +3831,10 @@ class RemoteOrganization:
     def is_restore_disabled(self)->bool:
         """
         Returns boolean whether restore is disabled for this organisation
-        
+
         Returns:
             bool    -   True if restore is disabled
-        
+
         """
         return self._restore_disabled
 
@@ -3524,10 +3842,10 @@ class RemoteOrganization:
     def is_login_disabled(self)->bool:
         """
         Returns boolean whether login is disabled for this organisation
-        
+
         Returns:
             bool    -   True if login is disabled
-        
+
         """
         return self._login_disabled
 
@@ -3542,7 +3860,7 @@ class RemoteOrganization:
 
         Returns:
             list    -   list of dicts containing operator details
-        
+
         Example:
             [
                 {
@@ -3561,15 +3879,15 @@ class RemoteOrganization:
     def operators(self, operator_list:list)->None:
         """
         Overwrites the operator:role associations of the organization remotely
-        
+
         Args:
             operators (list): list of dicts with role and user/userGroup keys
-            
+
             [
                 {'role':'<name of role>','userGroup':'<usergroupname>'},
                 {'role':'<name of role>','user':'<username>'}
             ]
-        
+
         Returns:
             None
 
@@ -3853,3 +4171,44 @@ class RemoteOrganization:
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def extend(self, region: str, country: str, commcell_name: str) -> None:
+        """
+        Extends this company to specified region
+        
+        Args:
+            region  (str)           -   the name of region to extend to
+            country (str)           -   country associated with region name
+            commcell_name   (str)   -   commcell name associated with region
+        """
+        req_json = {
+            "sourceCommcell": {
+                "commcell": {"commCellName": self.homecell}
+            },
+            "targetCommcell": {
+                "commcell": {"commCellName": commcell_name},
+                "companyGeoInfo": {
+                    "country": country,
+                    "companyRegion": {"regionName": region}
+                }
+            },
+            "tenantCompany": {
+                "providerGUID": self.provider_guid
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request('POST', self._services['EXTEND_ORGANIZATION'], req_json)
+
+        if flag:
+            if response.json():
+                if 'error' in response.json():
+                    error_code = response.json()['error']['errorCode']
+                    if error_code != 0:
+                        error_message = response.json()['error']['errorMessage']
+                        raise SDKException('RemoteOrganization', '111', 'Error: {0}'.format(error_message))
+            else:
+                raise SDKException('RemoteOrganization', '111')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()

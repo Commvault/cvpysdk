@@ -25,6 +25,8 @@ ClientGroups: Class for representing all the client groups associated with a com
 ClientGroup:  Class for representing a single Client Group of the commcell
 
 ClientGroups:
+=============
+
     __init__(commcell_object)  -- initialise instance of the ClientGroups associated with
     the specified commcell
 
@@ -42,7 +44,13 @@ ClientGroups:
     _valid_clients()           -- returns the list of all the valid clients,
     from the list of clients provided
 
-    all_clientgroups()         -- returns the dict of all the clientgroups on the commcell
+    _get_fl_paramters()        -- Returns the fl parameters to be passed in the mongodb caching api call
+
+    _get_sort_parameters()     -- Returns the sort parameters to be passed in the mongodb caching api call
+
+    _get_fq_parameters()       -- Returns the fq parameters based on the fq list passed
+
+    get_client_groups_cache()  -- Gets all the client groups present in CommcellEntityCache DB.
 
     has_clientgroup()          -- checks if a client group exists with the given name or not
 
@@ -62,8 +70,17 @@ ClientGroups:
 
     refresh()                  -- refresh the client groups associated with the commcell
 
+ClientGroups Attributes
+-----------------------
+
+    **all_clientgroups**         -- returns the dict of all the clientgroups on the commcell
+
+    **all_clientgroups_cache**   -- Returns dict of all the client groups and their info present in
+    CommcellEntityCache in mongoDB
 
 ClientGroup:
+============
+
     __init__(commcell_object,
              clientgroup_name,
              clientgroup_id=None)  -- initialise object of ClientGroup class with the specified
@@ -189,6 +206,7 @@ class ClientGroups(object):
         self._CLIENTGROUPS = self._commcell_object._services['CLIENTGROUPS']
 
         self._clientgroups = None
+        self._clientgroups_cache = None
         self.refresh()
 
     def __str__(self):
@@ -248,11 +266,8 @@ class ClientGroups(object):
             except IndexError:
                 raise IndexError('No client group exists with the given Name / Id')
 
-    def _get_clientgroups(self,hard=False):
+    def _get_clientgroups(self):
         """Gets all the clientgroups associated with the commcell
-
-            Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
 
             Returns:
                 dict - consists of all clientgroups of the commcell
@@ -267,8 +282,6 @@ class ClientGroups(object):
 
                     if response is not success
         """
-        if hard:
-            self._commcell_object._cvpysdk_object.make_request('GET', self._commcell_object._services["HARD_REFRESH_CACHE"]%'clientgroup')
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._CLIENTGROUPS
         )
@@ -278,10 +291,30 @@ class ClientGroups(object):
                 client_groups = response.json()['groups']
                 clientgroups_dict = {}
 
+                name_count = {}
+
+                for client_group in client_groups:
+                    temp_name = client_group['name'].lower()
+                    temp_company = \
+                        client_group.get('clientGroup', {}).get('entityInfo', {}).get('companyName', '').lower()
+
+                    if temp_name in name_count:
+                        name_count[temp_name].add(temp_company)
+                    else:
+                        name_count[temp_name] = {temp_company}
+
                 for client_group in client_groups:
                     temp_name = client_group['name'].lower()
                     temp_id = str(client_group['Id']).lower()
-                    clientgroups_dict[temp_name] = temp_id
+                    temp_company = \
+                        client_group.get('clientGroup', {}).get('entityInfo', {}).get('companyName', '').lower()
+
+                    if len(name_count[temp_name]) > 1:
+                        unique_key = f"{temp_name}_({temp_company})"
+                    else:
+                        unique_key = temp_name
+
+                    clientgroups_dict[unique_key] = temp_id
 
                 return clientgroups_dict
             else:
@@ -317,6 +350,150 @@ class ClientGroups(object):
 
         return clients
 
+    def _get_fl_parameters(self, fl: list = None) -> str:
+        """
+        Returns the fl parameters to be passed in the mongodb caching api call
+
+        Args:
+            fl    (list)  --   list of columns to be passed in API request
+
+        Returns:
+            fl_parameters(str) -- fl parameter string
+        """
+        self.valid_columns = {
+            'name': 'name',
+            'id': 'groups.Id',
+            'association': 'groups.groupAssocType',
+            'company': 'groups.clientGroup.entityInfo.companyName',
+            'tags': 'tags'
+        }
+        default_columns = 'name'
+
+        if fl:
+            if all(col in self.valid_columns for col in fl):
+                fl_parameters = f"&fl={default_columns},{','.join(self.valid_columns[column] for column in fl)}"
+            else:
+                raise SDKException('ClientGroup', '102', 'Invalid column name passed')
+        else:
+            fl_parameters = "&fl=groups.clientGroup,groups.discoverRulesInfo,groups.groupAssocType,groups.Id," \
+                            "groups.name,groups.isCompanySmartClientGroup"
+
+        return fl_parameters
+
+    def _get_sort_parameters(self, sort: list = None) -> str:
+        """
+        Returns the sort parameters to be passed in the mongodb caching api call
+
+        Args:
+            sort  (list)  --   contains the name of the column on which sorting will be performed and type of sort
+                                valid sor type -- 1 for ascending and -1 for descending
+                                e.g. sort = ['name','1']
+
+        Returns:
+            sort_parameters(str) -- sort parameter string
+        """
+        sort_type = str(sort[1])
+        col = sort[0]
+        if col in self.valid_columns.keys() and sort_type in ['1', '-1']:
+            sort_parameter = '&sort=' + self.valid_columns[col] + ':' + sort_type
+        else:
+            raise SDKException('ClientGroup', '102', 'Invalid column name passed')
+        return sort_parameter
+
+    def _get_fq_parameters(self, fq: list = None) -> str:
+        """
+        Returns the fq parameters based on the fq list passed
+        Args:
+             fq     (list) --   contains the columnName, condition and value
+                    e.g. fq = [['name','contains', 'test'],['association','eq', 'Manual']]
+
+        Returns:
+            fq_parameters(str) -- fq parameter string
+        """
+        conditions = ['contains', 'notContain', 'eq', 'neq']
+        params = ["&fq=groups.isCompanySmartClientGroup:eq:false"
+                  "&fq=groups.clientGroup.clientGroupName:neq:Index Servers"]
+        if fq:
+            for param in fq:
+                if param[0] in self.valid_columns.keys():
+                    if param[0] == 'tags' and param[1] == 'contains':
+                        params.append(f"&tags={param[2]}")
+                    elif param[1] in conditions:
+                        params.append(f"&fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}")
+                    elif param[1] == 'isEmpty' and len(param) == 2:
+                        params.append(f"&fq={self.valid_columns[param[0]]}:in:null,")
+                    else:
+                        raise SDKException('ClientGroup', '102', 'Invalid condition passed')
+                else:
+                    raise SDKException('ClientGroup', '102', 'Invalid column Name passed')
+        if params:
+            return "".join(params)
+
+    def get_client_groups_cache(self, hard: bool = False, **kwargs) -> dict:
+        """
+        Gets all the client groups present in CommcellEntityCache DB.
+
+        Args:
+            hard  (bool)        --   Flag to perform hard refresh on client groups cache.
+            **kwargs (dict):
+                - fl (list)     --   List of columns to return in response (default: None).
+                - sort (list)   --   Contains the name of the column on which sorting will be performed and type of sort.
+                                           Valid sort type: 1 for ascending and -1 for descending
+                                           e.g. sort = ['columnName', '1'] (default: None).
+                - limit (list)  --   Contains the start and limit parameter value.
+                                            Default ['0', '100'].
+                - search (str)  --   Contains the string to search in the commcell entity cache (default: None).
+                - fq (list)     --   Contains the columnName, condition and value.
+                                            e.g. fq = [['name', 'contains', 'test'],
+                                             ['association', 'eq', 'Manual']] (default: None).
+                - enum (bool)   --   Flag to return enums in the response (default: True).
+
+        Returns:
+            dict: Dictionary of all the properties present in response.
+        """
+        headers = self._commcell_object._headers.copy()
+        if kwargs.get('enum', True):
+            headers['EnumNames'] = 'True'
+
+        fl_parameters = self._get_fl_parameters(kwargs.get('fl', None))
+        fq_parameters = self._get_fq_parameters(kwargs.get('fq', None))
+        limit = kwargs.get('limit', ['0', '100'])
+        limit_parameters = f'start={limit[0]}&limit={limit[1]}'
+        hard_refresh = '&hardRefresh=true' if hard else ''
+        sort_parameters = self._get_sort_parameters(kwargs.get('sort', None)) if kwargs.get('sort', None) else ''
+        search_parameter = f'&search={",".join(self.valid_columns.values())}:contains:{kwargs.get("search", None)}' if kwargs.get(
+            'search', None) else ''
+
+        request_url = (
+                self._CLIENTGROUPS + "?" + limit_parameters + sort_parameters + fl_parameters + hard_refresh +
+                search_parameter + fq_parameters
+        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", request_url, headers=headers)
+        if not flag:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        client_group_cache = {}
+        if response.json() and 'groups' in response.json():
+            for group in response.json()['groups']:
+                name = group.get('name')
+                client_group_config = {
+                    'id': group.get('Id'),
+                    'association': group.get('groupAssocType'),
+                }
+                if 'clientGroup' in group:
+                    if 'companyName' in group.get('clientGroup', {}).get('entityInfo', {}):
+                        client_group_config['company'] = group.get('clientGroup', {}).get('entityInfo', {}).get(
+                            'companyName')
+                    if 'tags' in group.get('clientGroup', {}):
+                        client_group_config['tags'] = group.get('clientGroup', {}).get('tags')
+                client_group_config = {key: value for key, value in client_group_config.items() if value is not None}
+                client_group_cache[name] = client_group_config
+
+            return client_group_cache
+        else:
+            raise SDKException('Response', '102')
+
     @property
     def all_clientgroups(self):
         """Returns dict of all the clientgroups associated with this commcell
@@ -328,6 +505,28 @@ class ClientGroups(object):
                     }
         """
         return self._clientgroups
+
+    @property
+    def all_clientgroups_cache(self) -> dict:
+        """Returns dict of all the client groups and their info present in CommcellEntityCache in mongoDB
+
+            dict - consists of all client groups of the in the CommcellEntityCache
+                    {
+                         "clientgroup1_name": {
+                                "id": clientgroup1_id,
+                                "association": clientgroup1 association type,
+                                "company": clientgroup1 company
+                                "tags": clientgroup1 tags
+                                },
+                         "clientgroup2_name": {
+                                "id": clientgroup2_id,
+                                "association": clientgroup2 association type,
+                                "company": clientgroup2 company
+                                "tags": clientgroup2 tags
+                                }
+                    }
+        """
+        return self._clientgroups_cache
 
     def has_clientgroup(self, clientgroup_name):
         """Checks if a client group exists in the commcell with the input client group name.
@@ -878,14 +1077,21 @@ class ClientGroups(object):
                     'No ClientGroup exists with name: "{0}"'.format(clientgroup_name)
                 )
 
-    def refresh(self, hard=False):
+    def refresh(self, **kwargs):
         """
-        Refresh the client groups associated with the Commcell.
+        Refresh the list of client groups on this commcell.
 
             Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+                **kwargs (dict):
+                    mongodb (bool)  -- Flag to fetch client groups cache from MongoDB (default: False).
+                    hard (bool)     -- Flag to hard refresh MongoDB cache for this entity (default: False).
         """
-        self._clientgroups = self._get_clientgroups(hard)
+        mongodb = kwargs.get('mongodb', False)
+        hard = kwargs.get('hard', False)
+
+        self._clientgroups = self._get_clientgroups()
+        if mongodb:
+            self._clientgroups_cache = self.get_client_groups_cache(hard=hard)
 
 
 class ClientGroup(object):

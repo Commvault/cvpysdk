@@ -53,8 +53,14 @@ class BigDataAppsInstance(Instance):
 
         """
         from cvpysdk.instances.splunkinstance import SplunkInstance
+        from cvpysdk.instances.bigdataapps.mongodbinstance import MongoDBInstance
+        from cvpysdk.instances.bigdataapps.yugabyteinstance import YugabyteInstance
+        from cvpysdk.instances.bigdataapps.couchbaseinstance import CouchbaseInstance
         instance_types = {
-            16: SplunkInstance
+            16: SplunkInstance,
+            17: CouchbaseInstance,
+            19: YugabyteInstance,
+            8: MongoDBInstance
         }
 
         commcell_object = agent_object._commcell_object

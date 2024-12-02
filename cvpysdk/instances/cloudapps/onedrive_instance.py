@@ -25,19 +25,27 @@ OneDrive instance,and to perform operations on that instance
 
 OneDriveInstance:
 
-    _prepare_advsearchgrp_onedrivev2 -- Utility function to prepare advsearchgrp json for restore job for
-                                        OneDrive for business clients
+    _prepare_advsearchgrp_onedrive_for_business_client() --  Utility function to prepare advsearchgrp json for restore
+                                                            job for OneDrive for business clients
 
-    _prepare_findquery_onedrivev2    -- Utility function to prepare findquery json for restore job for
-                                        OneDrive for business clients
+    _prepare_findquery_onedrive_for_business_client()    --  Utility function to prepare findquery json for restore job
+                                                            for OneDrive for business clients
 
-    _prepare_restore_json_v2()       --  Utility function to prepare user level restore json for
-                                         OneDrive for business clients
+    _prepare_restore_json_onedrive_for_business_client() --  Utility function to prepare user level restore json for
+                                                            OneDrive for business clients
+
+    _prepare_delete_json_onedrive_v2()      --  Utility function to prepare delete documents json for
+                                                OneDrive for business clients
 
     _get_instance_properties()       --  Instance class method overwritten to add cloud apps
     instance properties as well
 
-    restore_out_of_place()           --  runs out-of-place restore for the instance
+    restore_out_of_place()                               --  runs out-of-place restore for the instance
+
+    modify_connection_settings()                         --  Modifies the azure app connection settings
+
+    delete_data_from_browse()       --  Deletes items for the backupset in the Index and makes them unavailable for
+                                        browsing and recovery
 
 """
 
@@ -148,7 +156,7 @@ class OneDriveInstance(CloudAppsInstance):
         return self._proxy_client
 
 
-    def _prepare_advsearchgrp_onedrivev2(self, source_item_list, subclient_id):
+    def _prepare_advsearchgrp_onedrive_for_business_client(self, source_item_list, subclient_id):
         """
                     Utility function to prepare advsearchgrp json for restore job for OneDrive for business clients
 
@@ -266,7 +274,7 @@ class OneDriveInstance(CloudAppsInstance):
 
         return advsearchgrp
 
-    def _prepare_findquery_onedrivev2(self, source_item_list, subclient_id):
+    def _prepare_findquery_onedrive_for_business_client(self, source_item_list, subclient_id):
         """
             Utility function to prepare findquery json for restore job for OneDrive for bussiness clients
 
@@ -324,7 +332,7 @@ class OneDriveInstance(CloudAppsInstance):
                       }
                     ]
                   },
-                  "advSearchGrp": self._prepare_advsearchgrp_onedrivev2(source_item_list,subclient_id),
+                  "advSearchGrp": self._prepare_advsearchgrp_onedrive_for_business_client(source_item_list,subclient_id),
                   "mode": "WebConsole"
                 }
 
@@ -333,7 +341,7 @@ class OneDriveInstance(CloudAppsInstance):
 
 
 
-    def _prepare_restore_json_onedrive_v2(self, source_item_list, **kwargs):
+    def _prepare_restore_json_onedrive_for_business_client(self, source_item_list, **kwargs):
 
         """ Utility function to prepare user level restore json for OneDrive for bussiness clients
 
@@ -356,6 +364,8 @@ class OneDriveInstance(CloudAppsInstance):
 
                 skip_file_permissions (bool)    --  If True, file permissions will be restored
 
+                include_deleted_items  (bool)   --  If True, deleted items will be included
+
             Returns:
                 request_json (dict) - request json for restore job
 
@@ -373,8 +383,8 @@ class OneDriveInstance(CloudAppsInstance):
         destination_client = kwargs.get('destination_client')
         overwrite = kwargs.get('overwrite', False)
         restore_as_copy = kwargs.get('restore_as_copy', False)
-        skip_file_permissions = kwargs.get('skip_file_permissions', False)
-
+        skip_file_permissions = kwargs.get('skip_file_permissions', True)
+        include_deleted_items = kwargs.get('include_deleted_items', False)
 
 
         if destination_client:
@@ -406,9 +416,9 @@ class OneDriveInstance(CloudAppsInstance):
         }
 
         restore_options['commonOptions'] = {
-            "overwriteFiles": False,
-            "skip": True,
-            "unconditionalOverwrite": False
+            "overwriteFiles": overwrite,
+            "skip": True if not restore_as_copy and not overwrite else False,
+            "unconditionalOverwrite": overwrite
         }
 
         destination = restore_options['destination']
@@ -452,7 +462,9 @@ class OneDriveInstance(CloudAppsInstance):
         subclient_id = associations['subclientId']
 
         cloudAppsRestoreOptions = restore_options['cloudAppsRestoreOptions']
-        cloudAppsRestoreOptions['googleRestoreOptions']['findQuery'] = self._prepare_findquery_onedrivev2(source_item_list, subclient_id)
+        cloudAppsRestoreOptions['googleRestoreOptions']['findQuery'] = self._prepare_findquery_onedrive_for_business_client(source_item_list, subclient_id)
+        if include_deleted_items:
+            cloudAppsRestoreOptions['googleRestoreOptions']['findQuery']['advSearchGrp']['commonFilter'][0]['filter']['filters'][0]['fieldValues']['values'].extend(["3333","3334","3335"])
 
         destination_option = "Destination"
         destination_value = "Original location"
@@ -489,15 +501,16 @@ class OneDriveInstance(CloudAppsInstance):
                   },
                   {
                     "option": "If the file exists",
-                    "value": "Skip"
+                    "value": "Restore as a copy" if restore_as_copy and not overwrite else "Unconditionally overwrite" if overwrite else "Skip"
+
                   },
                   {
                     "option": "Skip file permissions",
-                    "value": "Enabled"
+                    "value": "Enabled" if skip_file_permissions else "Disabled"
                   },
                   {
                     "option": "Include deleted items",
-                    "value": "Disabled"
+                    "value": "Enabled" if include_deleted_items else "Disabled"
                   }
                 ]
               }
@@ -512,6 +525,77 @@ class OneDriveInstance(CloudAppsInstance):
             joboptionitems.append({"option": "Destination path", "value": destination_path})
 
         return request_json
+
+    def _prepare_delete_json_onedrive_v2(self, item_guids, **kwargs):
+        """ Utility function to prepare delete documents json for OneDrive for bussiness clients
+
+            Args:
+                item_guid (str)         --  item GUID to delete in browse
+
+                Kwargs:
+
+                    include_deleted_items (bool)             --  If True, deleted items will be included in search
+
+            Returns:
+                request_json (dict) - request json for delete document
+
+            Raises:
+                SDKException:
+                    if destination client with given item does not exist
+
+                    if type of parameter is invalid
+        """
+        folder = kwargs.get('folder', False)
+        include_deleted_items = kwargs.get('include_deleted_items', False)
+        subclient_id = self.subclients['default']['id']
+
+        if isinstance(item_guids, str):
+            source_item_list = [item_guids]
+        else:
+            source_item_list = [].extend(item_guids)
+        req_json = {
+            'opType': 1,
+            'bulkMode': folder,
+            'deleteOption': {
+                'folderDelete': folder
+            },
+            'searchReq': {
+                'mode': 4,
+                'facetRequests': {
+                    'facetRequest': []
+                },
+                'advSearchGrp': self._prepare_advsearchgrp_onedrive_for_business_client(source_item_list, subclient_id),
+                'searchProcessingInfo': {
+                    'resultOffset': 0,
+                    'pageSize': 50,
+                    'queryParams': [
+                        {
+                            'param': 'ENABLE_MIXEDVIEW',
+                            'value': 'true'
+                        },
+                        {
+                            'param': 'ENABLE_NAVIGATION',
+                            'value': 'on'
+                        },
+                        {
+                            'param': 'ENABLE_DEFAULTFACETS',
+                            'value': 'false'
+                        }
+                    ],
+                    'sortParams': []
+                }
+            }
+        }
+
+        if isinstance(item_guids, list):
+            req_json['searchReq']['advSearchGrp']['fileFilter'][0]['filter']['filters'][1]['fieldValues'][
+                'values'].extend(item_guids[1:])
+
+        if include_deleted_items:
+            req_json['searchReq']['advSearchGrp']['commonFilter'][0]['filter']['filters'][0]['fieldValues']['values'].extend(
+                ["3333", "3334", "3335"])
+
+        return req_json
 
     def restore_out_of_place(
             self,
@@ -740,3 +824,84 @@ class OneDriveInstance(CloudAppsInstance):
         }
 
         self.update_properties(properties_dict=update_dict)
+
+    def modify_connection_settings(self, azure_app_id, azure_dir_id, azure_app_secret):
+        """
+                   Method to modify OneDrive connection settings
+
+                   Arguments:
+                       azure_app_id         (str)   --      new azure application id
+                       azure_dir_id         (str)   --      new azure directory id
+                       azure_app_secret        (str)   --     new azure app password
+
+                  Returns:
+                       None
+
+                  Raises:
+                      SDKException:
+                            if failed to add
+
+                            if response is empty
+
+                            if response code is not as expected
+        """
+
+        if not isinstance(azure_app_id, str) or not azure_app_id:
+            raise SDKException('Instance', '102', 'Invalid argument: azure_app_id must be a non-empty string')
+        if not isinstance(azure_dir_id, str) or not azure_dir_id:
+            raise SDKException('Instance', '102', 'Invalid argument: azure_dir_id must be a non-empty string')
+        if not isinstance(azure_app_secret, str) or not azure_app_secret:
+            raise SDKException('Instance', '102', 'Invalid argument: azure_app_secret must be a non-empty string')
+
+        update_dict = {
+            "instance": self._instance,
+            "cloudAppsInstance": {
+                "instanceType": self.ca_instance_type,
+                "oneDriveInstance": {
+                    "azureAppList": {
+                        "azureApps": [
+                            {
+                                "azureDirectoryId": azure_dir_id,
+                                "azureAppId": azure_app_id,
+                                "azureAppKeyValue": b64encode(azure_app_secret.encode()).decode()
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+
+        self.update_properties(properties_dict=update_dict)
+
+    def delete_data_from_browse(self, item_guids, include_deleted_items=False, folder=False):
+        """
+        Deletes items for the backupset in the Index and makes them unavailable for browsing and recovery
+
+            Args:
+                item_guids       (str/list)      --      The guids of items to be deleted from browse
+                include_deleted_items (bool)     --      If True, deleted items will be included in browse
+                folder           (bool)          --      If True, item to be deleted is Folder
+
+            Returns:
+                None        --      If delete request is sent successfully for file
+                jobIds      --      If delete request is sent successfully for folder
+
+            Raises:
+                SDKException:
+                    if failed to delete
+
+                    if response is empty
+
+                    if response code is not as expected
+
+        """
+        if not isinstance(item_guids, str) or not item_guids:
+            if not isinstance(item_guids, list):
+                raise SDKException('Instance', '102', "Invalid argument: item_guid must be a non-empty string or list of strings.")
+        if isinstance(item_guids, list):
+            for item in item_guids:
+                if not isinstance(item, str) or not item:
+                    raise SDKException('Instance', '102',"Invalid argument: item_guid must be a non-empty string.")
+
+        request_json = self._prepare_delete_json_onedrive_v2(item_guids, include_deleted_items=include_deleted_items, folder=folder)
+        return self._process_delete_response(request_json)

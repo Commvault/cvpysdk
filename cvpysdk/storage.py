@@ -576,9 +576,9 @@ class MediaAgent(object):
             self._index_cache_enabled = mediaagent_list['mediaAgentProps'][
                 'mediaAgentIdxCacheProps']['cacheEnabled']
 
-        if mediaagent_list['mediaAgentProps']['mediaAgentIdxCacheProps']['cachePath']['path']:
-            self._index_cache = mediaagent_list['mediaAgentProps']['mediaAgentIdxCacheProps'
-                                                                   ]['cachePath']['path']
+        if mediaagent_list['mediaAgentProps']['indexLogsCacheInfo']['logsCachePath']['path']:
+            self._index_cache = mediaagent_list['mediaAgentProps']['indexLogsCacheInfo'
+                                                                   ]['logsCachePath']['path']
 
         if mediaagent_list['powerManagementInfo']['isPowerMgmtSupported']:
             self._is_power_mgmt_supported = mediaagent_list['powerManagementInfo']['isPowerMgmtSupported']
@@ -2477,8 +2477,7 @@ class RPStores(object):
         self.refresh()
 
     def _get_rp_stores(self):
-        xml = '<?xml version="1.0" encoding="UTF-8"?><EVGui_GetLibraryListWCReq libraryType="RPSTORE"/>'
-        response = self._commcell.execute_qcommand("qoperation execute", xml)
+        flag, response = self._commcell._cvpysdk_object.make_request('GET', self._commcell._services['ALL_RPStores'])
 
         try:
             if response.json().get('libraryList'):

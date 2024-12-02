@@ -1944,6 +1944,42 @@ c
         """
         return options
 
+    def _process_index_delete_response(self, flag, response):
+        """Runs the Index Delete job for a subclient with the request provided and returns the Job object.
+
+            Args:
+                flag (bool)        --  flag parameter of the request to initiate an index delete job
+                response (object)  --  response of the request to initiate an index delete job
+
+            Returns:
+                object - instance of the Job class for this index delete job
+
+            Raises:
+                SDKException:
+                    if job initialization failed
+
+                    if response is empty
+
+                    if response is not success
+        """
+        if flag:
+            if response.json():
+                if "resp" in response.json():
+                    error_code = response.json()['resp']['errorCode']
+                    if error_code != 0:
+                        error_string = response.json().get('response', {}).get('errorString', str())
+                        o_str = 'Failed to Delete Documents\nError: "{0}"'.format(error_string)
+                        raise SDKException('Subclient', '102', o_str)
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to Delete Documents\nError: "{0}"'.format(error_string)
+                    raise SDKException('Subclient', '102', o_str)
+                if "jobIds" in response.json():
+                    return Job(self._commcell_object, response.json()["jobIds"][0])
+            return None
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
     def update_properties(self, properties_dict):
         """Updates the subclient properties
 

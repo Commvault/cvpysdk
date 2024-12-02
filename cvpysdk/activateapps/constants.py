@@ -695,6 +695,74 @@ class PlanConstants:
                     "planId": 0
                 }
             }
+        },
+        6: {
+            "ciPolicyInfo": {
+                "ciPolicy": {
+                    "policyType": 5,
+                    "detail": {
+                        "ciPolicy": {
+                            "opType": 2,
+                            "enableExactSearch": False,
+                            "ciPolicyType": 5,
+                            "filters": {
+                                "fileFilters": {
+                                    "includeDocTypes": "",
+                                    "minDocSize": 0,
+                                    "maxDocSize": 50
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "eePolicyInfo": {},
+            "exchange": {},
+            "office365Info": {
+                "o365Exchange": {
+                    "mbArchiving": {
+                        "policyType": 1,
+                        "agentType": {
+                            "appTypeId": 137
+                        },
+                        "detail": {
+                            "emailPolicy": {
+                                "emailPolicyType": 1,
+                                "archivePolicy": {
+                                    "primaryMailbox": True,
+                                    "contentIndexProps": {}
+                                }
+                            }
+                        }
+                    }
+                },
+                "o365CloudOffice": {
+                    "caBackup": {
+                        "policyType": 6,
+                        "detail": {
+                            "cloudAppPolicy": {
+                                "cloudAppPolicyType": 1,
+                                "backupPolicy": {
+                                    "onedrivebackupPolicy": {},
+                                    "spbackupPolicy": {},
+                                    "teamsbackupPolicy": {}
+                                }
+                            }
+                        }
+
+                    }
+
+                }
+
+            },
+
+            "summary": {
+                "plan": {
+                    "planName": "",
+                    "planId": 0
+                }
+            }
+
         }
     }
 
@@ -1053,6 +1121,12 @@ class ComplianceConstants:
         AppTypes.SHAREPOINT: SHAREPOINT_FACET
     }
 
+    CUSTOM_FACETS_NAME = {
+        AppTypes.TEAMS: "TEAMS_NAME",
+        AppTypes.SHAREPOINT: "CUSTODIAN",
+        AppTypes.ONEDRIVE: "CUSTODIAN"
+    }
+
     FACET_KEY = "facetRequest"
     FILE_FACET = [
         {
@@ -1101,6 +1175,13 @@ class ComplianceConstants:
         }
     ]
 
+    RESPONSE_FIELD_LIST = ("DATA_TYPE,CLIENTNAME,CONTENTID,CV_OBJECT_GUID,PARENT_GUID,CV_TURBO_GUID,"
+                           "AFILEID,AFILEOFFSET,COMMCELLNO,MODIFIEDTIME,SIZEINKB,BACKUPTIME,CISTATE,DATE_DELETED,"
+                           "TEAMS_ITEM_ID,TEAMS_ITEM_NAME,TEAMS_NAME,TEAMS_SMTP,TEAMS_ITEM_TYPE,TEAMS_CHANNEL_TYPE,"
+                           "TEAMS_TAB_TYPE,TEAMS_GROUP_VISIBILITY,TEAMS_GUID,TEAMS_CONV_ITEM_TYPE,"
+                           "TEAMS_CONV_MESSAGE_TYPE,TEAMS_CONV_SUBJECT,TEAMS_CONV_IMPORTANCE,TEAMS_CONV_SENDER_TYPE,"
+                           "TEAMS_CONV_SENDER_NAME,TEAMS_CONV_HAS_REPLIES,CI_URL,TEAMS_DRIVE_FOLDER_TYPE,APPTYPE,APPID")
+
     COMPLIANCE_SEARCH_JSON = {
         "mode": 2,
         "facetRequests": {},
@@ -1114,7 +1195,8 @@ class ComplianceConstants:
                                 "intraFieldOp": 0,
                                 "fieldValues": {
                                     "values": [
-                                        "1"
+                                        "1",
+                                        "3"
                                     ]
                                 }
                             }

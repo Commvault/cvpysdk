@@ -134,7 +134,7 @@ class Tags:
 
             Raises:
                 SDKException:
-                    if type of the organization name argument is not string
+                    if type of the tag name argument is not string
 
         """
         if not isinstance(tag_name, str):
@@ -142,7 +142,7 @@ class Tags:
 
         return self._tags and tag_name.lower() in self._tags
 
-    def get(self, name):
+    def get(self, name: str):
         """Returns an instance of the Tag class for the given tag name.
 
             Args:
@@ -158,22 +158,25 @@ class Tags:
                     if no tag exists with the given name
 
         """
-        if not isinstance(name, str):
-            raise SDKException('EntityTags', '101')
-
-        name = name.lower()
-
         if self.has_tag(name):
+            name = name.lower()
             return Tag(self._commcell_object, name, self._tags[name])
+
         raise SDKException('EntityTags', '105')
 
     def refresh(self) -> None:
         """Refresh the list of tags"""
-        self._tags = None
         self._tags = self._get_tags()
 
-    def add(self, tag_name) -> None:
-        """Method to add an entity tag"""
+    def add(self, tag_name: str):
+        """Method to add an entity tag
+
+            Args:
+                tag_name (str): entity tag name
+
+            Returns:
+                object  -   instance of the Tag class, for the newly created entity tag
+        """
         if not isinstance(tag_name, str):
             raise SDKException('EntityTags', '101')
 
@@ -203,17 +206,18 @@ class Tags:
                 raise SDKException('EntityTags', '103', err_message)
 
         self.refresh()
+        return self.get(tag_name)
 
-    def delete(self, tag_name) -> None:
-        """Deletes the entity tag"""
-        if not isinstance(tag_name, str):
-            raise SDKException('EntityTags', '101')
+    def delete(self, tag_name: str) -> None:
+        """Deletes the entity tag
 
-        tag_name = tag_name.lower()
-
+        Args:
+            tag_name (str): entity tag name to delete
+        """
         if not self.has_tag(tag_name):
             raise SDKException("EntityTags", '105')
 
+        tag_name = tag_name.lower()
         tag_id = self._tags[tag_name]
 
         flag, response = self._cvpysdk_object.make_request('DELETE', self._service['DELETE_ENTITY_TAGS'] % tag_id)
@@ -244,13 +248,13 @@ class Tag:
             Args:
                 commcell_object     (object)    --  instance of the Commcell class
 
-                tag_name            (str)       --  name of the organization
+                tag_name            (str)       --  name of the entity tag
 
-                tag_id              (str)       --  id of the organization
+                tag_id              (str)       --  id of the entity tag
                     default: None
 
             Returns:
-                object  -   instance of the Organization class
+                object  -   instance of the tag class
 
         """
         self._commcell_object = commcell_object

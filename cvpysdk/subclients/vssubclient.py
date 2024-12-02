@@ -658,10 +658,10 @@ class VirtualServerSubclient(Subclient):
                 for each_condition in nested_children:
                     display_name = each_condition['displayName']
                     content_type = VSAObjects(each_condition['type']).name
-                    vm_id = each_condition['name']
+                    vm_id = '' if each_condition.get('name', '') in display_name else each_condition.get('name', '')
                     temp_dict = {
-                        'equal_value': each_condition['equalsOrNotEquals'],
-                        'allOrAnyChildren': each_condition['allOrAnyChildren'],
+                        'equal_value': each_condition.get('equalsOrNotEquals', True),
+                        'allOrAnyChildren': each_condition.get('allOrAnyChildren', True),
                         'id': vm_id,
                         'path': path,
                         'display_name': display_name,
@@ -936,7 +936,9 @@ class VirtualServerSubclient(Subclient):
             "passUnconditionalOverride": value.get("unconditional_overwrite", False),
             "powerOnVmAfterRestore": value.get("power_on", False),
             "registerWithFailoverCluster": value.get("add_to_failover", False),
-            "userPassword": {"userName": vcenter_userpwd or "admin"}
+            "userPassword": {"userName": vcenter_userpwd or "admin"},
+            "redirectWritesToDatastore": value.get("redirectWritesToDatastore", ""),
+            "delayMigrationMinutes": value.get("delayMigrationMinutes", 0)
         }
         if value['in_place']:
             json_disklevel_option_restore["dataStore"] = {}
@@ -1012,7 +1014,7 @@ class VirtualServerSubclient(Subclient):
             self._advanced_option_restore_json["roleInfo"] = {
                 "name": value["iamRole"]
             }
-        if value.get("serviceAccount").get("email"):
+        if value.get("serviceAccount", {}).get("email"):
             self._advanced_option_restore_json["roleInfo"] = {
                 "email": value.get("serviceAccount").get("email"),
                 "name": value.get("serviceAccount").get("displayName"),
@@ -1206,7 +1208,8 @@ class VirtualServerSubclient(Subclient):
                vm_disk_browse=False,
                vm_files_browse=False,
                operation='browse',
-               copy_precedence=0
+               copy_precedence=0,
+               **kwargs
                ):
         """Gets the content of the backup for this subclient at the path
            specified.
@@ -1233,6 +1236,11 @@ class VirtualServerSubclient(Subclient):
                 operation            (str)   -- Type of operation, browser of find
 
                 copy_precedence      (int)   -- The copy precedence to do the operation from
+
+            Kwargs(optional)
+
+                live_browse           (bool)   -- set to True to get live browse content
+                                                    even though file indexing is enabled
 
             Returns:
                 list - list of all folders or files with their full paths
@@ -1273,7 +1281,7 @@ class VirtualServerSubclient(Subclient):
             vm_path = self._parse_vm_path(vm_names, vm_path)
             browse_content = super(VirtualServerSubclient, self).browse(
                 show_deleted_files, vm_disk_browse, True, path=vm_path,
-                vs_file_browse=vm_files_browse, operation=operation
+                vs_file_browse=vm_files_browse, operation=operation, **kwargs
             )
 
         if not vm_ids:

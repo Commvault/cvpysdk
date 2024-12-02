@@ -429,6 +429,17 @@ class FileSystemSubclient(Subclient):
                 }
             }
 
+        if 'mark_media_full_on_success' in options and options['mark_media_full_on_success']:
+
+            media_opts = {
+                'markMediaFullOnSuccess': options.get('mark_media_full_on_success', False)
+            }
+
+            if 'mediaOpt' in final_dict and isinstance(final_dict['mediaOpt'], dict):
+                final_dict['mediaOpt'].update(media_opts)
+            else:
+                final_dict['mediaOpt'] = media_opts
+
         return final_dict
 
     @property
@@ -1665,6 +1676,7 @@ class FileSystemSubclient(Subclient):
                             start_new_media         :   enables the option to start new media for the job
                             media_agent_name        :   to run backup via this media agent
                             impersonate_gui         :   sets the initiatedFrom property to GUI if True
+                            mark_media_full_on_success: boolean (True/False) that marks vols full on successful backup
 
                 common_backup_options      (dict)  --  advanced job options to be included while
                                                         making request

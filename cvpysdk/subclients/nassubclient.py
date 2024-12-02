@@ -61,7 +61,9 @@ class NASSubclient(FileSystemSubclient):
             incremental_level='BEFORE_SYNTH',
             on_demand_input=None,
             snap_name=None,
+            backup_external_links=0,
             backup_offline_data=False,
+            block_backup=False,
             volume_based_backup=False):
         """Runs a backup job for the subclient of the level specified.
 
@@ -85,7 +87,11 @@ class NASSubclient(FileSystemSubclient):
 
                 snap_name   (str)   --  input for snap_name
 
+		        backup_external_links	(int)	--	input for advanced option backup external links
+
                 backup_offline_data   (bool)  --  input for advanced NAS backup option backupOfflineData
+
+                block_backup (bool) -- input for advanced NAS backup option blockBackup
 
                 volume_based_backup   (bool)  --  input for advanced NAS backup option volumeBasedBackup
 
@@ -108,11 +114,13 @@ class NASSubclient(FileSystemSubclient):
 
         nas_options = {
             "nasOptions": {
+                "blockBackup": True if block_backup else False,
                 "backupFromSnap": snap_name if snap_name is not None else "",
                 "backupOfflineData": True if backup_offline_data else False,
                 "backupQuotas": True,
                 "backupFromSnapshot": True,
                 "backupFromSnapshotYes": True,
+                "backupExternalLinks": backup_external_links,
                 "replicationVolumeId": 0,
                 "volumeBasedBackup": True if volume_based_backup else False
             }

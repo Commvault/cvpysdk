@@ -115,6 +115,7 @@ import copy
 import base64
 import os.path
 import random
+import requests
 
 from cvpysdk.exception import SDKException
 from cvpysdk.activateapps.constants import ComplianceConstants
@@ -147,7 +148,7 @@ class ComplianceSearchUtils():
             self._update_response_(
                 response.text))
 
-    def do_compliance_search(self, search_text, index_server_name,
+    def do_compliance_search(self, search_text, index_server_name=None,
                              page_size=50, app_type=ComplianceConstants.AppTypes.FILE_SYSTEM):
         """Method to run a compliance search with the search text provided
 
@@ -179,10 +180,13 @@ class ComplianceSearchUtils():
 
         """
         self._index_servers.refresh()
-        if not self._index_servers.has(index_server_name):
-            raise SDKException('IndexServers', '102')
         search_request = copy.deepcopy(ComplianceConstants.COMPLIANCE_SEARCH_JSON)
-        search_request["listOfCIServer"][0]["cloudID"] = self._index_servers.get(index_server_name).cloud_id
+        if index_server_name:
+            if not self._index_servers.has(index_server_name):
+                raise SDKException('IndexServers', '102')
+            search_request["listOfCIServer"][0]["cloudID"] = self._index_servers.get(index_server_name).cloud_id
+        else:
+            del search_request["listOfCIServer"]
         search_request["advSearchGrp"]["cvSearchKeyword"]["keyword"] = search_text
         search_request["userInformation"]["userGuid"] = self._users.get(self._commcell.commcell_username).user_guid
         if app_type in ComplianceConstants.FILE_TYPES:
@@ -191,6 +195,14 @@ class ComplianceSearchUtils():
             custom_facet = copy.deepcopy(ComplianceConstants.FILE_FACET)
             if app_type != ComplianceConstants.AppTypes.FILE_SYSTEM:
                 custom_facet = copy.deepcopy(ComplianceConstants.CUSTOM_FACET)
+                custom_facet[0]["name"] = ComplianceConstants.CUSTOM_FACETS_NAME[app_type]
+                if app_type == ComplianceConstants.AppTypes.TEAMS:
+                    search_request["searchProcessingInfo"]["queryParams"].append(
+                        {
+                            "param": "RESPONSE_FIELD_LIST",
+                            "value": ComplianceConstants.RESPONSE_FIELD_LIST
+                        },
+                    )
                 custom_facet[1]["stringParameter"][0]["name"] = ComplianceConstants.CUSTOM_FACETS[app_type]
             search_request["facetRequests"][ComplianceConstants.FACET_KEY] = custom_facet
         elif app_type in ComplianceConstants.EMAIL_TYPES:
@@ -443,7 +455,7 @@ class ExportSet():
                     },
                     "options": {
                         "zipEML": True,
-                        "retentionInDays": -1}
+                        "retentionInDays": 30}
                 },
                 "onlineData": {
                     "downloadStatus": 0
@@ -779,6 +791,10 @@ class Export():
                     {
                         "name": self._export_set_properties['downLoadID'],
                         "id": 2
+                    },
+                    {
+                        "name": "zip",
+                        "id": 3
                     }
                 ]
             }
@@ -803,7 +819,15 @@ class Export():
             if response.json() and "fileContent" in response.json():
                 file_content = response.json()['fileContent']
                 download_file = os.path.join(download_folder, file_content['fileName'])
-                file_data = base64.b64decode(file_content['data'])
+                if 'cloudUrl' in response.json():
+                    url = response.json()['cloudUrl']
+                    cloud_file = requests.get(url)
+                    if cloud_file.status_code == 200:
+                        file_data = cloud_file.content
+                    else:
+                        raise SDKException('ComplianceSearch', '109')
+                else:
+                    file_data = base64.b64decode(file_content['data'])
                 with open(download_file, "wb") as f:
                     f.write(file_data)
                 return download_file

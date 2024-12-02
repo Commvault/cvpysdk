@@ -1950,6 +1950,10 @@ class EdiscoveryDataSources():
                     "propertyValue": str(EdiscoveryConstants.CrawlType.BACKUP_V2.value)
                 })
         else:
+            request_json['datasources'][0]['properties'].append({
+                "propertyName": "crawltype",
+                "propertyValue": str(EdiscoveryConstants.CrawlType.LIVE.value)
+            })
             if not is_commvault_client or 'access_node' in kwargs:
                 request_json['datasources'][0]['properties'].append({
                     "propertyName": "username",

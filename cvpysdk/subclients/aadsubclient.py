@@ -26,6 +26,7 @@ Class:
 from __future__ import unicode_literals
 from ..subclient import Subclient
 
+
 class AzureAdSubclient(Subclient):
     """
         Class for Azure AD subclient related operation
