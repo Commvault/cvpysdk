@@ -76,6 +76,7 @@ SERVICES_DICT_TEMPLATE = {
                        '&NeedXmlResp=true&includeDisabledClients=%s&CSCCNetworkCheck=%s'
                        '&applicationCheck=%s&additionalResources=%s',
     'MONGODB_CHECK_READINESS' : '{0}/clients/mongodb/status',
+    'CLIENT_BROWSE_FS' : '{0}/client/%s/browsefs',
     'GET_ALL_AGENTS': '{0}Agent?clientId=%s',
     'AGENT': '{0}Agent',
     'GET_AGENT': '{0}Agent?clientId=%s&applicationId=%s&propertyLevel=30',
@@ -215,6 +216,8 @@ SERVICES_DICT_TEMPLATE = {
     'GET_WORKFLOW_DEFINITION': '{0}Workflow/%s/definition',
     'GET_INTERACTIONS': '{0}WorkflowInteractions',
     'GET_INTERACTION': '{0}Workflow/Interaction/%s',
+    'EDIT_WORKFLOW_CONFIG': '{0}/cr/apps/configform/%s',
+    'APPROVE_WORKFLOW': '{0}workflow_editor/configuration/%s/approve',
 
     'INSTANCE_BROWSE': '{0}Client/%s/%s/Instance/%s/Browse',
     'CLOUD_DATABASE_BROWSE': '{0}BrowseRDSBackups',
@@ -314,13 +317,16 @@ SERVICES_DICT_TEMPLATE = {
     'EDISCOVERY_REQUEST_DOCUMENT_MARKER': '{0}EDiscoveryClients/Tasks/%s/Documents',
     'EDISCOVERY_CONFIGURE_TASK': '{0}EDiscoveryClient/ConfigureTask',
     'EDICOVERY_TASK_WORKFLOW': '{0}EDiscoveryClients/Tasks/%s/Workflows',
+    'GET_RESOURCE_POOLS': '{0}V4/ResourcePool',
+    'GET_RESOURCE_POOL_DETAILS': '{0}ResourcePool/%s',
+    'DELETE_RESOURCE_POOL': '{0}ResourcePool/%s',
+    'CREATE_RESOURCE_POOL': '{0}ResourcePool',
 
     'GLOBAL_FILTER': '{0}GlobalFilter',
     'RESTORE_OPTIONS': '{0}Restore/GetDestinationsToRestore?clientId=0&appId=%s&flag=8',
 
     'UPLOAD_FULL_FILE': '{0}Client/%s/file/action/upload?uploadType=fullFile',
     'UPLOAD_CHUNKED_FILE': '{0}Client/%s/file/action/upload?uploadType=chunkedFile',
-
     'PLANS': '{0}V2/Plan',
     'PLAN': '{0}V2/Plan/%s',
     'PLAN_SUMMARY': '{0}v4/Plan/Summary?%s',
@@ -545,6 +551,7 @@ SERVICES_DICT_TEMPLATE = {
     'REGISTRATION': '{0}/RegFrgnCell',
     'UNREGISTRATION': '{0}/UnRegisterCommCell',
     'SERVICE_REGISTER': '{0}/ServiceCommcells/Register',
+    'SERVICE_PROPS': '{0}/ServiceCommcell/Properties',
     'GET_REGISTERED_COMMCELLS': '{0}/CommCell/registered',
     'GET_REGISTERED_ROUTER_COMMCELLS': '{0}/ServiceCommcells',
     'GET_USERSPACE_SERVICE': '{0}/ServiceCommcell/UserSpace',

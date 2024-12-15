@@ -89,7 +89,11 @@ Workflow:
     _get_workflow_definition()          --  Get workflow definition properties
 
     @Class Modules
-    set_workflow_configuration()        -- Set workflow configuration
+    set_workflow_configuration()        --  Set workflow configuration
+
+    approve_workflow()                  --  Approves the workflow change requested by different user
+
+    get_authorizations()                --  Get authorizations/approvals for the workflow
 
     enable()                            --  Enables the workflow
 
@@ -1044,27 +1048,60 @@ class WorkFlow(object):
                     if HTTP Status Code is not SUCCESS / Setting workflow set_workflow_configuration failed
         """
         config_xml = "<configuration>{0}</configuration>".format(config_xml)
-        from xml.sax.saxutils import escape
-        escaped_xml = escape(config_xml)
-
-        request_xml = """<Workflow_SetConfigurationSettings configSettings="{0}">
-            <workflow workflowId="{1}" workflowName="{2}"/>
-        </Workflow_SetConfigurationSettings> """.format(escaped_xml, self._workflow_id, self._workflow_name)
-
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['EXECUTE_QCOMMAND'], request_xml
+            'POST', self._services['EDIT_WORKFLOW_CONFIG'] % self.workflow_id, config_xml
         )
 
         if flag:
             if response.json() and 'errorCode' in response.json():
+                error_message = response.json().get('errorMessage', 'No error message in response')
                 if response.json()['errorCode'] != 0:
-                    raise SDKException('Workflow', '105')
+                    raise SDKException('Workflow', '105', error_message)
                 else:
                     self.refresh()
             else:
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def approve_workflow(self, auth_id=None):
+        """
+        Approves change to this workflow initiated by a different admin user
+
+        Args:
+            auth_id (int)   --  Authorization ID to approve, will pick latest authId if not given
+        """
+        if not auth_id:
+            auth_dicts = self.get_authorizations()
+            if not auth_dicts:
+                raise SDKException('Workflow', '102', 'No approvals found for this workflow')
+            auth_id = sorted(auth_dicts, key=lambda x: x.get("createdTime"))[-1].get('authId')
+
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', self._services['APPROVE_WORKFLOW'] % auth_id
+        )
+
+        if flag:
+            if response.json() and 'errorCode' in response.json():
+                error_message = response.json().get('errorMessage', 'No error message in response')
+                if response.json()['errorCode'] != 0:
+                    raise SDKException('Workflow', '105', error_message)
+                else:
+                    self.refresh()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def get_authorizations(self):
+        """
+        Get the list of authorizations (approvals) for this workflow
+
+        Returns:
+            list    -   list of dicts with authorization details
+        """
+        self._get_workflow_properties()
+        return self._properties.get('authorizations', [])
 
     def enable(self):
         """ Enable Worklfow

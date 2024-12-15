@@ -105,6 +105,8 @@ Commcell:
 
     unregister_commcell()           -- unregisters a commcell
 
+    update_service_commcell_properties()    --  updates properties of registered service commcells
+
     is_commcell_registered()       -- checks if the commcell is registered
 
     _get_redirect_rules_service_commcell()    -- gets the redirect rules of service commcell
@@ -407,6 +409,7 @@ from .security.role import Roles
 from .security.two_factor_authentication import TwoFactorAuthentication
 from .credential_manager import Credentials
 from .download_center import DownloadCenter
+from .resource_pool import ResourcePools
 from .organization import Organizations, Organization
 from .storage_pool import StoragePools
 from .monitoring import MonitoringPolicies
@@ -680,6 +683,7 @@ class Commcell(object):
         self._activate = None
         self._export_sets = None
         self._content_analyzers = None
+        self._resource_pool = None
         self._plans = None
         self._job_controller = None
         self._users = None
@@ -792,6 +796,7 @@ class Commcell(object):
         del self._datacube
         del self._activate
         del self._content_analyzers
+        del self._resource_pool
         del self._plans
         del self._job_controller
         del self._users
@@ -1439,6 +1444,16 @@ class Commcell(object):
             return USER_LOGGED_OUT_MESSAGE
 
     @property
+    def resource_pool(self):
+        """Returns the instance of the ResourcePools class."""
+        try:
+            if self._resource_pool is None:
+                self._resource_pool = ResourcePools(self)
+            return self._resource_pool
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
     def activate(self):
         """Returns the instance of the ContentAnalyzers class."""
         try:
@@ -2067,6 +2082,7 @@ class Commcell(object):
         self._activate = None
         self._threat_indicators = None
         self._content_analyzers = None
+        self._resource_pool = None
         self._plans = None
         self._job_controller = None
         self._users = None
@@ -3627,6 +3643,39 @@ class Commcell(object):
                     response_string = self._update_response_(response.text)
                     raise SDKException('Response', '101', response_string)
 
+    def update_service_commcell_properties(self, commcell_guid, properties):
+        """
+        Updates the properties of the service commcell
+
+        Args:
+            commcell_guid   (str)   --  GUID of the service commcell
+
+            properties      (dict)  --  dict with properties to be updated
+                example: {'displayName': '...', 'webconsoleUrl': '...'}
+
+        Returns:
+            dict - comet-response header indicating which commcell failed, if any, else None
+        """
+        payload = {
+            "properties": {'csGUID': commcell_guid.upper()} | properties
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['SERVICE_PROPS'], payload
+        )
+        if flag:
+            if response.json():
+                error_code = response.json()['errorCode']
+                if error_code != 0:
+                    error_string = response.json().get('errorMessage') or response.json().get('errorString')
+                    raise SDKException('CommcellRegistration', '105', error_string)
+                self.refresh()
+                return response.headers.get("comet-response")
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     def get_eligible_service_commcells(self, login_name_or_email=None):
         """Gets the redirect service commcells based on login_name or email provided
 
@@ -4448,20 +4497,26 @@ class Commcell(object):
             org_id  (int)   -   id of company to get preference list for
 
         Returns:
-            user_nav_settings   -   dict with user role key and denied nav states as value
+            user_nav_settings   -   dict with user role key and prefs_dict as value which has include and denied navs
             example:
                 {
-                  "msp_admin": ["activeDirectory", "gsuiteApps", ...],
-                  "tenant_admin": [...],
-                  "tenant_user": [...],
-                  "msp_user": [...],
-                  "restricted_user": [...]
+                  "msp_admin": {
+                    "include_navs": ['gsuite','replication',....etc]
+                    "denied_navs": []
+                  },
+                  "tenant_admin": {...},
+                  "tenant_user": {...},
+                  "msp_user": {...},
+                  "restricted_user": {...}
                 }
         """
         user_roles = {0: 'msp_admin', 1: 'tenant_admin', 2: 'tenant_user', 3: 'msp_user', 4: 'restricted_user'}
         url = self._services['NAVIGATION_SETTINGS']
+        settings_type = 'globalSettings'
         if org_id:
             url += f'?organizationId={org_id}'
+            settings_type = 'companySettings'
+
         flag, response = self._cvpysdk_object.make_request('GET', url)
         if flag:
             if response.json():
@@ -4471,8 +4526,11 @@ class Commcell(object):
                     raise SDKException('Commcell', '108', error_string)
 
                 nav_settings = {}
-                for user_nav in response.json().get('navSettings', {}).get('globalSettings', []):
-                    nav_settings[user_roles[user_nav.get('userRole')]] = user_nav.get('deniedNavItems', '').split(',')
+                for user_nav in response.json().get('navSettings', {}).get(settings_type, []):
+                    nav_settings[user_roles[user_nav.get('userRole')]] = {
+                        "include_navs": user_nav.get('includeNavItems', '').split(','),
+                        "denied_navs": user_nav.get('deniedNavItems', '').split(',')
+                    }
                 return nav_settings
             else:
                 raise SDKException('Response', '102')
@@ -4485,27 +4543,38 @@ class Commcell(object):
         Makes a rest api call to set the navigation preference list (for command center)
 
         Args:
-            nav_settings    (dict)  -   dict with role:denied items format similar to get request return format
+            nav_settings    (dict)  -   dict with role: navs format similar to get request return format
             example:
                 {
-                  "msp_admin": ["activeDirectory", "gsuiteApps", ...],
-                  "tenant_admin": [...],
-                  "tenant_user": [...],
-                  "msp_user": [...],
-                  "restricted_user": [...]
+                  "msp_admin": {
+                    "include_navs": ['gsuite','replication',....etc]
+                    "denied_navs": []
+                  },
+                  "tenant_admin": {...},
+                  "tenant_user": {...},
+                  "msp_user": {...},
+                  "restricted_user": {...}
                 }
             org_id  (int)   -   id of company to set preference list for
         """
         user_roles = {'msp_admin': 0, 'tenant_admin': 1, 'tenant_user': 2, 'msp_user': 3, 'restricted_user': 4}
         url = self._services['NAVIGATION_SETTINGS']
+        settings_type = 'globalSettings'
         if org_id:
             url += f'?organizationId={org_id}'
+            settings_type = 'companySettings'
+
+        settings = []
+        for role, nav_items in nav_settings.items():
+            settings.append({"userRole": user_roles[role]})
+            if "include_navs" in nav_items:
+                settings[-1]["includeNavItems"] = ",".join(nav_items["include_navs"])
+            if "denied_navs" in nav_items:
+                settings[-1]["deniedNavItems"] = ",".join(nav_items["denied_navs"])
+
         request_json = {
             'navSettings': {
-                'globalSettings': [
-                    {"userRole": user_roles[role], "deniedNavItems": ",".join(nav_items)}
-                    for role, nav_items in nav_settings.items()
-                ]
+                settings_type: settings
             }
         }
         flag, response = self._cvpysdk_object.make_request('POST', url, payload=request_json)

@@ -235,6 +235,16 @@ EXCEPTION_DICT = {
         '103': 'Failed to get the list of analytics engines',
         '104': 'Failed to get the datasources'
     },
+    'ResourcePools': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Failed to get list of resource pools from CS',
+        '104': 'Resource pool not exists',
+        '105': 'Failed to get resource pool details from cs',
+        '106': 'Resource pool deletion failed',
+        '107': 'Resource pool with same name exists already',
+        '108': 'Resource pool creation failed'
+    },
     'ThreatIndicators': {
         '101': 'Data type of the input(s) is not valid',
         '102': '',
@@ -566,6 +576,7 @@ EXCEPTION_DICT = {
         '102': '',
         '103': 'Failed to unregister commcell',
         '104': 'Datatype of the input is not valid',
+        '105': 'Failed to set commcell properties'
     },
     'LiveSync': {
         '101': 'Data type of the input(s) is not valid',

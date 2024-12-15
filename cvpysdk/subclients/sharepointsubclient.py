@@ -47,6 +47,10 @@ SharepointSubclient:
 
     restore()                           --  restores the databases specified in the input paths list.
 
+    add_azure_app()                     --  adds a single azure app to the sharepoint client
+
+    delete_azure_app()                  --  deletes one/multiple azure app(s) from the sharepoint client
+
     run_manual_discovery()              --  runs the manual disocvery for specified backupset
 
     browse_for_content()                --  returns the user association content
@@ -585,6 +589,72 @@ class SharepointSubclient(SharepointSuperSubclient):
             return properties_dict
         else:
             raise SDKException('Subclient', '102', 'Method not supported for SharePoint On-Premise Instance')
+
+    def add_azure_app(self, azure_app_id, azure_app_key_id, azure_directory_id, cert_string=None, cert_password=None):
+        """
+        Adds an azure app to the sharepoint client
+
+        args:
+            azure_app_id        (str)       --      Application id of the azure app
+            azure_app_key_id    (str)       --      Client Secret of the azure app
+            azure_directory_id  (str)       --      Azure directory/tenant ID
+            cert_string         (str)       --      Certificate String
+            cert_password       (str)       --      Certificate Password
+        """
+        properties_dict = self._backupset_object.properties
+        azure_app_list = properties_dict["sharepointBackupSet"]["spOffice365BackupSetProp"].get("azureAppList", {}).get("azureApps", [])
+        azure_app_key_id = b64encode(azure_app_key_id.encode()).decode()
+
+        azure_app_dict = {
+            "azureAppId": azure_app_id,
+            "azureAppKeyValue": azure_app_key_id,
+            "azureDirectoryId": azure_directory_id
+        }
+
+        if cert_string:
+            # cert_string needs to be encoded twice
+            cert_string = b64encode(cert_string).decode()
+            cert_string = b64encode(cert_string.encode()).decode()
+
+            cert_password = b64encode(cert_password.encode()).decode()
+
+            cert_dict = {
+                "certificate": {
+                    "certBase64String": cert_string,
+                    "certPassword": cert_password
+                }
+            }
+            azure_app_dict.update(cert_dict)
+
+        azure_app_list.append(azure_app_dict)
+
+        properties_dict["sharepointBackupSet"]["spOffice365BackupSetProp"]["azureAppList"] =  {
+            "azureApps": azure_app_list
+        }
+
+        self._backupset_object.update_properties(properties_dict)
+
+    def delete_azure_app(self, app_ids):
+        """
+        Deletes azure app from the sharepoint client
+
+        args:
+            app_ids         (str / list[str])   --      Azure App ID or list of Azure App IDs to delete.
+        """
+        if not isinstance(app_ids, list):
+            app_ids = [app_ids]
+
+        properties_dict = self._backupset_object.properties
+        azure_app_list = properties_dict["sharepointBackupSet"]["spOffice365BackupSetProp"]["azureAppList"]["azureApps"]
+        new_app_list = []
+
+        for azure_app_dict in azure_app_list:
+            if not azure_app_dict["azureAppId"] in app_ids:
+                new_app_list.append(azure_app_dict)
+
+        properties_dict["sharepointBackupSet"]["spOffice365BackupSetProp"]["azureAppList"]["azureApps"] = new_app_list
+
+        self._backupset_object.update_properties(properties_dict)
 
     def run_manual_discovery(self):
         """Runs the manual discovery of backupset

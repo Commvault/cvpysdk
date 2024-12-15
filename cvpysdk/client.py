@@ -2108,7 +2108,11 @@ class Clients(object):
 
                 azure_app_key_id        (str)       --  app key for sharepoint online
 
-                azure_directory_id    (str)   --  azure directory id for sharepoint online
+                azure_directory_id    (str)         --  azure directory id for sharepoint online
+
+                cert_string           (str)         -- certificate string
+
+                cert_password         (str)         -- certificate password
 
                 cloud_region            (int)   --  stores the cloud region for the SharePoint client
                                                     - Default (Global Service) [1]
@@ -2247,27 +2251,37 @@ class Clients(object):
         if global_administrator:
             azure_app_key_id = b64encode(kwargs.get('azure_app_key_id').encode()).decode()
 
-            # cert_string needs to be encoded twice
-            cert_string = b64encode(kwargs.get('cert_string')).decode()
-            cert_string = b64encode(cert_string.encode()).decode()
+            azure_app_dict = {
+                "azureAppId": kwargs.get('azure_app_id'),
+                "azureAppKeyValue": azure_app_key_id,
+                "azureDirectoryId": kwargs.get('azure_directory_id')
+            }
 
-            cert_password = b64encode(kwargs.get('cert_password').encode()).decode()
+            if 'cert_string' in kwargs:
+                # cert_string needs to be encoded twice
+                cert_string = b64encode(kwargs.get('cert_string')).decode()
+                cert_string = b64encode(cert_string.encode()).decode()
+
+                cert_password = b64encode(kwargs.get('cert_password').encode()).decode()
+
+                cert_dict = {
+                    "certificate": {
+                        "certBase64String": cert_string,
+                        "certPassword": cert_password
+                    }
+                }
+                azure_app_dict.update(cert_dict)
+
+
 
             global_administrator_password = b64encode(kwargs.get('global_administrator_password').encode()).decode()
             request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
                 "spOffice365BackupSetProp"]["azureAppList"] = {
                     "azureApps": [
-                        {
-                            "azureAppId": kwargs.get('azure_app_id'),
-                            "azureAppKeyValue": azure_app_key_id,
-                            "azureDirectoryId": kwargs.get('azure_directory_id'),
-                            "certificate": {
-                                "certBase64String": cert_string,
-                                "certPassword": cert_password
-                            }
-                        }
+                        azure_app_dict
                     ]
                 }
+
             request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
                 "spOffice365BackupSetProp"]["serviceAccounts"] = {
                     "accounts": [
@@ -2297,24 +2311,31 @@ class Clients(object):
             if kwargs.get('is_modern_auth_enabled'):
                 azure_app_key_id = b64encode(kwargs.get('azure_app_key_id').encode()).decode()
 
-                # cert_string needs to be encoded twice
-                cert_string = b64encode(kwargs.get('cert_string')).decode()
-                cert_string = b64encode(cert_string.encode()).decode()
+                azure_app_dict = {
+                    "azureAppId": kwargs.get('azure_app_id'),
+                    "azureAppKeyValue": azure_app_key_id,
+                    "azureDirectoryId": kwargs.get('azure_directory_id')
+                }
 
-                cert_password = b64encode(kwargs.get('cert_password').encode()).decode()
+                if 'cert_string' in kwargs:
+                    # cert_string needs to be encoded twice
+                    cert_string = b64encode(kwargs.get('cert_string')).decode()
+                    cert_string = b64encode(cert_string.encode()).decode()
+
+                    cert_password = b64encode(kwargs.get('cert_password').encode()).decode()
+
+                    cert_dict = {
+                        "certificate": {
+                            "certBase64String": cert_string,
+                            "certPassword": cert_password
+                        }
+                    }
+                    azure_app_dict.update(cert_dict)
 
                 request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
                     "spOffice365BackupSetProp"]["azureAppList"] = {
                     "azureApps": [
-                        {
-                            "azureAppId": kwargs.get('azure_app_id'),
-                            "azureAppKeyValue": azure_app_key_id,
-                            "azureDirectoryId": kwargs.get('azure_directory_id'),
-                            "certificate": {
-                                "certBase64String": cert_string,
-                                "certPassword": cert_password
-                            }
-                        }
+                        azure_app_dict
                     ]
                 }
         if kwargs.get('azure_username'):

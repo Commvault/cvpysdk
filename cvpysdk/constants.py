@@ -663,7 +663,7 @@ class VSAFailOverStatus(Enum):
 class ApplicationGroup(Enum):
     """Class to maintain application group types."""
 
-    WINDOWS = 'APPGRP_WindowsFileSystemIDA'
+    WINDOWS = auto()
     UNIX = auto()
     IBMi = auto()
     OPENVMS = auto()

@@ -127,6 +127,7 @@ VirtualServerSubclient:
 
     update_properties()                       --  child method to add vsa specific properties to update properties
 
+    index_server                            --  Property to get/set the indexserver client for the subclient
 
 To add a new Virtual Subclient,  create a class in a new module under virtualserver sub package
 
@@ -155,6 +156,7 @@ import xmltodict
 
 from cvpysdk.plan import Plans
 from ..exception import SDKException
+from ..client import Client
 from ..subclient import Subclient
 from ..constants import VSAObjects, HypervisorType
 
@@ -568,6 +570,49 @@ class VirtualServerSubclient(Subclient):
             self._live_sync = VsaLiveSync(self)
 
         return self._live_sync
+
+    @property
+    def index_server(self):
+        """Returns the index server client set for the subclient. None if no Index Server is set"""
+
+        if 'indexSettings' not in self._commonProperties:
+            return None
+
+        index_settings = self._commonProperties['indexSettings']
+        index_server = None
+
+        if ('currentIndexServer' in index_settings and
+                'clientName' in index_settings['currentIndexServer']):
+            index_server = index_settings['currentIndexServer']['clientName']
+
+        if index_server is None:
+            return None
+
+        return self._commcell_object.clients.get(index_server)
+
+    @index_server.setter
+    def index_server(self, value):
+        """Sets the index server client for the backupset
+
+            Args:
+                value   (object)    --  The index server client object to set
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+
+        if not isinstance(value, Client):
+            raise SDKException('Subclient', '121')
+
+        index_server_name = value.client_name
+
+        self._set_subclient_properties(
+            "_commonProperties['indexSettings']['currentIndexServer']['clientName']",
+            index_server_name)
 
     def _get_disk_provisioning_value(self, provisioningType):
         """
@@ -1884,6 +1929,10 @@ class VirtualServerSubclient(Subclient):
             vm_path, show_deleted_files, restore_index, True, from_date, to_date
         )
 
+    def reinitialize_vm_names_browse(self):
+        self._vm_names_browse = []
+        self._get_vm_ids_and_names_dict_from_browse()
+
     def _get_disk_extension(self, disk_list):
         """
         get the Extension of all disk in the list
@@ -2617,7 +2666,7 @@ class VirtualServerSubclient(Subclient):
 
         for _each_vm_to_restore in restore_option['vm_to_restore']:
             if not restore_option["in_place"]:
-                if 'disk_type' in restore_option:
+                if 'disk_type' in restore_option and restore_option['disk_type']:
                     restore_option['restoreAsManagedVM'] = restore_option['disk_type'][
                         _each_vm_to_restore]
                 if ("restore_new_name" in restore_option and
