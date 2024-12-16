@@ -1,0 +1,1440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>cvpysdk.resource_pool API documentation</title>
+<meta name="description" content="Main file for performing resource pool related operations on CS …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em;background-color:#f8f9fa}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#FE496A;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#FD0131}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<link rel="shortcut icon" type="image/x-icon" href="https://commvault.github.io/cvpysdk/favicon.ico">
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>cvpysdk.resource_pool</code></h1>
+</header>
+<section id="section-intro">
+<p>Main file for performing resource pool related operations on CS</p>
+<p>ResourcePools , ResourcePool and ResourcePoolTypes are the classes defined in this file</p>
+<h2 id="resourcepools">Resourcepools</h2>
+<p><strong>init</strong>()
+&ndash;
+initialise object of the ResourcePools class</p>
+<p>_response_not_success()
+&ndash;
+parses through the exception response, and raises SDKException</p>
+<p>_get_resource_pools()
+&ndash;
+returns resource pools details from CS</p>
+<p>has()
+&ndash;
+Checks whether given resource pool exists in cs or not</p>
+<p>get()
+&ndash; returns ResourcePool object for given name</p>
+<p>delete()
+&ndash;
+deletes the resource pool from CS</p>
+<p>create()
+&ndash;
+creates resource pool in CS</p>
+<p>refresh()
+&ndash;
+Refreshes resource pools associated with cs</p>
+<h2 id="resourcepool">Resourcepool</h2>
+<p><strong>init</strong>()
+&ndash;
+initialise object of the ResourcePool class</p>
+<p>_response_not_success()
+&ndash;
+parses through the exception response, and raises SDKException</p>
+<p>_get_pool_details()
+&ndash;
+returns resource pool details from cs</p>
+<p>refresh()
+&ndash;
+refreshes resource pool details</p>
+<h2 id="resourcepool-attributes">ResourcePool Attributes:</h2>
+<pre><code>**resource_pool_id**        --  returns Resource pool id
+
+**resource_pool_type**      --  returns ResourcePoolTypes enum
+</code></pre>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/resource_pool.py#L1-L394" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python"># Copyright Commvault Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an &#34;AS IS&#34; BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------------------------------------------------
+
+&#34;&#34;&#34;Main file for performing resource pool related operations on CS
+
+ResourcePools , ResourcePool and ResourcePoolTypes are the classes defined in this file
+
+ResourcePools:
+
+        __init__()                          --  initialise object of the ResourcePools class
+
+        _response_not_success()             --  parses through the exception response, and raises SDKException
+
+        _get_resource_pools()               --  returns resource pools details from CS
+
+        has()                               --  Checks whether given resource pool exists in cs or not
+
+        get()                               -- returns ResourcePool object for given name
+
+        delete()                            --  deletes the resource pool from CS
+
+        create()                            --  creates resource pool in CS
+
+        refresh()                           --  Refreshes resource pools associated with cs
+
+ResourcePool:
+
+        __init__()                          --  initialise object of the ResourcePool class
+
+        _response_not_success()             --  parses through the exception response, and raises SDKException
+
+        _get_pool_details()                 --  returns resource pool details from cs
+
+        refresh()                           --  refreshes resource pool details
+
+ResourcePool Attributes:
+----------------------------------
+
+    **resource_pool_id**        --  returns Resource pool id
+
+    **resource_pool_type**      --  returns ResourcePoolTypes enum
+
+&#34;&#34;&#34;
+
+from .exception import SDKException
+
+import enum
+
+
+class ResourcePoolTypes(enum.Enum):
+    &#34;&#34;&#34;Enum class for different resource pool types&#34;&#34;&#34;
+    GENERIC = 0
+    O365 = 1
+    SALESFORCE = 2
+    EXCHANGE = 3
+    SHAREPOINT = 4
+    ONEDRIVE = 5
+    TEAMS = 6
+    DYNAMICS_365 = 7
+    VSA = 8
+    FILESYSTEM = 9
+    KUBERNETES = 10
+    AZURE_AD = 11
+    CLOUD_LAPTOP = 12
+    FILE_STORAGE_OPTIMIZATION = 13
+    DATA_GOVERNANCE = 14
+    E_DISCOVERY = 15
+    CLOUD_DB = 16
+    OBJECT_STORAGE = 17
+    GMAIL = 18
+    GOOGLE_DRIVE = 19
+    GOOGLE_WORKSPACE = 20
+    SERVICENOW = 21
+    THREATSCAN = 22
+    DEVOPS = 23
+    RISK_ANALYSIS = 24
+    GOOGLE_CLOUD_PLATFORM = 50001
+
+
+class ResourcePools():
+    &#34;&#34;&#34;class to represent all pool in resource pool&#34;&#34;&#34;
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initializes an instance of the ResourcePools class.
+
+            Args:
+
+                commcell_object     (object)    --  instance of the commcell class
+
+            Returns:
+
+                object  -   instance of the ResourcePools class
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._API_GET_ALL_RESOURCE_POOLS = self._services[&#39;GET_RESOURCE_POOLS&#39;]
+        self._API_DELETE_RESOURCE_POOL = self._services[&#39;DELETE_RESOURCE_POOL&#39;]
+        self._API_CREATE_RESOURCE_POOL = self._services[&#39;CREATE_RESOURCE_POOL&#39;]
+        self._pools = {}
+        self.refresh()
+
+    def _response_not_success(self, response):
+        &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
+
+            Args:
+                response    (object)    --  response class object,
+
+                received upon running an API request, using the `requests` python package
+
+        &#34;&#34;&#34;
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+
+    def _get_resource_pools(self) -&gt; dict:
+        &#34;&#34;&#34;returns resource pools details from CS
+
+                Args:
+
+                    None
+
+                Returns:
+
+                    dict       --  Resource pool details
+
+                Raises:
+
+                    SDKException:
+
+                        if failed to get resource pool details
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_GET_ALL_RESOURCE_POOLS)
+        output = {}
+        if flag:
+            if response.json() and &#39;resourcePools&#39; in response.json():
+                _resourcepools = response.json()[&#39;resourcePools&#39;]
+                for _pool in _resourcepools:
+                    if &#39;name&#39; in _pool:
+                        output.update({_pool[&#39;name&#39;].lower(): _pool})
+            elif bool(response.json()):
+                raise SDKException(&#39;ResourcePools&#39;, &#39;103&#39;)
+            return output
+        self._response_not_success(response)
+
+    def create(self, name: str, resource_type, **kwargs):
+        &#34;&#34;&#34;creates resource pool in CS
+
+            Args:
+
+                name    (str)           --  Resource pool name
+
+                resource_type   (enum)  --  ResourcePoolTypes enum
+
+            kwargs options:
+
+                for Threat Scan -
+
+                    index_server    (str)   --  index server name
+
+            Returns:
+
+                obj --  Instance of ResourcePool class
+
+            Raises:
+
+                SDKException:
+
+                    if failed to create resource pool
+
+                    if resource pool already exists
+
+        &#34;&#34;&#34;
+        if resource_type.value not in [ResourcePoolTypes.THREATSCAN.value]:
+            raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, &#39;Resource pool creation is not supported for this resource type&#39;)
+        if resource_type.value == ResourcePoolTypes.THREATSCAN.value and &#39;index_server&#39; not in kwargs:
+            raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, &#39;Index server name is missing in kwargs&#39;)
+        if self.has(name=name):
+            raise SDKException(&#39;ResourcePools&#39;, &#39;107&#39;)
+        _request_json = {
+            &#34;resourcePool&#34;: {
+                &#34;appType&#34;: resource_type.value,
+                &#34;dataAccessNodes&#34;: [],
+                &#34;extendedProp&#34;: {
+                    &#34;exchangeOnePassClientProperties&#34;: {}},
+                &#34;resourcePool&#34;: {
+                    &#34;resourcePoolId&#34;: 0,
+                    &#34;resourcePoolName&#34;: name},
+                &#34;exchangeServerProps&#34;: {
+                    &#34;jobResultsDirCredentials&#34;: {
+                        &#34;userName&#34;: &#34;&#34;},
+                    &#34;jobResultsDirPath&#34;: &#34;&#34;},
+                &#34;roleId&#34;: None,
+                &#34;indexServerMembers&#34;: [],
+                &#34;indexServer&#34;: {
+                    &#34;clientId&#34;: self._commcell_object.index_servers.get(
+                        kwargs.get(&#39;index_server&#39;)).index_server_client_id if resource_type.value == ResourcePoolTypes.THREATSCAN.value else 0,
+                    &#34;clientName&#34;: kwargs.get(&#39;index_server&#39;) if resource_type.value == ResourcePoolTypes.THREATSCAN.value else &#39;&#39;,
+                    &#34;displayName&#34;: kwargs.get(&#39;index_server&#39;) if resource_type.value == ResourcePoolTypes.THREATSCAN.value else &#39;&#39;,
+                    &#34;selected&#34;: True},
+                &#34;accessNodes&#34;: {
+                    &#34;clientGroups&#34;: [],
+                    &#34;clients&#34;: []}}}
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._API_CREATE_RESOURCE_POOL, _request_json)
+        if flag:
+            if response.json() and &#39;error&#39; in response.json():
+                _error = response.json()[&#39;error&#39;]
+                if _error.get(&#39;errorCode&#39;, 0) != 0:
+                    raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, f&#39;Resource pool creation failed with {_error}&#39;)
+                self.refresh()
+                return self.get(name=name)
+            raise SDKException(&#39;ResourcePools&#39;, &#39;108&#39;)
+        self._response_not_success(response)
+
+    def delete(self, name: str):
+        &#34;&#34;&#34;deletes the resource pool from CS
+
+            Args:
+
+                name   (str)       --   Resource pool name
+
+            Returns:
+
+                None
+
+            Raises:
+
+                SDKException:
+
+                    if failed to delete resource pool
+
+                    if failed to find resource pool
+        &#34;&#34;&#34;
+        if not self.has(name=name):
+            raise SDKException(&#39;ResourcePools&#39;, &#39;104&#39;)
+        api = self._API_DELETE_RESOURCE_POOL % (self._pools[name.lower()][&#39;id&#39;])
+        flag, response = self._cvpysdk_object.make_request(&#39;DELETE&#39;, api)
+        if flag:
+            if response.json() and &#39;error&#39; in response.json():
+                _error = response.json()[&#39;error&#39;]
+                if _error.get(&#39;errorCode&#39;, 0) != 0:
+                    raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, f&#39;Resource pool deletion failed with {_error}&#39;)
+                self.refresh()
+                return
+            raise SDKException(&#39;ResourcePools&#39;, &#39;106&#39;)
+        self._response_not_success(response)
+
+    def get(self, name: str):
+        &#34;&#34;&#34;returns ResourcePool object for given name
+
+            Args:
+
+                Name    (str)       -- Resource Pool name
+
+            Returns:
+
+                obj     -- Instance of ResourcePool class
+
+            Raises:
+
+                SDKException:
+
+                    if failed to find resource pool with given name
+
+        &#34;&#34;&#34;
+        if not self.has(name):
+            raise SDKException(&#39;ResourcePools&#39;, &#39;104&#39;)
+        return ResourcePool(commcell_object=self._commcell_object, name=name, pool_id=self._pools[name.lower()][&#39;id&#39;])
+
+    def has(self, name: str) -&gt; bool:
+        &#34;&#34;&#34;Checks whether given resource pool exists in cs or not
+
+            Args:
+
+                name        (str)       -- Resource pool name
+
+            Returns:
+
+               bool    --  True if resource pool exists in cs
+        &#34;&#34;&#34;
+        if name.lower() in self._pools:
+            return True
+        return False
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the resource pools associated with CS&#34;&#34;&#34;
+        self._pools = {}
+        self._pools = self._get_resource_pools()
+
+
+class ResourcePool:
+
+    def __init__(self, commcell_object, name, pool_id):
+        &#34;&#34;&#34;Initializes an instance of the ResourcePool class.
+
+            Args:
+
+                commcell_object     (object)    --  instance of the commcell class
+
+                server_name         (str)       --  Name of the resurce pool
+
+                pool_id             (str)       --  Resource pool id
+
+
+            Returns:
+
+                object  -   instance of the ResourcePool class
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._update_response_ = commcell_object._update_response_
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._resource_pool_name = name
+        self._resource_pool_id = pool_id
+        self._resource_details = None
+        self._API_GET_POOL_DETAILS = self._services[&#39;GET_RESOURCE_POOL_DETAILS&#39;]
+        self.refresh()
+
+    def _response_not_success(self, response):
+        &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
+
+            Args:
+                response    (object)    --  response class object,
+
+                received upon running an API request, using the `requests` python package
+
+        &#34;&#34;&#34;
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+
+    def _get_pool_details(self) -&gt; dict:
+        &#34;&#34;&#34;returns resource pool details from CS
+
+            Args:
+
+                None
+
+            Returns:
+
+                dict        - Resource pool details
+
+            Raises:
+
+                SDKException:
+
+                    if failed to get details for resource pool
+        &#34;&#34;&#34;
+        api = self._API_GET_POOL_DETAILS % (self._resource_pool_id)
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, api)
+        if flag:
+            if response.json() and &#39;resourcePool&#39; in response.json():
+                return response.json()[&#39;resourcePool&#39;]
+            raise SDKException(&#39;ResourcePools&#39;, &#39;105&#39;)
+        self._response_not_success(response)
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the resource pool details&#34;&#34;&#34;
+        self._resource_details = None
+        self._resource_details = self._get_pool_details()
+
+    @property
+    def resource_pool_id(self):
+        &#34;&#34;&#34;returns the pool id for this resource pool
+
+            Returns:
+
+                int --  resource pool id
+
+        &#34;&#34;&#34;
+        return int(self._resource_details[&#39;resourcePool&#39;].get(&#39;resourcePoolId&#39;))
+
+    @property
+    def resource_pool_type(self):
+        &#34;&#34;&#34;returns the pool type enum for this resource pool
+
+            Returns:
+
+                enum --  ResourcePoolTypes
+
+        &#34;&#34;&#34;
+        return ResourcePoolTypes(int(self._resource_details[&#39;appType&#39;]))</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="cvpysdk.resource_pool.ResourcePool"><code class="flex name class">
+<span>class <span class="ident">ResourcePool</span></span>
+<span>(</span><span>commcell_object, name, pool_id)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Initializes an instance of the ResourcePool class.</p>
+<h2 id="args">Args</h2>
+<p>commcell_object
+(object)
+&ndash;
+instance of the commcell class</p>
+<p>server_name
+(str)
+&ndash;
+Name of the resurce pool</p>
+<p>pool_id
+(str)
+&ndash;
+Resource pool id</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+instance of the ResourcePool class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/resource_pool.py#L304-L394" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class ResourcePool:
+
+    def __init__(self, commcell_object, name, pool_id):
+        &#34;&#34;&#34;Initializes an instance of the ResourcePool class.
+
+            Args:
+
+                commcell_object     (object)    --  instance of the commcell class
+
+                server_name         (str)       --  Name of the resurce pool
+
+                pool_id             (str)       --  Resource pool id
+
+
+            Returns:
+
+                object  -   instance of the ResourcePool class
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._update_response_ = commcell_object._update_response_
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._resource_pool_name = name
+        self._resource_pool_id = pool_id
+        self._resource_details = None
+        self._API_GET_POOL_DETAILS = self._services[&#39;GET_RESOURCE_POOL_DETAILS&#39;]
+        self.refresh()
+
+    def _response_not_success(self, response):
+        &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
+
+            Args:
+                response    (object)    --  response class object,
+
+                received upon running an API request, using the `requests` python package
+
+        &#34;&#34;&#34;
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+
+    def _get_pool_details(self) -&gt; dict:
+        &#34;&#34;&#34;returns resource pool details from CS
+
+            Args:
+
+                None
+
+            Returns:
+
+                dict        - Resource pool details
+
+            Raises:
+
+                SDKException:
+
+                    if failed to get details for resource pool
+        &#34;&#34;&#34;
+        api = self._API_GET_POOL_DETAILS % (self._resource_pool_id)
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, api)
+        if flag:
+            if response.json() and &#39;resourcePool&#39; in response.json():
+                return response.json()[&#39;resourcePool&#39;]
+            raise SDKException(&#39;ResourcePools&#39;, &#39;105&#39;)
+        self._response_not_success(response)
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the resource pool details&#34;&#34;&#34;
+        self._resource_details = None
+        self._resource_details = self._get_pool_details()
+
+    @property
+    def resource_pool_id(self):
+        &#34;&#34;&#34;returns the pool id for this resource pool
+
+            Returns:
+
+                int --  resource pool id
+
+        &#34;&#34;&#34;
+        return int(self._resource_details[&#39;resourcePool&#39;].get(&#39;resourcePoolId&#39;))
+
+    @property
+    def resource_pool_type(self):
+        &#34;&#34;&#34;returns the pool type enum for this resource pool
+
+            Returns:
+
+                enum --  ResourcePoolTypes
+
+        &#34;&#34;&#34;
+        return ResourcePoolTypes(int(self._resource_details[&#39;appType&#39;]))</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.resource_pool.ResourcePool.resource_pool_id"><code class="name">var <span class="ident">resource_pool_id</span></code></dt>
+<dd>
+<div class="desc"><p>returns the pool id for this resource pool</p>
+<h2 id="returns">Returns</h2>
+<p>int &ndash;
+resource pool id</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/resource_pool.py#L374-L383" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def resource_pool_id(self):
+    &#34;&#34;&#34;returns the pool id for this resource pool
+
+        Returns:
+
+            int --  resource pool id
+
+    &#34;&#34;&#34;
+    return int(self._resource_details[&#39;resourcePool&#39;].get(&#39;resourcePoolId&#39;))</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePool.resource_pool_type"><code class="name">var <span class="ident">resource_pool_type</span></code></dt>
+<dd>
+<div class="desc"><p>returns the pool type enum for this resource pool</p>
+<h2 id="returns">Returns</h2>
+<p>enum &ndash;
+ResourcePoolTypes</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/resource_pool.py#L385-L394" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def resource_pool_type(self):
+    &#34;&#34;&#34;returns the pool type enum for this resource pool
+
+        Returns:
+
+            enum --  ResourcePoolTypes
+
+    &#34;&#34;&#34;
+    return ResourcePoolTypes(int(self._resource_details[&#39;appType&#39;]))</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.resource_pool.ResourcePool.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the resource pool details</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/resource_pool.py#L369-L372" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refresh the resource pool details&#34;&#34;&#34;
+    self._resource_details = None
+    self._resource_details = self._get_pool_details()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes"><code class="flex name class">
+<span>class <span class="ident">ResourcePoolTypes</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Enum class for different resource pool types</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/resource_pool.py#L62-L89" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class ResourcePoolTypes(enum.Enum):
+    &#34;&#34;&#34;Enum class for different resource pool types&#34;&#34;&#34;
+    GENERIC = 0
+    O365 = 1
+    SALESFORCE = 2
+    EXCHANGE = 3
+    SHAREPOINT = 4
+    ONEDRIVE = 5
+    TEAMS = 6
+    DYNAMICS_365 = 7
+    VSA = 8
+    FILESYSTEM = 9
+    KUBERNETES = 10
+    AZURE_AD = 11
+    CLOUD_LAPTOP = 12
+    FILE_STORAGE_OPTIMIZATION = 13
+    DATA_GOVERNANCE = 14
+    E_DISCOVERY = 15
+    CLOUD_DB = 16
+    OBJECT_STORAGE = 17
+    GMAIL = 18
+    GOOGLE_DRIVE = 19
+    GOOGLE_WORKSPACE = 20
+    SERVICENOW = 21
+    THREATSCAN = 22
+    DEVOPS = 23
+    RISK_ANALYSIS = 24
+    GOOGLE_CLOUD_PLATFORM = 50001</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.AZURE_AD"><code class="name">var <span class="ident">AZURE_AD</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.CLOUD_DB"><code class="name">var <span class="ident">CLOUD_DB</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.CLOUD_LAPTOP"><code class="name">var <span class="ident">CLOUD_LAPTOP</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.DATA_GOVERNANCE"><code class="name">var <span class="ident">DATA_GOVERNANCE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.DEVOPS"><code class="name">var <span class="ident">DEVOPS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.DYNAMICS_365"><code class="name">var <span class="ident">DYNAMICS_365</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.EXCHANGE"><code class="name">var <span class="ident">EXCHANGE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.E_DISCOVERY"><code class="name">var <span class="ident">E_DISCOVERY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.FILESYSTEM"><code class="name">var <span class="ident">FILESYSTEM</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.FILE_STORAGE_OPTIMIZATION"><code class="name">var <span class="ident">FILE_STORAGE_OPTIMIZATION</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.GENERIC"><code class="name">var <span class="ident">GENERIC</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.GMAIL"><code class="name">var <span class="ident">GMAIL</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.GOOGLE_CLOUD_PLATFORM"><code class="name">var <span class="ident">GOOGLE_CLOUD_PLATFORM</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.GOOGLE_DRIVE"><code class="name">var <span class="ident">GOOGLE_DRIVE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.GOOGLE_WORKSPACE"><code class="name">var <span class="ident">GOOGLE_WORKSPACE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.KUBERNETES"><code class="name">var <span class="ident">KUBERNETES</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.O365"><code class="name">var <span class="ident">O365</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.OBJECT_STORAGE"><code class="name">var <span class="ident">OBJECT_STORAGE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.ONEDRIVE"><code class="name">var <span class="ident">ONEDRIVE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.RISK_ANALYSIS"><code class="name">var <span class="ident">RISK_ANALYSIS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.SALESFORCE"><code class="name">var <span class="ident">SALESFORCE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.SERVICENOW"><code class="name">var <span class="ident">SERVICENOW</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.SHAREPOINT"><code class="name">var <span class="ident">SHAREPOINT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.TEAMS"><code class="name">var <span class="ident">TEAMS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.THREATSCAN"><code class="name">var <span class="ident">THREATSCAN</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.VSA"><code class="name">var <span class="ident">VSA</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePools"><code class="flex name class">
+<span>class <span class="ident">ResourcePools</span></span>
+<span>(</span><span>commcell_object)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>class to represent all pool in resource pool</p>
+<p>Initializes an instance of the ResourcePools class.</p>
+<h2 id="args">Args</h2>
+<p>commcell_object
+(object)
+&ndash;
+instance of the commcell class</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+instance of the ResourcePools class</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/resource_pool.py#L92-L301" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class ResourcePools():
+    &#34;&#34;&#34;class to represent all pool in resource pool&#34;&#34;&#34;
+
+    def __init__(self, commcell_object):
+        &#34;&#34;&#34;Initializes an instance of the ResourcePools class.
+
+            Args:
+
+                commcell_object     (object)    --  instance of the commcell class
+
+            Returns:
+
+                object  -   instance of the ResourcePools class
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._API_GET_ALL_RESOURCE_POOLS = self._services[&#39;GET_RESOURCE_POOLS&#39;]
+        self._API_DELETE_RESOURCE_POOL = self._services[&#39;DELETE_RESOURCE_POOL&#39;]
+        self._API_CREATE_RESOURCE_POOL = self._services[&#39;CREATE_RESOURCE_POOL&#39;]
+        self._pools = {}
+        self.refresh()
+
+    def _response_not_success(self, response):
+        &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
+
+            Args:
+                response    (object)    --  response class object,
+
+                received upon running an API request, using the `requests` python package
+
+        &#34;&#34;&#34;
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+
+    def _get_resource_pools(self) -&gt; dict:
+        &#34;&#34;&#34;returns resource pools details from CS
+
+                Args:
+
+                    None
+
+                Returns:
+
+                    dict       --  Resource pool details
+
+                Raises:
+
+                    SDKException:
+
+                        if failed to get resource pool details
+
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_GET_ALL_RESOURCE_POOLS)
+        output = {}
+        if flag:
+            if response.json() and &#39;resourcePools&#39; in response.json():
+                _resourcepools = response.json()[&#39;resourcePools&#39;]
+                for _pool in _resourcepools:
+                    if &#39;name&#39; in _pool:
+                        output.update({_pool[&#39;name&#39;].lower(): _pool})
+            elif bool(response.json()):
+                raise SDKException(&#39;ResourcePools&#39;, &#39;103&#39;)
+            return output
+        self._response_not_success(response)
+
+    def create(self, name: str, resource_type, **kwargs):
+        &#34;&#34;&#34;creates resource pool in CS
+
+            Args:
+
+                name    (str)           --  Resource pool name
+
+                resource_type   (enum)  --  ResourcePoolTypes enum
+
+            kwargs options:
+
+                for Threat Scan -
+
+                    index_server    (str)   --  index server name
+
+            Returns:
+
+                obj --  Instance of ResourcePool class
+
+            Raises:
+
+                SDKException:
+
+                    if failed to create resource pool
+
+                    if resource pool already exists
+
+        &#34;&#34;&#34;
+        if resource_type.value not in [ResourcePoolTypes.THREATSCAN.value]:
+            raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, &#39;Resource pool creation is not supported for this resource type&#39;)
+        if resource_type.value == ResourcePoolTypes.THREATSCAN.value and &#39;index_server&#39; not in kwargs:
+            raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, &#39;Index server name is missing in kwargs&#39;)
+        if self.has(name=name):
+            raise SDKException(&#39;ResourcePools&#39;, &#39;107&#39;)
+        _request_json = {
+            &#34;resourcePool&#34;: {
+                &#34;appType&#34;: resource_type.value,
+                &#34;dataAccessNodes&#34;: [],
+                &#34;extendedProp&#34;: {
+                    &#34;exchangeOnePassClientProperties&#34;: {}},
+                &#34;resourcePool&#34;: {
+                    &#34;resourcePoolId&#34;: 0,
+                    &#34;resourcePoolName&#34;: name},
+                &#34;exchangeServerProps&#34;: {
+                    &#34;jobResultsDirCredentials&#34;: {
+                        &#34;userName&#34;: &#34;&#34;},
+                    &#34;jobResultsDirPath&#34;: &#34;&#34;},
+                &#34;roleId&#34;: None,
+                &#34;indexServerMembers&#34;: [],
+                &#34;indexServer&#34;: {
+                    &#34;clientId&#34;: self._commcell_object.index_servers.get(
+                        kwargs.get(&#39;index_server&#39;)).index_server_client_id if resource_type.value == ResourcePoolTypes.THREATSCAN.value else 0,
+                    &#34;clientName&#34;: kwargs.get(&#39;index_server&#39;) if resource_type.value == ResourcePoolTypes.THREATSCAN.value else &#39;&#39;,
+                    &#34;displayName&#34;: kwargs.get(&#39;index_server&#39;) if resource_type.value == ResourcePoolTypes.THREATSCAN.value else &#39;&#39;,
+                    &#34;selected&#34;: True},
+                &#34;accessNodes&#34;: {
+                    &#34;clientGroups&#34;: [],
+                    &#34;clients&#34;: []}}}
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._API_CREATE_RESOURCE_POOL, _request_json)
+        if flag:
+            if response.json() and &#39;error&#39; in response.json():
+                _error = response.json()[&#39;error&#39;]
+                if _error.get(&#39;errorCode&#39;, 0) != 0:
+                    raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, f&#39;Resource pool creation failed with {_error}&#39;)
+                self.refresh()
+                return self.get(name=name)
+            raise SDKException(&#39;ResourcePools&#39;, &#39;108&#39;)
+        self._response_not_success(response)
+
+    def delete(self, name: str):
+        &#34;&#34;&#34;deletes the resource pool from CS
+
+            Args:
+
+                name   (str)       --   Resource pool name
+
+            Returns:
+
+                None
+
+            Raises:
+
+                SDKException:
+
+                    if failed to delete resource pool
+
+                    if failed to find resource pool
+        &#34;&#34;&#34;
+        if not self.has(name=name):
+            raise SDKException(&#39;ResourcePools&#39;, &#39;104&#39;)
+        api = self._API_DELETE_RESOURCE_POOL % (self._pools[name.lower()][&#39;id&#39;])
+        flag, response = self._cvpysdk_object.make_request(&#39;DELETE&#39;, api)
+        if flag:
+            if response.json() and &#39;error&#39; in response.json():
+                _error = response.json()[&#39;error&#39;]
+                if _error.get(&#39;errorCode&#39;, 0) != 0:
+                    raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, f&#39;Resource pool deletion failed with {_error}&#39;)
+                self.refresh()
+                return
+            raise SDKException(&#39;ResourcePools&#39;, &#39;106&#39;)
+        self._response_not_success(response)
+
+    def get(self, name: str):
+        &#34;&#34;&#34;returns ResourcePool object for given name
+
+            Args:
+
+                Name    (str)       -- Resource Pool name
+
+            Returns:
+
+                obj     -- Instance of ResourcePool class
+
+            Raises:
+
+                SDKException:
+
+                    if failed to find resource pool with given name
+
+        &#34;&#34;&#34;
+        if not self.has(name):
+            raise SDKException(&#39;ResourcePools&#39;, &#39;104&#39;)
+        return ResourcePool(commcell_object=self._commcell_object, name=name, pool_id=self._pools[name.lower()][&#39;id&#39;])
+
+    def has(self, name: str) -&gt; bool:
+        &#34;&#34;&#34;Checks whether given resource pool exists in cs or not
+
+            Args:
+
+                name        (str)       -- Resource pool name
+
+            Returns:
+
+               bool    --  True if resource pool exists in cs
+        &#34;&#34;&#34;
+        if name.lower() in self._pools:
+            return True
+        return False
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the resource pools associated with CS&#34;&#34;&#34;
+        self._pools = {}
+        self._pools = self._get_resource_pools()</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.resource_pool.ResourcePools.create"><code class="name flex">
+<span>def <span class="ident">create</span></span>(<span>self, name: str, resource_type, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>creates resource pool in CS</p>
+<h2 id="args">Args</h2>
+<p>name
+(str)
+&ndash;
+Resource pool name</p>
+<p>resource_type
+(enum)
+&ndash;
+ResourcePoolTypes enum
+kwargs options:</p>
+<pre><code>for Threat Scan -
+
+    index_server    (str)   --  index server name
+</code></pre>
+<h2 id="returns">Returns</h2>
+<p>obj &ndash;
+Instance of ResourcePool class</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:</p>
+<pre><code>if failed to create resource pool
+
+if resource pool already exists
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/resource_pool.py#L158-L226" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def create(self, name: str, resource_type, **kwargs):
+    &#34;&#34;&#34;creates resource pool in CS
+
+        Args:
+
+            name    (str)           --  Resource pool name
+
+            resource_type   (enum)  --  ResourcePoolTypes enum
+
+        kwargs options:
+
+            for Threat Scan -
+
+                index_server    (str)   --  index server name
+
+        Returns:
+
+            obj --  Instance of ResourcePool class
+
+        Raises:
+
+            SDKException:
+
+                if failed to create resource pool
+
+                if resource pool already exists
+
+    &#34;&#34;&#34;
+    if resource_type.value not in [ResourcePoolTypes.THREATSCAN.value]:
+        raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, &#39;Resource pool creation is not supported for this resource type&#39;)
+    if resource_type.value == ResourcePoolTypes.THREATSCAN.value and &#39;index_server&#39; not in kwargs:
+        raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, &#39;Index server name is missing in kwargs&#39;)
+    if self.has(name=name):
+        raise SDKException(&#39;ResourcePools&#39;, &#39;107&#39;)
+    _request_json = {
+        &#34;resourcePool&#34;: {
+            &#34;appType&#34;: resource_type.value,
+            &#34;dataAccessNodes&#34;: [],
+            &#34;extendedProp&#34;: {
+                &#34;exchangeOnePassClientProperties&#34;: {}},
+            &#34;resourcePool&#34;: {
+                &#34;resourcePoolId&#34;: 0,
+                &#34;resourcePoolName&#34;: name},
+            &#34;exchangeServerProps&#34;: {
+                &#34;jobResultsDirCredentials&#34;: {
+                    &#34;userName&#34;: &#34;&#34;},
+                &#34;jobResultsDirPath&#34;: &#34;&#34;},
+            &#34;roleId&#34;: None,
+            &#34;indexServerMembers&#34;: [],
+            &#34;indexServer&#34;: {
+                &#34;clientId&#34;: self._commcell_object.index_servers.get(
+                    kwargs.get(&#39;index_server&#39;)).index_server_client_id if resource_type.value == ResourcePoolTypes.THREATSCAN.value else 0,
+                &#34;clientName&#34;: kwargs.get(&#39;index_server&#39;) if resource_type.value == ResourcePoolTypes.THREATSCAN.value else &#39;&#39;,
+                &#34;displayName&#34;: kwargs.get(&#39;index_server&#39;) if resource_type.value == ResourcePoolTypes.THREATSCAN.value else &#39;&#39;,
+                &#34;selected&#34;: True},
+            &#34;accessNodes&#34;: {
+                &#34;clientGroups&#34;: [],
+                &#34;clients&#34;: []}}}
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._API_CREATE_RESOURCE_POOL, _request_json)
+    if flag:
+        if response.json() and &#39;error&#39; in response.json():
+            _error = response.json()[&#39;error&#39;]
+            if _error.get(&#39;errorCode&#39;, 0) != 0:
+                raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, f&#39;Resource pool creation failed with {_error}&#39;)
+            self.refresh()
+            return self.get(name=name)
+        raise SDKException(&#39;ResourcePools&#39;, &#39;108&#39;)
+    self._response_not_success(response)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePools.delete"><code class="name flex">
+<span>def <span class="ident">delete</span></span>(<span>self, name: str)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>deletes the resource pool from CS</p>
+<h2 id="args">Args</h2>
+<p>name
+(str)
+&ndash;
+Resource pool name</p>
+<h2 id="returns">Returns</h2>
+<p>None</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:</p>
+<pre><code>if failed to delete resource pool
+
+if failed to find resource pool
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/resource_pool.py#L228-L259" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def delete(self, name: str):
+    &#34;&#34;&#34;deletes the resource pool from CS
+
+        Args:
+
+            name   (str)       --   Resource pool name
+
+        Returns:
+
+            None
+
+        Raises:
+
+            SDKException:
+
+                if failed to delete resource pool
+
+                if failed to find resource pool
+    &#34;&#34;&#34;
+    if not self.has(name=name):
+        raise SDKException(&#39;ResourcePools&#39;, &#39;104&#39;)
+    api = self._API_DELETE_RESOURCE_POOL % (self._pools[name.lower()][&#39;id&#39;])
+    flag, response = self._cvpysdk_object.make_request(&#39;DELETE&#39;, api)
+    if flag:
+        if response.json() and &#39;error&#39; in response.json():
+            _error = response.json()[&#39;error&#39;]
+            if _error.get(&#39;errorCode&#39;, 0) != 0:
+                raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, f&#39;Resource pool deletion failed with {_error}&#39;)
+            self.refresh()
+            return
+        raise SDKException(&#39;ResourcePools&#39;, &#39;106&#39;)
+    self._response_not_success(response)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePools.get"><code class="name flex">
+<span>def <span class="ident">get</span></span>(<span>self, name: str)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>returns ResourcePool object for given name</p>
+<h2 id="args">Args</h2>
+<p>Name
+(str)
+&ndash; Resource Pool name</p>
+<h2 id="returns">Returns</h2>
+<p>obj
+&ndash; Instance of ResourcePool class</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:</p>
+<pre><code>if failed to find resource pool with given name
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/resource_pool.py#L261-L281" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get(self, name: str):
+    &#34;&#34;&#34;returns ResourcePool object for given name
+
+        Args:
+
+            Name    (str)       -- Resource Pool name
+
+        Returns:
+
+            obj     -- Instance of ResourcePool class
+
+        Raises:
+
+            SDKException:
+
+                if failed to find resource pool with given name
+
+    &#34;&#34;&#34;
+    if not self.has(name):
+        raise SDKException(&#39;ResourcePools&#39;, &#39;104&#39;)
+    return ResourcePool(commcell_object=self._commcell_object, name=name, pool_id=self._pools[name.lower()][&#39;id&#39;])</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePools.has"><code class="name flex">
+<span>def <span class="ident">has</span></span>(<span>self, name: str) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks whether given resource pool exists in cs or not</p>
+<h2 id="args">Args</h2>
+<p>name
+(str)
+&ndash; Resource pool name</p>
+<h2 id="returns">Returns</h2>
+<p>bool
+&ndash;
+True if resource pool exists in cs</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/resource_pool.py#L283-L296" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def has(self, name: str) -&gt; bool:
+    &#34;&#34;&#34;Checks whether given resource pool exists in cs or not
+
+        Args:
+
+            name        (str)       -- Resource pool name
+
+        Returns:
+
+           bool    --  True if resource pool exists in cs
+    &#34;&#34;&#34;
+    if name.lower() in self._pools:
+        return True
+    return False</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePools.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the resource pools associated with CS</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/resource_pool.py#L298-L301" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refresh the resource pools associated with CS&#34;&#34;&#34;
+    self._pools = {}
+    self._pools = self._get_resource_pools()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<header>
+<a class="homelink" rel="home" title="GitHub home" href="https://github.com/Commvault/cvpysdk">
+<img src="https://commvault.github.io/cvpysdk/logo.png" alt="" width="100%"> Commvault Python SDK
+</a> <br>
+<a class="homelink" title="Go to Top Level" href="https://commvault.github.io/cvpysdk/cvpysdk/index.html"> Go to Top Level </a>
+</header>
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = '../doc-search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<h1>Index</h1>
+<div class="toc">
+<ul>
+<li><a href="#resourcepool-attributes">ResourcePool Attributes:</a></li>
+</ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="cvpysdk" href="index.html">cvpysdk</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="cvpysdk.resource_pool.ResourcePool" href="#cvpysdk.resource_pool.ResourcePool">ResourcePool</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.resource_pool.ResourcePool.refresh" href="#cvpysdk.resource_pool.ResourcePool.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePool.resource_pool_id" href="#cvpysdk.resource_pool.ResourcePool.resource_pool_id">resource_pool_id</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePool.resource_pool_type" href="#cvpysdk.resource_pool.ResourcePool.resource_pool_type">resource_pool_type</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.resource_pool.ResourcePoolTypes" href="#cvpysdk.resource_pool.ResourcePoolTypes">ResourcePoolTypes</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.AZURE_AD" href="#cvpysdk.resource_pool.ResourcePoolTypes.AZURE_AD">AZURE_AD</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.CLOUD_DB" href="#cvpysdk.resource_pool.ResourcePoolTypes.CLOUD_DB">CLOUD_DB</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.CLOUD_LAPTOP" href="#cvpysdk.resource_pool.ResourcePoolTypes.CLOUD_LAPTOP">CLOUD_LAPTOP</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.DATA_GOVERNANCE" href="#cvpysdk.resource_pool.ResourcePoolTypes.DATA_GOVERNANCE">DATA_GOVERNANCE</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.DEVOPS" href="#cvpysdk.resource_pool.ResourcePoolTypes.DEVOPS">DEVOPS</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.DYNAMICS_365" href="#cvpysdk.resource_pool.ResourcePoolTypes.DYNAMICS_365">DYNAMICS_365</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.EXCHANGE" href="#cvpysdk.resource_pool.ResourcePoolTypes.EXCHANGE">EXCHANGE</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.E_DISCOVERY" href="#cvpysdk.resource_pool.ResourcePoolTypes.E_DISCOVERY">E_DISCOVERY</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.FILESYSTEM" href="#cvpysdk.resource_pool.ResourcePoolTypes.FILESYSTEM">FILESYSTEM</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.FILE_STORAGE_OPTIMIZATION" href="#cvpysdk.resource_pool.ResourcePoolTypes.FILE_STORAGE_OPTIMIZATION">FILE_STORAGE_OPTIMIZATION</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.GENERIC" href="#cvpysdk.resource_pool.ResourcePoolTypes.GENERIC">GENERIC</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.GMAIL" href="#cvpysdk.resource_pool.ResourcePoolTypes.GMAIL">GMAIL</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.GOOGLE_CLOUD_PLATFORM" href="#cvpysdk.resource_pool.ResourcePoolTypes.GOOGLE_CLOUD_PLATFORM">GOOGLE_CLOUD_PLATFORM</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.GOOGLE_DRIVE" href="#cvpysdk.resource_pool.ResourcePoolTypes.GOOGLE_DRIVE">GOOGLE_DRIVE</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.GOOGLE_WORKSPACE" href="#cvpysdk.resource_pool.ResourcePoolTypes.GOOGLE_WORKSPACE">GOOGLE_WORKSPACE</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.KUBERNETES" href="#cvpysdk.resource_pool.ResourcePoolTypes.KUBERNETES">KUBERNETES</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.O365" href="#cvpysdk.resource_pool.ResourcePoolTypes.O365">O365</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.OBJECT_STORAGE" href="#cvpysdk.resource_pool.ResourcePoolTypes.OBJECT_STORAGE">OBJECT_STORAGE</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.ONEDRIVE" href="#cvpysdk.resource_pool.ResourcePoolTypes.ONEDRIVE">ONEDRIVE</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.RISK_ANALYSIS" href="#cvpysdk.resource_pool.ResourcePoolTypes.RISK_ANALYSIS">RISK_ANALYSIS</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.SALESFORCE" href="#cvpysdk.resource_pool.ResourcePoolTypes.SALESFORCE">SALESFORCE</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.SERVICENOW" href="#cvpysdk.resource_pool.ResourcePoolTypes.SERVICENOW">SERVICENOW</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.SHAREPOINT" href="#cvpysdk.resource_pool.ResourcePoolTypes.SHAREPOINT">SHAREPOINT</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.TEAMS" href="#cvpysdk.resource_pool.ResourcePoolTypes.TEAMS">TEAMS</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.THREATSCAN" href="#cvpysdk.resource_pool.ResourcePoolTypes.THREATSCAN">THREATSCAN</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.VSA" href="#cvpysdk.resource_pool.ResourcePoolTypes.VSA">VSA</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.resource_pool.ResourcePools" href="#cvpysdk.resource_pool.ResourcePools">ResourcePools</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.resource_pool.ResourcePools.create" href="#cvpysdk.resource_pool.ResourcePools.create">create</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePools.delete" href="#cvpysdk.resource_pool.ResourcePools.delete">delete</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePools.get" href="#cvpysdk.resource_pool.ResourcePools.get">get</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePools.has" href="#cvpysdk.resource_pool.ResourcePools.has">has</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePools.refresh" href="#cvpysdk.resource_pool.ResourcePools.refresh">refresh</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

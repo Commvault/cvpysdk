@@ -28,14 +28,19 @@
 <p>OneDriveInstance: Derived class from CloudAppsInstance Base class, representing a
 OneDrive instance,and to perform operations on that instance</p>
 <h2 id="onedriveinstance">Onedriveinstance</h2>
-<p>_prepare_advsearchgrp_onedrivev2 &ndash; Utility function to prepare advsearchgrp json for restore job for
-OneDrive for business clients</p>
-<p>_prepare_findquery_onedrivev2
-&ndash; Utility function to prepare findquery json for restore job for
-OneDrive for business clients</p>
-<p>_prepare_restore_json_v2()
+<p>_prepare_advsearchgrp_onedrive_for_business_client() &ndash;
+Utility function to prepare advsearchgrp json for restore
+job for OneDrive for business clients</p>
+<p>_prepare_findquery_onedrive_for_business_client()
 &ndash;
+Utility function to prepare findquery json for restore job
+for OneDrive for business clients</p>
+<p>_prepare_restore_json_onedrive_for_business_client() &ndash;
 Utility function to prepare user level restore json for
+OneDrive for business clients</p>
+<p>_prepare_delete_json_onedrive_v2()
+&ndash;
+Utility function to prepare delete documents json for
 OneDrive for business clients</p>
 <p>_get_instance_properties()
 &ndash;
@@ -44,10 +49,17 @@ instance properties as well</p>
 <p>restore_out_of_place()
 &ndash;
 runs out-of-place restore for the instance</p>
+<p>modify_connection_settings()
+&ndash;
+Modifies the azure app connection settings</p>
+<p>delete_data_from_browse()
+&ndash;
+Deletes items for the backupset in the Index and makes them unavailable for
+browsing and recovery</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/onedrive_instance.py#L1-L742" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/onedrive_instance.py#L1-L907" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -76,19 +88,27 @@ OneDrive instance,and to perform operations on that instance
 
 OneDriveInstance:
 
-    _prepare_advsearchgrp_onedrivev2 -- Utility function to prepare advsearchgrp json for restore job for
-                                        OneDrive for business clients
+    _prepare_advsearchgrp_onedrive_for_business_client() --  Utility function to prepare advsearchgrp json for restore
+                                                            job for OneDrive for business clients
 
-    _prepare_findquery_onedrivev2    -- Utility function to prepare findquery json for restore job for
-                                        OneDrive for business clients
+    _prepare_findquery_onedrive_for_business_client()    --  Utility function to prepare findquery json for restore job
+                                                            for OneDrive for business clients
 
-    _prepare_restore_json_v2()       --  Utility function to prepare user level restore json for
-                                         OneDrive for business clients
+    _prepare_restore_json_onedrive_for_business_client() --  Utility function to prepare user level restore json for
+                                                            OneDrive for business clients
+
+    _prepare_delete_json_onedrive_v2()      --  Utility function to prepare delete documents json for
+                                                OneDrive for business clients
 
     _get_instance_properties()       --  Instance class method overwritten to add cloud apps
     instance properties as well
 
-    restore_out_of_place()           --  runs out-of-place restore for the instance
+    restore_out_of_place()                               --  runs out-of-place restore for the instance
+
+    modify_connection_settings()                         --  Modifies the azure app connection settings
+
+    delete_data_from_browse()       --  Deletes items for the backupset in the Index and makes them unavailable for
+                                        browsing and recovery
 
 &#34;&#34;&#34;
 
@@ -199,7 +219,7 @@ class OneDriveInstance(CloudAppsInstance):
         return self._proxy_client
 
 
-    def _prepare_advsearchgrp_onedrivev2(self, source_item_list, subclient_id):
+    def _prepare_advsearchgrp_onedrive_for_business_client(self, source_item_list, subclient_id):
         &#34;&#34;&#34;
                     Utility function to prepare advsearchgrp json for restore job for OneDrive for business clients
 
@@ -317,7 +337,7 @@ class OneDriveInstance(CloudAppsInstance):
 
         return advsearchgrp
 
-    def _prepare_findquery_onedrivev2(self, source_item_list, subclient_id):
+    def _prepare_findquery_onedrive_for_business_client(self, source_item_list, subclient_id):
         &#34;&#34;&#34;
             Utility function to prepare findquery json for restore job for OneDrive for bussiness clients
 
@@ -375,7 +395,7 @@ class OneDriveInstance(CloudAppsInstance):
                       }
                     ]
                   },
-                  &#34;advSearchGrp&#34;: self._prepare_advsearchgrp_onedrivev2(source_item_list,subclient_id),
+                  &#34;advSearchGrp&#34;: self._prepare_advsearchgrp_onedrive_for_business_client(source_item_list,subclient_id),
                   &#34;mode&#34;: &#34;WebConsole&#34;
                 }
 
@@ -384,7 +404,7 @@ class OneDriveInstance(CloudAppsInstance):
 
 
 
-    def _prepare_restore_json_onedrive_v2(self, source_item_list, **kwargs):
+    def _prepare_restore_json_onedrive_for_business_client(self, source_item_list, **kwargs):
 
         &#34;&#34;&#34; Utility function to prepare user level restore json for OneDrive for bussiness clients
 
@@ -407,6 +427,8 @@ class OneDriveInstance(CloudAppsInstance):
 
                 skip_file_permissions (bool)    --  If True, file permissions will be restored
 
+                include_deleted_items  (bool)   --  If True, deleted items will be included
+
             Returns:
                 request_json (dict) - request json for restore job
 
@@ -424,8 +446,8 @@ class OneDriveInstance(CloudAppsInstance):
         destination_client = kwargs.get(&#39;destination_client&#39;)
         overwrite = kwargs.get(&#39;overwrite&#39;, False)
         restore_as_copy = kwargs.get(&#39;restore_as_copy&#39;, False)
-        skip_file_permissions = kwargs.get(&#39;skip_file_permissions&#39;, False)
-
+        skip_file_permissions = kwargs.get(&#39;skip_file_permissions&#39;, True)
+        include_deleted_items = kwargs.get(&#39;include_deleted_items&#39;, False)
 
 
         if destination_client:
@@ -457,9 +479,9 @@ class OneDriveInstance(CloudAppsInstance):
         }
 
         restore_options[&#39;commonOptions&#39;] = {
-            &#34;overwriteFiles&#34;: False,
-            &#34;skip&#34;: True,
-            &#34;unconditionalOverwrite&#34;: False
+            &#34;overwriteFiles&#34;: overwrite,
+            &#34;skip&#34;: True if not restore_as_copy and not overwrite else False,
+            &#34;unconditionalOverwrite&#34;: overwrite
         }
 
         destination = restore_options[&#39;destination&#39;]
@@ -503,7 +525,9 @@ class OneDriveInstance(CloudAppsInstance):
         subclient_id = associations[&#39;subclientId&#39;]
 
         cloudAppsRestoreOptions = restore_options[&#39;cloudAppsRestoreOptions&#39;]
-        cloudAppsRestoreOptions[&#39;googleRestoreOptions&#39;][&#39;findQuery&#39;] = self._prepare_findquery_onedrivev2(source_item_list, subclient_id)
+        cloudAppsRestoreOptions[&#39;googleRestoreOptions&#39;][&#39;findQuery&#39;] = self._prepare_findquery_onedrive_for_business_client(source_item_list, subclient_id)
+        if include_deleted_items:
+            cloudAppsRestoreOptions[&#39;googleRestoreOptions&#39;][&#39;findQuery&#39;][&#39;advSearchGrp&#39;][&#39;commonFilter&#39;][0][&#39;filter&#39;][&#39;filters&#39;][0][&#39;fieldValues&#39;][&#39;values&#39;].extend([&#34;3333&#34;,&#34;3334&#34;,&#34;3335&#34;])
 
         destination_option = &#34;Destination&#34;
         destination_value = &#34;Original location&#34;
@@ -540,15 +564,16 @@ class OneDriveInstance(CloudAppsInstance):
                   },
                   {
                     &#34;option&#34;: &#34;If the file exists&#34;,
-                    &#34;value&#34;: &#34;Skip&#34;
+                    &#34;value&#34;: &#34;Restore as a copy&#34; if restore_as_copy and not overwrite else &#34;Unconditionally overwrite&#34; if overwrite else &#34;Skip&#34;
+
                   },
                   {
                     &#34;option&#34;: &#34;Skip file permissions&#34;,
-                    &#34;value&#34;: &#34;Enabled&#34;
+                    &#34;value&#34;: &#34;Enabled&#34; if skip_file_permissions else &#34;Disabled&#34;
                   },
                   {
                     &#34;option&#34;: &#34;Include deleted items&#34;,
-                    &#34;value&#34;: &#34;Disabled&#34;
+                    &#34;value&#34;: &#34;Enabled&#34; if include_deleted_items else &#34;Disabled&#34;
                   }
                 ]
               }
@@ -563,6 +588,77 @@ class OneDriveInstance(CloudAppsInstance):
             joboptionitems.append({&#34;option&#34;: &#34;Destination path&#34;, &#34;value&#34;: destination_path})
 
         return request_json
+
+    def _prepare_delete_json_onedrive_v2(self, item_guids, **kwargs):
+        &#34;&#34;&#34; Utility function to prepare delete documents json for OneDrive for bussiness clients
+
+            Args:
+                item_guid (str)         --  item GUID to delete in browse
+
+                Kwargs:
+
+                    include_deleted_items (bool)             --  If True, deleted items will be included in search
+
+            Returns:
+                request_json (dict) - request json for delete document
+
+            Raises:
+                SDKException:
+                    if destination client with given item does not exist
+
+                    if type of parameter is invalid
+        &#34;&#34;&#34;
+        folder = kwargs.get(&#39;folder&#39;, False)
+        include_deleted_items = kwargs.get(&#39;include_deleted_items&#39;, False)
+        subclient_id = self.subclients[&#39;default&#39;][&#39;id&#39;]
+
+        if isinstance(item_guids, str):
+            source_item_list = [item_guids]
+        else:
+            source_item_list = [].extend(item_guids)
+        req_json = {
+            &#39;opType&#39;: 1,
+            &#39;bulkMode&#39;: folder,
+            &#39;deleteOption&#39;: {
+                &#39;folderDelete&#39;: folder
+            },
+            &#39;searchReq&#39;: {
+                &#39;mode&#39;: 4,
+                &#39;facetRequests&#39;: {
+                    &#39;facetRequest&#39;: []
+                },
+                &#39;advSearchGrp&#39;: self._prepare_advsearchgrp_onedrive_for_business_client(source_item_list, subclient_id),
+                &#39;searchProcessingInfo&#39;: {
+                    &#39;resultOffset&#39;: 0,
+                    &#39;pageSize&#39;: 50,
+                    &#39;queryParams&#39;: [
+                        {
+                            &#39;param&#39;: &#39;ENABLE_MIXEDVIEW&#39;,
+                            &#39;value&#39;: &#39;true&#39;
+                        },
+                        {
+                            &#39;param&#39;: &#39;ENABLE_NAVIGATION&#39;,
+                            &#39;value&#39;: &#39;on&#39;
+                        },
+                        {
+                            &#39;param&#39;: &#39;ENABLE_DEFAULTFACETS&#39;,
+                            &#39;value&#39;: &#39;false&#39;
+                        }
+                    ],
+                    &#39;sortParams&#39;: []
+                }
+            }
+        }
+
+        if isinstance(item_guids, list):
+            req_json[&#39;searchReq&#39;][&#39;advSearchGrp&#39;][&#39;fileFilter&#39;][0][&#39;filter&#39;][&#39;filters&#39;][1][&#39;fieldValues&#39;][
+                &#39;values&#39;].extend(item_guids[1:])
+
+        if include_deleted_items:
+            req_json[&#39;searchReq&#39;][&#39;advSearchGrp&#39;][&#39;commonFilter&#39;][0][&#39;filter&#39;][&#39;filters&#39;][0][&#39;fieldValues&#39;][&#39;values&#39;].extend(
+                [&#34;3333&#34;, &#34;3334&#34;, &#34;3335&#34;])
+
+        return req_json
 
     def restore_out_of_place(
             self,
@@ -790,7 +886,88 @@ class OneDriveInstance(CloudAppsInstance):
             }
         }
 
-        self.update_properties(properties_dict=update_dict)</code></pre>
+        self.update_properties(properties_dict=update_dict)
+
+    def modify_connection_settings(self, azure_app_id, azure_dir_id, azure_app_secret):
+        &#34;&#34;&#34;
+                   Method to modify OneDrive connection settings
+
+                   Arguments:
+                       azure_app_id         (str)   --      new azure application id
+                       azure_dir_id         (str)   --      new azure directory id
+                       azure_app_secret        (str)   --     new azure app password
+
+                  Returns:
+                       None
+
+                  Raises:
+                      SDKException:
+                            if failed to add
+
+                            if response is empty
+
+                            if response code is not as expected
+        &#34;&#34;&#34;
+
+        if not isinstance(azure_app_id, str) or not azure_app_id:
+            raise SDKException(&#39;Instance&#39;, &#39;102&#39;, &#39;Invalid argument: azure_app_id must be a non-empty string&#39;)
+        if not isinstance(azure_dir_id, str) or not azure_dir_id:
+            raise SDKException(&#39;Instance&#39;, &#39;102&#39;, &#39;Invalid argument: azure_dir_id must be a non-empty string&#39;)
+        if not isinstance(azure_app_secret, str) or not azure_app_secret:
+            raise SDKException(&#39;Instance&#39;, &#39;102&#39;, &#39;Invalid argument: azure_app_secret must be a non-empty string&#39;)
+
+        update_dict = {
+            &#34;instance&#34;: self._instance,
+            &#34;cloudAppsInstance&#34;: {
+                &#34;instanceType&#34;: self.ca_instance_type,
+                &#34;oneDriveInstance&#34;: {
+                    &#34;azureAppList&#34;: {
+                        &#34;azureApps&#34;: [
+                            {
+                                &#34;azureDirectoryId&#34;: azure_dir_id,
+                                &#34;azureAppId&#34;: azure_app_id,
+                                &#34;azureAppKeyValue&#34;: b64encode(azure_app_secret.encode()).decode()
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+
+        self.update_properties(properties_dict=update_dict)
+
+    def delete_data_from_browse(self, item_guids, include_deleted_items=False, folder=False):
+        &#34;&#34;&#34;
+        Deletes items for the backupset in the Index and makes them unavailable for browsing and recovery
+
+            Args:
+                item_guids       (str/list)      --      The guids of items to be deleted from browse
+                include_deleted_items (bool)     --      If True, deleted items will be included in browse
+                folder           (bool)          --      If True, item to be deleted is Folder
+
+            Returns:
+                None        --      If delete request is sent successfully for file
+                jobIds      --      If delete request is sent successfully for folder
+
+            Raises:
+                SDKException:
+                    if failed to delete
+
+                    if response is empty
+
+                    if response code is not as expected
+
+        &#34;&#34;&#34;
+        if not isinstance(item_guids, str) or not item_guids:
+            if not isinstance(item_guids, list):
+                raise SDKException(&#39;Instance&#39;, &#39;102&#39;, &#34;Invalid argument: item_guid must be a non-empty string or list of strings.&#34;)
+        if isinstance(item_guids, list):
+            for item in item_guids:
+                if not isinstance(item, str) or not item:
+                    raise SDKException(&#39;Instance&#39;, &#39;102&#39;,&#34;Invalid argument: item_guid must be a non-empty string.&#34;)
+
+        request_json = self._prepare_delete_json_onedrive_v2(item_guids, include_deleted_items=include_deleted_items, folder=folder)
+        return self._process_delete_response(request_json)</code></pre>
 </details>
 </section>
 <section>
@@ -828,7 +1005,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/onedrive_instance.py#L51-L742" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/onedrive_instance.py#L59-L907" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class OneDriveInstance(CloudAppsInstance):
     &#34;&#34;&#34;Class for representing an Instance of the OneDrive instance type.&#34;&#34;&#34;
@@ -930,7 +1107,7 @@ default: None</p>
         return self._proxy_client
 
 
-    def _prepare_advsearchgrp_onedrivev2(self, source_item_list, subclient_id):
+    def _prepare_advsearchgrp_onedrive_for_business_client(self, source_item_list, subclient_id):
         &#34;&#34;&#34;
                     Utility function to prepare advsearchgrp json for restore job for OneDrive for business clients
 
@@ -1048,7 +1225,7 @@ default: None</p>
 
         return advsearchgrp
 
-    def _prepare_findquery_onedrivev2(self, source_item_list, subclient_id):
+    def _prepare_findquery_onedrive_for_business_client(self, source_item_list, subclient_id):
         &#34;&#34;&#34;
             Utility function to prepare findquery json for restore job for OneDrive for bussiness clients
 
@@ -1106,7 +1283,7 @@ default: None</p>
                       }
                     ]
                   },
-                  &#34;advSearchGrp&#34;: self._prepare_advsearchgrp_onedrivev2(source_item_list,subclient_id),
+                  &#34;advSearchGrp&#34;: self._prepare_advsearchgrp_onedrive_for_business_client(source_item_list,subclient_id),
                   &#34;mode&#34;: &#34;WebConsole&#34;
                 }
 
@@ -1115,7 +1292,7 @@ default: None</p>
 
 
 
-    def _prepare_restore_json_onedrive_v2(self, source_item_list, **kwargs):
+    def _prepare_restore_json_onedrive_for_business_client(self, source_item_list, **kwargs):
 
         &#34;&#34;&#34; Utility function to prepare user level restore json for OneDrive for bussiness clients
 
@@ -1138,6 +1315,8 @@ default: None</p>
 
                 skip_file_permissions (bool)    --  If True, file permissions will be restored
 
+                include_deleted_items  (bool)   --  If True, deleted items will be included
+
             Returns:
                 request_json (dict) - request json for restore job
 
@@ -1155,8 +1334,8 @@ default: None</p>
         destination_client = kwargs.get(&#39;destination_client&#39;)
         overwrite = kwargs.get(&#39;overwrite&#39;, False)
         restore_as_copy = kwargs.get(&#39;restore_as_copy&#39;, False)
-        skip_file_permissions = kwargs.get(&#39;skip_file_permissions&#39;, False)
-
+        skip_file_permissions = kwargs.get(&#39;skip_file_permissions&#39;, True)
+        include_deleted_items = kwargs.get(&#39;include_deleted_items&#39;, False)
 
 
         if destination_client:
@@ -1188,9 +1367,9 @@ default: None</p>
         }
 
         restore_options[&#39;commonOptions&#39;] = {
-            &#34;overwriteFiles&#34;: False,
-            &#34;skip&#34;: True,
-            &#34;unconditionalOverwrite&#34;: False
+            &#34;overwriteFiles&#34;: overwrite,
+            &#34;skip&#34;: True if not restore_as_copy and not overwrite else False,
+            &#34;unconditionalOverwrite&#34;: overwrite
         }
 
         destination = restore_options[&#39;destination&#39;]
@@ -1234,7 +1413,9 @@ default: None</p>
         subclient_id = associations[&#39;subclientId&#39;]
 
         cloudAppsRestoreOptions = restore_options[&#39;cloudAppsRestoreOptions&#39;]
-        cloudAppsRestoreOptions[&#39;googleRestoreOptions&#39;][&#39;findQuery&#39;] = self._prepare_findquery_onedrivev2(source_item_list, subclient_id)
+        cloudAppsRestoreOptions[&#39;googleRestoreOptions&#39;][&#39;findQuery&#39;] = self._prepare_findquery_onedrive_for_business_client(source_item_list, subclient_id)
+        if include_deleted_items:
+            cloudAppsRestoreOptions[&#39;googleRestoreOptions&#39;][&#39;findQuery&#39;][&#39;advSearchGrp&#39;][&#39;commonFilter&#39;][0][&#39;filter&#39;][&#39;filters&#39;][0][&#39;fieldValues&#39;][&#39;values&#39;].extend([&#34;3333&#34;,&#34;3334&#34;,&#34;3335&#34;])
 
         destination_option = &#34;Destination&#34;
         destination_value = &#34;Original location&#34;
@@ -1271,15 +1452,16 @@ default: None</p>
                   },
                   {
                     &#34;option&#34;: &#34;If the file exists&#34;,
-                    &#34;value&#34;: &#34;Skip&#34;
+                    &#34;value&#34;: &#34;Restore as a copy&#34; if restore_as_copy and not overwrite else &#34;Unconditionally overwrite&#34; if overwrite else &#34;Skip&#34;
+
                   },
                   {
                     &#34;option&#34;: &#34;Skip file permissions&#34;,
-                    &#34;value&#34;: &#34;Enabled&#34;
+                    &#34;value&#34;: &#34;Enabled&#34; if skip_file_permissions else &#34;Disabled&#34;
                   },
                   {
                     &#34;option&#34;: &#34;Include deleted items&#34;,
-                    &#34;value&#34;: &#34;Disabled&#34;
+                    &#34;value&#34;: &#34;Enabled&#34; if include_deleted_items else &#34;Disabled&#34;
                   }
                 ]
               }
@@ -1294,6 +1476,77 @@ default: None</p>
             joboptionitems.append({&#34;option&#34;: &#34;Destination path&#34;, &#34;value&#34;: destination_path})
 
         return request_json
+
+    def _prepare_delete_json_onedrive_v2(self, item_guids, **kwargs):
+        &#34;&#34;&#34; Utility function to prepare delete documents json for OneDrive for bussiness clients
+
+            Args:
+                item_guid (str)         --  item GUID to delete in browse
+
+                Kwargs:
+
+                    include_deleted_items (bool)             --  If True, deleted items will be included in search
+
+            Returns:
+                request_json (dict) - request json for delete document
+
+            Raises:
+                SDKException:
+                    if destination client with given item does not exist
+
+                    if type of parameter is invalid
+        &#34;&#34;&#34;
+        folder = kwargs.get(&#39;folder&#39;, False)
+        include_deleted_items = kwargs.get(&#39;include_deleted_items&#39;, False)
+        subclient_id = self.subclients[&#39;default&#39;][&#39;id&#39;]
+
+        if isinstance(item_guids, str):
+            source_item_list = [item_guids]
+        else:
+            source_item_list = [].extend(item_guids)
+        req_json = {
+            &#39;opType&#39;: 1,
+            &#39;bulkMode&#39;: folder,
+            &#39;deleteOption&#39;: {
+                &#39;folderDelete&#39;: folder
+            },
+            &#39;searchReq&#39;: {
+                &#39;mode&#39;: 4,
+                &#39;facetRequests&#39;: {
+                    &#39;facetRequest&#39;: []
+                },
+                &#39;advSearchGrp&#39;: self._prepare_advsearchgrp_onedrive_for_business_client(source_item_list, subclient_id),
+                &#39;searchProcessingInfo&#39;: {
+                    &#39;resultOffset&#39;: 0,
+                    &#39;pageSize&#39;: 50,
+                    &#39;queryParams&#39;: [
+                        {
+                            &#39;param&#39;: &#39;ENABLE_MIXEDVIEW&#39;,
+                            &#39;value&#39;: &#39;true&#39;
+                        },
+                        {
+                            &#39;param&#39;: &#39;ENABLE_NAVIGATION&#39;,
+                            &#39;value&#39;: &#39;on&#39;
+                        },
+                        {
+                            &#39;param&#39;: &#39;ENABLE_DEFAULTFACETS&#39;,
+                            &#39;value&#39;: &#39;false&#39;
+                        }
+                    ],
+                    &#39;sortParams&#39;: []
+                }
+            }
+        }
+
+        if isinstance(item_guids, list):
+            req_json[&#39;searchReq&#39;][&#39;advSearchGrp&#39;][&#39;fileFilter&#39;][0][&#39;filter&#39;][&#39;filters&#39;][1][&#39;fieldValues&#39;][
+                &#39;values&#39;].extend(item_guids[1:])
+
+        if include_deleted_items:
+            req_json[&#39;searchReq&#39;][&#39;advSearchGrp&#39;][&#39;commonFilter&#39;][0][&#39;filter&#39;][&#39;filters&#39;][0][&#39;fieldValues&#39;][&#39;values&#39;].extend(
+                [&#34;3333&#34;, &#34;3334&#34;, &#34;3335&#34;])
+
+        return req_json
 
     def restore_out_of_place(
             self,
@@ -1521,7 +1774,88 @@ default: None</p>
             }
         }
 
-        self.update_properties(properties_dict=update_dict)</code></pre>
+        self.update_properties(properties_dict=update_dict)
+
+    def modify_connection_settings(self, azure_app_id, azure_dir_id, azure_app_secret):
+        &#34;&#34;&#34;
+                   Method to modify OneDrive connection settings
+
+                   Arguments:
+                       azure_app_id         (str)   --      new azure application id
+                       azure_dir_id         (str)   --      new azure directory id
+                       azure_app_secret        (str)   --     new azure app password
+
+                  Returns:
+                       None
+
+                  Raises:
+                      SDKException:
+                            if failed to add
+
+                            if response is empty
+
+                            if response code is not as expected
+        &#34;&#34;&#34;
+
+        if not isinstance(azure_app_id, str) or not azure_app_id:
+            raise SDKException(&#39;Instance&#39;, &#39;102&#39;, &#39;Invalid argument: azure_app_id must be a non-empty string&#39;)
+        if not isinstance(azure_dir_id, str) or not azure_dir_id:
+            raise SDKException(&#39;Instance&#39;, &#39;102&#39;, &#39;Invalid argument: azure_dir_id must be a non-empty string&#39;)
+        if not isinstance(azure_app_secret, str) or not azure_app_secret:
+            raise SDKException(&#39;Instance&#39;, &#39;102&#39;, &#39;Invalid argument: azure_app_secret must be a non-empty string&#39;)
+
+        update_dict = {
+            &#34;instance&#34;: self._instance,
+            &#34;cloudAppsInstance&#34;: {
+                &#34;instanceType&#34;: self.ca_instance_type,
+                &#34;oneDriveInstance&#34;: {
+                    &#34;azureAppList&#34;: {
+                        &#34;azureApps&#34;: [
+                            {
+                                &#34;azureDirectoryId&#34;: azure_dir_id,
+                                &#34;azureAppId&#34;: azure_app_id,
+                                &#34;azureAppKeyValue&#34;: b64encode(azure_app_secret.encode()).decode()
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+
+        self.update_properties(properties_dict=update_dict)
+
+    def delete_data_from_browse(self, item_guids, include_deleted_items=False, folder=False):
+        &#34;&#34;&#34;
+        Deletes items for the backupset in the Index and makes them unavailable for browsing and recovery
+
+            Args:
+                item_guids       (str/list)      --      The guids of items to be deleted from browse
+                include_deleted_items (bool)     --      If True, deleted items will be included in browse
+                folder           (bool)          --      If True, item to be deleted is Folder
+
+            Returns:
+                None        --      If delete request is sent successfully for file
+                jobIds      --      If delete request is sent successfully for folder
+
+            Raises:
+                SDKException:
+                    if failed to delete
+
+                    if response is empty
+
+                    if response code is not as expected
+
+        &#34;&#34;&#34;
+        if not isinstance(item_guids, str) or not item_guids:
+            if not isinstance(item_guids, list):
+                raise SDKException(&#39;Instance&#39;, &#39;102&#39;, &#34;Invalid argument: item_guid must be a non-empty string or list of strings.&#34;)
+        if isinstance(item_guids, list):
+            for item in item_guids:
+                if not isinstance(item, str) or not item:
+                    raise SDKException(&#39;Instance&#39;, &#39;102&#39;,&#34;Invalid argument: item_guid must be a non-empty string.&#34;)
+
+        request_json = self._prepare_delete_json_onedrive_v2(item_guids, include_deleted_items=include_deleted_items, folder=folder)
+        return self._process_delete_response(request_json)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -1536,7 +1870,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/onedrive_instance.py#L130-L133" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/onedrive_instance.py#L138-L141" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def auto_discovery_mode(self):
@@ -1550,7 +1884,7 @@ def auto_discovery_mode(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/onedrive_instance.py#L125-L128" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/onedrive_instance.py#L133-L136" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def auto_discovery_status(self):
@@ -1564,7 +1898,7 @@ def auto_discovery_status(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/onedrive_instance.py#L113-L118" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/onedrive_instance.py#L121-L126" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def ca_instance_type(self):
@@ -1580,7 +1914,7 @@ def ca_instance_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/onedrive_instance.py#L120-L123" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/onedrive_instance.py#L128-L131" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def manage_content_automatically(self):
@@ -1594,7 +1928,7 @@ def manage_content_automatically(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/onedrive_instance.py#L135-L138" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/onedrive_instance.py#L143-L146" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def onedrive_client_id(self):
@@ -1608,7 +1942,7 @@ def onedrive_client_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/onedrive_instance.py#L140-L143" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/onedrive_instance.py#L148-L151" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def onedrive_tenant(self):
@@ -1622,7 +1956,7 @@ def onedrive_tenant(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/onedrive_instance.py#L145-L148" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/onedrive_instance.py#L153-L156" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def proxy_client(self):
@@ -1633,6 +1967,67 @@ def proxy_client(self):
 </dl>
 <h3>Methods</h3>
 <dl>
+<dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.delete_data_from_browse"><code class="name flex">
+<span>def <span class="ident">delete_data_from_browse</span></span>(<span>self, item_guids, include_deleted_items=False, folder=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Deletes items for the backupset in the Index and makes them unavailable for browsing and recovery</p>
+<pre><code>Args:
+    item_guids       (str/list)      --      The guids of items to be deleted from browse
+    include_deleted_items (bool)     --      If True, deleted items will be included in browse
+    folder           (bool)          --      If True, item to be deleted is Folder
+
+Returns:
+    None        --      If delete request is sent successfully for file
+    jobIds      --      If delete request is sent successfully for folder
+
+Raises:
+    SDKException:
+        if failed to delete
+
+        if response is empty
+
+        if response code is not as expected
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/onedrive_instance.py#L876-L907" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def delete_data_from_browse(self, item_guids, include_deleted_items=False, folder=False):
+    &#34;&#34;&#34;
+    Deletes items for the backupset in the Index and makes them unavailable for browsing and recovery
+
+        Args:
+            item_guids       (str/list)      --      The guids of items to be deleted from browse
+            include_deleted_items (bool)     --      If True, deleted items will be included in browse
+            folder           (bool)          --      If True, item to be deleted is Folder
+
+        Returns:
+            None        --      If delete request is sent successfully for file
+            jobIds      --      If delete request is sent successfully for folder
+
+        Raises:
+            SDKException:
+                if failed to delete
+
+                if response is empty
+
+                if response code is not as expected
+
+    &#34;&#34;&#34;
+    if not isinstance(item_guids, str) or not item_guids:
+        if not isinstance(item_guids, list):
+            raise SDKException(&#39;Instance&#39;, &#39;102&#39;, &#34;Invalid argument: item_guid must be a non-empty string or list of strings.&#34;)
+    if isinstance(item_guids, list):
+        for item in item_guids:
+            if not isinstance(item, str) or not item:
+                raise SDKException(&#39;Instance&#39;, &#39;102&#39;,&#34;Invalid argument: item_guid must be a non-empty string.&#34;)
+
+    request_json = self._prepare_delete_json_onedrive_v2(item_guids, include_deleted_items=include_deleted_items, folder=folder)
+    return self._process_delete_response(request_json)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.enable_auto_discovery"><code class="name flex">
 <span>def <span class="ident">enable_auto_discovery</span></span>(<span>self, mode='REGEX')</span>
 </code></dt>
@@ -1649,7 +2044,7 @@ GROUP
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/onedrive_instance.py#L631-L663" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/onedrive_instance.py#L715-L747" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_auto_discovery(self, mode=&#39;REGEX&#39;):
     &#34;&#34;&#34;Enables auto discovery on instance.
@@ -1707,7 +2102,7 @@ new user account password</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/onedrive_instance.py#L697-L742" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/onedrive_instance.py#L781-L826" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def modify_accessnodes(self,modified_accessnodes_list,modified_user_name,modified_user_password):
     &#34;&#34;&#34;
@@ -1757,6 +2152,87 @@ new user account password</p></div>
     self.update_properties(properties_dict=update_dict)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.modify_connection_settings"><code class="name flex">
+<span>def <span class="ident">modify_connection_settings</span></span>(<span>self, azure_app_id, azure_dir_id, azure_app_secret)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to modify OneDrive connection settings</p>
+<p>Arguments:
+azure_app_id
+(str)
+&ndash;
+new azure application id
+azure_dir_id
+(str)
+&ndash;
+new azure directory id
+azure_app_secret
+(str)
+&ndash;
+new azure app password</p>
+<h2 id="returns">Returns</h2>
+<p>None</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if failed to add</p>
+<pre><code>  if response is empty
+
+  if response code is not as expected
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/onedrive_instance.py#L828-L874" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def modify_connection_settings(self, azure_app_id, azure_dir_id, azure_app_secret):
+    &#34;&#34;&#34;
+               Method to modify OneDrive connection settings
+
+               Arguments:
+                   azure_app_id         (str)   --      new azure application id
+                   azure_dir_id         (str)   --      new azure directory id
+                   azure_app_secret        (str)   --     new azure app password
+
+              Returns:
+                   None
+
+              Raises:
+                  SDKException:
+                        if failed to add
+
+                        if response is empty
+
+                        if response code is not as expected
+    &#34;&#34;&#34;
+
+    if not isinstance(azure_app_id, str) or not azure_app_id:
+        raise SDKException(&#39;Instance&#39;, &#39;102&#39;, &#39;Invalid argument: azure_app_id must be a non-empty string&#39;)
+    if not isinstance(azure_dir_id, str) or not azure_dir_id:
+        raise SDKException(&#39;Instance&#39;, &#39;102&#39;, &#39;Invalid argument: azure_dir_id must be a non-empty string&#39;)
+    if not isinstance(azure_app_secret, str) or not azure_app_secret:
+        raise SDKException(&#39;Instance&#39;, &#39;102&#39;, &#39;Invalid argument: azure_app_secret must be a non-empty string&#39;)
+
+    update_dict = {
+        &#34;instance&#34;: self._instance,
+        &#34;cloudAppsInstance&#34;: {
+            &#34;instanceType&#34;: self.ca_instance_type,
+            &#34;oneDriveInstance&#34;: {
+                &#34;azureAppList&#34;: {
+                    &#34;azureApps&#34;: [
+                        {
+                            &#34;azureDirectoryId&#34;: azure_dir_id,
+                            &#34;azureAppId&#34;: azure_app_id,
+                            &#34;azureAppKeyValue&#34;: b64encode(azure_app_secret.encode()).decode()
+                        }
+                    ]
+                }
+            }
+        }
+    }
+
+    self.update_properties(properties_dict=update_dict)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.modify_index_server"><code class="name flex">
 <span>def <span class="ident">modify_index_server</span></span>(<span>self, modified_index_server)</span>
 </code></dt>
@@ -1769,7 +2245,7 @@ new index server name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/onedrive_instance.py#L670-L695" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/onedrive_instance.py#L754-L779" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def modify_index_server(self, modified_index_server):
     &#34;&#34;&#34;
@@ -1870,7 +2346,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/onedrive_instance.py#L516-L629" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/onedrive_instance.py#L600-L713" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -1993,13 +2469,16 @@ if response is not success
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.instances.cainstance.CloudAppsInstance" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance">CloudAppsInstance</a></b></code>:
 <ul class="hlist">
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.backupsets" href="../../instance.html#cvpysdk.instance.Instance.backupsets">backupsets</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.browse" href="../../instance.html#cvpysdk.instance.Instance.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.credentials" href="../../instance.html#cvpysdk.instance.Instance.credentials">credentials</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.find" href="../../instance.html#cvpysdk.instance.Instance.find">find</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.instance_id" href="../../instance.html#cvpysdk.instance.Instance.instance_id">instance_id</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.instance_name" href="../../instance.html#cvpysdk.instance.Instance.instance_name">instance_name</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.name" href="../../instance.html#cvpysdk.instance.Instance.name">name</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.properties" href="../../instance.html#cvpysdk.instance.Instance.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.refresh" href="../../instance.html#cvpysdk.instance.Instance.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.subclients" href="../../instance.html#cvpysdk.instance.Instance.subclients">subclients</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.update_properties" href="../../instance.html#cvpysdk.instance.Instance.update_properties">update_properties</a></code></li>
 </ul>
 </li>
@@ -2079,9 +2558,11 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.auto_discovery_mode" href="#cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.auto_discovery_mode">auto_discovery_mode</a></code></li>
 <li><code><a title="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.auto_discovery_status" href="#cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.auto_discovery_status">auto_discovery_status</a></code></li>
 <li><code><a title="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.ca_instance_type" href="#cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.ca_instance_type">ca_instance_type</a></code></li>
+<li><code><a title="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.delete_data_from_browse" href="#cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.delete_data_from_browse">delete_data_from_browse</a></code></li>
 <li><code><a title="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.enable_auto_discovery" href="#cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.enable_auto_discovery">enable_auto_discovery</a></code></li>
 <li><code><a title="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.manage_content_automatically" href="#cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.manage_content_automatically">manage_content_automatically</a></code></li>
 <li><code><a title="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.modify_accessnodes" href="#cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.modify_accessnodes">modify_accessnodes</a></code></li>
+<li><code><a title="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.modify_connection_settings" href="#cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.modify_connection_settings">modify_connection_settings</a></code></li>
 <li><code><a title="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.modify_index_server" href="#cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.modify_index_server">modify_index_server</a></code></li>
 <li><code><a title="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.onedrive_client_id" href="#cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.onedrive_client_id">onedrive_client_id</a></code></li>
 <li><code><a title="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.onedrive_tenant" href="#cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.onedrive_tenant">onedrive_tenant</a></code></li>

@@ -47,7 +47,7 @@ vcenter_client</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/virtualserver/vmware.py#L1-L1016" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/virtualserver/vmware.py#L1-L1021" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -348,6 +348,11 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
 
                     revert              (bool)      --  Revert option
 
+                    volume_level_restore (bool)     -- Restore option type for LR: Default is None
+
+                    redirectWritesToDatastore (str) -- Datastore name to redirect writes for LR restore: Default &#34; &#34;
+
+                    delayMigrationMinutes   (Int)  -- Migrations delay in minutes: Default &#39;0&#39;
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -361,13 +366,13 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                     if response is empty
 
                     if response is not success
-
         &#34;&#34;&#34;
-
         restore_option = {}
         extra_options = [&#39;source_ip&#39;, &#39;destination_ip&#39;, &#39;network&#39;, &#39;destComputerName&#39;,
                          &#39;source_subnet&#39;, &#39;source_gateway&#39;, &#39;destination_subnet&#39;,
-                         &#39;destination_gateway&#39;, &#39;folder_path&#39;, &#39;media_agent&#39;, &#39;v2_details&#39;, &#39;revert&#39;]
+                         &#39;destination_gateway&#39;, &#39;folder_path&#39;, &#39;media_agent&#39;, &#39;v2_details&#39;, &#39;revert&#39;,
+                         &#39;volume_level_restore&#39;,&#39;redirectWritesToDatastore&#39;,&#39;delayMigrationMinutes&#39;]
+
         for key in extra_options:
             if key in kwargs:
                 restore_option[key] = kwargs[key]
@@ -1093,7 +1098,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/virtualserver/vmware.py#L50-L1016" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/virtualserver/vmware.py#L50-L1021" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VMWareVirtualServerSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient Base class.
@@ -1345,6 +1350,11 @@ backupset class, subclient name, subclient id</p></div>
 
                     revert              (bool)      --  Revert option
 
+                    volume_level_restore (bool)     -- Restore option type for LR: Default is None
+
+                    redirectWritesToDatastore (str) -- Datastore name to redirect writes for LR restore: Default &#34; &#34;
+
+                    delayMigrationMinutes   (Int)  -- Migrations delay in minutes: Default &#39;0&#39;
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -1358,13 +1368,13 @@ backupset class, subclient name, subclient id</p></div>
                     if response is empty
 
                     if response is not success
-
         &#34;&#34;&#34;
-
         restore_option = {}
         extra_options = [&#39;source_ip&#39;, &#39;destination_ip&#39;, &#39;network&#39;, &#39;destComputerName&#39;,
                          &#39;source_subnet&#39;, &#39;source_gateway&#39;, &#39;destination_subnet&#39;,
-                         &#39;destination_gateway&#39;, &#39;folder_path&#39;, &#39;media_agent&#39;, &#39;v2_details&#39;, &#39;revert&#39;]
+                         &#39;destination_gateway&#39;, &#39;folder_path&#39;, &#39;media_agent&#39;, &#39;v2_details&#39;, &#39;revert&#39;,
+                         &#39;volume_level_restore&#39;,&#39;redirectWritesToDatastore&#39;,&#39;delayMigrationMinutes&#39;]
+
         for key in extra_options:
             if key in kwargs:
                 restore_option[key] = kwargs[key]
@@ -2092,7 +2102,7 @@ restore dict</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/virtualserver/vmware.py#L84-L100" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/virtualserver/vmware.py#L84-L100" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_revert_option(self, request_json, revert):
     &#34;&#34;&#34;
@@ -2174,7 +2184,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/virtualserver/vmware.py#L499-L610" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/virtualserver/vmware.py#L504-L615" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def attach_disk_restore(self,
                         vm_name,
@@ -2322,7 +2332,7 @@ default : None. If name of the RPStore is given, granular mode is chosen else Li
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/virtualserver/vmware.py#L834-L902" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/virtualserver/vmware.py#L839-L907" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_blr_replication_pair(self, *, target, vms, plan_name, rpstore=None, granular_options=None):
     &#34;&#34;&#34;
@@ -2458,7 +2468,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/virtualserver/vmware.py#L370-L497" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/virtualserver/vmware.py#L375-L502" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_restore(self,
                  vm_name,
@@ -2653,7 +2663,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/virtualserver/vmware.py#L612-L736" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/virtualserver/vmware.py#L617-L741" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_azurerm(
         self,
@@ -2834,7 +2844,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/virtualserver/vmware.py#L904-L1016" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/virtualserver/vmware.py#L909-L1021" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_googlecloud(
         self,
@@ -3002,7 +3012,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/virtualserver/vmware.py#L739-L832" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/virtualserver/vmware.py#L744-L837" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_hyperv(
         self,
@@ -3179,7 +3189,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/virtualserver/vmware.py#L102-L210" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/virtualserver/vmware.py#L102-L210" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(
         self,
@@ -3395,6 +3405,12 @@ v2_details          (dict)       -- details for v2 jobs
                                 eg: check clients.vmclient.VMClient._child_job_subclient_details
 
 revert              (bool)      --  Revert option
+
+volume_level_restore (bool)     -- Restore option type for LR: Default is None
+
+redirectWritesToDatastore (str) -- Datastore name to redirect writes for LR restore: Default " "
+
+delayMigrationMinutes   (Int)  -- Migrations delay in minutes: Default '0'
 </code></pre>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this restore job</p>
@@ -3410,7 +3426,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/virtualserver/vmware.py#L212-L368" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/virtualserver/vmware.py#L212-L373" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(
         self,
@@ -3500,6 +3516,11 @@ if response is not success
 
                 revert              (bool)      --  Revert option
 
+                volume_level_restore (bool)     -- Restore option type for LR: Default is None
+
+                redirectWritesToDatastore (str) -- Datastore name to redirect writes for LR restore: Default &#34; &#34;
+
+                delayMigrationMinutes   (Int)  -- Migrations delay in minutes: Default &#39;0&#39;
 
         Returns:
             object - instance of the Job class for this restore job
@@ -3513,13 +3534,13 @@ if response is not success
                 if response is empty
 
                 if response is not success
-
     &#34;&#34;&#34;
-
     restore_option = {}
     extra_options = [&#39;source_ip&#39;, &#39;destination_ip&#39;, &#39;network&#39;, &#39;destComputerName&#39;,
                      &#39;source_subnet&#39;, &#39;source_gateway&#39;, &#39;destination_subnet&#39;,
-                     &#39;destination_gateway&#39;, &#39;folder_path&#39;, &#39;media_agent&#39;, &#39;v2_details&#39;, &#39;revert&#39;]
+                     &#39;destination_gateway&#39;, &#39;folder_path&#39;, &#39;media_agent&#39;, &#39;v2_details&#39;, &#39;revert&#39;,
+                     &#39;volume_level_restore&#39;,&#39;redirectWritesToDatastore&#39;,&#39;delayMigrationMinutes&#39;]
+
     for key in extra_options:
         if key in kwargs:
             restore_option[key] = kwargs[key]
@@ -3604,6 +3625,7 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.get_nics_from_browse" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.get_nics_from_browse">get_nics_from_browse</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.guest_file_restore" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.guest_file_restore">guest_file_restore</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.guest_files_browse" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.guest_files_browse">guest_files_browse</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.index_server" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.index_server">index_server</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.instance_proxy" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.instance_proxy">instance_proxy</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.is_backup_enabled" href="../../subclient.html#cvpysdk.subclient.Subclient.is_backup_enabled">is_backup_enabled</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.is_blocklevel_backup_enabled" href="../../subclient.html#cvpysdk.subclient.Subclient.is_blocklevel_backup_enabled">is_blocklevel_backup_enabled</a></code></li>

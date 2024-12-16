@@ -110,7 +110,7 @@ get_saml_user_redirect_url() -- gets redirect url of saml user
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L1-L1043" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L1-L1052" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -276,7 +276,7 @@ class IdentityManagementApps(object):
         &#34;&#34;&#34;Returns the number of the app added to the Commcell.&#34;&#34;&#34;
         return len(self.all_apps)
 
-    def _get_apps(self):
+    def _get_apps(self, hard=False):
         &#34;&#34;&#34;Gets list of all third party apps.
 
             Returns:
@@ -302,6 +302,10 @@ class IdentityManagementApps(object):
                 SDKException:
                         if response is not success
         &#34;&#34;&#34;
+        if hard:
+            self._cvpysdk_object.make_request(
+                &#39;GET&#39;, self._APPS + &#39;?hardRefresh=true&#39;
+            )
         flag, response = self._cvpysdk_object.make_request(
             &#39;GET&#39;, self._APPS
         )
@@ -623,7 +627,7 @@ class IdentityManagementApps(object):
         &#34;&#34;&#34;Creates a commcell app by associating speccified users
 
             Args:
-                IDP_props      (list)     --  dict containing properties of the IDP&#39;s identity app
+                idp_props      (list)     --  dict containing properties of the IDP&#39;s identity app
 
                     [
                         {
@@ -645,6 +649,10 @@ class IdentityManagementApps(object):
                     ]
 
                 app_name       (str)      --  GUID for the app
+
+                app_display_name (str)    --  display name for the app
+
+                app_description  (str)    --  description for the app
 
                 user_assoc_list (list)    --  list of users for association
 
@@ -756,26 +764,26 @@ class IdentityManagementApps(object):
 
         &#34;&#34;&#34;
         third_party_json = {
-            &#34;App_SetClientThirdPartyAppPropReq&#34;:{
-            &#34;opType&#34;: 1,
-            &#34;clientThirdPartyApps&#34;: [
-                {
-                    &#34;appName&#34;: appname,
-                    &#34;flags&#34;: 0,
-                    &#34;appType&#34;: 5,
-                    &#34;isEnabled&#34;: 1,
-                    &#34;props&#34;: {
-                        &#34;nameValues&#34;: props
-                    },
-                    &#34;assocTree&#34;: [
-                        {
-                            &#34;_type_&#34;: 13,
-                            &#34;userName&#34;: user_name
-                        } for user_name in user_to_be_added
-                    ]
-                }
-            ]
-        }
+            &#34;App_SetClientThirdPartyAppPropReq&#34;: {
+                &#34;opType&#34;: 1,
+                &#34;clientThirdPartyApps&#34;: [
+                    {
+                        &#34;appName&#34;: appname,
+                        &#34;flags&#34;: 0,
+                        &#34;appType&#34;: 5,
+                        &#34;isEnabled&#34;: 1,
+                        &#34;props&#34;: {
+                            &#34;nameValues&#34;: props
+                        },
+                        &#34;assocTree&#34;: [
+                            {
+                                &#34;_type_&#34;: 13,
+                                &#34;userName&#34;: user_name
+                            } for user_name in user_to_be_added
+                        ]
+                    }
+                ]
+            }
         }
 
         response_json = self._commcell_object.qoperation_execute(third_party_json)
@@ -807,9 +815,14 @@ class IdentityManagementApps(object):
 
         return self._apps and app_name.lower() in self._apps
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the apps associated with the Commcell.&#34;&#34;&#34;
-        self._apps = self._get_apps()
+    def refresh(self, hard=False):
+        &#34;&#34;&#34;Refresh the apps associated with the Commcell.
+        
+            Args:
+                hard    (bool)  --  perform a hard refresh of the cache
+                
+        &#34;&#34;&#34;
+        self._apps = self._get_apps(hard)
 
 
 class IdentityManagementApp(object):
@@ -823,15 +836,12 @@ class IdentityManagementApp(object):
 
                 app_name            (str)       --  name of the app
 
-                app_key             (str)       --  key of the app
-                    default: None
-
-                app_dict            (dict)     -- dict containing the properties of the app
-                    default: None
+                app_dict            (dict)     -- dict containing the properties of the app. default: None
 
             Returns:
                 object - instance of the IdentityManagementApp class
         &#34;&#34;&#34;
+        self._properties = None
         self._commcell_object = commcell_object
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._update_response_ = commcell_object._update_response_
@@ -974,11 +984,10 @@ class SamlApp(object):
 
                 appname             (string)        saml app name
 
-                properties          (dict)          dict containing properties of saml app
-                    Default: None
+                properties          (dict)          dict containing properties of saml app. Default: None
 
             Returns:
-                object - instnace of the SamlApp class
+                object - instance of the SamlApp class
         &#34;&#34;&#34;
 
         self._commcell = commcell
@@ -1048,7 +1057,7 @@ class SamlApp(object):
 
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(
-            &#39;PUT&#39;, self._SAML% self._appname, req_body
+            &#39;PUT&#39;, self._SAML % self._appname, req_body
         )
         if flag:
             if response.json() and &#39;errorCode&#39; in response.json():
@@ -1182,21 +1191,15 @@ instance of the commcell class</p>
 (str)
 &ndash;
 name of the app</p>
-<p>app_key
-(str)
-&ndash;
-key of the app
-default: None</p>
 <p>app_dict
 (dict)
-&ndash; dict containing the properties of the app
-default: None</p>
+&ndash; dict containing the properties of the app. default: None</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the IdentityManagementApp class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L701-L850" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L714-L860" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class IdentityManagementApp(object):
     &#34;&#34;&#34;Class for performing operations on a specific identity management app&#34;&#34;&#34;
@@ -1209,15 +1212,12 @@ default: None</p>
 
                 app_name            (str)       --  name of the app
 
-                app_key             (str)       --  key of the app
-                    default: None
-
-                app_dict            (dict)     -- dict containing the properties of the app
-                    default: None
+                app_dict            (dict)     -- dict containing the properties of the app. default: None
 
             Returns:
                 object - instance of the IdentityManagementApp class
         &#34;&#34;&#34;
+        self._properties = None
         self._commcell_object = commcell_object
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._update_response_ = commcell_object._update_response_
@@ -1357,7 +1357,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L832-L835" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L842-L845" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def app_description(self):
@@ -1371,7 +1371,7 @@ def app_description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L827-L830" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L837-L840" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def app_key(self):
@@ -1385,7 +1385,7 @@ def app_key(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L822-L825" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L832-L835" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def app_name(self):
@@ -1399,7 +1399,7 @@ def app_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L837-L840" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L847-L850" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def app_type(self):
@@ -1413,7 +1413,7 @@ def app_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L847-L850" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L857-L860" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def flags(self):
@@ -1427,7 +1427,7 @@ def flags(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L842-L845" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L852-L855" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_enabled(self):
@@ -1453,7 +1453,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L799-L816" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L809-L826" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_app_props(self):
     &#34;&#34;&#34;Returns a dict containing the properties of a third party app.
@@ -1483,7 +1483,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L818-L820" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L828-L830" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the app.&#34;&#34;&#34;
@@ -1509,7 +1509,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L120-L698" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L120-L711" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class IdentityManagementApps(object):
     &#34;&#34;&#34;Class for representing third party apps in the commcell&#34;&#34;&#34;
@@ -1556,7 +1556,7 @@ instance of the Commcell class</p>
         &#34;&#34;&#34;Returns the number of the app added to the Commcell.&#34;&#34;&#34;
         return len(self.all_apps)
 
-    def _get_apps(self):
+    def _get_apps(self, hard=False):
         &#34;&#34;&#34;Gets list of all third party apps.
 
             Returns:
@@ -1582,6 +1582,10 @@ instance of the Commcell class</p>
                 SDKException:
                         if response is not success
         &#34;&#34;&#34;
+        if hard:
+            self._cvpysdk_object.make_request(
+                &#39;GET&#39;, self._APPS + &#39;?hardRefresh=true&#39;
+            )
         flag, response = self._cvpysdk_object.make_request(
             &#39;GET&#39;, self._APPS
         )
@@ -1903,7 +1907,7 @@ instance of the Commcell class</p>
         &#34;&#34;&#34;Creates a commcell app by associating speccified users
 
             Args:
-                IDP_props      (list)     --  dict containing properties of the IDP&#39;s identity app
+                idp_props      (list)     --  dict containing properties of the IDP&#39;s identity app
 
                     [
                         {
@@ -1925,6 +1929,10 @@ instance of the Commcell class</p>
                     ]
 
                 app_name       (str)      --  GUID for the app
+
+                app_display_name (str)    --  display name for the app
+
+                app_description  (str)    --  description for the app
 
                 user_assoc_list (list)    --  list of users for association
 
@@ -2036,26 +2044,26 @@ instance of the Commcell class</p>
 
         &#34;&#34;&#34;
         third_party_json = {
-            &#34;App_SetClientThirdPartyAppPropReq&#34;:{
-            &#34;opType&#34;: 1,
-            &#34;clientThirdPartyApps&#34;: [
-                {
-                    &#34;appName&#34;: appname,
-                    &#34;flags&#34;: 0,
-                    &#34;appType&#34;: 5,
-                    &#34;isEnabled&#34;: 1,
-                    &#34;props&#34;: {
-                        &#34;nameValues&#34;: props
-                    },
-                    &#34;assocTree&#34;: [
-                        {
-                            &#34;_type_&#34;: 13,
-                            &#34;userName&#34;: user_name
-                        } for user_name in user_to_be_added
-                    ]
-                }
-            ]
-        }
+            &#34;App_SetClientThirdPartyAppPropReq&#34;: {
+                &#34;opType&#34;: 1,
+                &#34;clientThirdPartyApps&#34;: [
+                    {
+                        &#34;appName&#34;: appname,
+                        &#34;flags&#34;: 0,
+                        &#34;appType&#34;: 5,
+                        &#34;isEnabled&#34;: 1,
+                        &#34;props&#34;: {
+                            &#34;nameValues&#34;: props
+                        },
+                        &#34;assocTree&#34;: [
+                            {
+                                &#34;_type_&#34;: 13,
+                                &#34;userName&#34;: user_name
+                            } for user_name in user_to_be_added
+                        ]
+                    }
+                ]
+            }
         }
 
         response_json = self._commcell_object.qoperation_execute(third_party_json)
@@ -2087,9 +2095,14 @@ instance of the Commcell class</p>
 
         return self._apps and app_name.lower() in self._apps
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the apps associated with the Commcell.&#34;&#34;&#34;
-        self._apps = self._get_apps()</code></pre>
+    def refresh(self, hard=False):
+        &#34;&#34;&#34;Refresh the apps associated with the Commcell.
+        
+            Args:
+                hard    (bool)  --  perform a hard refresh of the cache
+                
+        &#34;&#34;&#34;
+        self._apps = self._get_apps(hard)</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
@@ -2106,7 +2119,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L296-L309" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L300-L313" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_apps(self):
@@ -2139,7 +2152,7 @@ List containing commcell apps in the SP commcell</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L277-L294" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L281-L298" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def get_commcell_identity_apps(self):
@@ -2171,7 +2184,7 @@ object of IdentityManangementApp class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L265-L275" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L269-L279" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def get_local_identity_app(self):
@@ -2195,7 +2208,7 @@ def get_local_identity_app(self):
 <dd>
 <div class="desc"><p>Creates a commcell app by associating speccified users</p>
 <h2 id="args">Args</h2>
-<p>IDP_props
+<p>idp_props
 (list)
 &ndash;
 dict containing properties of the IDP's identity app</p>
@@ -2222,6 +2235,13 @@ dict containing properties of the IDP's identity app</p>
 (str)
 &ndash;
 GUID for the app</p>
+<p>app_display_name (str)
+&ndash;
+display name for the app</p>
+<p>app_description
+(str)
+&ndash;
+description for the app</p>
 <p>user_assoc_list (list)
 &ndash;
 list of users for association</p>
@@ -2245,7 +2265,7 @@ if failed to configure identity app</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L502-L605" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L506-L613" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def configure_commcell_app(self,
                            idp_props,
@@ -2257,7 +2277,7 @@ if failed to configure identity app</p></div>
     &#34;&#34;&#34;Creates a commcell app by associating speccified users
 
         Args:
-            IDP_props      (list)     --  dict containing properties of the IDP&#39;s identity app
+            idp_props      (list)     --  dict containing properties of the IDP&#39;s identity app
 
                 [
                     {
@@ -2279,6 +2299,10 @@ if failed to configure identity app</p></div>
                 ]
 
             app_name       (str)      --  GUID for the app
+
+            app_display_name (str)    --  display name for the app
+
+            app_description  (str)    --  description for the app
 
             user_assoc_list (list)    --  list of users for association
 
@@ -2374,7 +2398,7 @@ if failed to configure identity app</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L452-L500" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L456-L504" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def configure_local_identity_app(self, user_list=None):
     &#34;&#34;&#34;Creates a local identity app by associating speccified users
@@ -2470,7 +2494,7 @@ if failed to configure identity app</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L607-L676" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L615-L684" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def configure_openid_app(self, appname, props, user_to_be_added):
     &#34;&#34;&#34;
@@ -2510,26 +2534,26 @@ if failed to configure identity app</p></div>
 
     &#34;&#34;&#34;
     third_party_json = {
-        &#34;App_SetClientThirdPartyAppPropReq&#34;:{
-        &#34;opType&#34;: 1,
-        &#34;clientThirdPartyApps&#34;: [
-            {
-                &#34;appName&#34;: appname,
-                &#34;flags&#34;: 0,
-                &#34;appType&#34;: 5,
-                &#34;isEnabled&#34;: 1,
-                &#34;props&#34;: {
-                    &#34;nameValues&#34;: props
-                },
-                &#34;assocTree&#34;: [
-                    {
-                        &#34;_type_&#34;: 13,
-                        &#34;userName&#34;: user_name
-                    } for user_name in user_to_be_added
-                ]
-            }
-        ]
-    }
+        &#34;App_SetClientThirdPartyAppPropReq&#34;: {
+            &#34;opType&#34;: 1,
+            &#34;clientThirdPartyApps&#34;: [
+                {
+                    &#34;appName&#34;: appname,
+                    &#34;flags&#34;: 0,
+                    &#34;appType&#34;: 5,
+                    &#34;isEnabled&#34;: 1,
+                    &#34;props&#34;: {
+                        &#34;nameValues&#34;: props
+                    },
+                    &#34;assocTree&#34;: [
+                        {
+                            &#34;_type_&#34;: 13,
+                            &#34;userName&#34;: user_name
+                        } for user_name in user_to_be_added
+                    ]
+                }
+            ]
+        }
     }
 
     response_json = self._commcell_object.qoperation_execute(third_party_json)
@@ -2593,7 +2617,7 @@ if invalid response</dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L385-L450" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L389-L454" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def configure_saml_app(self, app_name, desc, idp_metadata, sp_metadata, associations):
     &#34;&#34;&#34;Creates a saml app
@@ -2684,7 +2708,7 @@ if passed app not found</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L311-L353" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L315-L357" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_identity_app(self, app_name):
     &#34;&#34;&#34;Deletes the specified local identity app
@@ -2746,7 +2770,7 @@ if invalid response</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L355-L383" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L359-L387" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_saml_app(self, app_name):
     &#34;&#34;&#34;Deletes the specified saml app
@@ -2799,7 +2823,7 @@ if type of the app name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L214-L238" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L218-L242" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, app_name):
     &#34;&#34;&#34;Returns a identitymanagementapp object of the specified app name
@@ -2848,7 +2872,7 @@ if type of the app name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L240-L263" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L244-L267" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_saml(self, app_name):
     &#34;&#34;&#34;Returns a SamlApp object of the specified app name
@@ -2896,7 +2920,7 @@ if type of the app name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L678-L694" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L686-L702" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_identity_app(self, app_name):
     &#34;&#34;&#34;Checks if an identity app exits in the commcell
@@ -2918,18 +2942,28 @@ if type of the app name argument is not string</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.identity_management.IdentityManagementApps.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self, hard=False)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh the apps associated with the Commcell.</p></div>
+<div class="desc"><p>Refresh the apps associated with the Commcell.</p>
+<h2 id="args">Args</h2>
+<p>hard
+(bool)
+&ndash;
+perform a hard refresh of the cache</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L696-L698" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L704-L711" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refresh the apps associated with the Commcell.&#34;&#34;&#34;
-    self._apps = self._get_apps()</code></pre>
+<pre><code class="python">def refresh(self, hard=False):
+    &#34;&#34;&#34;Refresh the apps associated with the Commcell.
+    
+        Args:
+            hard    (bool)  --  perform a hard refresh of the cache
+            
+    &#34;&#34;&#34;
+    self._apps = self._get_apps(hard)</code></pre>
 </details>
 </dd>
 </dl>
@@ -2950,14 +2984,13 @@ instance of commcell class</p>
 saml app name</p>
 <p>properties
 (dict)
-dict containing properties of saml app
-Default: None</p>
+dict containing properties of saml app. Default: None</p>
 <h2 id="returns">Returns</h2>
-<p>object - instnace of the SamlApp class</p></div>
+<p>object - instance of the SamlApp class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L853-L1043" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L863-L1052" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SamlApp(object):
     &#34;&#34;&#34;Class for performing operations on a specific saml app&#34;&#34;&#34;
@@ -2969,11 +3002,10 @@ Default: None</p>
 
                 appname             (string)        saml app name
 
-                properties          (dict)          dict containing properties of saml app
-                    Default: None
+                properties          (dict)          dict containing properties of saml app. Default: None
 
             Returns:
-                object - instnace of the SamlApp class
+                object - instance of the SamlApp class
         &#34;&#34;&#34;
 
         self._commcell = commcell
@@ -3043,7 +3075,7 @@ Default: None</p>
 
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(
-            &#39;PUT&#39;, self._SAML% self._appname, req_body
+            &#39;PUT&#39;, self._SAML % self._appname, req_body
         )
         if flag:
             if response.json() and &#39;errorCode&#39; in response.json():
@@ -3159,7 +3191,7 @@ Default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L999-L1002" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L1008-L1011" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_auto_create_user(self):
@@ -3175,7 +3207,7 @@ True if saml app is created for a company, False otherwise</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L1034-L1043" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L1043-L1052" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_company_saml_app(self):
@@ -3195,7 +3227,7 @@ def is_company_saml_app(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L994-L997" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L1003-L1006" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_saml_app_enabled(self):
@@ -3209,7 +3241,7 @@ def is_saml_app_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L1029-L1032" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L1038-L1041" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def saml_app_associations(self):
@@ -3223,7 +3255,7 @@ def saml_app_associations(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L1014-L1017" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L1023-L1026" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def saml_app_attribute_mappings(self):
@@ -3237,7 +3269,7 @@ def saml_app_attribute_mappings(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L1004-L1007" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L1013-L1016" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def saml_app_default_user_groups(self):
@@ -3251,7 +3283,7 @@ def saml_app_default_user_groups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L989-L992" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L998-L1001" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def saml_app_description(self):
@@ -3265,7 +3297,7 @@ def saml_app_description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L1019-L1022" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L1028-L1031" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def saml_app_identity_provider_metadata(self):
@@ -3279,7 +3311,7 @@ def saml_app_identity_provider_metadata(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L1009-L1012" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L1018-L1021" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def saml_app_nameid_attribute(self):
@@ -3293,7 +3325,7 @@ def saml_app_nameid_attribute(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L1024-L1027" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L1033-L1036" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def saml_app_service_provider_metadata(self):
@@ -3322,7 +3354,7 @@ if request is not successful</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L955-L987" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L964-L996" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_saml_user_redirect_url(self, user_email):
     &#34;&#34;&#34;Get Redirect Url of SAML User
@@ -3375,7 +3407,7 @@ if request is not successful</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L925-L953" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L934-L962" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def modify_saml_app(self, req_body):
     &#34;&#34;&#34;Modifies a saml app
@@ -3389,7 +3421,7 @@ if request is not successful</p></div>
 
     &#34;&#34;&#34;
     flag, response = self._cvpysdk_object.make_request(
-        &#39;PUT&#39;, self._SAML% self._appname, req_body
+        &#39;PUT&#39;, self._SAML % self._appname, req_body
     )
     if flag:
         if response.json() and &#39;errorCode&#39; in response.json():
@@ -3416,7 +3448,7 @@ if request is not successful</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/identity_management.py#L892-L894" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/identity_management.py#L901-L903" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the saml app properties&#34;&#34;&#34;

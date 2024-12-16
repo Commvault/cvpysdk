@@ -35,7 +35,7 @@ sync_remote_cache()                   --  syncs remote cache
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/deployment/download.py#L1-L488" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/deployment/download.py#L1-L543" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -179,11 +179,15 @@ class Download(object):
         &#34;&#34;&#34;
 
         # To set the default value if option is none
+        version = self.commcell_object.commserv_version
         if options is None:
             options = &#39;latest service pack&#39;
 
         if DownloadOptions.LATEST_SERVICEPACK.value == options:
             self.update_option = {
+                &#39;upgradeToLatestRelease&#39;: True,
+                &#39;latestFixesForCurrentRelease&#39;: False,
+                &#34;featureRelease&#34;: self.commcell_object.version,
                 &#39;SPName&#39;: &#39;latest&#39;,
                 &#39;IsSPName&#39;: False,
                 &#39;isSpDelayedDays&#39;: True,
@@ -191,10 +195,21 @@ class Download(object):
             }
         elif DownloadOptions.LATEST_HOTFIXES.value == options:
             self.update_option = {
+                &#39;upgradeToLatestRelease&#39;: False,
+                &#39;latestFixesForCurrentRelease&#39;: True,
+                &#34;featureRelease&#34;: self.commcell_object.version,
                 &#39;SPName&#39;: &#39;hotfix&#39;,
                 &#39;IsSPName&#39;: False,
                 &#39;isSpDelayedDays&#39;: True,
                 &#39;isHotfixesDownload&#39;: True
+            }
+        elif DownloadOptions.SERVICEPACK_AND_HOTFIXES.value == options:
+            if not (service_pack or cu_number):
+                raise SDKException(&#39;Download&#39;, &#39;102&#39;)
+            self.update_option = {
+                &#39;upgradeToLatestRelease&#39;: False,
+                &#39;latestFixesForCurrentRelease&#39;: False,
+                &#34;featureRelease&#34;: &#34;11.&#34; + service_pack + &#34;.&#34; + cu_number
             }
         else:
             if service_pack is None:
@@ -214,90 +229,130 @@ class Download(object):
         client_groups = []
         if sync_cache and sync_cache_list:
             for cache in sync_cache_list:
-                client_groups.append({&#34;clientName&#34;: cache})
+                client_groups.append({&#34;type&#34;: &#34;CLIENT_ENTITY&#34;,
+                                      &#34;clientName&#34;: cache,
+                                      &#34;id&#34;: self.commcell_object.clients.get(cache).client_id
+                                      }) if version &gt;= 36 else client_groups.append({&#34;clientName&#34;: cache})
         elif sync_cache and not sync_cache_list:
-            client_groups = [{&#34;_type_&#34;: 2}]
+            if version &lt; 36:
+                client_groups = [{&#34;_type_&#34;: 2}]
+            else:
+                flag_1, response_1 = self._cvpysdkcommcell_object.make_request(&#39;GET&#39;, self._services[&#39;CREATE_RC&#39;])
+                cache_list = []
+                for obj in response_1.json()[&#39;softwareCacheDetailList&#39;]:
+                    cache_list.append(obj[&#39;cache&#39;][&#39;name&#39;])
+                for client in cache_list:
+                    client_groups.append({&#34;type&#34;: &#34;CLIENT_ENTITY&#34;,
+                                          &#34;clientName&#34;: client,
+                                          &#34;id&#34;: int(self.commcell_object.clients.all_clients[client][&#39;id&#39;])})
 
-        request_json = {
-            &#34;taskInfo&#34;: {
-                &#34;task&#34;: {
-                    &#34;taskType&#34;: 1,
-                    &#34;initiatedFrom&#34;: 2,
-                    &#34;policyType&#34;: 0,
-                    &#34;alert&#34;: {
-                        &#34;alertName&#34;: &#34;&#34;
-                    },
-                    &#34;taskFlags&#34;: {
-                        &#34;isEdgeDrive&#34;: False,
-                        &#34;disabled&#34;: False
-                    }
+        if version &gt;= 36:
+            win_os_list = []
+            unix_os_list = []
+            temp_win = [&#39;Windows(X64)&#39;, &#39;Windows(32)&#39;]
+
+            for os in os_list:
+                if os in temp_win:
+                    win_os_list.append(os)
+                else:
+                    unix_os_list.append(os)
+            request_json = {
+                &#34;downloadConfiguration&#34;: {
+                    &#34;upgradeToLatestRelease&#34;: self.update_option[&#39;upgradeToLatestRelease&#39;],
+                    &#34;latestFixesForCurrentRelease&#34;: self.update_option[&#39;latestFixesForCurrentRelease&#39;],
+                    &#34;featureRelease&#34;: self.update_option[&#39;featureRelease&#39;],
+                    &#34;windowsDownloadOptions&#34;: win_os_list,
+                    &#34;unixDownloadOptions&#34;: unix_os_list,
                 },
-                &#34;subTasks&#34;: [
-                    {
-                        &#34;subTaskOperation&#34;: 1,
-                        &#34;subTask&#34;: {
-                            &#34;subTaskType&#34;: 1,
-                            &#34;operationType&#34;: 4019
+                &#34;notifyWhenJobCompletes&#34;: False,
+                &#34;entities&#34;: client_groups
+
+            }
+        else:
+            request_json = {
+                &#34;taskInfo&#34;: {
+                    &#34;task&#34;: {
+                        &#34;taskType&#34;: 1,
+                        &#34;initiatedFrom&#34;: 2,
+                        &#34;policyType&#34;: 0,
+                        &#34;alert&#34;: {
+                            &#34;alertName&#34;: &#34;&#34;
                         },
-                        &#34;options&#34;: {
-                            &#34;adminOpts&#34;: {
-                                &#34;updateOption&#34;: {
-                                    &#34;syncUpdateCaches&#34;: sync_cache,
-                                    &#34;spName&#34;: self.update_option[&#39;SPName&#39;],
-                                    &#34;CUNumber&#34;: cu_number,
-                                    &#34;isWindows&#34;: True,
-                                    &#34;majorOnly&#34;: False,
-                                    &#34;isSpName&#34;: self.update_option[&#39;IsSPName&#39;],
-                                    &#34;copyUpdates&#34;: True,
-                                    &#34;isHotfixesDownload&#34;: self.update_option[&#39;isHotfixesDownload&#39;],
-                                    &#34;isSpDelayedDays&#34;: self.update_option[&#39;isSpDelayedDays&#39;],
-                                    &#34;copySoftwareAndUpdates&#34;: False,
-                                    &#34;isUnix&#34;: True,
-                                    &#34;unixDownloadPackages&#34;: {
-                                        &#34;linuxosX64&#34;: &#39;Linux X86_64&#39; in os_list,
-                                        &#34;solarisosX64&#34;: &#39;Solaris X86_64&#39; in os_list,
-                                        &#34;solsparcos&#34;: &#39;Solaris-SPARC-X86&#39; in os_list,
-                                        &#34;freeBSDos&#34;: &#39;Freebsd X86&#39; in os_list,
-                                        &#34;linuxos&#34;: &#39;Linux X86&#39; in os_list,
-                                        &#34;linuxosPPC64le&#34;: &#39;Linux PPC64le&#39; in os_list,
-                                        &#34;freeBSDosX64&#34;: &#39;Freebsd X86_64&#39; in os_list,
-                                        &#34;solarisos&#34;: &#39;Solaris SPARC&#39; in os_list,
-                                        &#34;linuxs390os&#34;: &#39;Linux-S390-31&#39; in os_list,
-                                        &#34;darwinos&#34;: &#39;macOS&#39; in os_list,
-                                        &#34;linuxosS390&#34;: &#39;Linux-S390&#39; in os_list,
-                                        &#34;aixppcos&#34;: &#39;Aix-PPC-32&#39; in os_list,
-                                        &#34;linuxosPPC64&#34;: &#39;Linux-PPC-64&#39; in os_list,
-                                        &#34;aixos&#34;: &#39;Aix PPC&#39; in os_list,
-                                        &#34;hpos&#34;: &#39;HP IA64&#39; in os_list,
-                                        &#34;solos&#34;: &#39;Solaris X86&#39; in os_list
-                                    },
-                                    &#34;windowsDownloadPackages&#34;: {
-                                        &#34;windowsX64&#34;: &#39;Windows(X64)&#39; in os_list,
-                                        &#34;windows32&#34;: &#39;Windows(32)&#39; in os_list
-                                    },
-                                    &#34;clientAndClientGroups&#34;: client_groups,
-                                    &#34;downloadUpdatesJobOptions&#34;: {
-                                        &#34;downloadSoftware&#34;: True
+                        &#34;taskFlags&#34;: {
+                            &#34;isEdgeDrive&#34;: False,
+                            &#34;disabled&#34;: False
+                        }
+                    },
+                    &#34;subTasks&#34;: [
+                        {
+                            &#34;subTaskOperation&#34;: 1,
+                            &#34;subTask&#34;: {
+                                &#34;subTaskType&#34;: 1,
+                                &#34;operationType&#34;: 4019
+                            },
+                            &#34;options&#34;: {
+                                &#34;adminOpts&#34;: {
+                                    &#34;updateOption&#34;: {
+                                        &#34;syncUpdateCaches&#34;: sync_cache,
+                                        &#34;spName&#34;: self.update_option[&#39;SPName&#39;],
+                                        &#34;CUNumber&#34;: cu_number,
+                                        &#34;isWindows&#34;: True,
+                                        &#34;majorOnly&#34;: False,
+                                        &#34;isSpName&#34;: self.update_option[&#39;IsSPName&#39;],
+                                        &#34;copyUpdates&#34;: True,
+                                        &#34;isHotfixesDownload&#34;: self.update_option[&#39;isHotfixesDownload&#39;],
+                                        &#34;isSpDelayedDays&#34;: self.update_option[&#39;isSpDelayedDays&#39;],
+                                        &#34;copySoftwareAndUpdates&#34;: False,
+                                        &#34;isUnix&#34;: True,
+                                        &#34;unixDownloadPackages&#34;: {
+                                            &#34;linuxosX64&#34;: &#39;Linux X86_64&#39; in os_list,
+                                            &#34;solarisosX64&#34;: &#39;Solaris X86_64&#39; in os_list,
+                                            &#34;solsparcos&#34;: &#39;Solaris-SPARC-X86&#39; in os_list,
+                                            &#34;freeBSDos&#34;: &#39;Freebsd X86&#39; in os_list,
+                                            &#34;linuxos&#34;: &#39;Linux X86&#39; in os_list,
+                                            &#34;linuxosPPC64le&#34;: &#39;Linux PPC64le&#39; in os_list,
+                                            &#34;freeBSDosX64&#34;: &#39;Freebsd X86_64&#39; in os_list,
+                                            &#34;solarisos&#34;: &#39;Solaris SPARC&#39; in os_list,
+                                            &#34;linuxs390os&#34;: &#39;Linux-S390-31&#39; in os_list,
+                                            &#34;darwinos&#34;: &#39;macOS&#39; in os_list,
+                                            &#34;linuxosS390&#34;: &#39;Linux-S390&#39; in os_list,
+                                            &#34;aixppcos&#34;: &#39;Aix-PPC-32&#39; in os_list,
+                                            &#34;linuxosPPC64&#34;: &#39;Linux-PPC-64&#39; in os_list,
+                                            &#34;aixos&#34;: &#39;Aix PPC&#39; in os_list,
+                                            &#34;hpos&#34;: &#39;HP IA64&#39; in os_list,
+                                            &#34;solos&#34;: &#39;Solaris X86&#39; in os_list
+                                        },
+                                        &#34;windowsDownloadPackages&#34;: {
+                                            &#34;windowsX64&#34;: &#39;Windows(X64)&#39; in os_list,
+                                            &#34;windows32&#34;: &#39;Windows(32)&#39; in os_list
+                                        },
+                                        &#34;clientAndClientGroups&#34;: client_groups,
+                                        &#34;downloadUpdatesJobOptions&#34;: {
+                                            &#34;downloadSoftware&#34;: True
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                ]
+                    ]
+                }
             }
-        }
 
         if schedule_pattern:
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
+        method = &#39;PUT&#39; if version &gt;= 36 else &#39;POST&#39;
+        url = self._services[&#39;DOWNLOAD_SOFTWARE&#39;] if version &gt;= 36 else self._services[&#39;CREATE_TASK&#39;]
+
         flag, response = self._cvpysdkcommcell_object.make_request(
-            &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
+            method, url, request_json
         )
 
         if flag:
             if response.json():
-                if &#34;jobIds&#34; in response.json():
-                    return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+                if &#34;jobId&#34; in response.json() or &#34;jobIds&#34; in response.json():
+                    return Job(self.commcell_object, response.json()[&#39;jobId&#39;]) if version &gt;= 36 \
+                        else Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
 
                 elif &#34;taskId&#34; in response.json():
                     return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
@@ -552,7 +607,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/deployment/download.py#L39-L488" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/deployment/download.py#L39-L543" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Download(object):
     &#34;&#34;&#34;&#34;class for downloading software packages&#34;&#34;&#34;
@@ -658,11 +713,15 @@ instance of the Commcell class</p>
         &#34;&#34;&#34;
 
         # To set the default value if option is none
+        version = self.commcell_object.commserv_version
         if options is None:
             options = &#39;latest service pack&#39;
 
         if DownloadOptions.LATEST_SERVICEPACK.value == options:
             self.update_option = {
+                &#39;upgradeToLatestRelease&#39;: True,
+                &#39;latestFixesForCurrentRelease&#39;: False,
+                &#34;featureRelease&#34;: self.commcell_object.version,
                 &#39;SPName&#39;: &#39;latest&#39;,
                 &#39;IsSPName&#39;: False,
                 &#39;isSpDelayedDays&#39;: True,
@@ -670,10 +729,21 @@ instance of the Commcell class</p>
             }
         elif DownloadOptions.LATEST_HOTFIXES.value == options:
             self.update_option = {
+                &#39;upgradeToLatestRelease&#39;: False,
+                &#39;latestFixesForCurrentRelease&#39;: True,
+                &#34;featureRelease&#34;: self.commcell_object.version,
                 &#39;SPName&#39;: &#39;hotfix&#39;,
                 &#39;IsSPName&#39;: False,
                 &#39;isSpDelayedDays&#39;: True,
                 &#39;isHotfixesDownload&#39;: True
+            }
+        elif DownloadOptions.SERVICEPACK_AND_HOTFIXES.value == options:
+            if not (service_pack or cu_number):
+                raise SDKException(&#39;Download&#39;, &#39;102&#39;)
+            self.update_option = {
+                &#39;upgradeToLatestRelease&#39;: False,
+                &#39;latestFixesForCurrentRelease&#39;: False,
+                &#34;featureRelease&#34;: &#34;11.&#34; + service_pack + &#34;.&#34; + cu_number
             }
         else:
             if service_pack is None:
@@ -693,90 +763,130 @@ instance of the Commcell class</p>
         client_groups = []
         if sync_cache and sync_cache_list:
             for cache in sync_cache_list:
-                client_groups.append({&#34;clientName&#34;: cache})
+                client_groups.append({&#34;type&#34;: &#34;CLIENT_ENTITY&#34;,
+                                      &#34;clientName&#34;: cache,
+                                      &#34;id&#34;: self.commcell_object.clients.get(cache).client_id
+                                      }) if version &gt;= 36 else client_groups.append({&#34;clientName&#34;: cache})
         elif sync_cache and not sync_cache_list:
-            client_groups = [{&#34;_type_&#34;: 2}]
+            if version &lt; 36:
+                client_groups = [{&#34;_type_&#34;: 2}]
+            else:
+                flag_1, response_1 = self._cvpysdkcommcell_object.make_request(&#39;GET&#39;, self._services[&#39;CREATE_RC&#39;])
+                cache_list = []
+                for obj in response_1.json()[&#39;softwareCacheDetailList&#39;]:
+                    cache_list.append(obj[&#39;cache&#39;][&#39;name&#39;])
+                for client in cache_list:
+                    client_groups.append({&#34;type&#34;: &#34;CLIENT_ENTITY&#34;,
+                                          &#34;clientName&#34;: client,
+                                          &#34;id&#34;: int(self.commcell_object.clients.all_clients[client][&#39;id&#39;])})
 
-        request_json = {
-            &#34;taskInfo&#34;: {
-                &#34;task&#34;: {
-                    &#34;taskType&#34;: 1,
-                    &#34;initiatedFrom&#34;: 2,
-                    &#34;policyType&#34;: 0,
-                    &#34;alert&#34;: {
-                        &#34;alertName&#34;: &#34;&#34;
-                    },
-                    &#34;taskFlags&#34;: {
-                        &#34;isEdgeDrive&#34;: False,
-                        &#34;disabled&#34;: False
-                    }
+        if version &gt;= 36:
+            win_os_list = []
+            unix_os_list = []
+            temp_win = [&#39;Windows(X64)&#39;, &#39;Windows(32)&#39;]
+
+            for os in os_list:
+                if os in temp_win:
+                    win_os_list.append(os)
+                else:
+                    unix_os_list.append(os)
+            request_json = {
+                &#34;downloadConfiguration&#34;: {
+                    &#34;upgradeToLatestRelease&#34;: self.update_option[&#39;upgradeToLatestRelease&#39;],
+                    &#34;latestFixesForCurrentRelease&#34;: self.update_option[&#39;latestFixesForCurrentRelease&#39;],
+                    &#34;featureRelease&#34;: self.update_option[&#39;featureRelease&#39;],
+                    &#34;windowsDownloadOptions&#34;: win_os_list,
+                    &#34;unixDownloadOptions&#34;: unix_os_list,
                 },
-                &#34;subTasks&#34;: [
-                    {
-                        &#34;subTaskOperation&#34;: 1,
-                        &#34;subTask&#34;: {
-                            &#34;subTaskType&#34;: 1,
-                            &#34;operationType&#34;: 4019
+                &#34;notifyWhenJobCompletes&#34;: False,
+                &#34;entities&#34;: client_groups
+
+            }
+        else:
+            request_json = {
+                &#34;taskInfo&#34;: {
+                    &#34;task&#34;: {
+                        &#34;taskType&#34;: 1,
+                        &#34;initiatedFrom&#34;: 2,
+                        &#34;policyType&#34;: 0,
+                        &#34;alert&#34;: {
+                            &#34;alertName&#34;: &#34;&#34;
                         },
-                        &#34;options&#34;: {
-                            &#34;adminOpts&#34;: {
-                                &#34;updateOption&#34;: {
-                                    &#34;syncUpdateCaches&#34;: sync_cache,
-                                    &#34;spName&#34;: self.update_option[&#39;SPName&#39;],
-                                    &#34;CUNumber&#34;: cu_number,
-                                    &#34;isWindows&#34;: True,
-                                    &#34;majorOnly&#34;: False,
-                                    &#34;isSpName&#34;: self.update_option[&#39;IsSPName&#39;],
-                                    &#34;copyUpdates&#34;: True,
-                                    &#34;isHotfixesDownload&#34;: self.update_option[&#39;isHotfixesDownload&#39;],
-                                    &#34;isSpDelayedDays&#34;: self.update_option[&#39;isSpDelayedDays&#39;],
-                                    &#34;copySoftwareAndUpdates&#34;: False,
-                                    &#34;isUnix&#34;: True,
-                                    &#34;unixDownloadPackages&#34;: {
-                                        &#34;linuxosX64&#34;: &#39;Linux X86_64&#39; in os_list,
-                                        &#34;solarisosX64&#34;: &#39;Solaris X86_64&#39; in os_list,
-                                        &#34;solsparcos&#34;: &#39;Solaris-SPARC-X86&#39; in os_list,
-                                        &#34;freeBSDos&#34;: &#39;Freebsd X86&#39; in os_list,
-                                        &#34;linuxos&#34;: &#39;Linux X86&#39; in os_list,
-                                        &#34;linuxosPPC64le&#34;: &#39;Linux PPC64le&#39; in os_list,
-                                        &#34;freeBSDosX64&#34;: &#39;Freebsd X86_64&#39; in os_list,
-                                        &#34;solarisos&#34;: &#39;Solaris SPARC&#39; in os_list,
-                                        &#34;linuxs390os&#34;: &#39;Linux-S390-31&#39; in os_list,
-                                        &#34;darwinos&#34;: &#39;macOS&#39; in os_list,
-                                        &#34;linuxosS390&#34;: &#39;Linux-S390&#39; in os_list,
-                                        &#34;aixppcos&#34;: &#39;Aix-PPC-32&#39; in os_list,
-                                        &#34;linuxosPPC64&#34;: &#39;Linux-PPC-64&#39; in os_list,
-                                        &#34;aixos&#34;: &#39;Aix PPC&#39; in os_list,
-                                        &#34;hpos&#34;: &#39;HP IA64&#39; in os_list,
-                                        &#34;solos&#34;: &#39;Solaris X86&#39; in os_list
-                                    },
-                                    &#34;windowsDownloadPackages&#34;: {
-                                        &#34;windowsX64&#34;: &#39;Windows(X64)&#39; in os_list,
-                                        &#34;windows32&#34;: &#39;Windows(32)&#39; in os_list
-                                    },
-                                    &#34;clientAndClientGroups&#34;: client_groups,
-                                    &#34;downloadUpdatesJobOptions&#34;: {
-                                        &#34;downloadSoftware&#34;: True
+                        &#34;taskFlags&#34;: {
+                            &#34;isEdgeDrive&#34;: False,
+                            &#34;disabled&#34;: False
+                        }
+                    },
+                    &#34;subTasks&#34;: [
+                        {
+                            &#34;subTaskOperation&#34;: 1,
+                            &#34;subTask&#34;: {
+                                &#34;subTaskType&#34;: 1,
+                                &#34;operationType&#34;: 4019
+                            },
+                            &#34;options&#34;: {
+                                &#34;adminOpts&#34;: {
+                                    &#34;updateOption&#34;: {
+                                        &#34;syncUpdateCaches&#34;: sync_cache,
+                                        &#34;spName&#34;: self.update_option[&#39;SPName&#39;],
+                                        &#34;CUNumber&#34;: cu_number,
+                                        &#34;isWindows&#34;: True,
+                                        &#34;majorOnly&#34;: False,
+                                        &#34;isSpName&#34;: self.update_option[&#39;IsSPName&#39;],
+                                        &#34;copyUpdates&#34;: True,
+                                        &#34;isHotfixesDownload&#34;: self.update_option[&#39;isHotfixesDownload&#39;],
+                                        &#34;isSpDelayedDays&#34;: self.update_option[&#39;isSpDelayedDays&#39;],
+                                        &#34;copySoftwareAndUpdates&#34;: False,
+                                        &#34;isUnix&#34;: True,
+                                        &#34;unixDownloadPackages&#34;: {
+                                            &#34;linuxosX64&#34;: &#39;Linux X86_64&#39; in os_list,
+                                            &#34;solarisosX64&#34;: &#39;Solaris X86_64&#39; in os_list,
+                                            &#34;solsparcos&#34;: &#39;Solaris-SPARC-X86&#39; in os_list,
+                                            &#34;freeBSDos&#34;: &#39;Freebsd X86&#39; in os_list,
+                                            &#34;linuxos&#34;: &#39;Linux X86&#39; in os_list,
+                                            &#34;linuxosPPC64le&#34;: &#39;Linux PPC64le&#39; in os_list,
+                                            &#34;freeBSDosX64&#34;: &#39;Freebsd X86_64&#39; in os_list,
+                                            &#34;solarisos&#34;: &#39;Solaris SPARC&#39; in os_list,
+                                            &#34;linuxs390os&#34;: &#39;Linux-S390-31&#39; in os_list,
+                                            &#34;darwinos&#34;: &#39;macOS&#39; in os_list,
+                                            &#34;linuxosS390&#34;: &#39;Linux-S390&#39; in os_list,
+                                            &#34;aixppcos&#34;: &#39;Aix-PPC-32&#39; in os_list,
+                                            &#34;linuxosPPC64&#34;: &#39;Linux-PPC-64&#39; in os_list,
+                                            &#34;aixos&#34;: &#39;Aix PPC&#39; in os_list,
+                                            &#34;hpos&#34;: &#39;HP IA64&#39; in os_list,
+                                            &#34;solos&#34;: &#39;Solaris X86&#39; in os_list
+                                        },
+                                        &#34;windowsDownloadPackages&#34;: {
+                                            &#34;windowsX64&#34;: &#39;Windows(X64)&#39; in os_list,
+                                            &#34;windows32&#34;: &#39;Windows(32)&#39; in os_list
+                                        },
+                                        &#34;clientAndClientGroups&#34;: client_groups,
+                                        &#34;downloadUpdatesJobOptions&#34;: {
+                                            &#34;downloadSoftware&#34;: True
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                ]
+                    ]
+                }
             }
-        }
 
         if schedule_pattern:
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
+        method = &#39;PUT&#39; if version &gt;= 36 else &#39;POST&#39;
+        url = self._services[&#39;DOWNLOAD_SOFTWARE&#39;] if version &gt;= 36 else self._services[&#39;CREATE_TASK&#39;]
+
         flag, response = self._cvpysdkcommcell_object.make_request(
-            &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
+            method, url, request_json
         )
 
         if flag:
             if response.json():
-                if &#34;jobIds&#34; in response.json():
-                    return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+                if &#34;jobId&#34; in response.json() or &#34;jobIds&#34; in response.json():
+                    return Job(self.commcell_object, response.json()[&#39;jobId&#39;]) if version &gt;= 36 \
+                        else Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
 
                 elif &#34;taskId&#34; in response.json():
                     return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
@@ -1074,7 +1184,7 @@ password = "base64encoded password"
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/deployment/download.py#L274-L392" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/deployment/download.py#L329-L447" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def copy_software(self, media_loc, username=None, password=None, sync_cache=True, schedule_pattern=None):
     &#34;&#34;&#34;copies media from the specified location on the commcell
@@ -1312,7 +1422,7 @@ cu_number=42
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/deployment/download.py#L58-L272" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/deployment/download.py#L58-L327" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def download_software(
         self,
@@ -1399,11 +1509,15 @@ cu_number=42
     &#34;&#34;&#34;
 
     # To set the default value if option is none
+    version = self.commcell_object.commserv_version
     if options is None:
         options = &#39;latest service pack&#39;
 
     if DownloadOptions.LATEST_SERVICEPACK.value == options:
         self.update_option = {
+            &#39;upgradeToLatestRelease&#39;: True,
+            &#39;latestFixesForCurrentRelease&#39;: False,
+            &#34;featureRelease&#34;: self.commcell_object.version,
             &#39;SPName&#39;: &#39;latest&#39;,
             &#39;IsSPName&#39;: False,
             &#39;isSpDelayedDays&#39;: True,
@@ -1411,10 +1525,21 @@ cu_number=42
         }
     elif DownloadOptions.LATEST_HOTFIXES.value == options:
         self.update_option = {
+            &#39;upgradeToLatestRelease&#39;: False,
+            &#39;latestFixesForCurrentRelease&#39;: True,
+            &#34;featureRelease&#34;: self.commcell_object.version,
             &#39;SPName&#39;: &#39;hotfix&#39;,
             &#39;IsSPName&#39;: False,
             &#39;isSpDelayedDays&#39;: True,
             &#39;isHotfixesDownload&#39;: True
+        }
+    elif DownloadOptions.SERVICEPACK_AND_HOTFIXES.value == options:
+        if not (service_pack or cu_number):
+            raise SDKException(&#39;Download&#39;, &#39;102&#39;)
+        self.update_option = {
+            &#39;upgradeToLatestRelease&#39;: False,
+            &#39;latestFixesForCurrentRelease&#39;: False,
+            &#34;featureRelease&#34;: &#34;11.&#34; + service_pack + &#34;.&#34; + cu_number
         }
     else:
         if service_pack is None:
@@ -1434,90 +1559,130 @@ cu_number=42
     client_groups = []
     if sync_cache and sync_cache_list:
         for cache in sync_cache_list:
-            client_groups.append({&#34;clientName&#34;: cache})
+            client_groups.append({&#34;type&#34;: &#34;CLIENT_ENTITY&#34;,
+                                  &#34;clientName&#34;: cache,
+                                  &#34;id&#34;: self.commcell_object.clients.get(cache).client_id
+                                  }) if version &gt;= 36 else client_groups.append({&#34;clientName&#34;: cache})
     elif sync_cache and not sync_cache_list:
-        client_groups = [{&#34;_type_&#34;: 2}]
+        if version &lt; 36:
+            client_groups = [{&#34;_type_&#34;: 2}]
+        else:
+            flag_1, response_1 = self._cvpysdkcommcell_object.make_request(&#39;GET&#39;, self._services[&#39;CREATE_RC&#39;])
+            cache_list = []
+            for obj in response_1.json()[&#39;softwareCacheDetailList&#39;]:
+                cache_list.append(obj[&#39;cache&#39;][&#39;name&#39;])
+            for client in cache_list:
+                client_groups.append({&#34;type&#34;: &#34;CLIENT_ENTITY&#34;,
+                                      &#34;clientName&#34;: client,
+                                      &#34;id&#34;: int(self.commcell_object.clients.all_clients[client][&#39;id&#39;])})
 
-    request_json = {
-        &#34;taskInfo&#34;: {
-            &#34;task&#34;: {
-                &#34;taskType&#34;: 1,
-                &#34;initiatedFrom&#34;: 2,
-                &#34;policyType&#34;: 0,
-                &#34;alert&#34;: {
-                    &#34;alertName&#34;: &#34;&#34;
-                },
-                &#34;taskFlags&#34;: {
-                    &#34;isEdgeDrive&#34;: False,
-                    &#34;disabled&#34;: False
-                }
+    if version &gt;= 36:
+        win_os_list = []
+        unix_os_list = []
+        temp_win = [&#39;Windows(X64)&#39;, &#39;Windows(32)&#39;]
+
+        for os in os_list:
+            if os in temp_win:
+                win_os_list.append(os)
+            else:
+                unix_os_list.append(os)
+        request_json = {
+            &#34;downloadConfiguration&#34;: {
+                &#34;upgradeToLatestRelease&#34;: self.update_option[&#39;upgradeToLatestRelease&#39;],
+                &#34;latestFixesForCurrentRelease&#34;: self.update_option[&#39;latestFixesForCurrentRelease&#39;],
+                &#34;featureRelease&#34;: self.update_option[&#39;featureRelease&#39;],
+                &#34;windowsDownloadOptions&#34;: win_os_list,
+                &#34;unixDownloadOptions&#34;: unix_os_list,
             },
-            &#34;subTasks&#34;: [
-                {
-                    &#34;subTaskOperation&#34;: 1,
-                    &#34;subTask&#34;: {
-                        &#34;subTaskType&#34;: 1,
-                        &#34;operationType&#34;: 4019
+            &#34;notifyWhenJobCompletes&#34;: False,
+            &#34;entities&#34;: client_groups
+
+        }
+    else:
+        request_json = {
+            &#34;taskInfo&#34;: {
+                &#34;task&#34;: {
+                    &#34;taskType&#34;: 1,
+                    &#34;initiatedFrom&#34;: 2,
+                    &#34;policyType&#34;: 0,
+                    &#34;alert&#34;: {
+                        &#34;alertName&#34;: &#34;&#34;
                     },
-                    &#34;options&#34;: {
-                        &#34;adminOpts&#34;: {
-                            &#34;updateOption&#34;: {
-                                &#34;syncUpdateCaches&#34;: sync_cache,
-                                &#34;spName&#34;: self.update_option[&#39;SPName&#39;],
-                                &#34;CUNumber&#34;: cu_number,
-                                &#34;isWindows&#34;: True,
-                                &#34;majorOnly&#34;: False,
-                                &#34;isSpName&#34;: self.update_option[&#39;IsSPName&#39;],
-                                &#34;copyUpdates&#34;: True,
-                                &#34;isHotfixesDownload&#34;: self.update_option[&#39;isHotfixesDownload&#39;],
-                                &#34;isSpDelayedDays&#34;: self.update_option[&#39;isSpDelayedDays&#39;],
-                                &#34;copySoftwareAndUpdates&#34;: False,
-                                &#34;isUnix&#34;: True,
-                                &#34;unixDownloadPackages&#34;: {
-                                    &#34;linuxosX64&#34;: &#39;Linux X86_64&#39; in os_list,
-                                    &#34;solarisosX64&#34;: &#39;Solaris X86_64&#39; in os_list,
-                                    &#34;solsparcos&#34;: &#39;Solaris-SPARC-X86&#39; in os_list,
-                                    &#34;freeBSDos&#34;: &#39;Freebsd X86&#39; in os_list,
-                                    &#34;linuxos&#34;: &#39;Linux X86&#39; in os_list,
-                                    &#34;linuxosPPC64le&#34;: &#39;Linux PPC64le&#39; in os_list,
-                                    &#34;freeBSDosX64&#34;: &#39;Freebsd X86_64&#39; in os_list,
-                                    &#34;solarisos&#34;: &#39;Solaris SPARC&#39; in os_list,
-                                    &#34;linuxs390os&#34;: &#39;Linux-S390-31&#39; in os_list,
-                                    &#34;darwinos&#34;: &#39;macOS&#39; in os_list,
-                                    &#34;linuxosS390&#34;: &#39;Linux-S390&#39; in os_list,
-                                    &#34;aixppcos&#34;: &#39;Aix-PPC-32&#39; in os_list,
-                                    &#34;linuxosPPC64&#34;: &#39;Linux-PPC-64&#39; in os_list,
-                                    &#34;aixos&#34;: &#39;Aix PPC&#39; in os_list,
-                                    &#34;hpos&#34;: &#39;HP IA64&#39; in os_list,
-                                    &#34;solos&#34;: &#39;Solaris X86&#39; in os_list
-                                },
-                                &#34;windowsDownloadPackages&#34;: {
-                                    &#34;windowsX64&#34;: &#39;Windows(X64)&#39; in os_list,
-                                    &#34;windows32&#34;: &#39;Windows(32)&#39; in os_list
-                                },
-                                &#34;clientAndClientGroups&#34;: client_groups,
-                                &#34;downloadUpdatesJobOptions&#34;: {
-                                    &#34;downloadSoftware&#34;: True
+                    &#34;taskFlags&#34;: {
+                        &#34;isEdgeDrive&#34;: False,
+                        &#34;disabled&#34;: False
+                    }
+                },
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTaskOperation&#34;: 1,
+                        &#34;subTask&#34;: {
+                            &#34;subTaskType&#34;: 1,
+                            &#34;operationType&#34;: 4019
+                        },
+                        &#34;options&#34;: {
+                            &#34;adminOpts&#34;: {
+                                &#34;updateOption&#34;: {
+                                    &#34;syncUpdateCaches&#34;: sync_cache,
+                                    &#34;spName&#34;: self.update_option[&#39;SPName&#39;],
+                                    &#34;CUNumber&#34;: cu_number,
+                                    &#34;isWindows&#34;: True,
+                                    &#34;majorOnly&#34;: False,
+                                    &#34;isSpName&#34;: self.update_option[&#39;IsSPName&#39;],
+                                    &#34;copyUpdates&#34;: True,
+                                    &#34;isHotfixesDownload&#34;: self.update_option[&#39;isHotfixesDownload&#39;],
+                                    &#34;isSpDelayedDays&#34;: self.update_option[&#39;isSpDelayedDays&#39;],
+                                    &#34;copySoftwareAndUpdates&#34;: False,
+                                    &#34;isUnix&#34;: True,
+                                    &#34;unixDownloadPackages&#34;: {
+                                        &#34;linuxosX64&#34;: &#39;Linux X86_64&#39; in os_list,
+                                        &#34;solarisosX64&#34;: &#39;Solaris X86_64&#39; in os_list,
+                                        &#34;solsparcos&#34;: &#39;Solaris-SPARC-X86&#39; in os_list,
+                                        &#34;freeBSDos&#34;: &#39;Freebsd X86&#39; in os_list,
+                                        &#34;linuxos&#34;: &#39;Linux X86&#39; in os_list,
+                                        &#34;linuxosPPC64le&#34;: &#39;Linux PPC64le&#39; in os_list,
+                                        &#34;freeBSDosX64&#34;: &#39;Freebsd X86_64&#39; in os_list,
+                                        &#34;solarisos&#34;: &#39;Solaris SPARC&#39; in os_list,
+                                        &#34;linuxs390os&#34;: &#39;Linux-S390-31&#39; in os_list,
+                                        &#34;darwinos&#34;: &#39;macOS&#39; in os_list,
+                                        &#34;linuxosS390&#34;: &#39;Linux-S390&#39; in os_list,
+                                        &#34;aixppcos&#34;: &#39;Aix-PPC-32&#39; in os_list,
+                                        &#34;linuxosPPC64&#34;: &#39;Linux-PPC-64&#39; in os_list,
+                                        &#34;aixos&#34;: &#39;Aix PPC&#39; in os_list,
+                                        &#34;hpos&#34;: &#39;HP IA64&#39; in os_list,
+                                        &#34;solos&#34;: &#39;Solaris X86&#39; in os_list
+                                    },
+                                    &#34;windowsDownloadPackages&#34;: {
+                                        &#34;windowsX64&#34;: &#39;Windows(X64)&#39; in os_list,
+                                        &#34;windows32&#34;: &#39;Windows(32)&#39; in os_list
+                                    },
+                                    &#34;clientAndClientGroups&#34;: client_groups,
+                                    &#34;downloadUpdatesJobOptions&#34;: {
+                                        &#34;downloadSoftware&#34;: True
+                                    }
                                 }
                             }
                         }
                     }
-                }
-            ]
+                ]
+            }
         }
-    }
 
     if schedule_pattern:
         request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
+    method = &#39;PUT&#39; if version &gt;= 36 else &#39;POST&#39;
+    url = self._services[&#39;DOWNLOAD_SOFTWARE&#39;] if version &gt;= 36 else self._services[&#39;CREATE_TASK&#39;]
+
     flag, response = self._cvpysdkcommcell_object.make_request(
-        &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
+        method, url, request_json
     )
 
     if flag:
         if response.json():
-            if &#34;jobIds&#34; in response.json():
-                return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+            if &#34;jobId&#34; in response.json() or &#34;jobIds&#34; in response.json():
+                return Job(self.commcell_object, response.json()[&#39;jobId&#39;]) if version &gt;= 36 \
+                    else Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
 
             elif &#34;taskId&#34; in response.json():
                 return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
@@ -1555,7 +1720,7 @@ if another sync job is running with the given client
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/deployment/download.py#L394-L488" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/deployment/download.py#L449-L543" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def sync_remote_cache(self, client_list=None):
     &#34;&#34;&#34;Syncs remote cache

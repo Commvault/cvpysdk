@@ -52,7 +52,7 @@ Enables tfa at commcell or organization level</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/two_factor_authentication.py#L1-L256" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/two_factor_authentication.py#L1-L262" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -245,12 +245,14 @@ class TwoFactorAuthentication:
         )
         self._process_response(flag=flag, response=response)
 
-    def enable_tfa(self, user_groups=None):
+    def enable_tfa(self, user_groups=None, usernameless=False, passwordless=False):
         &#34;&#34;&#34;
         Enables two factor authentication at commcell/organization level.
 
         Args:
             user_groups     (list)  --  user group names on which two factor authentication needs to be enabled
+            usernameless    (bool)  --  allow usernameless login if True
+            passwordless    (bool)  --  allow passwordless login if True
 
         Returns:
             None
@@ -276,7 +278,11 @@ class TwoFactorAuthentication:
         payload = {
             &#34;twoFactorAuthenticationInfo&#34;: {
                 &#34;mode&#34;: 2 if user_groups_list else 1,
-                &#34;userGroups&#34;: user_groups_list
+                &#34;userGroups&#34;: user_groups_list,
+                &#39;webAuthn&#39;: {
+                    &#39;allowPasswordlessLogin&#39;: passwordless,
+                    &#39;allowUsernamelessLogin&#39;: usernameless
+                }
             }
         }
 
@@ -343,7 +349,7 @@ if invalid args are sent.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/two_factor_authentication.py#L49-L256" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/two_factor_authentication.py#L49-L262" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class TwoFactorAuthentication:
     &#34;&#34;&#34;Class for managing the security associations roles on the commcell&#34;&#34;&#34;
@@ -488,12 +494,14 @@ if invalid args are sent.</p></div>
         )
         self._process_response(flag=flag, response=response)
 
-    def enable_tfa(self, user_groups=None):
+    def enable_tfa(self, user_groups=None, usernameless=False, passwordless=False):
         &#34;&#34;&#34;
         Enables two factor authentication at commcell/organization level.
 
         Args:
             user_groups     (list)  --  user group names on which two factor authentication needs to be enabled
+            usernameless    (bool)  --  allow usernameless login if True
+            passwordless    (bool)  --  allow passwordless login if True
 
         Returns:
             None
@@ -519,7 +527,11 @@ if invalid args are sent.</p></div>
         payload = {
             &#34;twoFactorAuthenticationInfo&#34;: {
                 &#34;mode&#34;: 2 if user_groups_list else 1,
-                &#34;userGroups&#34;: user_groups_list
+                &#34;userGroups&#34;: user_groups_list,
+                &#39;webAuthn&#39;: {
+                    &#39;allowPasswordlessLogin&#39;: passwordless,
+                    &#39;allowUsernamelessLogin&#39;: usernameless
+                }
             }
         }
 
@@ -562,7 +574,7 @@ if invalid args are sent.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/two_factor_authentication.py#L239-L242" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/two_factor_authentication.py#L245-L248" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_tfa_enabled(self):
@@ -583,7 +595,7 @@ eg:-
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/two_factor_authentication.py#L244-L256" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/two_factor_authentication.py#L250-L262" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def tfa_enabled_user_groups(self):
@@ -616,7 +628,7 @@ if failed to disable tfa.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/two_factor_authentication.py#L173-L190" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/two_factor_authentication.py#L173-L190" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_tfa(self):
     &#34;&#34;&#34;
@@ -639,7 +651,7 @@ if failed to disable tfa.</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.security.two_factor_authentication.TwoFactorAuthentication.enable_tfa"><code class="name flex">
-<span>def <span class="ident">enable_tfa</span></span>(<span>self, user_groups=None)</span>
+<span>def <span class="ident">enable_tfa</span></span>(<span>self, user_groups=None, usernameless=False, passwordless=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Enables two factor authentication at commcell/organization level.</p>
@@ -647,7 +659,15 @@ if failed to disable tfa.</p></div>
 <p>user_groups
 (list)
 &ndash;
-user group names on which two factor authentication needs to be enabled</p>
+user group names on which two factor authentication needs to be enabled
+usernameless
+(bool)
+&ndash;
+allow usernameless login if True
+passwordless
+(bool)
+&ndash;
+allow passwordless login if True</p>
 <h2 id="returns">Returns</h2>
 <p>None</p>
 <h2 id="raises">Raises</h2>
@@ -656,14 +676,16 @@ if failed to enable tfa.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/two_factor_authentication.py#L192-L237" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/two_factor_authentication.py#L192-L243" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def enable_tfa(self, user_groups=None):
+<pre><code class="python">def enable_tfa(self, user_groups=None, usernameless=False, passwordless=False):
     &#34;&#34;&#34;
     Enables two factor authentication at commcell/organization level.
 
     Args:
         user_groups     (list)  --  user group names on which two factor authentication needs to be enabled
+        usernameless    (bool)  --  allow usernameless login if True
+        passwordless    (bool)  --  allow passwordless login if True
 
     Returns:
         None
@@ -689,7 +711,11 @@ if failed to enable tfa.</p></div>
     payload = {
         &#34;twoFactorAuthenticationInfo&#34;: {
             &#34;mode&#34;: 2 if user_groups_list else 1,
-            &#34;userGroups&#34;: user_groups_list
+            &#34;userGroups&#34;: user_groups_list,
+            &#39;webAuthn&#39;: {
+                &#39;allowPasswordlessLogin&#39;: passwordless,
+                &#39;allowUsernamelessLogin&#39;: usernameless
+            }
         }
     }
 
@@ -716,7 +742,7 @@ if failed to enable tfa.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/two_factor_authentication.py#L81-L88" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/two_factor_authentication.py#L81-L88" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;

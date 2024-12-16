@@ -89,6 +89,9 @@ Method to add a new salesforce instance</p>
 <p>add_postgresql_instance()
 &ndash;
 Method to add a new postgresql instance</p>
+<p>add_cosmosdb_instance()
+&ndash;
+Method to add new cosmosdb instance</p>
 <p>_set_general_properties_json()
 &ndash;
 setter for general cloud properties while adding a new
@@ -123,6 +126,10 @@ updates the instance properties</p>
 &ndash;
 processes the restore request sent to server
 and returns the restore job object</p>
+<p>_process_delete_response()
+&ndash;
+Runs the DeleteDocuments API with the request JSON provided for Delete,
+and returns the contents after parsing the response</p>
 <p>_filter_paths()
 &ndash;
 filters the path as per the OS, and the Agent</p>
@@ -163,6 +170,8 @@ input paths list to the same location</p>
 &ndash;
 Restores the files/folders specified in the input paths
 list to the input client, at the specified destination location</p>
+<p>_restore_bigdataapps_option_json() &ndash;
+setter for bigdata apps option property in restore</p>
 <p>_task()
 &ndash;
 the task dict used while restore/backup job</p>
@@ -184,6 +193,9 @@ id of this instance</p>
 <p>instance_name()
 &ndash;
 name of this instance</p>
+<p>credentials()
+&ndash;
+Sets the credentials for the instance</p>
 <p>browse()
 &ndash;
 browse the content of the instance</p>
@@ -193,10 +205,25 @@ find content in the instance</p>
 <p>refresh()
 &ndash;
 refresh the properties of the instance</p>
+<h2 id="instance-attributes">Instance Attributes</h2>
+<pre><code>**instance_id**          --  returns the instance id
+
+**instance_name**        --  returns the instance name
+
+**name**                 --  returns the instance display name
+
+**properties**           --  returns the properties of the instance
+
+**subclients**           --  returns the configured subclients for the instance
+
+**backupsets**           --  returns the backupsets associated with the instance
+
+**credentials**          --  returns the credentials associated with the instance
+</code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L1-L3106" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L1-L3352" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -267,6 +294,8 @@ Instances:
 
     add_postgresql_instance()       --  Method to add a new postgresql instance
 
+    add_cosmosdb_instance()         --  Method to add new cosmosdb instance
+
     _set_general_properties_json()  --  setter for general cloud properties while adding a new
     cloud storage instance
 
@@ -292,6 +321,9 @@ Instance:
 
     _process_restore_response()     --  processes the restore request sent to server
     and returns the restore job object
+
+    _process_delete_response()      --  Runs the DeleteDocuments API with the request JSON provided for Delete,
+                                        and returns the contents after parsing the response
 
     _filter_paths()                 --  filters the path as per the OS, and the Agent
 
@@ -320,6 +352,8 @@ Instance:
     _restore_out_of_place()         --  Restores the files/folders specified in the input paths
     list to the input client, at the specified destination location
 
+   _restore_bigdataapps_option_json() --  setter for bigdata apps option property in restore
+
     _task()                         --  the task dict used while restore/backup job
 
     _restore_sub_task()             --  the restore job specific sub task dict used to form
@@ -335,11 +369,30 @@ Instance:
 
     instance_name()                 --  name of this instance
 
+    credentials()                   --  Sets the credentials for the instance
+
     browse()                        --  browse the content of the instance
 
     find()                          --  find content in the instance
 
     refresh()                       --  refresh the properties of the instance
+
+Instance Attributes
+-----------------
+
+    **instance_id**          --  returns the instance id
+
+    **instance_name**        --  returns the instance name
+
+    **name**                 --  returns the instance display name
+
+    **properties**           --  returns the properties of the instance
+
+    **subclients**           --  returns the configured subclients for the instance
+
+    **backupsets**           --  returns the backupsets associated with the instance
+
+    **credentials**          --  returns the credentials associated with the instance
 
 &#34;&#34;&#34;
 
@@ -995,7 +1048,8 @@ class Instances(object):
                                     &#39;command_storage_policy&#39;: &#39;cmd_sp&#39;,
                                     &#39;home_directory&#39;:&#39;/home/db2inst1&#39;,
                                     &#39;password&#39;:&#39;db2inst1&#39;,
-                                    &#39;user_name&#39;:&#39;db2inst1&#39;
+                                    &#39;user_name&#39;:&#39;db2inst1&#39;,
+                                    &#39;credential_name&#39;: &#39;cred_name&#39;
                                 }
                     Raises:
                         SDKException:
@@ -1034,45 +1088,50 @@ class Instances(object):
                     db2_options[&#34;data_storage_policy&#34;])
             )
 
+        if self._commcell_object.credentials.has_credential(db2_options[&#34;credential_name&#34;]):
+            credential = self._commcell_object.credentials.get(db2_options[&#34;credential_name&#34;])
+        else:
+            credential = self._commcell_object.credentials.add_db2_database_creds(db2_options[&#34;credential_name&#34;],
+                                                                              db2_options[&#34;user_name&#34;],
+                                                                              db2_options[&#34;password&#34;])
+
         # encodes the plain text password using base64 encoding
 
         #enable_auto_discovery = db2_options[&#34;enable_auto_discovery&#34;]
-        db2_password = b64encode(db2_options[&#34;password&#34;].encode()).decode()
 
         request_json = {
             &#34;instanceProperties&#34;: {
                 &#34;instance&#34;: {
                     &#34;clientName&#34;: self._client_object.client_name,
-                    &#34;appName&#34;: &#34;db2&#34;,
+                    &#34;clientId&#34;: int(self._client_object.client_id),
                     &#34;instanceName&#34;: db2_options[&#34;instance_name&#34;],
+                    &#34;commcellId&#34;: self._commcell_object.commcell_id,
+                    &#34;instanceId&#34;: -1,
+                    &#34;applicationId&#34;: int(self._agent_object.agent_id)
+                },
+                &#34;credentialEntity&#34;: {
+                    &#34;credentialId&#34;: credential.credential_id,
+                    &#34;credentialName&#34;: credential.credential_name,
+                    &#34;description&#34;: credential.credential_description,
+                    &#34;recordType&#34;: credential._record_type,
+                    &#34;selected&#34;: True
+                },
+                &#34;planEntity&#34;: {
+                    &#34;planId&#34;: int(self._commcell_object.plans.get(storage_policy).plan_id)
                 },
                 &#34;db2Instance&#34;: {
                     &#34;homeDirectory&#34;: db2_options[&#34;home_directory&#34;],
-                    &#34;userAccount&#34;: {
-                        &#34;domainName&#34;: db2_options.get(&#34;domain_name&#34;, &#39;&#39;),
-                        &#34;password&#34;: db2_password,
-                        &#34;userName&#34;: db2_options[&#34;user_name&#34;],
-                    },
-
                     &#34;DB2StorageDevice&#34;: {
-                        &#34;networkAgents&#34;: db2_options.get(&#34;network_agents&#34;, 1),
-                        &#34;softwareCompression&#34;: db2_options.get(&#34;software_compression&#34;, 0),
-                        # &#34;throttleNetworkBandwidth&#34;: db2_options.get(&#34;throttle_network_bandwidth&#34;, 500),
                         &#34;dataBackupStoragePolicy&#34;: {
-                            &#34;storagePolicyName&#34;: storage_policy
+                            &#34;storagePolicyId&#34;: 1
                         },
                         &#34;commandLineStoragePolicy&#34;: {
-                            &#34;storagePolicyName&#34;: storage_policy
+                            &#34;storagePolicyId&#34;: 1
                         },
                         &#34;logBackupStoragePolicy&#34;: {
-                            &#34;storagePolicyName&#34;: storage_policy
-                        },
-                        &#34;deDuplicationOptions&#34;: {
-                            &#34;generateSignature&#34;: db2_options.get(&#34;generate_signature&#34;, 1)
+                            &#34;storagePolicyId&#34;: 1
                         }
-                    },
-                    &#34;overrideDataPathsForCmdPolicy&#34;:
-                        db2_options.get(&#34;override_data_paths_for_cmd_policy&#34;, False)
+                    }
                 }
             }
         }
@@ -1522,6 +1581,7 @@ class Instances(object):
                                                    binary_directory     (str)          -- postgres binary location
                                                    lib_directory        (str)          -- postgres lib location
                                                    archive_log_directory (str)         -- postgres archive log location
+                                                   credential_name      (str)          -- PostgreSQL crdential name
             Returns:
                 object - instance of the Instance class
 
@@ -1531,7 +1591,7 @@ class Instances(object):
 
                     if mysql instance with same name already exists
 
-                    if given storage policy does not exists in commcell
+                    if given storage policy does not exist in commcell
         &#34;&#34;&#34;
 
         if self.has_instance(instance_name):
@@ -1539,7 +1599,9 @@ class Instances(object):
                 &#39;Instance&#39;, &#39;102&#39;, &#39;Instance &#34;{0}&#34; already exists.&#39;.format(
                     instance_name)
             )
-        password = b64encode(kwargs.get(&#34;postgres_password&#34;, &#34;&#34;).encode()).decode()
+        if not self._commcell_object.credentials.has_credential(kwargs.get(&#34;credential_name&#34;)):
+            self._commcell_object.credentials.add_postgres_database_creds(
+                kwargs.get(&#34;credential_name&#34;), kwargs.get(&#34;user_name&#34;), kwargs.get(&#34;password&#34;))
         request_json = {
             &#34;instanceProperties&#34;: {
                 &#34;instance&#34;: {
@@ -1554,13 +1616,13 @@ class Instances(object):
                     &#34;port&#34;: kwargs.get(&#34;port&#34;, &#34;5432&#34;),
                     &#34;ArchiveLogDirectory&#34;: kwargs.get(&#34;archive_log_directory&#34;, &#34;&#34;),
                     &#34;BinaryDirectory&#34;: kwargs.get(&#34;binary_directory&#34;, &#34;&#34;),
-                    &#34;SAUser&#34;: {
-                        &#34;password&#34;: password,
-                        &#34;userName&#34;: kwargs.get(&#34;postgres_user_name&#34;, &#34;postgres&#34;)
-                    },
+                    &#34;SAUser&#34;: {},
                     &#34;logStoragePolicy&#34;: {
                         &#34;storagePolicyName&#34;: kwargs.get(&#34;storage_policy&#34;, &#34;&#34;)
                     },
+                    &#34;credentialEntity&#34;: {
+                        &#34;credentialName&#34;: kwargs.get(&#34;credential_name&#34;, &#34;&#34;)
+                    }
 
                 }
             }
@@ -1917,6 +1979,63 @@ class Instances(object):
             request_json[&#39;instanceProperties&#39;][&#39;oracleInstance&#39;].update(catalog)
         self._process_add_response(request_json)
 
+    def add_cosmosdb_instance(self, instance_name, **instance_options):
+        &#34;&#34;&#34;Adds new cosmosdb cassandra api Instance to given Client
+            Args:
+                                instance_name       (str)   --  instance_name
+                instance_options       (dict)  --  dict of keyword arguments as follows:
+                    Example:
+                       instance_options = {
+                            &#39;plan_name&#39;: &#39;server plan&#39;,
+                            &#39;cloudaccount_name&#39;: &#39;hotsname:port&#39;,
+                            &#39;cloudinstancetype&#39;: &#39;instancetype&#39;,
+                        }
+
+            Returns:
+                object - instance of the Instance class
+
+            Raises:
+                SDKException:
+                    if instance with same name already exists
+                    if given plan name does not exists in commcell
+        &#34;&#34;&#34;
+
+        if self.has_instance(instance_name):
+            raise SDKException(
+                &#39;Instance&#39;, &#39;102&#39;, &#39;Instance &#34;{0}&#34; already exists.&#39;.format(
+                    instance_name)
+            )
+
+        if not self._commcell_object.plans.has_plan(
+                instance_options.get(&#34;plan_name&#34;)):
+            raise SDKException(
+                &#39;Instance&#39;,
+                &#39;102&#39;,
+                &#39;Storage Policy: &#34;{0}&#34; does not exist in the Commcell&#39;.format(
+                    instance_options.get(&#34;plan_name&#34;))
+            )
+
+        request_json = {
+            &#34;instanceProperties&#34;: {
+                &#34;cloudAppsInstance&#34;: {
+                    &#34;instanceType&#34;: instance_options.get(&#34;cloudinstancetype&#34;,&#34;&#34;),
+                    &#34;rdsInstance&#34;: {
+                    }
+                },
+                &#34;instance&#34;: {
+                    &#34;applicationId&#34;: 134,
+                    &#34;clientId&#34;: int(self._client_object.client_id),
+                    &#34;clientName&#34;: instance_options.get(&#34;cloudaccount_name&#34;,&#34;&#34;),
+                    &#34;instanceName&#34;: instance_name
+                },
+                &#34;planEntity&#34;: {
+                    &#34;planName&#34;: instance_options.get(&#34;plan_name&#34;)
+                }
+            }
+        }
+
+        self._process_add_response(request_json)
+
     def refresh(self):
         &#34;&#34;&#34;Refresh the instances associated with the Agent of the selected Client.&#34;&#34;&#34;
         self._instances = self._get_instances()
@@ -2024,8 +2143,8 @@ class Instance(object):
         # Restore json instance var
         self._commonopts_restore_json = {}
 
-        self.backupsets = None
-        self.subclients = None
+        self._backupsets = None
+        self._subclients = None
         self.refresh()
 
     def _get_instance_id(self):
@@ -2255,6 +2374,43 @@ class Instance(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
+    def _process_delete_response(self, request_json):
+        &#34;&#34;&#34;Runs the DeleteDocuments API with the request JSON provided for Delete,
+            and returns the contents after parsing the response.
+
+            Args:
+                request_json    (dict)  --  JSON request to run for the API
+
+            Returns:
+                object - instance of the Job class for this Delete job if it is a folder
+
+            Raises:
+                SDKException:
+                    if Delete job failed
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._DELETE, request_json)
+
+        if flag:
+            if response.json():
+                if &#34;jobIds&#34; in response.json():
+                    return Job(self._commcell_object, response.json()[&#39;jobIds&#39;][0])
+                elif &#34;processingInfo&#34; in response.json():
+                    pass
+                elif &#34;errorCode&#34; in response.json():
+                    error_message = response.json()[&#39;errorMessage&#39;]
+                    o_str = &#39;Delete job failed\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Instance&#39;, &#39;102&#39;, o_str)
+                else:
+                    raise SDKException(&#39;Instance&#39;, &#39;102&#39;, &#39;Failed to run the Delete job&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
     def _filter_paths(self, paths, is_single_path=False):
         &#34;&#34;&#34;Filters the paths based on the Operating System, and Agent.
 
@@ -2394,6 +2550,7 @@ class Instance(object):
                 &#34;subTasks&#34;: [{
                     &#34;subTaskOperation&#34;: 1,
                     &#34;options&#34;: {
+                        &#34;commonOpts&#34;: self._commonopts_restore_json,
                         &#34;restoreOptions&#34;: {
                             &#34;impersonation&#34;: self._impersonation_json_,
                             &#34;browseOption&#34;: self._browse_restore_json,
@@ -2403,8 +2560,7 @@ class Instance(object):
                             &#34;virtualServerRstOption&#34;: self._virtualserver_restore_json,
                             &#34;sharePointRstOption&#34;: self._restore_sharepoint_json,
                             &#34;volumeRstOption&#34;: self._volume_restore_json
-                        },
-                        &#34;commonOpts&#34;: self._commonopts_restore_json
+                        }
                     }
                 }]
             }
@@ -2476,6 +2632,10 @@ class Instance(object):
 
         if restore_option.get(&#39;restore_data_only&#39;, False):
             request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;restoreACLsType&#34;] = 2
+
+        if &#39;latest_version&#39; in restore_option:
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
+                &#34;commonOptions&#34;][&#34;restoreLatestVersionOnly&#34;] = restore_option.get(&#39;latest_version&#39;, True)
 
         return request_json
 
@@ -2791,6 +2951,27 @@ class Instance(object):
 
         request_json[&#39;instanceProperties&#39;].update(properties_dict)
         self._process_update_request(request_json)
+
+    @property
+    def backupsets(self):
+        &#34;&#34;&#34;Returns the instance of the Backupsets class representing the list of Backupsets
+        installed / configured on the Client for the selected Instance.
+        &#34;&#34;&#34;
+        if self._backupsets is None:
+            from .backupset import Backupsets
+            self._backupsets = Backupsets(self)
+
+        return self._backupsets
+
+    @property
+    def subclients(self):
+        &#34;&#34;&#34;Returns the instance of the Subclients class representing the list of Subclients
+        installed / configured on the Client for the selected Instance.
+        &#34;&#34;&#34;
+        if self._subclients is None:
+            self._subclients = Subclients(self)
+
+        return self._subclients
 
     @property
     def properties(self):
@@ -3212,6 +3393,73 @@ class Instance(object):
                     &#34;cleanupScriptPath&#34;: value.get(&#34;instant_clone_options&#34;).get(&#34;clone_cleanup_script&#34;)
                 }
 
+
+    def _restore_bigdataapps_option_json(self, value):
+        &#34;&#34;&#34;setter for Big Data Apps restore option in restore JSON&#34;&#34;&#34;
+        request_json = self._restore_json(restore_option=value)
+
+        request_json[&#34;taskInfo&#34;][&#34;associations&#34;][0][&#34;subclientId&#34;] = value.get(
+            &#34;subclient_id&#34;, -1)
+        request_json[&#34;taskInfo&#34;][&#34;associations&#34;][0][&#34;backupsetName&#34;] = value.get(
+            &#34;backupset_name&#34;)
+        request_json[&#34;taskInfo&#34;][&#34;associations&#34;][0][&#34;_type_&#34;] = value.get(
+            &#34;_type_&#34;)
+
+        distributed_restore_json = {
+            &#34;distributedRestore&#34;: True,
+        }
+
+        if value.get(&#34;cassandra_restore&#34;, False):
+            distributed_restore_json[&#34;cassandraRestoreOptions&#34;] = {
+                &#34;outofPlaceRestore&#34;: value.get(&#34;outofPlaceRestore&#34;, False),
+                &#34;runStageFreeRestore&#34;: value.get(&#34;runStageFreeRestore&#34;, False),
+                &#34;recover&#34;: value.get(&#34;recover&#34;, False),
+                &#34;replaceDeadNode&#34;: value.get(&#34;replaceDeadNode&#34;, False),
+                &#34;stagingLocation&#34;: value.get(&#34;stagingLocation&#34;),
+                &#34;useSSTableLoader&#34;: value.get(&#34;useSSTableLoader&#34;, False),
+                &#34;runLogRestore&#34;: value.get(&#34;runLogRestore&#34;, False),
+                &#34;nodeMap&#34;: value.get(&#34;nodeMap&#34;, []),
+                &#34;dockerNodeMap&#34;: value.get(&#34;dockerNodeMap&#34;, []),
+                &#34;DBRestore&#34;: value.get(&#34;DBRestore&#34;, False),
+                &#34;truncateTables&#34;: value.get(&#34;truncateTables&#34;, False)
+            }
+
+        if value.get(&#34;cockroachdb_restore&#34;, False):
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;cloudAppsRestoreOptions&#34;] = {
+                &#34;instanceType&#34;: &#34;AMAZON_S3&#34;}
+            distributed_restore_json[&#34;clientType&#34;] = value.get(&#34;client_type&#34;)
+            distributed_restore_json[&#34;isMultiNodeRestore&#34;] = True
+            distributed_restore_json[&#34;noSQLGenericRestoreOptions&#34;] = {
+                &#34;pointInTime&#34;: {
+                    &#34;time&#34;: 0
+                },
+                &#34;restoreCluster&#34;: False,
+                &#34;tableMap&#34;: [
+                    {
+                        &#34;fromTable&#34;: value.get(&#34;fromtable&#34;),
+                        &#34;toTable&#34;: value.get(&#34;totable&#34;)
+                    }
+                ]
+            }
+
+            access_nodes = []
+            for node in value.get(&#34;accessnodes&#34;):
+                client_object = self._commcell_object.clients.get(node)
+                client_object._get_client_properties()
+                client_id = int(client_object.client_id)
+                access_node = {
+                    &#34;clientId&#34;: client_id,
+                    &#34;clientName&#34;: client_object.client_name
+                }
+                access_nodes.append(access_node)
+
+            distributed_restore_json[&#34;dataAccessNodes&#34;] = {
+                &#34;dataAccessNodes&#34;: access_nodes
+            }
+
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;distributedAppsRestoreOptions&#34;] = distributed_restore_json
+        return request_json
+
     def _restore_virtual_rst_option_json(self, value):
         &#34;&#34;&#34;setter for the virtualServer restore option in restore JSON&#34;&#34;&#34;
         self._virtualserver_restore_json = {
@@ -3297,13 +3545,38 @@ class Instance(object):
 
         return _backup_subtask
 
+    @property
+    def credentials(self):
+        &#34;&#34;&#34;Getter for the instance credentials
+
+            Returns:
+                str - name of the credential associated with the instance
+
+        &#34;&#34;&#34;
+        return self._properties.get(&#39;credentialEntity&#39;, {}).get(&#39;credentialName&#39;, &#39;&#39;)
+
+    @credentials.setter
+    def credentials(self, credential_name):
+        &#34;&#34;&#34;Setter for the instance credentials
+
+            Args:
+                credential_name (str)  --  name of the credential to be associated with the instance
+
+        &#34;&#34;&#34;
+        properties = self._properties
+        credential_id = self._commcell_object.credentials.get(credential_name).credential_id
+        credential_json = {
+            &#34;credentialId&#34;: credential_id,
+            &#34;credentialName&#34;: credential_name
+        }
+        properties[&#39;credentialEntity&#39;] = credential_json
+        self.update_properties(properties)
+
     def refresh(self):
         &#34;&#34;&#34;Refresh the properties of the Instance.&#34;&#34;&#34;
-        from .backupset import Backupsets
-
         self._get_instance_properties()
-        self.backupsets = Backupsets(self)
-        self.subclients = Subclients(self)</code></pre>
+        self._backupsets = None
+        self._subclients = None</code></pre>
 </details>
 </section>
 <section>
@@ -3341,7 +3614,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L1725-L3106" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L1817-L3352" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Instance(object):
     &#34;&#34;&#34;Class for performing instance operations for a specific instance.&#34;&#34;&#34;
@@ -3445,8 +3718,8 @@ default: None</p>
         # Restore json instance var
         self._commonopts_restore_json = {}
 
-        self.backupsets = None
-        self.subclients = None
+        self._backupsets = None
+        self._subclients = None
         self.refresh()
 
     def _get_instance_id(self):
@@ -3676,6 +3949,43 @@ default: None</p>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
+    def _process_delete_response(self, request_json):
+        &#34;&#34;&#34;Runs the DeleteDocuments API with the request JSON provided for Delete,
+            and returns the contents after parsing the response.
+
+            Args:
+                request_json    (dict)  --  JSON request to run for the API
+
+            Returns:
+                object - instance of the Job class for this Delete job if it is a folder
+
+            Raises:
+                SDKException:
+                    if Delete job failed
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._DELETE, request_json)
+
+        if flag:
+            if response.json():
+                if &#34;jobIds&#34; in response.json():
+                    return Job(self._commcell_object, response.json()[&#39;jobIds&#39;][0])
+                elif &#34;processingInfo&#34; in response.json():
+                    pass
+                elif &#34;errorCode&#34; in response.json():
+                    error_message = response.json()[&#39;errorMessage&#39;]
+                    o_str = &#39;Delete job failed\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Instance&#39;, &#39;102&#39;, o_str)
+                else:
+                    raise SDKException(&#39;Instance&#39;, &#39;102&#39;, &#39;Failed to run the Delete job&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
     def _filter_paths(self, paths, is_single_path=False):
         &#34;&#34;&#34;Filters the paths based on the Operating System, and Agent.
 
@@ -3815,6 +4125,7 @@ default: None</p>
                 &#34;subTasks&#34;: [{
                     &#34;subTaskOperation&#34;: 1,
                     &#34;options&#34;: {
+                        &#34;commonOpts&#34;: self._commonopts_restore_json,
                         &#34;restoreOptions&#34;: {
                             &#34;impersonation&#34;: self._impersonation_json_,
                             &#34;browseOption&#34;: self._browse_restore_json,
@@ -3824,8 +4135,7 @@ default: None</p>
                             &#34;virtualServerRstOption&#34;: self._virtualserver_restore_json,
                             &#34;sharePointRstOption&#34;: self._restore_sharepoint_json,
                             &#34;volumeRstOption&#34;: self._volume_restore_json
-                        },
-                        &#34;commonOpts&#34;: self._commonopts_restore_json
+                        }
                     }
                 }]
             }
@@ -3897,6 +4207,10 @@ default: None</p>
 
         if restore_option.get(&#39;restore_data_only&#39;, False):
             request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;restoreACLsType&#34;] = 2
+
+        if &#39;latest_version&#39; in restore_option:
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
+                &#34;commonOptions&#34;][&#34;restoreLatestVersionOnly&#34;] = restore_option.get(&#39;latest_version&#39;, True)
 
         return request_json
 
@@ -4212,6 +4526,27 @@ default: None</p>
 
         request_json[&#39;instanceProperties&#39;].update(properties_dict)
         self._process_update_request(request_json)
+
+    @property
+    def backupsets(self):
+        &#34;&#34;&#34;Returns the instance of the Backupsets class representing the list of Backupsets
+        installed / configured on the Client for the selected Instance.
+        &#34;&#34;&#34;
+        if self._backupsets is None:
+            from .backupset import Backupsets
+            self._backupsets = Backupsets(self)
+
+        return self._backupsets
+
+    @property
+    def subclients(self):
+        &#34;&#34;&#34;Returns the instance of the Subclients class representing the list of Subclients
+        installed / configured on the Client for the selected Instance.
+        &#34;&#34;&#34;
+        if self._subclients is None:
+            self._subclients = Subclients(self)
+
+        return self._subclients
 
     @property
     def properties(self):
@@ -4633,6 +4968,73 @@ default: None</p>
                     &#34;cleanupScriptPath&#34;: value.get(&#34;instant_clone_options&#34;).get(&#34;clone_cleanup_script&#34;)
                 }
 
+
+    def _restore_bigdataapps_option_json(self, value):
+        &#34;&#34;&#34;setter for Big Data Apps restore option in restore JSON&#34;&#34;&#34;
+        request_json = self._restore_json(restore_option=value)
+
+        request_json[&#34;taskInfo&#34;][&#34;associations&#34;][0][&#34;subclientId&#34;] = value.get(
+            &#34;subclient_id&#34;, -1)
+        request_json[&#34;taskInfo&#34;][&#34;associations&#34;][0][&#34;backupsetName&#34;] = value.get(
+            &#34;backupset_name&#34;)
+        request_json[&#34;taskInfo&#34;][&#34;associations&#34;][0][&#34;_type_&#34;] = value.get(
+            &#34;_type_&#34;)
+
+        distributed_restore_json = {
+            &#34;distributedRestore&#34;: True,
+        }
+
+        if value.get(&#34;cassandra_restore&#34;, False):
+            distributed_restore_json[&#34;cassandraRestoreOptions&#34;] = {
+                &#34;outofPlaceRestore&#34;: value.get(&#34;outofPlaceRestore&#34;, False),
+                &#34;runStageFreeRestore&#34;: value.get(&#34;runStageFreeRestore&#34;, False),
+                &#34;recover&#34;: value.get(&#34;recover&#34;, False),
+                &#34;replaceDeadNode&#34;: value.get(&#34;replaceDeadNode&#34;, False),
+                &#34;stagingLocation&#34;: value.get(&#34;stagingLocation&#34;),
+                &#34;useSSTableLoader&#34;: value.get(&#34;useSSTableLoader&#34;, False),
+                &#34;runLogRestore&#34;: value.get(&#34;runLogRestore&#34;, False),
+                &#34;nodeMap&#34;: value.get(&#34;nodeMap&#34;, []),
+                &#34;dockerNodeMap&#34;: value.get(&#34;dockerNodeMap&#34;, []),
+                &#34;DBRestore&#34;: value.get(&#34;DBRestore&#34;, False),
+                &#34;truncateTables&#34;: value.get(&#34;truncateTables&#34;, False)
+            }
+
+        if value.get(&#34;cockroachdb_restore&#34;, False):
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;cloudAppsRestoreOptions&#34;] = {
+                &#34;instanceType&#34;: &#34;AMAZON_S3&#34;}
+            distributed_restore_json[&#34;clientType&#34;] = value.get(&#34;client_type&#34;)
+            distributed_restore_json[&#34;isMultiNodeRestore&#34;] = True
+            distributed_restore_json[&#34;noSQLGenericRestoreOptions&#34;] = {
+                &#34;pointInTime&#34;: {
+                    &#34;time&#34;: 0
+                },
+                &#34;restoreCluster&#34;: False,
+                &#34;tableMap&#34;: [
+                    {
+                        &#34;fromTable&#34;: value.get(&#34;fromtable&#34;),
+                        &#34;toTable&#34;: value.get(&#34;totable&#34;)
+                    }
+                ]
+            }
+
+            access_nodes = []
+            for node in value.get(&#34;accessnodes&#34;):
+                client_object = self._commcell_object.clients.get(node)
+                client_object._get_client_properties()
+                client_id = int(client_object.client_id)
+                access_node = {
+                    &#34;clientId&#34;: client_id,
+                    &#34;clientName&#34;: client_object.client_name
+                }
+                access_nodes.append(access_node)
+
+            distributed_restore_json[&#34;dataAccessNodes&#34;] = {
+                &#34;dataAccessNodes&#34;: access_nodes
+            }
+
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;distributedAppsRestoreOptions&#34;] = distributed_restore_json
+        return request_json
+
     def _restore_virtual_rst_option_json(self, value):
         &#34;&#34;&#34;setter for the virtualServer restore option in restore JSON&#34;&#34;&#34;
         self._virtualserver_restore_json = {
@@ -4718,13 +5120,38 @@ default: None</p>
 
         return _backup_subtask
 
+    @property
+    def credentials(self):
+        &#34;&#34;&#34;Getter for the instance credentials
+
+            Returns:
+                str - name of the credential associated with the instance
+
+        &#34;&#34;&#34;
+        return self._properties.get(&#39;credentialEntity&#39;, {}).get(&#39;credentialName&#39;, &#39;&#39;)
+
+    @credentials.setter
+    def credentials(self, credential_name):
+        &#34;&#34;&#34;Setter for the instance credentials
+
+            Args:
+                credential_name (str)  --  name of the credential to be associated with the instance
+
+        &#34;&#34;&#34;
+        properties = self._properties
+        credential_id = self._commcell_object.credentials.get(credential_name).credential_id
+        credential_json = {
+            &#34;credentialId&#34;: credential_id,
+            &#34;credentialName&#34;: credential_name
+        }
+        properties[&#39;credentialEntity&#39;] = credential_json
+        self.update_properties(properties)
+
     def refresh(self):
         &#34;&#34;&#34;Refresh the properties of the Instance.&#34;&#34;&#34;
-        from .backupset import Backupsets
-
         self._get_instance_properties()
-        self.backupsets = Backupsets(self)
-        self.subclients = Subclients(self)</code></pre>
+        self._backupsets = None
+        self._subclients = None</code></pre>
 </details>
 <h3>Subclasses</h3>
 <ul class="hlist">
@@ -4747,13 +5174,55 @@ default: None</p>
 </ul>
 <h3>Instance variables</h3>
 <dl>
+<dt id="cvpysdk.instance.Instance.backupsets"><code class="name">var <span class="ident">backupsets</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the instance of the Backupsets class representing the list of Backupsets
+installed / configured on the Client for the selected Instance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L2728-L2737" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def backupsets(self):
+    &#34;&#34;&#34;Returns the instance of the Backupsets class representing the list of Backupsets
+    installed / configured on the Client for the selected Instance.
+    &#34;&#34;&#34;
+    if self._backupsets is None:
+        from .backupset import Backupsets
+        self._backupsets = Backupsets(self)
+
+    return self._backupsets</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.instance.Instance.credentials"><code class="name">var <span class="ident">credentials</span></code></dt>
+<dd>
+<div class="desc"><p>Getter for the instance credentials</p>
+<h2 id="returns">Returns</h2>
+<p>str - name of the credential associated with the instance</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L3321-L3329" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def credentials(self):
+    &#34;&#34;&#34;Getter for the instance credentials
+
+        Returns:
+            str - name of the credential associated with the instance
+
+    &#34;&#34;&#34;
+    return self._properties.get(&#39;credentialEntity&#39;, {}).get(&#39;credentialName&#39;, &#39;&#39;)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.instance.Instance.instance_id"><code class="name">var <span class="ident">instance_id</span></code></dt>
 <dd>
 <div class="desc"><p>Treats the instance id as a read-only attribute.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L2629-L2632" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L2783-L2786" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_id(self):
@@ -4767,7 +5236,7 @@ def instance_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L2634-L2637" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L2788-L2791" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_name(self):
@@ -4781,7 +5250,7 @@ def instance_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L2600-L2603" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L2754-L2757" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -4795,12 +5264,32 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L2595-L2598" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L2749-L2752" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
     &#34;&#34;&#34;Returns the instance properties&#34;&#34;&#34;
     return copy.deepcopy(self._properties)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.instance.Instance.subclients"><code class="name">var <span class="ident">subclients</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the instance of the Subclients class representing the list of Subclients
+installed / configured on the Client for the selected Instance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L2739-L2747" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def subclients(self):
+    &#34;&#34;&#34;Returns the instance of the Subclients class representing the list of Subclients
+    installed / configured on the Client for the selected Instance.
+    &#34;&#34;&#34;
+    if self._subclients is None:
+        self._subclients = Subclients(self)
+
+    return self._subclients</code></pre>
 </details>
 </dd>
 </dl>
@@ -4853,7 +5342,7 @@ Refer <code>default_browse_options</code>_ for all the supported options.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L2639-L2695" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L2793-L2849" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, *args, **kwargs):
     &#34;&#34;&#34;Browses the content of the Instance.
@@ -4973,7 +5462,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L2697-L2763" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L2851-L2917" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find(self, *args, **kwargs):
     &#34;&#34;&#34;Searches a file/folder in the backed up content of the instance,
@@ -5052,15 +5541,13 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L3100-L3106" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L3348-L3352" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Instance.&#34;&#34;&#34;
-    from .backupset import Backupsets
-
     self._get_instance_properties()
-    self.backupsets = Backupsets(self)
-    self.subclients = Subclients(self)</code></pre>
+    self._backupsets = None
+    self._subclients = None</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.instance.Instance.update_properties"><code class="name flex">
@@ -5087,7 +5574,7 @@ need to change and use the update_properties method to set the properties</p></d
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L2565-L2593" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L2698-L2726" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;Updates the instance properties
@@ -5138,7 +5625,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L160-L1722" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L186-L1814" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Instances(object):
     &#34;&#34;&#34;Class for getting all the instances associated with a client.&#34;&#34;&#34;
@@ -5778,7 +6265,8 @@ instance of the Agent class</p>
                                     &#39;command_storage_policy&#39;: &#39;cmd_sp&#39;,
                                     &#39;home_directory&#39;:&#39;/home/db2inst1&#39;,
                                     &#39;password&#39;:&#39;db2inst1&#39;,
-                                    &#39;user_name&#39;:&#39;db2inst1&#39;
+                                    &#39;user_name&#39;:&#39;db2inst1&#39;,
+                                    &#39;credential_name&#39;: &#39;cred_name&#39;
                                 }
                     Raises:
                         SDKException:
@@ -5817,45 +6305,50 @@ instance of the Agent class</p>
                     db2_options[&#34;data_storage_policy&#34;])
             )
 
+        if self._commcell_object.credentials.has_credential(db2_options[&#34;credential_name&#34;]):
+            credential = self._commcell_object.credentials.get(db2_options[&#34;credential_name&#34;])
+        else:
+            credential = self._commcell_object.credentials.add_db2_database_creds(db2_options[&#34;credential_name&#34;],
+                                                                              db2_options[&#34;user_name&#34;],
+                                                                              db2_options[&#34;password&#34;])
+
         # encodes the plain text password using base64 encoding
 
         #enable_auto_discovery = db2_options[&#34;enable_auto_discovery&#34;]
-        db2_password = b64encode(db2_options[&#34;password&#34;].encode()).decode()
 
         request_json = {
             &#34;instanceProperties&#34;: {
                 &#34;instance&#34;: {
                     &#34;clientName&#34;: self._client_object.client_name,
-                    &#34;appName&#34;: &#34;db2&#34;,
+                    &#34;clientId&#34;: int(self._client_object.client_id),
                     &#34;instanceName&#34;: db2_options[&#34;instance_name&#34;],
+                    &#34;commcellId&#34;: self._commcell_object.commcell_id,
+                    &#34;instanceId&#34;: -1,
+                    &#34;applicationId&#34;: int(self._agent_object.agent_id)
+                },
+                &#34;credentialEntity&#34;: {
+                    &#34;credentialId&#34;: credential.credential_id,
+                    &#34;credentialName&#34;: credential.credential_name,
+                    &#34;description&#34;: credential.credential_description,
+                    &#34;recordType&#34;: credential._record_type,
+                    &#34;selected&#34;: True
+                },
+                &#34;planEntity&#34;: {
+                    &#34;planId&#34;: int(self._commcell_object.plans.get(storage_policy).plan_id)
                 },
                 &#34;db2Instance&#34;: {
                     &#34;homeDirectory&#34;: db2_options[&#34;home_directory&#34;],
-                    &#34;userAccount&#34;: {
-                        &#34;domainName&#34;: db2_options.get(&#34;domain_name&#34;, &#39;&#39;),
-                        &#34;password&#34;: db2_password,
-                        &#34;userName&#34;: db2_options[&#34;user_name&#34;],
-                    },
-
                     &#34;DB2StorageDevice&#34;: {
-                        &#34;networkAgents&#34;: db2_options.get(&#34;network_agents&#34;, 1),
-                        &#34;softwareCompression&#34;: db2_options.get(&#34;software_compression&#34;, 0),
-                        # &#34;throttleNetworkBandwidth&#34;: db2_options.get(&#34;throttle_network_bandwidth&#34;, 500),
                         &#34;dataBackupStoragePolicy&#34;: {
-                            &#34;storagePolicyName&#34;: storage_policy
+                            &#34;storagePolicyId&#34;: 1
                         },
                         &#34;commandLineStoragePolicy&#34;: {
-                            &#34;storagePolicyName&#34;: storage_policy
+                            &#34;storagePolicyId&#34;: 1
                         },
                         &#34;logBackupStoragePolicy&#34;: {
-                            &#34;storagePolicyName&#34;: storage_policy
-                        },
-                        &#34;deDuplicationOptions&#34;: {
-                            &#34;generateSignature&#34;: db2_options.get(&#34;generate_signature&#34;, 1)
+                            &#34;storagePolicyId&#34;: 1
                         }
-                    },
-                    &#34;overrideDataPathsForCmdPolicy&#34;:
-                        db2_options.get(&#34;override_data_paths_for_cmd_policy&#34;, False)
+                    }
                 }
             }
         }
@@ -6305,6 +6798,7 @@ instance of the Agent class</p>
                                                    binary_directory     (str)          -- postgres binary location
                                                    lib_directory        (str)          -- postgres lib location
                                                    archive_log_directory (str)         -- postgres archive log location
+                                                   credential_name      (str)          -- PostgreSQL crdential name
             Returns:
                 object - instance of the Instance class
 
@@ -6314,7 +6808,7 @@ instance of the Agent class</p>
 
                     if mysql instance with same name already exists
 
-                    if given storage policy does not exists in commcell
+                    if given storage policy does not exist in commcell
         &#34;&#34;&#34;
 
         if self.has_instance(instance_name):
@@ -6322,7 +6816,9 @@ instance of the Agent class</p>
                 &#39;Instance&#39;, &#39;102&#39;, &#39;Instance &#34;{0}&#34; already exists.&#39;.format(
                     instance_name)
             )
-        password = b64encode(kwargs.get(&#34;postgres_password&#34;, &#34;&#34;).encode()).decode()
+        if not self._commcell_object.credentials.has_credential(kwargs.get(&#34;credential_name&#34;)):
+            self._commcell_object.credentials.add_postgres_database_creds(
+                kwargs.get(&#34;credential_name&#34;), kwargs.get(&#34;user_name&#34;), kwargs.get(&#34;password&#34;))
         request_json = {
             &#34;instanceProperties&#34;: {
                 &#34;instance&#34;: {
@@ -6337,13 +6833,13 @@ instance of the Agent class</p>
                     &#34;port&#34;: kwargs.get(&#34;port&#34;, &#34;5432&#34;),
                     &#34;ArchiveLogDirectory&#34;: kwargs.get(&#34;archive_log_directory&#34;, &#34;&#34;),
                     &#34;BinaryDirectory&#34;: kwargs.get(&#34;binary_directory&#34;, &#34;&#34;),
-                    &#34;SAUser&#34;: {
-                        &#34;password&#34;: password,
-                        &#34;userName&#34;: kwargs.get(&#34;postgres_user_name&#34;, &#34;postgres&#34;)
-                    },
+                    &#34;SAUser&#34;: {},
                     &#34;logStoragePolicy&#34;: {
                         &#34;storagePolicyName&#34;: kwargs.get(&#34;storage_policy&#34;, &#34;&#34;)
                     },
+                    &#34;credentialEntity&#34;: {
+                        &#34;credentialName&#34;: kwargs.get(&#34;credential_name&#34;, &#34;&#34;)
+                    }
 
                 }
             }
@@ -6700,6 +7196,63 @@ instance of the Agent class</p>
             request_json[&#39;instanceProperties&#39;][&#39;oracleInstance&#39;].update(catalog)
         self._process_add_response(request_json)
 
+    def add_cosmosdb_instance(self, instance_name, **instance_options):
+        &#34;&#34;&#34;Adds new cosmosdb cassandra api Instance to given Client
+            Args:
+                                instance_name       (str)   --  instance_name
+                instance_options       (dict)  --  dict of keyword arguments as follows:
+                    Example:
+                       instance_options = {
+                            &#39;plan_name&#39;: &#39;server plan&#39;,
+                            &#39;cloudaccount_name&#39;: &#39;hotsname:port&#39;,
+                            &#39;cloudinstancetype&#39;: &#39;instancetype&#39;,
+                        }
+
+            Returns:
+                object - instance of the Instance class
+
+            Raises:
+                SDKException:
+                    if instance with same name already exists
+                    if given plan name does not exists in commcell
+        &#34;&#34;&#34;
+
+        if self.has_instance(instance_name):
+            raise SDKException(
+                &#39;Instance&#39;, &#39;102&#39;, &#39;Instance &#34;{0}&#34; already exists.&#39;.format(
+                    instance_name)
+            )
+
+        if not self._commcell_object.plans.has_plan(
+                instance_options.get(&#34;plan_name&#34;)):
+            raise SDKException(
+                &#39;Instance&#39;,
+                &#39;102&#39;,
+                &#39;Storage Policy: &#34;{0}&#34; does not exist in the Commcell&#39;.format(
+                    instance_options.get(&#34;plan_name&#34;))
+            )
+
+        request_json = {
+            &#34;instanceProperties&#34;: {
+                &#34;cloudAppsInstance&#34;: {
+                    &#34;instanceType&#34;: instance_options.get(&#34;cloudinstancetype&#34;,&#34;&#34;),
+                    &#34;rdsInstance&#34;: {
+                    }
+                },
+                &#34;instance&#34;: {
+                    &#34;applicationId&#34;: 134,
+                    &#34;clientId&#34;: int(self._client_object.client_id),
+                    &#34;clientName&#34;: instance_options.get(&#34;cloudaccount_name&#34;,&#34;&#34;),
+                    &#34;instanceName&#34;: instance_name
+                },
+                &#34;planEntity&#34;: {
+                    &#34;planName&#34;: instance_options.get(&#34;plan_name&#34;)
+                }
+            }
+        }
+
+        self._process_add_response(request_json)
+
     def refresh(self):
         &#34;&#34;&#34;Refresh the instances associated with the Agent of the selected Client.&#34;&#34;&#34;
         self._instances = self._get_instances()</code></pre>
@@ -6717,7 +7270,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L306-L317" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L332-L343" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_instances(self):
@@ -6758,7 +7311,7 @@ if cannot retrieve cluster type from default Instance</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L903-L1010" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L935-L1042" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_big_data_apps_instance(self, distributed_options):
     &#34;&#34;&#34;
@@ -6977,7 +7530,7 @@ SDKException :</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L1012-L1189" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L1044-L1221" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_cloud_storage_instance(self, cloud_options):
     &#34;&#34;&#34;Returns the JSON request to pass to the API for adding a cloud storage instance
@@ -7159,6 +7712,93 @@ SDKException :</p>
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.instance.Instances.add_cosmosdb_instance"><code class="name flex">
+<span>def <span class="ident">add_cosmosdb_instance</span></span>(<span>self, instance_name, **instance_options)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Adds new cosmosdb cassandra api Instance to given Client</p>
+<h2 id="args">Args</h2>
+<pre><code>            instance_name       (str)   --  instance_name
+</code></pre>
+<p>instance_options
+(dict)
+&ndash;
+dict of keyword arguments as follows:
+Example:
+instance_options = {
+'plan_name': 'server plan',
+'cloudaccount_name': 'hotsname:port',
+'cloudinstancetype': 'instancetype',
+}</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Instance class</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if instance with same name already exists
+if given plan name does not exists in commcell</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L1755-L1810" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def add_cosmosdb_instance(self, instance_name, **instance_options):
+    &#34;&#34;&#34;Adds new cosmosdb cassandra api Instance to given Client
+        Args:
+                            instance_name       (str)   --  instance_name
+            instance_options       (dict)  --  dict of keyword arguments as follows:
+                Example:
+                   instance_options = {
+                        &#39;plan_name&#39;: &#39;server plan&#39;,
+                        &#39;cloudaccount_name&#39;: &#39;hotsname:port&#39;,
+                        &#39;cloudinstancetype&#39;: &#39;instancetype&#39;,
+                    }
+
+        Returns:
+            object - instance of the Instance class
+
+        Raises:
+            SDKException:
+                if instance with same name already exists
+                if given plan name does not exists in commcell
+    &#34;&#34;&#34;
+
+    if self.has_instance(instance_name):
+        raise SDKException(
+            &#39;Instance&#39;, &#39;102&#39;, &#39;Instance &#34;{0}&#34; already exists.&#39;.format(
+                instance_name)
+        )
+
+    if not self._commcell_object.plans.has_plan(
+            instance_options.get(&#34;plan_name&#34;)):
+        raise SDKException(
+            &#39;Instance&#39;,
+            &#39;102&#39;,
+            &#39;Storage Policy: &#34;{0}&#34; does not exist in the Commcell&#39;.format(
+                instance_options.get(&#34;plan_name&#34;))
+        )
+
+    request_json = {
+        &#34;instanceProperties&#34;: {
+            &#34;cloudAppsInstance&#34;: {
+                &#34;instanceType&#34;: instance_options.get(&#34;cloudinstancetype&#34;,&#34;&#34;),
+                &#34;rdsInstance&#34;: {
+                }
+            },
+            &#34;instance&#34;: {
+                &#34;applicationId&#34;: 134,
+                &#34;clientId&#34;: int(self._client_object.client_id),
+                &#34;clientName&#34;: instance_options.get(&#34;cloudaccount_name&#34;,&#34;&#34;),
+                &#34;instanceName&#34;: instance_name
+            },
+            &#34;planEntity&#34;: {
+                &#34;planName&#34;: instance_options.get(&#34;plan_name&#34;)
+            }
+        }
+    }
+
+    self._process_add_response(request_json)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.instance.Instances.add_db2_instance"><code class="name flex">
 <span>def <span class="ident">add_db2_instance</span></span>(<span>self, db2_options)</span>
 </code></dt>
@@ -7174,7 +7814,8 @@ db2_options = {
 'command_storage_policy': 'cmd_sp',
 'home_directory':'/home/db2inst1',
 'password':'db2inst1',
-'user_name':'db2inst1'
+'user_name':'db2inst1',
+'credential_name': 'cred_name'
 }
 Raises:
 SDKException:
@@ -7186,7 +7827,7 @@ if None value in db2 options</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L785-L901" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L811-L933" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_db2_instance(self, db2_options):
     &#34;&#34;&#34;
@@ -7201,7 +7842,8 @@ if None value in db2 options</p>
                                 &#39;command_storage_policy&#39;: &#39;cmd_sp&#39;,
                                 &#39;home_directory&#39;:&#39;/home/db2inst1&#39;,
                                 &#39;password&#39;:&#39;db2inst1&#39;,
-                                &#39;user_name&#39;:&#39;db2inst1&#39;
+                                &#39;user_name&#39;:&#39;db2inst1&#39;,
+                                &#39;credential_name&#39;: &#39;cred_name&#39;
                             }
                 Raises:
                     SDKException:
@@ -7240,45 +7882,50 @@ if None value in db2 options</p>
                 db2_options[&#34;data_storage_policy&#34;])
         )
 
+    if self._commcell_object.credentials.has_credential(db2_options[&#34;credential_name&#34;]):
+        credential = self._commcell_object.credentials.get(db2_options[&#34;credential_name&#34;])
+    else:
+        credential = self._commcell_object.credentials.add_db2_database_creds(db2_options[&#34;credential_name&#34;],
+                                                                          db2_options[&#34;user_name&#34;],
+                                                                          db2_options[&#34;password&#34;])
+
     # encodes the plain text password using base64 encoding
 
     #enable_auto_discovery = db2_options[&#34;enable_auto_discovery&#34;]
-    db2_password = b64encode(db2_options[&#34;password&#34;].encode()).decode()
 
     request_json = {
         &#34;instanceProperties&#34;: {
             &#34;instance&#34;: {
                 &#34;clientName&#34;: self._client_object.client_name,
-                &#34;appName&#34;: &#34;db2&#34;,
+                &#34;clientId&#34;: int(self._client_object.client_id),
                 &#34;instanceName&#34;: db2_options[&#34;instance_name&#34;],
+                &#34;commcellId&#34;: self._commcell_object.commcell_id,
+                &#34;instanceId&#34;: -1,
+                &#34;applicationId&#34;: int(self._agent_object.agent_id)
+            },
+            &#34;credentialEntity&#34;: {
+                &#34;credentialId&#34;: credential.credential_id,
+                &#34;credentialName&#34;: credential.credential_name,
+                &#34;description&#34;: credential.credential_description,
+                &#34;recordType&#34;: credential._record_type,
+                &#34;selected&#34;: True
+            },
+            &#34;planEntity&#34;: {
+                &#34;planId&#34;: int(self._commcell_object.plans.get(storage_policy).plan_id)
             },
             &#34;db2Instance&#34;: {
                 &#34;homeDirectory&#34;: db2_options[&#34;home_directory&#34;],
-                &#34;userAccount&#34;: {
-                    &#34;domainName&#34;: db2_options.get(&#34;domain_name&#34;, &#39;&#39;),
-                    &#34;password&#34;: db2_password,
-                    &#34;userName&#34;: db2_options[&#34;user_name&#34;],
-                },
-
                 &#34;DB2StorageDevice&#34;: {
-                    &#34;networkAgents&#34;: db2_options.get(&#34;network_agents&#34;, 1),
-                    &#34;softwareCompression&#34;: db2_options.get(&#34;software_compression&#34;, 0),
-                    # &#34;throttleNetworkBandwidth&#34;: db2_options.get(&#34;throttle_network_bandwidth&#34;, 500),
                     &#34;dataBackupStoragePolicy&#34;: {
-                        &#34;storagePolicyName&#34;: storage_policy
+                        &#34;storagePolicyId&#34;: 1
                     },
                     &#34;commandLineStoragePolicy&#34;: {
-                        &#34;storagePolicyName&#34;: storage_policy
+                        &#34;storagePolicyId&#34;: 1
                     },
                     &#34;logBackupStoragePolicy&#34;: {
-                        &#34;storagePolicyName&#34;: storage_policy
-                    },
-                    &#34;deDuplicationOptions&#34;: {
-                        &#34;generateSignature&#34;: db2_options.get(&#34;generate_signature&#34;, 1)
+                        &#34;storagePolicyId&#34;: 1
                     }
-                },
-                &#34;overrideDataPathsForCmdPolicy&#34;:
-                    db2_options.get(&#34;override_data_paths_for_cmd_policy&#34;, False)
+                }
             }
         }
     }
@@ -7338,7 +7985,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L420-L534" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L446-L560" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_informix_instance(self, informix_options):
     &#34;&#34;&#34;Adds new Informix Instance to given Client
@@ -7495,7 +8142,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L1539-L1628" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L1574-L1663" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_mysql_instance(self, instance_name, database_options):
     &#34;&#34;&#34;Adds new mysql Instance to given Client
@@ -7657,7 +8304,7 @@ Given storage policies do not exist in Commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L1630-L1718" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L1665-L1753" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_oracle_instance(self, instance_name, **oracle_options):
     &#34;&#34;&#34;Adds new oracle instance for the given client
@@ -7789,7 +8436,10 @@ lib_directory
 (str)
 &ndash; postgres lib location
 archive_log_directory (str)
-&ndash; postgres archive log location</p>
+&ndash; postgres archive log location
+credential_name
+(str)
+&ndash; PostgreSQL crdential name</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Instance class</p>
 <h2 id="raises">Raises</h2>
@@ -7797,12 +8447,12 @@ archive_log_directory (str)
 if None value in mysql options</p>
 <pre><code>if mysql instance with same name already exists
 
-if given storage policy does not exists in commcell
+if given storage policy does not exist in commcell
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L1311-L1368" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L1343-L1403" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_postgresql_instance(self, instance_name, **kwargs):
     &#34;&#34;&#34;Adds new postgresql instance to given client
@@ -7818,6 +8468,7 @@ if given storage policy does not exists in commcell
                                                binary_directory     (str)          -- postgres binary location
                                                lib_directory        (str)          -- postgres lib location
                                                archive_log_directory (str)         -- postgres archive log location
+                                               credential_name      (str)          -- PostgreSQL crdential name
         Returns:
             object - instance of the Instance class
 
@@ -7827,7 +8478,7 @@ if given storage policy does not exists in commcell
 
                 if mysql instance with same name already exists
 
-                if given storage policy does not exists in commcell
+                if given storage policy does not exist in commcell
     &#34;&#34;&#34;
 
     if self.has_instance(instance_name):
@@ -7835,7 +8486,9 @@ if given storage policy does not exists in commcell
             &#39;Instance&#39;, &#39;102&#39;, &#39;Instance &#34;{0}&#34; already exists.&#39;.format(
                 instance_name)
         )
-    password = b64encode(kwargs.get(&#34;postgres_password&#34;, &#34;&#34;).encode()).decode()
+    if not self._commcell_object.credentials.has_credential(kwargs.get(&#34;credential_name&#34;)):
+        self._commcell_object.credentials.add_postgres_database_creds(
+            kwargs.get(&#34;credential_name&#34;), kwargs.get(&#34;user_name&#34;), kwargs.get(&#34;password&#34;))
     request_json = {
         &#34;instanceProperties&#34;: {
             &#34;instance&#34;: {
@@ -7850,13 +8503,13 @@ if given storage policy does not exists in commcell
                 &#34;port&#34;: kwargs.get(&#34;port&#34;, &#34;5432&#34;),
                 &#34;ArchiveLogDirectory&#34;: kwargs.get(&#34;archive_log_directory&#34;, &#34;&#34;),
                 &#34;BinaryDirectory&#34;: kwargs.get(&#34;binary_directory&#34;, &#34;&#34;),
-                &#34;SAUser&#34;: {
-                    &#34;password&#34;: password,
-                    &#34;userName&#34;: kwargs.get(&#34;postgres_user_name&#34;, &#34;postgres&#34;)
-                },
+                &#34;SAUser&#34;: {},
                 &#34;logStoragePolicy&#34;: {
                     &#34;storagePolicyName&#34;: kwargs.get(&#34;storage_policy&#34;, &#34;&#34;)
                 },
+                &#34;credentialEntity&#34;: {
+                    &#34;credentialName&#34;: kwargs.get(&#34;credential_name&#34;, &#34;&#34;)
+                }
 
             }
         }
@@ -7924,7 +8577,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L1191-L1309" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L1223-L1341" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_salesforce_instance(
         self, instance_name, access_node,
@@ -8081,7 +8734,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L536-L596" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L562-L622" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_sap_hana_instance(self, **kwargs):
     &#34;&#34;&#34;Adds new sap hana instance to given client
@@ -8180,7 +8833,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L663-L783" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L689-L809" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_sybase_instance(self, sybase_options):
     &#34;&#34;&#34;
@@ -8328,7 +8981,7 @@ if no instance exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L598-L661" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L624-L687" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, instance_name):
     &#34;&#34;&#34;Deletes the instance specified by the instance_name from the agent.
@@ -8415,7 +9068,7 @@ if type of the instance name argument is not string or Int</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L337-L369" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L363-L395" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, instance_name):
     &#34;&#34;&#34;Returns a instance object of the specified instance name.
@@ -8469,7 +9122,7 @@ if type of the instance name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L319-L335" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L345-L361" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_instance(self, instance_name):
     &#34;&#34;&#34;Checks if a instance exists for the agent with the input instance name.
@@ -8498,7 +9151,7 @@ if type of the instance name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instance.py#L1720-L1722" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L1812-L1814" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the instances associated with the Agent of the selected Client.&#34;&#34;&#34;
@@ -8565,7 +9218,9 @@ setTimeout(() => input.focus(), 100);
 </script>
 <h1>Index</h1>
 <div class="toc">
-<ul></ul>
+<ul>
+<li><a href="#instance-attributes">Instance Attributes</a></li>
+</ul>
 </div>
 <ul id="index">
 <li><h3>Super-module</h3>
@@ -8578,13 +9233,16 @@ setTimeout(() => input.focus(), 100);
 <li>
 <h4><code><a title="cvpysdk.instance.Instance" href="#cvpysdk.instance.Instance">Instance</a></code></h4>
 <ul class="two-column">
+<li><code><a title="cvpysdk.instance.Instance.backupsets" href="#cvpysdk.instance.Instance.backupsets">backupsets</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.browse" href="#cvpysdk.instance.Instance.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.instance.Instance.credentials" href="#cvpysdk.instance.Instance.credentials">credentials</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.find" href="#cvpysdk.instance.Instance.find">find</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.instance_id" href="#cvpysdk.instance.Instance.instance_id">instance_id</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.instance_name" href="#cvpysdk.instance.Instance.instance_name">instance_name</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.name" href="#cvpysdk.instance.Instance.name">name</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.properties" href="#cvpysdk.instance.Instance.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.refresh" href="#cvpysdk.instance.Instance.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.instance.Instance.subclients" href="#cvpysdk.instance.Instance.subclients">subclients</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.update_properties" href="#cvpysdk.instance.Instance.update_properties">update_properties</a></code></li>
 </ul>
 </li>
@@ -8593,6 +9251,7 @@ setTimeout(() => input.focus(), 100);
 <ul class="">
 <li><code><a title="cvpysdk.instance.Instances.add_big_data_apps_instance" href="#cvpysdk.instance.Instances.add_big_data_apps_instance">add_big_data_apps_instance</a></code></li>
 <li><code><a title="cvpysdk.instance.Instances.add_cloud_storage_instance" href="#cvpysdk.instance.Instances.add_cloud_storage_instance">add_cloud_storage_instance</a></code></li>
+<li><code><a title="cvpysdk.instance.Instances.add_cosmosdb_instance" href="#cvpysdk.instance.Instances.add_cosmosdb_instance">add_cosmosdb_instance</a></code></li>
 <li><code><a title="cvpysdk.instance.Instances.add_db2_instance" href="#cvpysdk.instance.Instances.add_db2_instance">add_db2_instance</a></code></li>
 <li><code><a title="cvpysdk.instance.Instances.add_informix_instance" href="#cvpysdk.instance.Instances.add_informix_instance">add_informix_instance</a></code></li>
 <li><code><a title="cvpysdk.instance.Instances.add_mysql_instance" href="#cvpysdk.instance.Instances.add_mysql_instance">add_mysql_instance</a></code></li>

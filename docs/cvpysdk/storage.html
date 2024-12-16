@@ -272,7 +272,7 @@ Refresh the properties of this tape library.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1-L2949" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1-L2948" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -852,9 +852,9 @@ class MediaAgent(object):
             self._index_cache_enabled = mediaagent_list[&#39;mediaAgentProps&#39;][
                 &#39;mediaAgentIdxCacheProps&#39;][&#39;cacheEnabled&#39;]
 
-        if mediaagent_list[&#39;mediaAgentProps&#39;][&#39;mediaAgentIdxCacheProps&#39;][&#39;cachePath&#39;][&#39;path&#39;]:
-            self._index_cache = mediaagent_list[&#39;mediaAgentProps&#39;][&#39;mediaAgentIdxCacheProps&#39;
-                                                                   ][&#39;cachePath&#39;][&#39;path&#39;]
+        if mediaagent_list[&#39;mediaAgentProps&#39;][&#39;indexLogsCacheInfo&#39;][&#39;logsCachePath&#39;][&#39;path&#39;]:
+            self._index_cache = mediaagent_list[&#39;mediaAgentProps&#39;][&#39;indexLogsCacheInfo&#39;
+                                                                   ][&#39;logsCachePath&#39;][&#39;path&#39;]
 
         if mediaagent_list[&#39;powerManagementInfo&#39;][&#39;isPowerMgmtSupported&#39;]:
             self._is_power_mgmt_supported = mediaagent_list[&#39;powerManagementInfo&#39;][&#39;isPowerMgmtSupported&#39;]
@@ -2753,8 +2753,7 @@ class RPStores(object):
         self.refresh()
 
     def _get_rp_stores(self):
-        xml = &#39;&lt;?xml version=&#34;1.0&#34; encoding=&#34;UTF-8&#34;?&gt;&lt;EVGui_GetLibraryListWCReq libraryType=&#34;RPSTORE&#34;/&gt;&#39;
-        response = self._commcell.execute_qcommand(&#34;qoperation execute&#34;, xml)
+        flag, response = self._commcell._cvpysdk_object.make_request(&#39;GET&#39;, self._commcell._services[&#39;ALL_RPStores&#39;])
 
         try:
             if response.json().get(&#39;libraryList&#39;):
@@ -3250,7 +3249,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1161-L1411" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1161-L1411" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class DiskLibraries(Libraries):
     &#34;&#34;&#34;Class for getting all the disk libraries associated with the commcell.&#34;&#34;&#34;
@@ -3521,7 +3520,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1187-L1198" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1187-L1198" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_disk_libraries(self):
@@ -3605,7 +3604,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1200-L1322" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1200-L1322" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, library_name, media_agent, mount_path, username=&#34;&#34;, password=&#34;&#34;, servertype=0,
         saved_credential_name=&#34;&#34;, **kwargs):
@@ -3749,7 +3748,7 @@ if response is incorrect</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1324-L1380" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1324-L1380" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, library_name):
     &#34;&#34;&#34;deletes the specified library.
@@ -3830,7 +3829,7 @@ if type of the library name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1382-L1411" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1382-L1411" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, library_name, library_details=None):
     &#34;&#34;&#34;Returns a DiskLibrary object of the specified disk library name.
@@ -3903,7 +3902,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1415-L2462" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1415-L2462" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class DiskLibrary(object):
     &#34;&#34;&#34;Class for a specific disk library.&#34;&#34;&#34;
@@ -4962,7 +4961,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2315-L2319" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2315-L2319" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def advanced_library_properties(self):
@@ -4977,7 +4976,7 @@ def advanced_library_properties(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2215-L2218" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2215-L2218" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def free_space(self):
@@ -4991,7 +4990,7 @@ def free_space(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2304-L2307" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2304-L2307" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def library_id(self):
@@ -5005,7 +5004,7 @@ def library_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2299-L2302" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2299-L2302" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def library_name(self):
@@ -5019,7 +5018,7 @@ def library_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2309-L2313" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2309-L2313" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def library_properties(self):
@@ -5034,7 +5033,7 @@ def library_properties(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2331-L2334" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2331-L2334" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def media_agent(self):
@@ -5048,7 +5047,7 @@ def media_agent(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2287-L2292" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2287-L2292" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def media_agents_associated(self):
@@ -5064,7 +5063,7 @@ def media_agents_associated(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2321-L2324" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2321-L2324" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def mount_path(self):
@@ -5078,7 +5077,7 @@ def mount_path(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2220-L2223" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2220-L2223" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def mountpath_usage(self):
@@ -5092,7 +5091,7 @@ def mountpath_usage(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2294-L2297" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2294-L2297" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -5144,7 +5143,7 @@ Exception:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1626-L1698" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1626-L1698" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_cloud_mount_path(self, mount_path, media_agent, username, password, server_type):
     &#34;&#34;&#34; Adds a mount path to the cloud library
@@ -5253,7 +5252,7 @@ Exception:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1832-L1899" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1832-L1899" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_mount_path(self, mount_path, media_agent, username=&#39;&#39;, password=&#39;&#39;):
     &#34;&#34;&#34; Adds a mount path [local/remote] to the disk library
@@ -5353,7 +5352,7 @@ Exception:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1700-L1761" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1700-L1761" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_storage_accelerator_credential(self, mount_path, saved_credential=&#34;&#34;, reset=False):
     &#34;&#34;&#34; Add storage accelerator credential to the cloud mount path
@@ -5458,7 +5457,7 @@ mountpath_id (int)
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1953-L2013" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1953-L2013" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def change_device_access_type(self, mountpath_id, device_id, device_controller_id, media_agent_id,
                               device_access_type):
@@ -5544,7 +5543,7 @@ mountpath_id (int)
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2015-L2064" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2015-L2064" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def modify_cloud_access_type(self, mountpath_id, device_controller_id,
                               device_access_type, enabled=True):
@@ -5637,7 +5636,7 @@ Exception:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1457-L1554" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1457-L1554" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def move_mountpath(self, mountpath_id, source_device_path,
                    source_mediaagent_id, target_device_path, target_mediaagent_id,
@@ -5747,7 +5746,7 @@ Exception:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1827-L1830" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1827-L1830" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of this disk library.&#34;&#34;&#34;
@@ -5770,7 +5769,7 @@ max data to be consumed in MB</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1927-L1951" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1927-L1951" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_max_data_to_write_on_mount_path(self, mount_path, size):
     &#34;&#34;&#34;
@@ -5816,7 +5815,7 @@ if failed to update</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2257-L2285" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2257-L2285" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_mountpath_preferred_on_mediaagent(self, value):
     &#34;&#34;&#34;Sets select preferred mountPath according to mediaagent setting on the library.
@@ -5864,7 +5863,7 @@ reserve space to be set in MB</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1901-L1925" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1901-L1925" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_mountpath_reserve_space(self, mount_path, size):
     &#34;&#34;&#34;
@@ -5965,7 +5964,7 @@ Exception:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2341-L2462" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2341-L2462" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def share_mount_path(self, new_media_agent, new_mount_path, **kwargs):
     &#34;&#34;&#34;
@@ -6145,7 +6144,7 @@ mountpath_id (int)
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2067-L2156" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2067-L2156" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_device_controller(self, mountpath_id, device_id, device_controller_id, media_agent_id,
                              device_access_type, **kwargs):
@@ -6265,7 +6264,7 @@ Exception:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1556-L1624" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1556-L1624" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def validate_mountpath(self, mountpath_drive_id, media_agent):
 
@@ -6352,7 +6351,7 @@ Slot Id of the media on the library</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2159-L2213" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2159-L2213" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def verify_media(self, media_name, location_id):
     &#34;&#34;&#34;
@@ -6429,7 +6428,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1084-L1158" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1084-L1158" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Libraries(object):
     &#34;&#34;&#34; Class for libraries&#34;&#34;&#34;
@@ -6531,7 +6530,7 @@ if type of the library name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1138-L1154" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1138-L1154" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_library(self, library_name):
     &#34;&#34;&#34;Checks if a library exists in the commcell with the input library name.
@@ -6560,7 +6559,7 @@ if type of the library name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1156-L1158" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1156-L1158" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the disk libraries associated with the Commcell.&#34;&#34;&#34;
@@ -6595,7 +6594,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L458-L1081" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L458-L1081" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class MediaAgent(object):
     &#34;&#34;&#34;Class for a specific media agent.&#34;&#34;&#34;
@@ -6718,9 +6717,9 @@ default: None</p>
             self._index_cache_enabled = mediaagent_list[&#39;mediaAgentProps&#39;][
                 &#39;mediaAgentIdxCacheProps&#39;][&#39;cacheEnabled&#39;]
 
-        if mediaagent_list[&#39;mediaAgentProps&#39;][&#39;mediaAgentIdxCacheProps&#39;][&#39;cachePath&#39;][&#39;path&#39;]:
-            self._index_cache = mediaagent_list[&#39;mediaAgentProps&#39;][&#39;mediaAgentIdxCacheProps&#39;
-                                                                   ][&#39;cachePath&#39;][&#39;path&#39;]
+        if mediaagent_list[&#39;mediaAgentProps&#39;][&#39;indexLogsCacheInfo&#39;][&#39;logsCachePath&#39;][&#39;path&#39;]:
+            self._index_cache = mediaagent_list[&#39;mediaAgentProps&#39;][&#39;indexLogsCacheInfo&#39;
+                                                                   ][&#39;logsCachePath&#39;][&#39;path&#39;]
 
         if mediaagent_list[&#39;powerManagementInfo&#39;][&#39;isPowerMgmtSupported&#39;]:
             self._is_power_mgmt_supported = mediaagent_list[&#39;powerManagementInfo&#39;][&#39;isPowerMgmtSupported&#39;]
@@ -7241,7 +7240,7 @@ Returns :
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1059-L1077" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1059-L1077" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def current_power_status(self):
@@ -7270,7 +7269,7 @@ def current_power_status(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1049-L1052" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1049-L1052" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_cache_enabled(self):
@@ -7284,7 +7283,7 @@ def index_cache_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1044-L1047" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1044-L1047" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_cache_path(self):
@@ -7298,7 +7297,7 @@ def index_cache_path(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1034-L1037" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1034-L1037" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_online(self):
@@ -7312,7 +7311,7 @@ def is_online(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1054-L1057" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1054-L1057" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_power_management_enabled(self):
@@ -7326,7 +7325,7 @@ def is_power_management_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1029-L1032" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1029-L1032" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def media_agent_id(self):
@@ -7340,7 +7339,7 @@ def media_agent_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1024-L1027" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1024-L1027" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def media_agent_name(self):
@@ -7354,7 +7353,7 @@ def media_agent_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1019-L1022" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1019-L1022" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -7368,7 +7367,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1039-L1042" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1039-L1042" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def platform(self):
@@ -7401,7 +7400,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L732-L827" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L732-L827" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def change_index_cache(self, old_index_cache_path, new_index_cache_path):
     &#34;&#34;&#34;
@@ -7517,7 +7516,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L600-L628" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L600-L628" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_power_management(self, pseudo_client_name):
     &#34;&#34;&#34;
@@ -7570,7 +7569,7 @@ False
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L877-L920" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L877-L920" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def mark_for_maintenance(self, mark=False):
     &#34;&#34;&#34;
@@ -7632,7 +7631,7 @@ False
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L682-L697" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L682-L697" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def power_off(self, wait_till_stopped=True):
     &#34;&#34;&#34;
@@ -7666,7 +7665,7 @@ False
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L665-L680" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L665-L680" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def power_on(self, wait_till_online=True):
     &#34;&#34;&#34;
@@ -7694,7 +7693,7 @@ False
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L1079-L1081" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L1079-L1081" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the MediaAgent.&#34;&#34;&#34;
@@ -7724,7 +7723,7 @@ if operation performed successfully.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L972-L1017" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L972-L1017" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_concurrent_lan(self, enable=True):
     &#34;&#34;&#34;
@@ -7796,7 +7795,7 @@ if operation performed successfully.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L922-L970" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L922-L970" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_ransomware_protection(self, status):
     &#34;&#34;&#34;Enables / Disables the ransomware protection on Windows MediaAgent.
@@ -7870,7 +7869,7 @@ False
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L829-L874" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L829-L874" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_state(self, enable=True):
     &#34;&#34;&#34;
@@ -7944,7 +7943,7 @@ False
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L699-L730" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L699-L730" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def wait_for_power_status(self, expected_power_status, time_out_sec=600):
     &#34;&#34;&#34;
@@ -7998,7 +7997,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L229-L455" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L229-L455" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class MediaAgents(object):
     &#34;&#34;&#34;Class for getting all the media agents associated with the commcell.&#34;&#34;&#34;
@@ -8255,7 +8254,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L323-L347" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L323-L347" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_media_agents(self):
@@ -8314,7 +8313,7 @@ if no media agent exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L396-L451" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L396-L451" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, media_agent, force=False):
     &#34;&#34;&#34;Deletes the media agent from the commcell.
@@ -8393,7 +8392,7 @@ if type of the media agent name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L367-L394" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L367-L394" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, media_agent_name):
     &#34;&#34;&#34;Returns a MediaAgent object of the specified media agent name.
@@ -8442,7 +8441,7 @@ if type of the media agent name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L349-L365" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L349-L365" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_media_agent(self, media_agent_name):
     &#34;&#34;&#34;Checks if a media agent exists in the commcell with the input media agent name.
@@ -8471,7 +8470,7 @@ if type of the media agent name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L453-L455" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L453-L455" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the media agents associated with the Commcell.&#34;&#34;&#34;
@@ -8489,7 +8488,7 @@ if type of the media agent name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2576-L2588" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2575-L2587" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class RPStore(object):
     def __init__(self, commcell, rpstore_name, rpstore_id):
@@ -8513,7 +8512,7 @@ if type of the media agent name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2586-L2588" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2585-L2587" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def rpstore_id(self):
@@ -8526,7 +8525,7 @@ def rpstore_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2582-L2584" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2581-L2583" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def rpstore_name(self):
@@ -8550,7 +8549,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2465-L2573" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2465-L2572" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class RPStores(object):
     def __init__(self, commcell):
@@ -8567,8 +8566,7 @@ instance of the Commcell class</p>
         self.refresh()
 
     def _get_rp_stores(self):
-        xml = &#39;&lt;?xml version=&#34;1.0&#34; encoding=&#34;UTF-8&#34;?&gt;&lt;EVGui_GetLibraryListWCReq libraryType=&#34;RPSTORE&#34;/&gt;&#39;
-        response = self._commcell.execute_qcommand(&#34;qoperation execute&#34;, xml)
+        flag, response = self._commcell._cvpysdk_object.make_request(&#39;GET&#39;, self._commcell._services[&#39;ALL_RPStores&#39;])
 
         try:
             if response.json().get(&#39;libraryList&#39;):
@@ -8689,7 +8687,7 @@ Name of the media agent</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2493-L2537" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2492-L2536" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, name, path, storage, media_agent_name):
     &#34;&#34;&#34;
@@ -8752,7 +8750,7 @@ Name of the RPStore</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2553-L2569" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2552-L2568" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, rpstore_name):
     &#34;&#34;&#34;Fetches the given RPStore
@@ -8790,7 +8788,7 @@ Name of the RPStore</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2539-L2551" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2538-L2550" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_rp_store(self, rpstore_name):
     &#34;&#34;&#34;Validates if the given RPStore is present
@@ -8815,7 +8813,7 @@ Name of the RPStore</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2571-L2573" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2570-L2572" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the media agents associated with the Commcell.&#34;&#34;&#34;
@@ -8840,7 +8838,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2592-L2828" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2591-L2827" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class TapeLibraries(Libraries):
 
@@ -9106,7 +9104,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2786-L2828" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2785-L2827" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def configure_tape_library(self,tape_library_name, mediaagents):
     &#34;&#34;&#34;
@@ -9173,7 +9171,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2654-L2689" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2653-L2688" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, tape_library_name):
     &#34;&#34;&#34;
@@ -9231,7 +9229,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2756-L2784" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2755-L2783" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def detect_tape_library(self, mediaagents):
     &#34;&#34;&#34;
@@ -9282,7 +9280,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2632-L2652" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2631-L2651" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, tape_library_name):
     &#34;&#34;&#34;
@@ -9318,7 +9316,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2737-L2747" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2736-L2746" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def lock_mm_configuration(self, forceLock = False):
     &#34;&#34;&#34;
@@ -9341,7 +9339,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2749-L2753" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2748-L2752" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def unlock_mm_configuration(self):
     &#34;&#34;&#34;
@@ -9378,7 +9376,7 @@ tape_library_id (int) &ndash; tape library ID</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2832-L2949" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2831-L2948" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class TapeLibrary(object):
 
@@ -9507,7 +9505,7 @@ tape_library_id (int) &ndash; tape library ID</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2946-L2949" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2945-L2948" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def library_id(self):
@@ -9521,7 +9519,7 @@ def library_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2941-L2944" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2940-L2943" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def library_name(self):
@@ -9542,7 +9540,7 @@ def library_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2889-L2905" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2888-L2904" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_drive_list(self):
     &#34;&#34;&#34;
@@ -9571,7 +9569,7 @@ def library_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage.py#L2936-L2938" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage.py#L2935-L2937" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of this tape library.&#34;&#34;&#34;

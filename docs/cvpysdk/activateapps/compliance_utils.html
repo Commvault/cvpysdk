@@ -104,7 +104,7 @@ download_export()                   --  Method to download the exported items to
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L1-L861" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L1-L836" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -223,6 +223,7 @@ import copy
 import base64
 import os.path
 import random
+import requests
 
 from cvpysdk.exception import SDKException
 from cvpysdk.activateapps.constants import ComplianceConstants
@@ -241,100 +242,6 @@ class ComplianceSearchUtils():
         self._users = commcell.users
         self._export_sets = ExportSets(commcell)
         self._do_search_api = self._services[&#34;DO_COMPLIANCE_SEARCH&#34;]
-        self._do_search_json_req = \
-            {
-                &#34;mode&#34;: 2,
-                &#34;facetRequests&#34;: {},
-                &#34;advSearchGrp&#34;: {
-                    &#34;commonFilter&#34;: [
-                        {
-                            &#34;filter&#34;: {
-                                &#34;filters&#34;: [
-                                    {
-                                        &#34;field&#34;: &#34;CI_STATUS&#34;,
-                                        &#34;intraFieldOp&#34;: 0,
-                                        &#34;fieldValues&#34;: {
-                                            &#34;values&#34;: [
-                                                &#34;1&#34;
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    ],
-                    &#34;fileFilter&#34;: [
-                        {
-                            &#34;filter&#34;: {
-                                &#34;interFilterOP&#34;: 2,
-                                &#34;filters&#34;: [
-                                    {
-                                        &#34;field&#34;: &#34;CISTATE&#34;,
-                                        &#34;intraFieldOp&#34;: 0,
-                                        &#34;fieldValues&#34;: {
-                                            &#34;values&#34;: [
-                                                &#34;0&#34;,
-                                                &#34;1&#34;,
-                                                &#34;12&#34;,
-                                                &#34;13&#34;,
-                                                &#34;14&#34;,
-                                                &#34;15&#34;,
-                                                &#34;1014&#34;,
-                                                &#34;3333&#34;,
-                                                &#34;3334&#34;,
-                                                &#34;3335&#34;
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    ],
-                    &#34;cvSearchKeyword&#34;: {
-                        &#34;isExactWordsOptionSelected&#34;: False,
-                        &#34;keyword&#34;: None
-                    },
-                    &#34;galaxyFilter&#34;: [
-                        {
-                            &#34;applicationType&#34;: 0
-                        }
-                    ]
-                },
-                &#34;userInformation&#34;: {
-                    &#34;userGuid&#34;: None
-                },
-                &#34;listOfCIServer&#34;: [
-                    {
-                        &#34;cloudID&#34;: None
-                    }
-                ],
-                &#34;searchProcessingInfo&#34;: {
-                    &#34;resultOffset&#34;: 0,
-                    &#34;pageSize&#34;: 50,
-                    &#34;queryParams&#34;: [
-                        {
-                            &#34;param&#34;: &#34;SORT_STYLE&#34;,
-                            &#34;value&#34;: &#34;DESCENDING&#34;
-                        },
-                        {
-                            &#34;param&#34;: &#34;SORTFIELD&#34;,
-                            &#34;value&#34;: &#34;MODIFIEDTIME&#34;
-                        },
-                        {
-                            &#34;param&#34;: &#34;ENABLE_NEW_COMPLIANCE_SEARCH&#34;,
-                            &#34;value&#34;: &#34;true&#34;
-                        },
-                        {
-                            &#34;param&#34;: &#34;ENABLE_DEFAULT_VISIBLE_QUERY&#34;,
-                            &#34;value&#34;: &#34;true&#34;
-                        },
-                        {
-                            &#34;param&#34;: &#34;RESPONSE_FIELD_LIST&#34;,
-                            &#34;value&#34;: &#34;CLIENTID,CLIENTNAME,BACKUPTIME,SIZEINKB,MODIFIEDTIME,CONTENTID,CV_TURBO_GUID,AFILEID,AFILEOFFSET,COMMCELLNO,Url,FILE_NAME,FILE_FOLDER,APPTYPE,JOBID,CISTATE,DATE_DELETED,CV_OBJECT_GUID,PARENT_GUID,CUSTODIAN,OWNER,APPID&#34;
-                        }
-                    ]
-                }
-            }
 
     def _response_not_success(self, response):
         &#34;&#34;&#34;Helper method to raise exception when response is not 200 (ok)
@@ -349,15 +256,31 @@ class ComplianceSearchUtils():
             self._update_response_(
                 response.text))
 
-    def do_compliance_search(self, search_text, index_server_name):
+    def do_compliance_search(self, search_text, index_server_name=None,
+                             page_size=50, app_type=ComplianceConstants.AppTypes.FILE_SYSTEM):
         &#34;&#34;&#34;Method to run a compliance search with the search text provided
 
             Args:
                 search_text         (str)   -   Search text to be searched on the Compliance search
                 index_server_name   (str)   -   Index server name on which the search has to be executed
+                page_size           (int)   -   Search result page size value (To Fetch all HITS - 0)
+                                                Default: 50
+                app_type            (str)   -   ComplianceConstants.AppTypes Enum values
+                                                Default: FILE_SYSTEM
 
             Returns:
-                List of all the search result items with the metadata and SOLR fields
+                (list)  -   List of all the search result items with the metadata and SOLR fields
+                Example :
+                    [ {
+                        &#34;FileName&#34;: &lt;name&gt;,
+                        &#34;SizeKB&#34;: &lt;size&gt;...,
+                        &lt;name&gt;: &lt;key&gt;
+                    },
+                    {
+                        &#34;FileName&#34;: &lt;name&gt;,
+                        &#34;SizeKB&#34;: &lt;size&gt;...,
+                        &lt;name&gt;: &lt;key&gt;
+                    }... ]
 
             Raises:
                     SDKException:
@@ -365,16 +288,52 @@ class ComplianceSearchUtils():
 
         &#34;&#34;&#34;
         self._index_servers.refresh()
-        if not self._index_servers.has(index_server_name):
-            raise SDKException(&#39;IndexServers&#39;, &#39;102&#39;)
-        search_request = copy.deepcopy(self._do_search_json_req)
-        search_request[&#34;listOfCIServer&#34;][0][&#34;cloudID&#34;] = self._index_servers.get(index_server_name).cloud_id
+        search_request = copy.deepcopy(ComplianceConstants.COMPLIANCE_SEARCH_JSON)
+        if index_server_name:
+            if not self._index_servers.has(index_server_name):
+                raise SDKException(&#39;IndexServers&#39;, &#39;102&#39;)
+            search_request[&#34;listOfCIServer&#34;][0][&#34;cloudID&#34;] = self._index_servers.get(index_server_name).cloud_id
+        else:
+            del search_request[&#34;listOfCIServer&#34;]
         search_request[&#34;advSearchGrp&#34;][&#34;cvSearchKeyword&#34;][&#34;keyword&#34;] = search_text
         search_request[&#34;userInformation&#34;][&#34;userGuid&#34;] = self._users.get(self._commcell.commcell_username).user_guid
+        if app_type in ComplianceConstants.FILE_TYPES:
+            search_request[&#34;advSearchGrp&#34;][&#34;galaxyFilter&#34;][0][&#34;applicationType&#34;] = ComplianceConstants.FILE_TYPE
+            search_request[&#34;advSearchGrp&#34;][ComplianceConstants.FILE_FILTERS_KEY] = ComplianceConstants.FILE_FILTERS
+            custom_facet = copy.deepcopy(ComplianceConstants.FILE_FACET)
+            if app_type != ComplianceConstants.AppTypes.FILE_SYSTEM:
+                custom_facet = copy.deepcopy(ComplianceConstants.CUSTOM_FACET)
+                custom_facet[0][&#34;name&#34;] = ComplianceConstants.CUSTOM_FACETS_NAME[app_type]
+                if app_type == ComplianceConstants.AppTypes.TEAMS:
+                    search_request[&#34;searchProcessingInfo&#34;][&#34;queryParams&#34;].append(
+                        {
+                            &#34;param&#34;: &#34;RESPONSE_FIELD_LIST&#34;,
+                            &#34;value&#34;: ComplianceConstants.RESPONSE_FIELD_LIST
+                        },
+                    )
+                custom_facet[1][&#34;stringParameter&#34;][0][&#34;name&#34;] = ComplianceConstants.CUSTOM_FACETS[app_type]
+            search_request[&#34;facetRequests&#34;][ComplianceConstants.FACET_KEY] = custom_facet
+        elif app_type in ComplianceConstants.EMAIL_TYPES:
+            search_request[&#34;advSearchGrp&#34;][&#34;galaxyFilter&#34;][0][&#34;applicationType&#34;] = ComplianceConstants.EMAIL_TYPE
+            search_request[&#34;advSearchGrp&#34;][ComplianceConstants.EMAIL_FILTERS_KEY] = {
+                &#34;usermailbox&#34;: app_type == ComplianceConstants.AppTypes.EXCHANGE,
+                &#34;journalmailbox&#34;: app_type == ComplianceConstants.AppTypes.EXCHANGE_JOURNAL,
+                &#34;smtpmailbox&#34;: app_type == ComplianceConstants.AppTypes.EXCHANGE_JOURNAL
+            }
+        else:
+            raise SDKException(&#39;ComplianceSearch&#39;, &#39;107&#39;)
+        if page_size == 0:
+            flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._do_search_api, payload=search_request)
+            if flag and response.json() and &#34;totalHits&#34; in response.json().get(&#34;proccessingInfo&#34;):
+                page_size = max(response.json()[&#34;proccessingInfo&#34;][&#34;totalHits&#34;], 50)
+        search_request[&#34;searchProcessingInfo&#34;][&#34;pageSize&#34;] = page_size
         flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._do_search_api, payload=search_request)
         if flag:
-            if response.json() and &#34;searchResult&#34; in response.json():
-                return response.json()[&#34;searchResult&#34;][&#34;resultItem&#34;]
+            if response.json():
+                if &#34;searchResult&#34; in response.json():
+                    if &#34;resultItem&#34; in response.json()[&#34;searchResult&#34;]:
+                        return response.json()[&#34;searchResult&#34;][&#34;resultItem&#34;]
+                return []
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             self._response_not_success(response)
@@ -409,8 +368,6 @@ class ExportSets():
                 for container in containers:
                     self._all_export_set.update(
                         {container[&#34;containerName&#34;]: container})
-            else:
-                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             self._response_not_success(response)
 
@@ -485,7 +442,7 @@ class ExportSets():
             flag, response = self._cvpysdk_object.make_request(
                 method=&#34;POST&#34;, url=self._add_export_set_api, payload=add_export_set_json_req)
             if flag:
-                if response.json() and &#34;containers&#34; in response.json():
+                if response.json() and &#34;container&#34; in response.json():
                     self.refresh()
                     return self.get(export_set_name=export_set_name)
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -526,7 +483,7 @@ class ExportSets():
                 export_set_name (str)   -   Export set name to be deleted
 
             Returns:
-                Returns None if delete successfully else raises error
+                Returns True if delete successfully else raises error
 
             Raises:
                 SDKException:
@@ -541,8 +498,8 @@ class ExportSets():
         if flag:
             if response.json() and &#34;errList&#34; in response.json() and len(response.json()[&#34;errList&#34;]) == 0:
                 self.refresh()
-        else:
-            self._response_not_success(response)
+                return True
+        self._response_not_success(response)
 
 
 class ExportSet():
@@ -598,13 +555,15 @@ class ExportSet():
             {
                 &#34;complianceData&#34;: {
                     &#34;mode&#34;: 2,
-                    &#34;restoreType&#34;: 17,
+                    &#34;restoreType&#34;: 2,
                     &#34;downLoadDesc&#34;: None,
                     &#34;destContainer&#34;: None,
                     &#34;originatingContainer&#34;: {
                         &#34;containerOwnerType&#34;: 1
                     },
-                    &#34;options&#34;: {}
+                    &#34;options&#34;: {
+                        &#34;zipEML&#34;: True,
+                        &#34;retentionInDays&#34;: 30}
                 },
                 &#34;onlineData&#34;: {
                     &#34;downloadStatus&#34;: 0
@@ -613,10 +572,11 @@ class ExportSet():
                     &#34;resultItem&#34;: None
                 }
             }
-        self._delete_export_api = self._services[&#39;ADD_EXPORT_SET&#39;]
+        self._delete_export_api = self._services[&#39;GET_EXPORTS&#39;]
         self._delete_export_json_req = \
             {
                 &#34;operationType&#34;: 2,
+                &#34;container&#34;: None,
                 &#34;downloadItems&#34;: {
                     &#34;items&#34;: None
                 },
@@ -668,7 +628,7 @@ class ExportSet():
                                                         Default : Add (2)
 
             Returns:
-                Returns None if share worked fine else raises an Exception
+                Returns True if share worked fine else raises an Exception
 
         &#34;&#34;&#34;
         if isinstance(permissions, str):
@@ -700,27 +660,24 @@ class ExportSet():
             share_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;] = [user_details]
             if permissions is None:
                 share_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;properties&#39;][&#39;permissions&#39;] = []
-                permissions = [&#34;View&#34;, &#34;Download&#34;]
-                if mode == 3:
-                    permissions = list(ComplianceConstants.PERMISSIONS.keys())
-            if permissions is not None:
-                if mode == 3:
-                    share_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;properties&#39;][&#39;permissions&#39;] = []
-                for permission in permissions:
-                    try:
-                        share_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;properties&#39;][&#39;permissions&#39;].append(
-                            ComplianceConstants.PERMISSIONS[permission]
-                        )
-                    except KeyError:
-                        raise SDKException(&#39;ComplianceSearch&#39;, &#39;102&#39;)
+                permissions = [[&#34;View&#34;, &#34;Download&#34;], list(ComplianceConstants.PERMISSIONS.keys())][mode//3]
+            if mode == 3:
+                share_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;properties&#39;][&#39;permissions&#39;] = []
+            for permission in permissions:
+                try:
+                    share_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;properties&#39;][&#39;permissions&#39;].append(
+                        ComplianceConstants.PERMISSIONS[permission]
+                    )
+                except KeyError:
+                    raise SDKException(&#39;ComplianceSearch&#39;, &#39;102&#39;)
         share_json[&#39;entityAssociated&#39;][&#39;entity&#39;][0][&#39;downloadSetId&#39;] = self.export_set_id
         flag, response = self._cvpysdk_object.make_request(&#34;POST&#34;, self._share_export_set_api, share_json)
         if flag:
             if response.json() and &#34;response&#34; in response.json():
                 if response.json()[&#39;response&#39;][0][&#39;errorCode&#39;] == 0:
                     self.refresh()
-        else:
-            self._response_not_success(response)
+                    return True
+        self._response_not_success(response)
 
     def has(self, export_name):
         &#34;&#34;&#34;Method to check if the export exists or not
@@ -755,7 +712,7 @@ class ExportSet():
                 export_name (str)   -   Export name to be deleted
 
             Returns:
-                Returns None if delete successfully else raises error
+                Returns True if delete successfully else raises error
 
             Raises:
                 SDKException:
@@ -766,21 +723,24 @@ class ExportSet():
             raise SDKException(&#34;ComplianceSearch&#34;, &#34;103&#34;)
         delete_json = copy.deepcopy(self._delete_export_json_req)
         delete_json[&#34;downloadItems&#34;][&#34;items&#34;] = [self._all_exports[export_name]]
+        delete_json[&#34;container&#34;] = self.properties
         flag, response = self._cvpysdk_object.make_request(&#34;POST&#34;, self._delete_export_api, delete_json)
         if flag:
             if response.json() and &#34;errList&#34; in response.json() and len(response.json()[&#34;errList&#34;]) != 0:
                 if response.json()[&#34;errList&#34;][0][&#34;errorCode&#34;] != 0:
                     raise SDKException(&#34;ComplianceSearch&#34;, &#34;104&#34;,
                                        response.json()[&#34;errList&#34;][0].get(&#34;errLogMessage&#34;))
-        else:
-            self._response_not_success(response)
+            return True
+        self._response_not_success(response)
 
-    def export_items_to_set(self, export_name, export_items):
+    def export_items_to_set(self, export_name, export_items, export_type=ComplianceConstants.ExportTypes.CAB):
         &#34;&#34;&#34;Method to export items/documents to the export set
 
             Args:
                 export_name     (str)   -   Export name for the exported items
                 export_items    (list)  -   List of search result items which needs to be export
+                export_type     (str)   -   ComplianceConstants.ExportTypes Enum values
+                                            Default: CAB
 
             Returns:
                 Returns the restore job ID for the export operation
@@ -790,7 +750,10 @@ class ExportSet():
                     Response was not success
 
         &#34;&#34;&#34;
+        if export_type not in ComplianceConstants.RESTORE_TYPE:
+            raise SDKException(&#39;ComplianceSearch&#39;, &#39;108&#39;)
         export_items_json_req = copy.deepcopy(self._export_items_json_req)
+        export_items_json_req[&#39;complianceData&#39;][&#39;restoreType&#39;] = ComplianceConstants.RESTORE_TYPE[export_type]
         export_items_json_req[&#39;complianceData&#39;][&#39;downLoadDesc&#39;] = export_name
         export_items_json_req[&#39;complianceData&#39;][&#39;destContainer&#39;] = self.properties
         export_items_json_req[&#39;listOfItems&#39;][&#39;resultItem&#39;] = export_items
@@ -936,6 +899,10 @@ class Export():
                     {
                         &#34;name&#34;: self._export_set_properties[&#39;downLoadID&#39;],
                         &#34;id&#34;: 2
+                    },
+                    {
+                        &#34;name&#34;: &#34;zip&#34;,
+                        &#34;id&#34;: 3
                     }
                 ]
             }
@@ -960,7 +927,15 @@ class Export():
             if response.json() and &#34;fileContent&#34; in response.json():
                 file_content = response.json()[&#39;fileContent&#39;]
                 download_file = os.path.join(download_folder, file_content[&#39;fileName&#39;])
-                file_data = base64.b64decode(file_content[&#39;data&#39;])
+                if &#39;cloudUrl&#39; in response.json():
+                    url = response.json()[&#39;cloudUrl&#39;]
+                    cloud_file = requests.get(url)
+                    if cloud_file.status_code == 200:
+                        file_data = cloud_file.content
+                    else:
+                        raise SDKException(&#39;ComplianceSearch&#39;, &#39;109&#39;)
+                else:
+                    file_data = base64.b64decode(file_content[&#39;data&#39;])
                 with open(download_file, &#34;wb&#34;) as f:
                     f.write(file_data)
                 return download_file
@@ -988,7 +963,7 @@ class Export():
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L123-L272" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L124-L231" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ComplianceSearchUtils():
     &#34;&#34;&#34;Class for compliance search related operations support&#34;&#34;&#34;
@@ -1003,100 +978,6 @@ class Export():
         self._users = commcell.users
         self._export_sets = ExportSets(commcell)
         self._do_search_api = self._services[&#34;DO_COMPLIANCE_SEARCH&#34;]
-        self._do_search_json_req = \
-            {
-                &#34;mode&#34;: 2,
-                &#34;facetRequests&#34;: {},
-                &#34;advSearchGrp&#34;: {
-                    &#34;commonFilter&#34;: [
-                        {
-                            &#34;filter&#34;: {
-                                &#34;filters&#34;: [
-                                    {
-                                        &#34;field&#34;: &#34;CI_STATUS&#34;,
-                                        &#34;intraFieldOp&#34;: 0,
-                                        &#34;fieldValues&#34;: {
-                                            &#34;values&#34;: [
-                                                &#34;1&#34;
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    ],
-                    &#34;fileFilter&#34;: [
-                        {
-                            &#34;filter&#34;: {
-                                &#34;interFilterOP&#34;: 2,
-                                &#34;filters&#34;: [
-                                    {
-                                        &#34;field&#34;: &#34;CISTATE&#34;,
-                                        &#34;intraFieldOp&#34;: 0,
-                                        &#34;fieldValues&#34;: {
-                                            &#34;values&#34;: [
-                                                &#34;0&#34;,
-                                                &#34;1&#34;,
-                                                &#34;12&#34;,
-                                                &#34;13&#34;,
-                                                &#34;14&#34;,
-                                                &#34;15&#34;,
-                                                &#34;1014&#34;,
-                                                &#34;3333&#34;,
-                                                &#34;3334&#34;,
-                                                &#34;3335&#34;
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    ],
-                    &#34;cvSearchKeyword&#34;: {
-                        &#34;isExactWordsOptionSelected&#34;: False,
-                        &#34;keyword&#34;: None
-                    },
-                    &#34;galaxyFilter&#34;: [
-                        {
-                            &#34;applicationType&#34;: 0
-                        }
-                    ]
-                },
-                &#34;userInformation&#34;: {
-                    &#34;userGuid&#34;: None
-                },
-                &#34;listOfCIServer&#34;: [
-                    {
-                        &#34;cloudID&#34;: None
-                    }
-                ],
-                &#34;searchProcessingInfo&#34;: {
-                    &#34;resultOffset&#34;: 0,
-                    &#34;pageSize&#34;: 50,
-                    &#34;queryParams&#34;: [
-                        {
-                            &#34;param&#34;: &#34;SORT_STYLE&#34;,
-                            &#34;value&#34;: &#34;DESCENDING&#34;
-                        },
-                        {
-                            &#34;param&#34;: &#34;SORTFIELD&#34;,
-                            &#34;value&#34;: &#34;MODIFIEDTIME&#34;
-                        },
-                        {
-                            &#34;param&#34;: &#34;ENABLE_NEW_COMPLIANCE_SEARCH&#34;,
-                            &#34;value&#34;: &#34;true&#34;
-                        },
-                        {
-                            &#34;param&#34;: &#34;ENABLE_DEFAULT_VISIBLE_QUERY&#34;,
-                            &#34;value&#34;: &#34;true&#34;
-                        },
-                        {
-                            &#34;param&#34;: &#34;RESPONSE_FIELD_LIST&#34;,
-                            &#34;value&#34;: &#34;CLIENTID,CLIENTNAME,BACKUPTIME,SIZEINKB,MODIFIEDTIME,CONTENTID,CV_TURBO_GUID,AFILEID,AFILEOFFSET,COMMCELLNO,Url,FILE_NAME,FILE_FOLDER,APPTYPE,JOBID,CISTATE,DATE_DELETED,CV_OBJECT_GUID,PARENT_GUID,CUSTODIAN,OWNER,APPID&#34;
-                        }
-                    ]
-                }
-            }
 
     def _response_not_success(self, response):
         &#34;&#34;&#34;Helper method to raise exception when response is not 200 (ok)
@@ -1111,15 +992,31 @@ class Export():
             self._update_response_(
                 response.text))
 
-    def do_compliance_search(self, search_text, index_server_name):
+    def do_compliance_search(self, search_text, index_server_name=None,
+                             page_size=50, app_type=ComplianceConstants.AppTypes.FILE_SYSTEM):
         &#34;&#34;&#34;Method to run a compliance search with the search text provided
 
             Args:
                 search_text         (str)   -   Search text to be searched on the Compliance search
                 index_server_name   (str)   -   Index server name on which the search has to be executed
+                page_size           (int)   -   Search result page size value (To Fetch all HITS - 0)
+                                                Default: 50
+                app_type            (str)   -   ComplianceConstants.AppTypes Enum values
+                                                Default: FILE_SYSTEM
 
             Returns:
-                List of all the search result items with the metadata and SOLR fields
+                (list)  -   List of all the search result items with the metadata and SOLR fields
+                Example :
+                    [ {
+                        &#34;FileName&#34;: &lt;name&gt;,
+                        &#34;SizeKB&#34;: &lt;size&gt;...,
+                        &lt;name&gt;: &lt;key&gt;
+                    },
+                    {
+                        &#34;FileName&#34;: &lt;name&gt;,
+                        &#34;SizeKB&#34;: &lt;size&gt;...,
+                        &lt;name&gt;: &lt;key&gt;
+                    }... ]
 
             Raises:
                     SDKException:
@@ -1127,16 +1024,52 @@ class Export():
 
         &#34;&#34;&#34;
         self._index_servers.refresh()
-        if not self._index_servers.has(index_server_name):
-            raise SDKException(&#39;IndexServers&#39;, &#39;102&#39;)
-        search_request = copy.deepcopy(self._do_search_json_req)
-        search_request[&#34;listOfCIServer&#34;][0][&#34;cloudID&#34;] = self._index_servers.get(index_server_name).cloud_id
+        search_request = copy.deepcopy(ComplianceConstants.COMPLIANCE_SEARCH_JSON)
+        if index_server_name:
+            if not self._index_servers.has(index_server_name):
+                raise SDKException(&#39;IndexServers&#39;, &#39;102&#39;)
+            search_request[&#34;listOfCIServer&#34;][0][&#34;cloudID&#34;] = self._index_servers.get(index_server_name).cloud_id
+        else:
+            del search_request[&#34;listOfCIServer&#34;]
         search_request[&#34;advSearchGrp&#34;][&#34;cvSearchKeyword&#34;][&#34;keyword&#34;] = search_text
         search_request[&#34;userInformation&#34;][&#34;userGuid&#34;] = self._users.get(self._commcell.commcell_username).user_guid
+        if app_type in ComplianceConstants.FILE_TYPES:
+            search_request[&#34;advSearchGrp&#34;][&#34;galaxyFilter&#34;][0][&#34;applicationType&#34;] = ComplianceConstants.FILE_TYPE
+            search_request[&#34;advSearchGrp&#34;][ComplianceConstants.FILE_FILTERS_KEY] = ComplianceConstants.FILE_FILTERS
+            custom_facet = copy.deepcopy(ComplianceConstants.FILE_FACET)
+            if app_type != ComplianceConstants.AppTypes.FILE_SYSTEM:
+                custom_facet = copy.deepcopy(ComplianceConstants.CUSTOM_FACET)
+                custom_facet[0][&#34;name&#34;] = ComplianceConstants.CUSTOM_FACETS_NAME[app_type]
+                if app_type == ComplianceConstants.AppTypes.TEAMS:
+                    search_request[&#34;searchProcessingInfo&#34;][&#34;queryParams&#34;].append(
+                        {
+                            &#34;param&#34;: &#34;RESPONSE_FIELD_LIST&#34;,
+                            &#34;value&#34;: ComplianceConstants.RESPONSE_FIELD_LIST
+                        },
+                    )
+                custom_facet[1][&#34;stringParameter&#34;][0][&#34;name&#34;] = ComplianceConstants.CUSTOM_FACETS[app_type]
+            search_request[&#34;facetRequests&#34;][ComplianceConstants.FACET_KEY] = custom_facet
+        elif app_type in ComplianceConstants.EMAIL_TYPES:
+            search_request[&#34;advSearchGrp&#34;][&#34;galaxyFilter&#34;][0][&#34;applicationType&#34;] = ComplianceConstants.EMAIL_TYPE
+            search_request[&#34;advSearchGrp&#34;][ComplianceConstants.EMAIL_FILTERS_KEY] = {
+                &#34;usermailbox&#34;: app_type == ComplianceConstants.AppTypes.EXCHANGE,
+                &#34;journalmailbox&#34;: app_type == ComplianceConstants.AppTypes.EXCHANGE_JOURNAL,
+                &#34;smtpmailbox&#34;: app_type == ComplianceConstants.AppTypes.EXCHANGE_JOURNAL
+            }
+        else:
+            raise SDKException(&#39;ComplianceSearch&#39;, &#39;107&#39;)
+        if page_size == 0:
+            flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._do_search_api, payload=search_request)
+            if flag and response.json() and &#34;totalHits&#34; in response.json().get(&#34;proccessingInfo&#34;):
+                page_size = max(response.json()[&#34;proccessingInfo&#34;][&#34;totalHits&#34;], 50)
+        search_request[&#34;searchProcessingInfo&#34;][&#34;pageSize&#34;] = page_size
         flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._do_search_api, payload=search_request)
         if flag:
-            if response.json() and &#34;searchResult&#34; in response.json():
-                return response.json()[&#34;searchResult&#34;][&#34;resultItem&#34;]
+            if response.json():
+                if &#34;searchResult&#34; in response.json():
+                    if &#34;resultItem&#34; in response.json()[&#34;searchResult&#34;]:
+                        return response.json()[&#34;searchResult&#34;][&#34;resultItem&#34;]
+                return []
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             self._response_not_success(response)</code></pre>
@@ -1144,7 +1077,7 @@ class Export():
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.activateapps.compliance_utils.ComplianceSearchUtils.do_compliance_search"><code class="name flex">
-<span>def <span class="ident">do_compliance_search</span></span>(<span>self, search_text, index_server_name)</span>
+<span>def <span class="ident">do_compliance_search</span></span>(<span>self, search_text, index_server_name=None, page_size=50, app_type=AppTypes.FILE_SYSTEM)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Method to run a compliance search with the search text provided</p>
@@ -1156,26 +1089,65 @@ Search text to be searched on the Compliance search
 index_server_name
 (str)
 -
-Index server name on which the search has to be executed</p>
+Index server name on which the search has to be executed
+page_size
+(int)
+-
+Search result page size value (To Fetch all HITS - 0)
+Default: 50
+app_type
+(str)
+-
+ComplianceConstants.AppTypes Enum values
+Default: FILE_SYSTEM</p>
 <h2 id="returns">Returns</h2>
-<p>List of all the search result items with the metadata and SOLR fields</p>
+<p>(list)
+-
+List of all the search result items with the metadata and SOLR fields
+Example :
+[ {
+"FileName": <name>,
+"SizeKB": <size>&hellip;,
+<name>: <key>
+},
+{
+"FileName": <name>,
+"SizeKB": <size>&hellip;,
+<name>: <key>
+}&hellip; ]</p>
 <h2 id="raises">Raises</h2>
 <p>SDKException:
 Response was not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L244-L272" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L151-L231" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def do_compliance_search(self, search_text, index_server_name):
+<pre><code class="python">def do_compliance_search(self, search_text, index_server_name=None,
+                         page_size=50, app_type=ComplianceConstants.AppTypes.FILE_SYSTEM):
     &#34;&#34;&#34;Method to run a compliance search with the search text provided
 
         Args:
             search_text         (str)   -   Search text to be searched on the Compliance search
             index_server_name   (str)   -   Index server name on which the search has to be executed
+            page_size           (int)   -   Search result page size value (To Fetch all HITS - 0)
+                                            Default: 50
+            app_type            (str)   -   ComplianceConstants.AppTypes Enum values
+                                            Default: FILE_SYSTEM
 
         Returns:
-            List of all the search result items with the metadata and SOLR fields
+            (list)  -   List of all the search result items with the metadata and SOLR fields
+            Example :
+                [ {
+                    &#34;FileName&#34;: &lt;name&gt;,
+                    &#34;SizeKB&#34;: &lt;size&gt;...,
+                    &lt;name&gt;: &lt;key&gt;
+                },
+                {
+                    &#34;FileName&#34;: &lt;name&gt;,
+                    &#34;SizeKB&#34;: &lt;size&gt;...,
+                    &lt;name&gt;: &lt;key&gt;
+                }... ]
 
         Raises:
                 SDKException:
@@ -1183,16 +1155,52 @@ Response was not success</p></div>
 
     &#34;&#34;&#34;
     self._index_servers.refresh()
-    if not self._index_servers.has(index_server_name):
-        raise SDKException(&#39;IndexServers&#39;, &#39;102&#39;)
-    search_request = copy.deepcopy(self._do_search_json_req)
-    search_request[&#34;listOfCIServer&#34;][0][&#34;cloudID&#34;] = self._index_servers.get(index_server_name).cloud_id
+    search_request = copy.deepcopy(ComplianceConstants.COMPLIANCE_SEARCH_JSON)
+    if index_server_name:
+        if not self._index_servers.has(index_server_name):
+            raise SDKException(&#39;IndexServers&#39;, &#39;102&#39;)
+        search_request[&#34;listOfCIServer&#34;][0][&#34;cloudID&#34;] = self._index_servers.get(index_server_name).cloud_id
+    else:
+        del search_request[&#34;listOfCIServer&#34;]
     search_request[&#34;advSearchGrp&#34;][&#34;cvSearchKeyword&#34;][&#34;keyword&#34;] = search_text
     search_request[&#34;userInformation&#34;][&#34;userGuid&#34;] = self._users.get(self._commcell.commcell_username).user_guid
+    if app_type in ComplianceConstants.FILE_TYPES:
+        search_request[&#34;advSearchGrp&#34;][&#34;galaxyFilter&#34;][0][&#34;applicationType&#34;] = ComplianceConstants.FILE_TYPE
+        search_request[&#34;advSearchGrp&#34;][ComplianceConstants.FILE_FILTERS_KEY] = ComplianceConstants.FILE_FILTERS
+        custom_facet = copy.deepcopy(ComplianceConstants.FILE_FACET)
+        if app_type != ComplianceConstants.AppTypes.FILE_SYSTEM:
+            custom_facet = copy.deepcopy(ComplianceConstants.CUSTOM_FACET)
+            custom_facet[0][&#34;name&#34;] = ComplianceConstants.CUSTOM_FACETS_NAME[app_type]
+            if app_type == ComplianceConstants.AppTypes.TEAMS:
+                search_request[&#34;searchProcessingInfo&#34;][&#34;queryParams&#34;].append(
+                    {
+                        &#34;param&#34;: &#34;RESPONSE_FIELD_LIST&#34;,
+                        &#34;value&#34;: ComplianceConstants.RESPONSE_FIELD_LIST
+                    },
+                )
+            custom_facet[1][&#34;stringParameter&#34;][0][&#34;name&#34;] = ComplianceConstants.CUSTOM_FACETS[app_type]
+        search_request[&#34;facetRequests&#34;][ComplianceConstants.FACET_KEY] = custom_facet
+    elif app_type in ComplianceConstants.EMAIL_TYPES:
+        search_request[&#34;advSearchGrp&#34;][&#34;galaxyFilter&#34;][0][&#34;applicationType&#34;] = ComplianceConstants.EMAIL_TYPE
+        search_request[&#34;advSearchGrp&#34;][ComplianceConstants.EMAIL_FILTERS_KEY] = {
+            &#34;usermailbox&#34;: app_type == ComplianceConstants.AppTypes.EXCHANGE,
+            &#34;journalmailbox&#34;: app_type == ComplianceConstants.AppTypes.EXCHANGE_JOURNAL,
+            &#34;smtpmailbox&#34;: app_type == ComplianceConstants.AppTypes.EXCHANGE_JOURNAL
+        }
+    else:
+        raise SDKException(&#39;ComplianceSearch&#39;, &#39;107&#39;)
+    if page_size == 0:
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._do_search_api, payload=search_request)
+        if flag and response.json() and &#34;totalHits&#34; in response.json().get(&#34;proccessingInfo&#34;):
+            page_size = max(response.json()[&#34;proccessingInfo&#34;][&#34;totalHits&#34;], 50)
+    search_request[&#34;searchProcessingInfo&#34;][&#34;pageSize&#34;] = page_size
     flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._do_search_api, payload=search_request)
     if flag:
-        if response.json() and &#34;searchResult&#34; in response.json():
-            return response.json()[&#34;searchResult&#34;][&#34;resultItem&#34;]
+        if response.json():
+            if &#34;searchResult&#34; in response.json():
+                if &#34;resultItem&#34; in response.json()[&#34;searchResult&#34;]:
+                    return response.json()[&#34;searchResult&#34;][&#34;resultItem&#34;]
+            return []
         raise SDKException(&#39;Response&#39;, &#39;102&#39;)
     else:
         self._response_not_success(response)</code></pre>
@@ -1210,7 +1218,7 @@ Response was not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L787-L861" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L750-L836" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Export():
     &#34;&#34;&#34;Class for an instance of a single Export of the export set&#34;&#34;&#34;
@@ -1256,6 +1264,10 @@ Response was not success</p></div>
                     {
                         &#34;name&#34;: self._export_set_properties[&#39;downLoadID&#39;],
                         &#34;id&#34;: 2
+                    },
+                    {
+                        &#34;name&#34;: &#34;zip&#34;,
+                        &#34;id&#34;: 3
                     }
                 ]
             }
@@ -1280,7 +1292,15 @@ Response was not success</p></div>
             if response.json() and &#34;fileContent&#34; in response.json():
                 file_content = response.json()[&#39;fileContent&#39;]
                 download_file = os.path.join(download_folder, file_content[&#39;fileName&#39;])
-                file_data = base64.b64decode(file_content[&#39;data&#39;])
+                if &#39;cloudUrl&#39; in response.json():
+                    url = response.json()[&#39;cloudUrl&#39;]
+                    cloud_file = requests.get(url)
+                    if cloud_file.status_code == 200:
+                        file_data = cloud_file.content
+                    else:
+                        raise SDKException(&#39;ComplianceSearch&#39;, &#39;109&#39;)
+                else:
+                    file_data = base64.b64decode(file_content[&#39;data&#39;])
                 with open(download_file, &#34;wb&#34;) as f:
                     f.write(file_data)
                 return download_file
@@ -1308,7 +1328,7 @@ Response was not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L835-L861" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L802-L836" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def download_export(self, download_folder):
     &#34;&#34;&#34;Method to download the exported items to a zip file
@@ -1330,7 +1350,15 @@ Response was not success</p></div>
         if response.json() and &#34;fileContent&#34; in response.json():
             file_content = response.json()[&#39;fileContent&#39;]
             download_file = os.path.join(download_folder, file_content[&#39;fileName&#39;])
-            file_data = base64.b64decode(file_content[&#39;data&#39;])
+            if &#39;cloudUrl&#39; in response.json():
+                url = response.json()[&#39;cloudUrl&#39;]
+                cloud_file = requests.get(url)
+                if cloud_file.status_code == 200:
+                    file_data = cloud_file.content
+                else:
+                    raise SDKException(&#39;ComplianceSearch&#39;, &#39;109&#39;)
+            else:
+                file_data = base64.b64decode(file_content[&#39;data&#39;])
             with open(download_file, &#34;wb&#34;) as f:
                 f.write(file_data)
             return download_file
@@ -1347,7 +1375,7 @@ Response was not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L816-L833" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L779-L800" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Method to refresh the properties of the class Export&#34;&#34;&#34;
@@ -1364,6 +1392,10 @@ Response was not success</p></div>
                 {
                     &#34;name&#34;: self._export_set_properties[&#39;downLoadID&#39;],
                     &#34;id&#34;: 2
+                },
+                {
+                    &#34;name&#34;: &#34;zip&#34;,
+                    &#34;id&#34;: 3
                 }
             ]
         }</code></pre>
@@ -1381,7 +1413,7 @@ Response was not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L440-L784" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L397-L747" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ExportSet():
     &#34;&#34;&#34;Class for an instance of a single Export set of the commcell&#34;&#34;&#34;
@@ -1436,13 +1468,15 @@ Response was not success</p></div>
             {
                 &#34;complianceData&#34;: {
                     &#34;mode&#34;: 2,
-                    &#34;restoreType&#34;: 17,
+                    &#34;restoreType&#34;: 2,
                     &#34;downLoadDesc&#34;: None,
                     &#34;destContainer&#34;: None,
                     &#34;originatingContainer&#34;: {
                         &#34;containerOwnerType&#34;: 1
                     },
-                    &#34;options&#34;: {}
+                    &#34;options&#34;: {
+                        &#34;zipEML&#34;: True,
+                        &#34;retentionInDays&#34;: 30}
                 },
                 &#34;onlineData&#34;: {
                     &#34;downloadStatus&#34;: 0
@@ -1451,10 +1485,11 @@ Response was not success</p></div>
                     &#34;resultItem&#34;: None
                 }
             }
-        self._delete_export_api = self._services[&#39;ADD_EXPORT_SET&#39;]
+        self._delete_export_api = self._services[&#39;GET_EXPORTS&#39;]
         self._delete_export_json_req = \
             {
                 &#34;operationType&#34;: 2,
+                &#34;container&#34;: None,
                 &#34;downloadItems&#34;: {
                     &#34;items&#34;: None
                 },
@@ -1506,7 +1541,7 @@ Response was not success</p></div>
                                                         Default : Add (2)
 
             Returns:
-                Returns None if share worked fine else raises an Exception
+                Returns True if share worked fine else raises an Exception
 
         &#34;&#34;&#34;
         if isinstance(permissions, str):
@@ -1538,27 +1573,24 @@ Response was not success</p></div>
             share_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;] = [user_details]
             if permissions is None:
                 share_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;properties&#39;][&#39;permissions&#39;] = []
-                permissions = [&#34;View&#34;, &#34;Download&#34;]
-                if mode == 3:
-                    permissions = list(ComplianceConstants.PERMISSIONS.keys())
-            if permissions is not None:
-                if mode == 3:
-                    share_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;properties&#39;][&#39;permissions&#39;] = []
-                for permission in permissions:
-                    try:
-                        share_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;properties&#39;][&#39;permissions&#39;].append(
-                            ComplianceConstants.PERMISSIONS[permission]
-                        )
-                    except KeyError:
-                        raise SDKException(&#39;ComplianceSearch&#39;, &#39;102&#39;)
+                permissions = [[&#34;View&#34;, &#34;Download&#34;], list(ComplianceConstants.PERMISSIONS.keys())][mode//3]
+            if mode == 3:
+                share_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;properties&#39;][&#39;permissions&#39;] = []
+            for permission in permissions:
+                try:
+                    share_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;properties&#39;][&#39;permissions&#39;].append(
+                        ComplianceConstants.PERMISSIONS[permission]
+                    )
+                except KeyError:
+                    raise SDKException(&#39;ComplianceSearch&#39;, &#39;102&#39;)
         share_json[&#39;entityAssociated&#39;][&#39;entity&#39;][0][&#39;downloadSetId&#39;] = self.export_set_id
         flag, response = self._cvpysdk_object.make_request(&#34;POST&#34;, self._share_export_set_api, share_json)
         if flag:
             if response.json() and &#34;response&#34; in response.json():
                 if response.json()[&#39;response&#39;][0][&#39;errorCode&#39;] == 0:
                     self.refresh()
-        else:
-            self._response_not_success(response)
+                    return True
+        self._response_not_success(response)
 
     def has(self, export_name):
         &#34;&#34;&#34;Method to check if the export exists or not
@@ -1593,7 +1625,7 @@ Response was not success</p></div>
                 export_name (str)   -   Export name to be deleted
 
             Returns:
-                Returns None if delete successfully else raises error
+                Returns True if delete successfully else raises error
 
             Raises:
                 SDKException:
@@ -1604,21 +1636,24 @@ Response was not success</p></div>
             raise SDKException(&#34;ComplianceSearch&#34;, &#34;103&#34;)
         delete_json = copy.deepcopy(self._delete_export_json_req)
         delete_json[&#34;downloadItems&#34;][&#34;items&#34;] = [self._all_exports[export_name]]
+        delete_json[&#34;container&#34;] = self.properties
         flag, response = self._cvpysdk_object.make_request(&#34;POST&#34;, self._delete_export_api, delete_json)
         if flag:
             if response.json() and &#34;errList&#34; in response.json() and len(response.json()[&#34;errList&#34;]) != 0:
                 if response.json()[&#34;errList&#34;][0][&#34;errorCode&#34;] != 0:
                     raise SDKException(&#34;ComplianceSearch&#34;, &#34;104&#34;,
                                        response.json()[&#34;errList&#34;][0].get(&#34;errLogMessage&#34;))
-        else:
-            self._response_not_success(response)
+            return True
+        self._response_not_success(response)
 
-    def export_items_to_set(self, export_name, export_items):
+    def export_items_to_set(self, export_name, export_items, export_type=ComplianceConstants.ExportTypes.CAB):
         &#34;&#34;&#34;Method to export items/documents to the export set
 
             Args:
                 export_name     (str)   -   Export name for the exported items
                 export_items    (list)  -   List of search result items which needs to be export
+                export_type     (str)   -   ComplianceConstants.ExportTypes Enum values
+                                            Default: CAB
 
             Returns:
                 Returns the restore job ID for the export operation
@@ -1628,7 +1663,10 @@ Response was not success</p></div>
                     Response was not success
 
         &#34;&#34;&#34;
+        if export_type not in ComplianceConstants.RESTORE_TYPE:
+            raise SDKException(&#39;ComplianceSearch&#39;, &#39;108&#39;)
         export_items_json_req = copy.deepcopy(self._export_items_json_req)
+        export_items_json_req[&#39;complianceData&#39;][&#39;restoreType&#39;] = ComplianceConstants.RESTORE_TYPE[export_type]
         export_items_json_req[&#39;complianceData&#39;][&#39;downLoadDesc&#39;] = export_name
         export_items_json_req[&#39;complianceData&#39;][&#39;destContainer&#39;] = self.properties
         export_items_json_req[&#39;listOfItems&#39;][&#39;resultItem&#39;] = export_items
@@ -1754,7 +1792,7 @@ if all the items needs to be selected or not</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L699-L714" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L662-L677" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@staticmethod
 def select(result_items, no_of_files=0, export_all=False):
@@ -1785,7 +1823,7 @@ def select(result_items, no_of_files=0, export_all=False):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L746-L754" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L709-L717" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def export_set_comment(self):
@@ -1806,7 +1844,7 @@ def export_set_comment(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L726-L734" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L689-L697" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def export_set_full_name(self):
@@ -1827,7 +1865,7 @@ def export_set_full_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L766-L774" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L729-L737" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def export_set_guid(self):
@@ -1848,7 +1886,7 @@ def export_set_guid(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L756-L764" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L719-L727" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def export_set_id(self):
@@ -1869,7 +1907,7 @@ def export_set_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L736-L744" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L699-L707" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def export_set_name(self):
@@ -1890,7 +1928,7 @@ def export_set_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L776-L784" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L739-L747" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def export_set_owner_info(self):
@@ -1911,7 +1949,7 @@ def export_set_owner_info(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L716-L724" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L679-L687" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -1937,14 +1975,14 @@ def properties(self):
 -
 Export name to be deleted</p>
 <h2 id="returns">Returns</h2>
-<p>Returns None if delete successfully else raises error</p>
+<p>Returns True if delete successfully else raises error</p>
 <h2 id="raises">Raises</h2>
 <p>SDKException:
 Response was not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L643-L668" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L600-L626" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, export_name):
     &#34;&#34;&#34;Method to delete the export
@@ -1953,7 +1991,7 @@ Response was not success</p></div>
             export_name (str)   -   Export name to be deleted
 
         Returns:
-            Returns None if delete successfully else raises error
+            Returns True if delete successfully else raises error
 
         Raises:
             SDKException:
@@ -1964,18 +2002,19 @@ Response was not success</p></div>
         raise SDKException(&#34;ComplianceSearch&#34;, &#34;103&#34;)
     delete_json = copy.deepcopy(self._delete_export_json_req)
     delete_json[&#34;downloadItems&#34;][&#34;items&#34;] = [self._all_exports[export_name]]
+    delete_json[&#34;container&#34;] = self.properties
     flag, response = self._cvpysdk_object.make_request(&#34;POST&#34;, self._delete_export_api, delete_json)
     if flag:
         if response.json() and &#34;errList&#34; in response.json() and len(response.json()[&#34;errList&#34;]) != 0:
             if response.json()[&#34;errList&#34;][0][&#34;errorCode&#34;] != 0:
                 raise SDKException(&#34;ComplianceSearch&#34;, &#34;104&#34;,
                                    response.json()[&#34;errList&#34;][0].get(&#34;errLogMessage&#34;))
-    else:
-        self._response_not_success(response)</code></pre>
+        return True
+    self._response_not_success(response)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.activateapps.compliance_utils.ExportSet.export_items_to_set"><code class="name flex">
-<span>def <span class="ident">export_items_to_set</span></span>(<span>self, export_name, export_items)</span>
+<span>def <span class="ident">export_items_to_set</span></span>(<span>self, export_name, export_items, export_type=ExportTypes.CAB)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Method to export items/documents to the export set</p>
@@ -1987,7 +2026,12 @@ Export name for the exported items
 export_items
 (list)
 -
-List of search result items which needs to be export</p>
+List of search result items which needs to be export
+export_type
+(str)
+-
+ComplianceConstants.ExportTypes Enum values
+Default: CAB</p>
 <h2 id="returns">Returns</h2>
 <p>Returns the restore job ID for the export operation</p>
 <h2 id="raises">Raises</h2>
@@ -1996,14 +2040,16 @@ Response was not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L670-L697" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L628-L660" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def export_items_to_set(self, export_name, export_items):
+<pre><code class="python">def export_items_to_set(self, export_name, export_items, export_type=ComplianceConstants.ExportTypes.CAB):
     &#34;&#34;&#34;Method to export items/documents to the export set
 
         Args:
             export_name     (str)   -   Export name for the exported items
             export_items    (list)  -   List of search result items which needs to be export
+            export_type     (str)   -   ComplianceConstants.ExportTypes Enum values
+                                        Default: CAB
 
         Returns:
             Returns the restore job ID for the export operation
@@ -2013,7 +2059,10 @@ Response was not success</p></div>
                 Response was not success
 
     &#34;&#34;&#34;
+    if export_type not in ComplianceConstants.RESTORE_TYPE:
+        raise SDKException(&#39;ComplianceSearch&#39;, &#39;108&#39;)
     export_items_json_req = copy.deepcopy(self._export_items_json_req)
+    export_items_json_req[&#39;complianceData&#39;][&#39;restoreType&#39;] = ComplianceConstants.RESTORE_TYPE[export_type]
     export_items_json_req[&#39;complianceData&#39;][&#39;downLoadDesc&#39;] = export_name
     export_items_json_req[&#39;complianceData&#39;][&#39;destContainer&#39;] = self.properties
     export_items_json_req[&#39;listOfItems&#39;][&#39;resultItem&#39;] = export_items
@@ -2042,7 +2091,7 @@ Export name to get</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L629-L641" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L586-L598" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, export_name):
     &#34;&#34;&#34;Method to get the export
@@ -2073,7 +2122,7 @@ Export name to be checked</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L617-L627" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L574-L584" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has(self, export_name):
     &#34;&#34;&#34;Method to check if the export exists or not
@@ -2096,7 +2145,7 @@ Export name to be checked</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L462-L520" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L419-L480" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Method to refresh the properties of the class ExportSet&#34;&#34;&#34;
@@ -2129,13 +2178,15 @@ Export name to be checked</p>
         {
             &#34;complianceData&#34;: {
                 &#34;mode&#34;: 2,
-                &#34;restoreType&#34;: 17,
+                &#34;restoreType&#34;: 2,
                 &#34;downLoadDesc&#34;: None,
                 &#34;destContainer&#34;: None,
                 &#34;originatingContainer&#34;: {
                     &#34;containerOwnerType&#34;: 1
                 },
-                &#34;options&#34;: {}
+                &#34;options&#34;: {
+                    &#34;zipEML&#34;: True,
+                    &#34;retentionInDays&#34;: 30}
             },
             &#34;onlineData&#34;: {
                 &#34;downloadStatus&#34;: 0
@@ -2144,10 +2195,11 @@ Export name to be checked</p>
                 &#34;resultItem&#34;: None
             }
         }
-    self._delete_export_api = self._services[&#39;ADD_EXPORT_SET&#39;]
+    self._delete_export_api = self._services[&#39;GET_EXPORTS&#39;]
     self._delete_export_json_req = \
         {
             &#34;operationType&#34;: 2,
+            &#34;container&#34;: None,
             &#34;downloadItems&#34;: {
                 &#34;items&#34;: None
             },
@@ -2179,11 +2231,11 @@ mode
 to add (2), remove (3) or overwrite (1) the permissions
 Default : Add (2)</p>
 <h2 id="returns">Returns</h2>
-<p>Returns None if share worked fine else raises an Exception</p></div>
+<p>Returns True if share worked fine else raises an Exception</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L552-L615" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L512-L572" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def share(self, user_or_user_group_name=None, permissions=None, mode=2):
     &#34;&#34;&#34;Method to share the export set with the user or user group provided
@@ -2196,7 +2248,7 @@ Default : Add (2)</p>
                                                     Default : Add (2)
 
         Returns:
-            Returns None if share worked fine else raises an Exception
+            Returns True if share worked fine else raises an Exception
 
     &#34;&#34;&#34;
     if isinstance(permissions, str):
@@ -2228,27 +2280,24 @@ Default : Add (2)</p>
         share_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;userOrGroup&#39;] = [user_details]
         if permissions is None:
             share_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;properties&#39;][&#39;permissions&#39;] = []
-            permissions = [&#34;View&#34;, &#34;Download&#34;]
-            if mode == 3:
-                permissions = list(ComplianceConstants.PERMISSIONS.keys())
-        if permissions is not None:
-            if mode == 3:
-                share_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;properties&#39;][&#39;permissions&#39;] = []
-            for permission in permissions:
-                try:
-                    share_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;properties&#39;][&#39;permissions&#39;].append(
-                        ComplianceConstants.PERMISSIONS[permission]
-                    )
-                except KeyError:
-                    raise SDKException(&#39;ComplianceSearch&#39;, &#39;102&#39;)
+            permissions = [[&#34;View&#34;, &#34;Download&#34;], list(ComplianceConstants.PERMISSIONS.keys())][mode//3]
+        if mode == 3:
+            share_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;properties&#39;][&#39;permissions&#39;] = []
+        for permission in permissions:
+            try:
+                share_json[&#39;securityAssociations&#39;][&#39;associations&#39;][0][&#39;properties&#39;][&#39;permissions&#39;].append(
+                    ComplianceConstants.PERMISSIONS[permission]
+                )
+            except KeyError:
+                raise SDKException(&#39;ComplianceSearch&#39;, &#39;102&#39;)
     share_json[&#39;entityAssociated&#39;][&#39;entity&#39;][0][&#39;downloadSetId&#39;] = self.export_set_id
     flag, response = self._cvpysdk_object.make_request(&#34;POST&#34;, self._share_export_set_api, share_json)
     if flag:
         if response.json() and &#34;response&#34; in response.json():
             if response.json()[&#39;response&#39;][0][&#39;errorCode&#39;] == 0:
                 self.refresh()
-    else:
-        self._response_not_success(response)</code></pre>
+                return True
+    self._response_not_success(response)</code></pre>
 </details>
 </dd>
 </dl>
@@ -2263,7 +2312,7 @@ Default : Add (2)</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L275-L437" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L234-L394" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ExportSets():
     &#34;&#34;&#34;Class for representing all the export sets associated with the commcell&#34;&#34;&#34;
@@ -2294,8 +2343,6 @@ Default : Add (2)</p>
                 for container in containers:
                     self._all_export_set.update(
                         {container[&#34;containerName&#34;]: container})
-            else:
-                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             self._response_not_success(response)
 
@@ -2370,7 +2417,7 @@ Default : Add (2)</p>
             flag, response = self._cvpysdk_object.make_request(
                 method=&#34;POST&#34;, url=self._add_export_set_api, payload=add_export_set_json_req)
             if flag:
-                if response.json() and &#34;containers&#34; in response.json():
+                if response.json() and &#34;container&#34; in response.json():
                     self.refresh()
                     return self.get(export_set_name=export_set_name)
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -2411,7 +2458,7 @@ Default : Add (2)</p>
                 export_set_name (str)   -   Export set name to be deleted
 
             Returns:
-                Returns None if delete successfully else raises error
+                Returns True if delete successfully else raises error
 
             Raises:
                 SDKException:
@@ -2426,8 +2473,8 @@ Default : Add (2)</p>
         if flag:
             if response.json() and &#34;errList&#34; in response.json() and len(response.json()[&#34;errList&#34;]) == 0:
                 self.refresh()
-        else:
-            self._response_not_success(response)</code></pre>
+                return True
+        self._response_not_success(response)</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
@@ -2450,7 +2497,7 @@ Export set description fot the newly created export set</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L361-L385" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L318-L342" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, export_set_name, comment=None):
     &#34;&#34;&#34;Method to create an export set to the commcell environment
@@ -2471,7 +2518,7 @@ Export set description fot the newly created export set</p>
         flag, response = self._cvpysdk_object.make_request(
             method=&#34;POST&#34;, url=self._add_export_set_api, payload=add_export_set_json_req)
         if flag:
-            if response.json() and &#34;containers&#34; in response.json():
+            if response.json() and &#34;container&#34; in response.json():
                 self.refresh()
                 return self.get(export_set_name=export_set_name)
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -2489,14 +2536,14 @@ Export set description fot the newly created export set</p>
 -
 Export set name to be deleted</p>
 <h2 id="returns">Returns</h2>
-<p>Returns None if delete successfully else raises error</p>
+<p>Returns True if delete successfully else raises error</p>
 <h2 id="raises">Raises</h2>
 <p>SDKException:
 Response was not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L414-L437" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L371-L394" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, export_set_name):
     &#34;&#34;&#34;Method to delete the export set
@@ -2505,7 +2552,7 @@ Response was not success</p></div>
             export_set_name (str)   -   Export set name to be deleted
 
         Returns:
-            Returns None if delete successfully else raises error
+            Returns True if delete successfully else raises error
 
         Raises:
             SDKException:
@@ -2520,8 +2567,8 @@ Response was not success</p></div>
     if flag:
         if response.json() and &#34;errList&#34; in response.json() and len(response.json()[&#34;errList&#34;]) == 0:
             self.refresh()
-    else:
-        self._response_not_success(response)</code></pre>
+            return True
+    self._response_not_success(response)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.activateapps.compliance_utils.ExportSets.get"><code class="name flex">
@@ -2538,7 +2585,7 @@ Export set name to get</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L399-L412" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L356-L369" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, export_set_name):
     &#34;&#34;&#34;Method to get the export set
@@ -2570,7 +2617,7 @@ Export set name to be checked</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L387-L397" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L344-L354" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has(self, export_set_name):
     &#34;&#34;&#34;Method to check if the export set exists or not
@@ -2593,7 +2640,7 @@ Export set name to be checked</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/compliance_utils.py#L309-L346" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/compliance_utils.py#L266-L303" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Method to refresh all the properties of the class ExportSets&#34;&#34;&#34;

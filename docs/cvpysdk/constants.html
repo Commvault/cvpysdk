@@ -57,7 +57,7 @@ Enum to maintain Application Group Types.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/constants.py#L1-L837" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L1-L879" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -601,6 +601,8 @@ class AppIDAName(Enum):
     &#34;&#34;&#34;Class to maintain the app IDA names&#34;&#34;&#34;
     FILE_SYSTEM = &#39;File System&#39;
     VIRTUAL_SERVER = &#39;Virtual Server&#39;
+    BIG_DATA_APPS = &#39;big data apps&#39;
+
 
 class VSAObjects(Enum):
     &#34;&#34;&#34;Mapping for VSA Objects.&#34;&#34;&#34;
@@ -722,7 +724,7 @@ class VSAFailOverStatus(Enum):
 class ApplicationGroup(Enum):
     &#34;&#34;&#34;Class to maintain application group types.&#34;&#34;&#34;
 
-    WINDOWS = &#39;APPGRP_WindowsFileSystemIDA&#39;
+    WINDOWS = auto()
     UNIX = auto()
     IBMi = auto()
     OPENVMS = auto()
@@ -734,6 +736,9 @@ class ApplicationGroup(Enum):
 class StoragePoolConstants:
     &#34;&#34;&#34;Class to maintain storage policy constants&#34;&#34;&#34;
 
+    &#34;&#34;&#34;
+    Defines the JSON structure for Azure Cloud Storage request.
+    &#34;&#34;&#34;
     AZURE_STORAGE_REQ_JSON = {
         &#34;type&#34;: &#34;CVA_REGULAR_SP&#34;,
         &#34;numberOfCopies&#34;: 1,
@@ -819,6 +824,27 @@ class StoragePoolConstants:
         ]
     }
 
+    AIR_GAP_PROTECT_STORAGE_TYPES = {
+        &#34;MICROSOFT AZURE STORAGE&#34;: {
+            &#34;HOT&#34;: {
+                &#34;vendorId&#34;: 3,
+                &#34;displayVendorId&#34;: 401,
+            },
+
+            &#34;COOL&#34;: {
+                &#34;vendorId&#34;: 3,
+                &#34;displayVendorId&#34;: 402,
+            },
+        },
+
+        &#34;ORACLE CLOUD INFRASTRUCTURE OBJECT STORAGE&#34;: {
+            &#34;INFREQUENT ACCESS&#34;: {
+                &#34;vendorId&#34;: 26,
+                &#34;displayVendorId&#34;: 404,
+            },
+        }
+    }
+
 
 class CommcellEntity(Enum):
     &#34;&#34;&#34;Class to maintain Commcell Entity types&#34;&#34;&#34;
@@ -895,7 +921,22 @@ class Credential_Type(Enum):
     SSHACCOUNT = 3
     AZUREACCOUNT = 4
     VMWAREACCOUNT = 5
-    MICROSOFT_AZURE = 103</code></pre>
+    MICROSOFT_AZURE = 103
+
+
+class ResourcePoolAppType(Enum):
+    &#34;&#34;&#34;Class to maintain ResourcePool AppType&#34;&#34;&#34;
+    O365 = 1
+    EXCHANGE = 3
+    SHAREPOINT = 4
+    ONEDRIVE = 5
+    TEAMS = 6
+
+
+class OSType(Enum):
+    &#34;&#34;&#34;Class to maintain OS Types&#34;&#34;&#34;
+    WINDOWS = 1
+    UNIX = 2</code></pre>
 </details>
 </section>
 <section>
@@ -916,7 +957,7 @@ class Credential_Type(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/constants.py#L619-L627" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L621-L629" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AdvancedJobDetailType(Enum):
     &#34;&#34;&#34;Class to maintain advanced job details info type
@@ -965,12 +1006,13 @@ class Credential_Type(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/constants.py#L539-L542" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L539-L543" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AppIDAName(Enum):
     &#34;&#34;&#34;Class to maintain the app IDA names&#34;&#34;&#34;
     FILE_SYSTEM = &#39;File System&#39;
-    VIRTUAL_SERVER = &#39;Virtual Server&#39;</code></pre>
+    VIRTUAL_SERVER = &#39;Virtual Server&#39;
+    BIG_DATA_APPS = &#39;big data apps&#39;</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -978,6 +1020,10 @@ class Credential_Type(Enum):
 </ul>
 <h3>Class variables</h3>
 <dl>
+<dt id="cvpysdk.constants.AppIDAName.BIG_DATA_APPS"><code class="name">var <span class="ident">BIG_DATA_APPS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
 <dt id="cvpysdk.constants.AppIDAName.FILE_SYSTEM"><code class="name">var <span class="ident">FILE_SYSTEM</span></code></dt>
 <dd>
 <div class="desc"></div>
@@ -997,7 +1043,7 @@ class Credential_Type(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/constants.py#L531-L536" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L531-L536" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AppIDAType(Enum):
     &#34;&#34;&#34;Class to maintain all the app ida constants&#34;&#34;&#34;
@@ -1039,12 +1085,12 @@ class Credential_Type(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/constants.py#L661-L670" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L663-L672" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ApplicationGroup(Enum):
     &#34;&#34;&#34;Class to maintain application group types.&#34;&#34;&#34;
 
-    WINDOWS = &#39;APPGRP_WindowsFileSystemIDA&#39;
+    WINDOWS = auto()
     UNIX = auto()
     IBMi = auto()
     OPENVMS = auto()
@@ -1097,7 +1143,7 @@ class Credential_Type(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/constants.py#L762-L826" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L788-L852" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CommcellEntity(Enum):
     &#34;&#34;&#34;Class to maintain Commcell Entity types&#34;&#34;&#34;
@@ -1430,7 +1476,7 @@ class Credential_Type(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/constants.py#L829-L837" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L855-L863" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Credential_Type(Enum):
     &#34;&#34;&#34;Class to maintain Credential types&#34;&#34;&#34;
@@ -1483,7 +1529,7 @@ class Credential_Type(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/constants.py#L510-L528" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L510-L528" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class HypervisorType(Enum):
     &#34;&#34;&#34;Class to maintain all the hypervisor related constants.&#34;&#34;&#34;
@@ -1590,7 +1636,7 @@ class Credential_Type(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/constants.py#L590-L594" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L592-L596" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class InstanceBackupType(Enum):
     &#34;&#34;&#34;Class to maintain type of instance backup&#34;&#34;&#34;
@@ -1618,6 +1664,85 @@ class Credential_Type(Enum):
 </dd>
 </dl>
 </dd>
+<dt id="cvpysdk.constants.OSType"><code class="flex name class">
+<span>class <span class="ident">OSType</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class to maintain OS Types</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L875-L878" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class OSType(Enum):
+    &#34;&#34;&#34;Class to maintain OS Types&#34;&#34;&#34;
+    WINDOWS = 1
+    UNIX = 2</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="cvpysdk.constants.OSType.UNIX"><code class="name">var <span class="ident">UNIX</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.OSType.WINDOWS"><code class="name">var <span class="ident">WINDOWS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.constants.ResourcePoolAppType"><code class="flex name class">
+<span>class <span class="ident">ResourcePoolAppType</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class to maintain ResourcePool AppType</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L866-L872" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class ResourcePoolAppType(Enum):
+    &#34;&#34;&#34;Class to maintain ResourcePool AppType&#34;&#34;&#34;
+    O365 = 1
+    EXCHANGE = 3
+    SHAREPOINT = 4
+    ONEDRIVE = 5
+    TEAMS = 6</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="cvpysdk.constants.ResourcePoolAppType.EXCHANGE"><code class="name">var <span class="ident">EXCHANGE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.ResourcePoolAppType.O365"><code class="name">var <span class="ident">O365</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.ResourcePoolAppType.ONEDRIVE"><code class="name">var <span class="ident">ONEDRIVE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.ResourcePoolAppType.SHAREPOINT"><code class="name">var <span class="ident">SHAREPOINT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.constants.ResourcePoolAppType.TEAMS"><code class="name">var <span class="ident">TEAMS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
 <dt id="cvpysdk.constants.SQLDefines"><code class="flex name class">
 <span>class <span class="ident">SQLDefines</span></span>
 </code></dt>
@@ -1626,7 +1751,7 @@ class Credential_Type(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/constants.py#L597-L608" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L599-L610" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SQLDefines:
     &#34;&#34;&#34;Class to maintain SQL Defines&#34;&#34;&#34;
@@ -1677,7 +1802,7 @@ class Credential_Type(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/constants.py#L611-L616" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L613-L618" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SharepointDefines:
     &#34;&#34;&#34;Class to maintiain Sharepoint Defines&#34;&#34;&#34;
@@ -1706,11 +1831,14 @@ class Credential_Type(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/constants.py#L673-L759" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L675-L785" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class StoragePoolConstants:
     &#34;&#34;&#34;Class to maintain storage policy constants&#34;&#34;&#34;
 
+    &#34;&#34;&#34;
+    Defines the JSON structure for Azure Cloud Storage request.
+    &#34;&#34;&#34;
     AZURE_STORAGE_REQ_JSON = {
         &#34;type&#34;: &#34;CVA_REGULAR_SP&#34;,
         &#34;numberOfCopies&#34;: 1,
@@ -1794,10 +1922,35 @@ class Credential_Type(Enum):
                 }
             }
         ]
+    }
+
+    AIR_GAP_PROTECT_STORAGE_TYPES = {
+        &#34;MICROSOFT AZURE STORAGE&#34;: {
+            &#34;HOT&#34;: {
+                &#34;vendorId&#34;: 3,
+                &#34;displayVendorId&#34;: 401,
+            },
+
+            &#34;COOL&#34;: {
+                &#34;vendorId&#34;: 3,
+                &#34;displayVendorId&#34;: 402,
+            },
+        },
+
+        &#34;ORACLE CLOUD INFRASTRUCTURE OBJECT STORAGE&#34;: {
+            &#34;INFREQUENT ACCESS&#34;: {
+                &#34;vendorId&#34;: 26,
+                &#34;displayVendorId&#34;: 404,
+            },
+        }
     }</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
+<dt id="cvpysdk.constants.StoragePoolConstants.AIR_GAP_PROTECT_STORAGE_TYPES"><code class="name">var <span class="ident">AIR_GAP_PROTECT_STORAGE_TYPES</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
 <dt id="cvpysdk.constants.StoragePoolConstants.AZURE_STORAGE_REQ_JSON"><code class="name">var <span class="ident">AZURE_STORAGE_REQ_JSON</span></code></dt>
 <dd>
 <div class="desc"></div>
@@ -1817,7 +1970,7 @@ class Credential_Type(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/constants.py#L646-L658" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L648-L660" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VSAFailOverStatus(Enum):
     &#34;&#34;&#34;Class to maintain Failover status of the VSA Live sync&#34;&#34;&#34;
@@ -1894,7 +2047,7 @@ class Credential_Type(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/constants.py#L630-L643" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L632-L645" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VSALiveSyncStatus(Enum):
     &#34;&#34;&#34;Class to maintain status of the VSA Live sync&#34;&#34;&#34;
@@ -1976,7 +2129,7 @@ class Credential_Type(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/constants.py#L544-L587" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L546-L589" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VSAObjects(Enum):
     &#34;&#34;&#34;Mapping for VSA Objects.&#34;&#34;&#34;
@@ -2280,6 +2433,7 @@ setTimeout(() => input.focus(), 100);
 <li>
 <h4><code><a title="cvpysdk.constants.AppIDAName" href="#cvpysdk.constants.AppIDAName">AppIDAName</a></code></h4>
 <ul class="">
+<li><code><a title="cvpysdk.constants.AppIDAName.BIG_DATA_APPS" href="#cvpysdk.constants.AppIDAName.BIG_DATA_APPS">BIG_DATA_APPS</a></code></li>
 <li><code><a title="cvpysdk.constants.AppIDAName.FILE_SYSTEM" href="#cvpysdk.constants.AppIDAName.FILE_SYSTEM">FILE_SYSTEM</a></code></li>
 <li><code><a title="cvpysdk.constants.AppIDAName.VIRTUAL_SERVER" href="#cvpysdk.constants.AppIDAName.VIRTUAL_SERVER">VIRTUAL_SERVER</a></code></li>
 </ul>
@@ -2414,6 +2568,23 @@ setTimeout(() => input.focus(), 100);
 </ul>
 </li>
 <li>
+<h4><code><a title="cvpysdk.constants.OSType" href="#cvpysdk.constants.OSType">OSType</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.constants.OSType.UNIX" href="#cvpysdk.constants.OSType.UNIX">UNIX</a></code></li>
+<li><code><a title="cvpysdk.constants.OSType.WINDOWS" href="#cvpysdk.constants.OSType.WINDOWS">WINDOWS</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.constants.ResourcePoolAppType" href="#cvpysdk.constants.ResourcePoolAppType">ResourcePoolAppType</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.constants.ResourcePoolAppType.EXCHANGE" href="#cvpysdk.constants.ResourcePoolAppType.EXCHANGE">EXCHANGE</a></code></li>
+<li><code><a title="cvpysdk.constants.ResourcePoolAppType.O365" href="#cvpysdk.constants.ResourcePoolAppType.O365">O365</a></code></li>
+<li><code><a title="cvpysdk.constants.ResourcePoolAppType.ONEDRIVE" href="#cvpysdk.constants.ResourcePoolAppType.ONEDRIVE">ONEDRIVE</a></code></li>
+<li><code><a title="cvpysdk.constants.ResourcePoolAppType.SHAREPOINT" href="#cvpysdk.constants.ResourcePoolAppType.SHAREPOINT">SHAREPOINT</a></code></li>
+<li><code><a title="cvpysdk.constants.ResourcePoolAppType.TEAMS" href="#cvpysdk.constants.ResourcePoolAppType.TEAMS">TEAMS</a></code></li>
+</ul>
+</li>
+<li>
 <h4><code><a title="cvpysdk.constants.SQLDefines" href="#cvpysdk.constants.SQLDefines">SQLDefines</a></code></h4>
 <ul class="two-column">
 <li><code><a title="cvpysdk.constants.SQLDefines.DATABASE_RESTORE" href="#cvpysdk.constants.SQLDefines.DATABASE_RESTORE">DATABASE_RESTORE</a></code></li>
@@ -2434,6 +2605,7 @@ setTimeout(() => input.focus(), 100);
 <li>
 <h4><code><a title="cvpysdk.constants.StoragePoolConstants" href="#cvpysdk.constants.StoragePoolConstants">StoragePoolConstants</a></code></h4>
 <ul class="">
+<li><code><a title="cvpysdk.constants.StoragePoolConstants.AIR_GAP_PROTECT_STORAGE_TYPES" href="#cvpysdk.constants.StoragePoolConstants.AIR_GAP_PROTECT_STORAGE_TYPES">AIR_GAP_PROTECT_STORAGE_TYPES</a></code></li>
 <li><code><a title="cvpysdk.constants.StoragePoolConstants.AZURE_STORAGE_REQ_JSON" href="#cvpysdk.constants.StoragePoolConstants.AZURE_STORAGE_REQ_JSON">AZURE_STORAGE_REQ_JSON</a></code></li>
 <li><code><a title="cvpysdk.constants.StoragePoolConstants.MA_INFO_LIST" href="#cvpysdk.constants.StoragePoolConstants.MA_INFO_LIST">MA_INFO_LIST</a></code></li>
 </ul>

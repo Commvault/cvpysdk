@@ -53,7 +53,7 @@ Method to create object based on specific cloud apps instance type</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cainstance.py#L1-L110" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cainstance.py#L1-L113" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -129,6 +129,9 @@ class CloudAppsInstance(Instance):
         from .cloudapps.dynamics365_instance import MSDynamics365Instance
         from .cloudapps.teams_instance import TeamsInstance
         from .cloudapps.spanner_instance import GoogleSpannerInstance
+        from .cloudapps.onedrive_instance import OneDriveInstance
+        from .cloudapps.azure_cosmosdb_instance import AzureCosmosDBInstance
+
         instance_type = {
             1: GoogleInstance,
             2: GoogleInstance,
@@ -136,8 +139,7 @@ class CloudAppsInstance(Instance):
             4: AmazonRDSInstance,     # Amazon RDS Instance
             5: CloudStorageInstance,  # AmazonS3 Instance
             6: CloudStorageInstance,  # AzureBlob Instance
-            # OneDrive Instance, GoogleInstance class is used for OneDrive instance too.
-            7: GoogleInstance,
+            7: OneDriveInstance,      # OneDrive Instance
             14: CloudStorageInstance,  # OracleCloud Instance
             15: CloudStorageInstance,  # Openstack Instance
             20: CloudStorageInstance,  # Google Cloud Instance
@@ -149,7 +151,8 @@ class CloudAppsInstance(Instance):
             22: AmazonDynamoDBInstance, # Amazon DynamoDB
             35: MSDynamics365Instance,   #  MS Dynamics 365 Instance
             36: TeamsInstance, # Office 365 Teams
-                        37: GoogleSpannerInstance # Google Cloud Spanner Instance
+                        37: GoogleSpannerInstance, # Google Cloud Spanner Instance
+            44: AzureCosmosDBInstance # Azure Cosmos DB Cloud Apps Instance
         }
 
         commcell_object = agent_object._commcell_object
@@ -202,7 +205,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cainstance.py#L61-L110" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cainstance.py#L61-L113" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CloudAppsInstance(Instance):
     &#34;&#34;&#34;Class for representing an Instance of the Cloud Apps agent.&#34;&#34;&#34;
@@ -218,6 +221,9 @@ default: None</p>
         from .cloudapps.dynamics365_instance import MSDynamics365Instance
         from .cloudapps.teams_instance import TeamsInstance
         from .cloudapps.spanner_instance import GoogleSpannerInstance
+        from .cloudapps.onedrive_instance import OneDriveInstance
+        from .cloudapps.azure_cosmosdb_instance import AzureCosmosDBInstance
+
         instance_type = {
             1: GoogleInstance,
             2: GoogleInstance,
@@ -225,8 +231,7 @@ default: None</p>
             4: AmazonRDSInstance,     # Amazon RDS Instance
             5: CloudStorageInstance,  # AmazonS3 Instance
             6: CloudStorageInstance,  # AzureBlob Instance
-            # OneDrive Instance, GoogleInstance class is used for OneDrive instance too.
-            7: GoogleInstance,
+            7: OneDriveInstance,      # OneDrive Instance
             14: CloudStorageInstance,  # OracleCloud Instance
             15: CloudStorageInstance,  # Openstack Instance
             20: CloudStorageInstance,  # Google Cloud Instance
@@ -238,7 +243,8 @@ default: None</p>
             22: AmazonDynamoDBInstance, # Amazon DynamoDB
             35: MSDynamics365Instance,   #  MS Dynamics 365 Instance
             36: TeamsInstance, # Office 365 Teams
-                        37: GoogleSpannerInstance # Google Cloud Spanner Instance
+                        37: GoogleSpannerInstance, # Google Cloud Spanner Instance
+            44: AzureCosmosDBInstance # Azure Cosmos DB Cloud Apps Instance
         }
 
         commcell_object = agent_object._commcell_object
@@ -261,6 +267,7 @@ default: None</p>
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
+<li><a title="cvpysdk.instances.cloudapps.azure_cosmosdb_instance.AzureCosmosDBInstance" href="cloudapps/azure_cosmosdb_instance.html#cvpysdk.instances.cloudapps.azure_cosmosdb_instance.AzureCosmosDBInstance">AzureCosmosDBInstance</a></li>
 <li><a title="cvpysdk.instances.cloudapps.cloud_database_instance.CloudDatabaseInstance" href="cloudapps/cloud_database_instance.html#cvpysdk.instances.cloudapps.cloud_database_instance.CloudDatabaseInstance">CloudDatabaseInstance</a></li>
 <li><a title="cvpysdk.instances.cloudapps.cloud_storage_instance.CloudStorageInstance" href="cloudapps/cloud_storage_instance.html#cvpysdk.instances.cloudapps.cloud_storage_instance.CloudStorageInstance">CloudStorageInstance</a></li>
 <li><a title="cvpysdk.instances.cloudapps.dynamics365_instance.MSDynamics365Instance" href="cloudapps/dynamics365_instance.html#cvpysdk.instances.cloudapps.dynamics365_instance.MSDynamics365Instance">MSDynamics365Instance</a></li>
@@ -274,13 +281,16 @@ default: None</p>
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.instance.Instance" href="../instance.html#cvpysdk.instance.Instance">Instance</a></b></code>:
 <ul class="hlist">
+<li><code><a title="cvpysdk.instance.Instance.backupsets" href="../instance.html#cvpysdk.instance.Instance.backupsets">backupsets</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.browse" href="../instance.html#cvpysdk.instance.Instance.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.instance.Instance.credentials" href="../instance.html#cvpysdk.instance.Instance.credentials">credentials</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.find" href="../instance.html#cvpysdk.instance.Instance.find">find</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.instance_id" href="../instance.html#cvpysdk.instance.Instance.instance_id">instance_id</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.instance_name" href="../instance.html#cvpysdk.instance.Instance.instance_name">instance_name</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.name" href="../instance.html#cvpysdk.instance.Instance.name">name</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.properties" href="../instance.html#cvpysdk.instance.Instance.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.refresh" href="../instance.html#cvpysdk.instance.Instance.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.instance.Instance.subclients" href="../instance.html#cvpysdk.instance.Instance.subclients">subclients</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.update_properties" href="../instance.html#cvpysdk.instance.Instance.update_properties">update_properties</a></code></li>
 </ul>
 </li>

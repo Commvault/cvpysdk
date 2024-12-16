@@ -158,7 +158,7 @@ refresh the properties of the Alert</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L1-L1281" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L1-L1313" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -1440,7 +1440,39 @@ class Alert(object):
 
     def refresh(self):
         &#34;&#34;&#34;Refresh the properties of the Alert.&#34;&#34;&#34;
-        self._get_alert_properties()</code></pre>
+        self._get_alert_properties()
+
+    def trigger_test_alert(self):
+        &#34;&#34;&#34;
+        Method to trigger the test alert
+
+        Raises:
+            SDKException:
+                if failed to trigger test alert
+
+                if response is empty
+
+                if response is not success
+        &#34;&#34;&#34;
+        test_request = self._services[&#39;ALERT_TEST&#39;] % (self.alert_id)
+
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, test_request)
+
+        if not flag:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+        if not response.json():
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+
+        error_code = response.json().get(&#39;errorCode&#39;, -1)
+
+        if error_code != 0:
+            error_message = response.json().get(&#39;errorMessage&#39;, &#39;&#39;)
+
+            raise SDKException(
+                &#39;Alert&#39;, &#39;102&#39;, f&#39;Failed to trigger the test Alert. Error: [&#34;{error_message}&#34;]&#39;
+            )</code></pre>
 </details>
 </section>
 <section>
@@ -1482,7 +1514,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L728-L1281" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L728-L1313" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Alert(object):
     &#34;&#34;&#34;Class for performing operations for a specific alert.&#34;&#34;&#34;
@@ -2037,7 +2069,39 @@ default: None</p>
 
     def refresh(self):
         &#34;&#34;&#34;Refresh the properties of the Alert.&#34;&#34;&#34;
-        self._get_alert_properties()</code></pre>
+        self._get_alert_properties()
+
+    def trigger_test_alert(self):
+        &#34;&#34;&#34;
+        Method to trigger the test alert
+
+        Raises:
+            SDKException:
+                if failed to trigger test alert
+
+                if response is empty
+
+                if response is not success
+        &#34;&#34;&#34;
+        test_request = self._services[&#39;ALERT_TEST&#39;] % (self.alert_id)
+
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, test_request)
+
+        if not flag:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+        if not response.json():
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+
+        error_code = response.json().get(&#39;errorCode&#39;, -1)
+
+        if error_code != 0:
+            error_message = response.json().get(&#39;errorMessage&#39;, &#39;&#39;)
+
+            raise SDKException(
+                &#39;Alert&#39;, &#39;102&#39;, f&#39;Failed to trigger the test Alert. Error: [&#34;{error_message}&#34;]&#39;
+            )</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
@@ -2047,7 +2111,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L984-L987" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L984-L987" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def alert_category(self):
@@ -2061,7 +2125,7 @@ def alert_category(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L1003-L1006" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L1003-L1006" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def alert_criteria(self):
@@ -2075,7 +2139,7 @@ def alert_criteria(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L974-L977" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L974-L977" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def alert_id(self):
@@ -2089,7 +2153,7 @@ def alert_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L960-L963" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L960-L963" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def alert_name(self):
@@ -2103,7 +2167,7 @@ def alert_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L989-L992" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L989-L992" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def alert_severity(self):
@@ -2117,7 +2181,7 @@ def alert_severity(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L979-L982" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L979-L982" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def alert_type(self):
@@ -2131,7 +2195,7 @@ def alert_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L1058-L1061" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L1058-L1061" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -2145,7 +2209,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L1047-L1050" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L1047-L1050" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def email_recipients(self):
@@ -2159,7 +2223,7 @@ def email_recipients(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L1033-L1036" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L1033-L1036" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def entities(self):
@@ -2173,7 +2237,7 @@ def entities(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L955-L958" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L955-L958" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -2187,7 +2251,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L1008-L1015" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L1008-L1015" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def notification_types(self):
@@ -2205,7 +2269,7 @@ def notification_types(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L1080-L1083" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L1080-L1083" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_group_list(self):
@@ -2219,7 +2283,7 @@ def user_group_list(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L1069-L1072" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L1069-L1072" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def users_list(self):
@@ -2245,7 +2309,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L1236-L1277" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L1236-L1277" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable(self):
     &#34;&#34;&#34;Disable an alert.
@@ -2314,7 +2378,7 @@ if no notification type exists with the name provided
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L1143-L1193" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L1143-L1193" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_notification_type(self, alert_notification_type):
     &#34;&#34;&#34;Disable the notification type.
@@ -2384,7 +2448,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L1195-L1234" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L1195-L1234" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable(self):
     &#34;&#34;&#34;Enable an alert.
@@ -2451,7 +2515,7 @@ if no notification type exists with the name provided
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L1091-L1141" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L1091-L1141" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_notification_type(self, alert_notification_type):
     &#34;&#34;&#34;Enable the notification type.
@@ -2514,11 +2578,61 @@ if no notification type exists with the name provided
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L1279-L1281" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L1279-L1281" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Alert.&#34;&#34;&#34;
     self._get_alert_properties()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.alert.Alert.trigger_test_alert"><code class="name flex">
+<span>def <span class="ident">trigger_test_alert</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to trigger the test alert</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if failed to trigger test alert</p>
+<pre><code>if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L1283-L1313" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def trigger_test_alert(self):
+    &#34;&#34;&#34;
+    Method to trigger the test alert
+
+    Raises:
+        SDKException:
+            if failed to trigger test alert
+
+            if response is empty
+
+            if response is not success
+    &#34;&#34;&#34;
+    test_request = self._services[&#39;ALERT_TEST&#39;] % (self.alert_id)
+
+    flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, test_request)
+
+    if not flag:
+        response_string = self._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    if not response.json():
+        raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+
+    error_code = response.json().get(&#39;errorCode&#39;, -1)
+
+    if error_code != 0:
+        error_message = response.json().get(&#39;errorMessage&#39;, &#39;&#39;)
+
+        raise SDKException(
+            &#39;Alert&#39;, &#39;102&#39;, f&#39;Failed to trigger the test Alert. Error: [&#34;{error_message}&#34;]&#39;
+        )</code></pre>
 </details>
 </dd>
 </dl>
@@ -2539,7 +2653,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L137-L725" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L137-L725" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Alerts(object):
     &#34;&#34;&#34;Class for getting all the Alerts associated with the commcell.&#34;&#34;&#34;
@@ -3150,7 +3264,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L519-L535" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L519-L535" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_alerts(self):
@@ -3195,7 +3309,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L640-L672" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L640-L672" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def console_alert(self, live_feed_id):
     &#34;&#34;&#34;Returns the console console alert with given live_feed_id
@@ -3258,7 +3372,7 @@ object - json response object for console alerts if version greater than or equa
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L584-L638" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L584-L638" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def console_alerts(self, page_number=1, page_count=1):
     &#34;&#34;&#34;Returns the console alerts from page_number to the number of pages asked for page_count
@@ -3345,7 +3459,7 @@ if response is empty
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L454-L516" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L454-L516" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_alert(self, alert_dict):
     &#34;&#34;&#34;Creates a new Alert for CommCell
@@ -3431,7 +3545,7 @@ if no alert exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L674-L721" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L674-L721" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, alert_name):
     &#34;&#34;&#34;Deletes the alert from the commcell.
@@ -3502,7 +3616,7 @@ if type of the alert name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L555-L582" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L555-L582" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, alert_name):
     &#34;&#34;&#34;Returns a alert object of the specified alert name.
@@ -3542,7 +3656,7 @@ if type of the alert name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L435-L451" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L435-L451" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_alert_sender(self):
     &#34;&#34;&#34;
@@ -3580,7 +3694,7 @@ if type of the alert name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L537-L553" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L537-L553" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_alert(self, alert_name):
     &#34;&#34;&#34;Checks if a alert exists for the commcell with the input alert name.
@@ -3609,7 +3723,7 @@ if type of the alert name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/alert.py#L723-L725" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/alert.py#L723-L725" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the alerts associated with the Commcell.&#34;&#34;&#34;
@@ -3708,6 +3822,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.alert.Alert.name" href="#cvpysdk.alert.Alert.name">name</a></code></li>
 <li><code><a title="cvpysdk.alert.Alert.notification_types" href="#cvpysdk.alert.Alert.notification_types">notification_types</a></code></li>
 <li><code><a title="cvpysdk.alert.Alert.refresh" href="#cvpysdk.alert.Alert.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.alert.Alert.trigger_test_alert" href="#cvpysdk.alert.Alert.trigger_test_alert">trigger_test_alert</a></code></li>
 <li><code><a title="cvpysdk.alert.Alert.user_group_list" href="#cvpysdk.alert.Alert.user_group_list">user_group_list</a></code></li>
 <li><code><a title="cvpysdk.alert.Alert.users_list" href="#cvpysdk.alert.Alert.users_list">users_list</a></code></li>
 </ul>

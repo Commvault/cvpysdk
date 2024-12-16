@@ -48,7 +48,7 @@ user to the same location</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L1-L236" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L1-L237" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -193,7 +193,8 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
             restore_option=None,
             **kwargs):
 
-        &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
+        &#34;&#34;&#34;
+        Restores the FULL Virtual machine specified  in the input  list to the client,
             at the specified destination location.
 
 
@@ -241,7 +242,7 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
         &#34;&#34;&#34;
         restore_option = {}
         extra_options = [&#39;destination_network&#39;, &#39;networks_nic&#39;, &#39;subnetwork_nic&#39;, &#39;vmCustomMetadata&#39;,
-                         &#39;createPublicIP&#39;, &#39;publicIPaddress&#39;, &#39;privateIPaddress&#39;]
+                         &#39;createPublicIP&#39;, &#39;publicIPaddress&#39;, &#39;privateIPaddress&#39;, &#34;serviceAccount&#34;]
         for key in extra_options:
             if key in kwargs:
                 if key == &#34;vmCustomMetadata&#34;:
@@ -266,7 +267,7 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
             restore_option[&#34;replicaZones&#34;].append(zone)
             restore_option[&#34;replicaZones&#34;].append(kwargs.get(&#34;replica_zone&#34;))
 
-        # Set attr for all the option in restore xml from user inputs
+        # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
             restore_option,
             vm_to_restore=self._set_vm_to_restore(vm_to_restore),
@@ -314,7 +315,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L46-L236" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L46-L237" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient Base class.
@@ -414,7 +415,8 @@ backupset class, subclient name, subclient id</p></div>
             restore_option=None,
             **kwargs):
 
-        &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
+        &#34;&#34;&#34;
+        Restores the FULL Virtual machine specified  in the input  list to the client,
             at the specified destination location.
 
 
@@ -462,7 +464,7 @@ backupset class, subclient name, subclient id</p></div>
         &#34;&#34;&#34;
         restore_option = {}
         extra_options = [&#39;destination_network&#39;, &#39;networks_nic&#39;, &#39;subnetwork_nic&#39;, &#39;vmCustomMetadata&#39;,
-                         &#39;createPublicIP&#39;, &#39;publicIPaddress&#39;, &#39;privateIPaddress&#39;]
+                         &#39;createPublicIP&#39;, &#39;publicIPaddress&#39;, &#39;privateIPaddress&#39;, &#34;serviceAccount&#34;]
         for key in extra_options:
             if key in kwargs:
                 if key == &#34;vmCustomMetadata&#34;:
@@ -487,7 +489,7 @@ backupset class, subclient name, subclient id</p></div>
             restore_option[&#34;replicaZones&#34;].append(zone)
             restore_option[&#34;replicaZones&#34;].append(kwargs.get(&#34;replica_zone&#34;))
 
-        # Set attr for all the option in restore xml from user inputs
+        # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
             restore_option,
             vm_to_restore=self._set_vm_to_restore(vm_to_restore),
@@ -571,7 +573,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L63-L127" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L63-L127" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(
         self,
@@ -648,63 +650,51 @@ if response is not success
 in the input
 list to the client,
 at the specified destination location.</p>
-<h2 id="args">Args</h2>
-<p>vm_to_restore
-(list):
-provide the list of VM name to restore
-default: None</p>
-<p>proxy_client
-(str):
-proxy client to be used for restore
-default: proxy added in subclient</p>
-<p>new_name
-(str):
-new name to be given to the
-restored VM</p>
-<p>overwrite
-(bool):
-overwrite the existing VM
-default: True</p>
-<p>power_on
-(bool):
-power on the
-restored VM
-default: True</p>
-<p>copy_precedence
-(int)
-&ndash; copy precedence value
-default: 0</p>
-<p>**kwargs
-: Arbitrary keyword arguments Properties as of
-full_vm_restore_out_of_place
-eg:
-v2_details
-(dict)
-&ndash; details for v2 subclient
-eg: check clients.vmclient.VMClient._child_job_subclient_details
-destination_network (string)
-&ndash; Name of the destination network
-networks_nic
-(string)
-&ndash; Link for the destination network
-subnetwork_nic
-(string)
-&ndash; Link for the destination subnetwork</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if inputs are not of correct type as per definition</p>
-<pre><code>if failed to initialize job
+<pre><code>Args:
+    vm_to_restore     (list):       provide the list of VM name to restore
+                                    default: None
 
-if response is empty
+    proxy_client     (str):         proxy client to be used for restore
+                                    default: proxy added in subclient
 
-if response is not success
+    new_name         (str):         new name to be given to the
+                                    restored VM
+
+    overwrite         (bool):        overwrite the existing VM
+                                     default: True
+
+    power_on          (bool):        power on the  restored VM
+                                      default: True
+
+    copy_precedence   (int)        -- copy precedence value
+                                      default: 0
+
+    **kwargs                         : Arbitrary keyword arguments Properties as of
+                                         full_vm_restore_out_of_place
+        eg:
+        v2_details          (dict)       -- details for v2 subclient
+                                        eg: check clients.vmclient.VMClient._child_job_subclient_details
+        destination_network (string)     -- Name of the destination network
+        networks_nic        (string)     -- Link for the destination network
+        subnetwork_nic      (string)    -- Link for the destination subnetwork
+
+Returns:
+    object - instance of the Job class for this restore job
+
+Raises:
+    SDKException:
+        if inputs are not of correct type as per definition
+
+        if failed to initialize job
+
+        if response is empty
+
+        if response is not success
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L129-L236" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/virtualserver/google_cloud_platform.py#L129-L237" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(
         self,
@@ -721,7 +711,8 @@ if response is not success
         restore_option=None,
         **kwargs):
 
-    &#34;&#34;&#34;Restores the FULL Virtual machine specified  in the input  list to the client,
+    &#34;&#34;&#34;
+    Restores the FULL Virtual machine specified  in the input  list to the client,
         at the specified destination location.
 
 
@@ -769,7 +760,7 @@ if response is not success
     &#34;&#34;&#34;
     restore_option = {}
     extra_options = [&#39;destination_network&#39;, &#39;networks_nic&#39;, &#39;subnetwork_nic&#39;, &#39;vmCustomMetadata&#39;,
-                     &#39;createPublicIP&#39;, &#39;publicIPaddress&#39;, &#39;privateIPaddress&#39;]
+                     &#39;createPublicIP&#39;, &#39;publicIPaddress&#39;, &#39;privateIPaddress&#39;, &#34;serviceAccount&#34;]
     for key in extra_options:
         if key in kwargs:
             if key == &#34;vmCustomMetadata&#34;:
@@ -794,7 +785,7 @@ if response is not success
         restore_option[&#34;replicaZones&#34;].append(zone)
         restore_option[&#34;replicaZones&#34;].append(kwargs.get(&#34;replica_zone&#34;))
 
-    # Set attr for all the option in restore xml from user inputs
+    # set attr for all the option in restore xml from user inputs
     self._set_restore_inputs(
         restore_option,
         vm_to_restore=self._set_vm_to_restore(vm_to_restore),
@@ -849,6 +840,7 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.get_nics_from_browse" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.get_nics_from_browse">get_nics_from_browse</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.guest_file_restore" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.guest_file_restore">guest_file_restore</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.guest_files_browse" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.guest_files_browse">guest_files_browse</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.index_server" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.index_server">index_server</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.instance_proxy" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.instance_proxy">instance_proxy</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.is_backup_enabled" href="../../subclient.html#cvpysdk.subclient.Subclient.is_backup_enabled">is_backup_enabled</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.is_blocklevel_backup_enabled" href="../../subclient.html#cvpysdk.subclient.Subclient.is_blocklevel_backup_enabled">is_blocklevel_backup_enabled</a></code></li>

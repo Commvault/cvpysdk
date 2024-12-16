@@ -61,9 +61,19 @@ get_supported_solutions()   --  returns the supported solutions for plans
 add_exchange_plan()         --  Adds a new exchange plan to the commcell
 
 create_server_plan()        --  creates a new server plan to the commcell
+
+_get_fl_parameters()        --  Returns the fl parameters to be passed in the mongodb caching api call
+
+_get_sort_parameters()      --  Returns the sort parameters to be passed in the mongodb caching api call
+
+_get_fq_parameters()        --  Returns the fq parameters based on the fq list passed
+
+get_plans_cache()           --  Returns plan cache in response
 </code></pre>
 <h2 id="attributes">Attributes</h2>
 <pre><code>**all_plans**   --  returns the dict consisting of plans and their details
+
+**all_plans_cache** --  Returns the dictionary consisting of all the plans cache present in mongoDB
 </code></pre>
 <dl>
 <dt><strong><code>Plan</code></strong></dt>
@@ -81,6 +91,8 @@ _get_plan_properties()      -- get the properties of this plan
 _update_plan_props()        -- method to update plan properties
 
 _get_associated_entities()  -- method to get list of entities associated to a plan
+
+_enable_content_indexing_o365_plan() --method to enable content indexing for O365 plan
 
 derive_and_add()            -- add new plan by deriving from the parent Plan object
 
@@ -133,6 +145,8 @@ delete_schedule()           --  method to delete a schedule from the plan
 edit_snapshot_options()     --  method to edit snapshot options of the plan
 
 update_backup_content()     --  method to update backup content of the plan
+
+enable_data_aging()         --  Enable data aging for the copy of the plan
 </code></pre>
 <h2 id="plan-attributes">Plan Attributes</h2>
 <pre><code>**plan_id**                 --  returns the id of the plan
@@ -163,12 +177,26 @@ update_backup_content()     --  method to update backup content of the plan
 
 **content_indexing_props**  --  returns the DC plan related properties from the plan
 
+**region_id**               --  Returns the Backup destination region id
+
+**company**                 --  Returns the company of the plan
+
+**resources**               --  Returns the resources stored in storage resource pool
+
 **applicable_solutions**    --  returns applicable solutions configured on server plan
+
+**data_schedule_policy**    --  returns the data schedule policy of the plan
+
+**log_schedule_policy**     --  returns the log schedule policy of the plan
+
+**snap_schedule_policy**    --  returns the snap schedule policy of the plan
+
+**content_indexing**        --  returns the status of content indexing of O365 plan
 </code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L1-L3583" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L1-L4144" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -233,11 +261,21 @@ Plans
     add_exchange_plan()         --  Adds a new exchange plan to the commcell
 
     create_server_plan()        --  creates a new server plan to the commcell
+
+    _get_fl_parameters()        --  Returns the fl parameters to be passed in the mongodb caching api call
+
+    _get_sort_parameters()      --  Returns the sort parameters to be passed in the mongodb caching api call
+
+    _get_fq_parameters()        --  Returns the fq parameters based on the fq list passed
+
+    get_plans_cache()           --  Returns plan cache in response
     
 Attributes
 ----------
 
     **all_plans**   --  returns the dict consisting of plans and their details
+
+    **all_plans_cache** --  Returns the dictionary consisting of all the plans cache present in mongoDB
 
 
 Plan
@@ -254,6 +292,8 @@ Plan
     _update_plan_props()        -- method to update plan properties
 
     _get_associated_entities()  -- method to get list of entities associated to a plan
+
+    _enable_content_indexing_o365_plan() --method to enable content indexing for O365 plan
 
     derive_and_add()            -- add new plan by deriving from the parent Plan object
 
@@ -307,6 +347,8 @@ Plan
 
     update_backup_content()     --  method to update backup content of the plan
 
+    enable_data_aging()         --  Enable data aging for the copy of the plan
+
 Plan Attributes
 ----------------
     **plan_id**                 --  returns the id of the plan
@@ -336,8 +378,23 @@ Plan Attributes
     **associated_entities**     --  returns all the entities associated with the plan
 
     **content_indexing_props**  --  returns the DC plan related properties from the plan
+
+    **region_id**               --  Returns the Backup destination region id
+
+    **company**                 --  Returns the company of the plan
+
+    **resources**               --  Returns the resources stored in storage resource pool
     
     **applicable_solutions**    --  returns applicable solutions configured on server plan
+
+    **data_schedule_policy**    --  returns the data schedule policy of the plan
+
+    **log_schedule_policy**     --  returns the log schedule policy of the plan
+
+    **snap_schedule_policy**    --  returns the snap schedule policy of the plan
+
+    **content_indexing**        --  returns the status of content indexing of O365 plan
+
 &#34;&#34;&#34;
 from __future__ import unicode_literals
 
@@ -381,6 +438,7 @@ class _PayloadGeneratorPlanV4:
                     - &#39;retentionPeriodDays&#39; (int): Retention days for the copy (Default: 30 days)
                     - &#39;backupDestinationName&#39; (str): Name of the copy (Default: &#39;Primary&#39;)
                     - &#39;region_name&#39; (str, optional): Name of the region
+                    - &#39;storageTemplateTags&#39; (dict): To indentify storage based on tags (Needed only for Global Plans)
 
                 Note: Additional properties can be sent in the input to update the payload with the same exact key names.
                     
@@ -390,11 +448,10 @@ class _PayloadGeneratorPlanV4:
                 dict: Copy details as a dictionary.
         &#34;&#34;&#34;
         # validate the input
-        if &#39;storage_name&#39; not in copy_details:
-            raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#39;storage_name is required for copy configuration.&#39;)
+        if &#39;storageTemplateTags&#39; not in copy_details and &#39;storage_name&#39; not in copy_details:
+            raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#39;Storage details is required for copy configuration.&#39;)
         
         temp_dict = copy_details.copy() # make a copy of the input to avoid modifying the original input
-        storage_pool = self.__commcell.storage_pools.get(copy_details[&#34;storage_name&#34;])
 
         payload = {
             &#34;backupDestinationName&#34;: copy_details.get(&#34;backupDestinationName&#34;, &#34;Primary&#34;),
@@ -402,12 +459,16 @@ class _PayloadGeneratorPlanV4:
             &#34;useExtendedRetentionRules&#34;: False,
             &#34;overrideRetentionSettings&#34;: True,
             &#34;backupStartTime&#34;: -1,
-            &#34;storagePool&#34;: {
+        }
+
+        # If storage_name is provided, update the payload with storage details
+        if &#39;storage_name&#39; in copy_details:
+            storage_pool = self.__commcell.storage_pools.get(copy_details[&#34;storage_name&#34;])
+            payload[&#39;storagePool&#39;] = {
                 &#34;id&#34;: int(storage_pool.storage_pool_id),
                 &#34;name&#34;: storage_pool.storage_pool_name
-            },
-            &#34;storageType&#34;: storage_pool.storage_pool_properties[&#39;storagePoolDetails&#39;][&#39;libraryList&#39;][0][&#39;model&#39;].upper()
-        }
+            }
+            payload[&#39;storageType&#39;] = storage_pool.storage_pool_properties[&#39;storagePoolDetails&#39;][&#39;libraryList&#39;][0][&#39;model&#39;].upper()
 
         # Add aux copy specific properties
         if is_aux_copy:
@@ -629,7 +690,9 @@ class Plans(object):
 
         self._PLANS = self._services[&#39;PLANS&#39;]
         self._V4_PLANS = self._services[&#39;V4_SERVER_PLANS&#39;]
+        self._V4_GLOBAL_PLANS = self._services[&#39;V4_GLOBAL_SERVER_PLANS&#39;]
         self._plans = None
+        self._plans_cache = None
         self.refresh()
 
     def __str__(self):
@@ -683,11 +746,8 @@ class Plans(object):
             except IndexError:
                 raise IndexError(&#39;No plan exists with the given Name / Id&#39;)
 
-    def _get_plans(self, hard=False):
+    def _get_plans(self):
         &#34;&#34;&#34;Gets all the plans associated with the commcell
-
-            Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
 
             Returns:
                 dict - consists of all plans in the commcell
@@ -702,8 +762,6 @@ class Plans(object):
 
                         if response is not success
         &#34;&#34;&#34;
-        if hard:
-            self._cvpysdk_object.make_request(&#39;GET&#39;, self._services[&#34;HARD_REFRESH_CACHE&#34;] % &#39;plan&#39;)
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._PLANS)
 
         if flag:
@@ -712,10 +770,28 @@ class Plans(object):
             if response.json() and &#39;plans&#39; in response.json():
                 response_value = response.json()[&#39;plans&#39;]
 
+                name_count = {}
+
                 for temp in response_value:
-                    temp_name = temp[&#39;plan&#39;][&#39;planName&#39;].lower()
+                    temp_name = temp.get(&#39;plan&#39;, {}).get(&#39;planName&#39;, &#39;&#39;).lower()
+                    temp_company = temp.get(&#39;plan&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;companyName&#39;, &#39;&#39;).lower()
+
+                    if temp_name in name_count:
+                        name_count[temp_name].add(temp_company)
+                    else:
+                        name_count[temp_name] = {temp_company}
+
+                for temp in response_value:
+                    temp_name = temp.get(&#39;plan&#39;, {}).get(&#39;planName&#39;, &#39;&#39;).lower()
                     temp_id = str(temp[&#39;plan&#39;][&#39;planId&#39;]).lower()
-                    plans[temp_name] = temp_id
+                    temp_company = temp.get(&#39;plan&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;companyName&#39;, &#39;&#39;).lower()
+
+                    if len(name_count[temp_name]) &gt; 1:
+                        unique_key = f&#34;{temp_name}_({temp_company})&#34;
+                    else:
+                        unique_key = temp_name
+
+                    plans[unique_key] = temp_id
 
             return plans
         else:
@@ -766,6 +842,165 @@ class Plans(object):
                 response_string = self._update_response_(response.text)
                 raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
+    def _get_fl_parameters(self, fl: list = None) -&gt; str:
+        &#34;&#34;&#34;
+        Returns the fl parameters to be passed in the mongodb caching api call
+
+        Args:
+            fl    (list)  --   list of columns to be passed in API request
+
+        Returns:
+            fl_parameters(str) -- fl parameter string
+        &#34;&#34;&#34;
+        self.valid_columns = {
+            &#39;planName&#39;: &#39;plans.plan.planName&#39;,
+            &#39;planId&#39;: &#39;plans.plan.planId&#39;,
+            &#39;planType&#39;: &#39;plans.subtype&#39;,
+            &#39;numAssocEntities&#39;: &#39;plans.numAssocEntities&#39;,
+            &#39;rpoInMinutes&#39;: &#39;plans.rpoInMinutes&#39;,
+            &#39;numCopies&#39;: &#39;plans.numCopies&#39;,
+            &#39;planStatusFlag&#39;: &#39;plans.planStatusFlag&#39;,
+            &#39;storage&#39;: &#39;plans.storageResourcePoolMaps.resources.resourcePool&#39;,
+            &#39;company&#39;: &#39;plans.plan.entityInfo.companyName&#39;,
+            &#39;tags&#39;: &#39;tags&#39;
+        }
+        default_columns = &#39;plans.plan.planName,plans.plan.planId&#39;
+
+        if fl:
+            if all(col in self.valid_columns for col in fl):
+                fl_parameters = f&#34;&amp;fl={default_columns},{&#39;,&#39;.join(self.valid_columns[column] for column in fl)}&#34;
+            else:
+                raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#39;Invalid column name passed&#39;)
+        else:
+            fl_parameters = f&#34;&amp;fl={default_columns},{&#39;,&#39;.join(column for column in self.valid_columns.values())}&#34;
+
+        return fl_parameters
+
+    def _get_sort_parameters(self, sort: list = None) -&gt; str:
+        &#34;&#34;&#34;
+        Returns the sort parameters to be passed in the mongodb caching api call
+
+        Args:
+            sort  (list)  --   contains the name of the column on which sorting will be performed and type of sort
+                                valid sor type -- 1 for ascending and -1 for descending
+                                e.g. sort = [&#39;connectName&#39;,&#39;1&#39;]
+
+        Returns:
+            sort_parameters(str) -- sort parameter string
+        &#34;&#34;&#34;
+        sort_type = str(sort[1])
+        col = sort[0]
+        if col in self.valid_columns.keys() and sort_type in [&#39;1&#39;, &#39;-1&#39;]:
+            sort_parameter = &#39;&amp;sort=&#39; + self.valid_columns[col] + &#39;:&#39; + sort_type
+        else:
+            raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#39;Invalid column name passed&#39;)
+        return sort_parameter
+
+    def _get_fq_parameters(self, fq: list = None) -&gt; str:
+        &#34;&#34;&#34;
+        Returns the fq parameters based on the fq list passed
+        Args:
+             fq     (list) --   contains the columnName, condition and value
+                    e.g. fq = [[&#39;planName&#39;,&#39;contains&#39;, test&#39;],[&#39;numAssocEntities&#39;,&#39;between&#39;, &#39;0-1&#39;]]
+
+        Returns:
+            fq_parameters(str) -- fq parameter string
+        &#34;&#34;&#34;
+        conditions = [&#39;contains&#39;, &#39;notContain&#39;, &#39;eq&#39;, &#39;neq&#39;, &#39;gt&#39;, &#39;lt&#39;]
+        params = [&#34;&#34;]
+        if fq:
+
+            for param in fq:
+                if param[0] in self.valid_columns.keys():
+                    if param[0] == &#39;tags&#39; and param[1] ==&#39;contains&#39;:
+                        params.append(f&#34;&amp;tags={param[2]}&#34;)
+                    elif param[1] in conditions:
+                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}&#34;)
+                    elif param[1] == &#39;isEmpty&#39; and len(param) == 2:
+                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:in:null,&#34;)
+                    elif param[1] == &#39;between&#39; and &#39;-&#39; in param[2]:
+                        ranges = param[2].split(&#39;-&#39;)
+                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:gteq:{ranges[0]}&#34;)
+                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:lteq:{ranges[1]}&#34;)
+                    else:
+                        raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#39;Invalid condition passed&#39;)
+                else:
+                    raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#39;Invalid column Name passed&#39;)
+        if params:
+            return &#34;&#34;.join(params)
+
+    def get_plans_cache(self, hard: bool = False, **kwargs) -&gt; dict:
+        &#34;&#34;&#34;
+        Returns plan cache in response.
+
+        Args:
+            hard  (bool)    --   Flag to perform hard refresh on plans cache.
+            **kwargs (dict):
+                fl (list)   --   List of columns to return in response (default: None).
+                sort (list) --   Contains the name of the column on which sorting will be performed and type of sort.
+                                       Valid sort type: 1 for ascending and -1 for descending
+                                       e.g. sort = [&#39;columnName&#39;, &#39;1&#39;] (default: None).
+                limit (list)--   Contains the start and limit parameter value.
+                                        Default [&#39;0&#39;, &#39;100&#39;].
+                search (str)--   Contains the string to search in the commcell entity cache (default: None).
+                fq (list)   --   Contains the columnName, condition, and value.
+                                        e.g. fq = [[&#39;planName&#39;, &#39;contains&#39;, &#39;test&#39;],
+                                        [&#39;numAssocEntities&#39;, &#39;between&#39;, &#39;0-1&#39;]] (default: None).
+                enum (bool) --   Flag to return enums in the response (default: True).
+
+        Returns:
+            dict: Dictionary of all the properties present in response.
+        &#34;&#34;&#34;
+        headers = self._commcell_object._headers.copy()
+        if kwargs.get(&#39;enum&#39;, True):
+            headers[&#39;EnumNames&#39;] = &#34;True&#34;
+
+        fl_parameters = self._get_fl_parameters(kwargs.get(&#39;fl&#39;, None))
+        fq_parameters = self._get_fq_parameters(kwargs.get(&#39;fq&#39;, None))
+        limit = kwargs.get(&#39;limit&#39;, [&#39;0&#39;, &#39;100&#39;])
+        limit_parameters = f&#39;start={limit[0]}&amp;limit={limit[1]}&#39;
+        hard_refresh = &#39;&amp;hardRefresh=true&#39; if hard else &#39;&#39;
+        sort_parameters = self._get_sort_parameters(kwargs.get(&#39;sort&#39;, None)) if kwargs.get(&#39;sort&#39;, None) else &#39;&#39;
+        search_parameter = f&#39;&amp;search={&#34;,&#34;.join(self.valid_columns.values())}:contains:{kwargs.get(&#34;search&#34;, None)}&#39; if kwargs.get(
+            &#39;search&#39;, None) else &#39;&#39;
+
+        request_url = (
+                self._PLANS + &#34;?&#34; + limit_parameters + sort_parameters + fl_parameters + fq_parameters +
+                hard_refresh + search_parameter
+        )
+        flag, response = self._cvpysdk_object.make_request(&#34;GET&#34;, request_url, headers=headers)
+
+        if not flag:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+        plans_summary = {}
+        if response.json() and &#39;plans&#39; in response.json():
+            for plan in response.json()[&#39;plans&#39;]:
+                name = plan.get(&#34;plan&#34;, {}).get(&#34;planName&#34;, None)
+                plan_config = {
+                    &#39;planId&#39;: plan.get(&#39;plan&#39;, {}).get(&#39;planId&#39;, None),
+                    &#39;planType&#39;: plan.get(&#39;subtype&#39;),
+                    &#39;numCopies&#39;: plan.get(&#39;numCopies&#39;),
+                    &#39;numAssocEntities&#39;: plan.get(&#39;numAssocEntities&#39;),
+                    &#39;rpoInMinutes&#39;: plan.get(&#39;rpoInMinutes&#39;),
+                    &#39;planStatusFlag&#39;: plan.get(&#39;planStatusFlag&#39;),
+                    &#39;company&#39;: plan.get(&#39;plan&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;companyName&#39;, None)
+                }
+                if &#39;storageResourcePoolMaps&#39; in plan and &#39;resources&#39; in plan.get(&#39;storageResourcePoolMaps&#39;, {})[0]:
+                    plan_config[&#39;storage&#39;] = [
+                        resource.get(&#39;resourcePool&#39;, {}).get(&#39;resourcePoolName&#39;)
+                        for resource in plan.get(&#39;storageResourcePoolMaps&#39;, {})[0].get(&#39;resources&#39;)
+                    ]
+                if &#39;tags&#39; in plan.get(&#39;plan&#39;):
+                    plan_config[&#39;tags&#39;] = plan.get(&#39;plan&#39;, None).get(&#39;tags&#39;)
+                plan_config = {key: value for key, value in plan_config.items() if value is not None}
+                plans_summary[name] = plan_config
+
+            return plans_summary
+        else:
+            raise SDKException(&#34;Plan&#34;, &#34;102&#34;, &#34;Failed to get plans summary&#34;)
+
     @property
     def all_plans(self):
         &#34;&#34;&#34;Returns the dictionary consisting of all the plans added to the Commcell.
@@ -780,6 +1015,43 @@ class Plans(object):
 
         &#34;&#34;&#34;
         return self._plans
+
+    @property
+    def all_plans_cache(self):
+        &#34;&#34;&#34;Returns the dictionary consisting of all the plans cache present in mongoDB
+
+                    dict - consists of all the plans configured on the commcell
+
+                        {
+                        &#34;plan1_name&#34;:
+                         {
+                         id : &lt;plan&#39;s id&gt;,
+                         Type : &lt;type of plan&gt;,
+                         subtype : &lt;sub type of plan&gt;,
+                         status: &lt;status of the plan&gt;,
+                         numCopies: &lt;number of copies&gt;,
+                         numAssocEntities: &lt;associated Entities Count&gt;,
+                         RPO: &lt;rpo in minutes&gt;,
+                         planStatusFlag: &lt;status of plan&gt;,
+                         company: &lt;name of the company plan belongs to&gt;
+                         },
+
+                        &#34;plan2_name&#34;:
+                         {
+                         id : &lt;plan&#39;s id&gt;,
+                         Type : &lt;type of plan&gt;,
+                         subtype : &lt;sub type of plan&gt;,
+                         status: &lt;status of the plan&gt;,
+                         numCopies: &lt;number of copies&gt;,
+                         numAssocEntities: &lt;associated Entities Count&gt;,
+                         RPO: &lt;rpo in minutes&gt;,
+                         planStatusFlag: &lt;status of plan&gt;,
+                         company: &lt;name of the company plan belongs to&gt;
+                         },
+                    }
+
+                &#34;&#34;&#34;
+        return self._plans_cache
     
     def filter_plans(self, plan_type, company_name=None):
         &#34;&#34;&#34;
@@ -1162,6 +1434,41 @@ class Plans(object):
                         backup_copy_rpo_mins (int, optional): RPO for backup copy in minutes.
                         snap_retention_days (int, optional): Retention period in days.
                         snap_recovery_points (int, optional): Snap recovery point.
+                        gcm_options (dict, optional): Global Configuration Manager options
+                            commcells (list): List of commcell IDs to apply the plan (If not specified, applies to all commcells)
+
+                        For Global Plans, backup_destinations input should be in the following format:
+
+                        Example #1: For Single Copy
+                            backup_destinations = {
+                                &#34;storageTemplateTags&#34;: [
+                                    {
+                                        &#34;name&#34;: &#34;Tag Name&#34;,
+                                        &#34;value&#34;: &#34;Tag Value&#34;
+                                    }
+                                ]
+                            }
+
+                        Example #2: For Multiple Copies
+                        backup_destinations = [
+                            {
+                                &#39;storageTemplateTags&#39;: [
+                                    {
+                                        &#39;name&#39;: &#39;Tag Name 1&#39;, 
+                                        &#39;value&#39;: &#39;Tag Value 1&#39;
+                                    }
+                                ]
+                            }, 
+                            {
+                                &#39;backupDestinationName&#39;: &#39;Aux Copy Name&#39;, 
+                                &#39;storageTemplateTags&#39;: [
+                                    {
+                                        &#39;name&#39;: &#39;Tag Name 2&#39;, 
+                                        &#39;value&#39;: &#39;Tag Value 2&#39;
+                                    }
+                                ]
+                            }
+                        ]
 
         &#34;&#34;&#34;
         if schedules is None:
@@ -1180,14 +1487,36 @@ class Plans(object):
             plan_name, backup_destinations, schedules, **additional_params
         )
 
-        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._V4_PLANS, request_json)
+        if gcm_options := additional_params.get(&#39;gcm_options&#39;):
+            service_commcell_ids = gcm_options.get(&#39;commcells&#39;, [])  # [{&#39;id&#39;: 1}, {&#39;id&#39;: 2}]
+            apply_on_all_commcells = False if service_commcell_ids else True
+            request_json = {
+            &#34;globalConfigInfo&#34;: {
+                &#34;commcells&#34;: service_commcell_ids,
+                &#34;scope&#34;: &#34;&#34;,
+                &#34;scopeFilterQuery&#34;: &#34;&#34;,
+                &#34;applyOnAllCommCells&#34;: apply_on_all_commcells
+            },
+            &#34;plan&#34;: request_json
+            }
+
+        endpoint = self._V4_GLOBAL_PLANS if gcm_options else self._V4_PLANS
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, endpoint, request_json)
 
         if flag:
             if response.json():
                 response_value = response.json()
-                error_message = response_value.get(&#39;errorMessage&#39;)
-                error_code = response_value.get(&#39;errorCode&#39;, 0)
+                if &#39;errors&#39; in response_value:
+                    error_message = response_value.get(&#39;errors&#39;, [{}])[0].get(&#39;errorMessage&#39;)
+                    error_code = response_value.get(&#39;errors&#39;, [{}])[0].get(&#39;errorCode&#39;, 0)
+                else:
+                    error_message = response_value.get(&#39;errorMessage&#39;)
+                    error_code = response_value.get(&#39;errorCode&#39;, 0)
 
+                # corner case condition
+                if error_code == 587207454:
+                    raise SDKException(&#39;Plan&#39;, &#39;102&#39;, f&#39;Successfully created plan {response_value[&#34;plan&#34;][&#34;name&#34;]} &#39;
+                                                      f&#39;with error: {error_message}&#39;)
                 if error_code != 0:
                     raise SDKException(&#39;Plan&#39;, &#39;102&#39;, f&#39;Failed to create new V4 Server Plan\nError: &#34;{error_message}&#34;&#39;)
                 
@@ -1283,6 +1612,9 @@ class Plans(object):
             is_dedupe = False
 
         request_json = self._get_plan_template(plan_sub_type, &#34;MSP&#34;)
+        if plan_sub_type == &#34;Laptop&#34;:
+            del request_json[&#39;plan&#39;][&#39;laptop&#39;][&#39;accessPolicies&#39;]
+            
         request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;rpoInMinutes&#39;] = sla_in_minutes
         request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;description&#39;] = &#34;Created from CvPySDK.&#34;
         request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;plan&#39;][&#39;planName&#39;] = plan_name
@@ -1339,24 +1671,25 @@ class Plans(object):
                 }
 
         # Enable full backup schedule
-        for subtask in request_json[&#39;plan&#39;][&#39;schedule&#39;][&#39;subTasks&#39;]:
-            if &#39;flags&#39; in subtask[&#39;subTask&#39;] and subtask[&#39;subTask&#39;][&#39;flags&#39;] == 65536:
-                import copy
-                full_schedule = copy.deepcopy(subtask)
-                del copy
-                full_schedule[&#39;subTask&#39;].update({
-                    &#39;subTaskName&#39;: &#39;Full backup schedule&#39;,
-                    &#39;flags&#39;: 4194304
-                })
-                full_schedule[&#39;pattern&#39;].update({
-                    &#39;freq_type&#39;: 4,
-                    &#39;freq_interval&#39;: 1,
-                    &#39;name&#39;: &#39;Full backup schedule&#39;,
-                    &#39;active_end_time&#39;: 0
-                })
-                full_schedule[&#39;options&#39;][&#39;backupOpts&#39;][&#39;backupLevel&#39;] = &#39;FULL&#39;
-                request_json[&#39;plan&#39;][&#39;schedule&#39;][&#39;subTasks&#39;].append(full_schedule)
-                break
+        if plan_sub_type != &#34;Laptop&#34;:
+            for subtask in request_json[&#39;plan&#39;][&#39;schedule&#39;][&#39;subTasks&#39;]:
+                if &#39;flags&#39; in subtask[&#39;subTask&#39;] and subtask[&#39;subTask&#39;][&#39;flags&#39;] == 65536:
+                    import copy
+                    full_schedule = copy.deepcopy(subtask)
+                    del copy
+                    full_schedule[&#39;subTask&#39;].update({
+                        &#39;subTaskName&#39;: &#39;Full backup schedule&#39;,
+                        &#39;flags&#39;: 4194304
+                    })
+                    full_schedule[&#39;pattern&#39;].update({
+                        &#39;freq_type&#39;: 4,
+                        &#39;freq_interval&#39;: 1,
+                        &#39;name&#39;: &#39;Full backup schedule&#39;,
+                        &#39;active_end_time&#39;: 0
+                    })
+                    full_schedule[&#39;options&#39;][&#39;backupOpts&#39;][&#39;backupLevel&#39;] = &#39;FULL&#39;
+                    request_json[&#39;plan&#39;][&#39;schedule&#39;][&#39;subTasks&#39;].append(full_schedule)
+                    break
 
         if isinstance(override_entities, dict):
             request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;restrictions&#39;] = 0
@@ -1480,15 +1813,21 @@ class Plans(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         
-    def refresh(self, hard=False):
+    def refresh(self, **kwargs):
         &#34;&#34;&#34;
-        Refresh the plans associated with the Commcell.
+        Refresh the list of plans on this commcell.
 
             Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
-
+                **kwargs (dict):
+                    mongodb (bool)  -- Flag to fetch plans cache from MongoDB (default: False).
+                    hard (bool)     -- Flag to hard refresh MongoDB cache for this entity (default: False).
         &#34;&#34;&#34;
-        self._plans = self._get_plans(hard)
+        mongodb = kwargs.get(&#39;mongodb&#39;, False)
+        hard = kwargs.get(&#39;hard&#39;, False)
+
+        self._plans = self._get_plans()
+        if mongodb:
+            self._plans_cache = self.get_plans_cache(hard=hard)
 
     def add_data_classification_plan(self, plan_name, index_server, target_app=TargetApps.FSO, **kwargs):
         &#34;&#34;&#34;Adds data classification plan to the commcell
@@ -1668,26 +2007,57 @@ class Plans(object):
             response_string = self._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def get_plans_summary(self)-&gt;dict:
+    def get_plans_summary(self) -&gt; dict:
+
         &#34;&#34;&#34;Returns plan summary in response
 
         Returns:
             list - plans summary
+
+        **NOTE - THE FUNCTION WOULD BE DEPRECATED IN SP40 AS GET_PLANS_CACHE() WILL RETURN THE SIMILAR RESPONSE**
         &#34;&#34;&#34;
         params = &#34;fl=plans.missingEntities%2Cplans.numAssocEntities%2Cplans.numCopies%2Cplans.parent&#34; \
                  &#34;%2Cplans.permissions%2Cplans.plan.planId%2Cplans.plan.planName%2Cplans.planStatusFlag%2Cplans.restrictions%2C&#34; \
                  &#34;plans.rpoInMinutes%2Cplans.subtype%2Cplans.type%2Cplans.targetApps%2Cplans.storageResourcePoolMaps.resources.resourcePool&#34; \
                  &#34;&amp;hardRefresh=true&#34;
-        request_url = self._services[&#39;PLAN_SUMMARY&#39;]%(params)
+        request_url = self._services[&#39;PLAN_SUMMARY&#39;] % params
 
         flags,response = self._cvpysdk_object.make_request(&#39;GET&#39;,request_url)
 
         if flags:
-            if response.json() :
-                plans_summary = {entry.get(&#34;plan&#34;,{}).get(&#34;name&#34;,None): entry.get(&#34;associatedEntities&#34;,None) for entry in response.json()[&#34;plans&#34;]}
+            if response.json():
+                plans_summary = {entry.get(&#34;plan&#34;, {}).get(&#34;name&#34;, None): entry.get(&#34;associatedEntities&#34;, None)
+                                 for entry in response.json()[&#34;plans&#34;]}
                 return plans_summary
             else:
                 raise SDKException(&#34;Plan&#34;, &#34;102&#34;, &#34;Failed to get plans summary&#34;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def add_office365_plan(self, plan_name)-&gt;None:
+        &#34;&#34;&#34;
+        Creates Office 365 plan
+        Args:
+            plan_name (str) : name of the plan to be created
+        &#34;&#34;&#34;
+        if not isinstance(plan_name, str):
+            raise SDKException(&#39;Plan&#39;,&#39;102&#39;,&#39;Plan name should be passed as String&#39;)
+        plan_sub_type = &#34;Office365&#34;
+        plan_type = &#34;EXCHANGE&#34;
+        office365_plan_template = self._get_plan_template(plan_type=plan_type,plan_sub_type=plan_sub_type)
+        office365_plan_template[&#34;plan&#34;][&#34;summary&#34;][&#34;plan&#34;][&#34;planName&#34;] = plan_name
+        flag, response = self._cvpysdk_object.make_request(&#34;POST&#34;, self._PLANS ,office365_plan_template)
+        if flag:
+            if response:
+                if response.status_code == 200:
+                    self.refresh()
+                elif response.status_code == 400:
+                    raise SDKException(&#34;Plan&#34;,&#34;102&#34;,&#34;Bad request&#34;)
+                elif response.status_code == 401:
+                    raise SDKException(&#34;Plan&#34;, &#34;102&#34;, &#34;User is unauthorized to perform create operation&#34;)
+            else:
+                raise SDKException(&#34;Plan&#34;,&#34;102&#34;,&#34;Response received is empty&#34;)
         else:
             response_string = self._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
@@ -1740,6 +2110,8 @@ class Plan(object):
         self._plan_type = None
         self._subtype = None
         self._security_associations = {}
+        self._provider_domain_name = None
+        self._resources = None
         self._storage_pool = None
         self._child_policies = {
             &#39;storagePolicy&#39;: None,
@@ -1760,6 +2132,9 @@ class Plan(object):
         self._v4_plan_properties = {}
         self.refresh()
         self.plan_v4_helper = _PayloadGeneratorPlanV4(commcell=self._commcell_object)
+        self._data_schedule_policy = None
+        self._log_schedule_policy = None
+        self._snap_schedule_policy = None
 
     def __repr__(self):
         &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
@@ -1864,12 +2239,6 @@ class Plan(object):
                                 self._storage_copies[
                                     copy[&#39;StoragePolicyCopy&#39;][&#39;copyName&#39;]][&#39;isSnapCopy&#39;] = True
 
-                    if &#39;storagePolicy&#39; in self._plan_properties[&#39;storage&#39;]:
-                        self._commcell_object.storage_policies.refresh()
-                        self._child_policies[&#39;storagePolicy&#39;] = self._commcell_object.storage_policies.get(
-                            self._plan_properties[&#39;storage&#39;][&#39;storagePolicy&#39;][&#39;storagePolicyName&#39;]
-                        )
-
                 if self._subtype == 33554439:
                     if &#39;clientGroup&#39; in self._plan_properties[&#39;autoCreatedEntities&#39;]:
                         self._commcell_object.client_groups.refresh()
@@ -1881,23 +2250,6 @@ class Plan(object):
                     if &#39;localUserGroup&#39; in self._plan_properties[&#39;autoCreatedEntities&#39;]:
                         self._user_group = self._plan_properties[&#39;autoCreatedEntities&#39;][
                             &#39;localUserGroup&#39;][&#39;userGroupName&#39;]
-
-                if &#39;schedule&#39; in self._plan_properties:
-                    if &#39;task&#39; in self._plan_properties[&#39;schedule&#39;]:
-                        self._commcell_object.schedule_policies.refresh()
-                        self._child_policies[&#39;schedulePolicy&#39;] = {
-                            &#39;data&#39;: self._commcell_object.policies.schedule_policies.get(
-                                self._plan_properties[&#39;schedule&#39;][&#39;task&#39;][&#39;taskName&#39;]
-                            )
-                        }
-                        # Skip adding database schedules if plan has no database schedule policy
-                        if self._subtype == 33554437 and self._plan_properties.get(&#39;database&#39;, {}).get(&#39;rpoInMinutes&#39;):
-                            self._child_policies[&#39;schedulePolicy&#39;].update({
-                                &#39;log&#39;: self._commcell_object.policies.schedule_policies.get(
-                                    self._plan_properties[
-                                        &#39;database&#39;][&#39;scheduleLog&#39;][&#39;task&#39;][&#39;taskName&#39;]
-                                )
-                            })
 
                 if self._plan_properties[&#39;operationWindow&#39;][&#39;ruleId&#39;] != 0:
                     self._operation_window = self._plan_properties[&#39;operationWindow&#39;]
@@ -1977,9 +2329,16 @@ class Plan(object):
                                 )
                             else:
                                 self._security_associations[temp_key] = [association[&#39;properties&#39;][&#39;role&#39;][&#39;roleName&#39;]]
+                    if &#39;tagWithCompany&#39; in self._plan_properties.get(&#39;securityAssociations&#39;):
+                        self._provider_domain_name = self._plan_properties.get(&#39;securityAssociations&#39;, {}).\
+                            get(&#39;tagWithCompany&#39;, {}).get(&#39;providerDomainName&#39;)
 
                 if &#34;storageRules&#34; in self._plan_properties:
-                    self._region_id = [x[&#34;regions&#34;][&#34;region&#34;][0][&#34;regionId&#34;] for x in self._plan_properties[&#34;storageRules&#34;][&#34;rules&#34;]]
+                    self._region_id = [x[&#34;regions&#34;][&#34;region&#34;][0][&#34;regionId&#34;]
+                                       for x in self._plan_properties[&#34;storageRules&#34;][&#34;rules&#34;]]
+
+                if &#39;storageResourcePoolMap&#39; in self._plan_properties:
+                    self._resources = self._plan_properties.get(&#39;storageResourcePoolMap&#39;, {})[0].get(&#39;resources&#39;)
 
                 self._get_associated_entities()
 
@@ -3108,20 +3467,117 @@ class Plan(object):
                 &#39;Plan&#39;, &#39;102&#39;, &#39;Override restrictions must be defined in a dict&#39;
             )
 
+    def __set_storage_policy(self):
+        &#34;&#34;&#34;Method to set the storage policy of the plan&#34;&#34;&#34;
+        self._commcell_object.storage_policies.refresh()
+        storage_policy_name = self._plan_properties.get(&#39;storage&#39;, {}).get(&#39;storagePolicy&#39;, {}).get(&#39;storagePolicyName&#39;)
+        if storage_policy_name and self._commcell_object.storage_policies.has_policy(storage_policy_name):
+            self._child_policies[&#39;storagePolicy&#39;] = self._commcell_object.storage_policies.get(storage_policy_name)
+        else:
+            raise SDKException(&#39;Plan&#39;, &#39;102&#39;, f&#39;Failed to fetch storage policy: {storage_policy_name}&#39;)
+
     @property
     def storage_policy(self):
         &#34;&#34;&#34;Treats the plan storage policy as a read-only attribute&#34;&#34;&#34;
-        return self._child_policies[&#39;storagePolicy&#39;]
+        if not self._child_policies.get(&#39;storagePolicy&#39;):
+            self.__set_storage_policy()
+
+        return self._child_policies.get(&#39;storagePolicy&#39;)
 
     @property
     def storage_copies(self):
         &#34;&#34;&#34;Treats the plan storage policy as a read-only attribute&#34;&#34;&#34;
         return self._storage_copies
 
+    def __set_schedule_policies(self):
+        &#34;&#34;&#34;Sets the schedule policies for the plan&#34;&#34;&#34;
+        self._commcell_object.schedule_policies.refresh()
+        data_schedule_policy_exists = self._plan_properties.get(&#39;schedule&#39;, {}).get(&#39;task&#39;, {}).get(&#39;taskName&#39;)
+        log_schedule_policy_exists = self._plan_properties.get(&#39;database&#39;, {}).get(&#39;scheduleLog&#39;, {}).get(&#39;task&#39;, {}).get(&#39;taskName&#39;)
+        snap_schedule_policy_exists = self._plan_properties.get(&#39;snapInfo&#39;, {}).get(&#39;snapTask&#39;, {}).get(&#39;task&#39;, {}).get(&#39;taskName&#39;)
+
+        if data_schedule_policy_exists:
+            self._child_policies[&#39;schedulePolicy&#39;][&#39;data&#39;] = self.data_schedule_policy
+
+        if log_schedule_policy_exists:
+            self._child_policies[&#39;schedulePolicy&#39;][&#39;log&#39;] = self.log_schedule_policy
+
+        if snap_schedule_policy_exists:
+            self._child_policies[&#39;schedulePolicy&#39;][&#39;snap&#39;] = self.snap_schedule_policy
+
     @property
     def schedule_policies(self):
         &#34;&#34;&#34;Treats the plan schedule policies as read-only attribute&#34;&#34;&#34;
-        return self._child_policies[&#39;schedulePolicy&#39;]
+        if not self._child_policies.get(&#39;schedulePolicy&#39;):
+            self.__set_schedule_policies()
+
+        return self._child_policies.get(&#39;schedulePolicy&#39;)
+
+    def __get_schedule_policy(self, policy_type: str) -&gt; object:
+        &#34;&#34;&#34;
+        Returns the schedule policy object of the given policy type
+
+        Args:
+            policy_type (str)  --  type of schedule policy to be fetched
+                            Eg: &#39;data&#39;, &#39;log&#39;, &#39;snap&#39;
+
+        Returns:
+            object  --  schedule policy object
+        &#34;&#34;&#34;
+        policy_name = &#39;&#39;
+        policy_type = policy_type.lower()
+
+        if policy_type == &#39;data&#39;:
+            policy_name = self._plan_properties.get(&#39;schedule&#39;, {}).get(&#39;task&#39;, {}).get(&#39;taskName&#39;, &#39;&#39;)
+        elif policy_type == &#39;log&#39;:
+            policy_name = self._plan_properties.get(&#39;database&#39;, {}).get(&#39;scheduleLog&#39;, {}).get(&#39;task&#39;, {}).get(&#39;taskName&#39;, &#39;&#39;)
+        elif policy_type == &#39;snap&#39;:
+            policy_name = self._plan_properties.get(&#39;snapInfo&#39;, {}).get(&#39;snapTask&#39;, {}).get(&#39;task&#39;, {}).get(&#39;taskName&#39;, &#39;&#39;)
+        else:
+            raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#39;Invalid schedule policy type&#39;)
+
+        schedule_policies = self._commcell_object.schedule_policies
+
+        if not schedule_policies.has_policy(policy_name):
+            raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#39;Failed to fetch schedule policies&#39;)
+
+        return schedule_policies.get(policy_name)
+
+    @property
+    def data_schedule_policy(self) -&gt; object:
+        &#34;&#34;&#34;
+            Treats the plan data scheduler policy as read-only attribute
+
+            Returns:
+                object  -   data schedule policy object
+        &#34;&#34;&#34;
+        if not self._data_schedule_policy:
+            self._data_schedule_policy = self.__get_schedule_policy(&#39;data&#39;)
+        return self._data_schedule_policy
+
+    @property
+    def log_schedule_policy(self) -&gt; object:
+        &#34;&#34;&#34;
+            Treats the plan log schedule policy as read-only attribute
+
+            Returns:
+                object  -   log schedule policy object
+        &#34;&#34;&#34;
+        if not self._log_schedule_policy:
+            self._log_schedule_policy = self.__get_schedule_policy(&#39;log&#39;)
+        return self._log_schedule_policy
+
+    @property
+    def snap_schedule_policy(self) -&gt; object:
+        &#34;&#34;&#34;
+            Treats the plan snap schedule policy as read-only attribute
+
+            Returns:
+                object  -   snap schedule policy object
+        &#34;&#34;&#34;
+        if not self._snap_schedule_policy:
+            self._snap_schedule_policy = self.__get_schedule_policy(&#39;snap&#39;)
+        return self._snap_schedule_policy
 
     @property
     def addons(self):
@@ -3132,10 +3588,23 @@ class Plan(object):
             )
         return self._addons
 
+    def __set_subclient_policy_ids(self):
+        &#34;&#34;&#34;Sets the subclient policy ids for the plan&#34;&#34;&#34;
+        backup_content = self._plan_properties.get(&#39;laptop&#39;, {}).get(&#39;content&#39;, {}).get(&#39;backupContent&#39;, [])
+
+        self._child_policies[&#39;subclientPolicyIds&#39;] = [
+            ida[&#39;subClientPolicy&#39;][&#39;backupSetEntity&#39;][&#39;backupsetId&#39;]
+            for ida in backup_content
+            if ida.get(&#39;subClientPolicy&#39;, {}).get(&#39;backupSetEntity&#39;, {}).get(&#39;backupsetId&#39;)
+        ]
+
     @property
     def subclient_policy(self):
         &#34;&#34;&#34;Treats the plan subclient policy as a read-only attribute&#34;&#34;&#34;
-        return self._child_policies[&#39;subclientPolicyIds&#39;]
+        if not self._child_policies.get(&#39;subclientPolicyIds&#39;):
+            self.__set_subclient_policy_ids()
+
+        return self._child_policies.get(&#39;subclientPolicyIds&#39;)
 
     @property
     def associated_entities(self):
@@ -3195,6 +3664,28 @@ class Plan(object):
         return self._dc_plan_props
 
     @property
+    def content_indexing(self):
+        &#34;&#34;&#34;Returns the Content Indexing status of O365 plan&#34;&#34;&#34;
+        try:
+            ci_status = (self.properties.get(&#34;office365Info&#34;,{})
+                         .get(&#34;o365Exchange&#34;,{})
+                         .get(&#34;mbArchiving&#34;, {})
+                         .get(&#34;detail&#34;, {})
+                         .get(&#34;emailPolicy&#34;, {})
+                         .get(&#34;archivePolicy&#34;, {})
+                         .get(&#34;contentIndexProps&#34;, {})
+                         .get(&#34;enableContentIndex&#34;, {}))
+        except:
+            ci_status= None
+        return ci_status
+
+    @content_indexing.setter
+    def content_indexing(self, value: bool):
+        &#34;&#34;&#34;Sets content indexing value for O365 plan&#34;&#34;&#34;
+        self._enable_content_indexing_o365_plan(value)
+
+
+    @property
     def properties(self):
         &#34;&#34;&#34;Returns the configured properties for the Plan&#34;&#34;&#34;
         return self._plan_properties
@@ -3204,6 +3695,26 @@ class Plan(object):
         &#34;&#34;&#34;Returns the Backup destination region id&#34;&#34;&#34;
         return self._region_id
 
+    @property
+    def company(self) -&gt; str:
+        &#34;&#34;&#34;
+        Returns the company of the plan
+
+        return:
+            str --  company&#39;s domain name
+        &#34;&#34;&#34;
+        return self._provider_domain_name
+
+    @property
+    def resources(self) -&gt; list:
+        &#34;&#34;&#34;
+        Returns the resources stored in storage resource pool
+
+        return:
+            list --  plan&#39;s resources
+        &#34;&#34;&#34;
+        return self._resources
+
     def refresh(self):
         &#34;&#34;&#34;Refresh the properties of the Plan.&#34;&#34;&#34;
         self._properties = self._get_plan_properties()
@@ -3212,7 +3723,17 @@ class Plan(object):
         if self.subtype == 33554437:
             self._v4_plan_properties = self._get_v4_plan_properties()
 
-    def associate_user(self, userlist):
+        # lazy loading of properties
+        self._data_schedule_policy = None
+        self._log_schedule_policy = None
+        self._snap_schedule_policy = None
+        self._child_policies = {
+            &#39;storagePolicy&#39;: None,
+            &#39;schedulePolicy&#39;: {},
+            &#39;subclientPolicyIds&#39;: []
+        } # reset to constructor state
+
+    def associate_user(self, userlist, send_invite=True):
         &#34;&#34;&#34;associates the users to the plan.
             # TODO: Need to handle user groups.
 
@@ -3233,7 +3754,7 @@ class Plan(object):
                 temp = self._commcell_object.users.get(user)
 
                 temp_dict = {
-                    &#39;sendInvite&#39;: True,
+                    &#39;sendInvite&#39;: send_invite,
                     &#39;user&#39;: {
                         &#39;userName&#39;: temp.user_name,
                         &#39;userId&#39;: int(temp.user_id)
@@ -3519,7 +4040,42 @@ class Plan(object):
                 # currently we dont have any thing to update in DC plan for FSO app so throw exception
                 raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#39;No attributes to Edit for DC Plan with TargetApps as : FSO&#39;)
         self._update_plan_props(request_json)
-        
+
+    def _enable_content_indexing_o365_plan(self, value):
+        &#34;&#34;&#34;Enable CI for O365 plan
+
+            Args:
+                value (bool)  --- specifies whether to content index or not
+
+            Returns:
+                None
+        &#34;&#34;&#34;
+        request_json = copy.deepcopy(PlanConstants.PLAN_UPDATE_REQUEST_JSON[self.plan_type])
+
+        request_json[&#39;summary&#39;][&#39;plan&#39;][&#39;planName&#39;] = self.plan_name
+        request_json[&#39;summary&#39;][&#39;plan&#39;][&#39;planId&#39;] = int(self.plan_id)
+        o365_arch = request_json[&#39;office365Info&#39;][&#39;o365Exchange&#39;][&#39;mbArchiving&#39;][&#39;detail&#39;][&#39;emailPolicy&#39;]
+        o365_arch[&#39;archivePolicy&#39;][&#39;contentIndexProps&#39;][&#39;enableContentIndex&#39;] = value
+
+        o365_cloud = request_json[&#39;office365Info&#39;][&#39;o365CloudOffice&#39;][&#39;caBackup&#39;][&#39;detail&#39;][&#39;cloudAppPolicy&#39;][
+            &#39;backupPolicy&#39;]
+        o365_cloud[&#39;onedrivebackupPolicy&#39;][&#39;enableContentIndex&#39;] = value
+        o365_cloud[&#39;spbackupPolicy&#39;][&#39;enableContentIndex&#39;] = value
+        o365_cloud[&#39;teamsbackupPolicy&#39;][&#39;enableContentIndex&#39;] = value
+
+        request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][
+            &#39;includeDocTypes&#39;] = PlanConstants.DEFAULT_INCLUDE_DOC_TYPES
+        request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][
+            &#39;minDocSize&#39;] = PlanConstants.DEFAULT_MIN_DOC_SIZE
+
+        request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][
+            &#39;maxDocSize&#39;] = PlanConstants.DEFAULT_MAX_DOC_SIZE
+        request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][
+            &#39;opType&#39;] = PlanConstants.INDEXING_METADATA_AND_CONTENT
+        request_json[&#39;ciPolicy&#39;] = request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;]
+
+        self._update_plan_props(request_json)
+
     def policy_subclient_ids(self):
         &#34;&#34;&#34;Returns Policy subclient IDs of the plan
         
@@ -3718,6 +4274,39 @@ class Plan(object):
                     raise SDKException(&#39;Plan&#39;, 102, &#39;Failed to get subclient Ids.&#39;)
             else:
                 raise SDKException(&#39;Plan&#39;, 102, response.text)
+
+    def enable_data_aging(self, plan_copy_id: int, is_enable=True):
+
+        &#34;&#34;&#34;Method is used to enable/disable the data aging for the plan copy
+
+            Args:
+                plan_copy_id(int)      :   copy_id of the plan
+
+                is_enable(bool)       :   value whether to be unable or disable the data aging
+
+                                      example: true = enable
+                                               false = disable
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        payload = {
+            &#34;retentionRules&#34;: {
+                &#34;enableDataAging&#34;: is_enable
+            }
+        }
+
+        api_url = self._services[&#39;ENABLE_DATA_AGING&#39;] % (self._plan_id, plan_copy_id)
+        flag, response = self._cvpysdk_object.make_request(method=&#39;PUT&#39;,
+                                                           url=api_url, payload=payload)
+        if not flag:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;,
+                               self._commcell_object._update_response_(response.text))
+        if not response:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;,
+                               self._commcell_object._update_response_(response.text))
 
     @property
     def applicable_solutions(self):
@@ -3790,7 +4379,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L1524-L3583" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L1866-L4144" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Plan(object):
     &#34;&#34;&#34;Class for performing operations for a specific Plan.&#34;&#34;&#34;
@@ -3839,6 +4428,8 @@ default: None</p>
         self._plan_type = None
         self._subtype = None
         self._security_associations = {}
+        self._provider_domain_name = None
+        self._resources = None
         self._storage_pool = None
         self._child_policies = {
             &#39;storagePolicy&#39;: None,
@@ -3859,6 +4450,9 @@ default: None</p>
         self._v4_plan_properties = {}
         self.refresh()
         self.plan_v4_helper = _PayloadGeneratorPlanV4(commcell=self._commcell_object)
+        self._data_schedule_policy = None
+        self._log_schedule_policy = None
+        self._snap_schedule_policy = None
 
     def __repr__(self):
         &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
@@ -3963,12 +4557,6 @@ default: None</p>
                                 self._storage_copies[
                                     copy[&#39;StoragePolicyCopy&#39;][&#39;copyName&#39;]][&#39;isSnapCopy&#39;] = True
 
-                    if &#39;storagePolicy&#39; in self._plan_properties[&#39;storage&#39;]:
-                        self._commcell_object.storage_policies.refresh()
-                        self._child_policies[&#39;storagePolicy&#39;] = self._commcell_object.storage_policies.get(
-                            self._plan_properties[&#39;storage&#39;][&#39;storagePolicy&#39;][&#39;storagePolicyName&#39;]
-                        )
-
                 if self._subtype == 33554439:
                     if &#39;clientGroup&#39; in self._plan_properties[&#39;autoCreatedEntities&#39;]:
                         self._commcell_object.client_groups.refresh()
@@ -3980,23 +4568,6 @@ default: None</p>
                     if &#39;localUserGroup&#39; in self._plan_properties[&#39;autoCreatedEntities&#39;]:
                         self._user_group = self._plan_properties[&#39;autoCreatedEntities&#39;][
                             &#39;localUserGroup&#39;][&#39;userGroupName&#39;]
-
-                if &#39;schedule&#39; in self._plan_properties:
-                    if &#39;task&#39; in self._plan_properties[&#39;schedule&#39;]:
-                        self._commcell_object.schedule_policies.refresh()
-                        self._child_policies[&#39;schedulePolicy&#39;] = {
-                            &#39;data&#39;: self._commcell_object.policies.schedule_policies.get(
-                                self._plan_properties[&#39;schedule&#39;][&#39;task&#39;][&#39;taskName&#39;]
-                            )
-                        }
-                        # Skip adding database schedules if plan has no database schedule policy
-                        if self._subtype == 33554437 and self._plan_properties.get(&#39;database&#39;, {}).get(&#39;rpoInMinutes&#39;):
-                            self._child_policies[&#39;schedulePolicy&#39;].update({
-                                &#39;log&#39;: self._commcell_object.policies.schedule_policies.get(
-                                    self._plan_properties[
-                                        &#39;database&#39;][&#39;scheduleLog&#39;][&#39;task&#39;][&#39;taskName&#39;]
-                                )
-                            })
 
                 if self._plan_properties[&#39;operationWindow&#39;][&#39;ruleId&#39;] != 0:
                     self._operation_window = self._plan_properties[&#39;operationWindow&#39;]
@@ -4076,9 +4647,16 @@ default: None</p>
                                 )
                             else:
                                 self._security_associations[temp_key] = [association[&#39;properties&#39;][&#39;role&#39;][&#39;roleName&#39;]]
+                    if &#39;tagWithCompany&#39; in self._plan_properties.get(&#39;securityAssociations&#39;):
+                        self._provider_domain_name = self._plan_properties.get(&#39;securityAssociations&#39;, {}).\
+                            get(&#39;tagWithCompany&#39;, {}).get(&#39;providerDomainName&#39;)
 
                 if &#34;storageRules&#34; in self._plan_properties:
-                    self._region_id = [x[&#34;regions&#34;][&#34;region&#34;][0][&#34;regionId&#34;] for x in self._plan_properties[&#34;storageRules&#34;][&#34;rules&#34;]]
+                    self._region_id = [x[&#34;regions&#34;][&#34;region&#34;][0][&#34;regionId&#34;]
+                                       for x in self._plan_properties[&#34;storageRules&#34;][&#34;rules&#34;]]
+
+                if &#39;storageResourcePoolMap&#39; in self._plan_properties:
+                    self._resources = self._plan_properties.get(&#39;storageResourcePoolMap&#39;, {})[0].get(&#39;resources&#39;)
 
                 self._get_associated_entities()
 
@@ -5207,20 +5785,117 @@ default: None</p>
                 &#39;Plan&#39;, &#39;102&#39;, &#39;Override restrictions must be defined in a dict&#39;
             )
 
+    def __set_storage_policy(self):
+        &#34;&#34;&#34;Method to set the storage policy of the plan&#34;&#34;&#34;
+        self._commcell_object.storage_policies.refresh()
+        storage_policy_name = self._plan_properties.get(&#39;storage&#39;, {}).get(&#39;storagePolicy&#39;, {}).get(&#39;storagePolicyName&#39;)
+        if storage_policy_name and self._commcell_object.storage_policies.has_policy(storage_policy_name):
+            self._child_policies[&#39;storagePolicy&#39;] = self._commcell_object.storage_policies.get(storage_policy_name)
+        else:
+            raise SDKException(&#39;Plan&#39;, &#39;102&#39;, f&#39;Failed to fetch storage policy: {storage_policy_name}&#39;)
+
     @property
     def storage_policy(self):
         &#34;&#34;&#34;Treats the plan storage policy as a read-only attribute&#34;&#34;&#34;
-        return self._child_policies[&#39;storagePolicy&#39;]
+        if not self._child_policies.get(&#39;storagePolicy&#39;):
+            self.__set_storage_policy()
+
+        return self._child_policies.get(&#39;storagePolicy&#39;)
 
     @property
     def storage_copies(self):
         &#34;&#34;&#34;Treats the plan storage policy as a read-only attribute&#34;&#34;&#34;
         return self._storage_copies
 
+    def __set_schedule_policies(self):
+        &#34;&#34;&#34;Sets the schedule policies for the plan&#34;&#34;&#34;
+        self._commcell_object.schedule_policies.refresh()
+        data_schedule_policy_exists = self._plan_properties.get(&#39;schedule&#39;, {}).get(&#39;task&#39;, {}).get(&#39;taskName&#39;)
+        log_schedule_policy_exists = self._plan_properties.get(&#39;database&#39;, {}).get(&#39;scheduleLog&#39;, {}).get(&#39;task&#39;, {}).get(&#39;taskName&#39;)
+        snap_schedule_policy_exists = self._plan_properties.get(&#39;snapInfo&#39;, {}).get(&#39;snapTask&#39;, {}).get(&#39;task&#39;, {}).get(&#39;taskName&#39;)
+
+        if data_schedule_policy_exists:
+            self._child_policies[&#39;schedulePolicy&#39;][&#39;data&#39;] = self.data_schedule_policy
+
+        if log_schedule_policy_exists:
+            self._child_policies[&#39;schedulePolicy&#39;][&#39;log&#39;] = self.log_schedule_policy
+
+        if snap_schedule_policy_exists:
+            self._child_policies[&#39;schedulePolicy&#39;][&#39;snap&#39;] = self.snap_schedule_policy
+
     @property
     def schedule_policies(self):
         &#34;&#34;&#34;Treats the plan schedule policies as read-only attribute&#34;&#34;&#34;
-        return self._child_policies[&#39;schedulePolicy&#39;]
+        if not self._child_policies.get(&#39;schedulePolicy&#39;):
+            self.__set_schedule_policies()
+
+        return self._child_policies.get(&#39;schedulePolicy&#39;)
+
+    def __get_schedule_policy(self, policy_type: str) -&gt; object:
+        &#34;&#34;&#34;
+        Returns the schedule policy object of the given policy type
+
+        Args:
+            policy_type (str)  --  type of schedule policy to be fetched
+                            Eg: &#39;data&#39;, &#39;log&#39;, &#39;snap&#39;
+
+        Returns:
+            object  --  schedule policy object
+        &#34;&#34;&#34;
+        policy_name = &#39;&#39;
+        policy_type = policy_type.lower()
+
+        if policy_type == &#39;data&#39;:
+            policy_name = self._plan_properties.get(&#39;schedule&#39;, {}).get(&#39;task&#39;, {}).get(&#39;taskName&#39;, &#39;&#39;)
+        elif policy_type == &#39;log&#39;:
+            policy_name = self._plan_properties.get(&#39;database&#39;, {}).get(&#39;scheduleLog&#39;, {}).get(&#39;task&#39;, {}).get(&#39;taskName&#39;, &#39;&#39;)
+        elif policy_type == &#39;snap&#39;:
+            policy_name = self._plan_properties.get(&#39;snapInfo&#39;, {}).get(&#39;snapTask&#39;, {}).get(&#39;task&#39;, {}).get(&#39;taskName&#39;, &#39;&#39;)
+        else:
+            raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#39;Invalid schedule policy type&#39;)
+
+        schedule_policies = self._commcell_object.schedule_policies
+
+        if not schedule_policies.has_policy(policy_name):
+            raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#39;Failed to fetch schedule policies&#39;)
+
+        return schedule_policies.get(policy_name)
+
+    @property
+    def data_schedule_policy(self) -&gt; object:
+        &#34;&#34;&#34;
+            Treats the plan data scheduler policy as read-only attribute
+
+            Returns:
+                object  -   data schedule policy object
+        &#34;&#34;&#34;
+        if not self._data_schedule_policy:
+            self._data_schedule_policy = self.__get_schedule_policy(&#39;data&#39;)
+        return self._data_schedule_policy
+
+    @property
+    def log_schedule_policy(self) -&gt; object:
+        &#34;&#34;&#34;
+            Treats the plan log schedule policy as read-only attribute
+
+            Returns:
+                object  -   log schedule policy object
+        &#34;&#34;&#34;
+        if not self._log_schedule_policy:
+            self._log_schedule_policy = self.__get_schedule_policy(&#39;log&#39;)
+        return self._log_schedule_policy
+
+    @property
+    def snap_schedule_policy(self) -&gt; object:
+        &#34;&#34;&#34;
+            Treats the plan snap schedule policy as read-only attribute
+
+            Returns:
+                object  -   snap schedule policy object
+        &#34;&#34;&#34;
+        if not self._snap_schedule_policy:
+            self._snap_schedule_policy = self.__get_schedule_policy(&#39;snap&#39;)
+        return self._snap_schedule_policy
 
     @property
     def addons(self):
@@ -5231,10 +5906,23 @@ default: None</p>
             )
         return self._addons
 
+    def __set_subclient_policy_ids(self):
+        &#34;&#34;&#34;Sets the subclient policy ids for the plan&#34;&#34;&#34;
+        backup_content = self._plan_properties.get(&#39;laptop&#39;, {}).get(&#39;content&#39;, {}).get(&#39;backupContent&#39;, [])
+
+        self._child_policies[&#39;subclientPolicyIds&#39;] = [
+            ida[&#39;subClientPolicy&#39;][&#39;backupSetEntity&#39;][&#39;backupsetId&#39;]
+            for ida in backup_content
+            if ida.get(&#39;subClientPolicy&#39;, {}).get(&#39;backupSetEntity&#39;, {}).get(&#39;backupsetId&#39;)
+        ]
+
     @property
     def subclient_policy(self):
         &#34;&#34;&#34;Treats the plan subclient policy as a read-only attribute&#34;&#34;&#34;
-        return self._child_policies[&#39;subclientPolicyIds&#39;]
+        if not self._child_policies.get(&#39;subclientPolicyIds&#39;):
+            self.__set_subclient_policy_ids()
+
+        return self._child_policies.get(&#39;subclientPolicyIds&#39;)
 
     @property
     def associated_entities(self):
@@ -5294,6 +5982,28 @@ default: None</p>
         return self._dc_plan_props
 
     @property
+    def content_indexing(self):
+        &#34;&#34;&#34;Returns the Content Indexing status of O365 plan&#34;&#34;&#34;
+        try:
+            ci_status = (self.properties.get(&#34;office365Info&#34;,{})
+                         .get(&#34;o365Exchange&#34;,{})
+                         .get(&#34;mbArchiving&#34;, {})
+                         .get(&#34;detail&#34;, {})
+                         .get(&#34;emailPolicy&#34;, {})
+                         .get(&#34;archivePolicy&#34;, {})
+                         .get(&#34;contentIndexProps&#34;, {})
+                         .get(&#34;enableContentIndex&#34;, {}))
+        except:
+            ci_status= None
+        return ci_status
+
+    @content_indexing.setter
+    def content_indexing(self, value: bool):
+        &#34;&#34;&#34;Sets content indexing value for O365 plan&#34;&#34;&#34;
+        self._enable_content_indexing_o365_plan(value)
+
+
+    @property
     def properties(self):
         &#34;&#34;&#34;Returns the configured properties for the Plan&#34;&#34;&#34;
         return self._plan_properties
@@ -5303,6 +6013,26 @@ default: None</p>
         &#34;&#34;&#34;Returns the Backup destination region id&#34;&#34;&#34;
         return self._region_id
 
+    @property
+    def company(self) -&gt; str:
+        &#34;&#34;&#34;
+        Returns the company of the plan
+
+        return:
+            str --  company&#39;s domain name
+        &#34;&#34;&#34;
+        return self._provider_domain_name
+
+    @property
+    def resources(self) -&gt; list:
+        &#34;&#34;&#34;
+        Returns the resources stored in storage resource pool
+
+        return:
+            list --  plan&#39;s resources
+        &#34;&#34;&#34;
+        return self._resources
+
     def refresh(self):
         &#34;&#34;&#34;Refresh the properties of the Plan.&#34;&#34;&#34;
         self._properties = self._get_plan_properties()
@@ -5311,7 +6041,17 @@ default: None</p>
         if self.subtype == 33554437:
             self._v4_plan_properties = self._get_v4_plan_properties()
 
-    def associate_user(self, userlist):
+        # lazy loading of properties
+        self._data_schedule_policy = None
+        self._log_schedule_policy = None
+        self._snap_schedule_policy = None
+        self._child_policies = {
+            &#39;storagePolicy&#39;: None,
+            &#39;schedulePolicy&#39;: {},
+            &#39;subclientPolicyIds&#39;: []
+        } # reset to constructor state
+
+    def associate_user(self, userlist, send_invite=True):
         &#34;&#34;&#34;associates the users to the plan.
             # TODO: Need to handle user groups.
 
@@ -5332,7 +6072,7 @@ default: None</p>
                 temp = self._commcell_object.users.get(user)
 
                 temp_dict = {
-                    &#39;sendInvite&#39;: True,
+                    &#39;sendInvite&#39;: send_invite,
                     &#39;user&#39;: {
                         &#39;userName&#39;: temp.user_name,
                         &#39;userId&#39;: int(temp.user_id)
@@ -5618,7 +6358,42 @@ default: None</p>
                 # currently we dont have any thing to update in DC plan for FSO app so throw exception
                 raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#39;No attributes to Edit for DC Plan with TargetApps as : FSO&#39;)
         self._update_plan_props(request_json)
-        
+
+    def _enable_content_indexing_o365_plan(self, value):
+        &#34;&#34;&#34;Enable CI for O365 plan
+
+            Args:
+                value (bool)  --- specifies whether to content index or not
+
+            Returns:
+                None
+        &#34;&#34;&#34;
+        request_json = copy.deepcopy(PlanConstants.PLAN_UPDATE_REQUEST_JSON[self.plan_type])
+
+        request_json[&#39;summary&#39;][&#39;plan&#39;][&#39;planName&#39;] = self.plan_name
+        request_json[&#39;summary&#39;][&#39;plan&#39;][&#39;planId&#39;] = int(self.plan_id)
+        o365_arch = request_json[&#39;office365Info&#39;][&#39;o365Exchange&#39;][&#39;mbArchiving&#39;][&#39;detail&#39;][&#39;emailPolicy&#39;]
+        o365_arch[&#39;archivePolicy&#39;][&#39;contentIndexProps&#39;][&#39;enableContentIndex&#39;] = value
+
+        o365_cloud = request_json[&#39;office365Info&#39;][&#39;o365CloudOffice&#39;][&#39;caBackup&#39;][&#39;detail&#39;][&#39;cloudAppPolicy&#39;][
+            &#39;backupPolicy&#39;]
+        o365_cloud[&#39;onedrivebackupPolicy&#39;][&#39;enableContentIndex&#39;] = value
+        o365_cloud[&#39;spbackupPolicy&#39;][&#39;enableContentIndex&#39;] = value
+        o365_cloud[&#39;teamsbackupPolicy&#39;][&#39;enableContentIndex&#39;] = value
+
+        request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][
+            &#39;includeDocTypes&#39;] = PlanConstants.DEFAULT_INCLUDE_DOC_TYPES
+        request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][
+            &#39;minDocSize&#39;] = PlanConstants.DEFAULT_MIN_DOC_SIZE
+
+        request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][&#39;filters&#39;][&#39;fileFilters&#39;][
+            &#39;maxDocSize&#39;] = PlanConstants.DEFAULT_MAX_DOC_SIZE
+        request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;][&#39;detail&#39;][&#39;ciPolicy&#39;][
+            &#39;opType&#39;] = PlanConstants.INDEXING_METADATA_AND_CONTENT
+        request_json[&#39;ciPolicy&#39;] = request_json[&#39;ciPolicyInfo&#39;][&#39;ciPolicy&#39;]
+
+        self._update_plan_props(request_json)
+
     def policy_subclient_ids(self):
         &#34;&#34;&#34;Returns Policy subclient IDs of the plan
         
@@ -5818,6 +6593,39 @@ default: None</p>
             else:
                 raise SDKException(&#39;Plan&#39;, 102, response.text)
 
+    def enable_data_aging(self, plan_copy_id: int, is_enable=True):
+
+        &#34;&#34;&#34;Method is used to enable/disable the data aging for the plan copy
+
+            Args:
+                plan_copy_id(int)      :   copy_id of the plan
+
+                is_enable(bool)       :   value whether to be unable or disable the data aging
+
+                                      example: true = enable
+                                               false = disable
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        payload = {
+            &#34;retentionRules&#34;: {
+                &#34;enableDataAging&#34;: is_enable
+            }
+        }
+
+        api_url = self._services[&#39;ENABLE_DATA_AGING&#39;] % (self._plan_id, plan_copy_id)
+        flag, response = self._cvpysdk_object.make_request(method=&#39;PUT&#39;,
+                                                           url=api_url, payload=payload)
+        if not flag:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;,
+                               self._commcell_object._update_response_(response.text))
+        if not response:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;,
+                               self._commcell_object._update_response_(response.text))
+
     @property
     def applicable_solutions(self):
         &#34;&#34;&#34;Method to read applicable solutions&#34;&#34;&#34;
@@ -5861,7 +6669,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2954-L2961" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3382-L3389" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def addons(self):
@@ -5879,7 +6687,7 @@ def addons(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L3550-L3553" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L4111-L4114" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def applicable_solutions(self):
@@ -5893,12 +6701,59 @@ def applicable_solutions(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2968-L2971" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3409-L3412" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def associated_entities(self):
     &#34;&#34;&#34;getter for the backup entities associated with the plan&#34;&#34;&#34;
     return self._associated_entities</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.plan.Plan.company"><code class="name">var <span class="ident">company</span> : str</code></dt>
+<dd>
+<div class="desc"><p>Returns the company of the plan</p>
+<p>return:
+str &ndash;
+company's domain name</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3498-L3506" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def company(self) -&gt; str:
+    &#34;&#34;&#34;
+    Returns the company of the plan
+
+    return:
+        str --  company&#39;s domain name
+    &#34;&#34;&#34;
+    return self._provider_domain_name</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.plan.Plan.content_indexing"><code class="name">var <span class="ident">content_indexing</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the Content Indexing status of O365 plan</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3466-L3480" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def content_indexing(self):
+    &#34;&#34;&#34;Returns the Content Indexing status of O365 plan&#34;&#34;&#34;
+    try:
+        ci_status = (self.properties.get(&#34;office365Info&#34;,{})
+                     .get(&#34;o365Exchange&#34;,{})
+                     .get(&#34;mbArchiving&#34;, {})
+                     .get(&#34;detail&#34;, {})
+                     .get(&#34;emailPolicy&#34;, {})
+                     .get(&#34;archivePolicy&#34;, {})
+                     .get(&#34;contentIndexProps&#34;, {})
+                     .get(&#34;enableContentIndex&#34;, {}))
+    except:
+        ci_status= None
+    return ci_status</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.plan.Plan.content_indexing_props"><code class="name">var <span class="ident">content_indexing_props</span></code></dt>
@@ -5907,12 +6762,37 @@ def associated_entities(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L3020-L3023" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3461-L3464" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def content_indexing_props(self):
     &#34;&#34;&#34;returns the DC plan related CI properties from Plan&#34;&#34;&#34;
     return self._dc_plan_props</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.plan.Plan.data_schedule_policy"><code class="name">var <span class="ident">data_schedule_policy</span> : object</code></dt>
+<dd>
+<div class="desc"><p>Treats the plan data scheduler policy as read-only attribute</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+data schedule policy object</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3346-L3356" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def data_schedule_policy(self) -&gt; object:
+    &#34;&#34;&#34;
+        Treats the plan data scheduler policy as read-only attribute
+
+        Returns:
+            object  -   data schedule policy object
+    &#34;&#34;&#34;
+    if not self._data_schedule_policy:
+        self._data_schedule_policy = self.__get_schedule_policy(&#39;data&#39;)
+    return self._data_schedule_policy</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.plan.Plan.full_operation_window"><code class="name">var <span class="ident">full_operation_window</span></code></dt>
@@ -5921,12 +6801,37 @@ def content_indexing_props(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2854-L2857" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3185-L3188" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def full_operation_window(self):
     &#34;&#34;&#34;Treats the plan full backup operation window as a read-only attribute&#34;&#34;&#34;
     return self._full_operation_window</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.plan.Plan.log_schedule_policy"><code class="name">var <span class="ident">log_schedule_policy</span> : object</code></dt>
+<dd>
+<div class="desc"><p>Treats the plan log schedule policy as read-only attribute</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+log schedule policy object</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3358-L3368" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def log_schedule_policy(self) -&gt; object:
+    &#34;&#34;&#34;
+        Treats the plan log schedule policy as read-only attribute
+
+        Returns:
+            object  -   log schedule policy object
+    &#34;&#34;&#34;
+    if not self._log_schedule_policy:
+        self._log_schedule_policy = self.__get_schedule_policy(&#39;log&#39;)
+    return self._log_schedule_policy</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.plan.Plan.operation_window"><code class="name">var <span class="ident">operation_window</span></code></dt>
@@ -5935,7 +6840,7 @@ def full_operation_window(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2806-L2809" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3137-L3140" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def operation_window(self):
@@ -5949,7 +6854,7 @@ def operation_window(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2911-L2914" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3242-L3245" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def override_entities(self):
@@ -5963,7 +6868,7 @@ def override_entities(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2973-L2976" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3414-L3417" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def parent_plan(self):
@@ -5977,7 +6882,7 @@ def parent_plan(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2736-L2739" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3067-L3070" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan_id(self):
@@ -5991,7 +6896,7 @@ def plan_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2741-L2744" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3072-L3075" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan_name(self):
@@ -6005,7 +6910,7 @@ def plan_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2901-L2904" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3232-L3235" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan_type(self):
@@ -6019,7 +6924,7 @@ def plan_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L3025-L3028" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3488-L3491" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -6033,12 +6938,34 @@ def properties(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L3030-L3033" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3493-L3496" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def region_id(self):
     &#34;&#34;&#34;Returns the Backup destination region id&#34;&#34;&#34;
     return self._region_id</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.plan.Plan.resources"><code class="name">var <span class="ident">resources</span> : list</code></dt>
+<dd>
+<div class="desc"><p>Returns the resources stored in storage resource pool</p>
+<p>return:
+list &ndash;
+plan's resources</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3508-L3516" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def resources(self) -&gt; list:
+    &#34;&#34;&#34;
+    Returns the resources stored in storage resource pool
+
+    return:
+        list --  plan&#39;s resources
+    &#34;&#34;&#34;
+    return self._resources</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.plan.Plan.schedule_policies"><code class="name">var <span class="ident">schedule_policies</span></code></dt>
@@ -6047,12 +6974,15 @@ def region_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2949-L2952" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3308-L3314" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def schedule_policies(self):
     &#34;&#34;&#34;Treats the plan schedule policies as read-only attribute&#34;&#34;&#34;
-    return self._child_policies[&#39;schedulePolicy&#39;]</code></pre>
+    if not self._child_policies.get(&#39;schedulePolicy&#39;):
+        self.__set_schedule_policies()
+
+    return self._child_policies.get(&#39;schedulePolicy&#39;)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.plan.Plan.security_associations"><code class="name">var <span class="ident">security_associations</span></code></dt>
@@ -6065,7 +6995,7 @@ def schedule_policies(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2978-L2986" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3419-L3427" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def security_associations(self):
@@ -6084,12 +7014,37 @@ def security_associations(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2780-L2783" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3111-L3114" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sla_in_minutes(self):
     &#34;&#34;&#34;Treats the plan SLA/RPO as a read-only attribute.&#34;&#34;&#34;
     return self._sla_in_minutes</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.plan.Plan.snap_schedule_policy"><code class="name">var <span class="ident">snap_schedule_policy</span> : object</code></dt>
+<dd>
+<div class="desc"><p>Treats the plan snap schedule policy as read-only attribute</p>
+<h2 id="returns">Returns</h2>
+<p>object
+-
+snap schedule policy object</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3370-L3380" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def snap_schedule_policy(self) -&gt; object:
+    &#34;&#34;&#34;
+        Treats the plan snap schedule policy as read-only attribute
+
+        Returns:
+            object  -   snap schedule policy object
+    &#34;&#34;&#34;
+    if not self._snap_schedule_policy:
+        self._snap_schedule_policy = self.__get_schedule_policy(&#39;snap&#39;)
+    return self._snap_schedule_policy</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.plan.Plan.storage_copies"><code class="name">var <span class="ident">storage_copies</span></code></dt>
@@ -6098,7 +7053,7 @@ def sla_in_minutes(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2944-L2947" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3287-L3290" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_copies(self):
@@ -6112,12 +7067,15 @@ def storage_copies(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2939-L2942" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3279-L3285" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_policy(self):
     &#34;&#34;&#34;Treats the plan storage policy as a read-only attribute&#34;&#34;&#34;
-    return self._child_policies[&#39;storagePolicy&#39;]</code></pre>
+    if not self._child_policies.get(&#39;storagePolicy&#39;):
+        self.__set_storage_policy()
+
+    return self._child_policies.get(&#39;storagePolicy&#39;)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.plan.Plan.subclient_policy"><code class="name">var <span class="ident">subclient_policy</span></code></dt>
@@ -6126,12 +7084,15 @@ def storage_policy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2963-L2966" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3401-L3407" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclient_policy(self):
     &#34;&#34;&#34;Treats the plan subclient policy as a read-only attribute&#34;&#34;&#34;
-    return self._child_policies[&#39;subclientPolicyIds&#39;]</code></pre>
+    if not self._child_policies.get(&#39;subclientPolicyIds&#39;):
+        self.__set_subclient_policy_ids()
+
+    return self._child_policies.get(&#39;subclientPolicyIds&#39;)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.plan.Plan.subtype"><code class="name">var <span class="ident">subtype</span></code></dt>
@@ -6140,7 +7101,7 @@ def subclient_policy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2906-L2909" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3237-L3240" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subtype(self):
@@ -6184,7 +7145,7 @@ if failed to add new copy to the plan</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2238-L2275" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L2569-L2606" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_copy(self, copy_name: str, storage_pool: str, retention: int=30, extended_retention: dict=None, region: str=None) -&gt; None:
     &#34;&#34;&#34;
@@ -6244,7 +7205,7 @@ if failed to add new region to the plan</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2352-L2376" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L2683-L2707" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_region(self, region_name: str) -&gt; None:
     &#34;&#34;&#34;
@@ -6308,7 +7269,7 @@ if failed to add new region to the plan</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2432-L2480" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L2763-L2811" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_schedule(self, schedule_options: dict) -&gt; None:
     &#34;&#34;&#34;
@@ -6389,7 +7350,7 @@ dictionary of all copies of this plan</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2575-L2607" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L2906-L2938" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_storage_copy(self, copy_name, storage_pool, retention=30, extended_retention=None):
     &#34;&#34;&#34;Add a storage copy as backup destination to this plan
@@ -6427,7 +7388,7 @@ dictionary of all copies of this plan</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.plan.Plan.associate_user"><code class="name flex">
-<span>def <span class="ident">associate_user</span></span>(<span>self, userlist)</span>
+<span>def <span class="ident">associate_user</span></span>(<span>self, userlist, send_invite=True)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>associates the users to the plan.
@@ -6442,9 +7403,9 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L3043-L3096" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3536-L3589" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def associate_user(self, userlist):
+<pre><code class="python">def associate_user(self, userlist, send_invite=True):
     &#34;&#34;&#34;associates the users to the plan.
         # TODO: Need to handle user groups.
 
@@ -6465,7 +7426,7 @@ if response is empty</p>
             temp = self._commcell_object.users.get(user)
 
             temp_dict = {
-                &#39;sendInvite&#39;: True,
+                &#39;sendInvite&#39;: send_invite,
                 &#39;user&#39;: {
                     &#39;userName&#39;: temp.user_name,
                     &#39;userId&#39;: int(temp.user_id)
@@ -6520,7 +7481,7 @@ if failed to remove the copy from the plan</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2331-L2350" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L2662-L2681" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_copy(self, copy_name: str, region_name: str=None) -&gt; None:
     &#34;&#34;&#34;
@@ -6561,7 +7522,7 @@ if failed to remove the copy from the plan</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2517-L2544" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L2848-L2875" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_schedule(self, schedule_filter: dict) -&gt; None:
     &#34;&#34;&#34;
@@ -6645,7 +7606,7 @@ if inheritance rules are not followed
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L1821-L2102" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L2152-L2433" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def derive_and_add(self,
                    plan_name,
@@ -6939,7 +7900,7 @@ if inheritance rules are not followed
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2609-L2616" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L2940-L2947" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_full_schedule(self):
     &#34;&#34;&#34;Disable the full backup schedule of the plan&#34;&#34;&#34;
@@ -6979,7 +7940,7 @@ if plan not found</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2618-L2677" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L2949-L3008" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def edit_association(self, entities, new_plan=None):
     &#34;&#34;&#34;Reassociates or dissociates the entities from this plan
@@ -7073,7 +8034,7 @@ new_extended_retention =
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2277-L2329" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L2608-L2660" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def edit_copy(self, copy_name: str, new_retention_days: int = None, new_recovery_points: int = None, new_extended_retention: dict = None, current_region_name: str = None) -&gt; None:
     &#34;&#34;&#34;
@@ -7189,7 +8150,7 @@ Maximum document size in MB</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L3255-L3349" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3748-L3842" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def edit_plan(self, **kwargs):
     &#34;&#34;&#34;Edit plan options
@@ -7307,7 +8268,7 @@ schedule_filter (dict)
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2482-L2515" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L2813-L2846" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def edit_schedule(self, schedule_options: dict, schedule_filter: dict) -&gt; None:
     &#34;&#34;&#34;
@@ -7366,7 +8327,7 @@ if failed to edit the snapshot options of the plan</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2546-L2573" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L2877-L2904" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def edit_snapshot_options(self, enable_backup_copy:bool=True, backup_copy_rpo: int=None) -&gt; None:
     &#34;&#34;&#34;
@@ -7398,6 +8359,65 @@ if failed to edit the snapshot options of the plan</p></div>
     self.__handle_response(flag, response, custom_error_message=f&#39;Failed to edit snapshot settings for the plan : [{self.plan_name}]&#39;)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.plan.Plan.enable_data_aging"><code class="name flex">
+<span>def <span class="ident">enable_data_aging</span></span>(<span>self, plan_copy_id: int, is_enable=True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method is used to enable/disable the data aging for the plan copy</p>
+<h2 id="args">Args</h2>
+<p>plan_copy_id(int)
+:
+copy_id of the plan</p>
+<p>is_enable(bool)
+:
+value whether to be unable or disable the data aging</p>
+<pre><code>                  example: true = enable
+                           false = disable
+</code></pre>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if response is empty</p>
+<pre><code>if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L4078-L4109" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def enable_data_aging(self, plan_copy_id: int, is_enable=True):
+
+    &#34;&#34;&#34;Method is used to enable/disable the data aging for the plan copy
+
+        Args:
+            plan_copy_id(int)      :   copy_id of the plan
+
+            is_enable(bool)       :   value whether to be unable or disable the data aging
+
+                                  example: true = enable
+                                           false = disable
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+    &#34;&#34;&#34;
+    payload = {
+        &#34;retentionRules&#34;: {
+            &#34;enableDataAging&#34;: is_enable
+        }
+    }
+
+    api_url = self._services[&#39;ENABLE_DATA_AGING&#39;] % (self._plan_id, plan_copy_id)
+    flag, response = self._cvpysdk_object.make_request(method=&#39;PUT&#39;,
+                                                       url=api_url, payload=payload)
+    if not flag:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;,
+                           self._commcell_object._update_response_(response.text))
+    if not response:
+        raise SDKException(&#39;Response&#39;, &#39;102&#39;,
+                           self._commcell_object._update_response_(response.text))</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.plan.Plan.get_plan_properties"><code class="name flex">
 <span>def <span class="ident">get_plan_properties</span></span>(<span>self) ‑> Dict</span>
 </code></dt>
@@ -7411,7 +8431,7 @@ if failed to edit the snapshot options of the plan</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2186-L2193" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L2517-L2524" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_plan_properties(self) -&gt; Dict:
     &#34;&#34;&#34;
@@ -7445,7 +8465,7 @@ if failed to edit the snapshot options of the plan</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2398-L2430" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L2729-L2761" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_schedule_properties(self, schedule_filter: dict) -&gt; dict:
     &#34;&#34;&#34;
@@ -7502,7 +8522,7 @@ if failed to edit the snapshot options of the plan</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2195-L2223" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L2526-L2554" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_storage_copy_details(self, copy_name: str, region_name: str = None) -&gt; Dict:
     &#34;&#34;&#34;Method to get the storage copy details of the given copy name and region name
@@ -7555,7 +8575,7 @@ if failed to edit the snapshot options of the plan</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2225-L2236" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L2556-L2567" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_storage_copy_id(self, copy_name: str, region_name: str = None) -&gt; int:
     &#34;&#34;&#34;Gets the storage copy id of the given copy name
@@ -7605,7 +8625,7 @@ Pass True if he schedule to be modified is the full backup schedule</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2104-L2148" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L2435-L2479" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def modify_schedule(self, schedule_json, is_full_schedule=False):
     &#34;&#34;&#34;Modifies the incremental RPO schedule pattern of the plan with the given schedule json
@@ -7673,7 +8693,7 @@ Pass True if he schedule to be modified is the full backup schedule</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L3351-L3381" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3879-L3909" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def policy_subclient_ids(self):
     &#34;&#34;&#34;Returns Policy subclient IDs of the plan
@@ -7716,7 +8736,7 @@ Pass True if he schedule to be modified is the full backup schedule</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L3035-L3041" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3518-L3534" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Plan.&#34;&#34;&#34;
@@ -7724,7 +8744,17 @@ Pass True if he schedule to be modified is the full backup schedule</p></div>
 
     # fetch v4 properties for server plans
     if self.subtype == 33554437:
-        self._v4_plan_properties = self._get_v4_plan_properties()</code></pre>
+        self._v4_plan_properties = self._get_v4_plan_properties()
+
+    # lazy loading of properties
+    self._data_schedule_policy = None
+    self._log_schedule_policy = None
+    self._snap_schedule_policy = None
+    self._child_policies = {
+        &#39;storagePolicy&#39;: None,
+        &#39;schedulePolicy&#39;: {},
+        &#39;subclientPolicyIds&#39;: []
+    } # reset to constructor state</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.plan.Plan.remove_region"><code class="name flex">
@@ -7745,7 +8775,7 @@ if failed to remove the region from the plan</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2378-L2396" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L2709-L2727" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def remove_region(self, region_name: str) -&gt; None:
     &#34;&#34;&#34;
@@ -7801,7 +8831,7 @@ Operation type</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L3211-L3253" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3704-L3746" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def schedule(self, schedule_name, pattern_json, ops_type=2):
     &#34;&#34;&#34;Creates or modifies the schedule associated with plan
@@ -7886,7 +8916,7 @@ Operation type</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L3098-L3209" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3591-L3702" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def share(self, user_or_group_name, role_name, is_user=True, ops_type=1):
     &#34;&#34;&#34;Shares plan with given user or group by associating with given role
@@ -8046,7 +9076,7 @@ content = {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L3463-L3548" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3991-L4076" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_backup_content(self, content, request_type = &#39;OVERWRITE&#39;):
     &#34;&#34;&#34;
@@ -8172,7 +9202,7 @@ if association is not of List type</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L2988-L3018" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L3429-L3459" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_security_associations(self, associations_list, is_user = True, request_type = None, external_group = False):
     &#34;&#34;&#34;
@@ -8218,7 +9248,7 @@ if association is not of List type</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L181-L192" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L210-L221" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class PlanTypes(Enum):
     &#34;&#34;&#34;Class Enum to represent different plan types&#34;&#34;&#34;
@@ -8296,7 +9326,7 @@ if association is not of List type</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L439-L1521" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L472-L1863" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Plans(object):
     &#34;&#34;&#34;Class for representing all the plans in the commcell.&#34;&#34;&#34;
@@ -8319,7 +9349,9 @@ if association is not of List type</p></div>
 
         self._PLANS = self._services[&#39;PLANS&#39;]
         self._V4_PLANS = self._services[&#39;V4_SERVER_PLANS&#39;]
+        self._V4_GLOBAL_PLANS = self._services[&#39;V4_GLOBAL_SERVER_PLANS&#39;]
         self._plans = None
+        self._plans_cache = None
         self.refresh()
 
     def __str__(self):
@@ -8373,11 +9405,8 @@ if association is not of List type</p></div>
             except IndexError:
                 raise IndexError(&#39;No plan exists with the given Name / Id&#39;)
 
-    def _get_plans(self, hard=False):
+    def _get_plans(self):
         &#34;&#34;&#34;Gets all the plans associated with the commcell
-
-            Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
 
             Returns:
                 dict - consists of all plans in the commcell
@@ -8392,8 +9421,6 @@ if association is not of List type</p></div>
 
                         if response is not success
         &#34;&#34;&#34;
-        if hard:
-            self._cvpysdk_object.make_request(&#39;GET&#39;, self._services[&#34;HARD_REFRESH_CACHE&#34;] % &#39;plan&#39;)
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._PLANS)
 
         if flag:
@@ -8402,10 +9429,28 @@ if association is not of List type</p></div>
             if response.json() and &#39;plans&#39; in response.json():
                 response_value = response.json()[&#39;plans&#39;]
 
+                name_count = {}
+
                 for temp in response_value:
-                    temp_name = temp[&#39;plan&#39;][&#39;planName&#39;].lower()
+                    temp_name = temp.get(&#39;plan&#39;, {}).get(&#39;planName&#39;, &#39;&#39;).lower()
+                    temp_company = temp.get(&#39;plan&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;companyName&#39;, &#39;&#39;).lower()
+
+                    if temp_name in name_count:
+                        name_count[temp_name].add(temp_company)
+                    else:
+                        name_count[temp_name] = {temp_company}
+
+                for temp in response_value:
+                    temp_name = temp.get(&#39;plan&#39;, {}).get(&#39;planName&#39;, &#39;&#39;).lower()
                     temp_id = str(temp[&#39;plan&#39;][&#39;planId&#39;]).lower()
-                    plans[temp_name] = temp_id
+                    temp_company = temp.get(&#39;plan&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;companyName&#39;, &#39;&#39;).lower()
+
+                    if len(name_count[temp_name]) &gt; 1:
+                        unique_key = f&#34;{temp_name}_({temp_company})&#34;
+                    else:
+                        unique_key = temp_name
+
+                    plans[unique_key] = temp_id
 
             return plans
         else:
@@ -8456,6 +9501,165 @@ if association is not of List type</p></div>
                 response_string = self._update_response_(response.text)
                 raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
+    def _get_fl_parameters(self, fl: list = None) -&gt; str:
+        &#34;&#34;&#34;
+        Returns the fl parameters to be passed in the mongodb caching api call
+
+        Args:
+            fl    (list)  --   list of columns to be passed in API request
+
+        Returns:
+            fl_parameters(str) -- fl parameter string
+        &#34;&#34;&#34;
+        self.valid_columns = {
+            &#39;planName&#39;: &#39;plans.plan.planName&#39;,
+            &#39;planId&#39;: &#39;plans.plan.planId&#39;,
+            &#39;planType&#39;: &#39;plans.subtype&#39;,
+            &#39;numAssocEntities&#39;: &#39;plans.numAssocEntities&#39;,
+            &#39;rpoInMinutes&#39;: &#39;plans.rpoInMinutes&#39;,
+            &#39;numCopies&#39;: &#39;plans.numCopies&#39;,
+            &#39;planStatusFlag&#39;: &#39;plans.planStatusFlag&#39;,
+            &#39;storage&#39;: &#39;plans.storageResourcePoolMaps.resources.resourcePool&#39;,
+            &#39;company&#39;: &#39;plans.plan.entityInfo.companyName&#39;,
+            &#39;tags&#39;: &#39;tags&#39;
+        }
+        default_columns = &#39;plans.plan.planName,plans.plan.planId&#39;
+
+        if fl:
+            if all(col in self.valid_columns for col in fl):
+                fl_parameters = f&#34;&amp;fl={default_columns},{&#39;,&#39;.join(self.valid_columns[column] for column in fl)}&#34;
+            else:
+                raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#39;Invalid column name passed&#39;)
+        else:
+            fl_parameters = f&#34;&amp;fl={default_columns},{&#39;,&#39;.join(column for column in self.valid_columns.values())}&#34;
+
+        return fl_parameters
+
+    def _get_sort_parameters(self, sort: list = None) -&gt; str:
+        &#34;&#34;&#34;
+        Returns the sort parameters to be passed in the mongodb caching api call
+
+        Args:
+            sort  (list)  --   contains the name of the column on which sorting will be performed and type of sort
+                                valid sor type -- 1 for ascending and -1 for descending
+                                e.g. sort = [&#39;connectName&#39;,&#39;1&#39;]
+
+        Returns:
+            sort_parameters(str) -- sort parameter string
+        &#34;&#34;&#34;
+        sort_type = str(sort[1])
+        col = sort[0]
+        if col in self.valid_columns.keys() and sort_type in [&#39;1&#39;, &#39;-1&#39;]:
+            sort_parameter = &#39;&amp;sort=&#39; + self.valid_columns[col] + &#39;:&#39; + sort_type
+        else:
+            raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#39;Invalid column name passed&#39;)
+        return sort_parameter
+
+    def _get_fq_parameters(self, fq: list = None) -&gt; str:
+        &#34;&#34;&#34;
+        Returns the fq parameters based on the fq list passed
+        Args:
+             fq     (list) --   contains the columnName, condition and value
+                    e.g. fq = [[&#39;planName&#39;,&#39;contains&#39;, test&#39;],[&#39;numAssocEntities&#39;,&#39;between&#39;, &#39;0-1&#39;]]
+
+        Returns:
+            fq_parameters(str) -- fq parameter string
+        &#34;&#34;&#34;
+        conditions = [&#39;contains&#39;, &#39;notContain&#39;, &#39;eq&#39;, &#39;neq&#39;, &#39;gt&#39;, &#39;lt&#39;]
+        params = [&#34;&#34;]
+        if fq:
+
+            for param in fq:
+                if param[0] in self.valid_columns.keys():
+                    if param[0] == &#39;tags&#39; and param[1] ==&#39;contains&#39;:
+                        params.append(f&#34;&amp;tags={param[2]}&#34;)
+                    elif param[1] in conditions:
+                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}&#34;)
+                    elif param[1] == &#39;isEmpty&#39; and len(param) == 2:
+                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:in:null,&#34;)
+                    elif param[1] == &#39;between&#39; and &#39;-&#39; in param[2]:
+                        ranges = param[2].split(&#39;-&#39;)
+                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:gteq:{ranges[0]}&#34;)
+                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:lteq:{ranges[1]}&#34;)
+                    else:
+                        raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#39;Invalid condition passed&#39;)
+                else:
+                    raise SDKException(&#39;Plan&#39;, &#39;102&#39;, &#39;Invalid column Name passed&#39;)
+        if params:
+            return &#34;&#34;.join(params)
+
+    def get_plans_cache(self, hard: bool = False, **kwargs) -&gt; dict:
+        &#34;&#34;&#34;
+        Returns plan cache in response.
+
+        Args:
+            hard  (bool)    --   Flag to perform hard refresh on plans cache.
+            **kwargs (dict):
+                fl (list)   --   List of columns to return in response (default: None).
+                sort (list) --   Contains the name of the column on which sorting will be performed and type of sort.
+                                       Valid sort type: 1 for ascending and -1 for descending
+                                       e.g. sort = [&#39;columnName&#39;, &#39;1&#39;] (default: None).
+                limit (list)--   Contains the start and limit parameter value.
+                                        Default [&#39;0&#39;, &#39;100&#39;].
+                search (str)--   Contains the string to search in the commcell entity cache (default: None).
+                fq (list)   --   Contains the columnName, condition, and value.
+                                        e.g. fq = [[&#39;planName&#39;, &#39;contains&#39;, &#39;test&#39;],
+                                        [&#39;numAssocEntities&#39;, &#39;between&#39;, &#39;0-1&#39;]] (default: None).
+                enum (bool) --   Flag to return enums in the response (default: True).
+
+        Returns:
+            dict: Dictionary of all the properties present in response.
+        &#34;&#34;&#34;
+        headers = self._commcell_object._headers.copy()
+        if kwargs.get(&#39;enum&#39;, True):
+            headers[&#39;EnumNames&#39;] = &#34;True&#34;
+
+        fl_parameters = self._get_fl_parameters(kwargs.get(&#39;fl&#39;, None))
+        fq_parameters = self._get_fq_parameters(kwargs.get(&#39;fq&#39;, None))
+        limit = kwargs.get(&#39;limit&#39;, [&#39;0&#39;, &#39;100&#39;])
+        limit_parameters = f&#39;start={limit[0]}&amp;limit={limit[1]}&#39;
+        hard_refresh = &#39;&amp;hardRefresh=true&#39; if hard else &#39;&#39;
+        sort_parameters = self._get_sort_parameters(kwargs.get(&#39;sort&#39;, None)) if kwargs.get(&#39;sort&#39;, None) else &#39;&#39;
+        search_parameter = f&#39;&amp;search={&#34;,&#34;.join(self.valid_columns.values())}:contains:{kwargs.get(&#34;search&#34;, None)}&#39; if kwargs.get(
+            &#39;search&#39;, None) else &#39;&#39;
+
+        request_url = (
+                self._PLANS + &#34;?&#34; + limit_parameters + sort_parameters + fl_parameters + fq_parameters +
+                hard_refresh + search_parameter
+        )
+        flag, response = self._cvpysdk_object.make_request(&#34;GET&#34;, request_url, headers=headers)
+
+        if not flag:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+        plans_summary = {}
+        if response.json() and &#39;plans&#39; in response.json():
+            for plan in response.json()[&#39;plans&#39;]:
+                name = plan.get(&#34;plan&#34;, {}).get(&#34;planName&#34;, None)
+                plan_config = {
+                    &#39;planId&#39;: plan.get(&#39;plan&#39;, {}).get(&#39;planId&#39;, None),
+                    &#39;planType&#39;: plan.get(&#39;subtype&#39;),
+                    &#39;numCopies&#39;: plan.get(&#39;numCopies&#39;),
+                    &#39;numAssocEntities&#39;: plan.get(&#39;numAssocEntities&#39;),
+                    &#39;rpoInMinutes&#39;: plan.get(&#39;rpoInMinutes&#39;),
+                    &#39;planStatusFlag&#39;: plan.get(&#39;planStatusFlag&#39;),
+                    &#39;company&#39;: plan.get(&#39;plan&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;companyName&#39;, None)
+                }
+                if &#39;storageResourcePoolMaps&#39; in plan and &#39;resources&#39; in plan.get(&#39;storageResourcePoolMaps&#39;, {})[0]:
+                    plan_config[&#39;storage&#39;] = [
+                        resource.get(&#39;resourcePool&#39;, {}).get(&#39;resourcePoolName&#39;)
+                        for resource in plan.get(&#39;storageResourcePoolMaps&#39;, {})[0].get(&#39;resources&#39;)
+                    ]
+                if &#39;tags&#39; in plan.get(&#39;plan&#39;):
+                    plan_config[&#39;tags&#39;] = plan.get(&#39;plan&#39;, None).get(&#39;tags&#39;)
+                plan_config = {key: value for key, value in plan_config.items() if value is not None}
+                plans_summary[name] = plan_config
+
+            return plans_summary
+        else:
+            raise SDKException(&#34;Plan&#34;, &#34;102&#34;, &#34;Failed to get plans summary&#34;)
+
     @property
     def all_plans(self):
         &#34;&#34;&#34;Returns the dictionary consisting of all the plans added to the Commcell.
@@ -8470,6 +9674,43 @@ if association is not of List type</p></div>
 
         &#34;&#34;&#34;
         return self._plans
+
+    @property
+    def all_plans_cache(self):
+        &#34;&#34;&#34;Returns the dictionary consisting of all the plans cache present in mongoDB
+
+                    dict - consists of all the plans configured on the commcell
+
+                        {
+                        &#34;plan1_name&#34;:
+                         {
+                         id : &lt;plan&#39;s id&gt;,
+                         Type : &lt;type of plan&gt;,
+                         subtype : &lt;sub type of plan&gt;,
+                         status: &lt;status of the plan&gt;,
+                         numCopies: &lt;number of copies&gt;,
+                         numAssocEntities: &lt;associated Entities Count&gt;,
+                         RPO: &lt;rpo in minutes&gt;,
+                         planStatusFlag: &lt;status of plan&gt;,
+                         company: &lt;name of the company plan belongs to&gt;
+                         },
+
+                        &#34;plan2_name&#34;:
+                         {
+                         id : &lt;plan&#39;s id&gt;,
+                         Type : &lt;type of plan&gt;,
+                         subtype : &lt;sub type of plan&gt;,
+                         status: &lt;status of the plan&gt;,
+                         numCopies: &lt;number of copies&gt;,
+                         numAssocEntities: &lt;associated Entities Count&gt;,
+                         RPO: &lt;rpo in minutes&gt;,
+                         planStatusFlag: &lt;status of plan&gt;,
+                         company: &lt;name of the company plan belongs to&gt;
+                         },
+                    }
+
+                &#34;&#34;&#34;
+        return self._plans_cache
     
     def filter_plans(self, plan_type, company_name=None):
         &#34;&#34;&#34;
@@ -8852,6 +10093,41 @@ if association is not of List type</p></div>
                         backup_copy_rpo_mins (int, optional): RPO for backup copy in minutes.
                         snap_retention_days (int, optional): Retention period in days.
                         snap_recovery_points (int, optional): Snap recovery point.
+                        gcm_options (dict, optional): Global Configuration Manager options
+                            commcells (list): List of commcell IDs to apply the plan (If not specified, applies to all commcells)
+
+                        For Global Plans, backup_destinations input should be in the following format:
+
+                        Example #1: For Single Copy
+                            backup_destinations = {
+                                &#34;storageTemplateTags&#34;: [
+                                    {
+                                        &#34;name&#34;: &#34;Tag Name&#34;,
+                                        &#34;value&#34;: &#34;Tag Value&#34;
+                                    }
+                                ]
+                            }
+
+                        Example #2: For Multiple Copies
+                        backup_destinations = [
+                            {
+                                &#39;storageTemplateTags&#39;: [
+                                    {
+                                        &#39;name&#39;: &#39;Tag Name 1&#39;, 
+                                        &#39;value&#39;: &#39;Tag Value 1&#39;
+                                    }
+                                ]
+                            }, 
+                            {
+                                &#39;backupDestinationName&#39;: &#39;Aux Copy Name&#39;, 
+                                &#39;storageTemplateTags&#39;: [
+                                    {
+                                        &#39;name&#39;: &#39;Tag Name 2&#39;, 
+                                        &#39;value&#39;: &#39;Tag Value 2&#39;
+                                    }
+                                ]
+                            }
+                        ]
 
         &#34;&#34;&#34;
         if schedules is None:
@@ -8870,14 +10146,36 @@ if association is not of List type</p></div>
             plan_name, backup_destinations, schedules, **additional_params
         )
 
-        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._V4_PLANS, request_json)
+        if gcm_options := additional_params.get(&#39;gcm_options&#39;):
+            service_commcell_ids = gcm_options.get(&#39;commcells&#39;, [])  # [{&#39;id&#39;: 1}, {&#39;id&#39;: 2}]
+            apply_on_all_commcells = False if service_commcell_ids else True
+            request_json = {
+            &#34;globalConfigInfo&#34;: {
+                &#34;commcells&#34;: service_commcell_ids,
+                &#34;scope&#34;: &#34;&#34;,
+                &#34;scopeFilterQuery&#34;: &#34;&#34;,
+                &#34;applyOnAllCommCells&#34;: apply_on_all_commcells
+            },
+            &#34;plan&#34;: request_json
+            }
+
+        endpoint = self._V4_GLOBAL_PLANS if gcm_options else self._V4_PLANS
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, endpoint, request_json)
 
         if flag:
             if response.json():
                 response_value = response.json()
-                error_message = response_value.get(&#39;errorMessage&#39;)
-                error_code = response_value.get(&#39;errorCode&#39;, 0)
+                if &#39;errors&#39; in response_value:
+                    error_message = response_value.get(&#39;errors&#39;, [{}])[0].get(&#39;errorMessage&#39;)
+                    error_code = response_value.get(&#39;errors&#39;, [{}])[0].get(&#39;errorCode&#39;, 0)
+                else:
+                    error_message = response_value.get(&#39;errorMessage&#39;)
+                    error_code = response_value.get(&#39;errorCode&#39;, 0)
 
+                # corner case condition
+                if error_code == 587207454:
+                    raise SDKException(&#39;Plan&#39;, &#39;102&#39;, f&#39;Successfully created plan {response_value[&#34;plan&#34;][&#34;name&#34;]} &#39;
+                                                      f&#39;with error: {error_message}&#39;)
                 if error_code != 0:
                     raise SDKException(&#39;Plan&#39;, &#39;102&#39;, f&#39;Failed to create new V4 Server Plan\nError: &#34;{error_message}&#34;&#39;)
                 
@@ -8973,6 +10271,9 @@ if association is not of List type</p></div>
             is_dedupe = False
 
         request_json = self._get_plan_template(plan_sub_type, &#34;MSP&#34;)
+        if plan_sub_type == &#34;Laptop&#34;:
+            del request_json[&#39;plan&#39;][&#39;laptop&#39;][&#39;accessPolicies&#39;]
+            
         request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;rpoInMinutes&#39;] = sla_in_minutes
         request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;description&#39;] = &#34;Created from CvPySDK.&#34;
         request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;plan&#39;][&#39;planName&#39;] = plan_name
@@ -9029,24 +10330,25 @@ if association is not of List type</p></div>
                 }
 
         # Enable full backup schedule
-        for subtask in request_json[&#39;plan&#39;][&#39;schedule&#39;][&#39;subTasks&#39;]:
-            if &#39;flags&#39; in subtask[&#39;subTask&#39;] and subtask[&#39;subTask&#39;][&#39;flags&#39;] == 65536:
-                import copy
-                full_schedule = copy.deepcopy(subtask)
-                del copy
-                full_schedule[&#39;subTask&#39;].update({
-                    &#39;subTaskName&#39;: &#39;Full backup schedule&#39;,
-                    &#39;flags&#39;: 4194304
-                })
-                full_schedule[&#39;pattern&#39;].update({
-                    &#39;freq_type&#39;: 4,
-                    &#39;freq_interval&#39;: 1,
-                    &#39;name&#39;: &#39;Full backup schedule&#39;,
-                    &#39;active_end_time&#39;: 0
-                })
-                full_schedule[&#39;options&#39;][&#39;backupOpts&#39;][&#39;backupLevel&#39;] = &#39;FULL&#39;
-                request_json[&#39;plan&#39;][&#39;schedule&#39;][&#39;subTasks&#39;].append(full_schedule)
-                break
+        if plan_sub_type != &#34;Laptop&#34;:
+            for subtask in request_json[&#39;plan&#39;][&#39;schedule&#39;][&#39;subTasks&#39;]:
+                if &#39;flags&#39; in subtask[&#39;subTask&#39;] and subtask[&#39;subTask&#39;][&#39;flags&#39;] == 65536:
+                    import copy
+                    full_schedule = copy.deepcopy(subtask)
+                    del copy
+                    full_schedule[&#39;subTask&#39;].update({
+                        &#39;subTaskName&#39;: &#39;Full backup schedule&#39;,
+                        &#39;flags&#39;: 4194304
+                    })
+                    full_schedule[&#39;pattern&#39;].update({
+                        &#39;freq_type&#39;: 4,
+                        &#39;freq_interval&#39;: 1,
+                        &#39;name&#39;: &#39;Full backup schedule&#39;,
+                        &#39;active_end_time&#39;: 0
+                    })
+                    full_schedule[&#39;options&#39;][&#39;backupOpts&#39;][&#39;backupLevel&#39;] = &#39;FULL&#39;
+                    request_json[&#39;plan&#39;][&#39;schedule&#39;][&#39;subTasks&#39;].append(full_schedule)
+                    break
 
         if isinstance(override_entities, dict):
             request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;restrictions&#39;] = 0
@@ -9170,15 +10472,21 @@ if association is not of List type</p></div>
         else:
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         
-    def refresh(self, hard=False):
+    def refresh(self, **kwargs):
         &#34;&#34;&#34;
-        Refresh the plans associated with the Commcell.
+        Refresh the list of plans on this commcell.
 
             Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
-
+                **kwargs (dict):
+                    mongodb (bool)  -- Flag to fetch plans cache from MongoDB (default: False).
+                    hard (bool)     -- Flag to hard refresh MongoDB cache for this entity (default: False).
         &#34;&#34;&#34;
-        self._plans = self._get_plans(hard)
+        mongodb = kwargs.get(&#39;mongodb&#39;, False)
+        hard = kwargs.get(&#39;hard&#39;, False)
+
+        self._plans = self._get_plans()
+        if mongodb:
+            self._plans_cache = self.get_plans_cache(hard=hard)
 
     def add_data_classification_plan(self, plan_name, index_server, target_app=TargetApps.FSO, **kwargs):
         &#34;&#34;&#34;Adds data classification plan to the commcell
@@ -9358,26 +10666,57 @@ if association is not of List type</p></div>
             response_string = self._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def get_plans_summary(self)-&gt;dict:
+    def get_plans_summary(self) -&gt; dict:
+
         &#34;&#34;&#34;Returns plan summary in response
 
         Returns:
             list - plans summary
+
+        **NOTE - THE FUNCTION WOULD BE DEPRECATED IN SP40 AS GET_PLANS_CACHE() WILL RETURN THE SIMILAR RESPONSE**
         &#34;&#34;&#34;
         params = &#34;fl=plans.missingEntities%2Cplans.numAssocEntities%2Cplans.numCopies%2Cplans.parent&#34; \
                  &#34;%2Cplans.permissions%2Cplans.plan.planId%2Cplans.plan.planName%2Cplans.planStatusFlag%2Cplans.restrictions%2C&#34; \
                  &#34;plans.rpoInMinutes%2Cplans.subtype%2Cplans.type%2Cplans.targetApps%2Cplans.storageResourcePoolMaps.resources.resourcePool&#34; \
                  &#34;&amp;hardRefresh=true&#34;
-        request_url = self._services[&#39;PLAN_SUMMARY&#39;]%(params)
+        request_url = self._services[&#39;PLAN_SUMMARY&#39;] % params
 
         flags,response = self._cvpysdk_object.make_request(&#39;GET&#39;,request_url)
 
         if flags:
-            if response.json() :
-                plans_summary = {entry.get(&#34;plan&#34;,{}).get(&#34;name&#34;,None): entry.get(&#34;associatedEntities&#34;,None) for entry in response.json()[&#34;plans&#34;]}
+            if response.json():
+                plans_summary = {entry.get(&#34;plan&#34;, {}).get(&#34;name&#34;, None): entry.get(&#34;associatedEntities&#34;, None)
+                                 for entry in response.json()[&#34;plans&#34;]}
                 return plans_summary
             else:
                 raise SDKException(&#34;Plan&#34;, &#34;102&#34;, &#34;Failed to get plans summary&#34;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def add_office365_plan(self, plan_name)-&gt;None:
+        &#34;&#34;&#34;
+        Creates Office 365 plan
+        Args:
+            plan_name (str) : name of the plan to be created
+        &#34;&#34;&#34;
+        if not isinstance(plan_name, str):
+            raise SDKException(&#39;Plan&#39;,&#39;102&#39;,&#39;Plan name should be passed as String&#39;)
+        plan_sub_type = &#34;Office365&#34;
+        plan_type = &#34;EXCHANGE&#34;
+        office365_plan_template = self._get_plan_template(plan_type=plan_type,plan_sub_type=plan_sub_type)
+        office365_plan_template[&#34;plan&#34;][&#34;summary&#34;][&#34;plan&#34;][&#34;planName&#34;] = plan_name
+        flag, response = self._cvpysdk_object.make_request(&#34;POST&#34;, self._PLANS ,office365_plan_template)
+        if flag:
+            if response:
+                if response.status_code == 200:
+                    self.refresh()
+                elif response.status_code == 400:
+                    raise SDKException(&#34;Plan&#34;,&#34;102&#34;,&#34;Bad request&#34;)
+                elif response.status_code == 401:
+                    raise SDKException(&#34;Plan&#34;, &#34;102&#34;, &#34;User is unauthorized to perform create operation&#34;)
+            else:
+                raise SDKException(&#34;Plan&#34;,&#34;102&#34;,&#34;Response received is empty&#34;)
         else:
             response_string = self._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
@@ -9397,7 +10736,7 @@ if association is not of List type</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L597-L610" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L804-L817" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_plans(self):
@@ -9413,6 +10752,81 @@ def all_plans(self):
 
     &#34;&#34;&#34;
     return self._plans</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.plan.Plans.all_plans_cache"><code class="name">var <span class="ident">all_plans_cache</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the dictionary consisting of all the plans cache present in mongoDB</p>
+<p>dict - consists of all the plans configured on the commcell</p>
+<pre><code>{
+"plan1_name":
+ {
+ id : &lt;plan's id&gt;,
+ Type : &lt;type of plan&gt;,
+ subtype : &lt;sub type of plan&gt;,
+ status: &lt;status of the plan&gt;,
+ numCopies: &lt;number of copies&gt;,
+ numAssocEntities: &lt;associated Entities Count&gt;,
+ RPO: &lt;rpo in minutes&gt;,
+ planStatusFlag: &lt;status of plan&gt;,
+ company: &lt;name of the company plan belongs to&gt;
+ },
+
+"plan2_name":
+ {
+ id : &lt;plan's id&gt;,
+ Type : &lt;type of plan&gt;,
+ subtype : &lt;sub type of plan&gt;,
+ status: &lt;status of the plan&gt;,
+ numCopies: &lt;number of copies&gt;,
+ numAssocEntities: &lt;associated Entities Count&gt;,
+ RPO: &lt;rpo in minutes&gt;,
+ planStatusFlag: &lt;status of plan&gt;,
+ company: &lt;name of the company plan belongs to&gt;
+ },
+</code></pre>
+<p>}</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L819-L854" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def all_plans_cache(self):
+    &#34;&#34;&#34;Returns the dictionary consisting of all the plans cache present in mongoDB
+
+                dict - consists of all the plans configured on the commcell
+
+                    {
+                    &#34;plan1_name&#34;:
+                     {
+                     id : &lt;plan&#39;s id&gt;,
+                     Type : &lt;type of plan&gt;,
+                     subtype : &lt;sub type of plan&gt;,
+                     status: &lt;status of the plan&gt;,
+                     numCopies: &lt;number of copies&gt;,
+                     numAssocEntities: &lt;associated Entities Count&gt;,
+                     RPO: &lt;rpo in minutes&gt;,
+                     planStatusFlag: &lt;status of plan&gt;,
+                     company: &lt;name of the company plan belongs to&gt;
+                     },
+
+                    &#34;plan2_name&#34;:
+                     {
+                     id : &lt;plan&#39;s id&gt;,
+                     Type : &lt;type of plan&gt;,
+                     subtype : &lt;sub type of plan&gt;,
+                     status: &lt;status of the plan&gt;,
+                     numCopies: &lt;number of copies&gt;,
+                     numAssocEntities: &lt;associated Entities Count&gt;,
+                     RPO: &lt;rpo in minutes&gt;,
+                     planStatusFlag: &lt;status of plan&gt;,
+                     company: &lt;name of the company plan belongs to&gt;
+                     },
+                }
+
+            &#34;&#34;&#34;
+    return self._plans_cache</code></pre>
 </details>
 </dd>
 </dl>
@@ -9487,7 +10901,7 @@ if input parameters are incorrect</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L1038-L1252" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L1339-L1557" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self,
         plan_name,
@@ -9565,6 +10979,9 @@ if input parameters are incorrect</p>
         is_dedupe = False
 
     request_json = self._get_plan_template(plan_sub_type, &#34;MSP&#34;)
+    if plan_sub_type == &#34;Laptop&#34;:
+        del request_json[&#39;plan&#39;][&#39;laptop&#39;][&#39;accessPolicies&#39;]
+        
     request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;rpoInMinutes&#39;] = sla_in_minutes
     request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;description&#39;] = &#34;Created from CvPySDK.&#34;
     request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;plan&#39;][&#39;planName&#39;] = plan_name
@@ -9621,24 +11038,25 @@ if input parameters are incorrect</p>
             }
 
     # Enable full backup schedule
-    for subtask in request_json[&#39;plan&#39;][&#39;schedule&#39;][&#39;subTasks&#39;]:
-        if &#39;flags&#39; in subtask[&#39;subTask&#39;] and subtask[&#39;subTask&#39;][&#39;flags&#39;] == 65536:
-            import copy
-            full_schedule = copy.deepcopy(subtask)
-            del copy
-            full_schedule[&#39;subTask&#39;].update({
-                &#39;subTaskName&#39;: &#39;Full backup schedule&#39;,
-                &#39;flags&#39;: 4194304
-            })
-            full_schedule[&#39;pattern&#39;].update({
-                &#39;freq_type&#39;: 4,
-                &#39;freq_interval&#39;: 1,
-                &#39;name&#39;: &#39;Full backup schedule&#39;,
-                &#39;active_end_time&#39;: 0
-            })
-            full_schedule[&#39;options&#39;][&#39;backupOpts&#39;][&#39;backupLevel&#39;] = &#39;FULL&#39;
-            request_json[&#39;plan&#39;][&#39;schedule&#39;][&#39;subTasks&#39;].append(full_schedule)
-            break
+    if plan_sub_type != &#34;Laptop&#34;:
+        for subtask in request_json[&#39;plan&#39;][&#39;schedule&#39;][&#39;subTasks&#39;]:
+            if &#39;flags&#39; in subtask[&#39;subTask&#39;] and subtask[&#39;subTask&#39;][&#39;flags&#39;] == 65536:
+                import copy
+                full_schedule = copy.deepcopy(subtask)
+                del copy
+                full_schedule[&#39;subTask&#39;].update({
+                    &#39;subTaskName&#39;: &#39;Full backup schedule&#39;,
+                    &#39;flags&#39;: 4194304
+                })
+                full_schedule[&#39;pattern&#39;].update({
+                    &#39;freq_type&#39;: 4,
+                    &#39;freq_interval&#39;: 1,
+                    &#39;name&#39;: &#39;Full backup schedule&#39;,
+                    &#39;active_end_time&#39;: 0
+                })
+                full_schedule[&#39;options&#39;][&#39;backupOpts&#39;][&#39;backupLevel&#39;] = &#39;FULL&#39;
+                request_json[&#39;plan&#39;][&#39;schedule&#39;][&#39;subTasks&#39;].append(full_schedule)
+                break
 
     if isinstance(override_entities, dict):
         request_json[&#39;plan&#39;][&#39;summary&#39;][&#39;restrictions&#39;] = 0
@@ -9770,7 +11188,7 @@ max_doc_size        (int)       --  Maximum document size in MB
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L1321-L1497" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L1632-L1808" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_data_classification_plan(self, plan_name, index_server, target_app=TargetApps.FSO, **kwargs):
     &#34;&#34;&#34;Adds data classification plan to the commcell
@@ -10022,7 +11440,7 @@ if error in creating the plan
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L779-L895" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L1023-L1139" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_exchange_plan(self, plan_name: str, plan_sub_type: str = &#39;ExchangeUser&#39;, **kwargs):
     &#34;&#34;&#34;Adds a new exchange plan to the commcell.
@@ -10143,6 +11561,46 @@ if error in creating the plan
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.plan.Plans.add_office365_plan"><code class="name flex">
+<span>def <span class="ident">add_office365_plan</span></span>(<span>self, plan_name) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Creates Office 365 plan</p>
+<h2 id="args">Args</h2>
+<p>plan_name (str) : name of the plan to be created</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L1838-L1863" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def add_office365_plan(self, plan_name)-&gt;None:
+    &#34;&#34;&#34;
+    Creates Office 365 plan
+    Args:
+        plan_name (str) : name of the plan to be created
+    &#34;&#34;&#34;
+    if not isinstance(plan_name, str):
+        raise SDKException(&#39;Plan&#39;,&#39;102&#39;,&#39;Plan name should be passed as String&#39;)
+    plan_sub_type = &#34;Office365&#34;
+    plan_type = &#34;EXCHANGE&#34;
+    office365_plan_template = self._get_plan_template(plan_type=plan_type,plan_sub_type=plan_sub_type)
+    office365_plan_template[&#34;plan&#34;][&#34;summary&#34;][&#34;plan&#34;][&#34;planName&#34;] = plan_name
+    flag, response = self._cvpysdk_object.make_request(&#34;POST&#34;, self._PLANS ,office365_plan_template)
+    if flag:
+        if response:
+            if response.status_code == 200:
+                self.refresh()
+            elif response.status_code == 400:
+                raise SDKException(&#34;Plan&#34;,&#34;102&#34;,&#34;Bad request&#34;)
+            elif response.status_code == 401:
+                raise SDKException(&#34;Plan&#34;, &#34;102&#34;, &#34;User is unauthorized to perform create operation&#34;)
+        else:
+            raise SDKException(&#34;Plan&#34;,&#34;102&#34;,&#34;Response received is empty&#34;)
+    else:
+        response_string = self._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.plan.Plans.create_server_plan"><code class="name flex">
 <span>def <span class="ident">create_server_plan</span></span>(<span>self, plan_name: str, backup_destinations: Union[List[dict], dict], schedules: Union[List[dict], dict] = None, **additional_params) ‑> object</span>
 </code></dt>
@@ -10231,11 +11689,46 @@ full_backup_window (list, optional): Backup window for full backup schedules.
 enable_backup_copy (bool, optional): Enable backup copy.
 backup_copy_rpo_mins (int, optional): RPO for backup copy in minutes.
 snap_retention_days (int, optional): Retention period in days.
-snap_recovery_points (int, optional): Snap recovery point.</p></div>
+snap_recovery_points (int, optional): Snap recovery point.
+gcm_options (dict, optional): Global Configuration Manager options
+commcells (list): List of commcell IDs to apply the plan (If not specified, applies to all commcells)</p>
+<pre><code>    For Global Plans, backup_destinations input should be in the following format:
+
+    Example #1: For Single Copy
+        backup_destinations = {
+            "storageTemplateTags": [
+                {
+                    "name": "Tag Name",
+                    "value": "Tag Value"
+                }
+            ]
+        }
+
+    Example #2: For Multiple Copies
+    backup_destinations = [
+        {
+            'storageTemplateTags': [
+                {
+                    'name': 'Tag Name 1', 
+                    'value': 'Tag Value 1'
+                }
+            ]
+        }, 
+        {
+            'backupDestinationName': 'Aux Copy Name', 
+            'storageTemplateTags': [
+                {
+                    'name': 'Tag Name 2', 
+                    'value': 'Tag Value 2'
+                }
+            ]
+        }
+    ]
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L897-L1036" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L1141-L1337" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_server_plan(
     self, plan_name: str, backup_destinations: Union[List[dict], dict], schedules: Union[List[dict], dict]=None, **additional_params
@@ -10333,6 +11826,41 @@ snap_recovery_points (int, optional): Snap recovery point.</p></div>
                     backup_copy_rpo_mins (int, optional): RPO for backup copy in minutes.
                     snap_retention_days (int, optional): Retention period in days.
                     snap_recovery_points (int, optional): Snap recovery point.
+                    gcm_options (dict, optional): Global Configuration Manager options
+                        commcells (list): List of commcell IDs to apply the plan (If not specified, applies to all commcells)
+
+                    For Global Plans, backup_destinations input should be in the following format:
+
+                    Example #1: For Single Copy
+                        backup_destinations = {
+                            &#34;storageTemplateTags&#34;: [
+                                {
+                                    &#34;name&#34;: &#34;Tag Name&#34;,
+                                    &#34;value&#34;: &#34;Tag Value&#34;
+                                }
+                            ]
+                        }
+
+                    Example #2: For Multiple Copies
+                    backup_destinations = [
+                        {
+                            &#39;storageTemplateTags&#39;: [
+                                {
+                                    &#39;name&#39;: &#39;Tag Name 1&#39;, 
+                                    &#39;value&#39;: &#39;Tag Value 1&#39;
+                                }
+                            ]
+                        }, 
+                        {
+                            &#39;backupDestinationName&#39;: &#39;Aux Copy Name&#39;, 
+                            &#39;storageTemplateTags&#39;: [
+                                {
+                                    &#39;name&#39;: &#39;Tag Name 2&#39;, 
+                                    &#39;value&#39;: &#39;Tag Value 2&#39;
+                                }
+                            ]
+                        }
+                    ]
 
     &#34;&#34;&#34;
     if schedules is None:
@@ -10351,14 +11879,36 @@ snap_recovery_points (int, optional): Snap recovery point.</p></div>
         plan_name, backup_destinations, schedules, **additional_params
     )
 
-    flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._V4_PLANS, request_json)
+    if gcm_options := additional_params.get(&#39;gcm_options&#39;):
+        service_commcell_ids = gcm_options.get(&#39;commcells&#39;, [])  # [{&#39;id&#39;: 1}, {&#39;id&#39;: 2}]
+        apply_on_all_commcells = False if service_commcell_ids else True
+        request_json = {
+        &#34;globalConfigInfo&#34;: {
+            &#34;commcells&#34;: service_commcell_ids,
+            &#34;scope&#34;: &#34;&#34;,
+            &#34;scopeFilterQuery&#34;: &#34;&#34;,
+            &#34;applyOnAllCommCells&#34;: apply_on_all_commcells
+        },
+        &#34;plan&#34;: request_json
+        }
+
+    endpoint = self._V4_GLOBAL_PLANS if gcm_options else self._V4_PLANS
+    flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, endpoint, request_json)
 
     if flag:
         if response.json():
             response_value = response.json()
-            error_message = response_value.get(&#39;errorMessage&#39;)
-            error_code = response_value.get(&#39;errorCode&#39;, 0)
+            if &#39;errors&#39; in response_value:
+                error_message = response_value.get(&#39;errors&#39;, [{}])[0].get(&#39;errorMessage&#39;)
+                error_code = response_value.get(&#39;errors&#39;, [{}])[0].get(&#39;errorCode&#39;, 0)
+            else:
+                error_message = response_value.get(&#39;errorMessage&#39;)
+                error_code = response_value.get(&#39;errorCode&#39;, 0)
 
+            # corner case condition
+            if error_code == 587207454:
+                raise SDKException(&#39;Plan&#39;, &#39;102&#39;, f&#39;Successfully created plan {response_value[&#34;plan&#34;][&#34;name&#34;]} &#39;
+                                                  f&#39;with error: {error_message}&#39;)
             if error_code != 0:
                 raise SDKException(&#39;Plan&#39;, &#39;102&#39;, f&#39;Failed to create new V4 Server Plan\nError: &#34;{error_message}&#34;&#39;)
             
@@ -10402,7 +11952,7 @@ if no plan exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L718-L777" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L962-L1021" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, plan_name):
     &#34;&#34;&#34;Deletes the plan from the commcell.
@@ -10493,7 +12043,7 @@ if failed to get the response</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L612-L665" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L856-L909" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def filter_plans(self, plan_type, company_name=None):
     &#34;&#34;&#34;
@@ -10570,7 +12120,7 @@ if type of the plan name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L686-L716" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L930-L960" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, plan_name):
     &#34;&#34;&#34;Returns a plan object of the specified plan name.
@@ -10629,7 +12179,7 @@ if there is an error in the response</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L1254-L1294" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L1559-L1599" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_eligible_plans(self, entities):
     &#34;&#34;&#34;Returns dict of plans that are eligible for the specified entities
@@ -10674,35 +12224,153 @@ if there is an error in the response</p></div>
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.plan.Plans.get_plans_cache"><code class="name flex">
+<span>def <span class="ident">get_plans_cache</span></span>(<span>self, hard: bool = False, **kwargs) ‑> dict</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns plan cache in response.</p>
+<h2 id="args">Args</h2>
+<p>hard
+(bool)
+&ndash;
+Flag to perform hard refresh on plans cache.
+**kwargs (dict):
+fl (list)
+&ndash;
+List of columns to return in response (default: None).
+sort (list) &ndash;
+Contains the name of the column on which sorting will be performed and type of sort.
+Valid sort type: 1 for ascending and -1 for descending
+e.g. sort = ['columnName', '1'] (default: None).
+limit (list)&ndash;
+Contains the start and limit parameter value.
+Default ['0', '100'].
+search (str)&ndash;
+Contains the string to search in the commcell entity cache (default: None).
+fq (list)
+&ndash;
+Contains the columnName, condition, and value.
+e.g. fq = [['planName', 'contains', 'test'],
+['numAssocEntities', 'between', '0-1']] (default: None).
+enum (bool) &ndash;
+Flag to return enums in the response (default: True).</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict</code></dt>
+<dd>Dictionary of all the properties present in response.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L732-L802" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_plans_cache(self, hard: bool = False, **kwargs) -&gt; dict:
+    &#34;&#34;&#34;
+    Returns plan cache in response.
+
+    Args:
+        hard  (bool)    --   Flag to perform hard refresh on plans cache.
+        **kwargs (dict):
+            fl (list)   --   List of columns to return in response (default: None).
+            sort (list) --   Contains the name of the column on which sorting will be performed and type of sort.
+                                   Valid sort type: 1 for ascending and -1 for descending
+                                   e.g. sort = [&#39;columnName&#39;, &#39;1&#39;] (default: None).
+            limit (list)--   Contains the start and limit parameter value.
+                                    Default [&#39;0&#39;, &#39;100&#39;].
+            search (str)--   Contains the string to search in the commcell entity cache (default: None).
+            fq (list)   --   Contains the columnName, condition, and value.
+                                    e.g. fq = [[&#39;planName&#39;, &#39;contains&#39;, &#39;test&#39;],
+                                    [&#39;numAssocEntities&#39;, &#39;between&#39;, &#39;0-1&#39;]] (default: None).
+            enum (bool) --   Flag to return enums in the response (default: True).
+
+    Returns:
+        dict: Dictionary of all the properties present in response.
+    &#34;&#34;&#34;
+    headers = self._commcell_object._headers.copy()
+    if kwargs.get(&#39;enum&#39;, True):
+        headers[&#39;EnumNames&#39;] = &#34;True&#34;
+
+    fl_parameters = self._get_fl_parameters(kwargs.get(&#39;fl&#39;, None))
+    fq_parameters = self._get_fq_parameters(kwargs.get(&#39;fq&#39;, None))
+    limit = kwargs.get(&#39;limit&#39;, [&#39;0&#39;, &#39;100&#39;])
+    limit_parameters = f&#39;start={limit[0]}&amp;limit={limit[1]}&#39;
+    hard_refresh = &#39;&amp;hardRefresh=true&#39; if hard else &#39;&#39;
+    sort_parameters = self._get_sort_parameters(kwargs.get(&#39;sort&#39;, None)) if kwargs.get(&#39;sort&#39;, None) else &#39;&#39;
+    search_parameter = f&#39;&amp;search={&#34;,&#34;.join(self.valid_columns.values())}:contains:{kwargs.get(&#34;search&#34;, None)}&#39; if kwargs.get(
+        &#39;search&#39;, None) else &#39;&#39;
+
+    request_url = (
+            self._PLANS + &#34;?&#34; + limit_parameters + sort_parameters + fl_parameters + fq_parameters +
+            hard_refresh + search_parameter
+    )
+    flag, response = self._cvpysdk_object.make_request(&#34;GET&#34;, request_url, headers=headers)
+
+    if not flag:
+        response_string = self._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    plans_summary = {}
+    if response.json() and &#39;plans&#39; in response.json():
+        for plan in response.json()[&#39;plans&#39;]:
+            name = plan.get(&#34;plan&#34;, {}).get(&#34;planName&#34;, None)
+            plan_config = {
+                &#39;planId&#39;: plan.get(&#39;plan&#39;, {}).get(&#39;planId&#39;, None),
+                &#39;planType&#39;: plan.get(&#39;subtype&#39;),
+                &#39;numCopies&#39;: plan.get(&#39;numCopies&#39;),
+                &#39;numAssocEntities&#39;: plan.get(&#39;numAssocEntities&#39;),
+                &#39;rpoInMinutes&#39;: plan.get(&#39;rpoInMinutes&#39;),
+                &#39;planStatusFlag&#39;: plan.get(&#39;planStatusFlag&#39;),
+                &#39;company&#39;: plan.get(&#39;plan&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;companyName&#39;, None)
+            }
+            if &#39;storageResourcePoolMaps&#39; in plan and &#39;resources&#39; in plan.get(&#39;storageResourcePoolMaps&#39;, {})[0]:
+                plan_config[&#39;storage&#39;] = [
+                    resource.get(&#39;resourcePool&#39;, {}).get(&#39;resourcePoolName&#39;)
+                    for resource in plan.get(&#39;storageResourcePoolMaps&#39;, {})[0].get(&#39;resources&#39;)
+                ]
+            if &#39;tags&#39; in plan.get(&#39;plan&#39;):
+                plan_config[&#39;tags&#39;] = plan.get(&#39;plan&#39;, None).get(&#39;tags&#39;)
+            plan_config = {key: value for key, value in plan_config.items() if value is not None}
+            plans_summary[name] = plan_config
+
+        return plans_summary
+    else:
+        raise SDKException(&#34;Plan&#34;, &#34;102&#34;, &#34;Failed to get plans summary&#34;)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.plan.Plans.get_plans_summary"><code class="name flex">
 <span>def <span class="ident">get_plans_summary</span></span>(<span>self) ‑> dict</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns plan summary in response</p>
 <h2 id="returns">Returns</h2>
-<p>list - plans summary</p></div>
+<p>list - plans summary
+<strong>NOTE - THE FUNCTION WOULD BE DEPRECATED IN SP40 AS GET_PLANS_CACHE() WILL RETURN THE SIMILAR RESPONSE</strong></p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L1499-L1521" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L1810-L1836" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get_plans_summary(self)-&gt;dict:
+<pre><code class="python">def get_plans_summary(self) -&gt; dict:
+
     &#34;&#34;&#34;Returns plan summary in response
 
     Returns:
         list - plans summary
+
+    **NOTE - THE FUNCTION WOULD BE DEPRECATED IN SP40 AS GET_PLANS_CACHE() WILL RETURN THE SIMILAR RESPONSE**
     &#34;&#34;&#34;
     params = &#34;fl=plans.missingEntities%2Cplans.numAssocEntities%2Cplans.numCopies%2Cplans.parent&#34; \
              &#34;%2Cplans.permissions%2Cplans.plan.planId%2Cplans.plan.planName%2Cplans.planStatusFlag%2Cplans.restrictions%2C&#34; \
              &#34;plans.rpoInMinutes%2Cplans.subtype%2Cplans.type%2Cplans.targetApps%2Cplans.storageResourcePoolMaps.resources.resourcePool&#34; \
              &#34;&amp;hardRefresh=true&#34;
-    request_url = self._services[&#39;PLAN_SUMMARY&#39;]%(params)
+    request_url = self._services[&#39;PLAN_SUMMARY&#39;] % params
 
     flags,response = self._cvpysdk_object.make_request(&#39;GET&#39;,request_url)
 
     if flags:
-        if response.json() :
-            plans_summary = {entry.get(&#34;plan&#34;,{}).get(&#34;name&#34;,None): entry.get(&#34;associatedEntities&#34;,None) for entry in response.json()[&#34;plans&#34;]}
+        if response.json():
+            plans_summary = {entry.get(&#34;plan&#34;, {}).get(&#34;name&#34;, None): entry.get(&#34;associatedEntities&#34;, None)
+                             for entry in response.json()[&#34;plans&#34;]}
             return plans_summary
         else:
             raise SDKException(&#34;Plan&#34;, &#34;102&#34;, &#34;Failed to get plans summary&#34;)
@@ -10719,7 +12387,7 @@ if there is an error in the response</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L1296-L1309" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L1601-L1614" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_supported_solutions(self):
     &#34;&#34;&#34;Method to get supported solutions for plans&#34;&#34;&#34;
@@ -10757,7 +12425,7 @@ if type of the plan name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L667-L684" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L911-L928" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_plan(self, plan_name):
     &#34;&#34;&#34;Checks if a plan exists in the commcell with the input plan name.
@@ -10780,27 +12448,35 @@ if type of the plan name argument is not string</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.plan.Plans.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self, hard=False)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self, **kwargs)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh the plans associated with the Commcell.</p>
+<div class="desc"><p>Refresh the list of plans on this commcell.</p>
 <pre><code>Args:
-    hard    (bool)      --      flag to hard refresh mongo cache for this entity
+    **kwargs (dict):
+        mongodb (bool)  -- Flag to fetch plans cache from MongoDB (default: False).
+        hard (bool)     -- Flag to hard refresh MongoDB cache for this entity (default: False).
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/plan.py#L1311-L1319" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/plan.py#L1616-L1630" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self, hard=False):
+<pre><code class="python">def refresh(self, **kwargs):
     &#34;&#34;&#34;
-    Refresh the plans associated with the Commcell.
+    Refresh the list of plans on this commcell.
 
         Args:
-            hard    (bool)      --      flag to hard refresh mongo cache for this entity
-
+            **kwargs (dict):
+                mongodb (bool)  -- Flag to fetch plans cache from MongoDB (default: False).
+                hard (bool)     -- Flag to hard refresh MongoDB cache for this entity (default: False).
     &#34;&#34;&#34;
-    self._plans = self._get_plans(hard)</code></pre>
+    mongodb = kwargs.get(&#39;mongodb&#39;, False)
+    hard = kwargs.get(&#39;hard&#39;, False)
+
+    self._plans = self._get_plans()
+    if mongodb:
+        self._plans_cache = self.get_plans_cache(hard=hard)</code></pre>
 </details>
 </dd>
 </dl>
@@ -10893,7 +12569,10 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.plan.Plan.applicable_solutions" href="#cvpysdk.plan.Plan.applicable_solutions">applicable_solutions</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.associate_user" href="#cvpysdk.plan.Plan.associate_user">associate_user</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.associated_entities" href="#cvpysdk.plan.Plan.associated_entities">associated_entities</a></code></li>
+<li><code><a title="cvpysdk.plan.Plan.company" href="#cvpysdk.plan.Plan.company">company</a></code></li>
+<li><code><a title="cvpysdk.plan.Plan.content_indexing" href="#cvpysdk.plan.Plan.content_indexing">content_indexing</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.content_indexing_props" href="#cvpysdk.plan.Plan.content_indexing_props">content_indexing_props</a></code></li>
+<li><code><a title="cvpysdk.plan.Plan.data_schedule_policy" href="#cvpysdk.plan.Plan.data_schedule_policy">data_schedule_policy</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.delete_copy" href="#cvpysdk.plan.Plan.delete_copy">delete_copy</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.delete_schedule" href="#cvpysdk.plan.Plan.delete_schedule">delete_schedule</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.derive_and_add" href="#cvpysdk.plan.Plan.derive_and_add">derive_and_add</a></code></li>
@@ -10903,11 +12582,13 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.plan.Plan.edit_plan" href="#cvpysdk.plan.Plan.edit_plan">edit_plan</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.edit_schedule" href="#cvpysdk.plan.Plan.edit_schedule">edit_schedule</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.edit_snapshot_options" href="#cvpysdk.plan.Plan.edit_snapshot_options">edit_snapshot_options</a></code></li>
+<li><code><a title="cvpysdk.plan.Plan.enable_data_aging" href="#cvpysdk.plan.Plan.enable_data_aging">enable_data_aging</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.full_operation_window" href="#cvpysdk.plan.Plan.full_operation_window">full_operation_window</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.get_plan_properties" href="#cvpysdk.plan.Plan.get_plan_properties">get_plan_properties</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.get_schedule_properties" href="#cvpysdk.plan.Plan.get_schedule_properties">get_schedule_properties</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.get_storage_copy_details" href="#cvpysdk.plan.Plan.get_storage_copy_details">get_storage_copy_details</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.get_storage_copy_id" href="#cvpysdk.plan.Plan.get_storage_copy_id">get_storage_copy_id</a></code></li>
+<li><code><a title="cvpysdk.plan.Plan.log_schedule_policy" href="#cvpysdk.plan.Plan.log_schedule_policy">log_schedule_policy</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.modify_schedule" href="#cvpysdk.plan.Plan.modify_schedule">modify_schedule</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.operation_window" href="#cvpysdk.plan.Plan.operation_window">operation_window</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.override_entities" href="#cvpysdk.plan.Plan.override_entities">override_entities</a></code></li>
@@ -10920,11 +12601,13 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.plan.Plan.refresh" href="#cvpysdk.plan.Plan.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.region_id" href="#cvpysdk.plan.Plan.region_id">region_id</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.remove_region" href="#cvpysdk.plan.Plan.remove_region">remove_region</a></code></li>
+<li><code><a title="cvpysdk.plan.Plan.resources" href="#cvpysdk.plan.Plan.resources">resources</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.schedule" href="#cvpysdk.plan.Plan.schedule">schedule</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.schedule_policies" href="#cvpysdk.plan.Plan.schedule_policies">schedule_policies</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.security_associations" href="#cvpysdk.plan.Plan.security_associations">security_associations</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.share" href="#cvpysdk.plan.Plan.share">share</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.sla_in_minutes" href="#cvpysdk.plan.Plan.sla_in_minutes">sla_in_minutes</a></code></li>
+<li><code><a title="cvpysdk.plan.Plan.snap_schedule_policy" href="#cvpysdk.plan.Plan.snap_schedule_policy">snap_schedule_policy</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.storage_copies" href="#cvpysdk.plan.Plan.storage_copies">storage_copies</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.storage_policy" href="#cvpysdk.plan.Plan.storage_policy">storage_policy</a></code></li>
 <li><code><a title="cvpysdk.plan.Plan.subclient_policy" href="#cvpysdk.plan.Plan.subclient_policy">subclient_policy</a></code></li>
@@ -10954,12 +12637,15 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.plan.Plans.add" href="#cvpysdk.plan.Plans.add">add</a></code></li>
 <li><code><a title="cvpysdk.plan.Plans.add_data_classification_plan" href="#cvpysdk.plan.Plans.add_data_classification_plan">add_data_classification_plan</a></code></li>
 <li><code><a title="cvpysdk.plan.Plans.add_exchange_plan" href="#cvpysdk.plan.Plans.add_exchange_plan">add_exchange_plan</a></code></li>
+<li><code><a title="cvpysdk.plan.Plans.add_office365_plan" href="#cvpysdk.plan.Plans.add_office365_plan">add_office365_plan</a></code></li>
 <li><code><a title="cvpysdk.plan.Plans.all_plans" href="#cvpysdk.plan.Plans.all_plans">all_plans</a></code></li>
+<li><code><a title="cvpysdk.plan.Plans.all_plans_cache" href="#cvpysdk.plan.Plans.all_plans_cache">all_plans_cache</a></code></li>
 <li><code><a title="cvpysdk.plan.Plans.create_server_plan" href="#cvpysdk.plan.Plans.create_server_plan">create_server_plan</a></code></li>
 <li><code><a title="cvpysdk.plan.Plans.delete" href="#cvpysdk.plan.Plans.delete">delete</a></code></li>
 <li><code><a title="cvpysdk.plan.Plans.filter_plans" href="#cvpysdk.plan.Plans.filter_plans">filter_plans</a></code></li>
 <li><code><a title="cvpysdk.plan.Plans.get" href="#cvpysdk.plan.Plans.get">get</a></code></li>
 <li><code><a title="cvpysdk.plan.Plans.get_eligible_plans" href="#cvpysdk.plan.Plans.get_eligible_plans">get_eligible_plans</a></code></li>
+<li><code><a title="cvpysdk.plan.Plans.get_plans_cache" href="#cvpysdk.plan.Plans.get_plans_cache">get_plans_cache</a></code></li>
 <li><code><a title="cvpysdk.plan.Plans.get_plans_summary" href="#cvpysdk.plan.Plans.get_plans_summary">get_plans_summary</a></code></li>
 <li><code><a title="cvpysdk.plan.Plans.get_supported_solutions" href="#cvpysdk.plan.Plans.get_supported_solutions">get_supported_solutions</a></code></li>
 <li><code><a title="cvpysdk.plan.Plans.has_plan" href="#cvpysdk.plan.Plans.has_plan">has_plan</a></code></li>

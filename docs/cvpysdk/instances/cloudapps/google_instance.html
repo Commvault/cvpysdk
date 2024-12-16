@@ -49,7 +49,7 @@ Method to modify accessnodes</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L1-L521" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/google_instance.py#L1-L766" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -241,6 +241,175 @@ class GoogleInstance(CloudAppsInstance):
         &#34;&#34;&#34;Returns the proxy client name to this instance&#34;&#34;&#34;
         return self._proxy_client
 
+    def _prepare_advsearchgrp(self, source_item_list, subclient_id):
+        &#34;&#34;&#34;
+                    Utility function to prepare advsearchgrp json for restore job for OneDrive for business clients
+
+                    Args:
+                        source_item_list (list)         --  list of user GUID to process in restore
+
+                        subclient_id                    --  subclient id of the client
+
+                    Returns:
+                        advsearchgrp (dict) - advsearchgrp json for restore job
+        &#34;&#34;&#34;
+        advsearchgrp = {
+            &#34;fileFilter&#34;: [
+                {
+                    &#34;interGroupOP&#34;: &#34;FTAnd&#34;,
+                    &#34;filter&#34;: {
+                        &#34;filters&#34;: [
+                            {
+                                &#34;field&#34;: &#34;HIDDEN&#34;,
+                                &#34;fieldValues&#34;: {
+                                    &#34;values&#34;: [
+                                        &#34;true&#34;
+                                    ]
+                                },
+                                &#34;intraFieldOp&#34;: &#34;FTNot&#34;
+                            },
+                            {
+                                &#34;field&#34;: &#34;CV_OBJECT_GUID&#34;,
+                                &#34;fieldValues&#34;: {
+                                    &#34;values&#34;: source_item_list
+                                },
+                                &#34;intraFieldOp&#34;: &#34;FTOr&#34;
+                            }
+                        ],
+                        &#34;interFilterOP&#34;: &#34;FTAnd&#34;
+                    }
+                }
+            ],
+            &#34;commonFilter&#34;: [
+                {
+                    &#34;filter&#34;: {
+                        &#34;filters&#34;: [
+                            {
+                                &#34;field&#34;: &#34;CISTATE&#34;,
+                                &#34;fieldValues&#34;: {
+                                    &#34;values&#34;: [
+                                        &#34;1&#34;
+                                    ]
+                                },
+                                &#34;intraFieldOp&#34;: &#34;FTOr&#34;,
+                                &#34;groupType&#34;: 0
+                            },
+                            {
+                                &#34;field&#34;: &#34;IS_VISIBLE&#34;,
+                                &#34;fieldValues&#34;: {
+                                    &#34;values&#34;: [
+                                        &#34;true&#34;
+                                    ],
+                                    &#34;isRange&#34;: False,
+                                    &#34;isMoniker&#34;: False
+                                },
+                                &#34;intraFieldOp&#34;: &#34;FTOr&#34;,
+                                &#34;intraFieldOpStr&#34;: &#34;None&#34;
+                            }
+                        ],
+                        &#34;interFilterOP&#34;: &#34;FTAnd&#34;
+                    }
+                }
+            ],
+            &#34;galaxyFilter&#34;: [
+                {
+                    &#34;appIdList&#34;: [
+                        subclient_id
+                    ]
+                }
+            ],
+            &#34;graphFilter&#34;: [
+                {
+                    &#34;fromField&#34;: &#34;PARENT_GUID&#34;,
+                    &#34;toField&#34;: &#34;CV_OBJECT_GUID&#34;,
+                    &#34;returnRoot&#34;: True,
+                    &#34;traversalFilter&#34;: [
+                        {
+                            &#34;filters&#34;: [
+                                {
+                                    &#34;field&#34;: &#34;IS_VISIBLE&#34;,
+                                    &#34;fieldValues&#34;: {
+                                        &#34;values&#34;: [
+                                            &#34;true&#34;
+                                        ]
+                                    },
+                                    &#34;intraFieldOp&#34;: &#34;FTAnd&#34;,
+                                    &#34;groupType&#34;: 0
+                                },
+                                {
+                                    &#34;field&#34;: &#34;HIDDEN&#34;,
+                                    &#34;fieldValues&#34;: {
+                                        &#34;values&#34;: [
+                                            &#34;true&#34;
+                                        ]
+                                    },
+                                    &#34;intraFieldOp&#34;: &#34;FTNot&#34;
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+
+        return advsearchgrp
+
+    def _prepare_findquery(self, source_item_list, subclient_id):
+        &#34;&#34;&#34;
+            Utility function to prepare findquery json for restore job for OneDrive for bussiness clients
+
+            Args:
+                source_item_list (list)         --  list of user GUID to process in restore
+
+                subclient_id                    --  subclient id of the client
+
+            Returns:
+                findquery (dict) - findquery json for restore job
+        &#34;&#34;&#34;
+
+        findquery = {
+                  &#34;searchProcessingInfo&#34;: {
+                    &#34;pageSize&#34;: 15,
+                    &#34;resultOffset&#34;: 0,
+                    &#34;sortParams&#34;: [
+                      {
+                        &#34;sortField&#34;: &#34;DATA_TYPE&#34;,
+                        &#34;sortDirection&#34;: &#34;DESCENDING&#34;
+                      },
+                      {
+                        &#34;sortField&#34;: &#34;FileName&#34;,
+                        &#34;sortDirection&#34;: &#34;ASCENDING&#34;
+                      }
+                    ],
+                    &#34;queryParams&#34;: [
+                      {
+                        &#34;param&#34;: &#34;ENABLE_MIXEDVIEW&#34;,
+                        &#34;value&#34;: &#34;true&#34;
+                      },
+                      {
+                        &#34;param&#34;: &#34;RESPONSE_FIELD_LIST&#34;,
+                        &#34;value&#34;: &#34;FAST_URL,BACKUPTIME,SIZEINKB,MODIFIEDTIME,CONTENTID,CV_TURBO_GUID,AFILEID,AFILEOFFSET,COMMCELLNO,FILE_NAME,FILE_FOLDER,CVSTUB,DATA_TYPE,APPID,JOBID,CISTATE,DATE_DELETED,IdxFlags,CV_OBJECT_GUID,PARENT_GUID,CUSTODIAN,OWNER,ObjectType&#34;
+                      },
+                      {
+                        &#34;param&#34;: &#34;DO_NOT_AUDIT&#34;,
+                        &#34;value&#34;: &#34;false&#34;
+                      },
+                      {
+                        &#34;param&#34;: &#34;COLLAPSE_FIELD&#34;,
+                        &#34;value&#34;: &#34;CV_OBJECT_GUID&#34;
+                      },
+                      {
+                        &#34;param&#34;: &#34;COLLAPSE_SORT&#34;,
+                        &#34;value&#34;: &#34;BACKUPTIME DESC&#34;
+                      }
+                    ]
+                  },
+                  &#34;advSearchGrp&#34;: self._prepare_advsearchgrp(source_item_list,subclient_id),
+                  &#34;mode&#34;: &#34;WebConsole&#34;
+                }
+
+        return findquery
+
     def _prepare_restore_json_v2(self, source_item_list, **kwargs):
 
         &#34;&#34;&#34; Utility function to prepare user level restore json for OneDrive for bussiness clients
@@ -269,7 +438,6 @@ class GoogleInstance(CloudAppsInstance):
 
             Raises:
                 SDKException:
-
                     if destination client with given name does not exist
 
                     if type of parameter is invalid
@@ -283,6 +451,8 @@ class GoogleInstance(CloudAppsInstance):
         overwrite = kwargs.get(&#39;overwrite&#39;, False)
         restore_as_copy = kwargs.get(&#39;restore_as_copy&#39;, False)
         skip_file_permissions = kwargs.get(&#39;skip_file_permissions&#39;, False)
+
+
 
         if destination_client:
             if self._commcell_object.clients.all_clients.get(destination_client):
@@ -307,11 +477,16 @@ class GoogleInstance(CloudAppsInstance):
         options = subtasks[&#39;options&#39;]
         restore_options = options[&#39;restoreOptions&#39;]
 
-        common_options = restore_options[&#39;commonOptions&#39;]
-        common_options[&#39;skip&#39;] = False if overwrite or restore_as_copy else True
-        common_options[&#39;overwriteFiles&#39;] = False if disk_restore else overwrite
-        common_options[&#39;unconditionalOverwrite&#39;] = False if disk_restore else overwrite
-        common_options[&#39;restoreToDisk&#39;] = disk_restore
+        restore_options[&#34;browseOption&#34;] = {
+            &#34;commCellId&#34;: self._commcell_object.commcell_id,
+            &#34;showDeletedItems&#34;: False
+        }
+
+        restore_options[&#39;commonOptions&#39;] = {
+            &#34;overwriteFiles&#34;: False,
+            &#34;skip&#34;: True,
+            &#34;unconditionalOverwrite&#34;: False
+        }
 
         destination = restore_options[&#39;destination&#39;]
         destination[&#39;destAppId&#39;] = AppIDAType.WINDOWS_FILE_SYSTEM.value if disk_restore else AppIDAType.CLOUD_APP.value
@@ -342,6 +517,76 @@ class GoogleInstance(CloudAppsInstance):
                 &#34;restoreToGoogle&#34;: False if disk_restore else True
             }
         }
+
+        del subtasks[&#39;subTaskOperation&#39;]
+        del restore_options[&#39;fileOption&#39;]
+        del restore_options[&#39;impersonation&#39;]
+        del restore_options[&#39;volumeRstOption&#39;]
+        del restore_options[&#39;sharePointRstOption&#39;]
+        del restore_options[&#39;virtualServerRstOption&#39;]
+
+        associations = request_json[&#39;taskInfo&#39;][&#39;associations&#39;][0]
+        subclient_id = associations[&#39;subclientId&#39;]
+
+        cloudAppsRestoreOptions = restore_options[&#39;cloudAppsRestoreOptions&#39;]
+        cloudAppsRestoreOptions[&#39;googleRestoreOptions&#39;][&#39;findQuery&#39;] = self._prepare_findquery(source_item_list, subclient_id)
+
+        destination_option = &#34;Destination&#34;
+        destination_value = &#34;Original location&#34;
+        if out_of_place:
+            destination_option = &#34;Destination user&#34;
+            destination_value = source_item_list[0]
+        if disk_restore:
+            destination_option = &#34;Destination server&#34;
+            destination_value = destination_client
+
+
+        options[&#34;commonOpts&#34;] = {
+            &#34;notifyUserOnJobCompletion&#34;: False,
+            &#34;jobMetadata&#34;: [
+              {
+                &#34;selectedItems&#34;: [
+                  {
+                    &#34;itemName&#34;: source_item_list[0],
+                    &#34;itemType&#34;: &#34;User&#34;
+                  }
+                ],
+                &#34;jobOptionItems&#34;: [
+                  {
+                    &#34;option&#34;: &#34;Restore destination&#34;,
+                    &#34;value&#34;: &#34;OneDrive for Business&#34;
+                  },
+                  {
+                    &#34;option&#34;: &#34;Source&#34;,
+                    &#34;value&#34;: source_item_list[0]
+                  },
+                  {
+                    &#34;option&#34;: destination_option,
+                    &#34;value&#34;: destination_value
+                  },
+                  {
+                    &#34;option&#34;: &#34;If the file exists&#34;,
+                    &#34;value&#34;: &#34;Skip&#34;
+                  },
+                  {
+                    &#34;option&#34;: &#34;Skip file permissions&#34;,
+                    &#34;value&#34;: &#34;Enabled&#34;
+                  },
+                  {
+                    &#34;option&#34;: &#34;Include deleted items&#34;,
+                    &#34;value&#34;: &#34;Disabled&#34;
+                  }
+                ]
+              }
+            ]
+          }
+
+        joboptionitems = options[&#39;commonOpts&#39;][&#39;jobMetadata&#39;][0][&#39;jobOptionItems&#39;]
+
+        if out_of_place:
+            joboptionitems.append({&#34;option&#34;: &#34;Destination client&#34;,&#34;value&#34;: destination_client })
+        if disk_restore:
+            joboptionitems.append({&#34;option&#34;: &#34;Destination path&#34;, &#34;value&#34;: destination_path})
 
         return request_json
 
@@ -609,7 +854,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L50-L521" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/google_instance.py#L50-L766" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class GoogleInstance(CloudAppsInstance):
     &#34;&#34;&#34;Class for representing an Instance of the GMail/Gdrive instance type.&#34;&#34;&#34;
@@ -752,6 +997,175 @@ default: None</p>
         &#34;&#34;&#34;Returns the proxy client name to this instance&#34;&#34;&#34;
         return self._proxy_client
 
+    def _prepare_advsearchgrp(self, source_item_list, subclient_id):
+        &#34;&#34;&#34;
+                    Utility function to prepare advsearchgrp json for restore job for OneDrive for business clients
+
+                    Args:
+                        source_item_list (list)         --  list of user GUID to process in restore
+
+                        subclient_id                    --  subclient id of the client
+
+                    Returns:
+                        advsearchgrp (dict) - advsearchgrp json for restore job
+        &#34;&#34;&#34;
+        advsearchgrp = {
+            &#34;fileFilter&#34;: [
+                {
+                    &#34;interGroupOP&#34;: &#34;FTAnd&#34;,
+                    &#34;filter&#34;: {
+                        &#34;filters&#34;: [
+                            {
+                                &#34;field&#34;: &#34;HIDDEN&#34;,
+                                &#34;fieldValues&#34;: {
+                                    &#34;values&#34;: [
+                                        &#34;true&#34;
+                                    ]
+                                },
+                                &#34;intraFieldOp&#34;: &#34;FTNot&#34;
+                            },
+                            {
+                                &#34;field&#34;: &#34;CV_OBJECT_GUID&#34;,
+                                &#34;fieldValues&#34;: {
+                                    &#34;values&#34;: source_item_list
+                                },
+                                &#34;intraFieldOp&#34;: &#34;FTOr&#34;
+                            }
+                        ],
+                        &#34;interFilterOP&#34;: &#34;FTAnd&#34;
+                    }
+                }
+            ],
+            &#34;commonFilter&#34;: [
+                {
+                    &#34;filter&#34;: {
+                        &#34;filters&#34;: [
+                            {
+                                &#34;field&#34;: &#34;CISTATE&#34;,
+                                &#34;fieldValues&#34;: {
+                                    &#34;values&#34;: [
+                                        &#34;1&#34;
+                                    ]
+                                },
+                                &#34;intraFieldOp&#34;: &#34;FTOr&#34;,
+                                &#34;groupType&#34;: 0
+                            },
+                            {
+                                &#34;field&#34;: &#34;IS_VISIBLE&#34;,
+                                &#34;fieldValues&#34;: {
+                                    &#34;values&#34;: [
+                                        &#34;true&#34;
+                                    ],
+                                    &#34;isRange&#34;: False,
+                                    &#34;isMoniker&#34;: False
+                                },
+                                &#34;intraFieldOp&#34;: &#34;FTOr&#34;,
+                                &#34;intraFieldOpStr&#34;: &#34;None&#34;
+                            }
+                        ],
+                        &#34;interFilterOP&#34;: &#34;FTAnd&#34;
+                    }
+                }
+            ],
+            &#34;galaxyFilter&#34;: [
+                {
+                    &#34;appIdList&#34;: [
+                        subclient_id
+                    ]
+                }
+            ],
+            &#34;graphFilter&#34;: [
+                {
+                    &#34;fromField&#34;: &#34;PARENT_GUID&#34;,
+                    &#34;toField&#34;: &#34;CV_OBJECT_GUID&#34;,
+                    &#34;returnRoot&#34;: True,
+                    &#34;traversalFilter&#34;: [
+                        {
+                            &#34;filters&#34;: [
+                                {
+                                    &#34;field&#34;: &#34;IS_VISIBLE&#34;,
+                                    &#34;fieldValues&#34;: {
+                                        &#34;values&#34;: [
+                                            &#34;true&#34;
+                                        ]
+                                    },
+                                    &#34;intraFieldOp&#34;: &#34;FTAnd&#34;,
+                                    &#34;groupType&#34;: 0
+                                },
+                                {
+                                    &#34;field&#34;: &#34;HIDDEN&#34;,
+                                    &#34;fieldValues&#34;: {
+                                        &#34;values&#34;: [
+                                            &#34;true&#34;
+                                        ]
+                                    },
+                                    &#34;intraFieldOp&#34;: &#34;FTNot&#34;
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+
+        return advsearchgrp
+
+    def _prepare_findquery(self, source_item_list, subclient_id):
+        &#34;&#34;&#34;
+            Utility function to prepare findquery json for restore job for OneDrive for bussiness clients
+
+            Args:
+                source_item_list (list)         --  list of user GUID to process in restore
+
+                subclient_id                    --  subclient id of the client
+
+            Returns:
+                findquery (dict) - findquery json for restore job
+        &#34;&#34;&#34;
+
+        findquery = {
+                  &#34;searchProcessingInfo&#34;: {
+                    &#34;pageSize&#34;: 15,
+                    &#34;resultOffset&#34;: 0,
+                    &#34;sortParams&#34;: [
+                      {
+                        &#34;sortField&#34;: &#34;DATA_TYPE&#34;,
+                        &#34;sortDirection&#34;: &#34;DESCENDING&#34;
+                      },
+                      {
+                        &#34;sortField&#34;: &#34;FileName&#34;,
+                        &#34;sortDirection&#34;: &#34;ASCENDING&#34;
+                      }
+                    ],
+                    &#34;queryParams&#34;: [
+                      {
+                        &#34;param&#34;: &#34;ENABLE_MIXEDVIEW&#34;,
+                        &#34;value&#34;: &#34;true&#34;
+                      },
+                      {
+                        &#34;param&#34;: &#34;RESPONSE_FIELD_LIST&#34;,
+                        &#34;value&#34;: &#34;FAST_URL,BACKUPTIME,SIZEINKB,MODIFIEDTIME,CONTENTID,CV_TURBO_GUID,AFILEID,AFILEOFFSET,COMMCELLNO,FILE_NAME,FILE_FOLDER,CVSTUB,DATA_TYPE,APPID,JOBID,CISTATE,DATE_DELETED,IdxFlags,CV_OBJECT_GUID,PARENT_GUID,CUSTODIAN,OWNER,ObjectType&#34;
+                      },
+                      {
+                        &#34;param&#34;: &#34;DO_NOT_AUDIT&#34;,
+                        &#34;value&#34;: &#34;false&#34;
+                      },
+                      {
+                        &#34;param&#34;: &#34;COLLAPSE_FIELD&#34;,
+                        &#34;value&#34;: &#34;CV_OBJECT_GUID&#34;
+                      },
+                      {
+                        &#34;param&#34;: &#34;COLLAPSE_SORT&#34;,
+                        &#34;value&#34;: &#34;BACKUPTIME DESC&#34;
+                      }
+                    ]
+                  },
+                  &#34;advSearchGrp&#34;: self._prepare_advsearchgrp(source_item_list,subclient_id),
+                  &#34;mode&#34;: &#34;WebConsole&#34;
+                }
+
+        return findquery
+
     def _prepare_restore_json_v2(self, source_item_list, **kwargs):
 
         &#34;&#34;&#34; Utility function to prepare user level restore json for OneDrive for bussiness clients
@@ -780,7 +1194,6 @@ default: None</p>
 
             Raises:
                 SDKException:
-
                     if destination client with given name does not exist
 
                     if type of parameter is invalid
@@ -794,6 +1207,8 @@ default: None</p>
         overwrite = kwargs.get(&#39;overwrite&#39;, False)
         restore_as_copy = kwargs.get(&#39;restore_as_copy&#39;, False)
         skip_file_permissions = kwargs.get(&#39;skip_file_permissions&#39;, False)
+
+
 
         if destination_client:
             if self._commcell_object.clients.all_clients.get(destination_client):
@@ -818,11 +1233,16 @@ default: None</p>
         options = subtasks[&#39;options&#39;]
         restore_options = options[&#39;restoreOptions&#39;]
 
-        common_options = restore_options[&#39;commonOptions&#39;]
-        common_options[&#39;skip&#39;] = False if overwrite or restore_as_copy else True
-        common_options[&#39;overwriteFiles&#39;] = False if disk_restore else overwrite
-        common_options[&#39;unconditionalOverwrite&#39;] = False if disk_restore else overwrite
-        common_options[&#39;restoreToDisk&#39;] = disk_restore
+        restore_options[&#34;browseOption&#34;] = {
+            &#34;commCellId&#34;: self._commcell_object.commcell_id,
+            &#34;showDeletedItems&#34;: False
+        }
+
+        restore_options[&#39;commonOptions&#39;] = {
+            &#34;overwriteFiles&#34;: False,
+            &#34;skip&#34;: True,
+            &#34;unconditionalOverwrite&#34;: False
+        }
 
         destination = restore_options[&#39;destination&#39;]
         destination[&#39;destAppId&#39;] = AppIDAType.WINDOWS_FILE_SYSTEM.value if disk_restore else AppIDAType.CLOUD_APP.value
@@ -853,6 +1273,76 @@ default: None</p>
                 &#34;restoreToGoogle&#34;: False if disk_restore else True
             }
         }
+
+        del subtasks[&#39;subTaskOperation&#39;]
+        del restore_options[&#39;fileOption&#39;]
+        del restore_options[&#39;impersonation&#39;]
+        del restore_options[&#39;volumeRstOption&#39;]
+        del restore_options[&#39;sharePointRstOption&#39;]
+        del restore_options[&#39;virtualServerRstOption&#39;]
+
+        associations = request_json[&#39;taskInfo&#39;][&#39;associations&#39;][0]
+        subclient_id = associations[&#39;subclientId&#39;]
+
+        cloudAppsRestoreOptions = restore_options[&#39;cloudAppsRestoreOptions&#39;]
+        cloudAppsRestoreOptions[&#39;googleRestoreOptions&#39;][&#39;findQuery&#39;] = self._prepare_findquery(source_item_list, subclient_id)
+
+        destination_option = &#34;Destination&#34;
+        destination_value = &#34;Original location&#34;
+        if out_of_place:
+            destination_option = &#34;Destination user&#34;
+            destination_value = source_item_list[0]
+        if disk_restore:
+            destination_option = &#34;Destination server&#34;
+            destination_value = destination_client
+
+
+        options[&#34;commonOpts&#34;] = {
+            &#34;notifyUserOnJobCompletion&#34;: False,
+            &#34;jobMetadata&#34;: [
+              {
+                &#34;selectedItems&#34;: [
+                  {
+                    &#34;itemName&#34;: source_item_list[0],
+                    &#34;itemType&#34;: &#34;User&#34;
+                  }
+                ],
+                &#34;jobOptionItems&#34;: [
+                  {
+                    &#34;option&#34;: &#34;Restore destination&#34;,
+                    &#34;value&#34;: &#34;OneDrive for Business&#34;
+                  },
+                  {
+                    &#34;option&#34;: &#34;Source&#34;,
+                    &#34;value&#34;: source_item_list[0]
+                  },
+                  {
+                    &#34;option&#34;: destination_option,
+                    &#34;value&#34;: destination_value
+                  },
+                  {
+                    &#34;option&#34;: &#34;If the file exists&#34;,
+                    &#34;value&#34;: &#34;Skip&#34;
+                  },
+                  {
+                    &#34;option&#34;: &#34;Skip file permissions&#34;,
+                    &#34;value&#34;: &#34;Enabled&#34;
+                  },
+                  {
+                    &#34;option&#34;: &#34;Include deleted items&#34;,
+                    &#34;value&#34;: &#34;Disabled&#34;
+                  }
+                ]
+              }
+            ]
+          }
+
+        joboptionitems = options[&#39;commonOpts&#39;][&#39;jobMetadata&#39;][0][&#39;jobOptionItems&#39;]
+
+        if out_of_place:
+            joboptionitems.append({&#34;option&#34;: &#34;Destination client&#34;,&#34;value&#34;: destination_client })
+        if disk_restore:
+            joboptionitems.append({&#34;option&#34;: &#34;Destination path&#34;, &#34;value&#34;: destination_path})
 
         return request_json
 
@@ -1097,7 +1587,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L156-L159" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/google_instance.py#L156-L159" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def app_email_id(self):
@@ -1111,7 +1601,7 @@ def app_email_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L151-L154" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/google_instance.py#L151-L154" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def auto_discovery_mode(self):
@@ -1125,7 +1615,7 @@ def auto_discovery_mode(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L146-L149" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/google_instance.py#L146-L149" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def auto_discovery_status(self):
@@ -1139,7 +1629,7 @@ def auto_discovery_status(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L130-L139" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/google_instance.py#L130-L139" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def ca_instance_type(self):
@@ -1159,7 +1649,7 @@ def ca_instance_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L161-L164" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/google_instance.py#L161-L164" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def google_admin_id(self):
@@ -1173,7 +1663,7 @@ def google_admin_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L171-L174" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/google_instance.py#L171-L174" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def google_client_id(self):
@@ -1187,7 +1677,7 @@ def google_client_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L166-L169" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/google_instance.py#L166-L169" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def key_file_path(self):
@@ -1201,7 +1691,7 @@ def key_file_path(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L141-L144" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/google_instance.py#L141-L144" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def manage_content_automatically(self):
@@ -1215,7 +1705,7 @@ def manage_content_automatically(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L176-L179" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/google_instance.py#L176-L179" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def onedrive_client_id(self):
@@ -1229,7 +1719,7 @@ def onedrive_client_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L181-L184" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/google_instance.py#L181-L184" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def onedrive_tenant(self):
@@ -1243,7 +1733,7 @@ def onedrive_tenant(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L186-L189" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/google_instance.py#L186-L189" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def proxy_client(self):
@@ -1270,7 +1760,7 @@ GROUP
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L410-L442" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/google_instance.py#L655-L687" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_auto_discovery(self, mode=&#39;REGEX&#39;):
     &#34;&#34;&#34;Enables auto discovery on instance.
@@ -1328,7 +1818,7 @@ new user account password</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L476-L521" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/google_instance.py#L721-L766" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def modify_accessnodes(self,modified_accessnodes_list,modified_user_name,modified_user_password):
     &#34;&#34;&#34;
@@ -1390,7 +1880,7 @@ new index server name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L449-L474" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/google_instance.py#L694-L719" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def modify_index_server(self, modified_index_server):
     &#34;&#34;&#34;
@@ -1491,7 +1981,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/cloudapps/google_instance.py#L295-L408" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/cloudapps/google_instance.py#L540-L653" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -1614,13 +2104,16 @@ if response is not success
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.instances.cainstance.CloudAppsInstance" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance">CloudAppsInstance</a></b></code>:
 <ul class="hlist">
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.backupsets" href="../../instance.html#cvpysdk.instance.Instance.backupsets">backupsets</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.browse" href="../../instance.html#cvpysdk.instance.Instance.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.credentials" href="../../instance.html#cvpysdk.instance.Instance.credentials">credentials</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.find" href="../../instance.html#cvpysdk.instance.Instance.find">find</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.instance_id" href="../../instance.html#cvpysdk.instance.Instance.instance_id">instance_id</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.instance_name" href="../../instance.html#cvpysdk.instance.Instance.instance_name">instance_name</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.name" href="../../instance.html#cvpysdk.instance.Instance.name">name</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.properties" href="../../instance.html#cvpysdk.instance.Instance.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.refresh" href="../../instance.html#cvpysdk.instance.Instance.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.subclients" href="../../instance.html#cvpysdk.instance.Instance.subclients">subclients</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.update_properties" href="../../instance.html#cvpysdk.instance.Instance.update_properties">update_properties</a></code></li>
 </ul>
 </li>

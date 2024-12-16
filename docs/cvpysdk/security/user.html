@@ -40,6 +40,22 @@ Users class</p>
 <p>_get_users()
 &ndash;
 gets all the users on this commcell</p>
+<p>_get_fl_parameters()
+&ndash;
+Returns the fl parameters to be passed in the mongodb caching api call</p>
+<p>_get_sort_parameters()
+&ndash;
+Returns the sort parameters to be passed in the mongodb caching api call</p>
+<p>_get_fq_parameters()
+&ndash;
+Returns the fq parameters based on the fq list passed</p>
+<p>get_users_cache()
+&ndash;
+Gets all the users present in CommcellEntityCache DB.</p>
+<p>all_users_cache()
+&ndash;
+Returns dict of all the users and their info present in CommcellEntityCache
+in mongoDB</p>
 <p>_process_add_or_delete_response()
 &ndash;
 process the add or delete users response</p>
@@ -93,6 +109,10 @@ description()                       --  returns the description of this user
 
 email()                             --  returns the email of this user
 
+upn()                               --  Returns user principal name of the user
+
+number_of_laptops()                 --  Returns number of devices for the user
+
 associated_usergroups()             --  returns the usergroups associated with
                                         this user
 
@@ -126,11 +146,13 @@ user_company_name()                 -- returns company name if user is a company
 get_account_lock_info()             -- returns account lock information
 
 unlock()                            --  Unlocks user account
+
+reset_tenant_password()             --  resets password of a tenant admin using token received in email
 </code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L1-L1119" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L1-L1395" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -164,6 +186,17 @@ Users:
                                             Users class
 
     _get_users()                        --  gets all the users on this commcell
+
+    _get_fl_parameters()                --  Returns the fl parameters to be passed in the mongodb caching api call
+
+    _get_sort_parameters()              --  Returns the sort parameters to be passed in the mongodb caching api call
+
+    _get_fq_parameters()                --  Returns the fq parameters based on the fq list passed
+
+    get_users_cache()                   --  Gets all the users present in CommcellEntityCache DB.
+
+    all_users_cache()                   --  Returns dict of all the users and their info present in CommcellEntityCache
+                                            in mongoDB
 
     _process_add_or_delete_response()   --  process the add or delete users response
 
@@ -210,6 +243,10 @@ User
 
     email()                             --  returns the email of this user
 
+    upn()                               --  Returns user principal name of the user
+
+    number_of_laptops()                 --  Returns number of devices for the user
+
     associated_usergroups()             --  returns the usergroups associated with
                                             this user
 
@@ -243,6 +280,8 @@ User
     get_account_lock_info()             -- returns account lock information
 
     unlock()                            --  Unlocks user account
+
+    reset_tenant_password()             --  resets password of a tenant admin using token received in email
 &#34;&#34;&#34;
 
 from base64 import b64encode
@@ -263,8 +302,10 @@ class Users(object):
                 object - instance of the Clients class
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
-        self._users = self._get_users()
+        self._users = None
+        self._users_cache = None
         self._users_on_service = None
+        self.refresh()
 
     def __str__(self):
         &#34;&#34;&#34;Representation string consisting of all users of the commcell.
@@ -286,11 +327,8 @@ class Users(object):
             self._commcell_object.commserv_name
         )
 
-    def _get_users(self, hard=False):
+    def _get_users(self):
         &#34;&#34;&#34;Returns the list of users configured on this commcell
-
-            Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
 
             Returns:
                 dict of all the users on this commcell
@@ -299,10 +337,6 @@ class Users(object):
                     }
 
         &#34;&#34;&#34;
-        if hard:
-            self._commcell_object._headers[&#39;mode&#39;]=&#39;EdgeMode&#39;
-            self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, self._commcell_object._services[&#34;HARD_REFRESH_CACHE&#34;]%&#39;user&#39;,
-                                                               header=self._commcell_object._headers)
         get_all_user_service = self._commcell_object._services[&#39;USERS&#39;]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -324,6 +358,191 @@ class Users(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _get_fl_parameters(self, fl: list = None) -&gt; str:
+        &#34;&#34;&#34;
+        Returns the fl parameters to be passed in the mongodb caching api call
+
+        Args:
+            fl    (list)  --   list of columns to be passed in API request
+
+        Returns:
+            fl_parameters(str) -- fl parameter string
+        &#34;&#34;&#34;
+        self.valid_columns = {
+            &#39;UserName&#39;: &#39;users.userEntity.userName&#39;,
+            &#39;UserId&#39;: &#39;users.userEntity.userId&#39;,
+            &#39;email&#39;: &#39;users.email&#39;,
+            &#39;FullName&#39;: &#39;users.fullName&#39;,
+            &#39;description&#39;: &#39;users.description&#39;,
+            &#39;upn&#39;: &#39;users.UPN&#39;,
+            &#39;enabled&#39;: &#39;users.enableUser&#39;,
+            &#39;locked&#39;: &#39;users.isAccountLocked&#39;,
+            &#39;numberOfLaptops&#39;: &#39;users.numDevices&#39;,
+            &#39;company&#39;: &#39;users.userEntity.companyId&#39;
+        }
+        default_columns = &#39;users.userEntity.userName&#39;
+
+        if fl:
+            if all(col in self.valid_columns for col in fl):
+                fl_parameters = f&#34;&amp;fl={default_columns},{&#39;,&#39;.join(self.valid_columns[column] for column in fl)}&#34;
+            else:
+                raise SDKException(&#39;User&#39;, &#39;102&#39;, &#39;Invalid column name passed&#39;)
+        else:
+            fl_parameters = f&#34;&amp;fl={&#39;,&#39;.join(column for column in self.valid_columns.values())}&#34;
+
+        return fl_parameters
+
+    def _get_sort_parameters(self, sort: list = None) -&gt; str:
+        &#34;&#34;&#34;
+        Returns the sort parameters to be passed in the mongodb caching api call
+
+        Args:
+            sort  (list)  --   contains the name of the column on which sorting will be performed and type of sort
+                                valid sor type -- 1 for ascending and -1 for descending
+                                e.g. sort = [&#39;connectName&#39;,&#39;1&#39;]
+
+        Returns:
+            sort_parameters(str) -- sort parameter string
+        &#34;&#34;&#34;
+        sort_type = str(sort[1])
+        col = sort[0]
+        if col in self.valid_columns.keys() and sort_type in [&#39;1&#39;, &#39;-1&#39;]:
+            sort_parameter = &#39;&amp;sort=&#39; + self.valid_columns[col] + &#39;:&#39; + sort_type
+        else:
+            raise SDKException(&#39;User&#39;, &#39;102&#39;, &#39;Invalid column name passed&#39;)
+        return sort_parameter
+
+    def _get_fq_parameters(self, fq: list = None) -&gt; str:
+        &#34;&#34;&#34;
+        Returns the fq parameters based on the fq list passed
+        Args:
+             fq     (list) --   contains the columnName, condition and value
+                    e.g. fq = [[&#39;UserName&#39;,&#39;contains&#39;, &#39;test&#39;],[&#39;email&#39;,&#39;contains&#39;, &#39;test&#39;]]
+
+        Returns:
+            fq_parameters(str) -- fq parameter string
+        &#34;&#34;&#34;
+        conditions = [&#39;contains&#39;, &#39;notContain&#39;, &#39;eq&#39;, &#39;neq&#39;, &#39;gt&#39;, &#39;lt&#39;]
+        params = [&#34;&#34;]
+        if fq:
+            for param in fq:
+                if param[0] in self.valid_columns.keys():
+                    if param[1] in conditions:
+                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}&#34;)
+                    elif param[1] == &#39;isEmpty&#39; and len(param) == 2:
+                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:in:null,&#34;)
+                    elif param[1].lower() == &#39;between&#39; and &#39;-&#39; in param[2]:
+                        ranges = param[2].split(&#39;-&#39;)
+                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:gteq:{ranges[0]}&#34;)
+                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:lteq:{ranges[1]}&#34;)
+                    else:
+                        raise SDKException(&#39;User&#39;, &#39;102&#39;, &#39;Invalid condition passed&#39;)
+                else:
+                    raise SDKException(&#39;User&#39;, &#39;102&#39;, &#39;Invalid column Name passed&#39;)
+        if params:
+            return &#34;&#34;.join(params)
+
+    def get_users_cache(self, hard: bool = False, **kwargs) -&gt; dict:
+        &#34;&#34;&#34;
+        Gets all the users present in CommcellEntityCache DB.
+
+        Args:
+            hard  (bool)        --   Flag to perform hard refresh on users cache.
+            **kwargs (dict):
+                fl (list)       --   List of columns to return in response (default: None).
+                sort (list)     --   Contains the name of the column on which sorting will be performed and type of sort.
+                                        Valid sort type: 1 for ascending and -1 for descending
+                                        e.g. sort = [&#39;columnName&#39;, &#39;1&#39;] (default: None).
+                limit (list)    --   Contains the start and limit parameter value.
+                                        Default [&#39;0&#39;, &#39;100&#39;].
+                search (str)    --   Contains the string to search in the commcell entity cache (default: None).
+                fq (list)       --   Contains the columnName, condition and value.
+                                        e.g. fq = [[&#39;UserName&#39;, &#39;contains&#39;, &#39;test&#39;],
+                                         [&#39;email&#39;, &#39;contains&#39;, &#39;test&#39;]] (default: None).
+                enum (bool)     --   Flag to return enums in the response (default: True).
+
+        Returns:
+            dict: Dictionary of all the properties present in response.
+        &#34;&#34;&#34;
+        self._commcell_object._headers[&#39;mode&#39;] = &#39;EdgeMode&#39;
+        headers = self._commcell_object._headers.copy()
+        if kwargs.get(&#39;enum&#39;, True):
+            headers[&#39;EnumNames&#39;] = &#39;True&#39;
+
+        fl_parameters = self._get_fl_parameters(kwargs.get(&#39;fl&#39;, None))
+        fq_parameters = self._get_fq_parameters(kwargs.get(&#39;fq&#39;, None))
+        limit = kwargs.get(&#39;limit&#39;, [&#39;0&#39;, &#39;100&#39;])
+        limit_parameters = f&#39;start={limit[0]}&amp;limit={limit[1]}&#39;
+        hard_refresh = &#39;&amp;hardRefresh=true&#39; if hard else &#39;&#39;
+        sort_parameters = self._get_sort_parameters(kwargs.get(&#39;sort&#39;, None)) if kwargs.get(&#39;sort&#39;, None) else &#39;&#39;
+        search_parameter = f&#39;&amp;search={&#34;,&#34;.join(self.valid_columns.values())}:contains:{kwargs.get(&#34;search&#34;, None)}&#39; if kwargs.get(
+            &#39;search&#39;, None) else &#39;&#39;
+
+        request_url = (
+                self._commcell_object._services[&#39;USERS&#39;] + &#34;?&#34; +
+                limit_parameters + sort_parameters + fl_parameters + hard_refresh +
+                search_parameter + fq_parameters
+        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#34;GET&#34;, request_url, headers=headers)
+
+        if not flag:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+        users_cache = {}
+        if response.json() and &#39;users&#39; in response.json():
+            for user in response.json()[&#39;users&#39;]:
+                name = user.get(&#39;userEntity&#39;, {}).get(&#39;userName&#39;)
+                users_config = {
+                    &#39;userId&#39;: user.get(&#39;userEntity&#39;, {}).get(&#39;userId&#39;),
+                    &#39;email&#39;: user.get(&#39;email&#39;),
+                    &#39;fullName&#39;: user.get(&#39;fullName&#39;),
+                    &#39;description&#39;: user.get(&#39;description&#39;),
+                    &#39;UPN&#39;: user.get(&#39;UPN&#39;),
+                    &#39;enabled&#39;: user.get(&#39;enableUser&#39;),
+                    &#39;locked&#39;: user.get(&#39;isAccountLocked&#39;),
+                    &#39;numberOfLaptops&#39;: user.get(&#39;numDevices&#39;),
+                    &#39;company&#39;: user.get(&#39;userEntity&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;companyName&#39;)
+                }
+                users_config = {key: value for key, value in users_config.items() if value is not None}
+                users_cache[name] = users_config
+
+            return users_cache
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+
+    @property
+    def all_users_cache(self) -&gt; dict:
+        &#34;&#34;&#34;Returns dict of all the users and their info present in CommcellEntityCache in mongoDB
+
+            dict - consists of all users of the in the CommcellEntityCache
+                    {
+                         &#34;user1_name&#34;: {
+                                &#39;id&#39;: user1_id ,
+                                &#39;email&#39;: user1_email,
+                                &#39;fullName&#39;: user1_fullName,
+                                &#39;description&#39;: user1_description,
+                                &#39;UPN&#39;: user1_UPN,
+                                &#39;enabled&#39;: user1_enabled_user_flag,
+                                &#39;locked&#39;: user1_is_user_locked_flag,
+                                &#39;numberOfLaptops&#39;: user1_number_of_devices,
+                                &#39;company&#39;: user1_company
+                                },
+                         &#34;user2_name&#34;: {
+                                &#39;id&#39;: user2_id ,
+                                &#39;email&#39;: user2_email,
+                                &#39;fullName&#39;: user2_fullName,
+                                &#39;description&#39;: user2_description,
+                                &#39;UPN&#39;: user2_UPN,
+                                &#39;enabled&#39;: user2_enabled_user_flag,
+                                &#39;locked&#39;: user2_is_user_locked_flag,
+                                &#39;numberOfLaptops&#39;: user2_number_of_devices,
+                                &#39;company&#39;: user2_company
+                                }
+                    }
+        &#34;&#34;&#34;
+        return self._users_cache
 
     def _process_add_or_delete_response(self, flag, response):
         &#34;&#34;&#34;Processes the flag and response received from the server during add delete request
@@ -675,16 +894,22 @@ class Users(object):
             self._users_on_service = self._get_users_on_service_commcell()
         return self._users_on_service
 
-
-    def refresh(self, hard=False):
+    def refresh(self, **kwargs):
         &#34;&#34;&#34;
-        Refresh the list of Users on this commcell.
+        Refresh the list of users on this commcell.
 
             Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+                **kwargs (dict):
+                    mongodb (bool)  -- Flag to fetch users cache from MongoDB (default: False).
+                    hard (bool)     -- Flag to hard refresh MongoDB cache for this entity (default: False).
         &#34;&#34;&#34;
-        self._users = self._get_users(hard)
+        mongodb = kwargs.get(&#39;mongodb&#39;, False)
+        hard = kwargs.get(&#39;hard&#39;, False)
+
+        self._users = self._get_users()
         self._users_on_service = None
+        if mongodb:
+            self._users_cache = self.get_users_cache(hard=hard)
 
     @property
     def all_users(self):
@@ -729,6 +954,8 @@ class User(object):
         self._associated_usergroups = None
         self._properties = None
         self._tfa_status = None
+        self._upn = None
+        self._num_devices = None
         self._get_user_properties()
         self._get_tfa_status()
 
@@ -776,6 +1003,12 @@ class User(object):
 
                 if &#39;associatedExternalUserGroups&#39; in self._properties:
                     self._associated_external_usergroups = self._properties[&#39;associatedExternalUserGroups&#39;]
+
+                if &#39;UPN&#39; in self._properties:
+                    self._upn = self._properties.get(&#39;UPN&#39;)
+
+                if &#39;numDevices&#39; in self._properties:
+                    self._num_devices = self._properties.get(&#39;numDevices&#39;)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
@@ -914,6 +1147,26 @@ class User(object):
     def email(self):
         &#34;&#34;&#34;Returns the email associated with this commcell user&#34;&#34;&#34;
         return self._email
+
+    @property
+    def upn(self) -&gt; str:
+        &#34;&#34;&#34;
+        Returns user principal name of the user
+
+        Returns:
+            str -- upn of the user
+        &#34;&#34;&#34;
+        return self._upn
+
+    @property
+    def number_of_laptops(self) -&gt; int:
+        &#34;&#34;&#34;
+        Returns number of devices for the user
+
+        Returns:
+            int --  number of devices
+        &#34;&#34;&#34;
+        return self._num_devices
 
     @user_name.setter
     def user_name(self, value):
@@ -1248,6 +1501,51 @@ class User(object):
                 return response.json().get(&#39;lockedAccounts&#39;)[0].get(&#39;status&#39;), response.json().get(&#39;lockedAccounts&#39;)[0].get(&#39;statusCode&#39;)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def reset_tenant_password(self, token: str, password: str):
+        &#34;&#34;&#34;
+        Method to reset the password of a tenant admin using a token received in an email.
+
+        Args:
+            token (str): The token received in the reset password email.
+            password (str): The new password to set for the tenant admin.
+
+        Returns:
+            bool: True if the password reset is successful.
+
+        Raises:
+            SDKException: If there&#39;s an error with the response or the password reset fails.
+                - &#39;User&#39;, &#39;102&#39; if there&#39;s an error code or error string in the response.
+                - &#39;Response&#39;, &#39;102&#39; if the response is empty or has an invalid JSON format.
+                - &#39;Response&#39;, &#39;101&#39; if the HTTP request fails.
+        &#34;&#34;&#34;
+        headers = self._commcell_object._headers.copy()
+        del headers[&#39;Authtoken&#39;]
+        headers[&#39;Reset-Password-token&#39;] = token
+        payload = (f&#39;&lt;App_UpdateUserPropertiesRequest&gt;&lt;processinginstructioninfo&gt;&lt;formatFlags skipIdToNameConversion=&#39;
+                   f&#39;&#34;1&#34;/&gt;&lt;/processinginstructioninfo&gt;&lt;users removeOtherActiveSessions=&#34;1&#34; password = &#34;{password}&#34;&gt;&#39;
+                   f&#39;&lt;userEntity userId=&#34;{str(self.user_id)}&#34; /&gt;&lt;validationParameters passwordOperationType=&#34;1&#34; &#39;
+                   f&#39;password=&#34;{password}&#34;/&gt;&lt;/users&gt;&lt;/App_UpdateUserPropertiesRequest&gt;&#39;)
+        service = self._commcell_object._services[&#39;RESET_TENANT_PASSWORD&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, service, payload, headers=headers
+        )
+        if flag:
+            if response and response.json():
+                response_data = response.json()
+                error_code = response_data[&#39;response&#39;][0].get(&#39;errorCode&#39;, -1)
+                error_string = response_data[&#39;response&#39;][0].get(&#39;errorString&#39;, &#39;&#39;)
+
+                # Check if there&#39;s an error
+                if error_code != 0 or error_string:
+                    raise SDKException(&#39;User&#39;, &#39;102&#39;, f&#39;Error Code:&#39;
+                                                      f&#39;{error_code}, Error String: {error_string}&#39;)
+                return True
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, &#39;Empty response or invalid JSON format.&#39;)
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
@@ -1285,7 +1583,7 @@ default: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L567-L1119" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L770-L1395" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class User(object):
     &#34;&#34;&#34;Class for representing a particular user configured on this commcell&#34;&#34;&#34;
@@ -1318,6 +1616,8 @@ default: None</p></div>
         self._associated_usergroups = None
         self._properties = None
         self._tfa_status = None
+        self._upn = None
+        self._num_devices = None
         self._get_user_properties()
         self._get_tfa_status()
 
@@ -1365,6 +1665,12 @@ default: None</p></div>
 
                 if &#39;associatedExternalUserGroups&#39; in self._properties:
                     self._associated_external_usergroups = self._properties[&#39;associatedExternalUserGroups&#39;]
+
+                if &#39;UPN&#39; in self._properties:
+                    self._upn = self._properties.get(&#39;UPN&#39;)
+
+                if &#39;numDevices&#39; in self._properties:
+                    self._num_devices = self._properties.get(&#39;numDevices&#39;)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
@@ -1503,6 +1809,26 @@ default: None</p></div>
     def email(self):
         &#34;&#34;&#34;Returns the email associated with this commcell user&#34;&#34;&#34;
         return self._email
+
+    @property
+    def upn(self) -&gt; str:
+        &#34;&#34;&#34;
+        Returns user principal name of the user
+
+        Returns:
+            str -- upn of the user
+        &#34;&#34;&#34;
+        return self._upn
+
+    @property
+    def number_of_laptops(self) -&gt; int:
+        &#34;&#34;&#34;
+        Returns number of devices for the user
+
+        Returns:
+            int --  number of devices
+        &#34;&#34;&#34;
+        return self._num_devices
 
     @user_name.setter
     def user_name(self, value):
@@ -1839,6 +2165,51 @@ default: None</p></div>
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def reset_tenant_password(self, token: str, password: str):
+        &#34;&#34;&#34;
+        Method to reset the password of a tenant admin using a token received in an email.
+
+        Args:
+            token (str): The token received in the reset password email.
+            password (str): The new password to set for the tenant admin.
+
+        Returns:
+            bool: True if the password reset is successful.
+
+        Raises:
+            SDKException: If there&#39;s an error with the response or the password reset fails.
+                - &#39;User&#39;, &#39;102&#39; if there&#39;s an error code or error string in the response.
+                - &#39;Response&#39;, &#39;102&#39; if the response is empty or has an invalid JSON format.
+                - &#39;Response&#39;, &#39;101&#39; if the HTTP request fails.
+        &#34;&#34;&#34;
+        headers = self._commcell_object._headers.copy()
+        del headers[&#39;Authtoken&#39;]
+        headers[&#39;Reset-Password-token&#39;] = token
+        payload = (f&#39;&lt;App_UpdateUserPropertiesRequest&gt;&lt;processinginstructioninfo&gt;&lt;formatFlags skipIdToNameConversion=&#39;
+                   f&#39;&#34;1&#34;/&gt;&lt;/processinginstructioninfo&gt;&lt;users removeOtherActiveSessions=&#34;1&#34; password = &#34;{password}&#34;&gt;&#39;
+                   f&#39;&lt;userEntity userId=&#34;{str(self.user_id)}&#34; /&gt;&lt;validationParameters passwordOperationType=&#34;1&#34; &#39;
+                   f&#39;password=&#34;{password}&#34;/&gt;&lt;/users&gt;&lt;/App_UpdateUserPropertiesRequest&gt;&#39;)
+        service = self._commcell_object._services[&#39;RESET_TENANT_PASSWORD&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, service, payload, headers=headers
+        )
+        if flag:
+            if response and response.json():
+                response_data = response.json()
+                error_code = response_data[&#39;response&#39;][0].get(&#39;errorCode&#39;, -1)
+                error_string = response_data[&#39;response&#39;][0].get(&#39;errorString&#39;, &#39;&#39;)
+
+                # Check if there&#39;s an error
+                if error_code != 0 or error_string:
+                    raise SDKException(&#39;User&#39;, &#39;102&#39;, f&#39;Error Code:&#39;
+                                                      f&#39;{error_code}, Error String: {error_string}&#39;)
+                return True
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, &#39;Empty response or invalid JSON format.&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 <h3>Instance variables</h3>
@@ -1849,7 +2220,7 @@ default: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L866-L871" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L1097-L1102" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def age_password_days(self):
@@ -1865,7 +2236,7 @@ def age_password_days(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L814-L821" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L1045-L1052" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def associated_external_usergroups(self):
@@ -1883,7 +2254,7 @@ def associated_external_usergroups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L805-L812" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L1036-L1043" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def associated_usergroups(self):
@@ -1901,7 +2272,7 @@ def associated_usergroups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L774-L777" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L985-L988" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -1915,7 +2286,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L779-L782" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L990-L993" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def email(self):
@@ -1929,7 +2300,7 @@ def email(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L759-L762" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L970-L973" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def full_name(self):
@@ -1952,7 +2323,7 @@ example:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L1072-L1088" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L1303-L1319" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def get_account_lock_info(self):
@@ -1982,7 +2353,7 @@ tfa status</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L1063-L1070" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L1294-L1301" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_tfa_enabled(self):
@@ -2000,12 +2371,34 @@ def is_tfa_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L754-L757" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L965-L968" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
     &#34;&#34;&#34;Returns the User display name&#34;&#34;&#34;
     return self._properties[&#39;userEntity&#39;][&#39;userName&#39;]</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.User.number_of_laptops"><code class="name">var <span class="ident">number_of_laptops</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Returns number of devices for the user</p>
+<h2 id="returns">Returns</h2>
+<p>int &ndash;
+number of devices</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L1005-L1013" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def number_of_laptops(self) -&gt; int:
+    &#34;&#34;&#34;
+    Returns number of devices for the user
+
+    Returns:
+        int --  number of devices
+    &#34;&#34;&#34;
+    return self._num_devices</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.security.user.User.status"><code class="name">var <span class="ident">status</span></code></dt>
@@ -2014,12 +2407,33 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L828-L831" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L1059-L1062" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def status(self):
     &#34;&#34;&#34;Returns the status of this commcell user&#34;&#34;&#34;
     return self._user_status</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.User.upn"><code class="name">var <span class="ident">upn</span> : str</code></dt>
+<dd>
+<div class="desc"><p>Returns user principal name of the user</p>
+<h2 id="returns">Returns</h2>
+<p>str &ndash; upn of the user</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L995-L1003" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def upn(self) -&gt; str:
+    &#34;&#34;&#34;
+    Returns user principal name of the user
+
+    Returns:
+        str -- upn of the user
+    &#34;&#34;&#34;
+    return self._upn</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.security.user.User.user_company_name"><code class="name">var <span class="ident">user_company_name</span></code></dt>
@@ -2028,7 +2442,7 @@ def status(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L873-L878" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L1104-L1109" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_company_name(self):
@@ -2044,7 +2458,7 @@ def user_company_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L859-L864" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L1090-L1095" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_guid(self):
@@ -2060,7 +2474,7 @@ def user_guid(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L769-L772" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L980-L983" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_id(self):
@@ -2074,7 +2488,7 @@ def user_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L764-L767" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L975-L978" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_name(self):
@@ -2088,7 +2502,7 @@ def user_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L823-L826" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L1054-L1057" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_security_associations(self):
@@ -2112,7 +2526,7 @@ list of usergroups to be added</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L916-L922" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L1147-L1153" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_usergroups(self, usergroups_list):
     &#34;&#34;&#34;UPDATE the specified usergroups to this commcell user
@@ -2136,7 +2550,7 @@ list of usergroups to be overwritten</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L932-L939" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L1163-L1170" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def overwrite_usergroups(self, usergroups_list):
     &#34;&#34;&#34;OVERWRITE the specified usergroups to this commcell user
@@ -2156,7 +2570,7 @@ list of usergroups to be overwritten</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L941-L944" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L1172-L1175" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the User.&#34;&#34;&#34;
@@ -2177,7 +2591,7 @@ list of usergroups to be deleted</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L924-L930" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L1155-L1161" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def remove_usergroups(self, usergroups_list):
     &#34;&#34;&#34;DELETE the specified usergroups to this commcell user
@@ -2201,7 +2615,7 @@ if response is not successful</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L1013-L1036" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L1244-L1267" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def request_otp(self):
     &#34;&#34;&#34;fetches OTP for user
@@ -2224,6 +2638,82 @@ if response is not successful</p></div>
                 return response.json()[&#39;value&#39;]
         else:
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.user.User.reset_tenant_password"><code class="name flex">
+<span>def <span class="ident">reset_tenant_password</span></span>(<span>self, token: str, password: str)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to reset the password of a tenant admin using a token received in an email.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>token</code></strong> :&ensp;<code>str</code></dt>
+<dd>The token received in the reset password email.</dd>
+<dt><strong><code>password</code></strong> :&ensp;<code>str</code></dt>
+<dd>The new password to set for the tenant admin.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>bool</code></dt>
+<dd>True if the password reset is successful.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>SDKException</code></dt>
+<dd>If there's an error with the response or the password reset fails.
+- 'User', '102' if there's an error code or error string in the response.
+- 'Response', '102' if the response is empty or has an invalid JSON format.
+- 'Response', '101' if the HTTP request fails.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L1352-L1395" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def reset_tenant_password(self, token: str, password: str):
+    &#34;&#34;&#34;
+    Method to reset the password of a tenant admin using a token received in an email.
+
+    Args:
+        token (str): The token received in the reset password email.
+        password (str): The new password to set for the tenant admin.
+
+    Returns:
+        bool: True if the password reset is successful.
+
+    Raises:
+        SDKException: If there&#39;s an error with the response or the password reset fails.
+            - &#39;User&#39;, &#39;102&#39; if there&#39;s an error code or error string in the response.
+            - &#39;Response&#39;, &#39;102&#39; if the response is empty or has an invalid JSON format.
+            - &#39;Response&#39;, &#39;101&#39; if the HTTP request fails.
+    &#34;&#34;&#34;
+    headers = self._commcell_object._headers.copy()
+    del headers[&#39;Authtoken&#39;]
+    headers[&#39;Reset-Password-token&#39;] = token
+    payload = (f&#39;&lt;App_UpdateUserPropertiesRequest&gt;&lt;processinginstructioninfo&gt;&lt;formatFlags skipIdToNameConversion=&#39;
+               f&#39;&#34;1&#34;/&gt;&lt;/processinginstructioninfo&gt;&lt;users removeOtherActiveSessions=&#34;1&#34; password = &#34;{password}&#34;&gt;&#39;
+               f&#39;&lt;userEntity userId=&#34;{str(self.user_id)}&#34; /&gt;&lt;validationParameters passwordOperationType=&#34;1&#34; &#39;
+               f&#39;password=&#34;{password}&#34;/&gt;&lt;/users&gt;&lt;/App_UpdateUserPropertiesRequest&gt;&#39;)
+    service = self._commcell_object._services[&#39;RESET_TENANT_PASSWORD&#39;]
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;POST&#39;, service, payload, headers=headers
+    )
+    if flag:
+        if response and response.json():
+            response_data = response.json()
+            error_code = response_data[&#39;response&#39;][0].get(&#39;errorCode&#39;, -1)
+            error_string = response_data[&#39;response&#39;][0].get(&#39;errorString&#39;, &#39;&#39;)
+
+            # Check if there&#39;s an error
+            if error_code != 0 or error_string:
+                raise SDKException(&#39;User&#39;, &#39;102&#39;, f&#39;Error Code:&#39;
+                                                  f&#39;{error_code}, Error String: {error_string}&#39;)
+            return True
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;, &#39;Empty response or invalid JSON format.&#39;)
     else:
         response_string = self._commcell_object._update_response_(response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
@@ -2253,7 +2743,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L1090-L1119" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L1321-L1350" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def unlock(self):
     &#34;&#34;&#34;
@@ -2346,7 +2836,7 @@ OVERWRITE user security association.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L946-L1011" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L1177-L1242" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_security_associations(self, entity_dictionary, request_type):
     &#34;&#34;&#34;handles three way associations (role-user-entities)
@@ -2433,7 +2923,7 @@ the password) for validation.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L896-L914" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L1127-L1145" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_user_password(self, new_password, logged_in_user_password):
     &#34;&#34;&#34;updates new passwords of user
@@ -2474,7 +2964,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L119-L564" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L136-L767" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Users(object):
     &#34;&#34;&#34;Class for maintaining all the configured users on this commcell&#34;&#34;&#34;
@@ -2489,8 +2979,10 @@ instance of the Commcell class</p>
                 object - instance of the Clients class
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
-        self._users = self._get_users()
+        self._users = None
+        self._users_cache = None
         self._users_on_service = None
+        self.refresh()
 
     def __str__(self):
         &#34;&#34;&#34;Representation string consisting of all users of the commcell.
@@ -2512,11 +3004,8 @@ instance of the Commcell class</p>
             self._commcell_object.commserv_name
         )
 
-    def _get_users(self, hard=False):
+    def _get_users(self):
         &#34;&#34;&#34;Returns the list of users configured on this commcell
-
-            Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
 
             Returns:
                 dict of all the users on this commcell
@@ -2525,10 +3014,6 @@ instance of the Commcell class</p>
                     }
 
         &#34;&#34;&#34;
-        if hard:
-            self._commcell_object._headers[&#39;mode&#39;]=&#39;EdgeMode&#39;
-            self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, self._commcell_object._services[&#34;HARD_REFRESH_CACHE&#34;]%&#39;user&#39;,
-                                                               header=self._commcell_object._headers)
         get_all_user_service = self._commcell_object._services[&#39;USERS&#39;]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -2550,6 +3035,191 @@ instance of the Commcell class</p>
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _get_fl_parameters(self, fl: list = None) -&gt; str:
+        &#34;&#34;&#34;
+        Returns the fl parameters to be passed in the mongodb caching api call
+
+        Args:
+            fl    (list)  --   list of columns to be passed in API request
+
+        Returns:
+            fl_parameters(str) -- fl parameter string
+        &#34;&#34;&#34;
+        self.valid_columns = {
+            &#39;UserName&#39;: &#39;users.userEntity.userName&#39;,
+            &#39;UserId&#39;: &#39;users.userEntity.userId&#39;,
+            &#39;email&#39;: &#39;users.email&#39;,
+            &#39;FullName&#39;: &#39;users.fullName&#39;,
+            &#39;description&#39;: &#39;users.description&#39;,
+            &#39;upn&#39;: &#39;users.UPN&#39;,
+            &#39;enabled&#39;: &#39;users.enableUser&#39;,
+            &#39;locked&#39;: &#39;users.isAccountLocked&#39;,
+            &#39;numberOfLaptops&#39;: &#39;users.numDevices&#39;,
+            &#39;company&#39;: &#39;users.userEntity.companyId&#39;
+        }
+        default_columns = &#39;users.userEntity.userName&#39;
+
+        if fl:
+            if all(col in self.valid_columns for col in fl):
+                fl_parameters = f&#34;&amp;fl={default_columns},{&#39;,&#39;.join(self.valid_columns[column] for column in fl)}&#34;
+            else:
+                raise SDKException(&#39;User&#39;, &#39;102&#39;, &#39;Invalid column name passed&#39;)
+        else:
+            fl_parameters = f&#34;&amp;fl={&#39;,&#39;.join(column for column in self.valid_columns.values())}&#34;
+
+        return fl_parameters
+
+    def _get_sort_parameters(self, sort: list = None) -&gt; str:
+        &#34;&#34;&#34;
+        Returns the sort parameters to be passed in the mongodb caching api call
+
+        Args:
+            sort  (list)  --   contains the name of the column on which sorting will be performed and type of sort
+                                valid sor type -- 1 for ascending and -1 for descending
+                                e.g. sort = [&#39;connectName&#39;,&#39;1&#39;]
+
+        Returns:
+            sort_parameters(str) -- sort parameter string
+        &#34;&#34;&#34;
+        sort_type = str(sort[1])
+        col = sort[0]
+        if col in self.valid_columns.keys() and sort_type in [&#39;1&#39;, &#39;-1&#39;]:
+            sort_parameter = &#39;&amp;sort=&#39; + self.valid_columns[col] + &#39;:&#39; + sort_type
+        else:
+            raise SDKException(&#39;User&#39;, &#39;102&#39;, &#39;Invalid column name passed&#39;)
+        return sort_parameter
+
+    def _get_fq_parameters(self, fq: list = None) -&gt; str:
+        &#34;&#34;&#34;
+        Returns the fq parameters based on the fq list passed
+        Args:
+             fq     (list) --   contains the columnName, condition and value
+                    e.g. fq = [[&#39;UserName&#39;,&#39;contains&#39;, &#39;test&#39;],[&#39;email&#39;,&#39;contains&#39;, &#39;test&#39;]]
+
+        Returns:
+            fq_parameters(str) -- fq parameter string
+        &#34;&#34;&#34;
+        conditions = [&#39;contains&#39;, &#39;notContain&#39;, &#39;eq&#39;, &#39;neq&#39;, &#39;gt&#39;, &#39;lt&#39;]
+        params = [&#34;&#34;]
+        if fq:
+            for param in fq:
+                if param[0] in self.valid_columns.keys():
+                    if param[1] in conditions:
+                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}&#34;)
+                    elif param[1] == &#39;isEmpty&#39; and len(param) == 2:
+                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:in:null,&#34;)
+                    elif param[1].lower() == &#39;between&#39; and &#39;-&#39; in param[2]:
+                        ranges = param[2].split(&#39;-&#39;)
+                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:gteq:{ranges[0]}&#34;)
+                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:lteq:{ranges[1]}&#34;)
+                    else:
+                        raise SDKException(&#39;User&#39;, &#39;102&#39;, &#39;Invalid condition passed&#39;)
+                else:
+                    raise SDKException(&#39;User&#39;, &#39;102&#39;, &#39;Invalid column Name passed&#39;)
+        if params:
+            return &#34;&#34;.join(params)
+
+    def get_users_cache(self, hard: bool = False, **kwargs) -&gt; dict:
+        &#34;&#34;&#34;
+        Gets all the users present in CommcellEntityCache DB.
+
+        Args:
+            hard  (bool)        --   Flag to perform hard refresh on users cache.
+            **kwargs (dict):
+                fl (list)       --   List of columns to return in response (default: None).
+                sort (list)     --   Contains the name of the column on which sorting will be performed and type of sort.
+                                        Valid sort type: 1 for ascending and -1 for descending
+                                        e.g. sort = [&#39;columnName&#39;, &#39;1&#39;] (default: None).
+                limit (list)    --   Contains the start and limit parameter value.
+                                        Default [&#39;0&#39;, &#39;100&#39;].
+                search (str)    --   Contains the string to search in the commcell entity cache (default: None).
+                fq (list)       --   Contains the columnName, condition and value.
+                                        e.g. fq = [[&#39;UserName&#39;, &#39;contains&#39;, &#39;test&#39;],
+                                         [&#39;email&#39;, &#39;contains&#39;, &#39;test&#39;]] (default: None).
+                enum (bool)     --   Flag to return enums in the response (default: True).
+
+        Returns:
+            dict: Dictionary of all the properties present in response.
+        &#34;&#34;&#34;
+        self._commcell_object._headers[&#39;mode&#39;] = &#39;EdgeMode&#39;
+        headers = self._commcell_object._headers.copy()
+        if kwargs.get(&#39;enum&#39;, True):
+            headers[&#39;EnumNames&#39;] = &#39;True&#39;
+
+        fl_parameters = self._get_fl_parameters(kwargs.get(&#39;fl&#39;, None))
+        fq_parameters = self._get_fq_parameters(kwargs.get(&#39;fq&#39;, None))
+        limit = kwargs.get(&#39;limit&#39;, [&#39;0&#39;, &#39;100&#39;])
+        limit_parameters = f&#39;start={limit[0]}&amp;limit={limit[1]}&#39;
+        hard_refresh = &#39;&amp;hardRefresh=true&#39; if hard else &#39;&#39;
+        sort_parameters = self._get_sort_parameters(kwargs.get(&#39;sort&#39;, None)) if kwargs.get(&#39;sort&#39;, None) else &#39;&#39;
+        search_parameter = f&#39;&amp;search={&#34;,&#34;.join(self.valid_columns.values())}:contains:{kwargs.get(&#34;search&#34;, None)}&#39; if kwargs.get(
+            &#39;search&#39;, None) else &#39;&#39;
+
+        request_url = (
+                self._commcell_object._services[&#39;USERS&#39;] + &#34;?&#34; +
+                limit_parameters + sort_parameters + fl_parameters + hard_refresh +
+                search_parameter + fq_parameters
+        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#34;GET&#34;, request_url, headers=headers)
+
+        if not flag:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+        users_cache = {}
+        if response.json() and &#39;users&#39; in response.json():
+            for user in response.json()[&#39;users&#39;]:
+                name = user.get(&#39;userEntity&#39;, {}).get(&#39;userName&#39;)
+                users_config = {
+                    &#39;userId&#39;: user.get(&#39;userEntity&#39;, {}).get(&#39;userId&#39;),
+                    &#39;email&#39;: user.get(&#39;email&#39;),
+                    &#39;fullName&#39;: user.get(&#39;fullName&#39;),
+                    &#39;description&#39;: user.get(&#39;description&#39;),
+                    &#39;UPN&#39;: user.get(&#39;UPN&#39;),
+                    &#39;enabled&#39;: user.get(&#39;enableUser&#39;),
+                    &#39;locked&#39;: user.get(&#39;isAccountLocked&#39;),
+                    &#39;numberOfLaptops&#39;: user.get(&#39;numDevices&#39;),
+                    &#39;company&#39;: user.get(&#39;userEntity&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;companyName&#39;)
+                }
+                users_config = {key: value for key, value in users_config.items() if value is not None}
+                users_cache[name] = users_config
+
+            return users_cache
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+
+    @property
+    def all_users_cache(self) -&gt; dict:
+        &#34;&#34;&#34;Returns dict of all the users and their info present in CommcellEntityCache in mongoDB
+
+            dict - consists of all users of the in the CommcellEntityCache
+                    {
+                         &#34;user1_name&#34;: {
+                                &#39;id&#39;: user1_id ,
+                                &#39;email&#39;: user1_email,
+                                &#39;fullName&#39;: user1_fullName,
+                                &#39;description&#39;: user1_description,
+                                &#39;UPN&#39;: user1_UPN,
+                                &#39;enabled&#39;: user1_enabled_user_flag,
+                                &#39;locked&#39;: user1_is_user_locked_flag,
+                                &#39;numberOfLaptops&#39;: user1_number_of_devices,
+                                &#39;company&#39;: user1_company
+                                },
+                         &#34;user2_name&#34;: {
+                                &#39;id&#39;: user2_id ,
+                                &#39;email&#39;: user2_email,
+                                &#39;fullName&#39;: user2_fullName,
+                                &#39;description&#39;: user2_description,
+                                &#39;UPN&#39;: user2_UPN,
+                                &#39;enabled&#39;: user2_enabled_user_flag,
+                                &#39;locked&#39;: user2_is_user_locked_flag,
+                                &#39;numberOfLaptops&#39;: user2_number_of_devices,
+                                &#39;company&#39;: user2_company
+                                }
+                    }
+        &#34;&#34;&#34;
+        return self._users_cache
 
     def _process_add_or_delete_response(self, flag, response):
         &#34;&#34;&#34;Processes the flag and response received from the server during add delete request
@@ -2901,16 +3571,22 @@ instance of the Commcell class</p>
             self._users_on_service = self._get_users_on_service_commcell()
         return self._users_on_service
 
-
-    def refresh(self, hard=False):
+    def refresh(self, **kwargs):
         &#34;&#34;&#34;
-        Refresh the list of Users on this commcell.
+        Refresh the list of users on this commcell.
 
             Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+                **kwargs (dict):
+                    mongodb (bool)  -- Flag to fetch users cache from MongoDB (default: False).
+                    hard (bool)     -- Flag to hard refresh MongoDB cache for this entity (default: False).
         &#34;&#34;&#34;
-        self._users = self._get_users(hard)
+        mongodb = kwargs.get(&#39;mongodb&#39;, False)
+        hard = kwargs.get(&#39;hard&#39;, False)
+
+        self._users = self._get_users()
         self._users_on_service = None
+        if mongodb:
+            self._users_cache = self.get_users_cache(hard=hard)
 
     @property
     def all_users(self):
@@ -2935,7 +3611,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L555-L564" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L758-L767" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_users(self):
@@ -2949,6 +3625,72 @@ def all_users(self):
     return self._users</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.security.user.Users.all_users_cache"><code class="name">var <span class="ident">all_users_cache</span> : dict</code></dt>
+<dd>
+<div class="desc"><p>Returns dict of all the users and their info present in CommcellEntityCache in mongoDB</p>
+<p>dict - consists of all users of the in the CommcellEntityCache
+{
+"user1_name": {
+'id': user1_id ,
+'email': user1_email,
+'fullName': user1_fullName,
+'description': user1_description,
+'UPN': user1_UPN,
+'enabled': user1_enabled_user_flag,
+'locked': user1_is_user_locked_flag,
+'numberOfLaptops': user1_number_of_devices,
+'company': user1_company
+},
+"user2_name": {
+'id': user2_id ,
+'email': user2_email,
+'fullName': user2_fullName,
+'description': user2_description,
+'UPN': user2_UPN,
+'enabled': user2_enabled_user_flag,
+'locked': user2_is_user_locked_flag,
+'numberOfLaptops': user2_number_of_devices,
+'company': user2_company
+}
+}</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L359-L389" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def all_users_cache(self) -&gt; dict:
+    &#34;&#34;&#34;Returns dict of all the users and their info present in CommcellEntityCache in mongoDB
+
+        dict - consists of all users of the in the CommcellEntityCache
+                {
+                     &#34;user1_name&#34;: {
+                            &#39;id&#39;: user1_id ,
+                            &#39;email&#39;: user1_email,
+                            &#39;fullName&#39;: user1_fullName,
+                            &#39;description&#39;: user1_description,
+                            &#39;UPN&#39;: user1_UPN,
+                            &#39;enabled&#39;: user1_enabled_user_flag,
+                            &#39;locked&#39;: user1_is_user_locked_flag,
+                            &#39;numberOfLaptops&#39;: user1_number_of_devices,
+                            &#39;company&#39;: user1_company
+                            },
+                     &#34;user2_name&#34;: {
+                            &#39;id&#39;: user2_id ,
+                            &#39;email&#39;: user2_email,
+                            &#39;fullName&#39;: user2_fullName,
+                            &#39;description&#39;: user2_description,
+                            &#39;UPN&#39;: user2_UPN,
+                            &#39;enabled&#39;: user2_enabled_user_flag,
+                            &#39;locked&#39;: user2_is_user_locked_flag,
+                            &#39;numberOfLaptops&#39;: user2_number_of_devices,
+                            &#39;company&#39;: user2_company
+                            }
+                }
+    &#34;&#34;&#34;
+    return self._users_cache</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.security.user.Users.service_commcell_users_space"><code class="name">var <span class="ident">service_commcell_users_space</span></code></dt>
 <dd>
 <div class="desc"><p>Returns the user space from service commcell</p>
@@ -2957,7 +3699,7 @@ def all_users(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L533-L542" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L730-L739" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def service_commcell_users_space(self):
@@ -3071,7 +3813,7 @@ if failed to add user to commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L256-L390" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L453-L587" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self,
         user_name,
@@ -3251,7 +3993,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L427-L500" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L624-L697" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, user_name, new_user=None, new_usergroup=None):
     &#34;&#34;&#34;Deletes the specified user from the existing commcell users
@@ -3346,7 +4088,7 @@ if user doesn't exist with specified name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L408-L425" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L605-L622" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, user_name):
     &#34;&#34;&#34;Returns the user object for the specified user name
@@ -3368,6 +4110,120 @@ if user doesn't exist with specified name</p></div>
     return User(self._commcell_object, user_name, self._users[user_name.lower()])</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.security.user.Users.get_users_cache"><code class="name flex">
+<span>def <span class="ident">get_users_cache</span></span>(<span>self, hard: bool = False, **kwargs) ‑> dict</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gets all the users present in CommcellEntityCache DB.</p>
+<h2 id="args">Args</h2>
+<p>hard
+(bool)
+&ndash;
+Flag to perform hard refresh on users cache.
+**kwargs (dict):
+fl (list)
+&ndash;
+List of columns to return in response (default: None).
+sort (list)
+&ndash;
+Contains the name of the column on which sorting will be performed and type of sort.
+Valid sort type: 1 for ascending and -1 for descending
+e.g. sort = ['columnName', '1'] (default: None).
+limit (list)
+&ndash;
+Contains the start and limit parameter value.
+Default ['0', '100'].
+search (str)
+&ndash;
+Contains the string to search in the commcell entity cache (default: None).
+fq (list)
+&ndash;
+Contains the columnName, condition and value.
+e.g. fq = [['UserName', 'contains', 'test'],
+['email', 'contains', 'test']] (default: None).
+enum (bool)
+&ndash;
+Flag to return enums in the response (default: True).</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict</code></dt>
+<dd>Dictionary of all the properties present in response.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L290-L357" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_users_cache(self, hard: bool = False, **kwargs) -&gt; dict:
+    &#34;&#34;&#34;
+    Gets all the users present in CommcellEntityCache DB.
+
+    Args:
+        hard  (bool)        --   Flag to perform hard refresh on users cache.
+        **kwargs (dict):
+            fl (list)       --   List of columns to return in response (default: None).
+            sort (list)     --   Contains the name of the column on which sorting will be performed and type of sort.
+                                    Valid sort type: 1 for ascending and -1 for descending
+                                    e.g. sort = [&#39;columnName&#39;, &#39;1&#39;] (default: None).
+            limit (list)    --   Contains the start and limit parameter value.
+                                    Default [&#39;0&#39;, &#39;100&#39;].
+            search (str)    --   Contains the string to search in the commcell entity cache (default: None).
+            fq (list)       --   Contains the columnName, condition and value.
+                                    e.g. fq = [[&#39;UserName&#39;, &#39;contains&#39;, &#39;test&#39;],
+                                     [&#39;email&#39;, &#39;contains&#39;, &#39;test&#39;]] (default: None).
+            enum (bool)     --   Flag to return enums in the response (default: True).
+
+    Returns:
+        dict: Dictionary of all the properties present in response.
+    &#34;&#34;&#34;
+    self._commcell_object._headers[&#39;mode&#39;] = &#39;EdgeMode&#39;
+    headers = self._commcell_object._headers.copy()
+    if kwargs.get(&#39;enum&#39;, True):
+        headers[&#39;EnumNames&#39;] = &#39;True&#39;
+
+    fl_parameters = self._get_fl_parameters(kwargs.get(&#39;fl&#39;, None))
+    fq_parameters = self._get_fq_parameters(kwargs.get(&#39;fq&#39;, None))
+    limit = kwargs.get(&#39;limit&#39;, [&#39;0&#39;, &#39;100&#39;])
+    limit_parameters = f&#39;start={limit[0]}&amp;limit={limit[1]}&#39;
+    hard_refresh = &#39;&amp;hardRefresh=true&#39; if hard else &#39;&#39;
+    sort_parameters = self._get_sort_parameters(kwargs.get(&#39;sort&#39;, None)) if kwargs.get(&#39;sort&#39;, None) else &#39;&#39;
+    search_parameter = f&#39;&amp;search={&#34;,&#34;.join(self.valid_columns.values())}:contains:{kwargs.get(&#34;search&#34;, None)}&#39; if kwargs.get(
+        &#39;search&#39;, None) else &#39;&#39;
+
+    request_url = (
+            self._commcell_object._services[&#39;USERS&#39;] + &#34;?&#34; +
+            limit_parameters + sort_parameters + fl_parameters + hard_refresh +
+            search_parameter + fq_parameters
+    )
+    flag, response = self._commcell_object._cvpysdk_object.make_request(&#34;GET&#34;, request_url, headers=headers)
+
+    if not flag:
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    users_cache = {}
+    if response.json() and &#39;users&#39; in response.json():
+        for user in response.json()[&#39;users&#39;]:
+            name = user.get(&#39;userEntity&#39;, {}).get(&#39;userName&#39;)
+            users_config = {
+                &#39;userId&#39;: user.get(&#39;userEntity&#39;, {}).get(&#39;userId&#39;),
+                &#39;email&#39;: user.get(&#39;email&#39;),
+                &#39;fullName&#39;: user.get(&#39;fullName&#39;),
+                &#39;description&#39;: user.get(&#39;description&#39;),
+                &#39;UPN&#39;: user.get(&#39;UPN&#39;),
+                &#39;enabled&#39;: user.get(&#39;enableUser&#39;),
+                &#39;locked&#39;: user.get(&#39;isAccountLocked&#39;),
+                &#39;numberOfLaptops&#39;: user.get(&#39;numDevices&#39;),
+                &#39;company&#39;: user.get(&#39;userEntity&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;companyName&#39;)
+            }
+            users_config = {key: value for key, value in users_config.items() if value is not None}
+            users_cache[name] = users_config
+
+        return users_cache
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;102&#39;)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.security.user.Users.has_user"><code class="name flex">
 <span>def <span class="ident">has_user</span></span>(<span>self, user_name)</span>
 </code></dt>
@@ -3385,7 +4241,7 @@ if data type of input is invalid</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L392-L406" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L589-L603" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_user(self, user_name):
     &#34;&#34;&#34;Checks if any user with specified name exists on this commcell
@@ -3405,27 +4261,36 @@ if data type of input is invalid</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.security.user.Users.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self, hard=False)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self, **kwargs)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh the list of Users on this commcell.</p>
+<div class="desc"><p>Refresh the list of users on this commcell.</p>
 <pre><code>Args:
-    hard    (bool)      --      flag to hard refresh mongo cache for this entity
+    **kwargs (dict):
+        mongodb (bool)  -- Flag to fetch users cache from MongoDB (default: False).
+        hard (bool)     -- Flag to hard refresh MongoDB cache for this entity (default: False).
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/user.py#L545-L553" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/user.py#L741-L756" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self, hard=False):
+<pre><code class="python">def refresh(self, **kwargs):
     &#34;&#34;&#34;
-    Refresh the list of Users on this commcell.
+    Refresh the list of users on this commcell.
 
         Args:
-            hard    (bool)      --      flag to hard refresh mongo cache for this entity
+            **kwargs (dict):
+                mongodb (bool)  -- Flag to fetch users cache from MongoDB (default: False).
+                hard (bool)     -- Flag to hard refresh MongoDB cache for this entity (default: False).
     &#34;&#34;&#34;
-    self._users = self._get_users(hard)
-    self._users_on_service = None</code></pre>
+    mongodb = kwargs.get(&#39;mongodb&#39;, False)
+    hard = kwargs.get(&#39;hard&#39;, False)
+
+    self._users = self._get_users()
+    self._users_on_service = None
+    if mongodb:
+        self._users_cache = self.get_users_cache(hard=hard)</code></pre>
 </details>
 </dd>
 </dl>
@@ -3511,14 +4376,17 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.security.user.User.get_account_lock_info" href="#cvpysdk.security.user.User.get_account_lock_info">get_account_lock_info</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.is_tfa_enabled" href="#cvpysdk.security.user.User.is_tfa_enabled">is_tfa_enabled</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.name" href="#cvpysdk.security.user.User.name">name</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.number_of_laptops" href="#cvpysdk.security.user.User.number_of_laptops">number_of_laptops</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.overwrite_usergroups" href="#cvpysdk.security.user.User.overwrite_usergroups">overwrite_usergroups</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.refresh" href="#cvpysdk.security.user.User.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.remove_usergroups" href="#cvpysdk.security.user.User.remove_usergroups">remove_usergroups</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.request_otp" href="#cvpysdk.security.user.User.request_otp">request_otp</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.reset_tenant_password" href="#cvpysdk.security.user.User.reset_tenant_password">reset_tenant_password</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.status" href="#cvpysdk.security.user.User.status">status</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.unlock" href="#cvpysdk.security.user.User.unlock">unlock</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.update_security_associations" href="#cvpysdk.security.user.User.update_security_associations">update_security_associations</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.update_user_password" href="#cvpysdk.security.user.User.update_user_password">update_user_password</a></code></li>
+<li><code><a title="cvpysdk.security.user.User.upn" href="#cvpysdk.security.user.User.upn">upn</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.user_company_name" href="#cvpysdk.security.user.User.user_company_name">user_company_name</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.user_guid" href="#cvpysdk.security.user.User.user_guid">user_guid</a></code></li>
 <li><code><a title="cvpysdk.security.user.User.user_id" href="#cvpysdk.security.user.User.user_id">user_id</a></code></li>
@@ -3531,8 +4399,10 @@ setTimeout(() => input.focus(), 100);
 <ul class="">
 <li><code><a title="cvpysdk.security.user.Users.add" href="#cvpysdk.security.user.Users.add">add</a></code></li>
 <li><code><a title="cvpysdk.security.user.Users.all_users" href="#cvpysdk.security.user.Users.all_users">all_users</a></code></li>
+<li><code><a title="cvpysdk.security.user.Users.all_users_cache" href="#cvpysdk.security.user.Users.all_users_cache">all_users_cache</a></code></li>
 <li><code><a title="cvpysdk.security.user.Users.delete" href="#cvpysdk.security.user.Users.delete">delete</a></code></li>
 <li><code><a title="cvpysdk.security.user.Users.get" href="#cvpysdk.security.user.Users.get">get</a></code></li>
+<li><code><a title="cvpysdk.security.user.Users.get_users_cache" href="#cvpysdk.security.user.Users.get_users_cache">get_users_cache</a></code></li>
 <li><code><a title="cvpysdk.security.user.Users.has_user" href="#cvpysdk.security.user.Users.has_user">has_user</a></code></li>
 <li><code><a title="cvpysdk.security.user.Users.refresh" href="#cvpysdk.security.user.Users.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.security.user.Users.service_commcell_users_space" href="#cvpysdk.security.user.Users.service_commcell_users_space">service_commcell_users_space</a></code></li>

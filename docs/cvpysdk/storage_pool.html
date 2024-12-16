@@ -25,11 +25,14 @@
 <section id="section-intro">
 <p>File for doing operations on an Storage Pools.</p>
 <p>This module has classes defined for doing operations for Storage Pools:</p>
-<pre><code>#. Get the Id for the given Storage Pool
-</code></pre>
+<p>StoragePools, StoragePoolType, StorageType, WORMLockType and StoragePool are the classes defined in this file.</p>
+<p>StoragePools: Class for representing all the StoragePools in the commcell</p>
+<p>StoragePoolType : Class for representing storage pool types like deduplication, secondary copy, non-dedupe, scale out</p>
+<p>StorageType : Class for representing storage types like disk, cloud, tape of a storage pool</p>
+<p>WORMLockType : Class for representing different WORM lock types flag values of a WORM enable storage pool</p>
+<p>StoragePool: Class for representing a single StoragePool of the commcell</p>
 <h1 id="storagepools">StoragePools</h1>
-<pre><code>__init__(commcell_object)   --  initializes object of the StoragePools class associated
-with the commcell
+<pre><code>__init__(commcell_object)   --  initializes object of the StoragePools class associated with the commcell
 
 __str__()                   --  returns all the storage pools associated with the commcell
 
@@ -55,6 +58,8 @@ add_azure_storage_pool()    --  Adds new storage pool with provided name to the 
 delete()                    --  deletes the specified storage pool
 
 refresh()                   --  refresh the list of storage pools associated with the commcell
+
+add_air_gap_protect()       --  Adds a new air gap protect storage pool to commcell
 </code></pre>
 <h2 id="attributes">Attributes</h2>
 <pre><code>**all_storage_pools**   --  returns dict of all the storage pools on commcell
@@ -64,40 +69,54 @@ refresh()                   --  refresh the list of storage pools associated wit
 <dd>&nbsp;</dd>
 </dl>
 <p>===========</p>
-<p><strong>init</strong>(commcell_object,
-storage_pool_name,
-storage_pool_id)
-&ndash;
-initialize the instance of StoragePool class for specific
-storage pool of commcell
-<strong>repr</strong>()
-&ndash;
-returns a string representation of the
-StoragePool instance
-_get_storage_pool_properties()
-&ndash;
-returns the properties of this storage pool</p>
-<p>refresh()
-&ndash;
-Refresh the properties of the StoragePool</p>
-<p>get_copy()
-&ndash;
-Returns the StoragePolicyCopy object of Storage Pool copy</p>
+<pre><code>__init__()                  --  initialize the instance of StoragePool class for specific storage pool of commcell
+
+__repr__()                  --  returns a string representation of the StoragePool instance
+
+ _get_storage_pool_properties() --  returns the properties of this storage pool
+
+refresh()                   --      Refresh the properties of the StoragePool
+
+get_copy()                  --  Returns the StoragePolicyCopy object of Storage Pool copy
+
+enable_compliance_lock()    --  Enables compliance lock on Storage Pool Copy
+
+enable_worm_storage_lock()  --  Enables WORM storage lock on storage pool
+
+hyperscale_add_nodes()      --  Add 3 new nodes to an existing storage pool
+</code></pre>
 <h1 id="storagepool-instance-attributes">StoragePool instance attributes</h1>
-<p><strong>storage_policy_name</strong>
-&ndash;
-returns the name of the StoragePool as seen on GUI</p>
-<p><strong>storage_policy_id</strong>
-&ndash;
-returns the storage pool id</p>
-<p>enable_worm_storage_lock()
-&ndash;
-sets the hardware WORM storage lock on storage pool.</p>
+<pre><code>**storage_pool_name**           --  returns the name of the storage pool
+
+**storage_pool_id**             --  returns the storage pool id
+
+**storage_pool_properties**     --  returns the properties of the storage pool
+
+**global_policy_name**          --  returns the global policy corresponding to the storage pool
+
+**copy_name**                   --  returns the copy name of the storage pool
+
+**copy_id**                     --  returns the copy id of the storage pool
+
+**storage_pool_type**           --  returns the storage pool type
+
+**storage_type**                --  returns the storage type of the storage pool
+
+**storage_vendor**              --  returns the storage vendor id of the storage pool
+
+**is_worm_storage_lock_enabled**--  returns whether WORM storage lock is enabled
+
+**is_object_level_worm_lock_enabled** --  returns whether object level WORM lock is enabled
+
+**is_bucket_level_worm_lock_enabled** --  returns whether bucket level WORM lock is enabled
+
+**is_compliance_lock_enabled**  --  returns whether compliance lock is enabled
+</code></pre>
 <h1 id="todo-check-with-mm-api-team-to-get-the-response-in-json">TODO: check with MM API team to get the response in JSON</h1>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L1-L1050" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L1-L1299" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -121,14 +140,23 @@ sets the hardware WORM storage lock on storage pool.</p>
 
 This module has classes defined for doing operations for Storage Pools:
 
-    #. Get the Id for the given Storage Pool
+StoragePools, StoragePoolType, StorageType, WORMLockType and StoragePool are the classes defined in this file.
+
+StoragePools: Class for representing all the StoragePools in the commcell
+
+StoragePoolType : Class for representing storage pool types like deduplication, secondary copy, non-dedupe, scale out
+
+StorageType : Class for representing storage types like disk, cloud, tape of a storage pool
+
+WORMLockType : Class for representing different WORM lock types flag values of a WORM enable storage pool
+
+StoragePool: Class for representing a single StoragePool of the commcell
 
 
 StoragePools
 ============
 
-    __init__(commcell_object)   --  initializes object of the StoragePools class associated
-    with the commcell
+    __init__(commcell_object)   --  initializes object of the StoragePools class associated with the commcell
 
     __str__()                   --  returns all the storage pools associated with the commcell
 
@@ -155,45 +183,70 @@ StoragePools
 
     refresh()                   --  refresh the list of storage pools associated with the commcell
 
+    add_air_gap_protect()       --  Adds a new air gap protect storage pool to commcell
 
 Attributes
 ----------
 
     **all_storage_pools**   --  returns dict of all the storage pools on commcell
 
+
 StoragePool
 ===========
 
-__init__(commcell_object,
-            storage_pool_name,
-            storage_pool_id)    --  initialize the instance of StoragePool class for specific
-                                    storage pool of commcell
-__repr__()                      --  returns a string representation of the
-                                StoragePool instance
- _get_storage_pool_properties()        --  returns the properties of this storage pool
+    __init__()                  --  initialize the instance of StoragePool class for specific storage pool of commcell
 
-refresh()                                       --      Refresh the properties of the StoragePool
+    __repr__()                  --  returns a string representation of the StoragePool instance
 
-get_copy()                      --  Returns the StoragePolicyCopy object of Storage Pool copy
+     _get_storage_pool_properties() --  returns the properties of this storage pool
+
+    refresh()                   --      Refresh the properties of the StoragePool
+
+    get_copy()                  --  Returns the StoragePolicyCopy object of Storage Pool copy
+
+    enable_compliance_lock()    --  Enables compliance lock on Storage Pool Copy
+
+    enable_worm_storage_lock()  --  Enables WORM storage lock on storage pool
+
+    hyperscale_add_nodes()      --  Add 3 new nodes to an existing storage pool
 
 StoragePool instance attributes
 ================================
 
-**storage_policy_name**         --  returns the name of the StoragePool as seen on GUI
+    **storage_pool_name**           --  returns the name of the storage pool
 
-**storage_policy_id**           --  returns the storage pool id
+    **storage_pool_id**             --  returns the storage pool id
 
-enable_worm_storage_lock()      --  sets the hardware WORM storage lock on storage pool.
+    **storage_pool_properties**     --  returns the properties of the storage pool
 
+    **global_policy_name**          --  returns the global policy corresponding to the storage pool
+
+    **copy_name**                   --  returns the copy name of the storage pool
+
+    **copy_id**                     --  returns the copy id of the storage pool
+
+    **storage_pool_type**           --  returns the storage pool type
+
+    **storage_type**                --  returns the storage type of the storage pool
+
+    **storage_vendor**              --  returns the storage vendor id of the storage pool
+
+    **is_worm_storage_lock_enabled**--  returns whether WORM storage lock is enabled
+
+    **is_object_level_worm_lock_enabled** --  returns whether object level WORM lock is enabled
+
+    **is_bucket_level_worm_lock_enabled** --  returns whether bucket level WORM lock is enabled
+
+    **is_compliance_lock_enabled**  --  returns whether compliance lock is enabled
 
 # TODO: check with MM API team to get the response in JSON
-
 
 &#34;&#34;&#34;
 import copy
 
 import xmltodict
-from enum import Enum
+from base64 import b64encode
+from enum import IntFlag, IntEnum
 
 from .exception import SDKException
 
@@ -224,6 +277,8 @@ class StoragePools:
         self._add_storage_pool_api = self._services[&#39;ADD_STORAGE_POOL&#39;]
 
         self._storage_pools_api = self._services[&#39;STORAGE_POOL&#39;]
+
+        self._metallic_storage_api = self._services[&#39;GET_METALLIC_STORAGE_DETAILS&#39;]
         self._storage_pools = None
 
         self.refresh()
@@ -385,10 +440,10 @@ class StoragePools:
             Create new storage pool for hyperscale
             Args:
                 storage_pool_name (string) -- Name of the storage pools to create
-                
+
                 media_agents      (List)   -- List of 3 media agents with name&#39;s(str)
                                                 or instance of media agent&#39;s(object)
-                                                
+
                 Example: [&#34;ma1&#34;,&#34;ma2&#34;,&#34;ma3&#34;]
 
             Return:
@@ -453,6 +508,90 @@ class StoragePools:
         self.refresh()
         return self.get(storage_pool_name)
 
+    def add_air_gap_protect(self, storage_pool_name, media_agent, storage_type, storage_class, region_name,
+                            ddb_ma=None, dedup_path=None):
+        &#34;&#34;&#34;
+            Adds a new air gap protect storage pool to commcell
+
+                Args:
+                    storage_pool_name   (str)       --  name of new storage pool to add
+
+                    media_agent         (str/object)--  name or instance of media agent
+
+                    storage_type        (str)        -- name of the cloud vendor (str, eg - &#34;Microsoft Azure storage&#34;) (same as UI)
+
+                    storage_class       (str)        -- storage class (str, eg - &#34;Hot&#34;,&#34;Cool&#34;) (same as UI)
+
+                    region_name (str)      --  name of the geographical region for storage (same as UI)
+
+                    ddb_ma              (list&lt;str/object&gt;/str/object)   --  list of (name of name or instance)
+                                                                            or name or instance of dedupe media agent
+
+                    dedup_path          (list&lt;str&gt;/str)       --  list of paths or path where the DDB should be stored
+
+                Returns:
+                    StoragePool object if creation is successful
+
+                Raises:
+                    SDKException, if invalid parameters provided
+
+        &#34;&#34;&#34;
+        license_type_dict = StoragePoolConstants.AIR_GAP_PROTECT_STORAGE_TYPES
+        error_message = &#34;&#34;
+        if storage_type.upper() in license_type_dict:
+            available_storage_classes = license_type_dict[storage_type.upper()]
+            if storage_class.upper() in available_storage_classes:
+                vendor_id = available_storage_classes[storage_class.upper()][&#34;vendorId&#34;]
+                display_vendor_id = available_storage_classes[storage_class.upper()][&#34;displayVendorId&#34;]
+            else:
+                error_message += f&#34;Invalid storage class provided. Valid storage class {list(available_storage_classes.keys())}&#34;
+        else:
+            error_message += f&#34;  Invalid storage type provided. {list(license_type_dict.keys())}&#34;
+
+        if error_message:
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;, error_message)
+
+        region = None
+        available_regions = []
+
+        #  API call to fetch the region name - sourced directly from the vendor
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, self._metallic_storage_api)
+        if flag:
+            if response.json():
+                if &#34;storageInformation&#34; in response.json():
+                    for storage_info in response.json()[&#34;storageInformation&#34;]:
+                        if (int(storage_info[&#34;vendorId&#34;]) == int(vendor_id)) and (int(storage_info[&#34;displayVendorId&#34;]) == int(display_vendor_id)):
+                            for region_dict in storage_info[&#34;region&#34;]:
+                                available_regions.append(region_dict[&#34;displayName&#34;])
+                                if region_dict[&#34;displayName&#34;] == region_name:
+                                    region = region_dict[&#34;regionName&#34;]
+                                    break
+
+                        if region:
+                            break
+
+                    if region is None:
+                        if not available_regions:
+                            raise SDKException(&#39;Storage&#39;, &#39;101&#39;,
+                                               f&#34;Active license is required to configure {storage_type} - {storage_class} Air Gap Protect storage&#34;)
+                        else:
+                            raise SDKException(&#39;Storage&#39;, &#39;101&#39;,
+                                               f&#34;Invalid region: {region_name} ,\nValid regions: {available_regions}&#34;)
+                else:
+                    raise SDKException(&#39;Storage&#39;, &#39;101&#39;, &#34;Unexpected response returned while fetching Air Gap Protect storage details&#34;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+        # cloud server type for air gap protect is 400
+        cloud_server_type = 400
+
+        return self.add(storage_pool_name=storage_pool_name, mountpath=None, media_agent=media_agent, ddb_ma=ddb_ma,
+                        dedup_path=dedup_path, cloud_server_type=cloud_server_type, region=region, vendor_id=vendor_id,
+                        display_vendor_id=display_vendor_id)
+
     def add(self, storage_pool_name, mountpath, media_agent, ddb_ma=None, dedup_path=None, **kwargs):
         &#34;&#34;&#34;
         Adds a new storage pool to commcell
@@ -464,9 +603,10 @@ class StoragePools:
 
             media_agent         (str/object)--  name or instance of media agent
 
-            ddb_ma              (str/object)--  name or instance of dedupe media agent
+            ddb_ma              (list&lt;str/object&gt;/str/object)   --  list of (name of name or instance)
+                                                                        or name or instance of dedupe media agent
 
-            dedup_path          (str)       --  path where the DDB should be stored
+            dedup_path          (list&lt;str&gt;/str)       --  list of paths or path where the DDB should be stored
 
             **kwargs:
                 username        (str)       --  username to access the mountpath
@@ -476,6 +616,15 @@ class StoragePools:
                 credential_name (str)       --  name of the credential as in credential manager
 
                 cloud_server_type (int)     --  cloud server type of the cloud vendor (required)
+
+                region (str)                --  name of geographical region for storage (required for air gap protect)
+
+                vendor_id (int)             -- id for the cloud_vendor (eg - 3 for azure) (required for air gap protect pool)
+
+                display_vendor_id (int)     -- storage Class id for that vendor (eg - 401 for azure hot) (required for air gap protect pool)
+
+                region_id        (int)      --  Cloud Hypervisor specific region ID
+
         Returns:
             StoragePool object if creation is successful
 
@@ -485,9 +634,15 @@ class StoragePools:
         username = kwargs.get(&#39;username&#39;, None)
         password = kwargs.get(&#39;password&#39;, None)
         credential_name = kwargs.get(&#39;credential_name&#39;, None)
-        cloud_server_type = int(kwargs.get(&#39;cloud_server_type&#39;, 0))
+        cloud_server_type = kwargs.get(&#39;cloud_server_type&#39;, None)
+        library_name = kwargs.get(&#39;library_name&#39;, None)
 
-        if ((ddb_ma is not None and not isinstance(dedup_path, str)) or
+        region = kwargs.get(&#39;region&#39;, None)
+        vendor_id = kwargs.get(&#39;vendor_id&#39;, None)
+        display_vendor_id = kwargs.get(&#39;display_vendor_id&#39;, None)
+        region_id = kwargs.get(&#39;region_id&#39;, None)
+
+        if ((ddb_ma is not None and not (isinstance(dedup_path, str) or isinstance(dedup_path, list))) or
                 not (isinstance(storage_pool_name, str) or not isinstance(mountpath, str))):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
@@ -498,13 +653,28 @@ class StoragePools:
         else:
             raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
 
+        if (isinstance(ddb_ma, str) or isinstance(ddb_ma, MediaAgent)) and isinstance(dedup_path, str):
+            ddb_ma = [ddb_ma]
+            dedup_path = [dedup_path]
+
+        if isinstance(ddb_ma, list) and isinstance(dedup_path, list):
+            if len(ddb_ma) != len(dedup_path):
+                raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+        if library_name is not None and mountpath != &#39;&#39;:
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+        if ddb_ma is not None and (len(ddb_ma) &gt; 6 or len(dedup_path) &gt; 6):
+            raise SDKException(&#39;Storage&#39;, &#39;110&#39;)
+
         if ddb_ma is not None:
-            if isinstance(ddb_ma, MediaAgent):
-                ddb_ma = ddb_ma
-            elif isinstance(ddb_ma, str):
-                ddb_ma = MediaAgent(self._commcell_object, ddb_ma)
-            else:
-                raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
+            for i in range(len(ddb_ma)):
+                if isinstance(ddb_ma[i], MediaAgent):
+                    ddb_ma[i] = ddb_ma[i]
+                elif isinstance(ddb_ma[i], str):
+                    ddb_ma[i] = MediaAgent(self._commcell_object, ddb_ma[i])
+                else:
+                    raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
 
         request_json = {
             &#34;storagePolicyName&#34;: storage_pool_name,
@@ -544,19 +714,56 @@ class StoragePools:
             }
         }
 
-        if cloud_server_type &gt; 0:
+        if cloud_server_type and int(cloud_server_type) &gt; 0:
             request_json[&#34;storage&#34;][0][&#34;deviceType&#34;] = cloud_server_type
+
+        if region_id is not None:
+            request_json[&#34;storage&#34;][0][&#34;metallicStorageInfo&#34;] = {
+                &#34;region&#34;: [
+                    {
+                        &#34;regionId&#34;: region_id
+                    }
+                ],
+                &#34;storageClass&#34;: [
+                    &#34;CONTAINER_DEFAULT&#34;
+                ],
+                &#34;replication&#34;: [
+                    &#34;NONE&#34;
+                ]
+            }
+            request_json[&#34;region&#34;] = {&#34;regionId&#34;: region_id}
 
         if username is not None:
             request_json[&#34;storage&#34;][0][&#34;credentials&#34;] = {&#34;userName&#34;: username}
 
         if password is not None:
-            request_json[&#34;storage&#34;][0][&#34;credentials&#34;][&#34;password&#34;] = password
+            request_json[&#34;storage&#34;][0][&#34;credentials&#34;][&#34;password&#34;] = b64encode(password.encode()).decode()
 
         if credential_name is not None:
             request_json[&#34;storage&#34;][0][&#34;savedCredential&#34;] = {&#34;credentialName&#34;: credential_name}
 
+        if library_name is not None:
+            request_json[&#34;storage&#34;] = []
+            request_json[&#34;storagePolicyCopyInfo&#34;][&#34;library&#34;][&#34;libraryName&#34;] = library_name
+
         if ddb_ma is not None or dedup_path is not None:
+            maInfoList = []
+            for ma, path in zip(ddb_ma, dedup_path):
+                maInfoList.append({
+                    &#34;mediaAgent&#34;: {
+                        &#34;mediaAgentId&#34;: int(ma.media_agent_id),
+                        &#34;mediaAgentName&#34;: ma.media_agent_name
+                    },
+                    &#34;subStoreList&#34;: [
+                        {
+                            &#34;accessPath&#34;: {
+                                &#34;path&#34;: path
+                            },
+                            &#34;diskFreeThresholdMB&#34;: 5120,
+                            &#34;diskFreeWarningThreshholdMB&#34;: 10240
+                        }]
+                })
+
             request_json[&#34;storagePolicyCopyInfo&#34;].update({
                 &#34;storagePolicyFlags&#34;: {
                     &#34;blockLevelDedup&#34;: &#34;SET_TRUE&#34;,
@@ -568,21 +775,7 @@ class StoragePools:
                     &#34;hostGlobalDedupStore&#34;: &#34;SET_TRUE&#34;
                 },
                 &#34;DDBPartitionInfo&#34;: {
-                    &#34;maInfoList&#34;: [
-                        {
-                            &#34;mediaAgent&#34;: {
-                                &#34;mediaAgentId&#34;: int(ddb_ma.media_agent_id),
-                                &#34;mediaAgentName&#34;: ddb_ma.media_agent_name
-                            },
-                            &#34;subStoreList&#34;: [
-                                {
-                                    &#34;accessPath&#34;: {
-                                        &#34;path&#34;: dedup_path
-                                    },
-                                    &#34;diskFreeThresholdMB&#34;: 5120,
-                                    &#34;diskFreeWarningThreshholdMB&#34;: 10240
-                                }]
-                        }]
+                    &#34;maInfoList&#34;: maInfoList
                 }
             })
         else:
@@ -597,6 +790,23 @@ class StoragePools:
                     &#34;globalStoragePolicy&#34;: &#34;SET_TRUE&#34;
                 }
             })
+
+        # air gap protect storage
+        if cloud_server_type == 400:
+            del request_json[&#34;storage&#34;][0][&#34;path&#34;]
+            request_json[&#34;storage&#34;][0][&#34;savedCredential&#34;] = {&#34;credentialId&#34;: 0}
+
+            metallic_Storage = {
+                &#34;region&#34;: [
+                    {
+                        &#34;regionName&#34;: region
+                    }
+                ],
+                &#34;displayVendorId&#34;: display_vendor_id,
+                &#34;vendorId&#34;: vendor_id
+            }
+            request_json[&#34;storage&#34;][0][&#34;metallicStorageInfo&#34;] = metallic_Storage
+
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;POST&#39;, self._add_storage_pool_api, request_json
         )
@@ -607,7 +817,7 @@ class StoragePools:
 
                 if int(error_code) != 0:
                     error_message = response.json()[&#39;error&#39;][&#39;errorMessage&#39;]
-                    o_str = &#39;Failed to create storage policy\nError: &#34;{0}&#34;&#39;
+                    o_str = &#39;Failed to create storage pool\nError: &#34;{0}&#34;&#39;
 
                     raise SDKException(&#39;StoragePool&#39;, &#39;102&#39;, o_str.format(error_message))
             else:
@@ -704,6 +914,7 @@ class StoragePools:
         self.refresh()
         return self.get(request_json[&#34;storagePolicyName&#34;])
 
+
     def delete(self, storage_pool_name):
         &#34;&#34;&#34;deletes the specified storage pool.
 
@@ -758,18 +969,32 @@ class StoragePools:
                     &#39;102&#39;,
                     &#39;No storage pool exists with name: {0}&#39;.format(storage_pool_name)
                 )
-
     def refresh(self):
         &#34;&#34;&#34;Refresh the list of storage pools associated to the Commcell.&#34;&#34;&#34;
         self._storage_pools = self._get_storage_pools()
 
-
-class StoragePoolType(Enum):
-    &#34;&#34;&#34;Class Enum to represent different storage pool types&#34;&#34;&#34;
+class StoragePoolType(IntEnum):
+    &#34;&#34;&#34;Class IntEnum to represent different storage pool types&#34;&#34;&#34;
     DEDUPLICATION = 1,
     SECONDARY_COPY = 2,
     NON_DEDUPLICATION = 3,
     SCALE_OUT = 4
+
+
+class StorageType(IntEnum):
+    &#34;&#34;&#34;Class IntEnum to represent different storage types&#34;&#34;&#34;
+    DISK = 1,
+    CLOUD = 2,
+    HYPERSCALE = 3,
+    TAPE = 4
+
+
+class WORMLockType(IntFlag):
+    &#34;&#34;&#34;Class IntFlag to represent different WORM lock types flag values&#34;&#34;&#34;
+    COPY = 1,  # copy level software WORM (compliance lock)
+    STORAGE = 2,  # storage level hardware WORM
+    OBJECT = 4,  # object level storage WORM
+    BUCKET = 8  # bucket level storage WORM
 
 
 class StoragePool(object):
@@ -795,7 +1020,7 @@ class StoragePool(object):
         self._storage_pool_id = None
         self._copy_id = None
         self._copy_name = None
-        
+
         if storage_pool_id:
             self._storage_pool_id = str(storage_pool_id)
         else:
@@ -803,9 +1028,11 @@ class StoragePool(object):
 
         self._STORAGE_POOL = self._commcell_object._services[&#39;GET_STORAGE_POOL&#39;] % (self.storage_pool_id)
         self.refresh()
-        
-        self._copy_id = self._storage_pool_properties.get(&#34;storagePoolDetails&#34;,{}).get(&#34;copyInfo&#34;,{}).get(&#34;StoragePolicyCopy&#34;,{}).get(&#34;copyId&#34;)
-        self._copy_name = self._storage_pool_properties.get(&#34;storagePoolDetails&#34;, {}).get(&#34;copyInfo&#34;, {}).get(&#34;StoragePolicyCopy&#34;, {}).get(&#34;copyName&#34;)
+
+        self._copy_id = self._storage_pool_properties.get(&#34;storagePoolDetails&#34;, {}).get(&#34;copyInfo&#34;, {}).get(
+            &#34;StoragePolicyCopy&#34;, {}).get(&#34;copyId&#34;)
+        self._copy_name = self._storage_pool_properties.get(&#34;storagePoolDetails&#34;, {}).get(&#34;copyInfo&#34;, {}).get(
+            &#34;StoragePolicyCopy&#34;, {}).get(&#34;copyName&#34;)
 
     def __repr__(self):
         &#34;&#34;&#34;String representation of the instance of this class&#34;&#34;&#34;
@@ -869,10 +1096,92 @@ class StoragePool(object):
         &#34;&#34;&#34;Treats storage type as a read only attribute&#34;&#34;&#34;
         return self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;storagePoolType&#34;]
 
+    @property
+    def storage_type(self):
+        &#34;&#34;&#34;Treats storage type as a read only attribute&#34;&#34;&#34;
+        return self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;storageType&#34;]
+
+    @property
+    def storage_vendor(self):
+        &#34;&#34;&#34;Treats library vendor like cloud storage provider as a read only attribute&#34;&#34;&#34;
+        return self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;libraryVendorId&#34;]
+
+    @property
+    def is_worm_storage_lock_enabled(self):
+        &#34;&#34;&#34;Treats is worm enabled as a read only attribute&#34;&#34;&#34;
+        return self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;isWormStorage&#34;]
+
+    @property
+    def is_object_level_worm_lock_enabled(self):
+        &#34;&#34;&#34;Treats is object WORM enabled as a read only attribute&#34;&#34;&#34;
+        worm_flag = int(self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;copyInfo&#34;][&#34;wormStorageFlag&#34;])
+        return worm_flag &amp; WORMLockType.OBJECT == WORMLockType.OBJECT
+
+    @property
+    def is_bucket_level_worm_lock_enabled(self):
+        &#34;&#34;&#34;Treats is bucket WORM enabled as a read only attribute&#34;&#34;&#34;
+        worm_flag = int(self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;copyInfo&#34;][&#34;wormStorageFlag&#34;])
+        return worm_flag &amp; WORMLockType.BUCKET == WORMLockType.BUCKET
+
+    @property
+    def is_compliance_lock_enabled(self):
+        &#34;&#34;&#34;Treats is compliance lock enabled as a read only attribute&#34;&#34;&#34;
+        return self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;copyInfo&#34;][&#34;copyFlags&#34;][&#34;wormCopy&#34;] == 1
+
     def get_copy(self):
         &#34;&#34;&#34; Returns the StoragePolicyCopy object of Storage Pool copy&#34;&#34;&#34;
         return StoragePolicyCopy(self._commcell_object, self.storage_pool_name, self.copy_name)
-        
+
+    def enable_compliance_lock(self):
+        &#34;&#34;&#34; Enables compliance lock on Storage Pool Copy &#34;&#34;&#34;
+        self.get_copy().enable_compliance_lock()
+        self.refresh()
+
+    def enable_worm_storage_lock(self, retain_days):
+        &#34;&#34;&#34;
+        Enable storage WORM lock on storage pool
+
+        Args:
+            retain_days    (int)   -- number of days of retention on WORM copy.
+
+        Raises:
+            SDKException:
+                if response is not success.
+
+                if reponse is empty.
+        &#34;&#34;&#34;
+
+        request_json = {
+            &#34;storagePolicyCopyInfo&#34;: {
+                &#34;copyFlags&#34;: {
+                    &#34;wormCopy&#34;: 1
+                },
+                &#34;retentionRules&#34;: {
+                    &#34;retainBackupDataForDays&#34;: retain_days
+                }
+            },
+            &#34;isWormStorage&#34;: True,
+            &#34;forceCopyToFollowPoolRetention&#34;: True
+        }
+
+        _STORAGE_POOL_COPY = self._commcell_object._services[&#39;STORAGE_POLICY_COPY&#39;] % (
+            self._storage_pool_id, str(self.copy_id))
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;PUT&#39;, _STORAGE_POOL_COPY, request_json)
+
+        if flag:
+            if response.json():
+                response = response.json()
+                if &#34;error&#34; in response and response.get(&#34;error&#34;, {}).get(&#34;errorCode&#34;) != 0:
+                    error_message = response.get(&#34;error&#34;, {}).get(&#34;errorMessage&#34;)
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;, error_message)
+                else:
+                    self.refresh()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;101&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
     def hyperscale_add_nodes(self, media_agents):
         &#34;&#34;&#34;
         Add 3 new nodes to an existing storage pool
@@ -880,7 +1189,7 @@ class StoragePool(object):
         args:
             media_agents      (List)   -- List of 3 media agents with name&#39;s(str)
                                             or instance of media agent&#39;s(object)
-                                            
+
             Example: [&#34;ma1&#34;,&#34;ma2&#34;,&#34;ma3&#34;]
 
         Raises:
@@ -1107,47 +1416,7 @@ class StoragePool(object):
         SecurityAssociation(self._commcell_object, self)._add_security_association(associations_list,
                                                                                    user=isUser,
                                                                                    request_type=request_type,
-                                                                                   externalGroup=externalGroup)
-    
-    def enable_worm_storage_lock(self, days):
-        &#34;&#34;&#34;
-        Sets hardware worm setting on Storage Pool copy with given retention
-        
-        Args:
-            days    (int)   -- number of days of retention on WORM copy.
-        
-        Raises:
-            SDKException:
-                if response is not success.
-
-                if reponse is empty.
-        &#34;&#34;&#34;
-
-        request_json = {
-            &#34;storagePolicyCopyInfo&#34;:{
-                &#34;copyFlags&#34;:{
-                    &#34;wormCopy&#34;:1
-                },
-                &#34;retentionRules&#34;:{
-                    &#34;retainBackupDataForDays&#34;:days
-                }
-            },
-            &#34;isWormStorage&#34;:True,
-            &#34;forceCopyToFollowPoolRetention&#34;:True
-        }
-        
-        _STORAGE_POOL_COPY = self._commcell_object._services[&#39;STORAGE_POLICY_COPY&#39;] % (
-            self._storage_pool_id, str(self.copy_id))
-        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;PUT&#39;, _STORAGE_POOL_COPY, request_json)
-
-        if flag:
-            if response.json():
-                response = response.json()
-                if &#34;error&#34; in response and response.get(&#34;error&#34;, {}).get(&#34;errorCode&#34;) != 0:
-                    error_message = response.get(&#34;error&#34;, {}).get(&#34;errorMessage&#34;)
-                    raise SDKException(&#39;Response&#39;, &#39;102&#39;, error_message)
-            else:
-                raise SDKException(&#39;Response&#39;, &#39;101&#39;)</code></pre>
+                                                                                   externalGroup=externalGroup)</code></pre>
 </details>
 </section>
 <section>
@@ -1181,7 +1450,7 @@ class StoragePool(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L674-L1049" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L880-L1299" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class StoragePool(object):
     &#34;&#34;&#34;Class for individual storage pools&#34;&#34;&#34;
@@ -1206,7 +1475,7 @@ class StoragePool(object):
         self._storage_pool_id = None
         self._copy_id = None
         self._copy_name = None
-        
+
         if storage_pool_id:
             self._storage_pool_id = str(storage_pool_id)
         else:
@@ -1214,9 +1483,11 @@ class StoragePool(object):
 
         self._STORAGE_POOL = self._commcell_object._services[&#39;GET_STORAGE_POOL&#39;] % (self.storage_pool_id)
         self.refresh()
-        
-        self._copy_id = self._storage_pool_properties.get(&#34;storagePoolDetails&#34;,{}).get(&#34;copyInfo&#34;,{}).get(&#34;StoragePolicyCopy&#34;,{}).get(&#34;copyId&#34;)
-        self._copy_name = self._storage_pool_properties.get(&#34;storagePoolDetails&#34;, {}).get(&#34;copyInfo&#34;, {}).get(&#34;StoragePolicyCopy&#34;, {}).get(&#34;copyName&#34;)
+
+        self._copy_id = self._storage_pool_properties.get(&#34;storagePoolDetails&#34;, {}).get(&#34;copyInfo&#34;, {}).get(
+            &#34;StoragePolicyCopy&#34;, {}).get(&#34;copyId&#34;)
+        self._copy_name = self._storage_pool_properties.get(&#34;storagePoolDetails&#34;, {}).get(&#34;copyInfo&#34;, {}).get(
+            &#34;StoragePolicyCopy&#34;, {}).get(&#34;copyName&#34;)
 
     def __repr__(self):
         &#34;&#34;&#34;String representation of the instance of this class&#34;&#34;&#34;
@@ -1280,10 +1551,92 @@ class StoragePool(object):
         &#34;&#34;&#34;Treats storage type as a read only attribute&#34;&#34;&#34;
         return self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;storagePoolType&#34;]
 
+    @property
+    def storage_type(self):
+        &#34;&#34;&#34;Treats storage type as a read only attribute&#34;&#34;&#34;
+        return self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;storageType&#34;]
+
+    @property
+    def storage_vendor(self):
+        &#34;&#34;&#34;Treats library vendor like cloud storage provider as a read only attribute&#34;&#34;&#34;
+        return self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;libraryVendorId&#34;]
+
+    @property
+    def is_worm_storage_lock_enabled(self):
+        &#34;&#34;&#34;Treats is worm enabled as a read only attribute&#34;&#34;&#34;
+        return self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;isWormStorage&#34;]
+
+    @property
+    def is_object_level_worm_lock_enabled(self):
+        &#34;&#34;&#34;Treats is object WORM enabled as a read only attribute&#34;&#34;&#34;
+        worm_flag = int(self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;copyInfo&#34;][&#34;wormStorageFlag&#34;])
+        return worm_flag &amp; WORMLockType.OBJECT == WORMLockType.OBJECT
+
+    @property
+    def is_bucket_level_worm_lock_enabled(self):
+        &#34;&#34;&#34;Treats is bucket WORM enabled as a read only attribute&#34;&#34;&#34;
+        worm_flag = int(self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;copyInfo&#34;][&#34;wormStorageFlag&#34;])
+        return worm_flag &amp; WORMLockType.BUCKET == WORMLockType.BUCKET
+
+    @property
+    def is_compliance_lock_enabled(self):
+        &#34;&#34;&#34;Treats is compliance lock enabled as a read only attribute&#34;&#34;&#34;
+        return self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;copyInfo&#34;][&#34;copyFlags&#34;][&#34;wormCopy&#34;] == 1
+
     def get_copy(self):
         &#34;&#34;&#34; Returns the StoragePolicyCopy object of Storage Pool copy&#34;&#34;&#34;
         return StoragePolicyCopy(self._commcell_object, self.storage_pool_name, self.copy_name)
-        
+
+    def enable_compliance_lock(self):
+        &#34;&#34;&#34; Enables compliance lock on Storage Pool Copy &#34;&#34;&#34;
+        self.get_copy().enable_compliance_lock()
+        self.refresh()
+
+    def enable_worm_storage_lock(self, retain_days):
+        &#34;&#34;&#34;
+        Enable storage WORM lock on storage pool
+
+        Args:
+            retain_days    (int)   -- number of days of retention on WORM copy.
+
+        Raises:
+            SDKException:
+                if response is not success.
+
+                if reponse is empty.
+        &#34;&#34;&#34;
+
+        request_json = {
+            &#34;storagePolicyCopyInfo&#34;: {
+                &#34;copyFlags&#34;: {
+                    &#34;wormCopy&#34;: 1
+                },
+                &#34;retentionRules&#34;: {
+                    &#34;retainBackupDataForDays&#34;: retain_days
+                }
+            },
+            &#34;isWormStorage&#34;: True,
+            &#34;forceCopyToFollowPoolRetention&#34;: True
+        }
+
+        _STORAGE_POOL_COPY = self._commcell_object._services[&#39;STORAGE_POLICY_COPY&#39;] % (
+            self._storage_pool_id, str(self.copy_id))
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;PUT&#39;, _STORAGE_POOL_COPY, request_json)
+
+        if flag:
+            if response.json():
+                response = response.json()
+                if &#34;error&#34; in response and response.get(&#34;error&#34;, {}).get(&#34;errorCode&#34;) != 0:
+                    error_message = response.get(&#34;error&#34;, {}).get(&#34;errorMessage&#34;)
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;, error_message)
+                else:
+                    self.refresh()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;101&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
     def hyperscale_add_nodes(self, media_agents):
         &#34;&#34;&#34;
         Add 3 new nodes to an existing storage pool
@@ -1291,7 +1644,7 @@ class StoragePool(object):
         args:
             media_agents      (List)   -- List of 3 media agents with name&#39;s(str)
                                             or instance of media agent&#39;s(object)
-                                            
+
             Example: [&#34;ma1&#34;,&#34;ma2&#34;,&#34;ma3&#34;]
 
         Raises:
@@ -1518,47 +1871,7 @@ class StoragePool(object):
         SecurityAssociation(self._commcell_object, self)._add_security_association(associations_list,
                                                                                    user=isUser,
                                                                                    request_type=request_type,
-                                                                                   externalGroup=externalGroup)
-    
-    def enable_worm_storage_lock(self, days):
-        &#34;&#34;&#34;
-        Sets hardware worm setting on Storage Pool copy with given retention
-        
-        Args:
-            days    (int)   -- number of days of retention on WORM copy.
-        
-        Raises:
-            SDKException:
-                if response is not success.
-
-                if reponse is empty.
-        &#34;&#34;&#34;
-
-        request_json = {
-            &#34;storagePolicyCopyInfo&#34;:{
-                &#34;copyFlags&#34;:{
-                    &#34;wormCopy&#34;:1
-                },
-                &#34;retentionRules&#34;:{
-                    &#34;retainBackupDataForDays&#34;:days
-                }
-            },
-            &#34;isWormStorage&#34;:True,
-            &#34;forceCopyToFollowPoolRetention&#34;:True
-        }
-        
-        _STORAGE_POOL_COPY = self._commcell_object._services[&#39;STORAGE_POLICY_COPY&#39;] % (
-            self._storage_pool_id, str(self.copy_id))
-        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;PUT&#39;, _STORAGE_POOL_COPY, request_json)
-
-        if flag:
-            if response.json():
-                response = response.json()
-                if &#34;error&#34; in response and response.get(&#34;error&#34;, {}).get(&#34;errorCode&#34;) != 0:
-                    error_message = response.get(&#34;error&#34;, {}).get(&#34;errorMessage&#34;)
-                    raise SDKException(&#39;Response&#39;, &#39;102&#39;, error_message)
-            else:
-                raise SDKException(&#39;Response&#39;, &#39;101&#39;)</code></pre>
+                                                                                   externalGroup=externalGroup)</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
@@ -1568,7 +1881,7 @@ class StoragePool(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L761-L764" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L969-L972" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_id(self):
@@ -1582,7 +1895,7 @@ def copy_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L756-L759" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L964-L967" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def copy_name(self):
@@ -1596,12 +1909,70 @@ def copy_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L751-L754" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L959-L962" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def global_policy_name(self):
     &#34;&#34;&#34;Returns the global policy corresponding to the storage pool&#34;&#34;&#34;
     return self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;copyInfo&#34;][&#34;StoragePolicyCopy&#34;][&#34;storagePolicyName&#34;]</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.storage_pool.StoragePool.is_bucket_level_worm_lock_enabled"><code class="name">var <span class="ident">is_bucket_level_worm_lock_enabled</span></code></dt>
+<dd>
+<div class="desc"><p>Treats is bucket WORM enabled as a read only attribute</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L1000-L1004" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_bucket_level_worm_lock_enabled(self):
+    &#34;&#34;&#34;Treats is bucket WORM enabled as a read only attribute&#34;&#34;&#34;
+    worm_flag = int(self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;copyInfo&#34;][&#34;wormStorageFlag&#34;])
+    return worm_flag &amp; WORMLockType.BUCKET == WORMLockType.BUCKET</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.storage_pool.StoragePool.is_compliance_lock_enabled"><code class="name">var <span class="ident">is_compliance_lock_enabled</span></code></dt>
+<dd>
+<div class="desc"><p>Treats is compliance lock enabled as a read only attribute</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L1006-L1009" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_compliance_lock_enabled(self):
+    &#34;&#34;&#34;Treats is compliance lock enabled as a read only attribute&#34;&#34;&#34;
+    return self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;copyInfo&#34;][&#34;copyFlags&#34;][&#34;wormCopy&#34;] == 1</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.storage_pool.StoragePool.is_object_level_worm_lock_enabled"><code class="name">var <span class="ident">is_object_level_worm_lock_enabled</span></code></dt>
+<dd>
+<div class="desc"><p>Treats is object WORM enabled as a read only attribute</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L994-L998" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_object_level_worm_lock_enabled(self):
+    &#34;&#34;&#34;Treats is object WORM enabled as a read only attribute&#34;&#34;&#34;
+    worm_flag = int(self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;copyInfo&#34;][&#34;wormStorageFlag&#34;])
+    return worm_flag &amp; WORMLockType.OBJECT == WORMLockType.OBJECT</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.storage_pool.StoragePool.is_worm_storage_lock_enabled"><code class="name">var <span class="ident">is_worm_storage_lock_enabled</span></code></dt>
+<dd>
+<div class="desc"><p>Treats is worm enabled as a read only attribute</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L989-L992" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_worm_storage_lock_enabled(self):
+    &#34;&#34;&#34;Treats is worm enabled as a read only attribute&#34;&#34;&#34;
+    return self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;isWormStorage&#34;]</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.storage_pool.StoragePool.storage_pool_id"><code class="name">var <span class="ident">storage_pool_id</span></code></dt>
@@ -1610,7 +1981,7 @@ def global_policy_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L741-L744" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L949-L952" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_pool_id(self):
@@ -1624,7 +1995,7 @@ def storage_pool_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L736-L739" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L944-L947" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_pool_name(self):
@@ -1638,7 +2009,7 @@ def storage_pool_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L746-L749" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L954-L957" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_pool_properties(self):
@@ -1652,7 +2023,7 @@ def storage_pool_properties(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L766-L769" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L974-L977" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def storage_pool_type(self):
@@ -1660,16 +2031,60 @@ def storage_pool_type(self):
     return self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;storagePoolType&#34;]</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.storage_pool.StoragePool.storage_type"><code class="name">var <span class="ident">storage_type</span></code></dt>
+<dd>
+<div class="desc"><p>Treats storage type as a read only attribute</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L979-L982" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def storage_type(self):
+    &#34;&#34;&#34;Treats storage type as a read only attribute&#34;&#34;&#34;
+    return self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;storageType&#34;]</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.storage_pool.StoragePool.storage_vendor"><code class="name">var <span class="ident">storage_vendor</span></code></dt>
+<dd>
+<div class="desc"><p>Treats library vendor like cloud storage provider as a read only attribute</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L984-L987" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def storage_vendor(self):
+    &#34;&#34;&#34;Treats library vendor like cloud storage provider as a read only attribute&#34;&#34;&#34;
+    return self._storage_pool_properties[&#34;storagePoolDetails&#34;][&#34;libraryVendorId&#34;]</code></pre>
+</details>
+</dd>
 </dl>
 <h3>Methods</h3>
 <dl>
-<dt id="cvpysdk.storage_pool.StoragePool.enable_worm_storage_lock"><code class="name flex">
-<span>def <span class="ident">enable_worm_storage_lock</span></span>(<span>self, days)</span>
+<dt id="cvpysdk.storage_pool.StoragePool.enable_compliance_lock"><code class="name flex">
+<span>def <span class="ident">enable_compliance_lock</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Sets hardware worm setting on Storage Pool copy with given retention</p>
+<div class="desc"><p>Enables compliance lock on Storage Pool Copy</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L1015-L1018" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def enable_compliance_lock(self):
+    &#34;&#34;&#34; Enables compliance lock on Storage Pool Copy &#34;&#34;&#34;
+    self.get_copy().enable_compliance_lock()
+    self.refresh()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.storage_pool.StoragePool.enable_worm_storage_lock"><code class="name flex">
+<span>def <span class="ident">enable_worm_storage_lock</span></span>(<span>self, retain_days)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Enable storage WORM lock on storage pool</p>
 <h2 id="args">Args</h2>
-<p>days
+<p>retain_days
 (int)
 &ndash; number of days of retention on WORM copy.</p>
 <h2 id="raises">Raises</h2>
@@ -1680,15 +2095,15 @@ if response is not success.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L1011-L1049" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L1020-L1063" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def enable_worm_storage_lock(self, days):
+<pre><code class="python">def enable_worm_storage_lock(self, retain_days):
     &#34;&#34;&#34;
-    Sets hardware worm setting on Storage Pool copy with given retention
-    
+    Enable storage WORM lock on storage pool
+
     Args:
-        days    (int)   -- number of days of retention on WORM copy.
-    
+        retain_days    (int)   -- number of days of retention on WORM copy.
+
     Raises:
         SDKException:
             if response is not success.
@@ -1697,18 +2112,18 @@ if response is not success.</p>
     &#34;&#34;&#34;
 
     request_json = {
-        &#34;storagePolicyCopyInfo&#34;:{
-            &#34;copyFlags&#34;:{
-                &#34;wormCopy&#34;:1
+        &#34;storagePolicyCopyInfo&#34;: {
+            &#34;copyFlags&#34;: {
+                &#34;wormCopy&#34;: 1
             },
-            &#34;retentionRules&#34;:{
-                &#34;retainBackupDataForDays&#34;:days
+            &#34;retentionRules&#34;: {
+                &#34;retainBackupDataForDays&#34;: retain_days
             }
         },
-        &#34;isWormStorage&#34;:True,
-        &#34;forceCopyToFollowPoolRetention&#34;:True
+        &#34;isWormStorage&#34;: True,
+        &#34;forceCopyToFollowPoolRetention&#34;: True
     }
-    
+
     _STORAGE_POOL_COPY = self._commcell_object._services[&#39;STORAGE_POLICY_COPY&#39;] % (
         self._storage_pool_id, str(self.copy_id))
     flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;PUT&#39;, _STORAGE_POOL_COPY, request_json)
@@ -1719,8 +2134,13 @@ if response is not success.</p>
             if &#34;error&#34; in response and response.get(&#34;error&#34;, {}).get(&#34;errorCode&#34;) != 0:
                 error_message = response.get(&#34;error&#34;, {}).get(&#34;errorMessage&#34;)
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;, error_message)
+            else:
+                self.refresh()
         else:
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;)</code></pre>
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;)
+    else:
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.storage_pool.StoragePool.get_copy"><code class="name flex">
@@ -1731,7 +2151,7 @@ if response is not success.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L771-L773" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L1011-L1013" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_copy(self):
     &#34;&#34;&#34; Returns the StoragePolicyCopy object of Storage Pool copy&#34;&#34;&#34;
@@ -1756,7 +2176,7 @@ if add nodes to an existing storage pool fails</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L775-L856" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L1065-L1146" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def hyperscale_add_nodes(self, media_agents):
     &#34;&#34;&#34;
@@ -1765,7 +2185,7 @@ if add nodes to an existing storage pool fails</p></div>
     args:
         media_agents      (List)   -- List of 3 media agents with name&#39;s(str)
                                         or instance of media agent&#39;s(object)
-                                        
+
         Example: [&#34;ma1&#34;,&#34;ma2&#34;,&#34;ma3&#34;]
 
     Raises:
@@ -1855,7 +2275,7 @@ if reconfigure fails</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L858-L904" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L1148-L1194" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def hyperscale_reconfigure_storage_pool(self, storage_pool_name):
     &#34;&#34;&#34;
@@ -1921,7 +2341,7 @@ if replace fails</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L906-L971" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L1196-L1261" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def hyperscale_replace_disk(self, disk_id, media_agent, storage_pool_name):
     &#34;&#34;&#34;
@@ -1999,7 +2419,7 @@ if replace fails</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L973-L975" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L1263-L1265" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refreshes propery of the class object&#34;&#34;&#34;
@@ -2042,7 +2462,7 @@ if association is not of List type</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L977-L1009" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L1267-L1299" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_security_associations(self, associations_list, isUser=True, request_type=None, externalGroup=False):
     &#34;&#34;&#34;
@@ -2086,14 +2506,14 @@ if association is not of List type</p></div>
 <span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class Enum to represent different storage pool types</p></div>
+<div class="desc"><p>Class IntEnum to represent different storage pool types</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L666-L671" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L856-L861" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">class StoragePoolType(Enum):
-    &#34;&#34;&#34;Class Enum to represent different storage pool types&#34;&#34;&#34;
+<pre><code class="python">class StoragePoolType(IntEnum):
+    &#34;&#34;&#34;Class IntEnum to represent different storage pool types&#34;&#34;&#34;
     DEDUPLICATION = 1,
     SECONDARY_COPY = 2,
     NON_DEDUPLICATION = 3,
@@ -2101,6 +2521,8 @@ if association is not of List type</p></div>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
+<li>enum.IntEnum</li>
+<li>builtins.int</li>
 <li>enum.Enum</li>
 </ul>
 <h3>Class variables</h3>
@@ -2142,7 +2564,7 @@ instance of the StoragePools class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L105-L663" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L139-L854" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class StoragePools:
     &#34;&#34;&#34;Class for doing operations on Storage Pools, like get storage poo ID.&#34;&#34;&#34;
@@ -2165,6 +2587,8 @@ instance of the StoragePools class</p></div>
         self._add_storage_pool_api = self._services[&#39;ADD_STORAGE_POOL&#39;]
 
         self._storage_pools_api = self._services[&#39;STORAGE_POOL&#39;]
+
+        self._metallic_storage_api = self._services[&#39;GET_METALLIC_STORAGE_DETAILS&#39;]
         self._storage_pools = None
 
         self.refresh()
@@ -2326,10 +2750,10 @@ instance of the StoragePools class</p></div>
             Create new storage pool for hyperscale
             Args:
                 storage_pool_name (string) -- Name of the storage pools to create
-                
+
                 media_agents      (List)   -- List of 3 media agents with name&#39;s(str)
                                                 or instance of media agent&#39;s(object)
-                                                
+
                 Example: [&#34;ma1&#34;,&#34;ma2&#34;,&#34;ma3&#34;]
 
             Return:
@@ -2394,6 +2818,90 @@ instance of the StoragePools class</p></div>
         self.refresh()
         return self.get(storage_pool_name)
 
+    def add_air_gap_protect(self, storage_pool_name, media_agent, storage_type, storage_class, region_name,
+                            ddb_ma=None, dedup_path=None):
+        &#34;&#34;&#34;
+            Adds a new air gap protect storage pool to commcell
+
+                Args:
+                    storage_pool_name   (str)       --  name of new storage pool to add
+
+                    media_agent         (str/object)--  name or instance of media agent
+
+                    storage_type        (str)        -- name of the cloud vendor (str, eg - &#34;Microsoft Azure storage&#34;) (same as UI)
+
+                    storage_class       (str)        -- storage class (str, eg - &#34;Hot&#34;,&#34;Cool&#34;) (same as UI)
+
+                    region_name (str)      --  name of the geographical region for storage (same as UI)
+
+                    ddb_ma              (list&lt;str/object&gt;/str/object)   --  list of (name of name or instance)
+                                                                            or name or instance of dedupe media agent
+
+                    dedup_path          (list&lt;str&gt;/str)       --  list of paths or path where the DDB should be stored
+
+                Returns:
+                    StoragePool object if creation is successful
+
+                Raises:
+                    SDKException, if invalid parameters provided
+
+        &#34;&#34;&#34;
+        license_type_dict = StoragePoolConstants.AIR_GAP_PROTECT_STORAGE_TYPES
+        error_message = &#34;&#34;
+        if storage_type.upper() in license_type_dict:
+            available_storage_classes = license_type_dict[storage_type.upper()]
+            if storage_class.upper() in available_storage_classes:
+                vendor_id = available_storage_classes[storage_class.upper()][&#34;vendorId&#34;]
+                display_vendor_id = available_storage_classes[storage_class.upper()][&#34;displayVendorId&#34;]
+            else:
+                error_message += f&#34;Invalid storage class provided. Valid storage class {list(available_storage_classes.keys())}&#34;
+        else:
+            error_message += f&#34;  Invalid storage type provided. {list(license_type_dict.keys())}&#34;
+
+        if error_message:
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;, error_message)
+
+        region = None
+        available_regions = []
+
+        #  API call to fetch the region name - sourced directly from the vendor
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, self._metallic_storage_api)
+        if flag:
+            if response.json():
+                if &#34;storageInformation&#34; in response.json():
+                    for storage_info in response.json()[&#34;storageInformation&#34;]:
+                        if (int(storage_info[&#34;vendorId&#34;]) == int(vendor_id)) and (int(storage_info[&#34;displayVendorId&#34;]) == int(display_vendor_id)):
+                            for region_dict in storage_info[&#34;region&#34;]:
+                                available_regions.append(region_dict[&#34;displayName&#34;])
+                                if region_dict[&#34;displayName&#34;] == region_name:
+                                    region = region_dict[&#34;regionName&#34;]
+                                    break
+
+                        if region:
+                            break
+
+                    if region is None:
+                        if not available_regions:
+                            raise SDKException(&#39;Storage&#39;, &#39;101&#39;,
+                                               f&#34;Active license is required to configure {storage_type} - {storage_class} Air Gap Protect storage&#34;)
+                        else:
+                            raise SDKException(&#39;Storage&#39;, &#39;101&#39;,
+                                               f&#34;Invalid region: {region_name} ,\nValid regions: {available_regions}&#34;)
+                else:
+                    raise SDKException(&#39;Storage&#39;, &#39;101&#39;, &#34;Unexpected response returned while fetching Air Gap Protect storage details&#34;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+        # cloud server type for air gap protect is 400
+        cloud_server_type = 400
+
+        return self.add(storage_pool_name=storage_pool_name, mountpath=None, media_agent=media_agent, ddb_ma=ddb_ma,
+                        dedup_path=dedup_path, cloud_server_type=cloud_server_type, region=region, vendor_id=vendor_id,
+                        display_vendor_id=display_vendor_id)
+
     def add(self, storage_pool_name, mountpath, media_agent, ddb_ma=None, dedup_path=None, **kwargs):
         &#34;&#34;&#34;
         Adds a new storage pool to commcell
@@ -2405,9 +2913,10 @@ instance of the StoragePools class</p></div>
 
             media_agent         (str/object)--  name or instance of media agent
 
-            ddb_ma              (str/object)--  name or instance of dedupe media agent
+            ddb_ma              (list&lt;str/object&gt;/str/object)   --  list of (name of name or instance)
+                                                                        or name or instance of dedupe media agent
 
-            dedup_path          (str)       --  path where the DDB should be stored
+            dedup_path          (list&lt;str&gt;/str)       --  list of paths or path where the DDB should be stored
 
             **kwargs:
                 username        (str)       --  username to access the mountpath
@@ -2417,6 +2926,15 @@ instance of the StoragePools class</p></div>
                 credential_name (str)       --  name of the credential as in credential manager
 
                 cloud_server_type (int)     --  cloud server type of the cloud vendor (required)
+
+                region (str)                --  name of geographical region for storage (required for air gap protect)
+
+                vendor_id (int)             -- id for the cloud_vendor (eg - 3 for azure) (required for air gap protect pool)
+
+                display_vendor_id (int)     -- storage Class id for that vendor (eg - 401 for azure hot) (required for air gap protect pool)
+
+                region_id        (int)      --  Cloud Hypervisor specific region ID
+
         Returns:
             StoragePool object if creation is successful
 
@@ -2426,9 +2944,15 @@ instance of the StoragePools class</p></div>
         username = kwargs.get(&#39;username&#39;, None)
         password = kwargs.get(&#39;password&#39;, None)
         credential_name = kwargs.get(&#39;credential_name&#39;, None)
-        cloud_server_type = int(kwargs.get(&#39;cloud_server_type&#39;, 0))
+        cloud_server_type = kwargs.get(&#39;cloud_server_type&#39;, None)
+        library_name = kwargs.get(&#39;library_name&#39;, None)
 
-        if ((ddb_ma is not None and not isinstance(dedup_path, str)) or
+        region = kwargs.get(&#39;region&#39;, None)
+        vendor_id = kwargs.get(&#39;vendor_id&#39;, None)
+        display_vendor_id = kwargs.get(&#39;display_vendor_id&#39;, None)
+        region_id = kwargs.get(&#39;region_id&#39;, None)
+
+        if ((ddb_ma is not None and not (isinstance(dedup_path, str) or isinstance(dedup_path, list))) or
                 not (isinstance(storage_pool_name, str) or not isinstance(mountpath, str))):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
@@ -2439,13 +2963,28 @@ instance of the StoragePools class</p></div>
         else:
             raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
 
+        if (isinstance(ddb_ma, str) or isinstance(ddb_ma, MediaAgent)) and isinstance(dedup_path, str):
+            ddb_ma = [ddb_ma]
+            dedup_path = [dedup_path]
+
+        if isinstance(ddb_ma, list) and isinstance(dedup_path, list):
+            if len(ddb_ma) != len(dedup_path):
+                raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+        if library_name is not None and mountpath != &#39;&#39;:
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+        if ddb_ma is not None and (len(ddb_ma) &gt; 6 or len(dedup_path) &gt; 6):
+            raise SDKException(&#39;Storage&#39;, &#39;110&#39;)
+
         if ddb_ma is not None:
-            if isinstance(ddb_ma, MediaAgent):
-                ddb_ma = ddb_ma
-            elif isinstance(ddb_ma, str):
-                ddb_ma = MediaAgent(self._commcell_object, ddb_ma)
-            else:
-                raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
+            for i in range(len(ddb_ma)):
+                if isinstance(ddb_ma[i], MediaAgent):
+                    ddb_ma[i] = ddb_ma[i]
+                elif isinstance(ddb_ma[i], str):
+                    ddb_ma[i] = MediaAgent(self._commcell_object, ddb_ma[i])
+                else:
+                    raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
 
         request_json = {
             &#34;storagePolicyName&#34;: storage_pool_name,
@@ -2485,19 +3024,56 @@ instance of the StoragePools class</p></div>
             }
         }
 
-        if cloud_server_type &gt; 0:
+        if cloud_server_type and int(cloud_server_type) &gt; 0:
             request_json[&#34;storage&#34;][0][&#34;deviceType&#34;] = cloud_server_type
+
+        if region_id is not None:
+            request_json[&#34;storage&#34;][0][&#34;metallicStorageInfo&#34;] = {
+                &#34;region&#34;: [
+                    {
+                        &#34;regionId&#34;: region_id
+                    }
+                ],
+                &#34;storageClass&#34;: [
+                    &#34;CONTAINER_DEFAULT&#34;
+                ],
+                &#34;replication&#34;: [
+                    &#34;NONE&#34;
+                ]
+            }
+            request_json[&#34;region&#34;] = {&#34;regionId&#34;: region_id}
 
         if username is not None:
             request_json[&#34;storage&#34;][0][&#34;credentials&#34;] = {&#34;userName&#34;: username}
 
         if password is not None:
-            request_json[&#34;storage&#34;][0][&#34;credentials&#34;][&#34;password&#34;] = password
+            request_json[&#34;storage&#34;][0][&#34;credentials&#34;][&#34;password&#34;] = b64encode(password.encode()).decode()
 
         if credential_name is not None:
             request_json[&#34;storage&#34;][0][&#34;savedCredential&#34;] = {&#34;credentialName&#34;: credential_name}
 
+        if library_name is not None:
+            request_json[&#34;storage&#34;] = []
+            request_json[&#34;storagePolicyCopyInfo&#34;][&#34;library&#34;][&#34;libraryName&#34;] = library_name
+
         if ddb_ma is not None or dedup_path is not None:
+            maInfoList = []
+            for ma, path in zip(ddb_ma, dedup_path):
+                maInfoList.append({
+                    &#34;mediaAgent&#34;: {
+                        &#34;mediaAgentId&#34;: int(ma.media_agent_id),
+                        &#34;mediaAgentName&#34;: ma.media_agent_name
+                    },
+                    &#34;subStoreList&#34;: [
+                        {
+                            &#34;accessPath&#34;: {
+                                &#34;path&#34;: path
+                            },
+                            &#34;diskFreeThresholdMB&#34;: 5120,
+                            &#34;diskFreeWarningThreshholdMB&#34;: 10240
+                        }]
+                })
+
             request_json[&#34;storagePolicyCopyInfo&#34;].update({
                 &#34;storagePolicyFlags&#34;: {
                     &#34;blockLevelDedup&#34;: &#34;SET_TRUE&#34;,
@@ -2509,21 +3085,7 @@ instance of the StoragePools class</p></div>
                     &#34;hostGlobalDedupStore&#34;: &#34;SET_TRUE&#34;
                 },
                 &#34;DDBPartitionInfo&#34;: {
-                    &#34;maInfoList&#34;: [
-                        {
-                            &#34;mediaAgent&#34;: {
-                                &#34;mediaAgentId&#34;: int(ddb_ma.media_agent_id),
-                                &#34;mediaAgentName&#34;: ddb_ma.media_agent_name
-                            },
-                            &#34;subStoreList&#34;: [
-                                {
-                                    &#34;accessPath&#34;: {
-                                        &#34;path&#34;: dedup_path
-                                    },
-                                    &#34;diskFreeThresholdMB&#34;: 5120,
-                                    &#34;diskFreeWarningThreshholdMB&#34;: 10240
-                                }]
-                        }]
+                    &#34;maInfoList&#34;: maInfoList
                 }
             })
         else:
@@ -2538,6 +3100,23 @@ instance of the StoragePools class</p></div>
                     &#34;globalStoragePolicy&#34;: &#34;SET_TRUE&#34;
                 }
             })
+
+        # air gap protect storage
+        if cloud_server_type == 400:
+            del request_json[&#34;storage&#34;][0][&#34;path&#34;]
+            request_json[&#34;storage&#34;][0][&#34;savedCredential&#34;] = {&#34;credentialId&#34;: 0}
+
+            metallic_Storage = {
+                &#34;region&#34;: [
+                    {
+                        &#34;regionName&#34;: region
+                    }
+                ],
+                &#34;displayVendorId&#34;: display_vendor_id,
+                &#34;vendorId&#34;: vendor_id
+            }
+            request_json[&#34;storage&#34;][0][&#34;metallicStorageInfo&#34;] = metallic_Storage
+
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;POST&#39;, self._add_storage_pool_api, request_json
         )
@@ -2548,7 +3127,7 @@ instance of the StoragePools class</p></div>
 
                 if int(error_code) != 0:
                     error_message = response.json()[&#39;error&#39;][&#39;errorMessage&#39;]
-                    o_str = &#39;Failed to create storage policy\nError: &#34;{0}&#34;&#39;
+                    o_str = &#39;Failed to create storage pool\nError: &#34;{0}&#34;&#39;
 
                     raise SDKException(&#39;StoragePool&#39;, &#39;102&#39;, o_str.format(error_message))
             else:
@@ -2645,6 +3224,7 @@ instance of the StoragePools class</p></div>
         self.refresh()
         return self.get(request_json[&#34;storagePolicyName&#34;])
 
+
     def delete(self, storage_pool_name):
         &#34;&#34;&#34;deletes the specified storage pool.
 
@@ -2699,7 +3279,6 @@ instance of the StoragePools class</p></div>
                     &#39;102&#39;,
                     &#39;No storage pool exists with name: {0}&#39;.format(storage_pool_name)
                 )
-
     def refresh(self):
         &#34;&#34;&#34;Refresh the list of storage pools associated to the Commcell.&#34;&#34;&#34;
         self._storage_pools = self._get_storage_pools()</code></pre>
@@ -2722,7 +3301,7 @@ consists of all storage pools added to the commcell</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L233-L247" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L269-L283" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_storage_pools(self):
@@ -2762,12 +3341,14 @@ mount path for the storage pool</p>
 (str/object)&ndash;
 name or instance of media agent</p>
 <p>ddb_ma
-(str/object)&ndash;
-name or instance of dedupe media agent</p>
-<p>dedup_path
-(str)
+(list<str/object>/str/object)
 &ndash;
-path where the DDB should be stored</p>
+list of (name of name or instance)
+or name or instance of dedupe media agent</p>
+<p>dedup_path
+(list<str>/str)
+&ndash;
+list of paths or path where the DDB should be stored</p>
 <p>**kwargs:
 username
 (str)
@@ -2778,6 +3359,14 @@ username to access the mountpath</p>
 credential_name (str)       --  name of the credential as in credential manager
 
 cloud_server_type (int)     --  cloud server type of the cloud vendor (required)
+
+region (str)                --  name of geographical region for storage (required for air gap protect)
+
+vendor_id (int)             -- id for the cloud_vendor (eg - 3 for azure) (required for air gap protect pool)
+
+display_vendor_id (int)     -- storage Class id for that vendor (eg - 401 for azure hot) (required for air gap protect pool)
+
+region_id        (int)      --  Cloud Hypervisor specific region ID
 </code></pre>
 <h2 id="returns">Returns</h2>
 <p>StoragePool object if creation is successful</p>
@@ -2786,7 +3375,7 @@ cloud_server_type (int)     --  cloud server type of the cloud vendor (required)
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L355-L520" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L475-L711" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, storage_pool_name, mountpath, media_agent, ddb_ma=None, dedup_path=None, **kwargs):
     &#34;&#34;&#34;
@@ -2799,9 +3388,10 @@ cloud_server_type (int)     --  cloud server type of the cloud vendor (required)
 
         media_agent         (str/object)--  name or instance of media agent
 
-        ddb_ma              (str/object)--  name or instance of dedupe media agent
+        ddb_ma              (list&lt;str/object&gt;/str/object)   --  list of (name of name or instance)
+                                                                    or name or instance of dedupe media agent
 
-        dedup_path          (str)       --  path where the DDB should be stored
+        dedup_path          (list&lt;str&gt;/str)       --  list of paths or path where the DDB should be stored
 
         **kwargs:
             username        (str)       --  username to access the mountpath
@@ -2811,6 +3401,15 @@ cloud_server_type (int)     --  cloud server type of the cloud vendor (required)
             credential_name (str)       --  name of the credential as in credential manager
 
             cloud_server_type (int)     --  cloud server type of the cloud vendor (required)
+
+            region (str)                --  name of geographical region for storage (required for air gap protect)
+
+            vendor_id (int)             -- id for the cloud_vendor (eg - 3 for azure) (required for air gap protect pool)
+
+            display_vendor_id (int)     -- storage Class id for that vendor (eg - 401 for azure hot) (required for air gap protect pool)
+
+            region_id        (int)      --  Cloud Hypervisor specific region ID
+
     Returns:
         StoragePool object if creation is successful
 
@@ -2820,9 +3419,15 @@ cloud_server_type (int)     --  cloud server type of the cloud vendor (required)
     username = kwargs.get(&#39;username&#39;, None)
     password = kwargs.get(&#39;password&#39;, None)
     credential_name = kwargs.get(&#39;credential_name&#39;, None)
-    cloud_server_type = int(kwargs.get(&#39;cloud_server_type&#39;, 0))
+    cloud_server_type = kwargs.get(&#39;cloud_server_type&#39;, None)
+    library_name = kwargs.get(&#39;library_name&#39;, None)
 
-    if ((ddb_ma is not None and not isinstance(dedup_path, str)) or
+    region = kwargs.get(&#39;region&#39;, None)
+    vendor_id = kwargs.get(&#39;vendor_id&#39;, None)
+    display_vendor_id = kwargs.get(&#39;display_vendor_id&#39;, None)
+    region_id = kwargs.get(&#39;region_id&#39;, None)
+
+    if ((ddb_ma is not None and not (isinstance(dedup_path, str) or isinstance(dedup_path, list))) or
             not (isinstance(storage_pool_name, str) or not isinstance(mountpath, str))):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
 
@@ -2833,13 +3438,28 @@ cloud_server_type (int)     --  cloud server type of the cloud vendor (required)
     else:
         raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
 
+    if (isinstance(ddb_ma, str) or isinstance(ddb_ma, MediaAgent)) and isinstance(dedup_path, str):
+        ddb_ma = [ddb_ma]
+        dedup_path = [dedup_path]
+
+    if isinstance(ddb_ma, list) and isinstance(dedup_path, list):
+        if len(ddb_ma) != len(dedup_path):
+            raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+    if library_name is not None and mountpath != &#39;&#39;:
+        raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
+
+    if ddb_ma is not None and (len(ddb_ma) &gt; 6 or len(dedup_path) &gt; 6):
+        raise SDKException(&#39;Storage&#39;, &#39;110&#39;)
+
     if ddb_ma is not None:
-        if isinstance(ddb_ma, MediaAgent):
-            ddb_ma = ddb_ma
-        elif isinstance(ddb_ma, str):
-            ddb_ma = MediaAgent(self._commcell_object, ddb_ma)
-        else:
-            raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
+        for i in range(len(ddb_ma)):
+            if isinstance(ddb_ma[i], MediaAgent):
+                ddb_ma[i] = ddb_ma[i]
+            elif isinstance(ddb_ma[i], str):
+                ddb_ma[i] = MediaAgent(self._commcell_object, ddb_ma[i])
+            else:
+                raise SDKException(&#39;Storage&#39;, &#39;103&#39;)
 
     request_json = {
         &#34;storagePolicyName&#34;: storage_pool_name,
@@ -2879,19 +3499,56 @@ cloud_server_type (int)     --  cloud server type of the cloud vendor (required)
         }
     }
 
-    if cloud_server_type &gt; 0:
+    if cloud_server_type and int(cloud_server_type) &gt; 0:
         request_json[&#34;storage&#34;][0][&#34;deviceType&#34;] = cloud_server_type
+
+    if region_id is not None:
+        request_json[&#34;storage&#34;][0][&#34;metallicStorageInfo&#34;] = {
+            &#34;region&#34;: [
+                {
+                    &#34;regionId&#34;: region_id
+                }
+            ],
+            &#34;storageClass&#34;: [
+                &#34;CONTAINER_DEFAULT&#34;
+            ],
+            &#34;replication&#34;: [
+                &#34;NONE&#34;
+            ]
+        }
+        request_json[&#34;region&#34;] = {&#34;regionId&#34;: region_id}
 
     if username is not None:
         request_json[&#34;storage&#34;][0][&#34;credentials&#34;] = {&#34;userName&#34;: username}
 
     if password is not None:
-        request_json[&#34;storage&#34;][0][&#34;credentials&#34;][&#34;password&#34;] = password
+        request_json[&#34;storage&#34;][0][&#34;credentials&#34;][&#34;password&#34;] = b64encode(password.encode()).decode()
 
     if credential_name is not None:
         request_json[&#34;storage&#34;][0][&#34;savedCredential&#34;] = {&#34;credentialName&#34;: credential_name}
 
+    if library_name is not None:
+        request_json[&#34;storage&#34;] = []
+        request_json[&#34;storagePolicyCopyInfo&#34;][&#34;library&#34;][&#34;libraryName&#34;] = library_name
+
     if ddb_ma is not None or dedup_path is not None:
+        maInfoList = []
+        for ma, path in zip(ddb_ma, dedup_path):
+            maInfoList.append({
+                &#34;mediaAgent&#34;: {
+                    &#34;mediaAgentId&#34;: int(ma.media_agent_id),
+                    &#34;mediaAgentName&#34;: ma.media_agent_name
+                },
+                &#34;subStoreList&#34;: [
+                    {
+                        &#34;accessPath&#34;: {
+                            &#34;path&#34;: path
+                        },
+                        &#34;diskFreeThresholdMB&#34;: 5120,
+                        &#34;diskFreeWarningThreshholdMB&#34;: 10240
+                    }]
+            })
+
         request_json[&#34;storagePolicyCopyInfo&#34;].update({
             &#34;storagePolicyFlags&#34;: {
                 &#34;blockLevelDedup&#34;: &#34;SET_TRUE&#34;,
@@ -2903,21 +3560,7 @@ cloud_server_type (int)     --  cloud server type of the cloud vendor (required)
                 &#34;hostGlobalDedupStore&#34;: &#34;SET_TRUE&#34;
             },
             &#34;DDBPartitionInfo&#34;: {
-                &#34;maInfoList&#34;: [
-                    {
-                        &#34;mediaAgent&#34;: {
-                            &#34;mediaAgentId&#34;: int(ddb_ma.media_agent_id),
-                            &#34;mediaAgentName&#34;: ddb_ma.media_agent_name
-                        },
-                        &#34;subStoreList&#34;: [
-                            {
-                                &#34;accessPath&#34;: {
-                                    &#34;path&#34;: dedup_path
-                                },
-                                &#34;diskFreeThresholdMB&#34;: 5120,
-                                &#34;diskFreeWarningThreshholdMB&#34;: 10240
-                            }]
-                    }]
+                &#34;maInfoList&#34;: maInfoList
             }
         })
     else:
@@ -2932,6 +3575,23 @@ cloud_server_type (int)     --  cloud server type of the cloud vendor (required)
                 &#34;globalStoragePolicy&#34;: &#34;SET_TRUE&#34;
             }
         })
+
+    # air gap protect storage
+    if cloud_server_type == 400:
+        del request_json[&#34;storage&#34;][0][&#34;path&#34;]
+        request_json[&#34;storage&#34;][0][&#34;savedCredential&#34;] = {&#34;credentialId&#34;: 0}
+
+        metallic_Storage = {
+            &#34;region&#34;: [
+                {
+                    &#34;regionName&#34;: region
+                }
+            ],
+            &#34;displayVendorId&#34;: display_vendor_id,
+            &#34;vendorId&#34;: vendor_id
+        }
+        request_json[&#34;storage&#34;][0][&#34;metallicStorageInfo&#34;] = metallic_Storage
+
     flag, response = self._commcell_object._cvpysdk_object.make_request(
         &#39;POST&#39;, self._add_storage_pool_api, request_json
     )
@@ -2942,7 +3602,7 @@ cloud_server_type (int)     --  cloud server type of the cloud vendor (required)
 
             if int(error_code) != 0:
                 error_message = response.json()[&#39;error&#39;][&#39;errorMessage&#39;]
-                o_str = &#39;Failed to create storage policy\nError: &#34;{0}&#34;&#39;
+                o_str = &#39;Failed to create storage pool\nError: &#34;{0}&#34;&#39;
 
                 raise SDKException(&#39;StoragePool&#39;, &#39;102&#39;, o_str.format(error_message))
         else:
@@ -2954,6 +3614,123 @@ cloud_server_type (int)     --  cloud server type of the cloud vendor (required)
     self.refresh()
     self._commcell_object.disk_libraries.refresh()
     return self.get(storage_pool_name)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.storage_pool.StoragePools.add_air_gap_protect"><code class="name flex">
+<span>def <span class="ident">add_air_gap_protect</span></span>(<span>self, storage_pool_name, media_agent, storage_type, storage_class, region_name, ddb_ma=None, dedup_path=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Adds a new air gap protect storage pool to commcell</p>
+<pre><code>Args:
+    storage_pool_name   (str)       --  name of new storage pool to add
+
+    media_agent         (str/object)--  name or instance of media agent
+
+    storage_type        (str)        -- name of the cloud vendor (str, eg - "Microsoft Azure storage") (same as UI)
+
+    storage_class       (str)        -- storage class (str, eg - "Hot","Cool") (same as UI)
+
+    region_name (str)      --  name of the geographical region for storage (same as UI)
+
+    ddb_ma              (list&lt;str/object&gt;/str/object)   --  list of (name of name or instance)
+                                                            or name or instance of dedupe media agent
+
+    dedup_path          (list&lt;str&gt;/str)       --  list of paths or path where the DDB should be stored
+
+Returns:
+    StoragePool object if creation is successful
+
+Raises:
+    SDKException, if invalid parameters provided
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L391-L473" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def add_air_gap_protect(self, storage_pool_name, media_agent, storage_type, storage_class, region_name,
+                        ddb_ma=None, dedup_path=None):
+    &#34;&#34;&#34;
+        Adds a new air gap protect storage pool to commcell
+
+            Args:
+                storage_pool_name   (str)       --  name of new storage pool to add
+
+                media_agent         (str/object)--  name or instance of media agent
+
+                storage_type        (str)        -- name of the cloud vendor (str, eg - &#34;Microsoft Azure storage&#34;) (same as UI)
+
+                storage_class       (str)        -- storage class (str, eg - &#34;Hot&#34;,&#34;Cool&#34;) (same as UI)
+
+                region_name (str)      --  name of the geographical region for storage (same as UI)
+
+                ddb_ma              (list&lt;str/object&gt;/str/object)   --  list of (name of name or instance)
+                                                                        or name or instance of dedupe media agent
+
+                dedup_path          (list&lt;str&gt;/str)       --  list of paths or path where the DDB should be stored
+
+            Returns:
+                StoragePool object if creation is successful
+
+            Raises:
+                SDKException, if invalid parameters provided
+
+    &#34;&#34;&#34;
+    license_type_dict = StoragePoolConstants.AIR_GAP_PROTECT_STORAGE_TYPES
+    error_message = &#34;&#34;
+    if storage_type.upper() in license_type_dict:
+        available_storage_classes = license_type_dict[storage_type.upper()]
+        if storage_class.upper() in available_storage_classes:
+            vendor_id = available_storage_classes[storage_class.upper()][&#34;vendorId&#34;]
+            display_vendor_id = available_storage_classes[storage_class.upper()][&#34;displayVendorId&#34;]
+        else:
+            error_message += f&#34;Invalid storage class provided. Valid storage class {list(available_storage_classes.keys())}&#34;
+    else:
+        error_message += f&#34;  Invalid storage type provided. {list(license_type_dict.keys())}&#34;
+
+    if error_message:
+        raise SDKException(&#39;Storage&#39;, &#39;101&#39;, error_message)
+
+    region = None
+    available_regions = []
+
+    #  API call to fetch the region name - sourced directly from the vendor
+    flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, self._metallic_storage_api)
+    if flag:
+        if response.json():
+            if &#34;storageInformation&#34; in response.json():
+                for storage_info in response.json()[&#34;storageInformation&#34;]:
+                    if (int(storage_info[&#34;vendorId&#34;]) == int(vendor_id)) and (int(storage_info[&#34;displayVendorId&#34;]) == int(display_vendor_id)):
+                        for region_dict in storage_info[&#34;region&#34;]:
+                            available_regions.append(region_dict[&#34;displayName&#34;])
+                            if region_dict[&#34;displayName&#34;] == region_name:
+                                region = region_dict[&#34;regionName&#34;]
+                                break
+
+                    if region:
+                        break
+
+                if region is None:
+                    if not available_regions:
+                        raise SDKException(&#39;Storage&#39;, &#39;101&#39;,
+                                           f&#34;Active license is required to configure {storage_type} - {storage_class} Air Gap Protect storage&#34;)
+                    else:
+                        raise SDKException(&#39;Storage&#39;, &#39;101&#39;,
+                                           f&#34;Invalid region: {region_name} ,\nValid regions: {available_regions}&#34;)
+            else:
+                raise SDKException(&#39;Storage&#39;, &#39;101&#39;, &#34;Unexpected response returned while fetching Air Gap Protect storage details&#34;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    # cloud server type for air gap protect is 400
+    cloud_server_type = 400
+
+    return self.add(storage_pool_name=storage_pool_name, mountpath=None, media_agent=media_agent, ddb_ma=ddb_ma,
+                    dedup_path=dedup_path, cloud_server_type=cloud_server_type, region=region, vendor_id=vendor_id,
+                    display_vendor_id=display_vendor_id)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.storage_pool.StoragePools.add_azure_storage_pool"><code class="name flex">
@@ -2999,7 +3776,7 @@ Response was empty.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L522-L604" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L713-L795" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_azure_storage_pool(self, storage_pool_name, container_name, media_agents, dedup_paths, **kwargs):
     &#34;&#34;&#34; Adds new storage pool with provided name to the commcell
@@ -3109,7 +3886,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L606-L659" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L798-L851" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, storage_pool_name):
     &#34;&#34;&#34;deletes the specified storage pool.
@@ -3187,7 +3964,7 @@ if no storage pool exists with the given name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L261-L280" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L297-L316" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, name):
     &#34;&#34;&#34;Returns the id of the storage pool for the given storage pool name.
@@ -3228,7 +4005,7 @@ boolean output whether the storage pool exists in the commcell or not</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L249-L259" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L285-L295" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_storage_pool(self, name):
     &#34;&#34;&#34;Checks if a storage pool exists in the Commcell with the input storage pool name.
@@ -3263,17 +4040,17 @@ or instance of media agent's(object)</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L282-L353" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L318-L389" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def hyperscale_create_storage_pool(self, storage_pool_name, media_agents):
     &#34;&#34;&#34;
         Create new storage pool for hyperscale
         Args:
             storage_pool_name (string) -- Name of the storage pools to create
-            
+
             media_agents      (List)   -- List of 3 media agents with name&#39;s(str)
                                             or instance of media agent&#39;s(object)
-                                            
+
             Example: [&#34;ma1&#34;,&#34;ma2&#34;,&#34;ma3&#34;]
 
         Return:
@@ -3347,12 +4124,101 @@ or instance of media agent's(object)</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/storage_pool.py#L661-L663" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L852-L854" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the list of storage pools associated to the Commcell.&#34;&#34;&#34;
     self._storage_pools = self._get_storage_pools()</code></pre>
 </details>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.storage_pool.StorageType"><code class="flex name class">
+<span>class <span class="ident">StorageType</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class IntEnum to represent different storage types</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L864-L869" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class StorageType(IntEnum):
+    &#34;&#34;&#34;Class IntEnum to represent different storage types&#34;&#34;&#34;
+    DISK = 1,
+    CLOUD = 2,
+    HYPERSCALE = 3,
+    TAPE = 4</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.IntEnum</li>
+<li>builtins.int</li>
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="cvpysdk.storage_pool.StorageType.CLOUD"><code class="name">var <span class="ident">CLOUD</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.storage_pool.StorageType.DISK"><code class="name">var <span class="ident">DISK</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.storage_pool.StorageType.HYPERSCALE"><code class="name">var <span class="ident">HYPERSCALE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.storage_pool.StorageType.TAPE"><code class="name">var <span class="ident">TAPE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.storage_pool.WORMLockType"><code class="flex name class">
+<span>class <span class="ident">WORMLockType</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class IntFlag to represent different WORM lock types flag values</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/storage_pool.py#L872-L877" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class WORMLockType(IntFlag):
+    &#34;&#34;&#34;Class IntFlag to represent different WORM lock types flag values&#34;&#34;&#34;
+    COPY = 1,  # copy level software WORM (compliance lock)
+    STORAGE = 2,  # storage level hardware WORM
+    OBJECT = 4,  # object level storage WORM
+    BUCKET = 8  # bucket level storage WORM</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.IntFlag</li>
+<li>builtins.int</li>
+<li>enum.Flag</li>
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="cvpysdk.storage_pool.WORMLockType.BUCKET"><code class="name">var <span class="ident">BUCKET</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.storage_pool.WORMLockType.COPY"><code class="name">var <span class="ident">COPY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.storage_pool.WORMLockType.OBJECT"><code class="name">var <span class="ident">OBJECT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.storage_pool.WORMLockType.STORAGE"><code class="name">var <span class="ident">STORAGE</span></code></dt>
+<dd>
+<div class="desc"></div>
 </dd>
 </dl>
 </dd>
@@ -3437,17 +4303,24 @@ setTimeout(() => input.focus(), 100);
 <ul class="">
 <li><code><a title="cvpysdk.storage_pool.StoragePool.copy_id" href="#cvpysdk.storage_pool.StoragePool.copy_id">copy_id</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePool.copy_name" href="#cvpysdk.storage_pool.StoragePool.copy_name">copy_name</a></code></li>
+<li><code><a title="cvpysdk.storage_pool.StoragePool.enable_compliance_lock" href="#cvpysdk.storage_pool.StoragePool.enable_compliance_lock">enable_compliance_lock</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePool.enable_worm_storage_lock" href="#cvpysdk.storage_pool.StoragePool.enable_worm_storage_lock">enable_worm_storage_lock</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePool.get_copy" href="#cvpysdk.storage_pool.StoragePool.get_copy">get_copy</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePool.global_policy_name" href="#cvpysdk.storage_pool.StoragePool.global_policy_name">global_policy_name</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePool.hyperscale_add_nodes" href="#cvpysdk.storage_pool.StoragePool.hyperscale_add_nodes">hyperscale_add_nodes</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePool.hyperscale_reconfigure_storage_pool" href="#cvpysdk.storage_pool.StoragePool.hyperscale_reconfigure_storage_pool">hyperscale_reconfigure_storage_pool</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePool.hyperscale_replace_disk" href="#cvpysdk.storage_pool.StoragePool.hyperscale_replace_disk">hyperscale_replace_disk</a></code></li>
+<li><code><a title="cvpysdk.storage_pool.StoragePool.is_bucket_level_worm_lock_enabled" href="#cvpysdk.storage_pool.StoragePool.is_bucket_level_worm_lock_enabled">is_bucket_level_worm_lock_enabled</a></code></li>
+<li><code><a title="cvpysdk.storage_pool.StoragePool.is_compliance_lock_enabled" href="#cvpysdk.storage_pool.StoragePool.is_compliance_lock_enabled">is_compliance_lock_enabled</a></code></li>
+<li><code><a title="cvpysdk.storage_pool.StoragePool.is_object_level_worm_lock_enabled" href="#cvpysdk.storage_pool.StoragePool.is_object_level_worm_lock_enabled">is_object_level_worm_lock_enabled</a></code></li>
+<li><code><a title="cvpysdk.storage_pool.StoragePool.is_worm_storage_lock_enabled" href="#cvpysdk.storage_pool.StoragePool.is_worm_storage_lock_enabled">is_worm_storage_lock_enabled</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePool.refresh" href="#cvpysdk.storage_pool.StoragePool.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePool.storage_pool_id" href="#cvpysdk.storage_pool.StoragePool.storage_pool_id">storage_pool_id</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePool.storage_pool_name" href="#cvpysdk.storage_pool.StoragePool.storage_pool_name">storage_pool_name</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePool.storage_pool_properties" href="#cvpysdk.storage_pool.StoragePool.storage_pool_properties">storage_pool_properties</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePool.storage_pool_type" href="#cvpysdk.storage_pool.StoragePool.storage_pool_type">storage_pool_type</a></code></li>
+<li><code><a title="cvpysdk.storage_pool.StoragePool.storage_type" href="#cvpysdk.storage_pool.StoragePool.storage_type">storage_type</a></code></li>
+<li><code><a title="cvpysdk.storage_pool.StoragePool.storage_vendor" href="#cvpysdk.storage_pool.StoragePool.storage_vendor">storage_vendor</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePool.update_security_associations" href="#cvpysdk.storage_pool.StoragePool.update_security_associations">update_security_associations</a></code></li>
 </ul>
 </li>
@@ -3464,6 +4337,7 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="cvpysdk.storage_pool.StoragePools" href="#cvpysdk.storage_pool.StoragePools">StoragePools</a></code></h4>
 <ul class="">
 <li><code><a title="cvpysdk.storage_pool.StoragePools.add" href="#cvpysdk.storage_pool.StoragePools.add">add</a></code></li>
+<li><code><a title="cvpysdk.storage_pool.StoragePools.add_air_gap_protect" href="#cvpysdk.storage_pool.StoragePools.add_air_gap_protect">add_air_gap_protect</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePools.add_azure_storage_pool" href="#cvpysdk.storage_pool.StoragePools.add_azure_storage_pool">add_azure_storage_pool</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePools.all_storage_pools" href="#cvpysdk.storage_pool.StoragePools.all_storage_pools">all_storage_pools</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePools.delete" href="#cvpysdk.storage_pool.StoragePools.delete">delete</a></code></li>
@@ -3471,6 +4345,24 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.storage_pool.StoragePools.has_storage_pool" href="#cvpysdk.storage_pool.StoragePools.has_storage_pool">has_storage_pool</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePools.hyperscale_create_storage_pool" href="#cvpysdk.storage_pool.StoragePools.hyperscale_create_storage_pool">hyperscale_create_storage_pool</a></code></li>
 <li><code><a title="cvpysdk.storage_pool.StoragePools.refresh" href="#cvpysdk.storage_pool.StoragePools.refresh">refresh</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.storage_pool.StorageType" href="#cvpysdk.storage_pool.StorageType">StorageType</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.storage_pool.StorageType.CLOUD" href="#cvpysdk.storage_pool.StorageType.CLOUD">CLOUD</a></code></li>
+<li><code><a title="cvpysdk.storage_pool.StorageType.DISK" href="#cvpysdk.storage_pool.StorageType.DISK">DISK</a></code></li>
+<li><code><a title="cvpysdk.storage_pool.StorageType.HYPERSCALE" href="#cvpysdk.storage_pool.StorageType.HYPERSCALE">HYPERSCALE</a></code></li>
+<li><code><a title="cvpysdk.storage_pool.StorageType.TAPE" href="#cvpysdk.storage_pool.StorageType.TAPE">TAPE</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.storage_pool.WORMLockType" href="#cvpysdk.storage_pool.WORMLockType">WORMLockType</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.storage_pool.WORMLockType.BUCKET" href="#cvpysdk.storage_pool.WORMLockType.BUCKET">BUCKET</a></code></li>
+<li><code><a title="cvpysdk.storage_pool.WORMLockType.COPY" href="#cvpysdk.storage_pool.WORMLockType.COPY">COPY</a></code></li>
+<li><code><a title="cvpysdk.storage_pool.WORMLockType.OBJECT" href="#cvpysdk.storage_pool.WORMLockType.OBJECT">OBJECT</a></code></li>
+<li><code><a title="cvpysdk.storage_pool.WORMLockType.STORAGE" href="#cvpysdk.storage_pool.WORMLockType.STORAGE">STORAGE</a></code></li>
 </ul>
 </li>
 </ul>

@@ -94,11 +94,17 @@ restore_files_to_out_of_place()
 &ndash; Restore
 files to another team.
 restore_to_original_location()
-&ndash; Restore team to original location.</p>
+&ndash; Restore team to original location.
+refresh_retention_stats()
+&ndash; refresh the retention stats for the client
+refresh_client_level_stats()
+&ndash; refresh the client level stats for the client
+backup_stats()
+&ndash; Returns the client level stats for the client</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/cloudapps/teams_subclient.py#L1-L1152" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L1-L1237" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # ————————————————————————–
@@ -157,6 +163,10 @@ TeamsSubclient:
     _json_restore_destinationTeamInfo()         -- Get destinationTeamInfo json for teams restore operation.
     restore_files_to_out_of_place()             -- Restore  files to another team.
     restore_to_original_location()              -- Restore team to original location.
+    refresh_retention_stats()                   -- refresh the retention stats for the client
+    refresh_client_level_stats()                -- refresh the client level stats for the client
+    backup_stats()                    -- Returns the client level stats for the client
+
 &#34;&#34;&#34;
 
 from __future__ import unicode_literals
@@ -248,17 +258,21 @@ class TeamsSubclient(CloudAppsSubclient):
             request_json[&#39;cloudAppAssociation&#39;][&#39;cloudAppDiscoverinfo&#39;][&#39;groups&#39;] = groups
 
         elif discovery_type.value == 12:
-            discovered_teams = self.discover(discovery_type=const.ClOUD_APP_EDISCOVER_TYPE[&#39;Teams&#39;])
-            entities = [discovered_teams[team] for team in entities]
+            is_team_instance = True
+            if isinstance(entities[0], str):
+                is_team_instance = False
+                discovered_teams = self.discover(discovery_type=const.ClOUD_APP_EDISCOVER_TYPE[&#39;Teams&#39;])
+                entities = [discovered_teams[team] for team in entities]
             for team in entities:
                 user_json = copy(const.ADD_USER_JSON)
-                user_json[&#39;_type_&#39;] = team[&#39;user&#39;][&#39;_type_&#39;]
-                user_json[&#39;userGUID&#39;] = team[&#39;user&#39;][&#39;userGUID&#39;]
+                user_json[&#39;_type_&#39;] = 13 if is_team_instance else team[&#39;user&#39;][&#39;_type_&#39;]
+                user_json[&#39;userGUID&#39;] = team.guid if is_team_instance else team[&#39;user&#39;][&#39;userGUID&#39;]
 
                 user_account_json = deepcopy(const.ADD_TEAM_JSON)
-                user_account_json[&#39;displayName&#39;] = team[&#39;displayName&#39;]
-                user_account_json[&#39;smtpAddress&#39;] = team[&#39;smtpAddress&#39;]
-                user_account_json[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;] = team[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;]
+                user_account_json[&#39;displayName&#39;] = team.name if is_team_instance else team[&#39;displayName&#39;]
+                user_account_json[&#39;smtpAddress&#39;] = team.mail if is_team_instance else team[&#39;smtpAddress&#39;]
+                user_account_json[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;] = team.teamsCreatedTime if is_team_instance else \
+                    team[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;]
                 user_account_json[&#39;user&#39;] = user_json
                 useraccounts.append(user_account_json)
             request_json[&#39;cloudAppAssociation&#39;][&#39;cloudAppDiscoverinfo&#39;][&#39;userAccounts&#39;] = useraccounts
@@ -305,12 +319,13 @@ class TeamsSubclient(CloudAppsSubclient):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def backup(self, teams=None, convert_job_to_full=False):
+    def backup(self, teams=None, convert_job_to_full=False, discovery_type=13):
         &#34;&#34;&#34;Run an Incremental  or Full backup.
             Args:
                 teams               (list)  --  List of team Email IDs.
                 convert_job_to_full (bool)  --  True if we need to convert job to full otherwise False
                             Default --  False
+                discovery_type   (int)  -- type of the entity we are backing up ex user, team, group etc
 
             Returns:
                 obj   --  Instance of job.
@@ -329,20 +344,25 @@ class TeamsSubclient(CloudAppsSubclient):
         request_json[&#39;taskInfo&#39;][&#39;associations&#39;] = [self._json_association()]
 
         if teams:
-            discovered_teams = self.discover(refresh_cache=False)
-            teams = [discovered_teams[team] for team in teams]
+            is_team_instance = True
+            if isinstance(teams[0], str):
+                is_team_instance = False
+                discovered_teams = self.discover(refresh_cache=False)
+                teams = [discovered_teams[team] for team in teams]
+
             team_json_list = []
             selected_items_json = []
             for team in teams:
                 team_json = copy(const.BACKUP_TEAM_JSON)
-                team_json[&#39;displayName&#39;] = team[&#39;displayName&#39;]
-                team_json[&#39;smtpAddress&#39;] = team[&#39;smtpAddress&#39;]
-                team_json[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;] = team[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;]
-                team_json[&#39;user&#39;] = {&#34;userGUID&#34;: team[&#39;user&#39;][&#39;userGUID&#39;]}
+                team_json[&#39;displayName&#39;] = team.name if is_team_instance else team[&#39;displayName&#39;]
+                team_json[&#39;smtpAddress&#39;] = team.mail if is_team_instance else team[&#39;smtpAddress&#39;]
+                team_json[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;] = team.teamsCreatedTime if is_team_instance else \
+                    team[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;]
+                team_json[&#39;user&#39;] = {&#34;userGUID&#34;: team.guid if is_team_instance else team[&#39;user&#39;][&#39;userGUID&#39;]}
                 team_json_list.append(team_json)
                 selected_items_json.append({
                     &#39;selectedItems&#39;: {
-                        &#34;itemName&#34;: team[&#39;displayName&#39;], &#34;itemType&#34;: &#34;Team&#34;
+                        &#34;itemName&#34;: team.name if is_team_instance else team[&#39;displayName&#39;], &#34;itemType&#34;: &#34;Team&#34;
                     }
                 })
             backup_subtask_json[&#39;options&#39;][&#39;commonOpts&#39;][&#39;jobMetadata&#39;][0][&#39;selectedItems&#39;] = selected_items_json
@@ -1251,7 +1271,78 @@ class TeamsSubclient(CloudAppsSubclient):
             }
         }
 
-        return self._process_restore(request_json)</code></pre>
+        return self._process_restore(request_json)
+
+    def refresh_retention_stats(self):
+        &#34;&#34;&#34;
+        refresh the retention stats for the client
+
+        &#34;&#34;&#34;
+        request_json = {
+            &#34;appType&#34;: const.INDEX_APP_TYPE,
+            &#34;subclientId&#34;: int(self._subclient_id)
+        }
+        refresh_retention = self._services[&#39;OFFICE365_PROCESS_INDEX_RETENTION_RULES&#39;]
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, refresh_retention, request_json)
+
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                error_code = response.json().get(&#39;errorCode&#39;)
+                if error_code != 0:
+                    error_message = response.json().get(&#39;errorMessage&#39;)
+                    output_string = f&#39;Failed to refresh retention stats \nError: {error_message}&#39;
+                    raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, output_string)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def refresh_client_level_stats(self):
+        &#34;&#34;&#34;
+        refresh the client level stats for the client
+
+        &#34;&#34;&#34;
+        request_json = {
+            &#34;appType&#34;: const.INDEX_APP_TYPE,
+            &#34;oneDriveIdxStatsReq&#34;:
+                [{
+                    &#34;subclientId&#34;: int(self._subclient_id), &#34;type&#34;: 0}]
+        }
+        refresh_backup_stats = self._services[&#39;OFFICE365_POPULATE_INDEX_STATS&#39;]
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, refresh_backup_stats, request_json)
+
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                error_code = response.json().get(&#39;errorCode&#39;)
+                if error_code != 0:
+                    error_message = response.json().get(&#39;errorMessage&#39;)
+                    output_string = f&#39;Failed to refresh client level stats \nError: {error_message}&#39;
+                    raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, output_string)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    @property
+    def backup_stats(self):
+        &#34;&#34;&#34;
+        Returns the client level stats for the client
+
+        Retruns:
+
+            response(json)                : returns the client level stats as a json response
+        &#34;&#34;&#34;
+        backupset_id = int(self._subClientEntity.get(&#39;backupsetId&#39;))
+        get_backup_stats = self._services[&#39;OFFICE365_OVERVIEW_STATS&#39;] % backupset_id
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, get_backup_stats)
+
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                error_code = response.json().get(&#39;errorCode&#39;)
+                if error_code != 0:
+                    error_message = response.json().get(&#39;errorMessage&#39;)
+                    output_string = f&#39;Failed to get client level stats \nError: {error_message}&#39;
+                    raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, output_string)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+        return response.json()</code></pre>
 </details>
 </section>
 <section>
@@ -1289,7 +1380,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/cloudapps/teams_subclient.py#L72-L1152" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L76-L1237" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class TeamsSubclient(CloudAppsSubclient):
     &#34;&#34;&#34;Derived class from Subclient Base class, representing a Microsoft Office 365 Teams subclient
@@ -1368,17 +1459,21 @@ default: None</p>
             request_json[&#39;cloudAppAssociation&#39;][&#39;cloudAppDiscoverinfo&#39;][&#39;groups&#39;] = groups
 
         elif discovery_type.value == 12:
-            discovered_teams = self.discover(discovery_type=const.ClOUD_APP_EDISCOVER_TYPE[&#39;Teams&#39;])
-            entities = [discovered_teams[team] for team in entities]
+            is_team_instance = True
+            if isinstance(entities[0], str):
+                is_team_instance = False
+                discovered_teams = self.discover(discovery_type=const.ClOUD_APP_EDISCOVER_TYPE[&#39;Teams&#39;])
+                entities = [discovered_teams[team] for team in entities]
             for team in entities:
                 user_json = copy(const.ADD_USER_JSON)
-                user_json[&#39;_type_&#39;] = team[&#39;user&#39;][&#39;_type_&#39;]
-                user_json[&#39;userGUID&#39;] = team[&#39;user&#39;][&#39;userGUID&#39;]
+                user_json[&#39;_type_&#39;] = 13 if is_team_instance else team[&#39;user&#39;][&#39;_type_&#39;]
+                user_json[&#39;userGUID&#39;] = team.guid if is_team_instance else team[&#39;user&#39;][&#39;userGUID&#39;]
 
                 user_account_json = deepcopy(const.ADD_TEAM_JSON)
-                user_account_json[&#39;displayName&#39;] = team[&#39;displayName&#39;]
-                user_account_json[&#39;smtpAddress&#39;] = team[&#39;smtpAddress&#39;]
-                user_account_json[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;] = team[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;]
+                user_account_json[&#39;displayName&#39;] = team.name if is_team_instance else team[&#39;displayName&#39;]
+                user_account_json[&#39;smtpAddress&#39;] = team.mail if is_team_instance else team[&#39;smtpAddress&#39;]
+                user_account_json[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;] = team.teamsCreatedTime if is_team_instance else \
+                    team[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;]
                 user_account_json[&#39;user&#39;] = user_json
                 useraccounts.append(user_account_json)
             request_json[&#39;cloudAppAssociation&#39;][&#39;cloudAppDiscoverinfo&#39;][&#39;userAccounts&#39;] = useraccounts
@@ -1425,12 +1520,13 @@ default: None</p>
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def backup(self, teams=None, convert_job_to_full=False):
+    def backup(self, teams=None, convert_job_to_full=False, discovery_type=13):
         &#34;&#34;&#34;Run an Incremental  or Full backup.
             Args:
                 teams               (list)  --  List of team Email IDs.
                 convert_job_to_full (bool)  --  True if we need to convert job to full otherwise False
                             Default --  False
+                discovery_type   (int)  -- type of the entity we are backing up ex user, team, group etc
 
             Returns:
                 obj   --  Instance of job.
@@ -1449,20 +1545,25 @@ default: None</p>
         request_json[&#39;taskInfo&#39;][&#39;associations&#39;] = [self._json_association()]
 
         if teams:
-            discovered_teams = self.discover(refresh_cache=False)
-            teams = [discovered_teams[team] for team in teams]
+            is_team_instance = True
+            if isinstance(teams[0], str):
+                is_team_instance = False
+                discovered_teams = self.discover(refresh_cache=False)
+                teams = [discovered_teams[team] for team in teams]
+
             team_json_list = []
             selected_items_json = []
             for team in teams:
                 team_json = copy(const.BACKUP_TEAM_JSON)
-                team_json[&#39;displayName&#39;] = team[&#39;displayName&#39;]
-                team_json[&#39;smtpAddress&#39;] = team[&#39;smtpAddress&#39;]
-                team_json[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;] = team[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;]
-                team_json[&#39;user&#39;] = {&#34;userGUID&#34;: team[&#39;user&#39;][&#39;userGUID&#39;]}
+                team_json[&#39;displayName&#39;] = team.name if is_team_instance else team[&#39;displayName&#39;]
+                team_json[&#39;smtpAddress&#39;] = team.mail if is_team_instance else team[&#39;smtpAddress&#39;]
+                team_json[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;] = team.teamsCreatedTime if is_team_instance else \
+                    team[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;]
+                team_json[&#39;user&#39;] = {&#34;userGUID&#34;: team.guid if is_team_instance else team[&#39;user&#39;][&#39;userGUID&#39;]}
                 team_json_list.append(team_json)
                 selected_items_json.append({
                     &#39;selectedItems&#39;: {
-                        &#34;itemName&#34;: team[&#39;displayName&#39;], &#34;itemType&#34;: &#34;Team&#34;
+                        &#34;itemName&#34;: team.name if is_team_instance else team[&#39;displayName&#39;], &#34;itemType&#34;: &#34;Team&#34;
                     }
                 })
             backup_subtask_json[&#39;options&#39;][&#39;commonOpts&#39;][&#39;jobMetadata&#39;][0][&#39;selectedItems&#39;] = selected_items_json
@@ -2371,17 +2472,128 @@ default: None</p>
             }
         }
 
-        return self._process_restore(request_json)</code></pre>
+        return self._process_restore(request_json)
+
+    def refresh_retention_stats(self):
+        &#34;&#34;&#34;
+        refresh the retention stats for the client
+
+        &#34;&#34;&#34;
+        request_json = {
+            &#34;appType&#34;: const.INDEX_APP_TYPE,
+            &#34;subclientId&#34;: int(self._subclient_id)
+        }
+        refresh_retention = self._services[&#39;OFFICE365_PROCESS_INDEX_RETENTION_RULES&#39;]
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, refresh_retention, request_json)
+
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                error_code = response.json().get(&#39;errorCode&#39;)
+                if error_code != 0:
+                    error_message = response.json().get(&#39;errorMessage&#39;)
+                    output_string = f&#39;Failed to refresh retention stats \nError: {error_message}&#39;
+                    raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, output_string)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def refresh_client_level_stats(self):
+        &#34;&#34;&#34;
+        refresh the client level stats for the client
+
+        &#34;&#34;&#34;
+        request_json = {
+            &#34;appType&#34;: const.INDEX_APP_TYPE,
+            &#34;oneDriveIdxStatsReq&#34;:
+                [{
+                    &#34;subclientId&#34;: int(self._subclient_id), &#34;type&#34;: 0}]
+        }
+        refresh_backup_stats = self._services[&#39;OFFICE365_POPULATE_INDEX_STATS&#39;]
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, refresh_backup_stats, request_json)
+
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                error_code = response.json().get(&#39;errorCode&#39;)
+                if error_code != 0:
+                    error_message = response.json().get(&#39;errorMessage&#39;)
+                    output_string = f&#39;Failed to refresh client level stats \nError: {error_message}&#39;
+                    raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, output_string)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    @property
+    def backup_stats(self):
+        &#34;&#34;&#34;
+        Returns the client level stats for the client
+
+        Retruns:
+
+            response(json)                : returns the client level stats as a json response
+        &#34;&#34;&#34;
+        backupset_id = int(self._subClientEntity.get(&#39;backupsetId&#39;))
+        get_backup_stats = self._services[&#39;OFFICE365_OVERVIEW_STATS&#39;] % backupset_id
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, get_backup_stats)
+
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                error_code = response.json().get(&#39;errorCode&#39;)
+                if error_code != 0:
+                    error_message = response.json().get(&#39;errorMessage&#39;)
+                    output_string = f&#39;Failed to get client level stats \nError: {error_message}&#39;
+                    raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, output_string)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+        return response.json()</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient" href="../casubclient.html#cvpysdk.subclients.casubclient.CloudAppsSubclient">CloudAppsSubclient</a></li>
 <li><a title="cvpysdk.subclient.Subclient" href="../../subclient.html#cvpysdk.subclient.Subclient">Subclient</a></li>
 </ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.backup_stats"><code class="name">var <span class="ident">backup_stats</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the client level stats for the client</p>
+<h2 id="retruns">Retruns</h2>
+<p>response(json)
+: returns the client level stats as a json response</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L1214-L1237" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def backup_stats(self):
+    &#34;&#34;&#34;
+    Returns the client level stats for the client
+
+    Retruns:
+
+        response(json)                : returns the client level stats as a json response
+    &#34;&#34;&#34;
+    backupset_id = int(self._subClientEntity.get(&#39;backupsetId&#39;))
+    get_backup_stats = self._services[&#39;OFFICE365_OVERVIEW_STATS&#39;] % backupset_id
+    flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, get_backup_stats)
+
+    if flag:
+        if response.json() and &#39;errorCode&#39; in response.json():
+            error_code = response.json().get(&#39;errorCode&#39;)
+            if error_code != 0:
+                error_message = response.json().get(&#39;errorMessage&#39;)
+                output_string = f&#39;Failed to get client level stats \nError: {error_message}&#39;
+                raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, output_string)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    return response.json()</code></pre>
+</details>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.backup"><code class="name flex">
-<span>def <span class="ident">backup</span></span>(<span>self, teams=None, convert_job_to_full=False)</span>
+<span>def <span class="ident">backup</span></span>(<span>self, teams=None, convert_job_to_full=False, discovery_type=13)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Run an Incremental
@@ -2395,7 +2607,10 @@ convert_job_to_full (bool)
 &ndash;
 True if we need to convert job to full otherwise False
 Default &ndash;
-False</p>
+False
+discovery_type
+(int)
+&ndash; type of the entity we are backing up ex user, team, group etc</p>
 <h2 id="returns">Returns</h2>
 <p>obj
 &ndash;
@@ -2409,14 +2624,15 @@ If response is not success.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/cloudapps/teams_subclient.py#L206-L271" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L214-L285" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def backup(self, teams=None, convert_job_to_full=False):
+<pre><code class="python">def backup(self, teams=None, convert_job_to_full=False, discovery_type=13):
     &#34;&#34;&#34;Run an Incremental  or Full backup.
         Args:
             teams               (list)  --  List of team Email IDs.
             convert_job_to_full (bool)  --  True if we need to convert job to full otherwise False
                         Default --  False
+            discovery_type   (int)  -- type of the entity we are backing up ex user, team, group etc
 
         Returns:
             obj   --  Instance of job.
@@ -2435,20 +2651,25 @@ If response is not success.
     request_json[&#39;taskInfo&#39;][&#39;associations&#39;] = [self._json_association()]
 
     if teams:
-        discovered_teams = self.discover(refresh_cache=False)
-        teams = [discovered_teams[team] for team in teams]
+        is_team_instance = True
+        if isinstance(teams[0], str):
+            is_team_instance = False
+            discovered_teams = self.discover(refresh_cache=False)
+            teams = [discovered_teams[team] for team in teams]
+
         team_json_list = []
         selected_items_json = []
         for team in teams:
             team_json = copy(const.BACKUP_TEAM_JSON)
-            team_json[&#39;displayName&#39;] = team[&#39;displayName&#39;]
-            team_json[&#39;smtpAddress&#39;] = team[&#39;smtpAddress&#39;]
-            team_json[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;] = team[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;]
-            team_json[&#39;user&#39;] = {&#34;userGUID&#34;: team[&#39;user&#39;][&#39;userGUID&#39;]}
+            team_json[&#39;displayName&#39;] = team.name if is_team_instance else team[&#39;displayName&#39;]
+            team_json[&#39;smtpAddress&#39;] = team.mail if is_team_instance else team[&#39;smtpAddress&#39;]
+            team_json[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;] = team.teamsCreatedTime if is_team_instance else \
+                team[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;]
+            team_json[&#39;user&#39;] = {&#34;userGUID&#34;: team.guid if is_team_instance else team[&#39;user&#39;][&#39;userGUID&#39;]}
             team_json_list.append(team_json)
             selected_items_json.append({
                 &#39;selectedItems&#39;: {
-                    &#34;itemName&#34;: team[&#39;displayName&#39;], &#34;itemType&#34;: &#34;Team&#34;
+                    &#34;itemName&#34;: team.name if is_team_instance else team[&#39;displayName&#39;], &#34;itemType&#34;: &#34;Team&#34;
                 }
             })
         backup_subtask_json[&#39;options&#39;][&#39;commonOpts&#39;][&#39;jobMetadata&#39;][0][&#39;selectedItems&#39;] = selected_items_json
@@ -2505,7 +2726,7 @@ If response is not success.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/cloudapps/teams_subclient.py#L111-L204" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L115-L212" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def content(self, entities, o365_plan,  discovery_type):
     &#34;&#34;&#34;Add teams, discover() must be called before teams added using this method.
@@ -2545,17 +2766,21 @@ If response is not success.</p></div>
         request_json[&#39;cloudAppAssociation&#39;][&#39;cloudAppDiscoverinfo&#39;][&#39;groups&#39;] = groups
 
     elif discovery_type.value == 12:
-        discovered_teams = self.discover(discovery_type=const.ClOUD_APP_EDISCOVER_TYPE[&#39;Teams&#39;])
-        entities = [discovered_teams[team] for team in entities]
+        is_team_instance = True
+        if isinstance(entities[0], str):
+            is_team_instance = False
+            discovered_teams = self.discover(discovery_type=const.ClOUD_APP_EDISCOVER_TYPE[&#39;Teams&#39;])
+            entities = [discovered_teams[team] for team in entities]
         for team in entities:
             user_json = copy(const.ADD_USER_JSON)
-            user_json[&#39;_type_&#39;] = team[&#39;user&#39;][&#39;_type_&#39;]
-            user_json[&#39;userGUID&#39;] = team[&#39;user&#39;][&#39;userGUID&#39;]
+            user_json[&#39;_type_&#39;] = 13 if is_team_instance else team[&#39;user&#39;][&#39;_type_&#39;]
+            user_json[&#39;userGUID&#39;] = team.guid if is_team_instance else team[&#39;user&#39;][&#39;userGUID&#39;]
 
             user_account_json = deepcopy(const.ADD_TEAM_JSON)
-            user_account_json[&#39;displayName&#39;] = team[&#39;displayName&#39;]
-            user_account_json[&#39;smtpAddress&#39;] = team[&#39;smtpAddress&#39;]
-            user_account_json[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;] = team[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;]
+            user_account_json[&#39;displayName&#39;] = team.name if is_team_instance else team[&#39;displayName&#39;]
+            user_account_json[&#39;smtpAddress&#39;] = team.mail if is_team_instance else team[&#39;smtpAddress&#39;]
+            user_account_json[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;] = team.teamsCreatedTime if is_team_instance else \
+                team[&#39;msTeamsInfo&#39;][&#39;teamsCreatedTime&#39;]
             user_account_json[&#39;user&#39;] = user_json
             useraccounts.append(user_account_json)
         request_json[&#39;cloudAppAssociation&#39;][&#39;cloudAppDiscoverinfo&#39;][&#39;userAccounts&#39;] = useraccounts
@@ -2630,7 +2855,7 @@ If response is not success.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/cloudapps/teams_subclient.py#L89-L109" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L93-L113" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def discover(self, discovery_type=8, refresh_cache=True):
     &#34;&#34;&#34;Launches Discovery and returns the discovered teams.
@@ -2668,7 +2893,7 @@ Boolean if the association was removed successfully</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/cloudapps/teams_subclient.py#L780-L800" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L794-L814" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def exclude_teams_from_backup(self, user_assoc):
     &#34;&#34;&#34;Excludes user association from a teams client
@@ -2706,7 +2931,7 @@ Boolean if the association was removed successfully</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/cloudapps/teams_subclient.py#L702-L730" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L716-L744" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_associated_teams(self, pagingInfo=None, **kwargs):
     &#34;&#34;&#34;Get all associated teams for a client
@@ -2756,7 +2981,7 @@ Instance of Team.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/cloudapps/teams_subclient.py#L610-L619" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L624-L633" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_team(self, team):
     &#34;&#34;&#34;Get team object from team email address.
@@ -2801,7 +3026,7 @@ If response is not success.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/cloudapps/teams_subclient.py#L273-L318" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L287-L332" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def out_of_place_restore(self, team, destination_team, **kwargs):
     &#34;&#34;&#34;Restore a team to another location.
@@ -2851,6 +3076,74 @@ If response is not success.
     return self._process_restore(request_json)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.refresh_client_level_stats"><code class="name flex">
+<span>def <span class="ident">refresh_client_level_stats</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>refresh the client level stats for the client</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L1190-L1212" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh_client_level_stats(self):
+    &#34;&#34;&#34;
+    refresh the client level stats for the client
+
+    &#34;&#34;&#34;
+    request_json = {
+        &#34;appType&#34;: const.INDEX_APP_TYPE,
+        &#34;oneDriveIdxStatsReq&#34;:
+            [{
+                &#34;subclientId&#34;: int(self._subclient_id), &#34;type&#34;: 0}]
+    }
+    refresh_backup_stats = self._services[&#39;OFFICE365_POPULATE_INDEX_STATS&#39;]
+    flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, refresh_backup_stats, request_json)
+
+    if flag:
+        if response.json() and &#39;errorCode&#39; in response.json():
+            error_code = response.json().get(&#39;errorCode&#39;)
+            if error_code != 0:
+                error_message = response.json().get(&#39;errorMessage&#39;)
+                output_string = f&#39;Failed to refresh client level stats \nError: {error_message}&#39;
+                raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, output_string)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.refresh_retention_stats"><code class="name flex">
+<span>def <span class="ident">refresh_retention_stats</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>refresh the retention stats for the client</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L1168-L1188" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh_retention_stats(self):
+    &#34;&#34;&#34;
+    refresh the retention stats for the client
+
+    &#34;&#34;&#34;
+    request_json = {
+        &#34;appType&#34;: const.INDEX_APP_TYPE,
+        &#34;subclientId&#34;: int(self._subclient_id)
+    }
+    refresh_retention = self._services[&#39;OFFICE365_PROCESS_INDEX_RETENTION_RULES&#39;]
+    flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, refresh_retention, request_json)
+
+    if flag:
+        if response.json() and &#39;errorCode&#39; in response.json():
+            error_code = response.json().get(&#39;errorCode&#39;)
+            if error_code != 0:
+                error_message = response.json().get(&#39;errorMessage&#39;)
+                output_string = f&#39;Failed to refresh retention stats \nError: {error_message}&#39;
+                raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, output_string)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.remove_all_users_content"><code class="name flex">
 <span>def <span class="ident">remove_all_users_content</span></span>(<span>self)</span>
 </code></dt>
@@ -2861,7 +3154,7 @@ Boolean if the association was removed successfully</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/cloudapps/teams_subclient.py#L754-L778" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L768-L792" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def remove_all_users_content(self):
     &#34;&#34;&#34;Removes all user content from a teams client
@@ -2903,7 +3196,7 @@ Boolean if the association was removed successfully</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/cloudapps/teams_subclient.py#L732-L752" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L746-L766" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def remove_team_association(self, user_assoc):
     &#34;&#34;&#34;Removes user association from a teams client
@@ -2972,7 +3265,7 @@ If response is not success.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/cloudapps/teams_subclient.py#L1014-L1107" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L1028-L1121" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_files_to_out_of_place(self, source_team_mail, destination_team_mail, destination_channel,
                                   selected_files_ids, values, selected_files):
@@ -3108,7 +3401,7 @@ If response is not success.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/cloudapps/teams_subclient.py#L861-L964" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L875-L978" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place_to_file_location(self, source_team_mail, dest_client, dest_path, selected_items, values):
     &#34;&#34;&#34;Restore a team to file location.
@@ -3242,7 +3535,7 @@ If response is not success.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/cloudapps/teams_subclient.py#L569-L608" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L583-L622" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_posts_to_html(self, teams, destination_team=None):
     &#34;&#34;&#34;Restore posts of a team as HTML.
@@ -3319,7 +3612,7 @@ If response is not success.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/cloudapps/teams_subclient.py#L1109-L1152" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L1123-L1166" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_to_original_location(self, team_email_id, skip_items=True, restore_posts_as_html=False):
     &#34;&#34;&#34;Restore a team to original location.
@@ -3377,7 +3670,7 @@ If response is not success.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/cloudapps/teams_subclient.py#L653-L683" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L667-L697" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_all_users_content(self, plan_name):
     &#34;&#34;&#34;Add all teams to content
@@ -3540,12 +3833,15 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient">TeamsSubclient</a></code></h4>
 <ul class="">
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.backup" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.backup">backup</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.backup_stats" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.backup_stats">backup_stats</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.content" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.content">content</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.discover" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.discover">discover</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.exclude_teams_from_backup" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.exclude_teams_from_backup">exclude_teams_from_backup</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.get_associated_teams" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.get_associated_teams">get_associated_teams</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.get_team" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.get_team">get_team</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.out_of_place_restore" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.out_of_place_restore">out_of_place_restore</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.refresh_client_level_stats" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.refresh_client_level_stats">refresh_client_level_stats</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.refresh_retention_stats" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.refresh_retention_stats">refresh_retention_stats</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.remove_all_users_content" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.remove_all_users_content">remove_all_users_content</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.remove_team_association" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.remove_team_association">remove_team_association</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.restore_files_to_out_of_place" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.restore_files_to_out_of_place">restore_files_to_out_of_place</a></code></li>

@@ -45,6 +45,19 @@ UserGroups class</p>
 &ndash;
 Gets all the usergroups associated with the
 commcell specified</p>
+<p>_get_fl_parameters()
+&ndash;
+Returns the fl parameters to be passed in the mongodb caching api call</p>
+<p>_get_sort_parameters()
+&ndash;
+Returns the sort parameters to be passed in the mongodb caching api call</p>
+<p>get_user_groups_cache()
+&ndash;
+Gets all the user groups present in CommcellEntityCache DB.</p>
+<p>all_user_groups_cache()
+&ndash;
+Returns dict of all the user groups and their info present in CommcellEntityCache
+in mongoDB</p>
 <p>has_user_group()
 &ndash;
 Checks if a user group exists with the given
@@ -67,6 +80,9 @@ commcell</p>
 <p>all_user_groups()
 &ndash;
 Returns all the usergroups present in the commcell</p>
+<p>non_system_usergroups()
+&ndash;
+Returns all usergroups excluding system created ones</p>
 <h2 id="usergroup">Usergroup</h2>
 <p><strong>init</strong>(commcell_object,
 usergroup_name,
@@ -152,10 +168,13 @@ Updates user group navigation preferences</p>
 <p>allow_multiple_company_members
 &ndash;
 Sets/Gets the value for allowing multiple members for a company</p>
+<p>available_users_for_group
+&ndash;
+Returns dict of users compatible for adding to this group</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L1-L1031" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L1-L1248" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -196,6 +215,15 @@ UserGroups:
     _get_usergroups()               --  Gets all the usergroups associated with the
                                         commcell specified
 
+    _get_fl_parameters()            --  Returns the fl parameters to be passed in the mongodb caching api call
+
+    _get_sort_parameters()          --  Returns the sort parameters to be passed in the mongodb caching api call
+
+    get_user_groups_cache()         --  Gets all the user groups present in CommcellEntityCache DB.
+
+    all_user_groups_cache()         --  Returns dict of all the user groups and their info present in CommcellEntityCache
+                                        in mongoDB
+
     has_user_group()                --  Checks if a user group exists with the given
                                         name or not
 
@@ -211,6 +239,8 @@ UserGroups:
                                         commcell
 
     all_user_groups()               --  Returns all the usergroups present in the commcell
+
+    non_system_usergroups()         --  Returns all usergroups excluding system created ones
 
 
 UserGroup:
@@ -272,6 +302,8 @@ UserGroup:
 
     allow_multiple_company_members  --  Sets/Gets the value for allowing multiple members for a company
 
+    available_users_for_group       --  Returns dict of users compatible for adding to this group
+
 &#34;&#34;&#34;
 
 from __future__ import absolute_import
@@ -296,7 +328,7 @@ class UserGroups(object):
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._user_group = self._commcell_object._services[&#39;USERGROUPS&#39;]
-
+        self._user_groups_cache = None
         self._user_groups = None
         self.refresh()
 
@@ -320,11 +352,11 @@ class UserGroups(object):
             self._commcell_object.commserv_name
         )
 
-    def _get_user_groups(self, hard=False):
+    def _get_user_groups(self, system_created=True):
         &#34;&#34;&#34;Gets all the user groups associated with the commcell
 
             Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+                system_created  (bool) --   flag to include system created user groups
 
             Returns:
                 dict - consists of all user group in the commcell
@@ -339,11 +371,8 @@ class UserGroups(object):
 
                     if response is not success
         &#34;&#34;&#34;
-        if hard:
-            self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, self._commcell_object._services[&#34;HARD_REFRESH_CACHE&#34;]%
-                                                               (&#39;usergroup&#39;))
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            &#39;GET&#39;, self._user_group
+            &#39;GET&#39;, self._user_group % str(system_created).lower()
         )
 
         if flag:
@@ -362,6 +391,166 @@ class UserGroups(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _get_fl_parameters(self, fl: list = None) -&gt; str:
+        &#34;&#34;&#34;
+        Returns the fl parameters to be passed in the mongodb caching api call
+
+        Args:
+            fl    (list)  --   list of columns to be passed in API request
+
+        Returns:
+            fl_parameters(str) -- fl parameter string
+        &#34;&#34;&#34;
+        self.valid_columns = {
+            &#39;groupName&#39;: &#39;userGroups.userGroupEntity.userGroupName&#39;,
+            &#39;groupId&#39;: &#39;userGroups.userGroupEntity.userGroupId&#39;,
+            &#39;description&#39;: &#39;description&#39;,
+            &#39;status&#39;: &#39;enabled&#39;,
+            &#39;company&#39;: &#39;companyName&#39;
+        }
+        default_columns = &#39;userGroups.userGroupEntity.userGroupName&#39;
+
+        if fl:
+            if all(col in self.valid_columns for col in fl):
+                fl_parameters = f&#34;&amp;fl={default_columns},{&#39;,&#39;.join(self.valid_columns[column] for column in fl)}&#34;
+            else:
+                raise SDKException(&#39;UserGroup&#39;, &#39;102&#39;, &#39;Invalid column name passed&#39;)
+        else:
+            fl_parameters = f&#34;&amp;fl={default_columns},{&#39;,&#39;.join(column for column in self.valid_columns.values())}&#34;
+
+        return fl_parameters
+
+    def _get_sort_parameters(self, sort: list = None) -&gt; str:
+        &#34;&#34;&#34;
+        Returns the sort parameters to be passed in the mongodb caching api call
+
+        Args:
+            sort  (list)  --   contains the name of the column on which sorting will be performed and type of sort
+                                valid sor type -- 1 for ascending and -1 for descending
+                                e.g. sort = [&#39;connectName&#39;,&#39;1&#39;]
+
+        Returns:
+            sort_parameters(str) -- sort parameter string
+        &#34;&#34;&#34;
+        sort_type = str(sort[1])
+        col = sort[0]
+        if col in self.valid_columns.keys() and sort_type in [&#39;1&#39;, &#39;-1&#39;]:
+            sort_parameter = &#39;&amp;sort=&#39; + self.valid_columns[col] + &#39;:&#39; + sort_type
+        else:
+            raise SDKException(&#39;UserGroup&#39;, &#39;102&#39;, &#39;Invalid column name passed&#39;)
+        return sort_parameter
+
+    def _get_fq_parameters(self, fq: list = None) -&gt; str:
+        &#34;&#34;&#34;
+        Returns the fq parameters based on the fq list passed
+        Args:
+             fq     (list) --   contains the columnName, condition and value
+                    e.g. fq = [[&#39;groupName&#39;,&#39;contains&#39;, test&#39;][&#39;status&#39;,&#39;eq&#39;,&#39;Enabled&#39;]]
+
+        Returns:
+            fq_parameters(str) -- fq parameter string
+        &#34;&#34;&#34;
+        conditions = [&#39;contains&#39;, &#39;notContain&#39;, &#39;eq&#39;, &#39;neq&#39;]
+        params = [&#34;&#34;]
+        if fq:
+            for param in fq:
+                if param[0] in self.valid_columns.keys():
+                    if param[1] in conditions:
+                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}&#34;)
+                    elif param[1] == &#39;isEmpty&#39; and len(param) == 2:
+                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:in:null,&#34;)
+                    else:
+                        raise SDKException(&#39;UserGroup&#39;, &#39;102&#39;, &#39;Invalid condition passed&#39;)
+                else:
+                    raise SDKException(&#39;UserGroup&#39;, &#39;102&#39;, &#39;Invalid column Name passed&#39;)
+        if params:
+            return &#34;&#34;.join(params)
+
+    def get_user_groups_cache(self, hard: bool = False, **kwargs) -&gt; dict:
+        &#34;&#34;&#34;
+        Gets all the user groups present in CommcellEntityCache DB.
+
+        Args:
+            hard  (bool)          --   Flag to perform hard refresh on user groups cache.
+            **kwargs (dict):
+                fl (list)         --   List of columns to return in response (default: None).
+                sort (list)       --   Contains the name of the column on which sorting will be performed and type of sort.
+                                            Valid sort type: 1 for ascending and -1 for descending
+                                            e.g. sort = [&#39;columnName&#39;, &#39;1&#39;] (default: None).
+                limit (list)      --   Contains the start and limit parameter value.
+                                            Default [&#39;0&#39;, &#39;100&#39;].
+                search (str)      --   Contains the string to search in the commcell entity cache (default: None).
+                fq (list)         --   Contains the columnName, condition and value.
+                                            e.g. fq = [[&#39;groupName&#39;, &#39;contains&#39;, &#39;test&#39;],
+                                            [&#39;status&#39;, &#39;eq&#39;, &#39;Enabled&#39;]] (default: None).
+                enum (bool)       --   Flag to return enums in the response (default: True).
+
+        Returns:
+            dict: Dictionary of all the properties present in response.
+        &#34;&#34;&#34;
+        headers = self._commcell_object._headers.copy()
+        if kwargs.get(&#39;enum&#39;, True):
+            headers[&#39;EnumNames&#39;] = &#39;True&#39;
+
+        fl_parameters = self._get_fl_parameters(kwargs.get(&#39;fl&#39;, None))
+        fq_parameters = self._get_fq_parameters(kwargs.get(&#39;fq&#39;, None))
+        limit = kwargs.get(&#39;limit&#39;, [&#39;0&#39;, &#39;100&#39;])
+        limit_parameters = f&#39;start={limit[0]}&amp;limit={limit[1]}&#39;
+        hard_refresh = &#39;&amp;hardRefresh=true&#39; if hard else &#39;&#39;
+        sort_parameters = self._get_sort_parameters(kwargs.get(&#39;sort&#39;, None)) if kwargs.get(&#39;sort&#39;, None) else &#39;&#39;
+        search_parameter = f&#39;&amp;search={&#34;,&#34;.join(self.valid_columns.values())}:contains:{kwargs.get(&#34;search&#34;, None)}&#39; if kwargs.get(
+            &#39;search&#39;, None) else &#39;&#39;
+
+        request_url = (
+                self._commcell_object._services[&#39;USERGROUPS&#39;] + &#34;?&#34; +
+                limit_parameters + sort_parameters + fl_parameters + hard_refresh +
+                search_parameter + fq_parameters
+        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#34;GET&#34;, request_url, headers=headers)
+
+        if not flag:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+        user_groups_cache = {}
+        if response.json() and &#39;userGroups&#39; in response.json():
+            for user in response.json()[&#39;userGroups&#39;]:
+                name = user.get(&#39;userGroupEntity&#39;, {}).get(&#39;userGroupName&#39;)
+                user_groups_config = {
+                    &#39;groupId&#39;: user.get(&#39;userGroupEntity&#39;, {}).get(&#39;userGroupId&#39;),
+                    &#39;description&#39;: user.get(&#39;description&#39;, {}),
+                    &#39;status&#39;: user.get(&#39;enabled&#39;),
+                    &#39;company&#39;: user.get(&#39;userGroupEntity&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;companyName&#39;)
+                }
+                user_groups_config = {key: value for key, value in user_groups_config.items() if value is not None}
+                user_groups_cache[name] = user_groups_config
+
+            return user_groups_cache
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+
+    @property
+    def all_user_groups_cache(self) -&gt; dict:
+        &#34;&#34;&#34;Returns dict of all the user groups and their info present in CommcellEntityCache in mongoDB
+
+            dict - consists of all user groups of the in the CommcellEntityCache
+                    {
+                         &#34;userGroup1_name&#34;: {
+                                &#39;id&#39;: userGroup1_id ,
+                                &#39;description&#39;: userGroup1_description,
+                                &#39;status&#39;: userGroup1_status,
+                                &#39;company&#39;: userGroup1_company
+                                },
+                         &#34;userGroup2_name&#34;: {
+                                &#39;id&#39;: userGroup2_id ,
+                                &#39;description&#39;: userGroup2_description,
+                                &#39;status&#39;: userGroup2_status,
+                                &#39;company&#39;: userGroup2_company
+                                }
+                    }
+        &#34;&#34;&#34;
+        return self._user_groups_cache
 
     def has_user_group(self, user_group_name):
         &#34;&#34;&#34;Checks if a user group exists in the commcell with the input user group name.
@@ -633,14 +822,21 @@ class UserGroups(object):
 
         self._user_groups = self._get_user_groups()
 
-    def refresh(self, hard=False):
+    def refresh(self, **kwargs):
         &#34;&#34;&#34;
-        Refresh the user groups associated with the Commcell.
+        Refresh the list of user groups on this commcell.
 
             Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+                **kwargs (dict):
+                    mongodb (bool)  -- Flag to fetch user groups cache from MongoDB (default: False).
+                    hard (bool)     -- Flag to hard refresh MongoDB cache for this entity (default: False).
         &#34;&#34;&#34;
-        self._user_groups = self._get_user_groups(hard)
+        mongodb = kwargs.get(&#39;mongodb&#39;, False)
+        hard = kwargs.get(&#39;hard&#39;, False)
+
+        self._user_groups = self._get_user_groups()
+        if mongodb:
+            self._user_groups_cache = self.get_user_groups_cache(hard=hard)
 
     @property
     def all_user_groups(self):
@@ -654,6 +850,18 @@ class UserGroups(object):
 
         &#34;&#34;&#34;
         return self._user_groups
+
+    def non_system_usergroups(self):
+        &#34;&#34;&#34;Returns dict of all the user groups associated with this commcell
+
+        dict - consists of all user group in the commcell
+                 {
+                   &#34;user_group1_name&#34;: user_group1_id,
+                   &#34;user_group2_name&#34;: user_group2_id
+                  }
+
+        &#34;&#34;&#34;
+        return self._get_user_groups(system_created=False)
 
 
 class UserGroup(object):
@@ -1186,7 +1394,36 @@ class UserGroup(object):
                 response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-        self.refresh()</code></pre>
+        self.refresh()
+
+    def available_users_for_group(self):
+        &#34;&#34;&#34;Returns the dict of all the users on the commcell, that can be added to this group
+
+        dict of all the users available for adding to group
+                   {
+                        &#34;user1&#34;: {
+                            &#34;id&#34;: ...,
+                            &#34;name&#34;: ...,
+                            &#34;GUID&#34;: ...,
+                            ..
+                        }
+                   }
+        &#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._commcell_object._services[&#39;V4_USERS&#39;] + f&#39;&amp;groupContext={self.user_group_id}&#39;
+        )
+
+        if flag:
+            if response.json():
+                users_dict = {}
+                for user in response.json().get(&#39;users&#39;, []):
+                    users_dict[user.get(&#39;name&#39;)] = user
+                return users_dict
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </section>
 <section>
@@ -1224,7 +1461,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L500-L1030" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L689-L1248" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class UserGroup(object):
     &#34;&#34;&#34;Class for performing operations for a specific User Group.&#34;&#34;&#34;
@@ -1756,7 +1993,36 @@ default: None</p>
                 response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-        self.refresh()</code></pre>
+        self.refresh()
+
+    def available_users_for_group(self):
+        &#34;&#34;&#34;Returns the dict of all the users on the commcell, that can be added to this group
+
+        dict of all the users available for adding to group
+                   {
+                        &#34;user1&#34;: {
+                            &#34;id&#34;: ...,
+                            &#34;name&#34;: ...,
+                            &#34;GUID&#34;: ...,
+                            ..
+                        }
+                   }
+        &#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._commcell_object._services[&#39;V4_USERS&#39;] + f&#39;&amp;groupContext={self.user_group_id}&#39;
+        )
+
+        if flag:
+            if response.json():
+                users_dict = {}
+                for user in response.json().get(&#39;users&#39;, []):
+                    users_dict[user.get(&#39;name&#39;)] = user
+                return users_dict
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
@@ -1771,7 +2037,7 @@ False otherwise</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L673-L681" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L862-L870" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def allow_multiple_company_members(self):
@@ -1790,7 +2056,7 @@ def allow_multiple_company_members(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L716-L719" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L905-L908" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def associations(self):
@@ -1804,7 +2070,7 @@ def associations(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L639-L642" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L828-L831" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def company_id(self):
@@ -1824,7 +2090,7 @@ empty string, if usergroup belongs to Commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L644-L651" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L833-L840" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def company_name(self):
@@ -1842,7 +2108,7 @@ def company_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L629-L632" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L818-L821" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -1856,7 +2122,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L634-L637" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L823-L826" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def email(self):
@@ -1870,7 +2136,7 @@ def email(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L721-L724" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L910-L913" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_tfa_enabled(self):
@@ -1884,7 +2150,7 @@ def is_tfa_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L614-L617" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L803-L806" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -1898,7 +2164,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L657-L660" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L846-L849" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def status(self):
@@ -1912,7 +2178,7 @@ def status(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L619-L622" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L808-L811" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_group_id(self):
@@ -1926,7 +2192,7 @@ def user_group_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L624-L627" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L813-L816" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_group_name(self):
@@ -1940,7 +2206,7 @@ def user_group_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L706-L714" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L895-L903" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def usergroups(self):
@@ -1959,7 +2225,7 @@ def usergroups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L696-L704" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L885-L893" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def users(self):
@@ -1975,6 +2241,55 @@ def users(self):
 </dl>
 <h3>Methods</h3>
 <dl>
+<dt id="cvpysdk.security.usergroup.UserGroup.available_users_for_group"><code class="name flex">
+<span>def <span class="ident">available_users_for_group</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the dict of all the users on the commcell, that can be added to this group</p>
+<p>dict of all the users available for adding to group
+{
+"user1": {
+"id": &hellip;,
+"name": &hellip;,
+"GUID": &hellip;,
+..
+}
+}</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L1221-L1248" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def available_users_for_group(self):
+    &#34;&#34;&#34;Returns the dict of all the users on the commcell, that can be added to this group
+
+    dict of all the users available for adding to group
+               {
+                    &#34;user1&#34;: {
+                        &#34;id&#34;: ...,
+                        &#34;name&#34;: ...,
+                        &#34;GUID&#34;: ...,
+                        ..
+                    }
+               }
+    &#34;&#34;&#34;
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;GET&#39;, self._commcell_object._services[&#39;V4_USERS&#39;] + f&#39;&amp;groupContext={self.user_group_id}&#39;
+    )
+
+    if flag:
+        if response.json():
+            users_dict = {}
+            for user in response.json().get(&#39;users&#39;, []):
+                users_dict[user.get(&#39;name&#39;)] = user
+            return users_dict
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.security.usergroup.UserGroup.disable_tfa"><code class="name flex">
 <span>def <span class="ident">disable_tfa</span></span>(<span>self)</span>
 </code></dt>
@@ -1985,7 +2300,7 @@ def users(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L742-L754" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L931-L943" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_tfa(self):
     &#34;&#34;&#34;
@@ -2014,7 +2329,7 @@ def users(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L726-L740" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L915-L929" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_tfa(self):
     &#34;&#34;&#34;
@@ -2041,7 +2356,7 @@ def users(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L653-L655" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L842-L844" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the UserGroup.&#34;&#34;&#34;
@@ -2065,7 +2380,7 @@ list of navigation items to be seen in command center</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L871-L899" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L1060-L1088" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_navigation_preferences(self, include_navigation_list):
     &#34;&#34;&#34;Updates the user group&#39;s include navigation preferences with the the list provided
@@ -2158,7 +2473,7 @@ OVERWRITE user security association.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L756-L807" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L945-L996" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_security_associations(self, entity_dictionary, request_type):
     &#34;&#34;&#34;handles three way associations (role-usergroup-entities)
@@ -2254,7 +2569,7 @@ e.g : local_usergroups=['usergroup1', 'usegrouop2']</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L809-L869" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L998-L1058" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_usergroup_members(
         self,
@@ -2337,7 +2652,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L125-L497" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L138-L686" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class UserGroups(object):
     &#34;&#34;&#34;Class for getting all the usergroups associated with a commcell.&#34;&#34;&#34;
@@ -2354,7 +2669,7 @@ instance of the Commcell class</p>
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._user_group = self._commcell_object._services[&#39;USERGROUPS&#39;]
-
+        self._user_groups_cache = None
         self._user_groups = None
         self.refresh()
 
@@ -2378,11 +2693,11 @@ instance of the Commcell class</p>
             self._commcell_object.commserv_name
         )
 
-    def _get_user_groups(self, hard=False):
+    def _get_user_groups(self, system_created=True):
         &#34;&#34;&#34;Gets all the user groups associated with the commcell
 
             Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+                system_created  (bool) --   flag to include system created user groups
 
             Returns:
                 dict - consists of all user group in the commcell
@@ -2397,11 +2712,8 @@ instance of the Commcell class</p>
 
                     if response is not success
         &#34;&#34;&#34;
-        if hard:
-            self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, self._commcell_object._services[&#34;HARD_REFRESH_CACHE&#34;]%
-                                                               (&#39;usergroup&#39;))
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            &#39;GET&#39;, self._user_group
+            &#39;GET&#39;, self._user_group % str(system_created).lower()
         )
 
         if flag:
@@ -2420,6 +2732,166 @@ instance of the Commcell class</p>
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _get_fl_parameters(self, fl: list = None) -&gt; str:
+        &#34;&#34;&#34;
+        Returns the fl parameters to be passed in the mongodb caching api call
+
+        Args:
+            fl    (list)  --   list of columns to be passed in API request
+
+        Returns:
+            fl_parameters(str) -- fl parameter string
+        &#34;&#34;&#34;
+        self.valid_columns = {
+            &#39;groupName&#39;: &#39;userGroups.userGroupEntity.userGroupName&#39;,
+            &#39;groupId&#39;: &#39;userGroups.userGroupEntity.userGroupId&#39;,
+            &#39;description&#39;: &#39;description&#39;,
+            &#39;status&#39;: &#39;enabled&#39;,
+            &#39;company&#39;: &#39;companyName&#39;
+        }
+        default_columns = &#39;userGroups.userGroupEntity.userGroupName&#39;
+
+        if fl:
+            if all(col in self.valid_columns for col in fl):
+                fl_parameters = f&#34;&amp;fl={default_columns},{&#39;,&#39;.join(self.valid_columns[column] for column in fl)}&#34;
+            else:
+                raise SDKException(&#39;UserGroup&#39;, &#39;102&#39;, &#39;Invalid column name passed&#39;)
+        else:
+            fl_parameters = f&#34;&amp;fl={default_columns},{&#39;,&#39;.join(column for column in self.valid_columns.values())}&#34;
+
+        return fl_parameters
+
+    def _get_sort_parameters(self, sort: list = None) -&gt; str:
+        &#34;&#34;&#34;
+        Returns the sort parameters to be passed in the mongodb caching api call
+
+        Args:
+            sort  (list)  --   contains the name of the column on which sorting will be performed and type of sort
+                                valid sor type -- 1 for ascending and -1 for descending
+                                e.g. sort = [&#39;connectName&#39;,&#39;1&#39;]
+
+        Returns:
+            sort_parameters(str) -- sort parameter string
+        &#34;&#34;&#34;
+        sort_type = str(sort[1])
+        col = sort[0]
+        if col in self.valid_columns.keys() and sort_type in [&#39;1&#39;, &#39;-1&#39;]:
+            sort_parameter = &#39;&amp;sort=&#39; + self.valid_columns[col] + &#39;:&#39; + sort_type
+        else:
+            raise SDKException(&#39;UserGroup&#39;, &#39;102&#39;, &#39;Invalid column name passed&#39;)
+        return sort_parameter
+
+    def _get_fq_parameters(self, fq: list = None) -&gt; str:
+        &#34;&#34;&#34;
+        Returns the fq parameters based on the fq list passed
+        Args:
+             fq     (list) --   contains the columnName, condition and value
+                    e.g. fq = [[&#39;groupName&#39;,&#39;contains&#39;, test&#39;][&#39;status&#39;,&#39;eq&#39;,&#39;Enabled&#39;]]
+
+        Returns:
+            fq_parameters(str) -- fq parameter string
+        &#34;&#34;&#34;
+        conditions = [&#39;contains&#39;, &#39;notContain&#39;, &#39;eq&#39;, &#39;neq&#39;]
+        params = [&#34;&#34;]
+        if fq:
+            for param in fq:
+                if param[0] in self.valid_columns.keys():
+                    if param[1] in conditions:
+                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}&#34;)
+                    elif param[1] == &#39;isEmpty&#39; and len(param) == 2:
+                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:in:null,&#34;)
+                    else:
+                        raise SDKException(&#39;UserGroup&#39;, &#39;102&#39;, &#39;Invalid condition passed&#39;)
+                else:
+                    raise SDKException(&#39;UserGroup&#39;, &#39;102&#39;, &#39;Invalid column Name passed&#39;)
+        if params:
+            return &#34;&#34;.join(params)
+
+    def get_user_groups_cache(self, hard: bool = False, **kwargs) -&gt; dict:
+        &#34;&#34;&#34;
+        Gets all the user groups present in CommcellEntityCache DB.
+
+        Args:
+            hard  (bool)          --   Flag to perform hard refresh on user groups cache.
+            **kwargs (dict):
+                fl (list)         --   List of columns to return in response (default: None).
+                sort (list)       --   Contains the name of the column on which sorting will be performed and type of sort.
+                                            Valid sort type: 1 for ascending and -1 for descending
+                                            e.g. sort = [&#39;columnName&#39;, &#39;1&#39;] (default: None).
+                limit (list)      --   Contains the start and limit parameter value.
+                                            Default [&#39;0&#39;, &#39;100&#39;].
+                search (str)      --   Contains the string to search in the commcell entity cache (default: None).
+                fq (list)         --   Contains the columnName, condition and value.
+                                            e.g. fq = [[&#39;groupName&#39;, &#39;contains&#39;, &#39;test&#39;],
+                                            [&#39;status&#39;, &#39;eq&#39;, &#39;Enabled&#39;]] (default: None).
+                enum (bool)       --   Flag to return enums in the response (default: True).
+
+        Returns:
+            dict: Dictionary of all the properties present in response.
+        &#34;&#34;&#34;
+        headers = self._commcell_object._headers.copy()
+        if kwargs.get(&#39;enum&#39;, True):
+            headers[&#39;EnumNames&#39;] = &#39;True&#39;
+
+        fl_parameters = self._get_fl_parameters(kwargs.get(&#39;fl&#39;, None))
+        fq_parameters = self._get_fq_parameters(kwargs.get(&#39;fq&#39;, None))
+        limit = kwargs.get(&#39;limit&#39;, [&#39;0&#39;, &#39;100&#39;])
+        limit_parameters = f&#39;start={limit[0]}&amp;limit={limit[1]}&#39;
+        hard_refresh = &#39;&amp;hardRefresh=true&#39; if hard else &#39;&#39;
+        sort_parameters = self._get_sort_parameters(kwargs.get(&#39;sort&#39;, None)) if kwargs.get(&#39;sort&#39;, None) else &#39;&#39;
+        search_parameter = f&#39;&amp;search={&#34;,&#34;.join(self.valid_columns.values())}:contains:{kwargs.get(&#34;search&#34;, None)}&#39; if kwargs.get(
+            &#39;search&#39;, None) else &#39;&#39;
+
+        request_url = (
+                self._commcell_object._services[&#39;USERGROUPS&#39;] + &#34;?&#34; +
+                limit_parameters + sort_parameters + fl_parameters + hard_refresh +
+                search_parameter + fq_parameters
+        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#34;GET&#34;, request_url, headers=headers)
+
+        if not flag:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+        user_groups_cache = {}
+        if response.json() and &#39;userGroups&#39; in response.json():
+            for user in response.json()[&#39;userGroups&#39;]:
+                name = user.get(&#39;userGroupEntity&#39;, {}).get(&#39;userGroupName&#39;)
+                user_groups_config = {
+                    &#39;groupId&#39;: user.get(&#39;userGroupEntity&#39;, {}).get(&#39;userGroupId&#39;),
+                    &#39;description&#39;: user.get(&#39;description&#39;, {}),
+                    &#39;status&#39;: user.get(&#39;enabled&#39;),
+                    &#39;company&#39;: user.get(&#39;userGroupEntity&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;companyName&#39;)
+                }
+                user_groups_config = {key: value for key, value in user_groups_config.items() if value is not None}
+                user_groups_cache[name] = user_groups_config
+
+            return user_groups_cache
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+
+    @property
+    def all_user_groups_cache(self) -&gt; dict:
+        &#34;&#34;&#34;Returns dict of all the user groups and their info present in CommcellEntityCache in mongoDB
+
+            dict - consists of all user groups of the in the CommcellEntityCache
+                    {
+                         &#34;userGroup1_name&#34;: {
+                                &#39;id&#39;: userGroup1_id ,
+                                &#39;description&#39;: userGroup1_description,
+                                &#39;status&#39;: userGroup1_status,
+                                &#39;company&#39;: userGroup1_company
+                                },
+                         &#34;userGroup2_name&#34;: {
+                                &#39;id&#39;: userGroup2_id ,
+                                &#39;description&#39;: userGroup2_description,
+                                &#39;status&#39;: userGroup2_status,
+                                &#39;company&#39;: userGroup2_company
+                                }
+                    }
+        &#34;&#34;&#34;
+        return self._user_groups_cache
 
     def has_user_group(self, user_group_name):
         &#34;&#34;&#34;Checks if a user group exists in the commcell with the input user group name.
@@ -2691,14 +3163,21 @@ instance of the Commcell class</p>
 
         self._user_groups = self._get_user_groups()
 
-    def refresh(self, hard=False):
+    def refresh(self, **kwargs):
         &#34;&#34;&#34;
-        Refresh the user groups associated with the Commcell.
+        Refresh the list of user groups on this commcell.
 
             Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+                **kwargs (dict):
+                    mongodb (bool)  -- Flag to fetch user groups cache from MongoDB (default: False).
+                    hard (bool)     -- Flag to hard refresh MongoDB cache for this entity (default: False).
         &#34;&#34;&#34;
-        self._user_groups = self._get_user_groups(hard)
+        mongodb = kwargs.get(&#39;mongodb&#39;, False)
+        hard = kwargs.get(&#39;hard&#39;, False)
+
+        self._user_groups = self._get_user_groups()
+        if mongodb:
+            self._user_groups_cache = self.get_user_groups_cache(hard=hard)
 
     @property
     def all_user_groups(self):
@@ -2711,7 +3190,19 @@ instance of the Commcell class</p>
                   }
 
         &#34;&#34;&#34;
-        return self._user_groups</code></pre>
+        return self._user_groups
+
+    def non_system_usergroups(self):
+        &#34;&#34;&#34;Returns dict of all the user groups associated with this commcell
+
+        dict - consists of all user group in the commcell
+                 {
+                   &#34;user_group1_name&#34;: user_group1_id,
+                   &#34;user_group2_name&#34;: user_group2_id
+                  }
+
+        &#34;&#34;&#34;
+        return self._get_user_groups(system_created=False)</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
@@ -2726,7 +3217,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L486-L497" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L663-L674" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_user_groups(self):
@@ -2740,6 +3231,52 @@ def all_user_groups(self):
 
     &#34;&#34;&#34;
     return self._user_groups</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.usergroup.UserGroups.all_user_groups_cache"><code class="name">var <span class="ident">all_user_groups_cache</span> : dict</code></dt>
+<dd>
+<div class="desc"><p>Returns dict of all the user groups and their info present in CommcellEntityCache in mongoDB</p>
+<p>dict - consists of all user groups of the in the CommcellEntityCache
+{
+"userGroup1_name": {
+'id': userGroup1_id ,
+'description': userGroup1_description,
+'status': userGroup1_status,
+'company': userGroup1_company
+},
+"userGroup2_name": {
+'id': userGroup2_id ,
+'description': userGroup2_description,
+'status': userGroup2_status,
+'company': userGroup2_company
+}
+}</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L355-L375" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def all_user_groups_cache(self) -&gt; dict:
+    &#34;&#34;&#34;Returns dict of all the user groups and their info present in CommcellEntityCache in mongoDB
+
+        dict - consists of all user groups of the in the CommcellEntityCache
+                {
+                     &#34;userGroup1_name&#34;: {
+                            &#39;id&#39;: userGroup1_id ,
+                            &#39;description&#39;: userGroup1_description,
+                            &#39;status&#39;: userGroup1_status,
+                            &#39;company&#39;: userGroup1_company
+                            },
+                     &#34;userGroup2_name&#34;: {
+                            &#39;id&#39;: userGroup2_id ,
+                            &#39;description&#39;: userGroup2_description,
+                            &#39;status&#39;: userGroup2_status,
+                            &#39;company&#39;: userGroup2_company
+                            }
+                }
+    &#34;&#34;&#34;
+    return self._user_groups_cache</code></pre>
 </details>
 </dd>
 </dl>
@@ -2828,7 +3365,7 @@ if failed to add usergroup to commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L255-L390" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L425-L560" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self,
         usergroup_name,
@@ -3007,7 +3544,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L392-L475" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L562-L645" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, user_group, new_user=None, new_usergroup=None):
     &#34;&#34;&#34;Deletes the specified user from the existing commcell users
@@ -3114,7 +3651,7 @@ if type of the user group name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L226-L253" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L396-L423" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, user_group_name):
     &#34;&#34;&#34;Returns a user group object of the specified user group name.
@@ -3146,6 +3683,114 @@ if type of the user group name argument is not string</p>
         )</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.security.usergroup.UserGroups.get_user_groups_cache"><code class="name flex">
+<span>def <span class="ident">get_user_groups_cache</span></span>(<span>self, hard: bool = False, **kwargs) ‑> dict</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gets all the user groups present in CommcellEntityCache DB.</p>
+<h2 id="args">Args</h2>
+<p>hard
+(bool)
+&ndash;
+Flag to perform hard refresh on user groups cache.
+**kwargs (dict):
+fl (list)
+&ndash;
+List of columns to return in response (default: None).
+sort (list)
+&ndash;
+Contains the name of the column on which sorting will be performed and type of sort.
+Valid sort type: 1 for ascending and -1 for descending
+e.g. sort = ['columnName', '1'] (default: None).
+limit (list)
+&ndash;
+Contains the start and limit parameter value.
+Default ['0', '100'].
+search (str)
+&ndash;
+Contains the string to search in the commcell entity cache (default: None).
+fq (list)
+&ndash;
+Contains the columnName, condition and value.
+e.g. fq = [['groupName', 'contains', 'test'],
+['status', 'eq', 'Enabled']] (default: None).
+enum (bool)
+&ndash;
+Flag to return enums in the response (default: True).</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict</code></dt>
+<dd>Dictionary of all the properties present in response.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L292-L353" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_user_groups_cache(self, hard: bool = False, **kwargs) -&gt; dict:
+    &#34;&#34;&#34;
+    Gets all the user groups present in CommcellEntityCache DB.
+
+    Args:
+        hard  (bool)          --   Flag to perform hard refresh on user groups cache.
+        **kwargs (dict):
+            fl (list)         --   List of columns to return in response (default: None).
+            sort (list)       --   Contains the name of the column on which sorting will be performed and type of sort.
+                                        Valid sort type: 1 for ascending and -1 for descending
+                                        e.g. sort = [&#39;columnName&#39;, &#39;1&#39;] (default: None).
+            limit (list)      --   Contains the start and limit parameter value.
+                                        Default [&#39;0&#39;, &#39;100&#39;].
+            search (str)      --   Contains the string to search in the commcell entity cache (default: None).
+            fq (list)         --   Contains the columnName, condition and value.
+                                        e.g. fq = [[&#39;groupName&#39;, &#39;contains&#39;, &#39;test&#39;],
+                                        [&#39;status&#39;, &#39;eq&#39;, &#39;Enabled&#39;]] (default: None).
+            enum (bool)       --   Flag to return enums in the response (default: True).
+
+    Returns:
+        dict: Dictionary of all the properties present in response.
+    &#34;&#34;&#34;
+    headers = self._commcell_object._headers.copy()
+    if kwargs.get(&#39;enum&#39;, True):
+        headers[&#39;EnumNames&#39;] = &#39;True&#39;
+
+    fl_parameters = self._get_fl_parameters(kwargs.get(&#39;fl&#39;, None))
+    fq_parameters = self._get_fq_parameters(kwargs.get(&#39;fq&#39;, None))
+    limit = kwargs.get(&#39;limit&#39;, [&#39;0&#39;, &#39;100&#39;])
+    limit_parameters = f&#39;start={limit[0]}&amp;limit={limit[1]}&#39;
+    hard_refresh = &#39;&amp;hardRefresh=true&#39; if hard else &#39;&#39;
+    sort_parameters = self._get_sort_parameters(kwargs.get(&#39;sort&#39;, None)) if kwargs.get(&#39;sort&#39;, None) else &#39;&#39;
+    search_parameter = f&#39;&amp;search={&#34;,&#34;.join(self.valid_columns.values())}:contains:{kwargs.get(&#34;search&#34;, None)}&#39; if kwargs.get(
+        &#39;search&#39;, None) else &#39;&#39;
+
+    request_url = (
+            self._commcell_object._services[&#39;USERGROUPS&#39;] + &#34;?&#34; +
+            limit_parameters + sort_parameters + fl_parameters + hard_refresh +
+            search_parameter + fq_parameters
+    )
+    flag, response = self._commcell_object._cvpysdk_object.make_request(&#34;GET&#34;, request_url, headers=headers)
+
+    if not flag:
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    user_groups_cache = {}
+    if response.json() and &#39;userGroups&#39; in response.json():
+        for user in response.json()[&#39;userGroups&#39;]:
+            name = user.get(&#39;userGroupEntity&#39;, {}).get(&#39;userGroupName&#39;)
+            user_groups_config = {
+                &#39;groupId&#39;: user.get(&#39;userGroupEntity&#39;, {}).get(&#39;userGroupId&#39;),
+                &#39;description&#39;: user.get(&#39;description&#39;, {}),
+                &#39;status&#39;: user.get(&#39;enabled&#39;),
+                &#39;company&#39;: user.get(&#39;userGroupEntity&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;companyName&#39;)
+            }
+            user_groups_config = {key: value for key, value in user_groups_config.items() if value is not None}
+            user_groups_cache[name] = user_groups_config
+
+        return user_groups_cache
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;102&#39;)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.security.usergroup.UserGroups.has_user_group"><code class="name flex">
 <span>def <span class="ident">has_user_group</span></span>(<span>self, user_group_name)</span>
 </code></dt>
@@ -3164,7 +3809,7 @@ if type of the user group name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L207-L224" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L377-L394" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_user_group(self, user_group_name):
     &#34;&#34;&#34;Checks if a user group exists in the commcell with the input user group name.
@@ -3186,27 +3831,64 @@ if type of the user group name argument is not string</p></div>
     return self._user_groups and user_group_name.lower() in self._user_groups</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.security.usergroup.UserGroups.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self, hard=False)</span>
+<dt id="cvpysdk.security.usergroup.UserGroups.non_system_usergroups"><code class="name flex">
+<span>def <span class="ident">non_system_usergroups</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh the user groups associated with the Commcell.</p>
+<div class="desc"><p>Returns dict of all the user groups associated with this commcell</p>
+<p>dict - consists of all user group in the commcell
+{
+"user_group1_name": user_group1_id,
+"user_group2_name": user_group2_id
+}</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L676-L686" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def non_system_usergroups(self):
+    &#34;&#34;&#34;Returns dict of all the user groups associated with this commcell
+
+    dict - consists of all user group in the commcell
+             {
+               &#34;user_group1_name&#34;: user_group1_id,
+               &#34;user_group2_name&#34;: user_group2_id
+              }
+
+    &#34;&#34;&#34;
+    return self._get_user_groups(system_created=False)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.usergroup.UserGroups.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the list of user groups on this commcell.</p>
 <pre><code>Args:
-    hard    (bool)      --      flag to hard refresh mongo cache for this entity
+    **kwargs (dict):
+        mongodb (bool)  -- Flag to fetch user groups cache from MongoDB (default: False).
+        hard (bool)     -- Flag to hard refresh MongoDB cache for this entity (default: False).
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/usergroup.py#L477-L484" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/usergroup.py#L647-L661" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self, hard=False):
+<pre><code class="python">def refresh(self, **kwargs):
     &#34;&#34;&#34;
-    Refresh the user groups associated with the Commcell.
+    Refresh the list of user groups on this commcell.
 
         Args:
-            hard    (bool)      --      flag to hard refresh mongo cache for this entity
+            **kwargs (dict):
+                mongodb (bool)  -- Flag to fetch user groups cache from MongoDB (default: False).
+                hard (bool)     -- Flag to hard refresh MongoDB cache for this entity (default: False).
     &#34;&#34;&#34;
-    self._user_groups = self._get_user_groups(hard)</code></pre>
+    mongodb = kwargs.get(&#39;mongodb&#39;, False)
+    hard = kwargs.get(&#39;hard&#39;, False)
+
+    self._user_groups = self._get_user_groups()
+    if mongodb:
+        self._user_groups_cache = self.get_user_groups_cache(hard=hard)</code></pre>
 </details>
 </dd>
 </dl>
@@ -3284,6 +3966,7 @@ setTimeout(() => input.focus(), 100);
 <ul class="">
 <li><code><a title="cvpysdk.security.usergroup.UserGroup.allow_multiple_company_members" href="#cvpysdk.security.usergroup.UserGroup.allow_multiple_company_members">allow_multiple_company_members</a></code></li>
 <li><code><a title="cvpysdk.security.usergroup.UserGroup.associations" href="#cvpysdk.security.usergroup.UserGroup.associations">associations</a></code></li>
+<li><code><a title="cvpysdk.security.usergroup.UserGroup.available_users_for_group" href="#cvpysdk.security.usergroup.UserGroup.available_users_for_group">available_users_for_group</a></code></li>
 <li><code><a title="cvpysdk.security.usergroup.UserGroup.company_id" href="#cvpysdk.security.usergroup.UserGroup.company_id">company_id</a></code></li>
 <li><code><a title="cvpysdk.security.usergroup.UserGroup.company_name" href="#cvpysdk.security.usergroup.UserGroup.company_name">company_name</a></code></li>
 <li><code><a title="cvpysdk.security.usergroup.UserGroup.description" href="#cvpysdk.security.usergroup.UserGroup.description">description</a></code></li>
@@ -3305,12 +3988,15 @@ setTimeout(() => input.focus(), 100);
 </li>
 <li>
 <h4><code><a title="cvpysdk.security.usergroup.UserGroups" href="#cvpysdk.security.usergroup.UserGroups">UserGroups</a></code></h4>
-<ul class="two-column">
+<ul class="">
 <li><code><a title="cvpysdk.security.usergroup.UserGroups.add" href="#cvpysdk.security.usergroup.UserGroups.add">add</a></code></li>
 <li><code><a title="cvpysdk.security.usergroup.UserGroups.all_user_groups" href="#cvpysdk.security.usergroup.UserGroups.all_user_groups">all_user_groups</a></code></li>
+<li><code><a title="cvpysdk.security.usergroup.UserGroups.all_user_groups_cache" href="#cvpysdk.security.usergroup.UserGroups.all_user_groups_cache">all_user_groups_cache</a></code></li>
 <li><code><a title="cvpysdk.security.usergroup.UserGroups.delete" href="#cvpysdk.security.usergroup.UserGroups.delete">delete</a></code></li>
 <li><code><a title="cvpysdk.security.usergroup.UserGroups.get" href="#cvpysdk.security.usergroup.UserGroups.get">get</a></code></li>
+<li><code><a title="cvpysdk.security.usergroup.UserGroups.get_user_groups_cache" href="#cvpysdk.security.usergroup.UserGroups.get_user_groups_cache">get_user_groups_cache</a></code></li>
 <li><code><a title="cvpysdk.security.usergroup.UserGroups.has_user_group" href="#cvpysdk.security.usergroup.UserGroups.has_user_group">has_user_group</a></code></li>
+<li><code><a title="cvpysdk.security.usergroup.UserGroups.non_system_usergroups" href="#cvpysdk.security.usergroup.UserGroups.non_system_usergroups">non_system_usergroups</a></code></li>
 <li><code><a title="cvpysdk.security.usergroup.UserGroups.refresh" href="#cvpysdk.security.usergroup.UserGroups.refresh">refresh</a></code></li>
 </ul>
 </li>

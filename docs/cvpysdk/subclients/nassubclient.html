@@ -55,7 +55,7 @@ run a backup job for the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/nassubclient.py#L1-L384" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/nassubclient.py#L1-L392" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">#!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -120,7 +120,9 @@ class NASSubclient(FileSystemSubclient):
             incremental_level=&#39;BEFORE_SYNTH&#39;,
             on_demand_input=None,
             snap_name=None,
+            backup_external_links=0,
             backup_offline_data=False,
+            block_backup=False,
             volume_based_backup=False):
         &#34;&#34;&#34;Runs a backup job for the subclient of the level specified.
 
@@ -144,7 +146,11 @@ class NASSubclient(FileSystemSubclient):
 
                 snap_name   (str)   --  input for snap_name
 
+                        backup_external_links   (int)   --      input for advanced option backup external links
+
                 backup_offline_data   (bool)  --  input for advanced NAS backup option backupOfflineData
+
+                block_backup (bool) -- input for advanced NAS backup option blockBackup
 
                 volume_based_backup   (bool)  --  input for advanced NAS backup option volumeBasedBackup
 
@@ -167,11 +173,13 @@ class NASSubclient(FileSystemSubclient):
 
         nas_options = {
             &#34;nasOptions&#34;: {
+                &#34;blockBackup&#34;: True if block_backup else False,
                 &#34;backupFromSnap&#34;: snap_name if snap_name is not None else &#34;&#34;,
                 &#34;backupOfflineData&#34;: True if backup_offline_data else False,
                 &#34;backupQuotas&#34;: True,
                 &#34;backupFromSnapshot&#34;: True,
                 &#34;backupFromSnapshotYes&#34;: True,
+                &#34;backupExternalLinks&#34;: backup_external_links,
                 &#34;replicationVolumeId&#34;: 0,
                 &#34;volumeBasedBackup&#34;: True if volume_based_backup else False
             }
@@ -478,7 +486,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/nassubclient.py#L52-L384" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/nassubclient.py#L52-L392" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class NASSubclient(FileSystemSubclient):
     &#34;&#34;&#34;Derived class from Subclient Base class, representing a nas subclient,
@@ -492,7 +500,9 @@ default: None</p>
             incremental_level=&#39;BEFORE_SYNTH&#39;,
             on_demand_input=None,
             snap_name=None,
+            backup_external_links=0,
             backup_offline_data=False,
+            block_backup=False,
             volume_based_backup=False):
         &#34;&#34;&#34;Runs a backup job for the subclient of the level specified.
 
@@ -516,7 +526,11 @@ default: None</p>
 
                 snap_name   (str)   --  input for snap_name
 
+                        backup_external_links   (int)   --      input for advanced option backup external links
+
                 backup_offline_data   (bool)  --  input for advanced NAS backup option backupOfflineData
+
+                block_backup (bool) -- input for advanced NAS backup option blockBackup
 
                 volume_based_backup   (bool)  --  input for advanced NAS backup option volumeBasedBackup
 
@@ -539,11 +553,13 @@ default: None</p>
 
         nas_options = {
             &#34;nasOptions&#34;: {
+                &#34;blockBackup&#34;: True if block_backup else False,
                 &#34;backupFromSnap&#34;: snap_name if snap_name is not None else &#34;&#34;,
                 &#34;backupOfflineData&#34;: True if backup_offline_data else False,
                 &#34;backupQuotas&#34;: True,
                 &#34;backupFromSnapshot&#34;: True,
                 &#34;backupFromSnapshotYes&#34;: True,
+                &#34;backupExternalLinks&#34;: backup_external_links,
                 &#34;replicationVolumeId&#34;: 0,
                 &#34;volumeBasedBackup&#34;: True if volume_based_backup else False
             }
@@ -822,7 +838,7 @@ default: None</p>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.subclients.nassubclient.NASSubclient.backup"><code class="name flex">
-<span>def <span class="ident">backup</span></span>(<span>self, backup_level='Incremental', incremental_backup=False, incremental_level='BEFORE_SYNTH', on_demand_input=None, snap_name=None, backup_offline_data=False, volume_based_backup=False)</span>
+<span>def <span class="ident">backup</span></span>(<span>self, backup_level='Incremental', incremental_backup=False, incremental_level='BEFORE_SYNTH', on_demand_input=None, snap_name=None, backup_external_links=0, backup_offline_data=False, block_backup=False, volume_based_backup=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Runs a backup job for the subclient of the level specified.</p>
@@ -856,10 +872,13 @@ default: None</p>
 (str)
 &ndash;
 input for snap_name</p>
+<pre><code>    backup_external_links   (int)   --      input for advanced option backup external links
+</code></pre>
 <p>backup_offline_data
 (bool)
 &ndash;
 input for advanced NAS backup option backupOfflineData</p>
+<p>block_backup (bool) &ndash; input for advanced NAS backup option blockBackup</p>
 <p>volume_based_backup
 (bool)
 &ndash;
@@ -876,7 +895,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/nassubclient.py#L57-L131" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/nassubclient.py#L57-L139" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(
         self,
@@ -885,7 +904,9 @@ if response is not success
         incremental_level=&#39;BEFORE_SYNTH&#39;,
         on_demand_input=None,
         snap_name=None,
+        backup_external_links=0,
         backup_offline_data=False,
+        block_backup=False,
         volume_based_backup=False):
     &#34;&#34;&#34;Runs a backup job for the subclient of the level specified.
 
@@ -909,7 +930,11 @@ if response is not success
 
             snap_name   (str)   --  input for snap_name
 
+                    backup_external_links   (int)   --      input for advanced option backup external links
+
             backup_offline_data   (bool)  --  input for advanced NAS backup option backupOfflineData
+
+            block_backup (bool) -- input for advanced NAS backup option blockBackup
 
             volume_based_backup   (bool)  --  input for advanced NAS backup option volumeBasedBackup
 
@@ -932,11 +957,13 @@ if response is not success
 
     nas_options = {
         &#34;nasOptions&#34;: {
+            &#34;blockBackup&#34;: True if block_backup else False,
             &#34;backupFromSnap&#34;: snap_name if snap_name is not None else &#34;&#34;,
             &#34;backupOfflineData&#34;: True if backup_offline_data else False,
             &#34;backupQuotas&#34;: True,
             &#34;backupFromSnapshot&#34;: True,
             &#34;backupFromSnapshotYes&#34;: True,
+            &#34;backupExternalLinks&#34;: backup_external_links,
             &#34;replicationVolumeId&#34;: 0,
             &#34;volumeBasedBackup&#34;: True if volume_based_backup else False
         }
@@ -1042,7 +1069,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/nassubclient.py#L133-L253" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/nassubclient.py#L141-L261" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -1254,7 +1281,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/nassubclient.py#L255-L384" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/nassubclient.py#L263-L392" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,

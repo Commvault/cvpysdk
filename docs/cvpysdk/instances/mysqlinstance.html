@@ -36,6 +36,9 @@ Restore In-Place
 restore_in_place()              -- Restores the mysql data/log files specified in the
 input paths list to the same location
 
+restore_out_of_place()          -- method to perform out of place restore of MySQL data/log/recurring files to the
+destination client.
+
 _restore_browse_option_json()   -- setter for  browse option  property in restore
 
 _restore_common_options_json()  -- setter for common options property in restore
@@ -85,7 +88,7 @@ details
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/mysqlinstance.py#L1-L675" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/mysqlinstance.py#L1-L796" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -123,6 +126,9 @@ MYSQLInstance:
 
     restore_in_place()              -- Restores the mysql data/log files specified in the
     input paths list to the same location
+
+    restore_out_of_place()          -- method to perform out of place restore of MySQL data/log/recurring files to the
+    destination client.
 
     _restore_browse_option_json()   -- setter for  browse option  property in restore
 
@@ -178,6 +184,7 @@ MYSQLInstance instance Attributes:
 from __future__ import unicode_literals
 from ..instance import Instance
 from ..exception import SDKException
+from ..credential_manager import Credential
 
 
 class MYSQLInstance(Instance):
@@ -228,7 +235,8 @@ class MYSQLInstance(Instance):
             (str)   --  MySql server SA username
 
         &#34;&#34;&#34;
-        return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;SAUser&#39;, {}).get(&#39;userName&#39;, None)
+        credential_name = self._properties.get(&#39;credentialEntity&#39;, {}).get(&#39;credentialName&#39;, None)
+        return Credential(self._commcell_object, credential_name).credential_user_name
 
     @property
     def nt_username(self):
@@ -326,6 +334,20 @@ class MYSQLInstance(Instance):
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;EnableAutoDiscovery&#39;, False)
+
+    @autodiscovery_enabled.setter
+    def autodiscovery_enabled(self, value):
+        &#34;&#34;&#34;
+        Sets the auto discovery attribute to True or False
+        value (bool)   --  True or False
+
+        &#34;&#34;&#34;
+        properties = self._properties
+        update = {
+            &#34;EnableAutoDiscovery&#34;: value
+        }
+        properties[&#39;mySqlInstance&#39;] = update
+        self.update_properties(properties)
 
     @property
     def xtrabackup_bin_path(self):
@@ -645,6 +667,108 @@ class MYSQLInstance(Instance):
 
         return self._process_restore_response(request_json)
 
+    def restore_out_of_place(
+            self,
+            path=None,
+            staging=None,
+            dest_client_name=None,
+            dest_instance_name=None,
+            data_restore=True,
+            log_restore=False,
+            overwrite=True,
+            copy_precedence=None,
+            from_time=None,
+            to_time=None,
+            media_agent=None,
+            table_level_restore=False,
+            clone_env=False,
+            clone_options=None,
+            redirect_enabled=False,
+            redirect_path=None,
+            browse_jobid=None,
+            recurringRestore=False):
+        &#34;&#34;&#34;
+        Method to perform out of place restore of MySQL data/log/recurring files to the destination client location.
+
+            Args:
+                path                    (list)  --  list of database/databases to be restored
+                staging                 (str)   --  staging location for mysql logs during restores
+                dest_client_name        (str)   --  destination client name where files are to be restored
+                dest_instance_name      (str)   --  destination mysql instance name of destination client
+                data_restore            (bool)  --  for data only/data+log restore
+                log_restore             (bool)  --  for log only/data+log restore
+                overwrite               (bool)  --  unconditional overwrite files during restore
+                copy_precedence         (int)   --  copy precedence value of storage policy copy
+                from_time               (str)   --  time to restore the contents after
+                        format: YYYY-MM-DD HH:MM:SS
+                to_time                 (str)   --  time to restore the contents before
+                        format: YYYY-MM-DD HH:MM:SS
+                media_agent             (str)   --  media agent associated
+                table_level_restore     (bool)  --  Table level restore flag
+                clone_env               (bool)  --  boolean to specify whether the database should be cloned or not
+                clone_options           (dict)  --  clone restore options passed in a dict
+                redirect_enabled         (bool)  --  boolean to specify if redirect restore is enabled
+                redirect_path           (str)   --  Path specified in advanced restore options
+                in order to perform redirect restore
+                browse_jobid           (int)   --  Browse jobid to browse and restore from
+                recurringRestore       (bool)  --  for Recurring restore
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if destination client name is empty
+
+                    if destination Instance name empty
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        if not (isinstance(path, list) and
+                isinstance(overwrite, bool)):
+            raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+
+        if path == []:
+            raise SDKException(&#39;Instance&#39;, &#39;104&#39;)
+
+        if dest_client_name is None:
+            raise SDKException(&#39;Client&#39;, &#39;102&#39;,
+                               &#34;The destination client name is missing. &#34;
+                               &#34;Please provide a valid destination client name to proceed&#34;)
+
+        if dest_instance_name is None:
+            raise SDKException(&#39;Instance&#39;, &#39;102&#39;,
+                               &#34;The destination Instance name is missing. &#34;
+                               &#34;Please provide a valid destination Instance name to proceed&#34;)
+
+        request_json = self._restore_json(
+            paths=path,
+            staging=staging,
+            dest_client_name=dest_client_name,
+            dest_instance_name=dest_instance_name,
+            data_restore=data_restore,
+            log_restore=log_restore,
+            overwrite=overwrite,
+            copy_precedence=copy_precedence,
+            from_time=from_time,
+            to_time=to_time,
+            media_agent=media_agent,
+            table_level_restore=table_level_restore,
+            clone_env=clone_env,
+            clone_options=clone_options,
+            redirect_enabled=redirect_enabled,
+            redirect_path=redirect_path,
+            browse_jobid=browse_jobid,
+            recurringRestore=recurringRestore)
+
+        return self._process_restore_response(request_json)
+
     def _restore_browse_option_json(self, value):
         &#34;&#34;&#34;setter for the Browse options for restore in Json&#34;&#34;&#34;
 
@@ -725,7 +849,7 @@ class MYSQLInstance(Instance):
             &#34;destinationFolder&#34;: &#34;&#34;,
             &#34;data&#34;: value.get(&#34;data_restore&#34;, True),
             &#34;log&#34;: value.get(&#34;log_restore&#34;, True),
-            &#34;recurringRestore&#34;: False,
+            &#34;recurringRestore&#34;: value.get(&#34;recurringRestore&#34;, False),
             &#34;temporaryStagingLocation&#34;: value.get(&#34;staging&#34;, &#34;&#34;),
             &#34;dataStagingLocation&#34;: &#34;&#34;,
             &#34;logRestoreType&#34;: 0,
@@ -800,7 +924,7 @@ id of the instance</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/mysqlinstance.py#L94-L675" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/mysqlinstance.py#L98-L796" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class MYSQLInstance(Instance):
     &#34;&#34;&#34;
@@ -850,7 +974,8 @@ id of the instance</p>
             (str)   --  MySql server SA username
 
         &#34;&#34;&#34;
-        return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;SAUser&#39;, {}).get(&#39;userName&#39;, None)
+        credential_name = self._properties.get(&#39;credentialEntity&#39;, {}).get(&#39;credentialName&#39;, None)
+        return Credential(self._commcell_object, credential_name).credential_user_name
 
     @property
     def nt_username(self):
@@ -948,6 +1073,20 @@ id of the instance</p>
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;EnableAutoDiscovery&#39;, False)
+
+    @autodiscovery_enabled.setter
+    def autodiscovery_enabled(self, value):
+        &#34;&#34;&#34;
+        Sets the auto discovery attribute to True or False
+        value (bool)   --  True or False
+
+        &#34;&#34;&#34;
+        properties = self._properties
+        update = {
+            &#34;EnableAutoDiscovery&#34;: value
+        }
+        properties[&#39;mySqlInstance&#39;] = update
+        self.update_properties(properties)
 
     @property
     def xtrabackup_bin_path(self):
@@ -1267,6 +1406,108 @@ id of the instance</p>
 
         return self._process_restore_response(request_json)
 
+    def restore_out_of_place(
+            self,
+            path=None,
+            staging=None,
+            dest_client_name=None,
+            dest_instance_name=None,
+            data_restore=True,
+            log_restore=False,
+            overwrite=True,
+            copy_precedence=None,
+            from_time=None,
+            to_time=None,
+            media_agent=None,
+            table_level_restore=False,
+            clone_env=False,
+            clone_options=None,
+            redirect_enabled=False,
+            redirect_path=None,
+            browse_jobid=None,
+            recurringRestore=False):
+        &#34;&#34;&#34;
+        Method to perform out of place restore of MySQL data/log/recurring files to the destination client location.
+
+            Args:
+                path                    (list)  --  list of database/databases to be restored
+                staging                 (str)   --  staging location for mysql logs during restores
+                dest_client_name        (str)   --  destination client name where files are to be restored
+                dest_instance_name      (str)   --  destination mysql instance name of destination client
+                data_restore            (bool)  --  for data only/data+log restore
+                log_restore             (bool)  --  for log only/data+log restore
+                overwrite               (bool)  --  unconditional overwrite files during restore
+                copy_precedence         (int)   --  copy precedence value of storage policy copy
+                from_time               (str)   --  time to restore the contents after
+                        format: YYYY-MM-DD HH:MM:SS
+                to_time                 (str)   --  time to restore the contents before
+                        format: YYYY-MM-DD HH:MM:SS
+                media_agent             (str)   --  media agent associated
+                table_level_restore     (bool)  --  Table level restore flag
+                clone_env               (bool)  --  boolean to specify whether the database should be cloned or not
+                clone_options           (dict)  --  clone restore options passed in a dict
+                redirect_enabled         (bool)  --  boolean to specify if redirect restore is enabled
+                redirect_path           (str)   --  Path specified in advanced restore options
+                in order to perform redirect restore
+                browse_jobid           (int)   --  Browse jobid to browse and restore from
+                recurringRestore       (bool)  --  for Recurring restore
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if destination client name is empty
+
+                    if destination Instance name empty
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        if not (isinstance(path, list) and
+                isinstance(overwrite, bool)):
+            raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+
+        if path == []:
+            raise SDKException(&#39;Instance&#39;, &#39;104&#39;)
+
+        if dest_client_name is None:
+            raise SDKException(&#39;Client&#39;, &#39;102&#39;,
+                               &#34;The destination client name is missing. &#34;
+                               &#34;Please provide a valid destination client name to proceed&#34;)
+
+        if dest_instance_name is None:
+            raise SDKException(&#39;Instance&#39;, &#39;102&#39;,
+                               &#34;The destination Instance name is missing. &#34;
+                               &#34;Please provide a valid destination Instance name to proceed&#34;)
+
+        request_json = self._restore_json(
+            paths=path,
+            staging=staging,
+            dest_client_name=dest_client_name,
+            dest_instance_name=dest_instance_name,
+            data_restore=data_restore,
+            log_restore=log_restore,
+            overwrite=overwrite,
+            copy_precedence=copy_precedence,
+            from_time=from_time,
+            to_time=to_time,
+            media_agent=media_agent,
+            table_level_restore=table_level_restore,
+            clone_env=clone_env,
+            clone_options=clone_options,
+            redirect_enabled=redirect_enabled,
+            redirect_path=redirect_path,
+            browse_jobid=browse_jobid,
+            recurringRestore=recurringRestore)
+
+        return self._process_restore_response(request_json)
+
     def _restore_browse_option_json(self, value):
         &#34;&#34;&#34;setter for the Browse options for restore in Json&#34;&#34;&#34;
 
@@ -1347,7 +1588,7 @@ id of the instance</p>
             &#34;destinationFolder&#34;: &#34;&#34;,
             &#34;data&#34;: value.get(&#34;data_restore&#34;, True),
             &#34;log&#34;: value.get(&#34;log_restore&#34;, True),
-            &#34;recurringRestore&#34;: False,
+            &#34;recurringRestore&#34;: value.get(&#34;recurringRestore&#34;, False),
             &#34;temporaryStagingLocation&#34;: value.get(&#34;staging&#34;, &#34;&#34;),
             &#34;dataStagingLocation&#34;: &#34;&#34;,
             &#34;logRestoreType&#34;: 0,
@@ -1402,7 +1643,7 @@ False if auto discovery not enabled</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/mysqlinstance.py#L230-L239" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/mysqlinstance.py#L235-L244" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def autodiscovery_enabled(self):
@@ -1426,7 +1667,7 @@ MySql server binary directory</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/mysqlinstance.py#L164-L172" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/mysqlinstance.py#L169-L177" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def binary_directory(self):
@@ -1449,7 +1690,7 @@ MySql server commnadline storage policy information</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/mysqlinstance.py#L211-L228" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/mysqlinstance.py#L216-L233" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def command_line_sp_details(self):
@@ -1481,7 +1722,7 @@ MySql server config file location</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/mysqlinstance.py#L154-L162" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/mysqlinstance.py#L159-L167" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def config_file(self):
@@ -1505,7 +1746,7 @@ False if xtrabackup is not enabled</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/mysqlinstance.py#L253-L264" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/mysqlinstance.py#L272-L283" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_xtrabackup_enabled(self):
@@ -1531,7 +1772,7 @@ MySql server log backup storage policy information</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/mysqlinstance.py#L194-L209" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/mysqlinstance.py#L199-L214" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def log_backup_sp_details(self):
@@ -1561,7 +1802,7 @@ MySql server log directory path</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/mysqlinstance.py#L184-L192" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/mysqlinstance.py#L189-L197" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def log_data_directory(self):
@@ -1581,7 +1822,7 @@ def log_data_directory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/mysqlinstance.py#L285-L293" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/mysqlinstance.py#L304-L312" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def mysql_enterprise_backup_binary_path(self):
@@ -1604,7 +1845,7 @@ MySql server SA username</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/mysqlinstance.py#L134-L142" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/mysqlinstance.py#L138-L147" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def mysql_username(self):
@@ -1614,7 +1855,8 @@ def mysql_username(self):
         (str)   --  MySql server SA username
 
     &#34;&#34;&#34;
-    return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;SAUser&#39;, {}).get(&#39;userName&#39;, None)</code></pre>
+    credential_name = self._properties.get(&#39;credentialEntity&#39;, {}).get(&#39;credentialName&#39;, None)
+    return Credential(self._commcell_object, credential_name).credential_user_name</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.no_lock_status"><code class="name">var <span class="ident">no_lock_status</span></code></dt>
@@ -1628,7 +1870,7 @@ False if No Lock checkbox is disabled</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/mysqlinstance.py#L315-L324" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/mysqlinstance.py#L334-L343" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def no_lock_status(self):
@@ -1652,7 +1894,7 @@ MySql server NT username</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/mysqlinstance.py#L144-L152" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/mysqlinstance.py#L149-L157" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def nt_username(self):
@@ -1675,7 +1917,7 @@ MySql server port number</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/mysqlinstance.py#L124-L132" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/mysqlinstance.py#L128-L136" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def port(self):
@@ -1698,7 +1940,7 @@ MySql server proxy information</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/mysqlinstance.py#L266-L283" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/mysqlinstance.py#L285-L302" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def proxy_options(self):
@@ -1726,7 +1968,7 @@ def proxy_options(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/mysqlinstance.py#L342-L345" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/mysqlinstance.py#L361-L364" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def ssl_enabled(self):
@@ -1744,7 +1986,7 @@ MySql server version</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/mysqlinstance.py#L174-L182" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/mysqlinstance.py#L179-L187" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def version(self):
@@ -1767,7 +2009,7 @@ MySql server xtrabackup binary path</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/mysqlinstance.py#L241-L251" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/mysqlinstance.py#L260-L270" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def xtrabackup_bin_path(self):
@@ -1926,7 +2168,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/mysqlinstance.py#L402-L557" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/mysqlinstance.py#L421-L576" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -2086,18 +2328,174 @@ if response is not success
     return self._process_restore_response(request_json)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.restore_out_of_place"><code class="name flex">
+<span>def <span class="ident">restore_out_of_place</span></span>(<span>self, path=None, staging=None, dest_client_name=None, dest_instance_name=None, data_restore=True, log_restore=False, overwrite=True, copy_precedence=None, from_time=None, to_time=None, media_agent=None, table_level_restore=False, clone_env=False, clone_options=None, redirect_enabled=False, redirect_path=None, browse_jobid=None, recurringRestore=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to perform out of place restore of MySQL data/log/recurring files to the destination client location.</p>
+<pre><code>Args:
+    path                    (list)  --  list of database/databases to be restored
+    staging                 (str)   --  staging location for mysql logs during restores
+    dest_client_name        (str)   --  destination client name where files are to be restored
+    dest_instance_name      (str)   --  destination mysql instance name of destination client
+    data_restore            (bool)  --  for data only/data+log restore
+    log_restore             (bool)  --  for log only/data+log restore
+    overwrite               (bool)  --  unconditional overwrite files during restore
+    copy_precedence         (int)   --  copy precedence value of storage policy copy
+    from_time               (str)   --  time to restore the contents after
+            format: YYYY-MM-DD HH:MM:SS
+    to_time                 (str)   --  time to restore the contents before
+            format: YYYY-MM-DD HH:MM:SS
+    media_agent             (str)   --  media agent associated
+    table_level_restore     (bool)  --  Table level restore flag
+    clone_env               (bool)  --  boolean to specify whether the database should be cloned or not
+    clone_options           (dict)  --  clone restore options passed in a dict
+    redirect_enabled         (bool)  --  boolean to specify if redirect restore is enabled
+    redirect_path           (str)   --  Path specified in advanced restore options
+    in order to perform redirect restore
+    browse_jobid           (int)   --  Browse jobid to browse and restore from
+    recurringRestore       (bool)  --  for Recurring restore
+
+Returns:
+    object - instance of the Job class for this restore job
+
+Raises:
+    SDKException:
+        if paths is not a list
+
+        if failed to initialize job
+
+        if destination client name is empty
+
+        if destination Instance name empty
+
+        if response is empty
+
+        if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/mysqlinstance.py#L578-L678" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def restore_out_of_place(
+        self,
+        path=None,
+        staging=None,
+        dest_client_name=None,
+        dest_instance_name=None,
+        data_restore=True,
+        log_restore=False,
+        overwrite=True,
+        copy_precedence=None,
+        from_time=None,
+        to_time=None,
+        media_agent=None,
+        table_level_restore=False,
+        clone_env=False,
+        clone_options=None,
+        redirect_enabled=False,
+        redirect_path=None,
+        browse_jobid=None,
+        recurringRestore=False):
+    &#34;&#34;&#34;
+    Method to perform out of place restore of MySQL data/log/recurring files to the destination client location.
+
+        Args:
+            path                    (list)  --  list of database/databases to be restored
+            staging                 (str)   --  staging location for mysql logs during restores
+            dest_client_name        (str)   --  destination client name where files are to be restored
+            dest_instance_name      (str)   --  destination mysql instance name of destination client
+            data_restore            (bool)  --  for data only/data+log restore
+            log_restore             (bool)  --  for log only/data+log restore
+            overwrite               (bool)  --  unconditional overwrite files during restore
+            copy_precedence         (int)   --  copy precedence value of storage policy copy
+            from_time               (str)   --  time to restore the contents after
+                    format: YYYY-MM-DD HH:MM:SS
+            to_time                 (str)   --  time to restore the contents before
+                    format: YYYY-MM-DD HH:MM:SS
+            media_agent             (str)   --  media agent associated
+            table_level_restore     (bool)  --  Table level restore flag
+            clone_env               (bool)  --  boolean to specify whether the database should be cloned or not
+            clone_options           (dict)  --  clone restore options passed in a dict
+            redirect_enabled         (bool)  --  boolean to specify if redirect restore is enabled
+            redirect_path           (str)   --  Path specified in advanced restore options
+            in order to perform redirect restore
+            browse_jobid           (int)   --  Browse jobid to browse and restore from
+            recurringRestore       (bool)  --  for Recurring restore
+
+        Returns:
+            object - instance of the Job class for this restore job
+
+        Raises:
+            SDKException:
+                if paths is not a list
+
+                if failed to initialize job
+
+                if destination client name is empty
+
+                if destination Instance name empty
+
+                if response is empty
+
+                if response is not success
+    &#34;&#34;&#34;
+    if not (isinstance(path, list) and
+            isinstance(overwrite, bool)):
+        raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+
+    if path == []:
+        raise SDKException(&#39;Instance&#39;, &#39;104&#39;)
+
+    if dest_client_name is None:
+        raise SDKException(&#39;Client&#39;, &#39;102&#39;,
+                           &#34;The destination client name is missing. &#34;
+                           &#34;Please provide a valid destination client name to proceed&#34;)
+
+    if dest_instance_name is None:
+        raise SDKException(&#39;Instance&#39;, &#39;102&#39;,
+                           &#34;The destination Instance name is missing. &#34;
+                           &#34;Please provide a valid destination Instance name to proceed&#34;)
+
+    request_json = self._restore_json(
+        paths=path,
+        staging=staging,
+        dest_client_name=dest_client_name,
+        dest_instance_name=dest_instance_name,
+        data_restore=data_restore,
+        log_restore=log_restore,
+        overwrite=overwrite,
+        copy_precedence=copy_precedence,
+        from_time=from_time,
+        to_time=to_time,
+        media_agent=media_agent,
+        table_level_restore=table_level_restore,
+        clone_env=clone_env,
+        clone_options=clone_options,
+        redirect_enabled=redirect_enabled,
+        redirect_path=redirect_path,
+        browse_jobid=browse_jobid,
+        recurringRestore=recurringRestore)
+
+    return self._process_restore_response(request_json)</code></pre>
+</details>
+</dd>
 </dl>
 <h3>Inherited members</h3>
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.instance.Instance" href="../instance.html#cvpysdk.instance.Instance">Instance</a></b></code>:
 <ul class="hlist">
+<li><code><a title="cvpysdk.instance.Instance.backupsets" href="../instance.html#cvpysdk.instance.Instance.backupsets">backupsets</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.browse" href="../instance.html#cvpysdk.instance.Instance.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.instance.Instance.credentials" href="../instance.html#cvpysdk.instance.Instance.credentials">credentials</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.find" href="../instance.html#cvpysdk.instance.Instance.find">find</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.instance_id" href="../instance.html#cvpysdk.instance.Instance.instance_id">instance_id</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.instance_name" href="../instance.html#cvpysdk.instance.Instance.instance_name">instance_name</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.name" href="../instance.html#cvpysdk.instance.Instance.name">name</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.properties" href="../instance.html#cvpysdk.instance.Instance.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.refresh" href="../instance.html#cvpysdk.instance.Instance.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.instance.Instance.subclients" href="../instance.html#cvpysdk.instance.Instance.subclients">subclients</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.update_properties" href="../instance.html#cvpysdk.instance.Instance.update_properties">update_properties</a></code></li>
 </ul>
 </li>
@@ -2191,6 +2589,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.port" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.port">port</a></code></li>
 <li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.proxy_options" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.proxy_options">proxy_options</a></code></li>
 <li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.restore_in_place" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.restore_in_place">restore_in_place</a></code></li>
+<li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.restore_out_of_place" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.restore_out_of_place">restore_out_of_place</a></code></li>
 <li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.ssl_enabled" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.ssl_enabled">ssl_enabled</a></code></li>
 <li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.version" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.version">version</a></code></li>
 <li><code><a title="cvpysdk.instances.mysqlinstance.MYSQLInstance.xtrabackup_bin_path" href="#cvpysdk.instances.mysqlinstance.MYSQLInstance.xtrabackup_bin_path">xtrabackup_bin_path</a></code></li>

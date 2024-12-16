@@ -90,7 +90,7 @@ with postgres server
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/postgresinstance.py#L1-L723" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/postgresinstance.py#L1-L726" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -292,8 +292,11 @@ class PostgreSQLInstance(Instance):
             Return Type: str
 
         &#34;&#34;&#34;
-        if self._properties[&#39;postGreSQLInstance&#39;][&#39;SAUser&#39;][&#39;userName&#39;]:
-            return self._properties[&#39;postGreSQLInstance&#39;][&#39;SAUser&#39;][&#39;userName&#39;]
+        if self.credentials:
+            return self._commcell_object.credentials.get(self.credentials).credential_user_name
+        else:
+            if self._properties[&#39;postGreSQLInstance&#39;][&#39;SAUser&#39;][&#39;userName&#39;]:
+                return self._properties[&#39;postGreSQLInstance&#39;][&#39;SAUser&#39;][&#39;userName&#39;]
         raise SDKException(
             &#39;Instance&#39;,
             &#39;105&#39;,
@@ -843,7 +846,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/postgresinstance.py#L100-L723" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/postgresinstance.py#L100-L726" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class PostgreSQLInstance(Instance):
     &#34;&#34;&#34;Derived class from Instance Base class, representing a POSTGRESQL instance,
@@ -946,8 +949,11 @@ instance of the Agent class</p>
             Return Type: str
 
         &#34;&#34;&#34;
-        if self._properties[&#39;postGreSQLInstance&#39;][&#39;SAUser&#39;][&#39;userName&#39;]:
-            return self._properties[&#39;postGreSQLInstance&#39;][&#39;SAUser&#39;][&#39;userName&#39;]
+        if self.credentials:
+            return self._commcell_object.credentials.get(self.credentials).credential_user_name
+        else:
+            if self._properties[&#39;postGreSQLInstance&#39;][&#39;SAUser&#39;][&#39;userName&#39;]:
+                return self._properties[&#39;postGreSQLInstance&#39;][&#39;SAUser&#39;][&#39;userName&#39;]
         raise SDKException(
             &#39;Instance&#39;,
             &#39;105&#39;,
@@ -1483,7 +1489,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/postgresinstance.py#L250-L257" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/postgresinstance.py#L253-L260" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def archive_delete(self):
@@ -1502,7 +1508,7 @@ def archive_delete(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/postgresinstance.py#L300-L307" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/postgresinstance.py#L303-L310" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_standby_enabled(self):
@@ -1522,7 +1528,7 @@ Default: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/postgresinstance.py#L169-L176" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/postgresinstance.py#L169-L176" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def log_storage_policy(self):
@@ -1541,7 +1547,7 @@ def log_storage_policy(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/postgresinstance.py#L222-L234" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/postgresinstance.py#L225-L237" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def maintenance_database(self):
@@ -1565,7 +1571,7 @@ def maintenance_database(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/postgresinstance.py#L155-L167" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/postgresinstance.py#L155-L167" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_archive_log_directory(self):
@@ -1589,7 +1595,7 @@ def postgres_archive_log_directory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/postgresinstance.py#L127-L139" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/postgresinstance.py#L127-L139" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_bin_directory(self):
@@ -1613,7 +1619,7 @@ def postgres_bin_directory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/postgresinstance.py#L141-L153" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/postgresinstance.py#L141-L153" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_lib_directory(self):
@@ -1637,7 +1643,7 @@ def postgres_lib_directory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/postgresinstance.py#L208-L220" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/postgresinstance.py#L211-L223" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_server_port_number(self):
@@ -1661,7 +1667,7 @@ def postgres_server_port_number(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/postgresinstance.py#L194-L206" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/postgresinstance.py#L194-L209" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_server_user_name(self):
@@ -1670,8 +1676,11 @@ def postgres_server_user_name(self):
         Return Type: str
 
     &#34;&#34;&#34;
-    if self._properties[&#39;postGreSQLInstance&#39;][&#39;SAUser&#39;][&#39;userName&#39;]:
-        return self._properties[&#39;postGreSQLInstance&#39;][&#39;SAUser&#39;][&#39;userName&#39;]
+    if self.credentials:
+        return self._commcell_object.credentials.get(self.credentials).credential_user_name
+    else:
+        if self._properties[&#39;postGreSQLInstance&#39;][&#39;SAUser&#39;][&#39;userName&#39;]:
+            return self._properties[&#39;postGreSQLInstance&#39;][&#39;SAUser&#39;][&#39;userName&#39;]
     raise SDKException(
         &#39;Instance&#39;,
         &#39;105&#39;,
@@ -1684,7 +1693,7 @@ def postgres_server_user_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/postgresinstance.py#L363-L366" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/postgresinstance.py#L366-L369" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_ssl_ca_file(self):
@@ -1698,7 +1707,7 @@ def postgres_ssl_ca_file(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/postgresinstance.py#L373-L376" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/postgresinstance.py#L376-L379" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_ssl_cert_file(self):
@@ -1712,7 +1721,7 @@ def postgres_ssl_cert_file(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/postgresinstance.py#L368-L371" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/postgresinstance.py#L371-L374" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_ssl_key_file(self):
@@ -1726,7 +1735,7 @@ def postgres_ssl_key_file(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/postgresinstance.py#L358-L361" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/postgresinstance.py#L361-L364" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_ssl_status(self):
@@ -1741,7 +1750,7 @@ def postgres_ssl_status(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/postgresinstance.py#L236-L248" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/postgresinstance.py#L239-L251" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def postgres_version(self):
@@ -1765,7 +1774,7 @@ def postgres_version(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/postgresinstance.py#L287-L298" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/postgresinstance.py#L290-L301" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def standby_instance_id(self):
@@ -1788,7 +1797,7 @@ def standby_instance_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/postgresinstance.py#L274-L285" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/postgresinstance.py#L277-L288" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def standby_instance_name(self):
@@ -1811,7 +1820,7 @@ def standby_instance_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/postgresinstance.py#L333-L341" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/postgresinstance.py#L336-L344" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def use_master_for_data_backup(self):
@@ -1831,7 +1840,7 @@ def use_master_for_data_backup(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/postgresinstance.py#L309-L316" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/postgresinstance.py#L312-L319" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def use_master_for_log_backup(self):
@@ -1857,7 +1866,7 @@ def use_master_for_log_backup(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/postgresinstance.py#L378-L390" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/postgresinstance.py#L381-L393" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def change_sa_password(self, value):
     &#34;&#34;&#34; Changes postgresql user password
@@ -1994,7 +2003,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/postgresinstance.py#L535-L723" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/postgresinstance.py#L538-L726" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -2192,13 +2201,16 @@ Raises:
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.instance.Instance" href="../instance.html#cvpysdk.instance.Instance">Instance</a></b></code>:
 <ul class="hlist">
+<li><code><a title="cvpysdk.instance.Instance.backupsets" href="../instance.html#cvpysdk.instance.Instance.backupsets">backupsets</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.browse" href="../instance.html#cvpysdk.instance.Instance.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.instance.Instance.credentials" href="../instance.html#cvpysdk.instance.Instance.credentials">credentials</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.find" href="../instance.html#cvpysdk.instance.Instance.find">find</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.instance_id" href="../instance.html#cvpysdk.instance.Instance.instance_id">instance_id</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.instance_name" href="../instance.html#cvpysdk.instance.Instance.instance_name">instance_name</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.name" href="../instance.html#cvpysdk.instance.Instance.name">name</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.properties" href="../instance.html#cvpysdk.instance.Instance.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.refresh" href="../instance.html#cvpysdk.instance.Instance.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.instance.Instance.subclients" href="../instance.html#cvpysdk.instance.Instance.subclients">subclients</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.update_properties" href="../instance.html#cvpysdk.instance.Instance.update_properties">update_properties</a></code></li>
 </ul>
 </li>

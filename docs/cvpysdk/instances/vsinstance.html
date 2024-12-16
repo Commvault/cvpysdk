@@ -60,7 +60,7 @@ The Virtual Server 'Hyper-V' is named as 'hyperv.py'
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/vsinstance.py#L1-L377" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/vsinstance.py#L1-L378" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -356,13 +356,14 @@ class VirtualServerInstance(Instance):
     @property
     def co_ordinator(self):
         &#34;&#34;&#34;Returns the Co_ordinator of this instance it is read-only attribute&#34;&#34;&#34;
-        _associated_clients = self.associated_clients
-        associated_client = _associated_clients[0]
-        if self._commcell_object.clients.has_client(associated_client):
-            return associated_client
-        elif self._commcell_object.client_groups.has_clientgroup(associated_client):
-            associated_client_group = self._commcell_object.client_groups.get(associated_client)
-            return associated_client_group._associated_clients[0]
+        if self.associated_clients is not None:
+            _associated_clients = self.associated_clients
+            associated_client = _associated_clients[0]
+            if self._commcell_object.clients.has_client(associated_client):
+                return associated_client
+            elif self._commcell_object.client_groups.has_clientgroup(associated_client):
+                associated_client_group = self._commcell_object.client_groups.get(associated_client)
+                return associated_client_group._associated_clients[0]
 
     @property
     def frel(self):
@@ -476,7 +477,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/vsinstance.py#L86-L377" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/vsinstance.py#L86-L378" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VirtualServerInstance(Instance):
     &#34;&#34;&#34;Class for representing an Instance of the Virtual Server agent.&#34;&#34;&#34;
@@ -687,13 +688,14 @@ default: None</p>
     @property
     def co_ordinator(self):
         &#34;&#34;&#34;Returns the Co_ordinator of this instance it is read-only attribute&#34;&#34;&#34;
-        _associated_clients = self.associated_clients
-        associated_client = _associated_clients[0]
-        if self._commcell_object.clients.has_client(associated_client):
-            return associated_client
-        elif self._commcell_object.client_groups.has_clientgroup(associated_client):
-            associated_client_group = self._commcell_object.client_groups.get(associated_client)
-            return associated_client_group._associated_clients[0]
+        if self.associated_clients is not None:
+            _associated_clients = self.associated_clients
+            associated_client = _associated_clients[0]
+            if self._commcell_object.clients.has_client(associated_client):
+                return associated_client
+            elif self._commcell_object.client_groups.has_clientgroup(associated_client):
+                associated_client_group = self._commcell_object.client_groups.get(associated_client)
+                return associated_client_group._associated_clients[0]
 
     @property
     def frel(self):
@@ -805,7 +807,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/vsinstance.py#L215-L228" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/vsinstance.py#L215-L228" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def associated_clients(self):
@@ -829,18 +831,19 @@ def associated_clients(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/vsinstance.py#L292-L301" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/vsinstance.py#L292-L302" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def co_ordinator(self):
     &#34;&#34;&#34;Returns the Co_ordinator of this instance it is read-only attribute&#34;&#34;&#34;
-    _associated_clients = self.associated_clients
-    associated_client = _associated_clients[0]
-    if self._commcell_object.clients.has_client(associated_client):
-        return associated_client
-    elif self._commcell_object.client_groups.has_clientgroup(associated_client):
-        associated_client_group = self._commcell_object.client_groups.get(associated_client)
-        return associated_client_group._associated_clients[0]</code></pre>
+    if self.associated_clients is not None:
+        _associated_clients = self.associated_clients
+        associated_client = _associated_clients[0]
+        if self._commcell_object.clients.has_client(associated_client):
+            return associated_client
+        elif self._commcell_object.client_groups.has_clientgroup(associated_client):
+            associated_client_group = self._commcell_object.client_groups.get(associated_client)
+            return associated_client_group._associated_clients[0]</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.instances.vsinstance.VirtualServerInstance.frel"><code class="name">var <span class="ident">frel</span></code></dt>
@@ -859,7 +862,7 @@ string : frel client name</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/vsinstance.py#L303-L327" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/vsinstance.py#L304-L328" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def frel(self):
@@ -894,7 +897,7 @@ def frel(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/vsinstance.py#L210-L213" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/vsinstance.py#L210-L213" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def server_name(self):
@@ -907,13 +910,16 @@ def server_name(self):
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.instance.Instance" href="../instance.html#cvpysdk.instance.Instance">Instance</a></b></code>:
 <ul class="hlist">
+<li><code><a title="cvpysdk.instance.Instance.backupsets" href="../instance.html#cvpysdk.instance.Instance.backupsets">backupsets</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.browse" href="../instance.html#cvpysdk.instance.Instance.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.instance.Instance.credentials" href="../instance.html#cvpysdk.instance.Instance.credentials">credentials</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.find" href="../instance.html#cvpysdk.instance.Instance.find">find</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.instance_id" href="../instance.html#cvpysdk.instance.Instance.instance_id">instance_id</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.instance_name" href="../instance.html#cvpysdk.instance.Instance.instance_name">instance_name</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.name" href="../instance.html#cvpysdk.instance.Instance.name">name</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.properties" href="../instance.html#cvpysdk.instance.Instance.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.refresh" href="../instance.html#cvpysdk.instance.Instance.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.instance.Instance.subclients" href="../instance.html#cvpysdk.instance.Instance.subclients">subclients</a></code></li>
 <li><code><a title="cvpysdk.instance.Instance.update_properties" href="../instance.html#cvpysdk.instance.Instance.update_properties">update_properties</a></code></li>
 </ul>
 </li>

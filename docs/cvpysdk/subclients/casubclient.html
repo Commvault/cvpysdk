@@ -35,7 +35,7 @@ Method to create object based on specific cloud apps instance type</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/casubclient.py#L1-L82" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/casubclient.py#L1-L85" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -87,6 +87,8 @@ class CloudAppsSubclient(Subclient):
         from .cloudapps.dynamics365_subclient import MSDynamics365Subclient
         from .cloudapps.teams_subclient import TeamsSubclient
         from .cloudapps.spanner_subclient import GoogleSpannerSubclient
+        from .cloudapps.onedrive_subclient import OneDriveSubclient
+        from .cloudapps.azure_cosmosdb_subclient import AzureCosmosDBSubclient
 
         instance_types = {
             1: GoogleSubclient,
@@ -95,7 +97,7 @@ class CloudAppsSubclient(Subclient):
             4: CloudDatabaseSubclient,  # Amazon RDS Subclient
             5: CloudStorageSubclient,  # AmazonS3 Subclient
             6: CloudStorageSubclient,  # AzureBlob Subclient
-            7: GoogleSubclient,  # OneDrive Subclient. GoogleSuclient class is used for OneDrive too
+            7: OneDriveSubclient,  # OneDrive Subclient.
             14: CloudStorageSubclient,  # OracleCloud Subclient
             15: CloudStorageSubclient,  # Openstack Subclient
             20: CloudStorageSubclient,  # Google Cloud Instance
@@ -107,7 +109,8 @@ class CloudAppsSubclient(Subclient):
             22: CloudDatabaseSubclient,  # Amazon DynamoDB subclient
             35: MSDynamics365Subclient,  # Office 365 Apps -&gt; MS Dynamics 365 Subclient
             36: TeamsSubclient,  # Office 365 Apps -&gt; MS Teams
-            37: GoogleSpannerSubclient  # Google Cloud Spanner Subclient
+            37: GoogleSpannerSubclient,  # Google Cloud Spanner Subclient
+            44: AzureCosmosDBSubclient # Azure Cosmos DB Cloud Apps Instance
         }
 
         cloud_apps_instance_type = backupset_object._instance_object._properties[
@@ -155,7 +158,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/casubclient.py#L40-L82" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/casubclient.py#L40-L85" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CloudAppsSubclient(Subclient):
     &#34;&#34;&#34;Class for representing a subclient of the Cloud Apps agent.&#34;&#34;&#34;
@@ -168,6 +171,8 @@ default: None</p>
         from .cloudapps.dynamics365_subclient import MSDynamics365Subclient
         from .cloudapps.teams_subclient import TeamsSubclient
         from .cloudapps.spanner_subclient import GoogleSpannerSubclient
+        from .cloudapps.onedrive_subclient import OneDriveSubclient
+        from .cloudapps.azure_cosmosdb_subclient import AzureCosmosDBSubclient
 
         instance_types = {
             1: GoogleSubclient,
@@ -176,7 +181,7 @@ default: None</p>
             4: CloudDatabaseSubclient,  # Amazon RDS Subclient
             5: CloudStorageSubclient,  # AmazonS3 Subclient
             6: CloudStorageSubclient,  # AzureBlob Subclient
-            7: GoogleSubclient,  # OneDrive Subclient. GoogleSuclient class is used for OneDrive too
+            7: OneDriveSubclient,  # OneDrive Subclient.
             14: CloudStorageSubclient,  # OracleCloud Subclient
             15: CloudStorageSubclient,  # Openstack Subclient
             20: CloudStorageSubclient,  # Google Cloud Instance
@@ -188,7 +193,8 @@ default: None</p>
             22: CloudDatabaseSubclient,  # Amazon DynamoDB subclient
             35: MSDynamics365Subclient,  # Office 365 Apps -&gt; MS Dynamics 365 Subclient
             36: TeamsSubclient,  # Office 365 Apps -&gt; MS Teams
-            37: GoogleSpannerSubclient  # Google Cloud Spanner Subclient
+            37: GoogleSpannerSubclient,  # Google Cloud Spanner Subclient
+            44: AzureCosmosDBSubclient # Azure Cosmos DB Cloud Apps Instance
         }
 
         cloud_apps_instance_type = backupset_object._instance_object._properties[
@@ -207,9 +213,11 @@ default: None</p>
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
+<li><a title="cvpysdk.subclients.cloudapps.azure_cosmosdb_subclient.AzureCosmosDBSubclient" href="cloudapps/azure_cosmosdb_subclient.html#cvpysdk.subclients.cloudapps.azure_cosmosdb_subclient.AzureCosmosDBSubclient">AzureCosmosDBSubclient</a></li>
 <li><a title="cvpysdk.subclients.cloudapps.cloud_database_subclient.CloudDatabaseSubclient" href="cloudapps/cloud_database_subclient.html#cvpysdk.subclients.cloudapps.cloud_database_subclient.CloudDatabaseSubclient">CloudDatabaseSubclient</a></li>
 <li><a title="cvpysdk.subclients.cloudapps.cloud_storage_subclient.CloudStorageSubclient" href="cloudapps/cloud_storage_subclient.html#cvpysdk.subclients.cloudapps.cloud_storage_subclient.CloudStorageSubclient">CloudStorageSubclient</a></li>
 <li><a title="cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient" href="cloudapps/google_subclient.html#cvpysdk.subclients.cloudapps.google_subclient.GoogleSubclient">GoogleSubclient</a></li>
+<li><a title="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient" href="cloudapps/onedrive_subclient.html#cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient">OneDriveSubclient</a></li>
 <li><a title="cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient" href="cloudapps/salesforce_subclient.html#cvpysdk.subclients.cloudapps.salesforce_subclient.SalesforceSubclient">SalesforceSubclient</a></li>
 <li><a title="cvpysdk.subclients.cloudapps.spanner_subclient.GoogleSpannerSubclient" href="cloudapps/spanner_subclient.html#cvpysdk.subclients.cloudapps.spanner_subclient.GoogleSpannerSubclient">GoogleSpannerSubclient</a></li>
 <li><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient" href="cloudapps/teams_subclient.html#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient">TeamsSubclient</a></li>

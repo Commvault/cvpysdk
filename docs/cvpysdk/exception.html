@@ -77,7 +77,7 @@ where the user given message is appended to the original message joined by new l
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/exception.py#L1-L642" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/exception.py#L1-L674" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -214,7 +214,8 @@ EXCEPTION_DICT = {
         &#39;103&#39;: &#39;Class object should be an instance of Agent / Instance class&#39;,
         &#39;104&#39;: &#39;Invalid pruning type. Valid inputs &#34;days_based&#34; or &#34;cycles_based&#34;.&#39;,
         &#39;105&#39;: &#39;Invalid days/cycles value. Please provide an integer value &gt;= 2.&#39;,
-        &#39;106&#39;: &#39;IndexServer value should be a client object&#39;
+        &#39;106&#39;: &#39;IndexServer value should be a client object&#39;,
+        &#39;107&#39;: &#39;No result found for the given input&#39;
     },
     &#39;Instance&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
@@ -315,6 +316,27 @@ EXCEPTION_DICT = {
         &#39;103&#39;: &#39;Failed to get the list of analytics engines&#39;,
         &#39;104&#39;: &#39;Failed to get the datasources&#39;
     },
+    &#39;ResourcePools&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Failed to get list of resource pools from CS&#39;,
+        &#39;104&#39;: &#39;Resource pool not exists&#39;,
+        &#39;105&#39;: &#39;Failed to get resource pool details from cs&#39;,
+        &#39;106&#39;: &#39;Resource pool deletion failed&#39;,
+        &#39;107&#39;: &#39;Resource pool with same name exists already&#39;,
+        &#39;108&#39;: &#39;Resource pool creation failed&#39;
+    },
+    &#39;ThreatIndicators&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Failed to get list of threat indicators from CS&#39;,
+        &#39;104&#39;: &#39;Failed to get list of anomaly records for this client&#39;,
+        &#39;105&#39;: &#39;Given server name is not in threat indicators list&#39;,
+        &#39;106&#39;: &#39;Failed to clear anomalies for this client&#39;,
+        &#39;107&#39;: &#39;Storage pool name is missing in inputs&#39;,
+        &#39;108&#39;: &#39;Index server name is missing in inputs&#39;,
+        &#39;109&#39;: &#39;Failed to start threat anomaly scan on client&#39;
+    },
     &#39;ContentAnalyzer&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
         &#39;102&#39;: &#39;&#39;,
@@ -348,6 +370,13 @@ EXCEPTION_DICT = {
         &#39;105&#39;: &#39;Unable to modify TagSet in the commcell&#39;,
         &#39;106&#39;: &#39;Unable to find given tag name in this tagset&#39;,
         &#39;107&#39;: &#39;Unable to do TagSet security association in the commcell&#39;
+    },
+    &#39;EntityTags&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Unable to create entity tag with the given name&#39;,
+        &#39;104&#39;: &#39;Unable to delete entity tag with the given name&#39;,
+        &#39;105&#39;: &#39;Unable to find entity tag with given name for user&#39;
     },
     &#39;EntityManager&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
@@ -434,7 +463,10 @@ EXCEPTION_DICT = {
         &#39;103&#39;: &#39;Export not found under the export set&#39;,
         &#39;104&#39;: &#39;Export deletion failed with error&#39;,
         &#39;105&#39;: &#39;Failed to get the export set with provided export set name&#39;,
-        &#39;106&#39;: &#39;Export Set not found&#39;
+        &#39;106&#39;: &#39;Export Set not found&#39;,
+        &#39;107&#39;: &#39;Invalid Application type provided&#39;,
+        &#39;108&#39;: &#39;Invalid export type provided&#39;,
+        &#39;109&#39;: &#39;CosmosDB file download fail&#39;
     },
     &#39;Salesforce&#39;: {
         &#39;101&#39;: &#39;Neither Sync Database enabled nor user provided database details for restore&#39;,
@@ -504,7 +536,8 @@ EXCEPTION_DICT = {
                 &#39;Add plan to the Organization, and then set it as the default&#39;),
         &#39;112&#39;: &#39;Failed to activate organization&#39;,
         &#39;113&#39;: &#39;Failed to deactivate organization&#39;,
-        &#39;114&#39;: &#39;Input is not provided in expected manner&#39;
+        &#39;114&#39;: &#39;Input is not provided in expected manner&#39;,
+        &#39;115&#39;: &#39;Failed to extend organization&#39;
     },
     &#39;RemoteOrganization&#39;: {
         &#39;101&#39;: &#39;Failed to update organization operators remotely&#39;,
@@ -516,7 +549,8 @@ EXCEPTION_DICT = {
         &#39;107&#39;: &#39;Email address is not valid&#39;,
         &#39;108&#39;: &#39;Organization already exists&#39;,
         &#39;109&#39;: &#39;Failed to add organization remotely&#39;,
-        &#39;110&#39;: &#39;No organization exists with the given name in workloads or idp&#39;
+        &#39;110&#39;: &#39;No organization exists with the given name in workloads or idp&#39;,
+        &#39;111&#39;: &#39;Failed to extend organization remotely&#39;
     },
     &#39;StoragePool&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
@@ -623,9 +657,7 @@ EXCEPTION_DICT = {
         &#39;102&#39;: &#39;&#39;,
         &#39;103&#39;: &#39;Failed to unregister commcell&#39;,
         &#39;104&#39;: &#39;Datatype of the input is not valid&#39;,
-        &#39;105&#39;: &#39;Failed to reach remote commcell.&#39;,
-        &#39;106&#39;: &#39;Failed to authenticate remote commcell. Invalid user name and password.&#39;,
-        &#39;107&#39;: &#39;Insufficient permissions&#39;
+        &#39;105&#39;: &#39;Failed to set commcell properties&#39;
     },
     &#39;LiveSync&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
@@ -758,7 +790,7 @@ instance of the SDKException class of type Exception</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/exception.py#L613-L642" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/exception.py#L645-L674" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SDKException(Exception):
     &#34;&#34;&#34;Exception class for raising exception specific to a module.&#34;&#34;&#34;

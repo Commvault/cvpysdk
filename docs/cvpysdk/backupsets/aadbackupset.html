@@ -49,11 +49,19 @@ browse() : Overwrite default browse operation
 _process_browse_repsonse : process the browse result
 
 azuread_get_metadata : create azure ad object meta data information
+
+__prepare_search_json : Prepare search json for search api request
+
+get_search_response : Get search response from search api
+
+view_attributes_url_builder : Build view attribute url
+
+get_view_attribute_response : Get view attribute response from view attribute url
 </code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/aadbackupset.py#L1-L421" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/aadbackupset.py#L1-L591" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # pylint: disable=R1705, R0205
@@ -101,10 +109,19 @@ Class:
         _process_browse_repsonse : process the browse result
 
         azuread_get_metadata : create azure ad object meta data information
+        
+        __prepare_search_json : Prepare search json for search api request
+
+        get_search_response : Get search response from search api
+
+        view_attributes_url_builder : Build view attribute url
+
+        get_view_attribute_response : Get view attribute response from view attribute url
+
 &#34;&#34;&#34;
 
 from __future__ import unicode_literals
-
+import base64
 from ..backupset import Backupset
 from ..exception import SDKException
 
@@ -126,10 +143,7 @@ class AzureAdBackupset(Backupset):
         options = self._prepare_browse_options(options)
 
         request_json = self._prepare_browse_json(options)
-        if &#34;adv_attributes&#34; in options:
-            request_json = self.azuread_browse_double_query_adv(options, request_json)
-        else:
-            request_json = self.azuread_browse_double_query(options, request_json)
+        request_json = self.azuread_browse_double_query(options, request_json)
         flag, response = self._cvpysdk_object.make_request(&#34;POST&#34;,
                                                            self._BROWSE,
                                                            request_json)
@@ -152,18 +166,26 @@ class AzureAdBackupset(Backupset):
             azure_meta = options[&#39;meta&#39;]
         else:
             azure_meta = {}
-        _, result = self._azuread_browse_basic(options)
+        count, result = self._azuread_browse_basic(options)
         if len(result) == 1 and result[0][&#39;objType&#39;] == 1:
             newid = result[0][&#39;commonData&#39;][&#39;id&#39;]
             options[&#39;filters&#39;] = [(_[0], newid, _[2]) for _ in options[&#39;filters&#39;]]
             name, metainfo = self.azuread_browse_obj_meta(result[0])
             azure_meta[&#39;root&#39;] = metainfo
             options[&#39;meta&#39;] = azure_meta
-            result = self.browse(**options)
+            self._azuread_browse_meta(options)
         else:
-            for _ in result:
-                name, metainfo = self.azuread_browse_obj_meta(_)
-                azure_meta[name] = metainfo
+            for r_ in result:
+                if r_[&#39;objType&#39;] == 100:
+                    options[&#39;filters&#39;] = [(&#34;76&#34;, r_[&#39;commonData&#39;][&#39;id&#39;], &#34;9&#34;),
+                                        (&#34;125&#34;, &#34;FOLDER&#34;)]
+                    count_, metainfo_ = self._azuread_browse_basic(options)
+                    for i_ in metainfo_:
+                        name, metainfo = self.azuread_browse_obj_meta(i_)
+                        azure_meta[name] = metainfo
+                else:
+                    name, metainfo = self.azuread_browse_obj_meta(r_)
+                    azure_meta[name] = metainfo
         return azure_meta
 
     def _azuread_browse_folder(self, options):
@@ -177,57 +199,39 @@ class AzureAdBackupset(Backupset):
                 None
         &#34;&#34;&#34;
         azure_meta_mapper = {
-            &#34;user&#34; : &#34;users&#34;,
-            &#34;group&#34; : &#34;groups&#34;,
-            &#34;reg_app&#34; : &#34;applications&#34;,
-            &#34;ent_app&#34; : &#34;servicePrincipals&#34;}
-
+            &#34;user&#34; : { &#34;displayname&#34; : &#34;Users&#34;, &#34;browsetype&#34; : 2, &#34;browsestring&#34; : &#34;USER&#34;},
+            &#34;group&#34; : { &#34;displayname&#34; : &#34;Groups&#34;, &#34;browsetype&#34; : 3, &#34;browsestring&#34;: &#34;GROUP&#34;},
+            &#34;reg_app&#34; : {&#34;displayname&#34; : &#34;App registrations&#34;, &#34;browsetype&#34; : 5, &#34;browsestring&#34; : &#34;APPLICATION&#34;},
+            &#34;ent_app&#34; : { &#34;displayname&#34; : &#34;Enterprise applications&#34;,&#34;browsetype&#34;: 6, &#34;browsestring&#34; : &#34;SERVICE_PRINCIPAL&#34;},
+            &#34;ca_policy&#34; : { &#34;displayname&#34; : &#34;Policies&#34;,&#34;browsetype&#34;: 11, &#34;browsestring&#34; : &#34;CONDITIONAL_ACCESS_POLICY&#34;},
+            &#34;ca_name_location&#34; : { &#34;displayname&#34; : &#34;Named locations&#34;,&#34;browsetype&#34;: 12, &#34;browsestring&#34; : &#34;NAMED_LOCATION&#34;} ,
+            &#34;ca_auth_context&#34; : { &#34;displayname&#34; : &#34;Authentication context&#34;,&#34;browsetype&#34;: 13, &#34;browsestring&#34; : &#34;AUTHENTICATION_CONTEXT&#34;},
+            &#34;ca_auth_strength&#34; : { &#34;displayname&#34; : &#34;Authentication strengths&#34;,&#34;browsetype&#34;: 14, &#34;browsestring&#34; : &#34;AUTHENTICATION_STRENGTH&#34;},
+            &#34;role&#34; : { &#34;displayname&#34; : &#34;Roles&#34;,&#34;browsetype&#34;: 15, &#34;browsestring&#34; : &#34;DIRECTORY_ROLE_DEFINITIONS&#34;},
+            &#34;admin_unit&#34; : { &#34;displayname&#34; : &#34;Admin units&#34;,&#34;browsetype&#34;: 16, &#34;browsestring&#34; : &#34;ADMINISTRATIVE_UNIT&#34;}}
         azure_meta = options[&#39;meta&#39;]
-        newid = azure_meta[azure_meta_mapper[options[&#39;folder&#39;]]][&#39;id&#39;]
-
-        options[&#39;filters&#39;] = [(_[0], newid, _[2]) for _ in options[&#39;filters&#39;]]
+        newid = azure_meta[azure_meta_mapper[options[&#39;folder&#39;]][&#39;displayname&#39;]][&#39;id&#39;]
+        options[&#39;filters&#39;] = [(&#34;76&#34;, newid, &#34;9&#34;),
+                              (&#34;125&#34;, azure_meta_mapper[options[&#39;folder&#39;]][&#39;browsestring&#39;])]
         if &#34;search&#34; in options:
-            options[&#39;filters&#39;] = [[_, (&#34;30&#34;, options[&#39;search&#39;], None)] for _ in options[&#39;filters&#39;]]
-        del(options[&#39;folder&#39;])
-        count, results = self._azuread_browse_basic(options)
-        result = []
-        for _ in results:
-            _, metainfo = self.azuread_browse_obj_meta(_)
-            result.append(metainfo)
-        if &#39;adv_attributes&#39; in options:
-            count, result = self._adv_attributes(options, count, results)
-        return count, result
+            if isinstance(options[&#39;search&#39;], dict):
+                search_dict = options[&#39;search&#39;]
+                if &#34;obj_id&#34; in search_dict:
+                    options[&#39;filters&#39;].append((&#34;130&#34;, search_dict[&#39;obj_id&#39;]))
+                if &#34;source&#34; in search_dict:
+                    if search_dict[&#39;source&#39;] == &#34;AzureAD&#34;:
+                        options[&#39;filters&#39;].append((&#34;128&#34;, &#34;0&#34;))
+                    elif search_dict[&#39;source&#39;] == &#34;WinAD&#34;:
+                        options[&#39;filters&#39;].append((&#34;128&#34;, &#34;1&#34;))
+            else:
+                options[&#39;filters&#39;].append((&#34;30&#34;, options[&#39;search&#39;]))
 
-    def _adv_attributes(self, options, count, results):
-        &#34;&#34;&#34; get advanced attribute in objects
-            Args:
-                options    (dict)    browse option from impoort
-                count     (int)    return count from browse
-                result    (list)    objects list from browse
-            Return:
-                count     (int)    return count from browse
-                result    (list)    objects list from browse
-            Raise:
-                None
-        &#34;&#34;&#34;
-        for _ in results:
-            _, obj_ = self.azuread_browse_obj_meta(_)
-            rev_azuread_index_meta_mapper = {2 : &#34;USER&#34;,
-                                             5 : &#34;APPLICATION&#34;,
-                                             3 : &#34;GROUP&#34;,
-                                             6 : &#34;SERVICE_PRINCIPAL&#34;}
-            options[&#39;filters&#39;] = [[(&#34;130&#34;, obj_[&#39;id&#39;], &#34;9&#34;),
-                                   (&#34;125&#34;, rev_azuread_index_meta_mapper[obj_[&#39;type&#39;]],
-                                    None)],
-                                  [(&#34;130&#34;, obj_[&#39;id&#39;], &#34;9&#34;),
-                                   (&#34;125&#34;, rev_azuread_index_meta_mapper[obj_[&#39;type&#39;]],
-                                    None)]]
-            count, results = self._azuread_browse_basic(options)
-            result = []
-            for _ in results:
-                _, metainfo = self.azuread_browse_obj_meta(_)
-                result.append(metainfo)
-        return count, result
+        del(options[&#39;folder&#39;])
+        del(options[&#39;meta&#39;])
+        del(options[&#39;path&#39;])
+        count, results = self._azuread_browse_basic(options)
+        results = self._process_result_format(results)
+        return count, results
 
     def browse(self, *args, **kwargs):
         &#34;&#34;&#34;Browses the content of the Backupset.
@@ -244,16 +248,11 @@ class AzureAdBackupset(Backupset):
             options = args[0]
         else:
             options = kwargs
-
         options = self.azuread_browse_options_builder(options)
         azure_meta = self._azuread_browse_meta(options)
         options[&#39;meta&#39;] = azure_meta
+        count, browse_result = self._azuread_browse_folder(options)
 
-        if &#34;folder&#34; in options:
-            count, browse_result = self._azuread_browse_folder(options)
-        else:
-            browse_result = azure_meta
-            count = 0
         return count, browse_result
 
     def _process_browse_response(self, flag, response, options):
@@ -283,7 +282,7 @@ class AzureAdBackupset(Backupset):
                             browseresulttcount = browse_result[&#39;totalItemsFound&#39;]
                             if &#39;dataResultSet&#39; in browse_result:
                                 result_set = browse_result[&#39;dataResultSet&#39;]
-                    if not result_set:
+                    if not result_set and result_set != []:
                         raise SDKException(&#39;Backupset&#39;, &#39;102&#39;,
                                            &#34;Failed to browse for subclient backup content&#34;)
                     else:
@@ -296,6 +295,17 @@ class AzureAdBackupset(Backupset):
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
         return browseresulttcount, metadatas
 
+    def _process_result_format(self, results):
+        &#34;&#34;&#34;
+        process the browse result to original data format
+        Args:
+            results     (list)  search results list
+        return
+            results     (list)  search results list
+        &#34;&#34;&#34;
+        for _ in results:
+            _[&#39;azureid&#39;] =  _[&#39;commonData&#39;][&#39;id&#39;].replace(&#34;x&#34;,&#34;-&#34;)
+        return results
     def azuread_get_metadata(self, result):
         &#34;&#34;&#34; Get azure ad meta data for browse result
             Args:
@@ -333,14 +343,6 @@ class AzureAdBackupset(Backupset):
         metainfo[&#39;name&#39;] = name
         metainfo[&#39;guid&#39;] = obj_[&#39;guid&#39;]
         metainfo[&#39;type&#39;] = obj_[&#39;objType&#39;]
-#        rev_azuread_index_meta_mapper = dict((v,k) for k,v in AZUREAD_INDEX_META_MAPPER.items())
-        azuread_index_meta_mapper = {5 : &#34;application&#34;,
-                                     3 : &#34;group&#34;,
-                                     6 : &#34;servicePrincipal&#34;,
-                                     2 : &#34;user&#34;}
-        if metainfo[&#39;type&#39;] in azuread_index_meta_mapper:
-            metainfo[&#34;adv_attribute&#34;] = obj_[&#34;{}Data&#34;.\
-                                             format(azuread_index_meta_mapper[metainfo[&#39;type&#39;]])]
         return name, metainfo
 
     def azuread_browse_double_query(self, options, request_json):
@@ -353,110 +355,43 @@ class AzureAdBackupset(Backupset):
             Raise:
                 None
         &#34;&#34;&#34;
-        if options[&#39;filters&#39;]:
-            request_json[&#39;queries&#39;] = []
-            for ind_, filter_ in enumerate(options[&#39;filters&#39;]):
-                if ind_ &gt; 0:
-                    queries = {
-                        &#34;type&#34;: ind_,
-                        &#34;queryId&#34;: str(ind_),
-                        }
-                    request_json[&#39;queries&#39;].append(queries)
-                    request_json[&#39;queries&#39;][ind_][&#39;agprParam&#39;] = {&#39;aggrType&#39;: 4,
-                                                                  &#39;field&#39; : 0}
-                else:
-                    queries = {
-                        &#34;type&#34;: ind_,
-                        &#34;queryId&#34;: str(ind_),
+        request_json[&#39;queries&#39;] = [{
+                        &#34;type&#34;: &#34;0&#34;,
+                        &#34;queryId&#34;: &#34;0&#34;,
+                        &#34;whereClause&#34; :[],
                         &#34;dataParam&#34;: {
                             &#34;sortParam&#34;: {
                                 &#34;ascending&#34;: True,
                                 &#34;sortBy&#34;: [126]
-                                },
+                            },
                             &#34;paging&#34;: {
                                 &#34;pageSize&#34;: int(options[&#39;page_size&#39;]),
                                 &#34;skipNode&#34;: int(options[&#39;skip_node&#39;]),
                                 &#34;firstNode&#34;: 0
-                                }
                             }
                         }
-                    request_json[&#39;queries&#39;].append(queries)
-                request_json[&#39;queries&#39;][ind_][&#39;whereClause&#39;] = []
-                if len(filter_) == 2:
-                    for _ in filter_:
-                        filter_dict = {
-                            &#39;connector&#39;: 0,
-                            &#39;criteria&#39;: {
-                                &#39;field&#39;: _[0],
-                                &#39;values&#39;: [_[1]]}}
-                        request_json[&#39;queries&#39;][ind_][&#39;whereClause&#39;].append(filter_dict)
-                else:
-                    filter_dict = {
-                        &#39;connector&#39;: 0,
-                        &#39;criteria&#39;: {
-                            &#39;field&#39;: filter_[0],
-                            &#39;values&#39;: [filter_[1]],
-                            &#34;dataOperator&#34; : int(filter_[2])}}
-                    request_json[&#39;queries&#39;][ind_][&#39;whereClause&#39;].append(filter_dict)
-        return request_json
+                    },
+                    {   &#34;type&#34;: &#34;1&#34;,
+                        &#34;queryId&#34;: &#34;1&#34;,
+                        &#34;whereClause&#34;: [],
+                        &#34;aggrParam&#34;  : {&#39;aggrType&#39;: 4,
+                                        &#39;field&#39;: 0}}]
 
-
-    def azuread_browse_double_query_adv(self, options, request_json):
-        &#34;&#34;&#34; get advanced attribute for obeject
-            Args:
-                options    (dict)    browse option from impoort
-                request_json    (json)    request json file from basic request class
-            Return:
-                request_json    (json)    request json with addittional options
-            Raise:
-                None
-        &#34;&#34;&#34;
         if options[&#39;filters&#39;]:
-            request_json[&#39;queries&#39;] = []
-            for ind_, filter_ in enumerate(options[&#39;filters&#39;]):
-                if ind_ &gt; 0:
-                    queries = {
-                        &#34;type&#34;: ind_,
-                        &#34;queryId&#34;: str(ind_),
-                        }
-                    request_json[&#39;queries&#39;].append(queries)
-                    request_json[&#39;queries&#39;][ind_][&#39;agprParam&#39;] = {&#39;aggrType&#39;: 4,
-                                                                  &#39;field&#39; : 0}
-                else:
-                    queries = {
-                        &#34;type&#34;: ind_,
-                        &#34;queryId&#34;: str(ind_),
-                        &#34;dataParam&#34;: {
-                            &#34;sortParam&#34;: {
-                                &#34;ascending&#34;: True,
-                                &#34;sortBy&#34;: [126]
-                                },
-                            &#34;paging&#34;: {
-                                &#34;pageSize&#34;: int(options[&#39;page_size&#39;]),
-                                &#34;skipNode&#34;: int(options[&#39;skip_node&#39;]),
-                                &#34;firstNode&#34;: 0
-                                }
-                            }
-                        }
-                    request_json[&#39;queries&#39;].append(queries)
-                request_json[&#39;queries&#39;][ind_][&#39;whereClause&#39;] = []
+            for filter_ in options[&#39;filters&#39;]:
+                filter_dict = {
+                    &#39;connector&#39;: 0,
+                    &#39;criteria&#39;: {
+                        &#39;field&#39;: filter_[0],
+                        &#39;values&#39;: [filter_[1]]}}
+                if len(filter_) == 3:
+                    filter_dict[&#39;criteria&#39;][&#39;dataOperator&#39;] = int(filter_[2])
+                if filter_[0] == &#34;125&#34;:
+                    del (filter_dict[&#39;connector&#39;])
+                request_json[&#39;queries&#39;][0][&#39;whereClause&#39;].append(filter_dict)
+                request_json[&#39;queries&#39;][1][&#39;whereClause&#39;].append(filter_dict)
 
-                if len(filter_) == 2:
-                    for _ in filter_:
-                        if _[2] is not None:
-                            filter_dict = {
-                                &#39;connector&#39;: 0,
-                                &#39;criteria&#39;: {
-                                    &#39;field&#39;: _[0],
-                                    &#39;values&#39;: [_[1]],
-                                    &#34;dataOperator&#34; : int(_[2])}}
-                        else:
-                            filter_dict = {
-                                &#39;criteria&#39;: {
-                                    &#39;field&#39;: _[0],
-                                    &#39;values&#39;: [_[1]]}}
-                        request_json[&#39;queries&#39;][ind_][&#39;whereClause&#39;].append(filter_dict)
-        request_json[&#39;options&#39;][&#39;fetchFileProperties&#39;] = True
+        del(request_json[&#39;paths&#39;])
         return request_json
 
     def azuread_browse_options_builder(self, options):
@@ -475,7 +410,250 @@ class AzureAdBackupset(Backupset):
             options[&#39;operation&#39;] = &#34;browse&#34;
             options[&#39;page_size&#39;] = 20
             options[&#39;skip_node&#39;] = 0
-        return options</code></pre>
+        return options
+
+    def __prepare_search_json(self, options):
+        &#34;&#34;&#34;
+        performs view_properties (Cvpysdk Api call)
+        Args:
+            options     (dict)      example {&#34;to_time&#34;:(epoch) ,
+                                            &#34;subclient_id&#34;:(string/optional),
+                                            &#34;attribute&#34;: &#34;attribute to perform search &#34;}
+            Return:     (dict)      view properties
+        &#34;&#34;&#34;
+        options[&#34;subclient_id&#34;] = self.subclients.all_subclients[&#39;default&#39;][&#39;id&#39;]
+
+        request_json = {
+            &#34;mode&#34;: 4,
+            &#34;advSearchGrp&#34;: {
+                &#34;commonFilter&#34;: [
+                    {
+                        &#34;filter&#34;: {
+                            &#34;interFilterOP&#34;: 2,
+                            &#34;filters&#34;: [
+                                {
+                                    &#34;field&#34;: &#34;CISTATE&#34;,
+                                    &#34;intraFieldOp&#34;: 0,
+                                    &#34;fieldValues&#34;: {
+                                        &#34;values&#34;: [
+                                            &#34;1&#34;
+                                        ]
+                                    }
+                                },
+                                {
+                                    &#34;field&#34;: &#34;IS_VISIBLE&#34;,
+                                    &#34;intraFieldOp&#34;: 0,
+                                    &#34;fieldValues&#34;: {
+                                        &#34;values&#34;: [
+                                            &#34;true&#34;
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ],
+                &#34;fileFilter&#34;: [
+                    {
+                        &#34;interGroupOP&#34;: 2,
+                        &#34;filter&#34;: {
+                            &#34;interFilterOP&#34;: 2,
+                            &#34;filters&#34;: [
+                                {
+                                    &#34;field&#34;: &#34;BACKUPTIME&#34;,
+                                    &#34;intraFieldOp&#34;: 0,
+                                    &#34;fieldValues&#34;: {
+                                        &#34;values&#34;: [
+                                            &#34;0&#34;,
+                                            str(options[&#34;to_time&#34;])
+                                        ]
+                                    }
+                                },
+                                {
+                                    &#34;field&#34;: &#34;DATA_TYPE&#34;,
+                                    &#34;intraFieldOp&#34;: 0,
+                                    &#34;fieldValues&#34;: {
+                                        &#34;values&#34;: [
+                                            &#34;1&#34;
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ],
+                &#34;emailFilter&#34;: [],
+                &#34;galaxyFilter&#34;: [
+                    {
+                        &#34;appIdList&#34;: [
+                            int(options[&#34;subclient_id&#34;])
+                        ]
+                    }
+                ],
+                &#34;cvSearchKeyword&#34;: {
+                    &#34;isExactWordsOptionSelected&#34;: False,
+                    &#34;keyword&#34;: str(options[&#34;attribute&#34;]) + &#34;*&#34;
+                }
+            },
+            &#34;searchProcessingInfo&#34;: {
+                &#34;resultOffset&#34;: 0,
+                &#34;pageSize&#34;: 15,
+                &#34;queryParams&#34;: [
+                    {
+                        &#34;param&#34;: &#34;ENABLE_MIXEDVIEW&#34;,
+                        &#34;value&#34;: &#34;true&#34;
+                    },
+                    {
+                        &#34;param&#34;: &#34;ENABLE_NAVIGATION&#34;,
+                        &#34;value&#34;: &#34;on&#34;
+                    },
+                    {
+                        &#34;param&#34;: &#34;ENABLE_DEFAULTFACETS&#34;,
+                        &#34;value&#34;: &#34;false&#34;
+                    },
+                    {
+                        &#34;param&#34;: &#34;RESPONSE_FIELD_LIST&#34;,
+                        &#34;value&#34;: &#34;CONTENTID,CV_TURBO_GUID,PARENT_GUID,AFILEID,AFILEOFFSET,&#34;
+                                 &#34;COMMCELLNO,MODIFIEDTIME,SIZEINKB,DATA_TYPE,AD_DISPLAYNAME,&#34;
+                                 &#34;AD_ID,AD_OBJECT_TYPE,BACKUPTIME,AD_FLAGS,CISTATE,DATE_DELETED,&#34;
+                                 &#34;AD_MAIL,AD_MAILNICKNAME,AD_PROXY_ADDRESSES,AD_BUSINESS_PHONES,&#34;
+                                 &#34;AD_CITY,AD_COUNTRY,AD_DELETED_TIME,AD_POSTALCODE,AD_STATE,&#34;
+                                 &#34;AD_STREET_ADDRESS,AD_LAST_DIR_SYNC_TIME,&#34;
+                                 &#34;AD_COUNTRY_LETTER_CODE,AD_DIR_SYNC_ENABLED,AD_MKT_NOTIFY_MAILS,&#34;
+                                 &#34;AD_TENANT_OBJECT_TYPE,AD_PREFER_LANG,AD_SEC_NOTIFY_MAILS,&#34;
+                                 &#34;AD_SEC_NOTIFY_PHONES,AD_TECH_NOTIFY_MAILS,AD_TELEPHONE_NR,&#34;
+                                 &#34;AD_CREATED_TIME,AD_DESCRIPTION,AD_GROUP_TYPES,AD_MAIL_ENABLED,&#34;
+                                 &#34;AD_VISIBILITY,AD_SOURCE_TYPE,AD_AZURE_APP_ID,AD_HOME_PAGE_URL,&#34;
+                                 &#34;AD_TAGS,AD_AZURE_APP_DISPLAY_NAME,AD_APP_OWNER_ORGID,&#34;
+                                 &#34;AD_REPLY_URLS,AD_PUBLISHER_NAME,AD_SERVICE_PRINCIPAL_NAMES&#34;
+                    },
+                    {
+                        &#34;param&#34;: &#34;DO_NOT_AUDIT&#34;,
+                        &#34;value&#34;: &#34;true&#34;
+                    },
+                    {
+                        &#34;param&#34;: &#34;COLLAPSE_FIELD&#34;,
+                        &#34;value&#34;: &#34;AD_ID&#34;
+                    },
+                    {
+                        &#34;param&#34;: &#34;COLLAPSE_SORT&#34;,
+                        &#34;value&#34;: &#34;BACKUPTIME DESC&#34;
+                    }
+                ],
+                &#34;sortParams&#34;: [
+                    {
+                        &#34;sortDirection&#34;: 0,
+                        &#34;sortField&#34;: &#34;AD_DISPLAYNAME&#34;
+                    }
+                ]
+            },
+            &#34;facetRequests&#34;: {
+                &#34;facetRequest&#34;: [
+                    {
+                        &#34;name&#34;: &#34;AD_OBJECT_TYPE&#34;
+                    }
+                ]
+            }
+        }
+
+        return request_json
+
+    def get_search_response(self, job_time, attribute):
+        &#34;&#34;&#34;
+            Searches for jobs based on the specified parameters.
+
+            This method performs a search operation for jobs using the
+            given job time, display name and application ID.
+            Args:
+                job_time    (str)   The job ends time.
+                attribute   (str)  Attribute to search for.
+            Return:
+                The response contains the search results.
+            Raises:
+                SDKException: If there is a bad request
+                or no object found with the specified display name.
+        &#34;&#34;&#34;
+
+        uri = self._services[&#34;DO_WEB_SEARCH&#34;]
+        options = {&#34;to_time&#34;: job_time, &#34;attribute&#34;: attribute}
+        request_json = self.__prepare_search_json(options)
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, uri, request_json)
+        if not flag:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+        response = response.json()
+        if response[&#34;proccessingInfo&#34;][&#34;totalHits&#34;] == 0:
+            raise SDKException(&#39;Backupset&#39;, &#39;107&#39;, &#34;no result found with specified attribute&#34;)
+        return response
+
+    def view_attributes_url_builder(self,
+                                    job_time,
+                                    display_name):
+        &#34;&#34;&#34;
+        Builds a URL for viewing attributes based on the specified parameters.
+
+        This method constructs a URL for viewing attributes of an
+        object identified by the given job time and display name.
+        Args:
+            job_time    (str)   The job time.
+            display_name    (str)   The display name of the object.
+        Return:
+            The URL for viewing attributes.
+        &#34;&#34;&#34;
+
+        subclient_id = self.subclients.all_subclients[&#39;default&#39;][&#39;id&#39;]
+
+        try:
+            search_response = self.get_search_response(job_time=job_time, attribute=display_name)
+            afile_id = search_response[&#34;searchResult&#34;][&#34;resultItem&#34;][0][&#34;aFileId&#34;]
+            afile_offset = search_response[&#34;searchResult&#34;][&#34;resultItem&#34;][0][&#34;aFileOffset&#34;]
+            commcell_no = search_response[&#34;searchResult&#34;][&#34;resultItem&#34;][0][&#34;commcellNo&#34;]
+
+            op = &#34;dGVtcC5qc29u&#34;  # any filename.json for view properties call
+            # encoding string to base64
+            stub_info = str(&#39;2:&#39; + str(commcell_no) + &#39;:0:&#39; +
+                            str(afile_id) + &#39;:&#39; + str(afile_offset))
+            stub_info = stub_info.encode(&#34;ascii&#34;)
+            stub_info = base64.b64encode(stub_info)
+            stub_info = stub_info.decode(&#34;ascii&#34;)
+
+            url = self._services[&#39;VIEW_PROPERTIES&#39;] % (str(self._agent_object.agent_id),
+                                                       stub_info,
+                                                       op,
+                                                       str(subclient_id),
+                                                       &#39;1&#39;)
+            return url
+        except SDKException as e:
+            raise SDKException(&#39;Backupset&#39;, &#39;107&#39;,
+                               f&#34;No result found with specified attribute {e.exception_message}&#34;)
+
+    def get_view_attribute_response(self,
+                                    job_time,
+                                    display_name):
+        &#34;&#34;&#34;
+        Retrieves view attributes based on the specified parameters.
+
+        This method retrieves the view attributes of an
+        object identified by the given job time and display name.
+        Args:
+            job_time    (int)   The job time.
+            display_name    (string)    The display name of the object.
+        Return:
+            (dict)  The JSON response contains the view attributes.
+        Raises:
+            SDKException: If there is an error while retrieving the view attributes.
+        &#34;&#34;&#34;
+        try:
+            url = self.view_attributes_url_builder(display_name=display_name,
+                                                   job_time=job_time)
+
+            flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, url)
+            if not flag:
+                raise SDKException(&#39;Response&#39;, &#39;101&#39;, &#34;Response was not success&#34;)
+            if not response:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, &#34;Response received is empty&#34;)
+            return response.json()
+        except Exception as e:
+            raise SDKException(&#39;Backupset&#39;, &#39;107&#39;, f&#34;No result found {e.exception_message}&#34;)</code></pre>
 </details>
 </section>
 <section>
@@ -513,7 +691,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/aadbackupset.py#L55-L421" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/aadbackupset.py#L64-L591" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AzureAdBackupset(Backupset):
     &#34;&#34;&#34; Azure AD agent backupset class &#34;&#34;&#34;
@@ -532,10 +710,7 @@ default: None</p>
         options = self._prepare_browse_options(options)
 
         request_json = self._prepare_browse_json(options)
-        if &#34;adv_attributes&#34; in options:
-            request_json = self.azuread_browse_double_query_adv(options, request_json)
-        else:
-            request_json = self.azuread_browse_double_query(options, request_json)
+        request_json = self.azuread_browse_double_query(options, request_json)
         flag, response = self._cvpysdk_object.make_request(&#34;POST&#34;,
                                                            self._BROWSE,
                                                            request_json)
@@ -558,18 +733,26 @@ default: None</p>
             azure_meta = options[&#39;meta&#39;]
         else:
             azure_meta = {}
-        _, result = self._azuread_browse_basic(options)
+        count, result = self._azuread_browse_basic(options)
         if len(result) == 1 and result[0][&#39;objType&#39;] == 1:
             newid = result[0][&#39;commonData&#39;][&#39;id&#39;]
             options[&#39;filters&#39;] = [(_[0], newid, _[2]) for _ in options[&#39;filters&#39;]]
             name, metainfo = self.azuread_browse_obj_meta(result[0])
             azure_meta[&#39;root&#39;] = metainfo
             options[&#39;meta&#39;] = azure_meta
-            result = self.browse(**options)
+            self._azuread_browse_meta(options)
         else:
-            for _ in result:
-                name, metainfo = self.azuread_browse_obj_meta(_)
-                azure_meta[name] = metainfo
+            for r_ in result:
+                if r_[&#39;objType&#39;] == 100:
+                    options[&#39;filters&#39;] = [(&#34;76&#34;, r_[&#39;commonData&#39;][&#39;id&#39;], &#34;9&#34;),
+                                        (&#34;125&#34;, &#34;FOLDER&#34;)]
+                    count_, metainfo_ = self._azuread_browse_basic(options)
+                    for i_ in metainfo_:
+                        name, metainfo = self.azuread_browse_obj_meta(i_)
+                        azure_meta[name] = metainfo
+                else:
+                    name, metainfo = self.azuread_browse_obj_meta(r_)
+                    azure_meta[name] = metainfo
         return azure_meta
 
     def _azuread_browse_folder(self, options):
@@ -583,57 +766,39 @@ default: None</p>
                 None
         &#34;&#34;&#34;
         azure_meta_mapper = {
-            &#34;user&#34; : &#34;users&#34;,
-            &#34;group&#34; : &#34;groups&#34;,
-            &#34;reg_app&#34; : &#34;applications&#34;,
-            &#34;ent_app&#34; : &#34;servicePrincipals&#34;}
-
+            &#34;user&#34; : { &#34;displayname&#34; : &#34;Users&#34;, &#34;browsetype&#34; : 2, &#34;browsestring&#34; : &#34;USER&#34;},
+            &#34;group&#34; : { &#34;displayname&#34; : &#34;Groups&#34;, &#34;browsetype&#34; : 3, &#34;browsestring&#34;: &#34;GROUP&#34;},
+            &#34;reg_app&#34; : {&#34;displayname&#34; : &#34;App registrations&#34;, &#34;browsetype&#34; : 5, &#34;browsestring&#34; : &#34;APPLICATION&#34;},
+            &#34;ent_app&#34; : { &#34;displayname&#34; : &#34;Enterprise applications&#34;,&#34;browsetype&#34;: 6, &#34;browsestring&#34; : &#34;SERVICE_PRINCIPAL&#34;},
+            &#34;ca_policy&#34; : { &#34;displayname&#34; : &#34;Policies&#34;,&#34;browsetype&#34;: 11, &#34;browsestring&#34; : &#34;CONDITIONAL_ACCESS_POLICY&#34;},
+            &#34;ca_name_location&#34; : { &#34;displayname&#34; : &#34;Named locations&#34;,&#34;browsetype&#34;: 12, &#34;browsestring&#34; : &#34;NAMED_LOCATION&#34;} ,
+            &#34;ca_auth_context&#34; : { &#34;displayname&#34; : &#34;Authentication context&#34;,&#34;browsetype&#34;: 13, &#34;browsestring&#34; : &#34;AUTHENTICATION_CONTEXT&#34;},
+            &#34;ca_auth_strength&#34; : { &#34;displayname&#34; : &#34;Authentication strengths&#34;,&#34;browsetype&#34;: 14, &#34;browsestring&#34; : &#34;AUTHENTICATION_STRENGTH&#34;},
+            &#34;role&#34; : { &#34;displayname&#34; : &#34;Roles&#34;,&#34;browsetype&#34;: 15, &#34;browsestring&#34; : &#34;DIRECTORY_ROLE_DEFINITIONS&#34;},
+            &#34;admin_unit&#34; : { &#34;displayname&#34; : &#34;Admin units&#34;,&#34;browsetype&#34;: 16, &#34;browsestring&#34; : &#34;ADMINISTRATIVE_UNIT&#34;}}
         azure_meta = options[&#39;meta&#39;]
-        newid = azure_meta[azure_meta_mapper[options[&#39;folder&#39;]]][&#39;id&#39;]
-
-        options[&#39;filters&#39;] = [(_[0], newid, _[2]) for _ in options[&#39;filters&#39;]]
+        newid = azure_meta[azure_meta_mapper[options[&#39;folder&#39;]][&#39;displayname&#39;]][&#39;id&#39;]
+        options[&#39;filters&#39;] = [(&#34;76&#34;, newid, &#34;9&#34;),
+                              (&#34;125&#34;, azure_meta_mapper[options[&#39;folder&#39;]][&#39;browsestring&#39;])]
         if &#34;search&#34; in options:
-            options[&#39;filters&#39;] = [[_, (&#34;30&#34;, options[&#39;search&#39;], None)] for _ in options[&#39;filters&#39;]]
-        del(options[&#39;folder&#39;])
-        count, results = self._azuread_browse_basic(options)
-        result = []
-        for _ in results:
-            _, metainfo = self.azuread_browse_obj_meta(_)
-            result.append(metainfo)
-        if &#39;adv_attributes&#39; in options:
-            count, result = self._adv_attributes(options, count, results)
-        return count, result
+            if isinstance(options[&#39;search&#39;], dict):
+                search_dict = options[&#39;search&#39;]
+                if &#34;obj_id&#34; in search_dict:
+                    options[&#39;filters&#39;].append((&#34;130&#34;, search_dict[&#39;obj_id&#39;]))
+                if &#34;source&#34; in search_dict:
+                    if search_dict[&#39;source&#39;] == &#34;AzureAD&#34;:
+                        options[&#39;filters&#39;].append((&#34;128&#34;, &#34;0&#34;))
+                    elif search_dict[&#39;source&#39;] == &#34;WinAD&#34;:
+                        options[&#39;filters&#39;].append((&#34;128&#34;, &#34;1&#34;))
+            else:
+                options[&#39;filters&#39;].append((&#34;30&#34;, options[&#39;search&#39;]))
 
-    def _adv_attributes(self, options, count, results):
-        &#34;&#34;&#34; get advanced attribute in objects
-            Args:
-                options    (dict)    browse option from impoort
-                count     (int)    return count from browse
-                result    (list)    objects list from browse
-            Return:
-                count     (int)    return count from browse
-                result    (list)    objects list from browse
-            Raise:
-                None
-        &#34;&#34;&#34;
-        for _ in results:
-            _, obj_ = self.azuread_browse_obj_meta(_)
-            rev_azuread_index_meta_mapper = {2 : &#34;USER&#34;,
-                                             5 : &#34;APPLICATION&#34;,
-                                             3 : &#34;GROUP&#34;,
-                                             6 : &#34;SERVICE_PRINCIPAL&#34;}
-            options[&#39;filters&#39;] = [[(&#34;130&#34;, obj_[&#39;id&#39;], &#34;9&#34;),
-                                   (&#34;125&#34;, rev_azuread_index_meta_mapper[obj_[&#39;type&#39;]],
-                                    None)],
-                                  [(&#34;130&#34;, obj_[&#39;id&#39;], &#34;9&#34;),
-                                   (&#34;125&#34;, rev_azuread_index_meta_mapper[obj_[&#39;type&#39;]],
-                                    None)]]
-            count, results = self._azuread_browse_basic(options)
-            result = []
-            for _ in results:
-                _, metainfo = self.azuread_browse_obj_meta(_)
-                result.append(metainfo)
-        return count, result
+        del(options[&#39;folder&#39;])
+        del(options[&#39;meta&#39;])
+        del(options[&#39;path&#39;])
+        count, results = self._azuread_browse_basic(options)
+        results = self._process_result_format(results)
+        return count, results
 
     def browse(self, *args, **kwargs):
         &#34;&#34;&#34;Browses the content of the Backupset.
@@ -650,16 +815,11 @@ default: None</p>
             options = args[0]
         else:
             options = kwargs
-
         options = self.azuread_browse_options_builder(options)
         azure_meta = self._azuread_browse_meta(options)
         options[&#39;meta&#39;] = azure_meta
+        count, browse_result = self._azuread_browse_folder(options)
 
-        if &#34;folder&#34; in options:
-            count, browse_result = self._azuread_browse_folder(options)
-        else:
-            browse_result = azure_meta
-            count = 0
         return count, browse_result
 
     def _process_browse_response(self, flag, response, options):
@@ -689,7 +849,7 @@ default: None</p>
                             browseresulttcount = browse_result[&#39;totalItemsFound&#39;]
                             if &#39;dataResultSet&#39; in browse_result:
                                 result_set = browse_result[&#39;dataResultSet&#39;]
-                    if not result_set:
+                    if not result_set and result_set != []:
                         raise SDKException(&#39;Backupset&#39;, &#39;102&#39;,
                                            &#34;Failed to browse for subclient backup content&#34;)
                     else:
@@ -702,6 +862,17 @@ default: None</p>
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
         return browseresulttcount, metadatas
 
+    def _process_result_format(self, results):
+        &#34;&#34;&#34;
+        process the browse result to original data format
+        Args:
+            results     (list)  search results list
+        return
+            results     (list)  search results list
+        &#34;&#34;&#34;
+        for _ in results:
+            _[&#39;azureid&#39;] =  _[&#39;commonData&#39;][&#39;id&#39;].replace(&#34;x&#34;,&#34;-&#34;)
+        return results
     def azuread_get_metadata(self, result):
         &#34;&#34;&#34; Get azure ad meta data for browse result
             Args:
@@ -739,14 +910,6 @@ default: None</p>
         metainfo[&#39;name&#39;] = name
         metainfo[&#39;guid&#39;] = obj_[&#39;guid&#39;]
         metainfo[&#39;type&#39;] = obj_[&#39;objType&#39;]
-#        rev_azuread_index_meta_mapper = dict((v,k) for k,v in AZUREAD_INDEX_META_MAPPER.items())
-        azuread_index_meta_mapper = {5 : &#34;application&#34;,
-                                     3 : &#34;group&#34;,
-                                     6 : &#34;servicePrincipal&#34;,
-                                     2 : &#34;user&#34;}
-        if metainfo[&#39;type&#39;] in azuread_index_meta_mapper:
-            metainfo[&#34;adv_attribute&#34;] = obj_[&#34;{}Data&#34;.\
-                                             format(azuread_index_meta_mapper[metainfo[&#39;type&#39;]])]
         return name, metainfo
 
     def azuread_browse_double_query(self, options, request_json):
@@ -759,110 +922,43 @@ default: None</p>
             Raise:
                 None
         &#34;&#34;&#34;
-        if options[&#39;filters&#39;]:
-            request_json[&#39;queries&#39;] = []
-            for ind_, filter_ in enumerate(options[&#39;filters&#39;]):
-                if ind_ &gt; 0:
-                    queries = {
-                        &#34;type&#34;: ind_,
-                        &#34;queryId&#34;: str(ind_),
-                        }
-                    request_json[&#39;queries&#39;].append(queries)
-                    request_json[&#39;queries&#39;][ind_][&#39;agprParam&#39;] = {&#39;aggrType&#39;: 4,
-                                                                  &#39;field&#39; : 0}
-                else:
-                    queries = {
-                        &#34;type&#34;: ind_,
-                        &#34;queryId&#34;: str(ind_),
+        request_json[&#39;queries&#39;] = [{
+                        &#34;type&#34;: &#34;0&#34;,
+                        &#34;queryId&#34;: &#34;0&#34;,
+                        &#34;whereClause&#34; :[],
                         &#34;dataParam&#34;: {
                             &#34;sortParam&#34;: {
                                 &#34;ascending&#34;: True,
                                 &#34;sortBy&#34;: [126]
-                                },
+                            },
                             &#34;paging&#34;: {
                                 &#34;pageSize&#34;: int(options[&#39;page_size&#39;]),
                                 &#34;skipNode&#34;: int(options[&#39;skip_node&#39;]),
                                 &#34;firstNode&#34;: 0
-                                }
                             }
                         }
-                    request_json[&#39;queries&#39;].append(queries)
-                request_json[&#39;queries&#39;][ind_][&#39;whereClause&#39;] = []
-                if len(filter_) == 2:
-                    for _ in filter_:
-                        filter_dict = {
-                            &#39;connector&#39;: 0,
-                            &#39;criteria&#39;: {
-                                &#39;field&#39;: _[0],
-                                &#39;values&#39;: [_[1]]}}
-                        request_json[&#39;queries&#39;][ind_][&#39;whereClause&#39;].append(filter_dict)
-                else:
-                    filter_dict = {
-                        &#39;connector&#39;: 0,
-                        &#39;criteria&#39;: {
-                            &#39;field&#39;: filter_[0],
-                            &#39;values&#39;: [filter_[1]],
-                            &#34;dataOperator&#34; : int(filter_[2])}}
-                    request_json[&#39;queries&#39;][ind_][&#39;whereClause&#39;].append(filter_dict)
-        return request_json
+                    },
+                    {   &#34;type&#34;: &#34;1&#34;,
+                        &#34;queryId&#34;: &#34;1&#34;,
+                        &#34;whereClause&#34;: [],
+                        &#34;aggrParam&#34;  : {&#39;aggrType&#39;: 4,
+                                        &#39;field&#39;: 0}}]
 
-
-    def azuread_browse_double_query_adv(self, options, request_json):
-        &#34;&#34;&#34; get advanced attribute for obeject
-            Args:
-                options    (dict)    browse option from impoort
-                request_json    (json)    request json file from basic request class
-            Return:
-                request_json    (json)    request json with addittional options
-            Raise:
-                None
-        &#34;&#34;&#34;
         if options[&#39;filters&#39;]:
-            request_json[&#39;queries&#39;] = []
-            for ind_, filter_ in enumerate(options[&#39;filters&#39;]):
-                if ind_ &gt; 0:
-                    queries = {
-                        &#34;type&#34;: ind_,
-                        &#34;queryId&#34;: str(ind_),
-                        }
-                    request_json[&#39;queries&#39;].append(queries)
-                    request_json[&#39;queries&#39;][ind_][&#39;agprParam&#39;] = {&#39;aggrType&#39;: 4,
-                                                                  &#39;field&#39; : 0}
-                else:
-                    queries = {
-                        &#34;type&#34;: ind_,
-                        &#34;queryId&#34;: str(ind_),
-                        &#34;dataParam&#34;: {
-                            &#34;sortParam&#34;: {
-                                &#34;ascending&#34;: True,
-                                &#34;sortBy&#34;: [126]
-                                },
-                            &#34;paging&#34;: {
-                                &#34;pageSize&#34;: int(options[&#39;page_size&#39;]),
-                                &#34;skipNode&#34;: int(options[&#39;skip_node&#39;]),
-                                &#34;firstNode&#34;: 0
-                                }
-                            }
-                        }
-                    request_json[&#39;queries&#39;].append(queries)
-                request_json[&#39;queries&#39;][ind_][&#39;whereClause&#39;] = []
+            for filter_ in options[&#39;filters&#39;]:
+                filter_dict = {
+                    &#39;connector&#39;: 0,
+                    &#39;criteria&#39;: {
+                        &#39;field&#39;: filter_[0],
+                        &#39;values&#39;: [filter_[1]]}}
+                if len(filter_) == 3:
+                    filter_dict[&#39;criteria&#39;][&#39;dataOperator&#39;] = int(filter_[2])
+                if filter_[0] == &#34;125&#34;:
+                    del (filter_dict[&#39;connector&#39;])
+                request_json[&#39;queries&#39;][0][&#39;whereClause&#39;].append(filter_dict)
+                request_json[&#39;queries&#39;][1][&#39;whereClause&#39;].append(filter_dict)
 
-                if len(filter_) == 2:
-                    for _ in filter_:
-                        if _[2] is not None:
-                            filter_dict = {
-                                &#39;connector&#39;: 0,
-                                &#39;criteria&#39;: {
-                                    &#39;field&#39;: _[0],
-                                    &#39;values&#39;: [_[1]],
-                                    &#34;dataOperator&#34; : int(_[2])}}
-                        else:
-                            filter_dict = {
-                                &#39;criteria&#39;: {
-                                    &#39;field&#39;: _[0],
-                                    &#39;values&#39;: [_[1]]}}
-                        request_json[&#39;queries&#39;][ind_][&#39;whereClause&#39;].append(filter_dict)
-        request_json[&#39;options&#39;][&#39;fetchFileProperties&#39;] = True
+        del(request_json[&#39;paths&#39;])
         return request_json
 
     def azuread_browse_options_builder(self, options):
@@ -881,7 +977,250 @@ default: None</p>
             options[&#39;operation&#39;] = &#34;browse&#34;
             options[&#39;page_size&#39;] = 20
             options[&#39;skip_node&#39;] = 0
-        return options</code></pre>
+        return options
+
+    def __prepare_search_json(self, options):
+        &#34;&#34;&#34;
+        performs view_properties (Cvpysdk Api call)
+        Args:
+            options     (dict)      example {&#34;to_time&#34;:(epoch) ,
+                                            &#34;subclient_id&#34;:(string/optional),
+                                            &#34;attribute&#34;: &#34;attribute to perform search &#34;}
+            Return:     (dict)      view properties
+        &#34;&#34;&#34;
+        options[&#34;subclient_id&#34;] = self.subclients.all_subclients[&#39;default&#39;][&#39;id&#39;]
+
+        request_json = {
+            &#34;mode&#34;: 4,
+            &#34;advSearchGrp&#34;: {
+                &#34;commonFilter&#34;: [
+                    {
+                        &#34;filter&#34;: {
+                            &#34;interFilterOP&#34;: 2,
+                            &#34;filters&#34;: [
+                                {
+                                    &#34;field&#34;: &#34;CISTATE&#34;,
+                                    &#34;intraFieldOp&#34;: 0,
+                                    &#34;fieldValues&#34;: {
+                                        &#34;values&#34;: [
+                                            &#34;1&#34;
+                                        ]
+                                    }
+                                },
+                                {
+                                    &#34;field&#34;: &#34;IS_VISIBLE&#34;,
+                                    &#34;intraFieldOp&#34;: 0,
+                                    &#34;fieldValues&#34;: {
+                                        &#34;values&#34;: [
+                                            &#34;true&#34;
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ],
+                &#34;fileFilter&#34;: [
+                    {
+                        &#34;interGroupOP&#34;: 2,
+                        &#34;filter&#34;: {
+                            &#34;interFilterOP&#34;: 2,
+                            &#34;filters&#34;: [
+                                {
+                                    &#34;field&#34;: &#34;BACKUPTIME&#34;,
+                                    &#34;intraFieldOp&#34;: 0,
+                                    &#34;fieldValues&#34;: {
+                                        &#34;values&#34;: [
+                                            &#34;0&#34;,
+                                            str(options[&#34;to_time&#34;])
+                                        ]
+                                    }
+                                },
+                                {
+                                    &#34;field&#34;: &#34;DATA_TYPE&#34;,
+                                    &#34;intraFieldOp&#34;: 0,
+                                    &#34;fieldValues&#34;: {
+                                        &#34;values&#34;: [
+                                            &#34;1&#34;
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ],
+                &#34;emailFilter&#34;: [],
+                &#34;galaxyFilter&#34;: [
+                    {
+                        &#34;appIdList&#34;: [
+                            int(options[&#34;subclient_id&#34;])
+                        ]
+                    }
+                ],
+                &#34;cvSearchKeyword&#34;: {
+                    &#34;isExactWordsOptionSelected&#34;: False,
+                    &#34;keyword&#34;: str(options[&#34;attribute&#34;]) + &#34;*&#34;
+                }
+            },
+            &#34;searchProcessingInfo&#34;: {
+                &#34;resultOffset&#34;: 0,
+                &#34;pageSize&#34;: 15,
+                &#34;queryParams&#34;: [
+                    {
+                        &#34;param&#34;: &#34;ENABLE_MIXEDVIEW&#34;,
+                        &#34;value&#34;: &#34;true&#34;
+                    },
+                    {
+                        &#34;param&#34;: &#34;ENABLE_NAVIGATION&#34;,
+                        &#34;value&#34;: &#34;on&#34;
+                    },
+                    {
+                        &#34;param&#34;: &#34;ENABLE_DEFAULTFACETS&#34;,
+                        &#34;value&#34;: &#34;false&#34;
+                    },
+                    {
+                        &#34;param&#34;: &#34;RESPONSE_FIELD_LIST&#34;,
+                        &#34;value&#34;: &#34;CONTENTID,CV_TURBO_GUID,PARENT_GUID,AFILEID,AFILEOFFSET,&#34;
+                                 &#34;COMMCELLNO,MODIFIEDTIME,SIZEINKB,DATA_TYPE,AD_DISPLAYNAME,&#34;
+                                 &#34;AD_ID,AD_OBJECT_TYPE,BACKUPTIME,AD_FLAGS,CISTATE,DATE_DELETED,&#34;
+                                 &#34;AD_MAIL,AD_MAILNICKNAME,AD_PROXY_ADDRESSES,AD_BUSINESS_PHONES,&#34;
+                                 &#34;AD_CITY,AD_COUNTRY,AD_DELETED_TIME,AD_POSTALCODE,AD_STATE,&#34;
+                                 &#34;AD_STREET_ADDRESS,AD_LAST_DIR_SYNC_TIME,&#34;
+                                 &#34;AD_COUNTRY_LETTER_CODE,AD_DIR_SYNC_ENABLED,AD_MKT_NOTIFY_MAILS,&#34;
+                                 &#34;AD_TENANT_OBJECT_TYPE,AD_PREFER_LANG,AD_SEC_NOTIFY_MAILS,&#34;
+                                 &#34;AD_SEC_NOTIFY_PHONES,AD_TECH_NOTIFY_MAILS,AD_TELEPHONE_NR,&#34;
+                                 &#34;AD_CREATED_TIME,AD_DESCRIPTION,AD_GROUP_TYPES,AD_MAIL_ENABLED,&#34;
+                                 &#34;AD_VISIBILITY,AD_SOURCE_TYPE,AD_AZURE_APP_ID,AD_HOME_PAGE_URL,&#34;
+                                 &#34;AD_TAGS,AD_AZURE_APP_DISPLAY_NAME,AD_APP_OWNER_ORGID,&#34;
+                                 &#34;AD_REPLY_URLS,AD_PUBLISHER_NAME,AD_SERVICE_PRINCIPAL_NAMES&#34;
+                    },
+                    {
+                        &#34;param&#34;: &#34;DO_NOT_AUDIT&#34;,
+                        &#34;value&#34;: &#34;true&#34;
+                    },
+                    {
+                        &#34;param&#34;: &#34;COLLAPSE_FIELD&#34;,
+                        &#34;value&#34;: &#34;AD_ID&#34;
+                    },
+                    {
+                        &#34;param&#34;: &#34;COLLAPSE_SORT&#34;,
+                        &#34;value&#34;: &#34;BACKUPTIME DESC&#34;
+                    }
+                ],
+                &#34;sortParams&#34;: [
+                    {
+                        &#34;sortDirection&#34;: 0,
+                        &#34;sortField&#34;: &#34;AD_DISPLAYNAME&#34;
+                    }
+                ]
+            },
+            &#34;facetRequests&#34;: {
+                &#34;facetRequest&#34;: [
+                    {
+                        &#34;name&#34;: &#34;AD_OBJECT_TYPE&#34;
+                    }
+                ]
+            }
+        }
+
+        return request_json
+
+    def get_search_response(self, job_time, attribute):
+        &#34;&#34;&#34;
+            Searches for jobs based on the specified parameters.
+
+            This method performs a search operation for jobs using the
+            given job time, display name and application ID.
+            Args:
+                job_time    (str)   The job ends time.
+                attribute   (str)  Attribute to search for.
+            Return:
+                The response contains the search results.
+            Raises:
+                SDKException: If there is a bad request
+                or no object found with the specified display name.
+        &#34;&#34;&#34;
+
+        uri = self._services[&#34;DO_WEB_SEARCH&#34;]
+        options = {&#34;to_time&#34;: job_time, &#34;attribute&#34;: attribute}
+        request_json = self.__prepare_search_json(options)
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, uri, request_json)
+        if not flag:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+        response = response.json()
+        if response[&#34;proccessingInfo&#34;][&#34;totalHits&#34;] == 0:
+            raise SDKException(&#39;Backupset&#39;, &#39;107&#39;, &#34;no result found with specified attribute&#34;)
+        return response
+
+    def view_attributes_url_builder(self,
+                                    job_time,
+                                    display_name):
+        &#34;&#34;&#34;
+        Builds a URL for viewing attributes based on the specified parameters.
+
+        This method constructs a URL for viewing attributes of an
+        object identified by the given job time and display name.
+        Args:
+            job_time    (str)   The job time.
+            display_name    (str)   The display name of the object.
+        Return:
+            The URL for viewing attributes.
+        &#34;&#34;&#34;
+
+        subclient_id = self.subclients.all_subclients[&#39;default&#39;][&#39;id&#39;]
+
+        try:
+            search_response = self.get_search_response(job_time=job_time, attribute=display_name)
+            afile_id = search_response[&#34;searchResult&#34;][&#34;resultItem&#34;][0][&#34;aFileId&#34;]
+            afile_offset = search_response[&#34;searchResult&#34;][&#34;resultItem&#34;][0][&#34;aFileOffset&#34;]
+            commcell_no = search_response[&#34;searchResult&#34;][&#34;resultItem&#34;][0][&#34;commcellNo&#34;]
+
+            op = &#34;dGVtcC5qc29u&#34;  # any filename.json for view properties call
+            # encoding string to base64
+            stub_info = str(&#39;2:&#39; + str(commcell_no) + &#39;:0:&#39; +
+                            str(afile_id) + &#39;:&#39; + str(afile_offset))
+            stub_info = stub_info.encode(&#34;ascii&#34;)
+            stub_info = base64.b64encode(stub_info)
+            stub_info = stub_info.decode(&#34;ascii&#34;)
+
+            url = self._services[&#39;VIEW_PROPERTIES&#39;] % (str(self._agent_object.agent_id),
+                                                       stub_info,
+                                                       op,
+                                                       str(subclient_id),
+                                                       &#39;1&#39;)
+            return url
+        except SDKException as e:
+            raise SDKException(&#39;Backupset&#39;, &#39;107&#39;,
+                               f&#34;No result found with specified attribute {e.exception_message}&#34;)
+
+    def get_view_attribute_response(self,
+                                    job_time,
+                                    display_name):
+        &#34;&#34;&#34;
+        Retrieves view attributes based on the specified parameters.
+
+        This method retrieves the view attributes of an
+        object identified by the given job time and display name.
+        Args:
+            job_time    (int)   The job time.
+            display_name    (string)    The display name of the object.
+        Return:
+            (dict)  The JSON response contains the view attributes.
+        Raises:
+            SDKException: If there is an error while retrieving the view attributes.
+        &#34;&#34;&#34;
+        try:
+            url = self.view_attributes_url_builder(display_name=display_name,
+                                                   job_time=job_time)
+
+            flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, url)
+            if not flag:
+                raise SDKException(&#39;Response&#39;, &#39;101&#39;, &#34;Response was not success&#34;)
+            if not response:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, &#34;Response received is empty&#34;)
+            return response.json()
+        except Exception as e:
+            raise SDKException(&#39;Backupset&#39;, &#39;107&#39;, f&#34;No result found {e.exception_message}&#34;)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -910,7 +1249,7 @@ request json with addittional options</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/aadbackupset.py#L289-L344" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/aadbackupset.py#L283-L330" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def azuread_browse_double_query(self, options, request_json):
     &#34;&#34;&#34; create request json for azure ad based on double query
@@ -922,133 +1261,43 @@ request json with addittional options</p>
         Raise:
             None
     &#34;&#34;&#34;
-    if options[&#39;filters&#39;]:
-        request_json[&#39;queries&#39;] = []
-        for ind_, filter_ in enumerate(options[&#39;filters&#39;]):
-            if ind_ &gt; 0:
-                queries = {
-                    &#34;type&#34;: ind_,
-                    &#34;queryId&#34;: str(ind_),
-                    }
-                request_json[&#39;queries&#39;].append(queries)
-                request_json[&#39;queries&#39;][ind_][&#39;agprParam&#39;] = {&#39;aggrType&#39;: 4,
-                                                              &#39;field&#39; : 0}
-            else:
-                queries = {
-                    &#34;type&#34;: ind_,
-                    &#34;queryId&#34;: str(ind_),
+    request_json[&#39;queries&#39;] = [{
+                    &#34;type&#34;: &#34;0&#34;,
+                    &#34;queryId&#34;: &#34;0&#34;,
+                    &#34;whereClause&#34; :[],
                     &#34;dataParam&#34;: {
                         &#34;sortParam&#34;: {
                             &#34;ascending&#34;: True,
                             &#34;sortBy&#34;: [126]
-                            },
+                        },
                         &#34;paging&#34;: {
                             &#34;pageSize&#34;: int(options[&#39;page_size&#39;]),
                             &#34;skipNode&#34;: int(options[&#39;skip_node&#39;]),
                             &#34;firstNode&#34;: 0
-                            }
                         }
                     }
-                request_json[&#39;queries&#39;].append(queries)
-            request_json[&#39;queries&#39;][ind_][&#39;whereClause&#39;] = []
-            if len(filter_) == 2:
-                for _ in filter_:
-                    filter_dict = {
-                        &#39;connector&#39;: 0,
-                        &#39;criteria&#39;: {
-                            &#39;field&#39;: _[0],
-                            &#39;values&#39;: [_[1]]}}
-                    request_json[&#39;queries&#39;][ind_][&#39;whereClause&#39;].append(filter_dict)
-            else:
-                filter_dict = {
-                    &#39;connector&#39;: 0,
-                    &#39;criteria&#39;: {
-                        &#39;field&#39;: filter_[0],
-                        &#39;values&#39;: [filter_[1]],
-                        &#34;dataOperator&#34; : int(filter_[2])}}
-                request_json[&#39;queries&#39;][ind_][&#39;whereClause&#39;].append(filter_dict)
-    return request_json</code></pre>
-</details>
-</dd>
-<dt id="cvpysdk.backupsets.aadbackupset.AzureAdBackupset.azuread_browse_double_query_adv"><code class="name flex">
-<span>def <span class="ident">azuread_browse_double_query_adv</span></span>(<span>self, options, request_json)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>get advanced attribute for obeject</p>
-<h2 id="args">Args</h2>
-<p>options
-(dict)
-browse option from impoort
-request_json
-(json)
-request json file from basic request class</p>
-<h2 id="return">Return</h2>
-<p>request_json
-(json)
-request json with addittional options</p>
-<h2 id="raise">Raise</h2>
-<p>None</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/aadbackupset.py#L347-L403" class="git-link">Browse git</a>
-</summary>
-<pre><code class="python">def azuread_browse_double_query_adv(self, options, request_json):
-    &#34;&#34;&#34; get advanced attribute for obeject
-        Args:
-            options    (dict)    browse option from impoort
-            request_json    (json)    request json file from basic request class
-        Return:
-            request_json    (json)    request json with addittional options
-        Raise:
-            None
-    &#34;&#34;&#34;
-    if options[&#39;filters&#39;]:
-        request_json[&#39;queries&#39;] = []
-        for ind_, filter_ in enumerate(options[&#39;filters&#39;]):
-            if ind_ &gt; 0:
-                queries = {
-                    &#34;type&#34;: ind_,
-                    &#34;queryId&#34;: str(ind_),
-                    }
-                request_json[&#39;queries&#39;].append(queries)
-                request_json[&#39;queries&#39;][ind_][&#39;agprParam&#39;] = {&#39;aggrType&#39;: 4,
-                                                              &#39;field&#39; : 0}
-            else:
-                queries = {
-                    &#34;type&#34;: ind_,
-                    &#34;queryId&#34;: str(ind_),
-                    &#34;dataParam&#34;: {
-                        &#34;sortParam&#34;: {
-                            &#34;ascending&#34;: True,
-                            &#34;sortBy&#34;: [126]
-                            },
-                        &#34;paging&#34;: {
-                            &#34;pageSize&#34;: int(options[&#39;page_size&#39;]),
-                            &#34;skipNode&#34;: int(options[&#39;skip_node&#39;]),
-                            &#34;firstNode&#34;: 0
-                            }
-                        }
-                    }
-                request_json[&#39;queries&#39;].append(queries)
-            request_json[&#39;queries&#39;][ind_][&#39;whereClause&#39;] = []
+                },
+                {   &#34;type&#34;: &#34;1&#34;,
+                    &#34;queryId&#34;: &#34;1&#34;,
+                    &#34;whereClause&#34;: [],
+                    &#34;aggrParam&#34;  : {&#39;aggrType&#39;: 4,
+                                    &#39;field&#39;: 0}}]
 
-            if len(filter_) == 2:
-                for _ in filter_:
-                    if _[2] is not None:
-                        filter_dict = {
-                            &#39;connector&#39;: 0,
-                            &#39;criteria&#39;: {
-                                &#39;field&#39;: _[0],
-                                &#39;values&#39;: [_[1]],
-                                &#34;dataOperator&#34; : int(_[2])}}
-                    else:
-                        filter_dict = {
-                            &#39;criteria&#39;: {
-                                &#39;field&#39;: _[0],
-                                &#39;values&#39;: [_[1]]}}
-                    request_json[&#39;queries&#39;][ind_][&#39;whereClause&#39;].append(filter_dict)
-    request_json[&#39;options&#39;][&#39;fetchFileProperties&#39;] = True
+    if options[&#39;filters&#39;]:
+        for filter_ in options[&#39;filters&#39;]:
+            filter_dict = {
+                &#39;connector&#39;: 0,
+                &#39;criteria&#39;: {
+                    &#39;field&#39;: filter_[0],
+                    &#39;values&#39;: [filter_[1]]}}
+            if len(filter_) == 3:
+                filter_dict[&#39;criteria&#39;][&#39;dataOperator&#39;] = int(filter_[2])
+            if filter_[0] == &#34;125&#34;:
+                del (filter_dict[&#39;connector&#39;])
+            request_json[&#39;queries&#39;][0][&#39;whereClause&#39;].append(filter_dict)
+            request_json[&#39;queries&#39;][1][&#39;whereClause&#39;].append(filter_dict)
+
+    del(request_json[&#39;paths&#39;])
     return request_json</code></pre>
 </details>
 </dd>
@@ -1073,34 +1322,26 @@ azure ad browse meta data</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/aadbackupset.py#L262-L287" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/aadbackupset.py#L264-L281" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">    def azuread_browse_obj_meta(self, obj_):
-        &#34;&#34;&#34; get azure ad obj meta info
-            Args:
-                obj_    (obj)    azuare ad object
-            Return:
-                name    (str)    azure ad display name
-                metainfo     (dict)    azure ad browse meta data
-            Raise:
-                None
-        &#34;&#34;&#34;
-        name = obj_[&#39;commonData&#39;][&#39;displayName&#39;]
-        metainfo = {}
-        metainfo[&#39;id&#39;] = obj_[&#39;commonData&#39;][&#39;id&#39;]
-        metainfo[&#39;azureid&#39;] = metainfo[&#39;id&#39;].replace(&#34;x&#34;, &#34;-&#34;)
-        metainfo[&#39;name&#39;] = name
-        metainfo[&#39;guid&#39;] = obj_[&#39;guid&#39;]
-        metainfo[&#39;type&#39;] = obj_[&#39;objType&#39;]
-#        rev_azuread_index_meta_mapper = dict((v,k) for k,v in AZUREAD_INDEX_META_MAPPER.items())
-        azuread_index_meta_mapper = {5 : &#34;application&#34;,
-                                     3 : &#34;group&#34;,
-                                     6 : &#34;servicePrincipal&#34;,
-                                     2 : &#34;user&#34;}
-        if metainfo[&#39;type&#39;] in azuread_index_meta_mapper:
-            metainfo[&#34;adv_attribute&#34;] = obj_[&#34;{}Data&#34;.\
-                                             format(azuread_index_meta_mapper[metainfo[&#39;type&#39;]])]
-        return name, metainfo</code></pre>
+<pre><code class="python">def azuread_browse_obj_meta(self, obj_):
+    &#34;&#34;&#34; get azure ad obj meta info
+        Args:
+            obj_    (obj)    azuare ad object
+        Return:
+            name    (str)    azure ad display name
+            metainfo     (dict)    azure ad browse meta data
+        Raise:
+            None
+    &#34;&#34;&#34;
+    name = obj_[&#39;commonData&#39;][&#39;displayName&#39;]
+    metainfo = {}
+    metainfo[&#39;id&#39;] = obj_[&#39;commonData&#39;][&#39;id&#39;]
+    metainfo[&#39;azureid&#39;] = metainfo[&#39;id&#39;].replace(&#34;x&#34;, &#34;-&#34;)
+    metainfo[&#39;name&#39;] = name
+    metainfo[&#39;guid&#39;] = obj_[&#39;guid&#39;]
+    metainfo[&#39;type&#39;] = obj_[&#39;objType&#39;]
+    return name, metainfo</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.backupsets.aadbackupset.AzureAdBackupset.azuread_browse_options_builder"><code class="name flex">
@@ -1121,7 +1362,7 @@ create formated options based on import</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/aadbackupset.py#L405-L421" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/aadbackupset.py#L332-L348" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def azuread_browse_options_builder(self, options):
     &#34;&#34;&#34; build browse options
@@ -1161,7 +1402,7 @@ can't find meta data</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/aadbackupset.py#L242-L260" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/aadbackupset.py#L244-L262" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def azuread_get_metadata(self, result):
     &#34;&#34;&#34; Get azure ad meta data for browse result
@@ -1208,7 +1449,7 @@ objects list from browse</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/backupsets/aadbackupset.py#L175-L200" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/aadbackupset.py#L171-L191" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, *args, **kwargs):
     &#34;&#34;&#34;Browses the content of the Backupset.
@@ -1225,17 +1466,187 @@ objects list from browse</p>
         options = args[0]
     else:
         options = kwargs
-
     options = self.azuread_browse_options_builder(options)
     azure_meta = self._azuread_browse_meta(options)
     options[&#39;meta&#39;] = azure_meta
+    count, browse_result = self._azuread_browse_folder(options)
 
-    if &#34;folder&#34; in options:
-        count, browse_result = self._azuread_browse_folder(options)
-    else:
-        browse_result = azure_meta
-        count = 0
     return count, browse_result</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.backupsets.aadbackupset.AzureAdBackupset.get_search_response"><code class="name flex">
+<span>def <span class="ident">get_search_response</span></span>(<span>self, job_time, attribute)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Searches for jobs based on the specified parameters.</p>
+<p>This method performs a search operation for jobs using the
+given job time, display name and application ID.</p>
+<h2 id="args">Args</h2>
+<p>job_time
+(str)
+The job ends time.
+attribute
+(str)
+Attribute to search for.</p>
+<h2 id="return">Return</h2>
+<p>The response contains the search results.</p>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>SDKException</code></dt>
+<dd>If there is a bad request</dd>
+</dl>
+<p>or no object found with the specified display name.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/aadbackupset.py#L496-L521" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_search_response(self, job_time, attribute):
+    &#34;&#34;&#34;
+        Searches for jobs based on the specified parameters.
+
+        This method performs a search operation for jobs using the
+        given job time, display name and application ID.
+        Args:
+            job_time    (str)   The job ends time.
+            attribute   (str)  Attribute to search for.
+        Return:
+            The response contains the search results.
+        Raises:
+            SDKException: If there is a bad request
+            or no object found with the specified display name.
+    &#34;&#34;&#34;
+
+    uri = self._services[&#34;DO_WEB_SEARCH&#34;]
+    options = {&#34;to_time&#34;: job_time, &#34;attribute&#34;: attribute}
+    request_json = self.__prepare_search_json(options)
+    flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, uri, request_json)
+    if not flag:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+    response = response.json()
+    if response[&#34;proccessingInfo&#34;][&#34;totalHits&#34;] == 0:
+        raise SDKException(&#39;Backupset&#39;, &#39;107&#39;, &#34;no result found with specified attribute&#34;)
+    return response</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.backupsets.aadbackupset.AzureAdBackupset.get_view_attribute_response"><code class="name flex">
+<span>def <span class="ident">get_view_attribute_response</span></span>(<span>self, job_time, display_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Retrieves view attributes based on the specified parameters.</p>
+<p>This method retrieves the view attributes of an
+object identified by the given job time and display name.</p>
+<h2 id="args">Args</h2>
+<p>job_time
+(int)
+The job time.
+display_name
+(string)
+The display name of the object.</p>
+<h2 id="return">Return</h2>
+<p>(dict)
+The JSON response contains the view attributes.</p>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>SDKException</code></dt>
+<dd>If there is an error while retrieving the view attributes.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/aadbackupset.py#L564-L591" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_view_attribute_response(self,
+                                job_time,
+                                display_name):
+    &#34;&#34;&#34;
+    Retrieves view attributes based on the specified parameters.
+
+    This method retrieves the view attributes of an
+    object identified by the given job time and display name.
+    Args:
+        job_time    (int)   The job time.
+        display_name    (string)    The display name of the object.
+    Return:
+        (dict)  The JSON response contains the view attributes.
+    Raises:
+        SDKException: If there is an error while retrieving the view attributes.
+    &#34;&#34;&#34;
+    try:
+        url = self.view_attributes_url_builder(display_name=display_name,
+                                               job_time=job_time)
+
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, url)
+        if not flag:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, &#34;Response was not success&#34;)
+        if not response:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;, &#34;Response received is empty&#34;)
+        return response.json()
+    except Exception as e:
+        raise SDKException(&#39;Backupset&#39;, &#39;107&#39;, f&#34;No result found {e.exception_message}&#34;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.backupsets.aadbackupset.AzureAdBackupset.view_attributes_url_builder"><code class="name flex">
+<span>def <span class="ident">view_attributes_url_builder</span></span>(<span>self, job_time, display_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Builds a URL for viewing attributes based on the specified parameters.</p>
+<p>This method constructs a URL for viewing attributes of an
+object identified by the given job time and display name.</p>
+<h2 id="args">Args</h2>
+<p>job_time
+(str)
+The job time.
+display_name
+(str)
+The display name of the object.</p>
+<h2 id="return">Return</h2>
+<p>The URL for viewing attributes.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/aadbackupset.py#L523-L562" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def view_attributes_url_builder(self,
+                                job_time,
+                                display_name):
+    &#34;&#34;&#34;
+    Builds a URL for viewing attributes based on the specified parameters.
+
+    This method constructs a URL for viewing attributes of an
+    object identified by the given job time and display name.
+    Args:
+        job_time    (str)   The job time.
+        display_name    (str)   The display name of the object.
+    Return:
+        The URL for viewing attributes.
+    &#34;&#34;&#34;
+
+    subclient_id = self.subclients.all_subclients[&#39;default&#39;][&#39;id&#39;]
+
+    try:
+        search_response = self.get_search_response(job_time=job_time, attribute=display_name)
+        afile_id = search_response[&#34;searchResult&#34;][&#34;resultItem&#34;][0][&#34;aFileId&#34;]
+        afile_offset = search_response[&#34;searchResult&#34;][&#34;resultItem&#34;][0][&#34;aFileOffset&#34;]
+        commcell_no = search_response[&#34;searchResult&#34;][&#34;resultItem&#34;][0][&#34;commcellNo&#34;]
+
+        op = &#34;dGVtcC5qc29u&#34;  # any filename.json for view properties call
+        # encoding string to base64
+        stub_info = str(&#39;2:&#39; + str(commcell_no) + &#39;:0:&#39; +
+                        str(afile_id) + &#39;:&#39; + str(afile_offset))
+        stub_info = stub_info.encode(&#34;ascii&#34;)
+        stub_info = base64.b64encode(stub_info)
+        stub_info = stub_info.decode(&#34;ascii&#34;)
+
+        url = self._services[&#39;VIEW_PROPERTIES&#39;] % (str(self._agent_object.agent_id),
+                                                   stub_info,
+                                                   op,
+                                                   str(subclient_id),
+                                                   &#39;1&#39;)
+        return url
+    except SDKException as e:
+        raise SDKException(&#39;Backupset&#39;, &#39;107&#39;,
+                           f&#34;No result found with specified attribute {e.exception_message}&#34;)</code></pre>
 </details>
 </dd>
 </dl>
@@ -1336,11 +1747,13 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="cvpysdk.backupsets.aadbackupset.AzureAdBackupset" href="#cvpysdk.backupsets.aadbackupset.AzureAdBackupset">AzureAdBackupset</a></code></h4>
 <ul class="">
 <li><code><a title="cvpysdk.backupsets.aadbackupset.AzureAdBackupset.azuread_browse_double_query" href="#cvpysdk.backupsets.aadbackupset.AzureAdBackupset.azuread_browse_double_query">azuread_browse_double_query</a></code></li>
-<li><code><a title="cvpysdk.backupsets.aadbackupset.AzureAdBackupset.azuread_browse_double_query_adv" href="#cvpysdk.backupsets.aadbackupset.AzureAdBackupset.azuread_browse_double_query_adv">azuread_browse_double_query_adv</a></code></li>
 <li><code><a title="cvpysdk.backupsets.aadbackupset.AzureAdBackupset.azuread_browse_obj_meta" href="#cvpysdk.backupsets.aadbackupset.AzureAdBackupset.azuread_browse_obj_meta">azuread_browse_obj_meta</a></code></li>
 <li><code><a title="cvpysdk.backupsets.aadbackupset.AzureAdBackupset.azuread_browse_options_builder" href="#cvpysdk.backupsets.aadbackupset.AzureAdBackupset.azuread_browse_options_builder">azuread_browse_options_builder</a></code></li>
 <li><code><a title="cvpysdk.backupsets.aadbackupset.AzureAdBackupset.azuread_get_metadata" href="#cvpysdk.backupsets.aadbackupset.AzureAdBackupset.azuread_get_metadata">azuread_get_metadata</a></code></li>
 <li><code><a title="cvpysdk.backupsets.aadbackupset.AzureAdBackupset.browse" href="#cvpysdk.backupsets.aadbackupset.AzureAdBackupset.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.backupsets.aadbackupset.AzureAdBackupset.get_search_response" href="#cvpysdk.backupsets.aadbackupset.AzureAdBackupset.get_search_response">get_search_response</a></code></li>
+<li><code><a title="cvpysdk.backupsets.aadbackupset.AzureAdBackupset.get_view_attribute_response" href="#cvpysdk.backupsets.aadbackupset.AzureAdBackupset.get_view_attribute_response">get_view_attribute_response</a></code></li>
+<li><code><a title="cvpysdk.backupsets.aadbackupset.AzureAdBackupset.view_attributes_url_builder" href="#cvpysdk.backupsets.aadbackupset.AzureAdBackupset.view_attributes_url_builder">view_attributes_url_builder</a></code></li>
 </ul>
 </li>
 </ul>

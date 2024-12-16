@@ -57,7 +57,7 @@ Maintains constants for Compliance Search in Activate</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/constants.py#L1-L984" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/constants.py#L1-L1235" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -756,6 +756,74 @@ class PlanConstants:
                     &#34;planId&#34;: 0
                 }
             }
+        },
+        6: {
+            &#34;ciPolicyInfo&#34;: {
+                &#34;ciPolicy&#34;: {
+                    &#34;policyType&#34;: 5,
+                    &#34;detail&#34;: {
+                        &#34;ciPolicy&#34;: {
+                            &#34;opType&#34;: 2,
+                            &#34;enableExactSearch&#34;: False,
+                            &#34;ciPolicyType&#34;: 5,
+                            &#34;filters&#34;: {
+                                &#34;fileFilters&#34;: {
+                                    &#34;includeDocTypes&#34;: &#34;&#34;,
+                                    &#34;minDocSize&#34;: 0,
+                                    &#34;maxDocSize&#34;: 50
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            &#34;eePolicyInfo&#34;: {},
+            &#34;exchange&#34;: {},
+            &#34;office365Info&#34;: {
+                &#34;o365Exchange&#34;: {
+                    &#34;mbArchiving&#34;: {
+                        &#34;policyType&#34;: 1,
+                        &#34;agentType&#34;: {
+                            &#34;appTypeId&#34;: 137
+                        },
+                        &#34;detail&#34;: {
+                            &#34;emailPolicy&#34;: {
+                                &#34;emailPolicyType&#34;: 1,
+                                &#34;archivePolicy&#34;: {
+                                    &#34;primaryMailbox&#34;: True,
+                                    &#34;contentIndexProps&#34;: {}
+                                }
+                            }
+                        }
+                    }
+                },
+                &#34;o365CloudOffice&#34;: {
+                    &#34;caBackup&#34;: {
+                        &#34;policyType&#34;: 6,
+                        &#34;detail&#34;: {
+                            &#34;cloudAppPolicy&#34;: {
+                                &#34;cloudAppPolicyType&#34;: 1,
+                                &#34;backupPolicy&#34;: {
+                                    &#34;onedrivebackupPolicy&#34;: {},
+                                    &#34;spbackupPolicy&#34;: {},
+                                    &#34;teamsbackupPolicy&#34;: {}
+                                }
+                            }
+                        }
+
+                    }
+
+                }
+
+            },
+
+            &#34;summary&#34;: {
+                &#34;plan&#34;: {
+                    &#34;planName&#34;: &#34;&#34;,
+                    &#34;planId&#34;: 0
+                }
+            }
+
         }
     }
 
@@ -988,6 +1056,9 @@ class TagConstants:
 class ComplianceConstants:
     &#34;&#34;&#34;Class to maintain all the Compliance search related constants&#34;&#34;&#34;
 
+    SOLR_FIELD_FILE_NAME = &#34;fileName&#34;
+    SOLR_FIELD_SIZE = &#34;sizeKB&#34;
+
     VIEW_PERMISSION = {
         &#34;permissionId&#34;: 31,
         &#34;_type_&#34;: 122,
@@ -1012,11 +1083,16 @@ class ComplianceConstants:
         &#34;_type_&#34;: 122
     }
 
+    PERMISSION_ADD_NAME = &#34;Add&#34;
+    PERMISSION_DELETE_NAME = &#34;Delete&#34;
+    PERMISSION_DOWNLOAD_NAME = &#34;Download&#34;
+    PERMISSION_VIEW_NAME = &#34;View&#34;
+
     PERMISSIONS = {
-        &#34;Add&#34;: ADD_PERMISSION,
-        &#34;Delete&#34;: DELETE_PERMISSION,
-        &#34;Download&#34;: DOWNLOAD_PERMISSION,
-        &#34;View&#34;: VIEW_PERMISSION
+        PERMISSION_ADD_NAME: ADD_PERMISSION,
+        PERMISSION_DELETE_NAME: DELETE_PERMISSION,
+        PERMISSION_DOWNLOAD_NAME: DOWNLOAD_PERMISSION,
+        PERMISSION_VIEW_NAME: VIEW_PERMISSION
     }
 
     EXPORT_SET_SHARE_REQUEST_JSON = {
@@ -1042,6 +1118,181 @@ class ComplianceConstants:
                 }
             ]
         }
+    }
+
+    class AppTypes(Enum):
+        EXCHANGE = &#34;EXCHANGE&#34;
+        EXCHANGE_JOURNAL = &#34;EXCHANGE_JOURNAL&#34;
+        SHAREPOINT = &#34;SHAREPOINT&#34;
+        ONEDRIVE = &#34;ONEDRIVE&#34;
+        TEAMS = &#34;TEAMS&#34;
+        FILE_SYSTEM = &#34;FILE_SYSTEM&#34;
+
+    class ExportTypes(Enum):
+        CAB = &#34;CAB&#34;
+        PST = &#34;PST&#34;
+
+    RESTORE_TYPE = {
+        ExportTypes.PST: 1,
+        ExportTypes.CAB: 2
+    }
+
+    FILE_TYPE = &#34;File&#34;
+    EMAIL_TYPE = &#34;Email&#34;
+    FILE_TYPES = [AppTypes.FILE_SYSTEM, AppTypes.SHAREPOINT, AppTypes.ONEDRIVE, AppTypes.TEAMS]
+    EMAIL_TYPES = [AppTypes.EXCHANGE, AppTypes.EXCHANGE_JOURNAL]
+
+    FILE_FILTERS_KEY = &#34;fileFilter&#34;
+    FILE_FILTERS = [
+        {
+            &#34;filter&#34;: {
+                &#34;interFilterOP&#34;: &#34;FTAnd&#34;,
+                &#34;filters&#34;: [
+                    {
+                        &#34;field&#34;: &#34;CISTATE&#34;,
+                        &#34;intraFieldOp&#34;: &#34;FTOr&#34;,
+                        &#34;fieldValues&#34;: {
+                            &#34;values&#34;: [
+                                &#34;0&#34;,
+                                &#34;1&#34;,
+                                &#34;12&#34;,
+                                &#34;13&#34;,
+                                &#34;14&#34;,
+                                &#34;15&#34;,
+                                &#34;1014&#34;,
+                                &#34;3333&#34;,
+                                &#34;3334&#34;,
+                                &#34;3335&#34;
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+
+    EMAIL_FILTERS_KEY = &#34;emailView&#34;
+
+    ONEDRIVE_FACET = &#34;200118&#34;
+    TEAMS_FACET = &#34;200128&#34;
+    SHAREPOINT_FACET = &#34;78&#34;
+    CUSTOM_FACETS = {
+        AppTypes.ONEDRIVE: ONEDRIVE_FACET,
+        AppTypes.TEAMS: TEAMS_FACET,
+        AppTypes.SHAREPOINT: SHAREPOINT_FACET
+    }
+
+    CUSTOM_FACETS_NAME = {
+        AppTypes.TEAMS: &#34;TEAMS_NAME&#34;,
+        AppTypes.SHAREPOINT: &#34;CUSTODIAN&#34;,
+        AppTypes.ONEDRIVE: &#34;CUSTODIAN&#34;
+    }
+
+    FACET_KEY = &#34;facetRequest&#34;
+    FILE_FACET = [
+        {
+            &#34;count&#34;: 4,
+            &#34;name&#34;: &#34;CUSTODIAN&#34;
+        },
+        {
+            &#34;count&#34;: 4,
+            &#34;name&#34;: &#34;APPTYPE&#34;,
+            &#34;searchFieldName&#34;: &#34;APPTYPE&#34;,
+            &#34;stringParameter&#34;: [
+                {
+                    &#34;name&#34;: &#34;33&#34;,
+                    &#34;custom&#34;: True
+                },
+                {
+                    &#34;name&#34;: &#34;29&#34;,
+                    &#34;custom&#34;: True
+                },
+                {
+                    &#34;name&#34;: &#34;63&#34;,
+                    &#34;custom&#34;: True
+                },
+                {
+                    &#34;name&#34;: &#34;21&#34;,
+                    &#34;custom&#34;: True
+                }
+            ]
+        }
+    ]
+    CUSTOM_FACET = [
+        {
+            &#34;count&#34;: 4,
+            &#34;name&#34;: &#34;CUSTODIAN&#34;
+        },
+        {
+            &#34;count&#34;: 4,
+            &#34;name&#34;: &#34;APPTYPE&#34;,
+            &#34;searchFieldName&#34;: &#34;APPTYPE&#34;,
+            &#34;stringParameter&#34;: [
+                {
+                    &#34;name&#34;: None,
+                    &#34;custom&#34;: True
+                }
+            ]
+        }
+    ]
+
+    RESPONSE_FIELD_LIST = (&#34;DATA_TYPE,CLIENTNAME,CONTENTID,CV_OBJECT_GUID,PARENT_GUID,CV_TURBO_GUID,&#34;
+                           &#34;AFILEID,AFILEOFFSET,COMMCELLNO,MODIFIEDTIME,SIZEINKB,BACKUPTIME,CISTATE,DATE_DELETED,&#34;
+                           &#34;TEAMS_ITEM_ID,TEAMS_ITEM_NAME,TEAMS_NAME,TEAMS_SMTP,TEAMS_ITEM_TYPE,TEAMS_CHANNEL_TYPE,&#34;
+                           &#34;TEAMS_TAB_TYPE,TEAMS_GROUP_VISIBILITY,TEAMS_GUID,TEAMS_CONV_ITEM_TYPE,&#34;
+                           &#34;TEAMS_CONV_MESSAGE_TYPE,TEAMS_CONV_SUBJECT,TEAMS_CONV_IMPORTANCE,TEAMS_CONV_SENDER_TYPE,&#34;
+                           &#34;TEAMS_CONV_SENDER_NAME,TEAMS_CONV_HAS_REPLIES,CI_URL,TEAMS_DRIVE_FOLDER_TYPE,APPTYPE,APPID&#34;)
+
+    COMPLIANCE_SEARCH_JSON = {
+        &#34;mode&#34;: 2,
+        &#34;facetRequests&#34;: {},
+        &#34;advSearchGrp&#34;: {
+            &#34;commonFilter&#34;: [
+                {
+                    &#34;filter&#34;: {
+                        &#34;filters&#34;: [
+                            {
+                                &#34;field&#34;: &#34;CI_STATUS&#34;,
+                                &#34;intraFieldOp&#34;: 0,
+                                &#34;fieldValues&#34;: {
+                                    &#34;values&#34;: [
+                                        &#34;1&#34;,
+                                        &#34;3&#34;
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            &#34;cvSearchKeyword&#34;: {
+                &#34;isExactWordsOptionSelected&#34;: False,
+                &#34;keyword&#34;: None
+            },
+            &#34;galaxyFilter&#34;: [
+                {
+                    &#34;applicationType&#34;: None
+                }
+            ]
+        },
+        &#34;userInformation&#34;: {
+            &#34;userGuid&#34;: None
+        },
+        &#34;listOfCIServer&#34;: [
+            {
+                &#34;cloudID&#34;: None
+            }
+        ],
+        &#34;searchProcessingInfo&#34;: {
+            &#34;resultOffset&#34;: 0,
+            &#34;pageSize&#34;: 50,
+            &#34;queryParams&#34;: [
+                {
+                    &#34;param&#34;: &#34;ENABLE_NEW_COMPLIANCE_SEARCH&#34;,
+                    &#34;value&#34;: &#34;true&#34;
+                }
+            ]
+        }
     }</code></pre>
 </details>
 </section>
@@ -1062,7 +1313,7 @@ class ComplianceConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/constants.py#L830-L842" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/constants.py#L898-L910" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ActivateEntityConstants:
     &#34;&#34;&#34;Class to maintain all the Activate entity related constants&#34;&#34;&#34;
@@ -1094,7 +1345,7 @@ class ComplianceConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/constants.py#L805-L827" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/constants.py#L873-L895" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ClassifierConstants:
     &#34;&#34;&#34;Class to maintain all the Classsifier related constants&#34;&#34;&#34;
@@ -1136,10 +1387,13 @@ class ComplianceConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/constants.py#L927-L984" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/constants.py#L995-L1235" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ComplianceConstants:
     &#34;&#34;&#34;Class to maintain all the Compliance search related constants&#34;&#34;&#34;
+
+    SOLR_FIELD_FILE_NAME = &#34;fileName&#34;
+    SOLR_FIELD_SIZE = &#34;sizeKB&#34;
 
     VIEW_PERMISSION = {
         &#34;permissionId&#34;: 31,
@@ -1165,11 +1419,16 @@ class ComplianceConstants:
         &#34;_type_&#34;: 122
     }
 
+    PERMISSION_ADD_NAME = &#34;Add&#34;
+    PERMISSION_DELETE_NAME = &#34;Delete&#34;
+    PERMISSION_DOWNLOAD_NAME = &#34;Download&#34;
+    PERMISSION_VIEW_NAME = &#34;View&#34;
+
     PERMISSIONS = {
-        &#34;Add&#34;: ADD_PERMISSION,
-        &#34;Delete&#34;: DELETE_PERMISSION,
-        &#34;Download&#34;: DOWNLOAD_PERMISSION,
-        &#34;View&#34;: VIEW_PERMISSION
+        PERMISSION_ADD_NAME: ADD_PERMISSION,
+        PERMISSION_DELETE_NAME: DELETE_PERMISSION,
+        PERMISSION_DOWNLOAD_NAME: DOWNLOAD_PERMISSION,
+        PERMISSION_VIEW_NAME: VIEW_PERMISSION
     }
 
     EXPORT_SET_SHARE_REQUEST_JSON = {
@@ -1195,11 +1454,206 @@ class ComplianceConstants:
                 }
             ]
         }
+    }
+
+    class AppTypes(Enum):
+        EXCHANGE = &#34;EXCHANGE&#34;
+        EXCHANGE_JOURNAL = &#34;EXCHANGE_JOURNAL&#34;
+        SHAREPOINT = &#34;SHAREPOINT&#34;
+        ONEDRIVE = &#34;ONEDRIVE&#34;
+        TEAMS = &#34;TEAMS&#34;
+        FILE_SYSTEM = &#34;FILE_SYSTEM&#34;
+
+    class ExportTypes(Enum):
+        CAB = &#34;CAB&#34;
+        PST = &#34;PST&#34;
+
+    RESTORE_TYPE = {
+        ExportTypes.PST: 1,
+        ExportTypes.CAB: 2
+    }
+
+    FILE_TYPE = &#34;File&#34;
+    EMAIL_TYPE = &#34;Email&#34;
+    FILE_TYPES = [AppTypes.FILE_SYSTEM, AppTypes.SHAREPOINT, AppTypes.ONEDRIVE, AppTypes.TEAMS]
+    EMAIL_TYPES = [AppTypes.EXCHANGE, AppTypes.EXCHANGE_JOURNAL]
+
+    FILE_FILTERS_KEY = &#34;fileFilter&#34;
+    FILE_FILTERS = [
+        {
+            &#34;filter&#34;: {
+                &#34;interFilterOP&#34;: &#34;FTAnd&#34;,
+                &#34;filters&#34;: [
+                    {
+                        &#34;field&#34;: &#34;CISTATE&#34;,
+                        &#34;intraFieldOp&#34;: &#34;FTOr&#34;,
+                        &#34;fieldValues&#34;: {
+                            &#34;values&#34;: [
+                                &#34;0&#34;,
+                                &#34;1&#34;,
+                                &#34;12&#34;,
+                                &#34;13&#34;,
+                                &#34;14&#34;,
+                                &#34;15&#34;,
+                                &#34;1014&#34;,
+                                &#34;3333&#34;,
+                                &#34;3334&#34;,
+                                &#34;3335&#34;
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+
+    EMAIL_FILTERS_KEY = &#34;emailView&#34;
+
+    ONEDRIVE_FACET = &#34;200118&#34;
+    TEAMS_FACET = &#34;200128&#34;
+    SHAREPOINT_FACET = &#34;78&#34;
+    CUSTOM_FACETS = {
+        AppTypes.ONEDRIVE: ONEDRIVE_FACET,
+        AppTypes.TEAMS: TEAMS_FACET,
+        AppTypes.SHAREPOINT: SHAREPOINT_FACET
+    }
+
+    CUSTOM_FACETS_NAME = {
+        AppTypes.TEAMS: &#34;TEAMS_NAME&#34;,
+        AppTypes.SHAREPOINT: &#34;CUSTODIAN&#34;,
+        AppTypes.ONEDRIVE: &#34;CUSTODIAN&#34;
+    }
+
+    FACET_KEY = &#34;facetRequest&#34;
+    FILE_FACET = [
+        {
+            &#34;count&#34;: 4,
+            &#34;name&#34;: &#34;CUSTODIAN&#34;
+        },
+        {
+            &#34;count&#34;: 4,
+            &#34;name&#34;: &#34;APPTYPE&#34;,
+            &#34;searchFieldName&#34;: &#34;APPTYPE&#34;,
+            &#34;stringParameter&#34;: [
+                {
+                    &#34;name&#34;: &#34;33&#34;,
+                    &#34;custom&#34;: True
+                },
+                {
+                    &#34;name&#34;: &#34;29&#34;,
+                    &#34;custom&#34;: True
+                },
+                {
+                    &#34;name&#34;: &#34;63&#34;,
+                    &#34;custom&#34;: True
+                },
+                {
+                    &#34;name&#34;: &#34;21&#34;,
+                    &#34;custom&#34;: True
+                }
+            ]
+        }
+    ]
+    CUSTOM_FACET = [
+        {
+            &#34;count&#34;: 4,
+            &#34;name&#34;: &#34;CUSTODIAN&#34;
+        },
+        {
+            &#34;count&#34;: 4,
+            &#34;name&#34;: &#34;APPTYPE&#34;,
+            &#34;searchFieldName&#34;: &#34;APPTYPE&#34;,
+            &#34;stringParameter&#34;: [
+                {
+                    &#34;name&#34;: None,
+                    &#34;custom&#34;: True
+                }
+            ]
+        }
+    ]
+
+    RESPONSE_FIELD_LIST = (&#34;DATA_TYPE,CLIENTNAME,CONTENTID,CV_OBJECT_GUID,PARENT_GUID,CV_TURBO_GUID,&#34;
+                           &#34;AFILEID,AFILEOFFSET,COMMCELLNO,MODIFIEDTIME,SIZEINKB,BACKUPTIME,CISTATE,DATE_DELETED,&#34;
+                           &#34;TEAMS_ITEM_ID,TEAMS_ITEM_NAME,TEAMS_NAME,TEAMS_SMTP,TEAMS_ITEM_TYPE,TEAMS_CHANNEL_TYPE,&#34;
+                           &#34;TEAMS_TAB_TYPE,TEAMS_GROUP_VISIBILITY,TEAMS_GUID,TEAMS_CONV_ITEM_TYPE,&#34;
+                           &#34;TEAMS_CONV_MESSAGE_TYPE,TEAMS_CONV_SUBJECT,TEAMS_CONV_IMPORTANCE,TEAMS_CONV_SENDER_TYPE,&#34;
+                           &#34;TEAMS_CONV_SENDER_NAME,TEAMS_CONV_HAS_REPLIES,CI_URL,TEAMS_DRIVE_FOLDER_TYPE,APPTYPE,APPID&#34;)
+
+    COMPLIANCE_SEARCH_JSON = {
+        &#34;mode&#34;: 2,
+        &#34;facetRequests&#34;: {},
+        &#34;advSearchGrp&#34;: {
+            &#34;commonFilter&#34;: [
+                {
+                    &#34;filter&#34;: {
+                        &#34;filters&#34;: [
+                            {
+                                &#34;field&#34;: &#34;CI_STATUS&#34;,
+                                &#34;intraFieldOp&#34;: 0,
+                                &#34;fieldValues&#34;: {
+                                    &#34;values&#34;: [
+                                        &#34;1&#34;,
+                                        &#34;3&#34;
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            &#34;cvSearchKeyword&#34;: {
+                &#34;isExactWordsOptionSelected&#34;: False,
+                &#34;keyword&#34;: None
+            },
+            &#34;galaxyFilter&#34;: [
+                {
+                    &#34;applicationType&#34;: None
+                }
+            ]
+        },
+        &#34;userInformation&#34;: {
+            &#34;userGuid&#34;: None
+        },
+        &#34;listOfCIServer&#34;: [
+            {
+                &#34;cloudID&#34;: None
+            }
+        ],
+        &#34;searchProcessingInfo&#34;: {
+            &#34;resultOffset&#34;: 0,
+            &#34;pageSize&#34;: 50,
+            &#34;queryParams&#34;: [
+                {
+                    &#34;param&#34;: &#34;ENABLE_NEW_COMPLIANCE_SEARCH&#34;,
+                    &#34;value&#34;: &#34;true&#34;
+                }
+            ]
+        }
     }</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
 <dt id="cvpysdk.activateapps.constants.ComplianceConstants.ADD_PERMISSION"><code class="name">var <span class="ident">ADD_PERMISSION</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.AppTypes"><code class="name">var <span class="ident">AppTypes</span></code></dt>
+<dd>
+<div class="desc"><p>An enumeration.</p></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.COMPLIANCE_SEARCH_JSON"><code class="name">var <span class="ident">COMPLIANCE_SEARCH_JSON</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.CUSTOM_FACET"><code class="name">var <span class="ident">CUSTOM_FACET</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.CUSTOM_FACETS"><code class="name">var <span class="ident">CUSTOM_FACETS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.CUSTOM_FACETS_NAME"><code class="name">var <span class="ident">CUSTOM_FACETS_NAME</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -1211,11 +1665,95 @@ class ComplianceConstants:
 <dd>
 <div class="desc"></div>
 </dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.EMAIL_FILTERS_KEY"><code class="name">var <span class="ident">EMAIL_FILTERS_KEY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.EMAIL_TYPE"><code class="name">var <span class="ident">EMAIL_TYPE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.EMAIL_TYPES"><code class="name">var <span class="ident">EMAIL_TYPES</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
 <dt id="cvpysdk.activateapps.constants.ComplianceConstants.EXPORT_SET_SHARE_REQUEST_JSON"><code class="name">var <span class="ident">EXPORT_SET_SHARE_REQUEST_JSON</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.ExportTypes"><code class="name">var <span class="ident">ExportTypes</span></code></dt>
+<dd>
+<div class="desc"><p>An enumeration.</p></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.FACET_KEY"><code class="name">var <span class="ident">FACET_KEY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.FILE_FACET"><code class="name">var <span class="ident">FILE_FACET</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.FILE_FILTERS"><code class="name">var <span class="ident">FILE_FILTERS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.FILE_FILTERS_KEY"><code class="name">var <span class="ident">FILE_FILTERS_KEY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.FILE_TYPE"><code class="name">var <span class="ident">FILE_TYPE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.FILE_TYPES"><code class="name">var <span class="ident">FILE_TYPES</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.ONEDRIVE_FACET"><code class="name">var <span class="ident">ONEDRIVE_FACET</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
 <dt id="cvpysdk.activateapps.constants.ComplianceConstants.PERMISSIONS"><code class="name">var <span class="ident">PERMISSIONS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.PERMISSION_ADD_NAME"><code class="name">var <span class="ident">PERMISSION_ADD_NAME</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.PERMISSION_DELETE_NAME"><code class="name">var <span class="ident">PERMISSION_DELETE_NAME</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.PERMISSION_DOWNLOAD_NAME"><code class="name">var <span class="ident">PERMISSION_DOWNLOAD_NAME</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.PERMISSION_VIEW_NAME"><code class="name">var <span class="ident">PERMISSION_VIEW_NAME</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.RESPONSE_FIELD_LIST"><code class="name">var <span class="ident">RESPONSE_FIELD_LIST</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.RESTORE_TYPE"><code class="name">var <span class="ident">RESTORE_TYPE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.SHAREPOINT_FACET"><code class="name">var <span class="ident">SHAREPOINT_FACET</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.SOLR_FIELD_FILE_NAME"><code class="name">var <span class="ident">SOLR_FIELD_FILE_NAME</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.SOLR_FIELD_SIZE"><code class="name">var <span class="ident">SOLR_FIELD_SIZE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.ComplianceConstants.TEAMS_FACET"><code class="name">var <span class="ident">TEAMS_FACET</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -1233,7 +1771,7 @@ class ComplianceConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/constants.py#L118-L546" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/constants.py#L118-L546" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class EdiscoveryConstants:
     &#34;&#34;&#34;class to maintain constants for ediscovery clients&#34;&#34;&#34;
@@ -1869,7 +2407,7 @@ class ComplianceConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/constants.py#L549-L644" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/constants.py#L549-L644" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class InventoryConstants:
     &#34;&#34;&#34;Class to maintain constants for inventory manager&#34;&#34;&#34;
@@ -2064,7 +2602,7 @@ class ComplianceConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/constants.py#L647-L783" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/constants.py#L647-L851" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class PlanConstants:
     &#34;&#34;&#34;Class to maintain constants related to DC plan activate operations&#34;&#34;&#34;
@@ -2117,6 +2655,74 @@ class ComplianceConstants:
                     &#34;planId&#34;: 0
                 }
             }
+        },
+        6: {
+            &#34;ciPolicyInfo&#34;: {
+                &#34;ciPolicy&#34;: {
+                    &#34;policyType&#34;: 5,
+                    &#34;detail&#34;: {
+                        &#34;ciPolicy&#34;: {
+                            &#34;opType&#34;: 2,
+                            &#34;enableExactSearch&#34;: False,
+                            &#34;ciPolicyType&#34;: 5,
+                            &#34;filters&#34;: {
+                                &#34;fileFilters&#34;: {
+                                    &#34;includeDocTypes&#34;: &#34;&#34;,
+                                    &#34;minDocSize&#34;: 0,
+                                    &#34;maxDocSize&#34;: 50
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            &#34;eePolicyInfo&#34;: {},
+            &#34;exchange&#34;: {},
+            &#34;office365Info&#34;: {
+                &#34;o365Exchange&#34;: {
+                    &#34;mbArchiving&#34;: {
+                        &#34;policyType&#34;: 1,
+                        &#34;agentType&#34;: {
+                            &#34;appTypeId&#34;: 137
+                        },
+                        &#34;detail&#34;: {
+                            &#34;emailPolicy&#34;: {
+                                &#34;emailPolicyType&#34;: 1,
+                                &#34;archivePolicy&#34;: {
+                                    &#34;primaryMailbox&#34;: True,
+                                    &#34;contentIndexProps&#34;: {}
+                                }
+                            }
+                        }
+                    }
+                },
+                &#34;o365CloudOffice&#34;: {
+                    &#34;caBackup&#34;: {
+                        &#34;policyType&#34;: 6,
+                        &#34;detail&#34;: {
+                            &#34;cloudAppPolicy&#34;: {
+                                &#34;cloudAppPolicyType&#34;: 1,
+                                &#34;backupPolicy&#34;: {
+                                    &#34;onedrivebackupPolicy&#34;: {},
+                                    &#34;spbackupPolicy&#34;: {},
+                                    &#34;teamsbackupPolicy&#34;: {}
+                                }
+                            }
+                        }
+
+                    }
+
+                }
+
+            },
+
+            &#34;summary&#34;: {
+                &#34;plan&#34;: {
+                    &#34;planName&#34;: &#34;&#34;,
+                    &#34;planId&#34;: 0
+                }
+            }
+
         }
     }
 
@@ -2252,7 +2858,7 @@ class ComplianceConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/constants.py#L46-L115" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/constants.py#L46-L115" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class RequestConstants:
     &#34;&#34;&#34;class to maintain constants for request manager&#34;&#34;&#34;
@@ -2429,7 +3035,7 @@ class ComplianceConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/constants.py#L845-L924" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/constants.py#L913-L992" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class TagConstants:
     &#34;&#34;&#34;class to maintain all the Tags related constants&#34;&#34;&#34;
@@ -2557,7 +3163,7 @@ class ComplianceConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/constants.py#L786-L791" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/constants.py#L854-L859" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class TargetApps(Enum):
     &#34;&#34;&#34;Class to maintain supported apps types in Activate&#34;&#34;&#34;
@@ -2599,7 +3205,7 @@ class ComplianceConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/activateapps/constants.py#L794-L802" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/constants.py#L862-L870" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class TrainingStatus(Enum):
     &#34;&#34;&#34;Class to maintain training status for classifier&#34;&#34;&#34;
@@ -2731,10 +3337,36 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="cvpysdk.activateapps.constants.ComplianceConstants" href="#cvpysdk.activateapps.constants.ComplianceConstants">ComplianceConstants</a></code></h4>
 <ul class="">
 <li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.ADD_PERMISSION" href="#cvpysdk.activateapps.constants.ComplianceConstants.ADD_PERMISSION">ADD_PERMISSION</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.AppTypes" href="#cvpysdk.activateapps.constants.ComplianceConstants.AppTypes">AppTypes</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.COMPLIANCE_SEARCH_JSON" href="#cvpysdk.activateapps.constants.ComplianceConstants.COMPLIANCE_SEARCH_JSON">COMPLIANCE_SEARCH_JSON</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.CUSTOM_FACET" href="#cvpysdk.activateapps.constants.ComplianceConstants.CUSTOM_FACET">CUSTOM_FACET</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.CUSTOM_FACETS" href="#cvpysdk.activateapps.constants.ComplianceConstants.CUSTOM_FACETS">CUSTOM_FACETS</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.CUSTOM_FACETS_NAME" href="#cvpysdk.activateapps.constants.ComplianceConstants.CUSTOM_FACETS_NAME">CUSTOM_FACETS_NAME</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.DELETE_PERMISSION" href="#cvpysdk.activateapps.constants.ComplianceConstants.DELETE_PERMISSION">DELETE_PERMISSION</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.DOWNLOAD_PERMISSION" href="#cvpysdk.activateapps.constants.ComplianceConstants.DOWNLOAD_PERMISSION">DOWNLOAD_PERMISSION</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.EMAIL_FILTERS_KEY" href="#cvpysdk.activateapps.constants.ComplianceConstants.EMAIL_FILTERS_KEY">EMAIL_FILTERS_KEY</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.EMAIL_TYPE" href="#cvpysdk.activateapps.constants.ComplianceConstants.EMAIL_TYPE">EMAIL_TYPE</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.EMAIL_TYPES" href="#cvpysdk.activateapps.constants.ComplianceConstants.EMAIL_TYPES">EMAIL_TYPES</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.EXPORT_SET_SHARE_REQUEST_JSON" href="#cvpysdk.activateapps.constants.ComplianceConstants.EXPORT_SET_SHARE_REQUEST_JSON">EXPORT_SET_SHARE_REQUEST_JSON</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.ExportTypes" href="#cvpysdk.activateapps.constants.ComplianceConstants.ExportTypes">ExportTypes</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.FACET_KEY" href="#cvpysdk.activateapps.constants.ComplianceConstants.FACET_KEY">FACET_KEY</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.FILE_FACET" href="#cvpysdk.activateapps.constants.ComplianceConstants.FILE_FACET">FILE_FACET</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.FILE_FILTERS" href="#cvpysdk.activateapps.constants.ComplianceConstants.FILE_FILTERS">FILE_FILTERS</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.FILE_FILTERS_KEY" href="#cvpysdk.activateapps.constants.ComplianceConstants.FILE_FILTERS_KEY">FILE_FILTERS_KEY</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.FILE_TYPE" href="#cvpysdk.activateapps.constants.ComplianceConstants.FILE_TYPE">FILE_TYPE</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.FILE_TYPES" href="#cvpysdk.activateapps.constants.ComplianceConstants.FILE_TYPES">FILE_TYPES</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.ONEDRIVE_FACET" href="#cvpysdk.activateapps.constants.ComplianceConstants.ONEDRIVE_FACET">ONEDRIVE_FACET</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.PERMISSIONS" href="#cvpysdk.activateapps.constants.ComplianceConstants.PERMISSIONS">PERMISSIONS</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.PERMISSION_ADD_NAME" href="#cvpysdk.activateapps.constants.ComplianceConstants.PERMISSION_ADD_NAME">PERMISSION_ADD_NAME</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.PERMISSION_DELETE_NAME" href="#cvpysdk.activateapps.constants.ComplianceConstants.PERMISSION_DELETE_NAME">PERMISSION_DELETE_NAME</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.PERMISSION_DOWNLOAD_NAME" href="#cvpysdk.activateapps.constants.ComplianceConstants.PERMISSION_DOWNLOAD_NAME">PERMISSION_DOWNLOAD_NAME</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.PERMISSION_VIEW_NAME" href="#cvpysdk.activateapps.constants.ComplianceConstants.PERMISSION_VIEW_NAME">PERMISSION_VIEW_NAME</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.RESPONSE_FIELD_LIST" href="#cvpysdk.activateapps.constants.ComplianceConstants.RESPONSE_FIELD_LIST">RESPONSE_FIELD_LIST</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.RESTORE_TYPE" href="#cvpysdk.activateapps.constants.ComplianceConstants.RESTORE_TYPE">RESTORE_TYPE</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.SHAREPOINT_FACET" href="#cvpysdk.activateapps.constants.ComplianceConstants.SHAREPOINT_FACET">SHAREPOINT_FACET</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.SOLR_FIELD_FILE_NAME" href="#cvpysdk.activateapps.constants.ComplianceConstants.SOLR_FIELD_FILE_NAME">SOLR_FIELD_FILE_NAME</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.SOLR_FIELD_SIZE" href="#cvpysdk.activateapps.constants.ComplianceConstants.SOLR_FIELD_SIZE">SOLR_FIELD_SIZE</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.TEAMS_FACET" href="#cvpysdk.activateapps.constants.ComplianceConstants.TEAMS_FACET">TEAMS_FACET</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.ComplianceConstants.VIEW_PERMISSION" href="#cvpysdk.activateapps.constants.ComplianceConstants.VIEW_PERMISSION">VIEW_PERMISSION</a></code></li>
 </ul>
 </li>

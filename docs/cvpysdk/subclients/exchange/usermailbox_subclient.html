@@ -75,6 +75,7 @@ backup_generic_items()              --  Backup Generic Items
 backup_mailboxes()                  --  Backup selected mailboxes
 restore_in_place()                  --  runs in-place restore for the subclient
 create_recovery_point()             --  Create a recovery point for a mailbox
+restore_in_place_syntex()           --  runs an in-place restore for the Syntex client
 </code></pre>
 <h1 id="user-mailbox-subclient-instance-attributes">User Mailbox Subclient Instance Attributes:</h1>
 <pre><code>discover_users                          --  Dictionary of users discovered
@@ -85,7 +86,7 @@ o365groups                              --  Dictionary of discovered Office 365 
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1-L1719" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1-L1826" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -165,6 +166,7 @@ Browse/ Restore/ Backup Methods:
     backup_mailboxes()                  --  Backup selected mailboxes
     restore_in_place()                  --  runs in-place restore for the subclient
     create_recovery_point()             --  Create a recovery point for a mailbox
+    restore_in_place_syntex()           --  runs an in-place restore for the Syntex client
 
 
 
@@ -314,7 +316,7 @@ class UsermailboxSubclient(ExchangeSubclient):
 
     def _association_json_with_plan(self, plan_details):
         &#34;&#34;&#34;Constructs association json with plan to create association in UserMailbox Subclient.
-
+        
             Args: plan_details = {
                     &#39;plan_name&#39;: Plan Name,
                     &#39;plan_id&#39;: int or None (Optional)
@@ -892,7 +894,8 @@ class UsermailboxSubclient(ExchangeSubclient):
 
                 for mb_item in discover_users:
 
-                    if mailbox_item.lower() == mb_item[&#39;aliasName&#39;].lower():
+                    if mailbox_item.lower() == mb_item[&#39;aliasName&#39;].lower() or \
+                            mailbox_item.lower() == mb_item[&#39;smtpAdrress&#39;].lower():
                         mailbox_dict = {
                             &#39;smtpAdrress&#39;: mb_item[&#39;smtpAdrress&#39;],
                             &#39;aliasName&#39;: mb_item[&#39;aliasName&#39;],
@@ -1138,6 +1141,20 @@ class UsermailboxSubclient(ExchangeSubclient):
 
                         &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
                     }
+                     -- if use_policies is True --
+
+                        &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
+
+                        &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
+
+                        &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
+
+                        -- if use_policies is False --
+
+                        &#39;plan_name&#39;: &#39;Exchange Plan Name&#39;,
+
+                        &#39;plan_id&#39;: int or None (Optional)
+                        --
 
         &#34;&#34;&#34;
         adgroups = []
@@ -1158,7 +1175,6 @@ class UsermailboxSubclient(ExchangeSubclient):
 
                     if adgroup_item.lower() == ad_item[&#39;adGroupName&#39;].lower():
                         adgroup_dict = {
-                            &#34;associated&#34;: False,
                             &#39;adGroupName&#39;: ad_item[&#39;adGroupName&#39;],
                         }
                         adgroups.append(adgroup_dict)
@@ -1175,6 +1191,10 @@ class UsermailboxSubclient(ExchangeSubclient):
         else:
             _assocaition_json_ = self._association_json_with_plan(subclient_content)
         _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
+        _assocaition_json_[&#34;emailAssociation&#34;].update({&#34;emailStatus&#34;:0})
+        _assocaition_json_[&#34;emailAssociation&#34;].update({&#34;advanceOptions&#34;:{
+            &#34;enableAutoDiscovery&#34;: subclient_content[&#34;is_auto_discover_user&#34;]
+        }})
         self._set_association_request(_assocaition_json_)
 
     def set_o365group_asscoiations(self, subclient_content):
@@ -1397,6 +1417,20 @@ class UsermailboxSubclient(ExchangeSubclient):
 
                         &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
                     }
+                     -- if use_policies is True --
+
+                        &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
+
+                        &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
+
+                        &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
+
+                        -- if use_policies is False --
+
+                        &#39;plan_name&#39;: &#39;Exchange Plan Name&#39;,
+
+                        &#39;plan_id&#39;: int or None (Optional)
+                        --
 
         &#34;&#34;&#34;
         adgroups = []
@@ -1805,7 +1839,81 @@ class UsermailboxSubclient(ExchangeSubclient):
         self._discover_adgroups = self._get_discover_adgroups()
         self._users, self._o365groups = self._get_user_assocaitions()
         self._databases = self._get_database_associations()
-        self._adgroups = self._get_adgroup_assocaitions()</code></pre>
+        self._adgroups = self._get_adgroup_assocaitions()
+
+    def restore_in_place_syntex(self, **kwargs):
+        &#34;&#34;&#34;Runs an in-place restore job on the specified Syntex Exchange pseudo client
+
+             Kwargs:
+
+                 paths (list)  --  list of paths of mailboxes/folders to restore
+
+             Returns:
+
+                Job object
+
+            Raises:
+
+                SDKException:
+
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+        &#34;&#34;&#34;
+        paths = kwargs.get(&#39;paths&#39;, [])
+        paths = self._filter_paths(paths)
+        self._json_restore_exchange_restore_option({})
+        self._json_backupset()
+        restore_option = {&#34;paths&#34;: paths}
+
+        self._instance_object._restore_association = self._subClientEntity
+        request_json = self._restore_json(restore_option=restore_option)
+        request_json[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;subclientName&#39;] = self.subclient_name
+        request_json[&#39;taskInfo&#39;][&#39;associations&#39;][0][
+            &#39;backupsetName&#39;] = self._backupset_object.backupset_name
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][
+            &#39;options&#39;][&#39;restoreOptions&#39;][&#39;exchangeOption&#39;] = self._exchange_option_restore_json
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][
+            &#34;restoreOptions&#34;][&#34;browseOption&#34;][&#39;backupset&#39;] = self._exchange_backupset_json
+
+        mailboxes = self.browse_mailboxes()
+        mailbox_details = {}
+        for path in paths:
+            mailbox_details[path] = next((mailbox for mailbox in mailboxes if mailbox[&#39;aliasName&#39;] == path), None)
+        syntex_restore_items = []
+
+        for key, value in mailbox_details.items():
+            syntex_restore_items.append({
+                &#34;displayName&#34;: value[&#34;displayName&#34;],
+                &#34;guid&#34;: value[&#34;user&#34;][&#34;userGUID&#34;],
+                &#34;rawId&#34;: value[&#34;user&#34;][&#34;userGUID&#34;],
+                &#34;restoreType&#34;: 1
+            })
+
+        # Get the current time in UTC
+        current_time = datetime.datetime.now(datetime.timezone.utc)
+        current_timestamp = int(current_time.timestamp())
+        current_iso_format = current_time.strftime(&#39;%Y-%m-%dT%H:%M:%S.%f&#39;)[:-3] + &#39;Z&#39;
+
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;cloudAppsRestoreOptions&#34;] = {}
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;cloudAppsRestoreOptions&#34;][
+            &#34;msSyntexRestoreOptions&#34;] = {
+            &#34;msSyntexRestoreItems&#34;: {
+                &#34;listMsSyntexRestoreItems&#34;: syntex_restore_items
+            },
+            &#34;restoreDate&#34;: {
+                &#34;time&#34;: current_timestamp,
+                &#34;timeValue&#34;: current_iso_format
+            },
+            &#34;restorePointId&#34;: &#34;&#34;,
+            &#34;restoreType&#34;: 1,
+            &#34;useFastRestorePoint&#34;: False
+        }
+
+        return self._process_restore_response(request_json)</code></pre>
 </details>
 </section>
 <section>
@@ -1842,7 +1950,7 @@ subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L104-L1719" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L105-L1826" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class UsermailboxSubclient(ExchangeSubclient):
     &#34;&#34;&#34;Derived class from ExchangeSubclient Base class.
@@ -1968,7 +2076,7 @@ subclient id</p></div>
 
     def _association_json_with_plan(self, plan_details):
         &#34;&#34;&#34;Constructs association json with plan to create association in UserMailbox Subclient.
-
+        
             Args: plan_details = {
                     &#39;plan_name&#39;: Plan Name,
                     &#39;plan_id&#39;: int or None (Optional)
@@ -2546,7 +2654,8 @@ subclient id</p></div>
 
                 for mb_item in discover_users:
 
-                    if mailbox_item.lower() == mb_item[&#39;aliasName&#39;].lower():
+                    if mailbox_item.lower() == mb_item[&#39;aliasName&#39;].lower() or \
+                            mailbox_item.lower() == mb_item[&#39;smtpAdrress&#39;].lower():
                         mailbox_dict = {
                             &#39;smtpAdrress&#39;: mb_item[&#39;smtpAdrress&#39;],
                             &#39;aliasName&#39;: mb_item[&#39;aliasName&#39;],
@@ -2792,6 +2901,20 @@ subclient id</p></div>
 
                         &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
                     }
+                     -- if use_policies is True --
+
+                        &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
+
+                        &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
+
+                        &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
+
+                        -- if use_policies is False --
+
+                        &#39;plan_name&#39;: &#39;Exchange Plan Name&#39;,
+
+                        &#39;plan_id&#39;: int or None (Optional)
+                        --
 
         &#34;&#34;&#34;
         adgroups = []
@@ -2812,7 +2935,6 @@ subclient id</p></div>
 
                     if adgroup_item.lower() == ad_item[&#39;adGroupName&#39;].lower():
                         adgroup_dict = {
-                            &#34;associated&#34;: False,
                             &#39;adGroupName&#39;: ad_item[&#39;adGroupName&#39;],
                         }
                         adgroups.append(adgroup_dict)
@@ -2829,6 +2951,10 @@ subclient id</p></div>
         else:
             _assocaition_json_ = self._association_json_with_plan(subclient_content)
         _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
+        _assocaition_json_[&#34;emailAssociation&#34;].update({&#34;emailStatus&#34;:0})
+        _assocaition_json_[&#34;emailAssociation&#34;].update({&#34;advanceOptions&#34;:{
+            &#34;enableAutoDiscovery&#34;: subclient_content[&#34;is_auto_discover_user&#34;]
+        }})
         self._set_association_request(_assocaition_json_)
 
     def set_o365group_asscoiations(self, subclient_content):
@@ -3051,6 +3177,20 @@ subclient id</p></div>
 
                         &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
                     }
+                     -- if use_policies is True --
+
+                        &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
+
+                        &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
+
+                        &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
+
+                        -- if use_policies is False --
+
+                        &#39;plan_name&#39;: &#39;Exchange Plan Name&#39;,
+
+                        &#39;plan_id&#39;: int or None (Optional)
+                        --
 
         &#34;&#34;&#34;
         adgroups = []
@@ -3459,7 +3599,81 @@ subclient id</p></div>
         self._discover_adgroups = self._get_discover_adgroups()
         self._users, self._o365groups = self._get_user_assocaitions()
         self._databases = self._get_database_associations()
-        self._adgroups = self._get_adgroup_assocaitions()</code></pre>
+        self._adgroups = self._get_adgroup_assocaitions()
+
+    def restore_in_place_syntex(self, **kwargs):
+        &#34;&#34;&#34;Runs an in-place restore job on the specified Syntex Exchange pseudo client
+
+             Kwargs:
+
+                 paths (list)  --  list of paths of mailboxes/folders to restore
+
+             Returns:
+
+                Job object
+
+            Raises:
+
+                SDKException:
+
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+        &#34;&#34;&#34;
+        paths = kwargs.get(&#39;paths&#39;, [])
+        paths = self._filter_paths(paths)
+        self._json_restore_exchange_restore_option({})
+        self._json_backupset()
+        restore_option = {&#34;paths&#34;: paths}
+
+        self._instance_object._restore_association = self._subClientEntity
+        request_json = self._restore_json(restore_option=restore_option)
+        request_json[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;subclientName&#39;] = self.subclient_name
+        request_json[&#39;taskInfo&#39;][&#39;associations&#39;][0][
+            &#39;backupsetName&#39;] = self._backupset_object.backupset_name
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][
+            &#39;options&#39;][&#39;restoreOptions&#39;][&#39;exchangeOption&#39;] = self._exchange_option_restore_json
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][
+            &#34;restoreOptions&#34;][&#34;browseOption&#34;][&#39;backupset&#39;] = self._exchange_backupset_json
+
+        mailboxes = self.browse_mailboxes()
+        mailbox_details = {}
+        for path in paths:
+            mailbox_details[path] = next((mailbox for mailbox in mailboxes if mailbox[&#39;aliasName&#39;] == path), None)
+        syntex_restore_items = []
+
+        for key, value in mailbox_details.items():
+            syntex_restore_items.append({
+                &#34;displayName&#34;: value[&#34;displayName&#34;],
+                &#34;guid&#34;: value[&#34;user&#34;][&#34;userGUID&#34;],
+                &#34;rawId&#34;: value[&#34;user&#34;][&#34;userGUID&#34;],
+                &#34;restoreType&#34;: 1
+            })
+
+        # Get the current time in UTC
+        current_time = datetime.datetime.now(datetime.timezone.utc)
+        current_timestamp = int(current_time.timestamp())
+        current_iso_format = current_time.strftime(&#39;%Y-%m-%dT%H:%M:%S.%f&#39;)[:-3] + &#39;Z&#39;
+
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;cloudAppsRestoreOptions&#34;] = {}
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;cloudAppsRestoreOptions&#34;][
+            &#34;msSyntexRestoreOptions&#34;] = {
+            &#34;msSyntexRestoreItems&#34;: {
+                &#34;listMsSyntexRestoreItems&#34;: syntex_restore_items
+            },
+            &#34;restoreDate&#34;: {
+                &#34;time&#34;: current_timestamp,
+                &#34;timeValue&#34;: current_iso_format
+            },
+            &#34;restorePointId&#34;: &#34;&#34;,
+            &#34;restoreType&#34;: 1,
+            &#34;useFastRestorePoint&#34;: False
+        }
+
+        return self._process_restore_response(request_json)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -3474,7 +3688,7 @@ subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L754-L757" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L755-L758" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def adgroups(self):
@@ -3488,7 +3702,7 @@ def adgroups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L749-L752" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L750-L753" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def databases(self):
@@ -3502,7 +3716,7 @@ def databases(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L739-L742" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L740-L743" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def discover_adgroups(self):
@@ -3516,7 +3730,7 @@ def discover_adgroups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L734-L737" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L735-L738" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def discover_databases(self):
@@ -3530,7 +3744,7 @@ def discover_databases(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L729-L732" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L730-L733" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def discover_users(self):
@@ -3544,7 +3758,7 @@ def discover_users(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L759-L762" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L760-L763" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def o365groups(self):
@@ -3558,7 +3772,7 @@ def o365groups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L744-L747" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L745-L748" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def users(self):
@@ -3593,7 +3807,7 @@ List having dictionary of items to be backed up</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1552-L1578" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1585-L1611" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup_generic_items(self, subclient_content):
     &#34;&#34;&#34;
@@ -3638,7 +3852,7 @@ Sample Values:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1580-L1595" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1613-L1628" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup_mailboxes(self, mailbox_alias_names):
     &#34;&#34;&#34;
@@ -3667,7 +3881,7 @@ return: dictionary containing mailbox info</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1525-L1550" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1558-L1583" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse_mailboxes(self, retry_attempts=0):
     &#34;&#34;&#34;
@@ -3731,7 +3945,7 @@ Format:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1597-L1709" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1630-L1742" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_recovery_point(self, mailbox_prop, job=None, job_id=None):
     &#34;&#34;&#34;
@@ -3870,11 +4084,25 @@ dict of the adgroups to delete from subclient</p>
 
     'retention_policy': 'CIPLAN Retention policy',
 }
+ -- if use_policies is True --
+
+    'archive_policy' : "CIPLAN Archiving policy",
+
+    'cleanup_policy' : 'CIPLAN Clean-up policy',
+
+    'retention_policy': 'CIPLAN Retention policy'
+
+    -- if use_policies is False --
+
+    'plan_name': 'Exchange Plan Name',
+
+    'plan_id': int or None (Optional)
+    --
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1293-L1351" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1312-L1384" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_adgroup_assocaition(self, subclient_content, use_policies=True):
     &#34;&#34;&#34;Deletes Ad groups assocaition for UserMailboxSubclient.
@@ -3894,6 +4122,20 @@ dict of the adgroups to delete from subclient</p>
 
                     &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
                 }
+                 -- if use_policies is True --
+
+                    &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
+
+                    &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
+
+                    &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
+
+                    -- if use_policies is False --
+
+                    &#39;plan_name&#39;: &#39;Exchange Plan Name&#39;,
+
+                    &#39;plan_id&#39;: int or None (Optional)
+                    --
 
     &#34;&#34;&#34;
     adgroups = []
@@ -3970,7 +4212,7 @@ dict of the adgroups to delete from subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1452-L1512" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1485-L1545" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_auto_discover_association(self, association_name, subclient_content, use_policies=True):
     &#34;&#34;&#34;
@@ -4061,7 +4303,7 @@ dict of the databases to delete from subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1238-L1291" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1257-L1310" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_database_assocaition(self, subclient_content):
     &#34;&#34;&#34;Deletes Database assocaition for UserMailboxSubclient.
@@ -4143,7 +4385,7 @@ dict of the Users to delete from subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1188-L1236" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1207-L1255" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_o365group_association(self, subclient_content):
     &#34;&#34;&#34;delete O365 group association for UserMailboxSubclient.
@@ -4224,7 +4466,7 @@ subclient_content = {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1118-L1186" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1137-L1205" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_user_assocaition(self, subclient_content, use_policies=True):
     &#34;&#34;&#34;delete User assocaition for UserMailboxSubclient.
@@ -4305,7 +4547,7 @@ subclient_content = {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1389-L1406" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1422-L1439" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_allusers_associations(self):
     &#34;&#34;&#34;Disables alluser assocaition for UserMailboxSubclient.&#34;&#34;&#34;
@@ -4352,7 +4594,7 @@ assigned to all user assocaitions</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1353-L1387" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1386-L1420" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_allusers_associations(self, subclient_content):
     &#34;&#34;&#34;Enable all users assocaition for UserMailboxSubclient.
@@ -4412,7 +4654,7 @@ Name of the plan to associate with users/groups</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1408-L1450" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1441-L1483" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_auto_discover_association(self, association_name, plan_name):
     &#34;&#34;&#34;Enable all users assocaition for UserMailboxSubclient.
@@ -4470,7 +4712,7 @@ Returns: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1514-L1523" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1547-L1556" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_ews_support(self, service_url):
     &#34;&#34;&#34;This function provides support for EWS protocol to backup on-prem mailboxes
@@ -4492,7 +4734,7 @@ Returns: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1711-L1719" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1744-L1752" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the User Mailbox Subclient.&#34;&#34;&#34;
@@ -4503,6 +4745,105 @@ Returns: None</p></div>
     self._users, self._o365groups = self._get_user_assocaitions()
     self._databases = self._get_database_associations()
     self._adgroups = self._get_adgroup_assocaitions()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.restore_in_place_syntex"><code class="name flex">
+<span>def <span class="ident">restore_in_place_syntex</span></span>(<span>self, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Runs an in-place restore job on the specified Syntex Exchange pseudo client</p>
+<p>Kwargs:</p>
+<pre><code> paths (list)  --  list of paths of mailboxes/folders to restore
+</code></pre>
+<p>Returns:</p>
+<pre><code>Job object
+</code></pre>
+<h2 id="raises">Raises</h2>
+<p>SDKException:</p>
+<pre><code>if paths is not a list
+
+if failed to initialize job
+
+if response is empty
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1754-L1826" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def restore_in_place_syntex(self, **kwargs):
+    &#34;&#34;&#34;Runs an in-place restore job on the specified Syntex Exchange pseudo client
+
+         Kwargs:
+
+             paths (list)  --  list of paths of mailboxes/folders to restore
+
+         Returns:
+
+            Job object
+
+        Raises:
+
+            SDKException:
+
+                if paths is not a list
+
+                if failed to initialize job
+
+                if response is empty
+
+    &#34;&#34;&#34;
+    paths = kwargs.get(&#39;paths&#39;, [])
+    paths = self._filter_paths(paths)
+    self._json_restore_exchange_restore_option({})
+    self._json_backupset()
+    restore_option = {&#34;paths&#34;: paths}
+
+    self._instance_object._restore_association = self._subClientEntity
+    request_json = self._restore_json(restore_option=restore_option)
+    request_json[&#39;taskInfo&#39;][&#39;associations&#39;][0][&#39;subclientName&#39;] = self.subclient_name
+    request_json[&#39;taskInfo&#39;][&#39;associations&#39;][0][
+        &#39;backupsetName&#39;] = self._backupset_object.backupset_name
+    request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][
+        &#39;options&#39;][&#39;restoreOptions&#39;][&#39;exchangeOption&#39;] = self._exchange_option_restore_json
+    request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][
+        &#34;restoreOptions&#34;][&#34;browseOption&#34;][&#39;backupset&#39;] = self._exchange_backupset_json
+
+    mailboxes = self.browse_mailboxes()
+    mailbox_details = {}
+    for path in paths:
+        mailbox_details[path] = next((mailbox for mailbox in mailboxes if mailbox[&#39;aliasName&#39;] == path), None)
+    syntex_restore_items = []
+
+    for key, value in mailbox_details.items():
+        syntex_restore_items.append({
+            &#34;displayName&#34;: value[&#34;displayName&#34;],
+            &#34;guid&#34;: value[&#34;user&#34;][&#34;userGUID&#34;],
+            &#34;rawId&#34;: value[&#34;user&#34;][&#34;userGUID&#34;],
+            &#34;restoreType&#34;: 1
+        })
+
+    # Get the current time in UTC
+    current_time = datetime.datetime.now(datetime.timezone.utc)
+    current_timestamp = int(current_time.timestamp())
+    current_iso_format = current_time.strftime(&#39;%Y-%m-%dT%H:%M:%S.%f&#39;)[:-3] + &#39;Z&#39;
+
+    request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;cloudAppsRestoreOptions&#34;] = {}
+    request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;cloudAppsRestoreOptions&#34;][
+        &#34;msSyntexRestoreOptions&#34;] = {
+        &#34;msSyntexRestoreItems&#34;: {
+            &#34;listMsSyntexRestoreItems&#34;: syntex_restore_items
+        },
+        &#34;restoreDate&#34;: {
+            &#34;time&#34;: current_timestamp,
+            &#34;timeValue&#34;: current_iso_format
+        },
+        &#34;restorePointId&#34;: &#34;&#34;,
+        &#34;restoreType&#34;: 1,
+        &#34;useFastRestorePoint&#34;: False
+    }
+
+    return self._process_restore_response(request_json)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_adgroup_associations"><code class="name flex">
@@ -4527,11 +4868,25 @@ dict of the adgroups to add to the subclient</p>
 
     'retention_policy': 'CIPLAN Retention policy',
 }
+ -- if use_policies is True --
+
+    'archive_policy' : "CIPLAN Archiving policy",
+
+    'cleanup_policy' : 'CIPLAN Clean-up policy',
+
+    'retention_policy': 'CIPLAN Retention policy'
+
+    -- if use_policies is False --
+
+    'plan_name': 'Exchange Plan Name',
+
+    'plan_id': int or None (Optional)
+    --
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1034-L1089" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1036-L1108" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_adgroup_associations(self, subclient_content, use_policies=True):
     &#34;&#34;&#34;Create Ad groups assocaition for UserMailboxSubclient.
@@ -4551,6 +4906,20 @@ dict of the adgroups to add to the subclient</p>
 
                     &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
                 }
+                 -- if use_policies is True --
+
+                    &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
+
+                    &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
+
+                    &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
+
+                    -- if use_policies is False --
+
+                    &#39;plan_name&#39;: &#39;Exchange Plan Name&#39;,
+
+                    &#39;plan_id&#39;: int or None (Optional)
+                    --
 
     &#34;&#34;&#34;
     adgroups = []
@@ -4571,7 +4940,6 @@ dict of the adgroups to add to the subclient</p>
 
                 if adgroup_item.lower() == ad_item[&#39;adGroupName&#39;].lower():
                     adgroup_dict = {
-                        &#34;associated&#34;: False,
                         &#39;adGroupName&#39;: ad_item[&#39;adGroupName&#39;],
                     }
                     adgroups.append(adgroup_dict)
@@ -4588,6 +4956,10 @@ dict of the adgroups to add to the subclient</p>
     else:
         _assocaition_json_ = self._association_json_with_plan(subclient_content)
     _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
+    _assocaition_json_[&#34;emailAssociation&#34;].update({&#34;emailStatus&#34;:0})
+    _assocaition_json_[&#34;emailAssociation&#34;].update({&#34;advanceOptions&#34;:{
+        &#34;enableAutoDiscovery&#34;: subclient_content[&#34;is_auto_discover_user&#34;]
+    }})
     self._set_association_request(_assocaition_json_)</code></pre>
 </details>
 </dd>
@@ -4617,7 +4989,7 @@ dict of the databases to add to the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L980-L1032" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L982-L1034" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_database_assocaition(self, subclient_content):
     &#34;&#34;&#34;Create Database assocaition for UserMailboxSubclient.
@@ -4688,7 +5060,7 @@ all backupsets under client2 to the association</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L924-L978" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L926-L980" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_fs_association_for_pst(self, association):
     &#34;&#34;&#34;Helper method to create pst association for PST Ingestion by FS
@@ -4769,7 +5141,7 @@ dict of the policies to associate</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1091-L1116" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1110-L1135" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_o365group_asscoiations(self, subclient_content):
     &#34;&#34;&#34;Create O365 Group association for UserMailboxSubclient.
@@ -4833,7 +5205,7 @@ dict of the pst to add to the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L840-L922" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L842-L924" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_pst_association(self, subclient_content):
     &#34;&#34;&#34;Create PST assocaition for UserMailboxSubclient.
@@ -4953,7 +5325,7 @@ dict of the Users to add to the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/subclients/exchange/usermailbox_subclient.py#L764-L838" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L765-L840" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_user_assocaition(self, subclient_content, use_policies=True):
     &#34;&#34;&#34;Create User assocaition for UserMailboxSubclient.
@@ -4997,7 +5369,8 @@ dict of the Users to add to the subclient</p>
 
             for mb_item in discover_users:
 
-                if mailbox_item.lower() == mb_item[&#39;aliasName&#39;].lower():
+                if mailbox_item.lower() == mb_item[&#39;aliasName&#39;].lower() or \
+                        mailbox_item.lower() == mb_item[&#39;smtpAdrress&#39;].lower():
                     mailbox_dict = {
                         &#39;smtpAdrress&#39;: mb_item[&#39;smtpAdrress&#39;],
                         &#39;aliasName&#39;: mb_item[&#39;aliasName&#39;],
@@ -5193,6 +5566,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.enable_ews_support" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.enable_ews_support">enable_ews_support</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.o365groups" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.o365groups">o365groups</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.refresh" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.restore_in_place_syntex" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.restore_in_place_syntex">restore_in_place_syntex</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_adgroup_associations" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_adgroup_associations">set_adgroup_associations</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_database_assocaition" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_database_assocaition">set_database_assocaition</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_fs_association_for_pst" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_fs_association_for_pst">set_fs_association_for_pst</a></code></li>

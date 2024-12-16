@@ -52,7 +52,7 @@ checks if specified role exists on commcell</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/security_association.py#L1-L401" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/security_association.py#L1-L423" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -112,8 +112,20 @@ class SecurityAssociation(object):
 
                 class_object         (object)     --    instance of the class on which we want to
                                                             manage security operations
+                                                        default: commcell object will be used
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
+        if not class_object:
+            class_object = self._commcell_object
+
+        from ..commcell import Commcell
+        if isinstance(class_object, Commcell):
+            self._entity_list = {
+                &#34;entity&#34;: [{
+                    &#34;commCellId&#34;: class_object.commcell_id,
+                    &#34;_type_&#34;: 1
+                }]
+            }
 
         from ..client import Client
         if isinstance(class_object, Client):
@@ -139,6 +151,16 @@ class SecurityAssociation(object):
                 &#34;entity&#34;: [{
                     &#34;planId&#34;: int(class_object.plan_id),
                     &#34;_type_&#34;: 158
+                }]
+            }
+
+        from ..workflow import WorkFlow
+        if isinstance(class_object, WorkFlow):
+            self._entity_list = {
+                &#34;entity&#34;: [{
+                    &#34;workflowId&#34;: int(class_object.workflow_id),
+                    &#34;_type_&#34;: 83,
+                    &#34;entityType&#34;: 83
                 }]
             }
 
@@ -481,11 +503,12 @@ instance of the Commcell class</p>
 (object)
 &ndash;
 instance of the class on which we want to
-manage security operations</p></div>
+manage security operations
+default: commcell object will be used</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/security_association.py#L48-L400" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/security_association.py#L48-L422" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SecurityAssociation(object):
     &#34;&#34;&#34;Class for managing the security associations roles on the commcell&#34;&#34;&#34;
@@ -498,8 +521,20 @@ manage security operations</p></div>
 
                 class_object         (object)     --    instance of the class on which we want to
                                                             manage security operations
+                                                        default: commcell object will be used
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
+        if not class_object:
+            class_object = self._commcell_object
+
+        from ..commcell import Commcell
+        if isinstance(class_object, Commcell):
+            self._entity_list = {
+                &#34;entity&#34;: [{
+                    &#34;commCellId&#34;: class_object.commcell_id,
+                    &#34;_type_&#34;: 1
+                }]
+            }
 
         from ..client import Client
         if isinstance(class_object, Client):
@@ -525,6 +560,16 @@ manage security operations</p></div>
                 &#34;entity&#34;: [{
                     &#34;planId&#34;: int(class_object.plan_id),
                     &#34;_type_&#34;: 158
+                }]
+            }
+
+        from ..workflow import WorkFlow
+        if isinstance(class_object, WorkFlow):
+            self._entity_list = {
+                &#34;entity&#34;: [{
+                    &#34;workflowId&#34;: int(class_object.workflow_id),
+                    &#34;_type_&#34;: 83,
+                    &#34;entityType&#34;: 83
                 }]
             }
 
@@ -858,7 +903,7 @@ security association properties of entity</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/security_association.py#L189-L250" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/security_association.py#L211-L272" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@staticmethod
 def fetch_security_association(security_dict):
@@ -944,7 +989,7 @@ True if role with specified name exists</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/security/security_association.py#L388-L400" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/security_association.py#L410-L422" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_role(self, role_name):
     &#34;&#34;&#34;Checks if role with specified name exists

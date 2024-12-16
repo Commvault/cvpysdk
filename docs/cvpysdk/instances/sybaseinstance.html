@@ -49,6 +49,9 @@ individual database when we have rename device options</p>
 &ndash; setter for destination options property in restore</p>
 <p>_restore_sybase_option_json()
 &ndash; setter for Sybase restore option property in restore</p>
+<p>_primary_node_properties()
+&ndash;
+Returns Primary Node Properties of sybase hadr instance</p>
 <p>sybase_home()
 &ndash; returns string of sybase_home Property of Sybase instance</p>
 <p>sybase_instance_name()
@@ -83,10 +86,13 @@ for given sybase instance</p>
 &ndash; Performs individual databases restore</p>
 <p>restore_to_disk()
 &ndash; Perform restore to disk [Application free restore] for sybase</p>
+<p>get_node_properties()
+&ndash;
+Returns properties of all sybase hadr nodes or for given node id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/sybaseinstance.py#L1-L1043" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sybaseinstance.py#L1-L1122" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -137,6 +143,8 @@ SybaseInstance:
 
     _restore_sybase_option_json()   -- setter for Sybase restore option property in restore
 
+    _primary_node_properties()      --  Returns Primary Node Properties of sybase hadr instance
+
     sybase_home()                   -- returns string of sybase_home Property of Sybase instance
 
     sybase_instance_name()          -- returns sybase instance name without any case change
@@ -171,8 +179,9 @@ SybaseInstance:
 
     restore_to_disk()               -- Perform restore to disk [Application free restore] for sybase
 
-&#34;&#34;&#34;
+    get_node_properties()           --  Returns properties of all sybase hadr nodes or for given node id
 
+&#34;&#34;&#34;
 
 from __future__ import unicode_literals
 import datetime
@@ -206,8 +215,10 @@ class SybaseInstance(DatabaseInstance):
         self._destination_restore_json = None
         super(SybaseInstance, self).__init__(
             agent_object, instance_name, instance_id)
+        self._is_hadr = len(self._properties.get(&#39;sybaseClusterInstance&#39;, {})) &gt; 0
         self._instanceprop = {}  # instance variable to hold instance properties
-
+        self._nodes = self.get_node_properties()
+        self._primarynodeprop = self._primary_node_properties()
 
     @property
     def sybase_home(self):
@@ -218,6 +229,8 @@ class SybaseInstance(DatabaseInstance):
                 (str) - string representing sybase home
 
         &#34;&#34;&#34;
+        if self.is_hadr:
+            return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;sybaseHome&#39;)
         return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;sybaseHome&#39;)
 
     @property
@@ -229,6 +242,8 @@ class SybaseInstance(DatabaseInstance):
                 (str) - string representing sybase instance name
 
         &#34;&#34;&#34;
+        if self.is_hadr:
+            return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;backupServer&#39;)[:-3]
         return self._properties.get(&#39;instance&#39;, {}).get(&#39;instanceName&#39;)
 
     @property
@@ -244,6 +259,8 @@ class SybaseInstance(DatabaseInstance):
                     False - returns False if autodiscosvery is not enabled
 
         &#34;&#34;&#34;
+        if self.is_hadr:
+            return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;enableAutoDiscovery&#39;)
         return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;enableAutoDiscovery&#39;)
 
     @property
@@ -255,6 +272,8 @@ class SybaseInstance(DatabaseInstance):
                 (str) - string representing local admin user
 
         &#34;&#34;&#34;
+        if self.is_hadr:
+            return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;localAdministrator&#39;, {}).get(&#39;userName&#39;)
         return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;localAdministrator&#39;, {}).get(&#39;userName&#39;)
 
     @property
@@ -266,6 +285,8 @@ class SybaseInstance(DatabaseInstance):
                 (str) - string representing sa username
 
         &#34;&#34;&#34;
+        if self.is_hadr:
+            return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;saUser&#39;, {}).get(&#39;userName&#39;)
         return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;saUser&#39;, {}).get(&#39;userName&#39;)
 
     @property
@@ -288,6 +309,8 @@ class SybaseInstance(DatabaseInstance):
                 (str) - string representing backup server
 
         &#34;&#34;&#34;
+        if self.is_hadr:
+            return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;backupServer&#39;)
         return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;backupServer&#39;)
 
     @property
@@ -299,6 +322,8 @@ class SybaseInstance(DatabaseInstance):
                 (str) - string representing sybase OCS
 
         &#34;&#34;&#34;
+        if self.is_hadr:
+            return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;sybaseOCS&#39;)
         return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;sybaseOCS&#39;)
 
     @property
@@ -310,6 +335,8 @@ class SybaseInstance(DatabaseInstance):
                 (str) - string representing sybase ASE
 
         &#34;&#34;&#34;
+        if self.is_hadr:
+            return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;sybaseASE&#39;)
         return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;sybaseASE&#39;)
 
     @property
@@ -332,6 +359,8 @@ class SybaseInstance(DatabaseInstance):
                 (str) - string representing sybase config file
 
         &#34;&#34;&#34;
+        if self.is_hadr:
+            return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;configFile&#39;)
         return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;configFile&#39;)
 
     @property
@@ -344,7 +373,31 @@ class SybaseInstance(DatabaseInstance):
                             sybase shared memory directory
 
         &#34;&#34;&#34;
+        if self.is_hadr:
+            return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;sharedMemoryDirectory&#39;)
         return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;sharedMemoryDirectory&#39;)
+
+    @property
+    def is_hadr(self):
+        &#34;&#34;&#34;
+        Returns if current instance is Sybase HADR
+
+            Returns:
+                (bool) - true if instance is HADR
+        &#34;&#34;&#34;
+        return self._is_hadr
+
+    @property
+    def hadr_primarynode_id(self):
+        &#34;&#34;&#34;
+        Returns Primary node ID if instance is HADR
+
+            Returns:
+                (str) - Sybase Hadr Primary Node id
+        &#34;&#34;&#34;
+        if self.is_hadr:
+            return self._properties.get(&#39;sybaseClusterInstance&#39;, {}).get(&#39;primaryNodeId&#39;)
+        return None
 
     @property
     def client_name(self):
@@ -356,6 +409,38 @@ class SybaseInstance(DatabaseInstance):
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;instance&#39;, {}).get(&#39;clientName&#39;)
+
+    def _primary_node_properties(self):
+        &#34;&#34;&#34;
+        Returns Primary Node Properties
+
+            Returns:
+                (dict) - Primary Node Properties
+        &#34;&#34;&#34;
+        if self.is_hadr:
+            nodes = self._properties.get(&#39;sybaseClusterInstance&#39;).get(&#39;nodes&#39;)
+            for node in nodes:
+                if node.get(&#39;physicalClient&#39;, {}).get(&#39;clientId&#39;) == self.hadr_primarynode_id:
+                    return node
+
+    def get_node_properties(self, clientId=None):
+        &#34;&#34;&#34;
+        Returns Nodes Properties
+
+        Args:
+            clientId(str) - Returns Node properties of given ClientId
+
+        Returns:
+            (dict) - Node properties of given Client Id if given,
+                    otherwise all the node properties
+        &#34;&#34;&#34;
+        if self.is_hadr:
+            nodes = self._properties.get(&#39;sybaseClusterInstance&#39;).get(&#39;nodes&#39;)
+            if clientId:
+                for node in nodes:
+                    if node.get(&#39;physicalClient&#39;, {}).get(&#39;clientId&#39;) == int(clientId):
+                        return node
+            return nodes
 
     def _restore_common_options_json(self, value):
         &#34;&#34;&#34;
@@ -415,7 +500,7 @@ class SybaseInstance(DatabaseInstance):
             time_dict = {}
         else:
             time_dict = {
-                &#34;timeValue&#34;:value.get(&#34;to_time&#34;, &#34;&#34;)
+                &#34;timeValue&#34;: value.get(&#34;to_time&#34;, &#34;&#34;)
             }
         self._sybase_restore_json = {
             &#34;sybaseRecoverType&#34;: &#34;STATE_RECOVER&#34;,
@@ -1163,7 +1248,7 @@ Returns :
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/sybaseinstance.py#L93-L1043" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sybaseinstance.py#L96-L1122" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SybaseInstance(DatabaseInstance):
     &#34;&#34;&#34;
@@ -1191,8 +1276,10 @@ Returns :
         self._destination_restore_json = None
         super(SybaseInstance, self).__init__(
             agent_object, instance_name, instance_id)
+        self._is_hadr = len(self._properties.get(&#39;sybaseClusterInstance&#39;, {})) &gt; 0
         self._instanceprop = {}  # instance variable to hold instance properties
-
+        self._nodes = self.get_node_properties()
+        self._primarynodeprop = self._primary_node_properties()
 
     @property
     def sybase_home(self):
@@ -1203,6 +1290,8 @@ Returns :
                 (str) - string representing sybase home
 
         &#34;&#34;&#34;
+        if self.is_hadr:
+            return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;sybaseHome&#39;)
         return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;sybaseHome&#39;)
 
     @property
@@ -1214,6 +1303,8 @@ Returns :
                 (str) - string representing sybase instance name
 
         &#34;&#34;&#34;
+        if self.is_hadr:
+            return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;backupServer&#39;)[:-3]
         return self._properties.get(&#39;instance&#39;, {}).get(&#39;instanceName&#39;)
 
     @property
@@ -1229,6 +1320,8 @@ Returns :
                     False - returns False if autodiscosvery is not enabled
 
         &#34;&#34;&#34;
+        if self.is_hadr:
+            return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;enableAutoDiscovery&#39;)
         return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;enableAutoDiscovery&#39;)
 
     @property
@@ -1240,6 +1333,8 @@ Returns :
                 (str) - string representing local admin user
 
         &#34;&#34;&#34;
+        if self.is_hadr:
+            return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;localAdministrator&#39;, {}).get(&#39;userName&#39;)
         return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;localAdministrator&#39;, {}).get(&#39;userName&#39;)
 
     @property
@@ -1251,6 +1346,8 @@ Returns :
                 (str) - string representing sa username
 
         &#34;&#34;&#34;
+        if self.is_hadr:
+            return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;saUser&#39;, {}).get(&#39;userName&#39;)
         return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;saUser&#39;, {}).get(&#39;userName&#39;)
 
     @property
@@ -1273,6 +1370,8 @@ Returns :
                 (str) - string representing backup server
 
         &#34;&#34;&#34;
+        if self.is_hadr:
+            return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;backupServer&#39;)
         return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;backupServer&#39;)
 
     @property
@@ -1284,6 +1383,8 @@ Returns :
                 (str) - string representing sybase OCS
 
         &#34;&#34;&#34;
+        if self.is_hadr:
+            return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;sybaseOCS&#39;)
         return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;sybaseOCS&#39;)
 
     @property
@@ -1295,6 +1396,8 @@ Returns :
                 (str) - string representing sybase ASE
 
         &#34;&#34;&#34;
+        if self.is_hadr:
+            return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;sybaseASE&#39;)
         return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;sybaseASE&#39;)
 
     @property
@@ -1317,6 +1420,8 @@ Returns :
                 (str) - string representing sybase config file
 
         &#34;&#34;&#34;
+        if self.is_hadr:
+            return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;configFile&#39;)
         return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;configFile&#39;)
 
     @property
@@ -1329,7 +1434,31 @@ Returns :
                             sybase shared memory directory
 
         &#34;&#34;&#34;
+        if self.is_hadr:
+            return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;sharedMemoryDirectory&#39;)
         return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;sharedMemoryDirectory&#39;)
+
+    @property
+    def is_hadr(self):
+        &#34;&#34;&#34;
+        Returns if current instance is Sybase HADR
+
+            Returns:
+                (bool) - true if instance is HADR
+        &#34;&#34;&#34;
+        return self._is_hadr
+
+    @property
+    def hadr_primarynode_id(self):
+        &#34;&#34;&#34;
+        Returns Primary node ID if instance is HADR
+
+            Returns:
+                (str) - Sybase Hadr Primary Node id
+        &#34;&#34;&#34;
+        if self.is_hadr:
+            return self._properties.get(&#39;sybaseClusterInstance&#39;, {}).get(&#39;primaryNodeId&#39;)
+        return None
 
     @property
     def client_name(self):
@@ -1341,6 +1470,38 @@ Returns :
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;instance&#39;, {}).get(&#39;clientName&#39;)
+
+    def _primary_node_properties(self):
+        &#34;&#34;&#34;
+        Returns Primary Node Properties
+
+            Returns:
+                (dict) - Primary Node Properties
+        &#34;&#34;&#34;
+        if self.is_hadr:
+            nodes = self._properties.get(&#39;sybaseClusterInstance&#39;).get(&#39;nodes&#39;)
+            for node in nodes:
+                if node.get(&#39;physicalClient&#39;, {}).get(&#39;clientId&#39;) == self.hadr_primarynode_id:
+                    return node
+
+    def get_node_properties(self, clientId=None):
+        &#34;&#34;&#34;
+        Returns Nodes Properties
+
+        Args:
+            clientId(str) - Returns Node properties of given ClientId
+
+        Returns:
+            (dict) - Node properties of given Client Id if given,
+                    otherwise all the node properties
+        &#34;&#34;&#34;
+        if self.is_hadr:
+            nodes = self._properties.get(&#39;sybaseClusterInstance&#39;).get(&#39;nodes&#39;)
+            if clientId:
+                for node in nodes:
+                    if node.get(&#39;physicalClient&#39;, {}).get(&#39;clientId&#39;) == int(clientId):
+                        return node
+            return nodes
 
     def _restore_common_options_json(self, value):
         &#34;&#34;&#34;
@@ -1400,7 +1561,7 @@ Returns :
             time_dict = {}
         else:
             time_dict = {
-                &#34;timeValue&#34;:value.get(&#34;to_time&#34;, &#34;&#34;)
+                &#34;timeValue&#34;: value.get(&#34;to_time&#34;, &#34;&#34;)
             }
         self._sybase_restore_json = {
             &#34;sybaseRecoverType&#34;: &#34;STATE_RECOVER&#34;,
@@ -2133,7 +2294,7 @@ Returns :
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/sybaseinstance.py#L192-L201" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sybaseinstance.py#L207-L218" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_server(self):
@@ -2144,6 +2305,8 @@ def backup_server(self):
             (str) - string representing backup server
 
     &#34;&#34;&#34;
+    if self.is_hadr:
+        return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;backupServer&#39;)
     return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;backupServer&#39;)</code></pre>
 </details>
 </dd>
@@ -2156,7 +2319,7 @@ def backup_server(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/sybaseinstance.py#L259-L268" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sybaseinstance.py#L306-L315" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_name(self):
@@ -2168,6 +2331,30 @@ def client_name(self):
 
     &#34;&#34;&#34;
     return self._properties.get(&#39;instance&#39;, {}).get(&#39;clientName&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.instances.sybaseinstance.SybaseInstance.hadr_primarynode_id"><code class="name">var <span class="ident">hadr_primarynode_id</span></code></dt>
+<dd>
+<div class="desc"><p>Returns Primary node ID if instance is HADR</p>
+<pre><code>Returns:
+    (str) - Sybase Hadr Primary Node id
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sybaseinstance.py#L294-L304" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def hadr_primarynode_id(self):
+    &#34;&#34;&#34;
+    Returns Primary node ID if instance is HADR
+
+        Returns:
+            (str) - Sybase Hadr Primary Node id
+    &#34;&#34;&#34;
+    if self.is_hadr:
+        return self._properties.get(&#39;sybaseClusterInstance&#39;, {}).get(&#39;primaryNodeId&#39;)
+    return None</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.instances.sybaseinstance.SybaseInstance.is_discovery_enabled"><code class="name">var <span class="ident">is_discovery_enabled</span></code></dt>
@@ -2183,7 +2370,7 @@ def client_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/sybaseinstance.py#L144-L157" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sybaseinstance.py#L153-L168" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_discovery_enabled(self):
@@ -2198,7 +2385,31 @@ def is_discovery_enabled(self):
                 False - returns False if autodiscosvery is not enabled
 
     &#34;&#34;&#34;
+    if self.is_hadr:
+        return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;enableAutoDiscovery&#39;)
     return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;enableAutoDiscovery&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.instances.sybaseinstance.SybaseInstance.is_hadr"><code class="name">var <span class="ident">is_hadr</span></code></dt>
+<dd>
+<div class="desc"><p>Returns if current instance is Sybase HADR</p>
+<pre><code>Returns:
+    (bool) - true if instance is HADR
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sybaseinstance.py#L284-L292" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def is_hadr(self):
+    &#34;&#34;&#34;
+    Returns if current instance is Sybase HADR
+
+        Returns:
+            (bool) - true if instance is HADR
+    &#34;&#34;&#34;
+    return self._is_hadr</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.instances.sybaseinstance.SybaseInstance.localadmin_user"><code class="name">var <span class="ident">localadmin_user</span></code></dt>
@@ -2210,7 +2421,7 @@ def is_discovery_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/sybaseinstance.py#L159-L168" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sybaseinstance.py#L170-L181" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def localadmin_user(self):
@@ -2221,6 +2432,8 @@ def localadmin_user(self):
             (str) - string representing local admin user
 
     &#34;&#34;&#34;
+    if self.is_hadr:
+        return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;localAdministrator&#39;, {}).get(&#39;userName&#39;)
     return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;localAdministrator&#39;, {}).get(&#39;userName&#39;)</code></pre>
 </details>
 </dd>
@@ -2233,7 +2446,7 @@ def localadmin_user(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/sybaseinstance.py#L170-L179" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sybaseinstance.py#L183-L194" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sa_user(self):
@@ -2244,6 +2457,8 @@ def sa_user(self):
             (str) - string representing sa username
 
     &#34;&#34;&#34;
+    if self.is_hadr:
+        return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;saUser&#39;, {}).get(&#39;userName&#39;)
     return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;saUser&#39;, {}).get(&#39;userName&#39;)</code></pre>
 </details>
 </dd>
@@ -2256,7 +2471,7 @@ def sa_user(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/sybaseinstance.py#L214-L223" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sybaseinstance.py#L233-L244" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sybase_ase(self):
@@ -2267,6 +2482,8 @@ def sybase_ase(self):
             (str) - string representing sybase ASE
 
     &#34;&#34;&#34;
+    if self.is_hadr:
+        return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;sybaseASE&#39;)
     return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;sybaseASE&#39;)</code></pre>
 </details>
 </dd>
@@ -2279,7 +2496,7 @@ def sybase_ase(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/sybaseinstance.py#L225-L234" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sybaseinstance.py#L246-L255" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sybase_blocksize(self):
@@ -2302,7 +2519,7 @@ def sybase_blocksize(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/sybaseinstance.py#L236-L245" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sybaseinstance.py#L257-L268" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sybase_configfile(self):
@@ -2313,6 +2530,8 @@ def sybase_configfile(self):
             (str) - string representing sybase config file
 
     &#34;&#34;&#34;
+    if self.is_hadr:
+        return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;configFile&#39;)
     return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;configFile&#39;)</code></pre>
 </details>
 </dd>
@@ -2325,7 +2544,7 @@ def sybase_configfile(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/sybaseinstance.py#L122-L131" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sybaseinstance.py#L127-L138" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sybase_home(self):
@@ -2336,6 +2555,8 @@ def sybase_home(self):
             (str) - string representing sybase home
 
     &#34;&#34;&#34;
+    if self.is_hadr:
+        return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;sybaseHome&#39;)
     return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;sybaseHome&#39;)</code></pre>
 </details>
 </dd>
@@ -2348,7 +2569,7 @@ def sybase_home(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/sybaseinstance.py#L133-L142" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sybaseinstance.py#L140-L151" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sybase_instance_name(self):
@@ -2359,6 +2580,8 @@ def sybase_instance_name(self):
             (str) - string representing sybase instance name
 
     &#34;&#34;&#34;
+    if self.is_hadr:
+        return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;backupServer&#39;)[:-3]
     return self._properties.get(&#39;instance&#39;, {}).get(&#39;instanceName&#39;)</code></pre>
 </details>
 </dd>
@@ -2371,7 +2594,7 @@ def sybase_instance_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/sybaseinstance.py#L203-L212" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sybaseinstance.py#L220-L231" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sybase_ocs(self):
@@ -2382,6 +2605,8 @@ def sybase_ocs(self):
             (str) - string representing sybase OCS
 
     &#34;&#34;&#34;
+    if self.is_hadr:
+        return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;sybaseOCS&#39;)
     return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;sybaseOCS&#39;)</code></pre>
 </details>
 </dd>
@@ -2395,7 +2620,7 @@ def sybase_ocs(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/sybaseinstance.py#L247-L257" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sybaseinstance.py#L270-L282" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sybase_sharedmemory_directory(self):
@@ -2407,6 +2632,8 @@ def sybase_sharedmemory_directory(self):
                         sybase shared memory directory
 
     &#34;&#34;&#34;
+    if self.is_hadr:
+        return self._primarynodeprop.get(&#39;sybaseProps&#39;, {}).get(&#39;sharedMemoryDirectory&#39;)
     return self._properties.get(&#39;sybaseInstance&#39;, {}).get(&#39;sharedMemoryDirectory&#39;)</code></pre>
 </details>
 </dd>
@@ -2419,7 +2646,7 @@ def sybase_sharedmemory_directory(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/sybaseinstance.py#L181-L190" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sybaseinstance.py#L196-L205" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def version(self):
@@ -2436,6 +2663,41 @@ def version(self):
 </dl>
 <h3>Methods</h3>
 <dl>
+<dt id="cvpysdk.instances.sybaseinstance.SybaseInstance.get_node_properties"><code class="name flex">
+<span>def <span class="ident">get_node_properties</span></span>(<span>self, clientId=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns Nodes Properties</p>
+<h2 id="args">Args</h2>
+<p>clientId(str) - Returns Node properties of given ClientId</p>
+<h2 id="returns">Returns</h2>
+<p>(dict) - Node properties of given Client Id if given,
+otherwise all the node properties</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sybaseinstance.py#L330-L347" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_node_properties(self, clientId=None):
+    &#34;&#34;&#34;
+    Returns Nodes Properties
+
+    Args:
+        clientId(str) - Returns Node properties of given ClientId
+
+    Returns:
+        (dict) - Node properties of given Client Id if given,
+                otherwise all the node properties
+    &#34;&#34;&#34;
+    if self.is_hadr:
+        nodes = self._properties.get(&#39;sybaseClusterInstance&#39;).get(&#39;nodes&#39;)
+        if clientId:
+            for node in nodes:
+                if node.get(&#39;physicalClient&#39;, {}).get(&#39;clientId&#39;) == int(clientId):
+                    return node
+        return nodes</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.instances.sybaseinstance.SybaseInstance.restore_database"><code class="name flex">
 <span>def <span class="ident">restore_database</span></span>(<span>self, destination_client=None, destination_instance_name=None, database_list=None, timevalue=None, sybase_create_device=False, rename_databases=False, device_options=None, copy_precedence=0)</span>
 </code></dt>
@@ -2529,7 +2791,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/sybaseinstance.py#L885-L1003" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sybaseinstance.py#L964-L1082" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_database(self,
                      destination_client=None,
@@ -2746,7 +3008,7 @@ Returns:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/sybaseinstance.py#L767-L883" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sybaseinstance.py#L846-L962" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_sybase_server(self,
                           destination_client=None,
@@ -2895,7 +3157,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dae4e5d757578a0123ac548967635d21ca9ca6f/cvpysdk/instances/sybaseinstance.py#L1005-L1043" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sybaseinstance.py#L1084-L1122" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_to_disk(self,
                     destination_client,
@@ -2943,13 +3205,16 @@ Raises:
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.instances.dbinstance.DatabaseInstance" href="dbinstance.html#cvpysdk.instances.dbinstance.DatabaseInstance">DatabaseInstance</a></b></code>:
 <ul class="hlist">
+<li><code><a title="cvpysdk.instances.dbinstance.DatabaseInstance.backupsets" href="../instance.html#cvpysdk.instance.Instance.backupsets">backupsets</a></code></li>
 <li><code><a title="cvpysdk.instances.dbinstance.DatabaseInstance.browse" href="../instance.html#cvpysdk.instance.Instance.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.instances.dbinstance.DatabaseInstance.credentials" href="../instance.html#cvpysdk.instance.Instance.credentials">credentials</a></code></li>
 <li><code><a title="cvpysdk.instances.dbinstance.DatabaseInstance.find" href="../instance.html#cvpysdk.instance.Instance.find">find</a></code></li>
 <li><code><a title="cvpysdk.instances.dbinstance.DatabaseInstance.instance_id" href="../instance.html#cvpysdk.instance.Instance.instance_id">instance_id</a></code></li>
 <li><code><a title="cvpysdk.instances.dbinstance.DatabaseInstance.instance_name" href="../instance.html#cvpysdk.instance.Instance.instance_name">instance_name</a></code></li>
 <li><code><a title="cvpysdk.instances.dbinstance.DatabaseInstance.name" href="../instance.html#cvpysdk.instance.Instance.name">name</a></code></li>
 <li><code><a title="cvpysdk.instances.dbinstance.DatabaseInstance.properties" href="../instance.html#cvpysdk.instance.Instance.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.instances.dbinstance.DatabaseInstance.refresh" href="../instance.html#cvpysdk.instance.Instance.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.instances.dbinstance.DatabaseInstance.subclients" href="../instance.html#cvpysdk.instance.Instance.subclients">subclients</a></code></li>
 <li><code><a title="cvpysdk.instances.dbinstance.DatabaseInstance.update_properties" href="../instance.html#cvpysdk.instance.Instance.update_properties">update_properties</a></code></li>
 </ul>
 </li>
@@ -3028,7 +3293,10 @@ setTimeout(() => input.focus(), 100);
 <ul class="">
 <li><code><a title="cvpysdk.instances.sybaseinstance.SybaseInstance.backup_server" href="#cvpysdk.instances.sybaseinstance.SybaseInstance.backup_server">backup_server</a></code></li>
 <li><code><a title="cvpysdk.instances.sybaseinstance.SybaseInstance.client_name" href="#cvpysdk.instances.sybaseinstance.SybaseInstance.client_name">client_name</a></code></li>
+<li><code><a title="cvpysdk.instances.sybaseinstance.SybaseInstance.get_node_properties" href="#cvpysdk.instances.sybaseinstance.SybaseInstance.get_node_properties">get_node_properties</a></code></li>
+<li><code><a title="cvpysdk.instances.sybaseinstance.SybaseInstance.hadr_primarynode_id" href="#cvpysdk.instances.sybaseinstance.SybaseInstance.hadr_primarynode_id">hadr_primarynode_id</a></code></li>
 <li><code><a title="cvpysdk.instances.sybaseinstance.SybaseInstance.is_discovery_enabled" href="#cvpysdk.instances.sybaseinstance.SybaseInstance.is_discovery_enabled">is_discovery_enabled</a></code></li>
+<li><code><a title="cvpysdk.instances.sybaseinstance.SybaseInstance.is_hadr" href="#cvpysdk.instances.sybaseinstance.SybaseInstance.is_hadr">is_hadr</a></code></li>
 <li><code><a title="cvpysdk.instances.sybaseinstance.SybaseInstance.localadmin_user" href="#cvpysdk.instances.sybaseinstance.SybaseInstance.localadmin_user">localadmin_user</a></code></li>
 <li><code><a title="cvpysdk.instances.sybaseinstance.SybaseInstance.restore_database" href="#cvpysdk.instances.sybaseinstance.SybaseInstance.restore_database">restore_database</a></code></li>
 <li><code><a title="cvpysdk.instances.sybaseinstance.SybaseInstance.restore_sybase_server" href="#cvpysdk.instances.sybaseinstance.SybaseInstance.restore_sybase_server">restore_sybase_server</a></code></li>
