@@ -292,13 +292,14 @@ class VirtualServerInstance(Instance):
     @property
     def co_ordinator(self):
         """Returns the Co_ordinator of this instance it is read-only attribute"""
-        _associated_clients = self.associated_clients
-        associated_client = _associated_clients[0]
-        if self._commcell_object.clients.has_client(associated_client):
-            return associated_client
-        elif self._commcell_object.client_groups.has_clientgroup(associated_client):
-            associated_client_group = self._commcell_object.client_groups.get(associated_client)
-            return associated_client_group._associated_clients[0]
+        if self.associated_clients is not None:
+            _associated_clients = self.associated_clients
+            associated_client = _associated_clients[0]
+            if self._commcell_object.clients.has_client(associated_client):
+                return associated_client
+            elif self._commcell_object.client_groups.has_clientgroup(associated_client):
+                associated_client_group = self._commcell_object.client_groups.get(associated_client)
+                return associated_client_group._associated_clients[0]
 
     @property
     def frel(self):

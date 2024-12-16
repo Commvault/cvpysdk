@@ -198,8 +198,11 @@ class PostgreSQLInstance(Instance):
             Return Type: str
 
         """
-        if self._properties['postGreSQLInstance']['SAUser']['userName']:
-            return self._properties['postGreSQLInstance']['SAUser']['userName']
+        if self.credentials:
+            return self._commcell_object.credentials.get(self.credentials).credential_user_name
+        else:
+            if self._properties['postGreSQLInstance']['SAUser']['userName']:
+                return self._properties['postGreSQLInstance']['SAUser']['userName']
         raise SDKException(
             'Instance',
             '105',

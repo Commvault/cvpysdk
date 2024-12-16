@@ -61,11 +61,21 @@ Plans
     add_exchange_plan()         --  Adds a new exchange plan to the commcell
 
     create_server_plan()        --  creates a new server plan to the commcell
+
+    _get_fl_parameters()        --  Returns the fl parameters to be passed in the mongodb caching api call
+
+    _get_sort_parameters()      --  Returns the sort parameters to be passed in the mongodb caching api call
+
+    _get_fq_parameters()        --  Returns the fq parameters based on the fq list passed
+
+    get_plans_cache()           --  Returns plan cache in response
     
 Attributes
 ----------
 
     **all_plans**   --  returns the dict consisting of plans and their details
+
+    **all_plans_cache** --  Returns the dictionary consisting of all the plans cache present in mongoDB
 
 
 Plan
@@ -82,6 +92,8 @@ Plan
     _update_plan_props()        -- method to update plan properties
 
     _get_associated_entities()  -- method to get list of entities associated to a plan
+
+    _enable_content_indexing_o365_plan() --method to enable content indexing for O365 plan
 
     derive_and_add()            -- add new plan by deriving from the parent Plan object
 
@@ -135,6 +147,8 @@ Plan
 
     update_backup_content()     --  method to update backup content of the plan
 
+    enable_data_aging()         --  Enable data aging for the copy of the plan
+
 Plan Attributes
 ----------------
     **plan_id**                 --  returns the id of the plan
@@ -164,8 +178,23 @@ Plan Attributes
     **associated_entities**     --  returns all the entities associated with the plan
 
     **content_indexing_props**  --  returns the DC plan related properties from the plan
+
+    **region_id**               --  Returns the Backup destination region id
+
+    **company**                 --  Returns the company of the plan
+
+    **resources**               --  Returns the resources stored in storage resource pool
     
     **applicable_solutions**    --  returns applicable solutions configured on server plan
+
+    **data_schedule_policy**    --  returns the data schedule policy of the plan
+
+    **log_schedule_policy**     --  returns the log schedule policy of the plan
+
+    **snap_schedule_policy**    --  returns the snap schedule policy of the plan
+
+    **content_indexing**        --  returns the status of content indexing of O365 plan
+
 """
 from __future__ import unicode_literals
 
@@ -209,6 +238,7 @@ class _PayloadGeneratorPlanV4:
                     - 'retentionPeriodDays' (int): Retention days for the copy (Default: 30 days)
                     - 'backupDestinationName' (str): Name of the copy (Default: 'Primary')
                     - 'region_name' (str, optional): Name of the region
+                    - 'storageTemplateTags' (dict): To indentify storage based on tags (Needed only for Global Plans)
 
                 Note: Additional properties can be sent in the input to update the payload with the same exact key names.
                     
@@ -218,11 +248,10 @@ class _PayloadGeneratorPlanV4:
                 dict: Copy details as a dictionary.
         """
         # validate the input
-        if 'storage_name' not in copy_details:
-            raise SDKException('Plan', '102', 'storage_name is required for copy configuration.')
+        if 'storageTemplateTags' not in copy_details and 'storage_name' not in copy_details:
+            raise SDKException('Plan', '102', 'Storage details is required for copy configuration.')
         
         temp_dict = copy_details.copy() # make a copy of the input to avoid modifying the original input
-        storage_pool = self.__commcell.storage_pools.get(copy_details["storage_name"])
 
         payload = {
             "backupDestinationName": copy_details.get("backupDestinationName", "Primary"),
@@ -230,12 +259,16 @@ class _PayloadGeneratorPlanV4:
             "useExtendedRetentionRules": False,
             "overrideRetentionSettings": True,
             "backupStartTime": -1,
-            "storagePool": {
+        }
+
+        # If storage_name is provided, update the payload with storage details
+        if 'storage_name' in copy_details:
+            storage_pool = self.__commcell.storage_pools.get(copy_details["storage_name"])
+            payload['storagePool'] = {
                 "id": int(storage_pool.storage_pool_id),
                 "name": storage_pool.storage_pool_name
-            },
-            "storageType": storage_pool.storage_pool_properties['storagePoolDetails']['libraryList'][0]['model'].upper()
-        }
+            }
+            payload['storageType'] = storage_pool.storage_pool_properties['storagePoolDetails']['libraryList'][0]['model'].upper()
 
         # Add aux copy specific properties
         if is_aux_copy:
@@ -457,7 +490,9 @@ class Plans(object):
 
         self._PLANS = self._services['PLANS']
         self._V4_PLANS = self._services['V4_SERVER_PLANS']
+        self._V4_GLOBAL_PLANS = self._services['V4_GLOBAL_SERVER_PLANS']
         self._plans = None
+        self._plans_cache = None
         self.refresh()
 
     def __str__(self):
@@ -511,11 +546,8 @@ class Plans(object):
             except IndexError:
                 raise IndexError('No plan exists with the given Name / Id')
 
-    def _get_plans(self, hard=False):
+    def _get_plans(self):
         """Gets all the plans associated with the commcell
-
-            Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
 
             Returns:
                 dict - consists of all plans in the commcell
@@ -530,8 +562,6 @@ class Plans(object):
 
                         if response is not success
         """
-        if hard:
-            self._cvpysdk_object.make_request('GET', self._services["HARD_REFRESH_CACHE"] % 'plan')
         flag, response = self._cvpysdk_object.make_request('GET', self._PLANS)
 
         if flag:
@@ -540,10 +570,28 @@ class Plans(object):
             if response.json() and 'plans' in response.json():
                 response_value = response.json()['plans']
 
+                name_count = {}
+
                 for temp in response_value:
-                    temp_name = temp['plan']['planName'].lower()
+                    temp_name = temp.get('plan', {}).get('planName', '').lower()
+                    temp_company = temp.get('plan', {}).get('entityInfo', {}).get('companyName', '').lower()
+
+                    if temp_name in name_count:
+                        name_count[temp_name].add(temp_company)
+                    else:
+                        name_count[temp_name] = {temp_company}
+
+                for temp in response_value:
+                    temp_name = temp.get('plan', {}).get('planName', '').lower()
                     temp_id = str(temp['plan']['planId']).lower()
-                    plans[temp_name] = temp_id
+                    temp_company = temp.get('plan', {}).get('entityInfo', {}).get('companyName', '').lower()
+
+                    if len(name_count[temp_name]) > 1:
+                        unique_key = f"{temp_name}_({temp_company})"
+                    else:
+                        unique_key = temp_name
+
+                    plans[unique_key] = temp_id
 
             return plans
         else:
@@ -594,6 +642,165 @@ class Plans(object):
                 response_string = self._update_response_(response.text)
                 raise SDKException('Response', '101', response_string)
 
+    def _get_fl_parameters(self, fl: list = None) -> str:
+        """
+        Returns the fl parameters to be passed in the mongodb caching api call
+
+        Args:
+            fl    (list)  --   list of columns to be passed in API request
+
+        Returns:
+            fl_parameters(str) -- fl parameter string
+        """
+        self.valid_columns = {
+            'planName': 'plans.plan.planName',
+            'planId': 'plans.plan.planId',
+            'planType': 'plans.subtype',
+            'numAssocEntities': 'plans.numAssocEntities',
+            'rpoInMinutes': 'plans.rpoInMinutes',
+            'numCopies': 'plans.numCopies',
+            'planStatusFlag': 'plans.planStatusFlag',
+            'storage': 'plans.storageResourcePoolMaps.resources.resourcePool',
+            'company': 'plans.plan.entityInfo.companyName',
+            'tags': 'tags'
+        }
+        default_columns = 'plans.plan.planName,plans.plan.planId'
+
+        if fl:
+            if all(col in self.valid_columns for col in fl):
+                fl_parameters = f"&fl={default_columns},{','.join(self.valid_columns[column] for column in fl)}"
+            else:
+                raise SDKException('Plan', '102', 'Invalid column name passed')
+        else:
+            fl_parameters = f"&fl={default_columns},{','.join(column for column in self.valid_columns.values())}"
+
+        return fl_parameters
+
+    def _get_sort_parameters(self, sort: list = None) -> str:
+        """
+        Returns the sort parameters to be passed in the mongodb caching api call
+
+        Args:
+            sort  (list)  --   contains the name of the column on which sorting will be performed and type of sort
+                                valid sor type -- 1 for ascending and -1 for descending
+                                e.g. sort = ['connectName','1']
+
+        Returns:
+            sort_parameters(str) -- sort parameter string
+        """
+        sort_type = str(sort[1])
+        col = sort[0]
+        if col in self.valid_columns.keys() and sort_type in ['1', '-1']:
+            sort_parameter = '&sort=' + self.valid_columns[col] + ':' + sort_type
+        else:
+            raise SDKException('Plan', '102', 'Invalid column name passed')
+        return sort_parameter
+
+    def _get_fq_parameters(self, fq: list = None) -> str:
+        """
+        Returns the fq parameters based on the fq list passed
+        Args:
+             fq     (list) --   contains the columnName, condition and value
+                    e.g. fq = [['planName','contains', test'],['numAssocEntities','between', '0-1']]
+
+        Returns:
+            fq_parameters(str) -- fq parameter string
+        """
+        conditions = ['contains', 'notContain', 'eq', 'neq', 'gt', 'lt']
+        params = [""]
+        if fq:
+
+            for param in fq:
+                if param[0] in self.valid_columns.keys():
+                    if param[0] == 'tags' and param[1] =='contains':
+                        params.append(f"&tags={param[2]}")
+                    elif param[1] in conditions:
+                        params.append(f"&fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}")
+                    elif param[1] == 'isEmpty' and len(param) == 2:
+                        params.append(f"&fq={self.valid_columns[param[0]]}:in:null,")
+                    elif param[1] == 'between' and '-' in param[2]:
+                        ranges = param[2].split('-')
+                        params.append(f"&fq={self.valid_columns[param[0]]}:gteq:{ranges[0]}")
+                        params.append(f"&fq={self.valid_columns[param[0]]}:lteq:{ranges[1]}")
+                    else:
+                        raise SDKException('Plan', '102', 'Invalid condition passed')
+                else:
+                    raise SDKException('Plan', '102', 'Invalid column Name passed')
+        if params:
+            return "".join(params)
+
+    def get_plans_cache(self, hard: bool = False, **kwargs) -> dict:
+        """
+        Returns plan cache in response.
+
+        Args:
+            hard  (bool)    --   Flag to perform hard refresh on plans cache.
+            **kwargs (dict):
+                fl (list)   --   List of columns to return in response (default: None).
+                sort (list) --   Contains the name of the column on which sorting will be performed and type of sort.
+                                       Valid sort type: 1 for ascending and -1 for descending
+                                       e.g. sort = ['columnName', '1'] (default: None).
+                limit (list)--   Contains the start and limit parameter value.
+                                        Default ['0', '100'].
+                search (str)--   Contains the string to search in the commcell entity cache (default: None).
+                fq (list)   --   Contains the columnName, condition, and value.
+                                        e.g. fq = [['planName', 'contains', 'test'],
+                                        ['numAssocEntities', 'between', '0-1']] (default: None).
+                enum (bool) --   Flag to return enums in the response (default: True).
+
+        Returns:
+            dict: Dictionary of all the properties present in response.
+        """
+        headers = self._commcell_object._headers.copy()
+        if kwargs.get('enum', True):
+            headers['EnumNames'] = "True"
+
+        fl_parameters = self._get_fl_parameters(kwargs.get('fl', None))
+        fq_parameters = self._get_fq_parameters(kwargs.get('fq', None))
+        limit = kwargs.get('limit', ['0', '100'])
+        limit_parameters = f'start={limit[0]}&limit={limit[1]}'
+        hard_refresh = '&hardRefresh=true' if hard else ''
+        sort_parameters = self._get_sort_parameters(kwargs.get('sort', None)) if kwargs.get('sort', None) else ''
+        search_parameter = f'&search={",".join(self.valid_columns.values())}:contains:{kwargs.get("search", None)}' if kwargs.get(
+            'search', None) else ''
+
+        request_url = (
+                self._PLANS + "?" + limit_parameters + sort_parameters + fl_parameters + fq_parameters +
+                hard_refresh + search_parameter
+        )
+        flag, response = self._cvpysdk_object.make_request("GET", request_url, headers=headers)
+
+        if not flag:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        plans_summary = {}
+        if response.json() and 'plans' in response.json():
+            for plan in response.json()['plans']:
+                name = plan.get("plan", {}).get("planName", None)
+                plan_config = {
+                    'planId': plan.get('plan', {}).get('planId', None),
+                    'planType': plan.get('subtype'),
+                    'numCopies': plan.get('numCopies'),
+                    'numAssocEntities': plan.get('numAssocEntities'),
+                    'rpoInMinutes': plan.get('rpoInMinutes'),
+                    'planStatusFlag': plan.get('planStatusFlag'),
+                    'company': plan.get('plan', {}).get('entityInfo', {}).get('companyName', None)
+                }
+                if 'storageResourcePoolMaps' in plan and 'resources' in plan.get('storageResourcePoolMaps', {})[0]:
+                    plan_config['storage'] = [
+                        resource.get('resourcePool', {}).get('resourcePoolName')
+                        for resource in plan.get('storageResourcePoolMaps', {})[0].get('resources')
+                    ]
+                if 'tags' in plan.get('plan'):
+                    plan_config['tags'] = plan.get('plan', None).get('tags')
+                plan_config = {key: value for key, value in plan_config.items() if value is not None}
+                plans_summary[name] = plan_config
+
+            return plans_summary
+        else:
+            raise SDKException("Plan", "102", "Failed to get plans summary")
+
     @property
     def all_plans(self):
         """Returns the dictionary consisting of all the plans added to the Commcell.
@@ -608,6 +815,43 @@ class Plans(object):
 
         """
         return self._plans
+
+    @property
+    def all_plans_cache(self):
+        """Returns the dictionary consisting of all the plans cache present in mongoDB
+
+                    dict - consists of all the plans configured on the commcell
+
+                        {
+                        "plan1_name":
+                         {
+                         id : <plan's id>,
+                         Type : <type of plan>,
+                         subtype : <sub type of plan>,
+                         status: <status of the plan>,
+                         numCopies: <number of copies>,
+                         numAssocEntities: <associated Entities Count>,
+                         RPO: <rpo in minutes>,
+                         planStatusFlag: <status of plan>,
+                         company: <name of the company plan belongs to>
+                         },
+
+                        "plan2_name":
+                         {
+                         id : <plan's id>,
+                         Type : <type of plan>,
+                         subtype : <sub type of plan>,
+                         status: <status of the plan>,
+                         numCopies: <number of copies>,
+                         numAssocEntities: <associated Entities Count>,
+                         RPO: <rpo in minutes>,
+                         planStatusFlag: <status of plan>,
+                         company: <name of the company plan belongs to>
+                         },
+                    }
+
+                """
+        return self._plans_cache
     
     def filter_plans(self, plan_type, company_name=None):
         """
@@ -990,6 +1234,41 @@ class Plans(object):
                         backup_copy_rpo_mins (int, optional): RPO for backup copy in minutes.
                         snap_retention_days (int, optional): Retention period in days.
                         snap_recovery_points (int, optional): Snap recovery point.
+                        gcm_options (dict, optional): Global Configuration Manager options
+                            commcells (list): List of commcell IDs to apply the plan (If not specified, applies to all commcells)
+
+                        For Global Plans, backup_destinations input should be in the following format:
+
+                        Example #1: For Single Copy
+                            backup_destinations = {
+                                "storageTemplateTags": [
+                                    {
+                                        "name": "Tag Name",
+                                        "value": "Tag Value"
+                                    }
+                                ]
+                            }
+
+                        Example #2: For Multiple Copies
+                        backup_destinations = [
+                            {
+                                'storageTemplateTags': [
+                                    {
+                                        'name': 'Tag Name 1', 
+                                        'value': 'Tag Value 1'
+                                    }
+                                ]
+                            }, 
+                            {
+                                'backupDestinationName': 'Aux Copy Name', 
+                                'storageTemplateTags': [
+                                    {
+                                        'name': 'Tag Name 2', 
+                                        'value': 'Tag Value 2'
+                                    }
+                                ]
+                            }
+                        ]
 
         """
         if schedules is None:
@@ -1008,14 +1287,36 @@ class Plans(object):
             plan_name, backup_destinations, schedules, **additional_params
         )
 
-        flag, response = self._cvpysdk_object.make_request('POST', self._V4_PLANS, request_json)
+        if gcm_options := additional_params.get('gcm_options'):
+            service_commcell_ids = gcm_options.get('commcells', [])  # [{'id': 1}, {'id': 2}]
+            apply_on_all_commcells = False if service_commcell_ids else True
+            request_json = {
+            "globalConfigInfo": {
+                "commcells": service_commcell_ids,
+                "scope": "",
+                "scopeFilterQuery": "",
+                "applyOnAllCommCells": apply_on_all_commcells
+            },
+            "plan": request_json
+            }
+
+        endpoint = self._V4_GLOBAL_PLANS if gcm_options else self._V4_PLANS
+        flag, response = self._cvpysdk_object.make_request('POST', endpoint, request_json)
 
         if flag:
             if response.json():
                 response_value = response.json()
-                error_message = response_value.get('errorMessage')
-                error_code = response_value.get('errorCode', 0)
+                if 'errors' in response_value:
+                    error_message = response_value.get('errors', [{}])[0].get('errorMessage')
+                    error_code = response_value.get('errors', [{}])[0].get('errorCode', 0)
+                else:
+                    error_message = response_value.get('errorMessage')
+                    error_code = response_value.get('errorCode', 0)
 
+                # corner case condition
+                if error_code == 587207454:
+                    raise SDKException('Plan', '102', f'Successfully created plan {response_value["plan"]["name"]} '
+                                                      f'with error: {error_message}')
                 if error_code != 0:
                     raise SDKException('Plan', '102', f'Failed to create new V4 Server Plan\nError: "{error_message}"')
                 
@@ -1111,6 +1412,9 @@ class Plans(object):
             is_dedupe = False
 
         request_json = self._get_plan_template(plan_sub_type, "MSP")
+        if plan_sub_type == "Laptop":
+            del request_json['plan']['laptop']['accessPolicies']
+            
         request_json['plan']['summary']['rpoInMinutes'] = sla_in_minutes
         request_json['plan']['summary']['description'] = "Created from CvPySDK."
         request_json['plan']['summary']['plan']['planName'] = plan_name
@@ -1167,24 +1471,25 @@ class Plans(object):
                 }
 
         # Enable full backup schedule
-        for subtask in request_json['plan']['schedule']['subTasks']:
-            if 'flags' in subtask['subTask'] and subtask['subTask']['flags'] == 65536:
-                import copy
-                full_schedule = copy.deepcopy(subtask)
-                del copy
-                full_schedule['subTask'].update({
-                    'subTaskName': 'Full backup schedule',
-                    'flags': 4194304
-                })
-                full_schedule['pattern'].update({
-                    'freq_type': 4,
-                    'freq_interval': 1,
-                    'name': 'Full backup schedule',
-                    'active_end_time': 0
-                })
-                full_schedule['options']['backupOpts']['backupLevel'] = 'FULL'
-                request_json['plan']['schedule']['subTasks'].append(full_schedule)
-                break
+        if plan_sub_type != "Laptop":
+            for subtask in request_json['plan']['schedule']['subTasks']:
+                if 'flags' in subtask['subTask'] and subtask['subTask']['flags'] == 65536:
+                    import copy
+                    full_schedule = copy.deepcopy(subtask)
+                    del copy
+                    full_schedule['subTask'].update({
+                        'subTaskName': 'Full backup schedule',
+                        'flags': 4194304
+                    })
+                    full_schedule['pattern'].update({
+                        'freq_type': 4,
+                        'freq_interval': 1,
+                        'name': 'Full backup schedule',
+                        'active_end_time': 0
+                    })
+                    full_schedule['options']['backupOpts']['backupLevel'] = 'FULL'
+                    request_json['plan']['schedule']['subTasks'].append(full_schedule)
+                    break
 
         if isinstance(override_entities, dict):
             request_json['plan']['summary']['restrictions'] = 0
@@ -1308,15 +1613,21 @@ class Plans(object):
         else:
             raise SDKException('Response', '102')
         
-    def refresh(self, hard=False):
+    def refresh(self, **kwargs):
         """
-        Refresh the plans associated with the Commcell.
+        Refresh the list of plans on this commcell.
 
             Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
-
+                **kwargs (dict):
+                    mongodb (bool)  -- Flag to fetch plans cache from MongoDB (default: False).
+                    hard (bool)     -- Flag to hard refresh MongoDB cache for this entity (default: False).
         """
-        self._plans = self._get_plans(hard)
+        mongodb = kwargs.get('mongodb', False)
+        hard = kwargs.get('hard', False)
+
+        self._plans = self._get_plans()
+        if mongodb:
+            self._plans_cache = self.get_plans_cache(hard=hard)
 
     def add_data_classification_plan(self, plan_name, index_server, target_app=TargetApps.FSO, **kwargs):
         """Adds data classification plan to the commcell
@@ -1496,26 +1807,57 @@ class Plans(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def get_plans_summary(self)->dict:
+    def get_plans_summary(self) -> dict:
+
         """Returns plan summary in response
 
         Returns:
             list - plans summary
+
+        **NOTE - THE FUNCTION WOULD BE DEPRECATED IN SP40 AS GET_PLANS_CACHE() WILL RETURN THE SIMILAR RESPONSE**
         """
         params = "fl=plans.missingEntities%2Cplans.numAssocEntities%2Cplans.numCopies%2Cplans.parent" \
                  "%2Cplans.permissions%2Cplans.plan.planId%2Cplans.plan.planName%2Cplans.planStatusFlag%2Cplans.restrictions%2C" \
                  "plans.rpoInMinutes%2Cplans.subtype%2Cplans.type%2Cplans.targetApps%2Cplans.storageResourcePoolMaps.resources.resourcePool" \
                  "&hardRefresh=true"
-        request_url = self._services['PLAN_SUMMARY']%(params)
+        request_url = self._services['PLAN_SUMMARY'] % params
 
         flags,response = self._cvpysdk_object.make_request('GET',request_url)
 
         if flags:
-            if response.json() :
-                plans_summary = {entry.get("plan",{}).get("name",None): entry.get("associatedEntities",None) for entry in response.json()["plans"]}
+            if response.json():
+                plans_summary = {entry.get("plan", {}).get("name", None): entry.get("associatedEntities", None)
+                                 for entry in response.json()["plans"]}
                 return plans_summary
             else:
                 raise SDKException("Plan", "102", "Failed to get plans summary")
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def add_office365_plan(self, plan_name)->None:
+        """
+        Creates Office 365 plan
+        Args:
+            plan_name (str) : name of the plan to be created
+        """
+        if not isinstance(plan_name, str):
+            raise SDKException('Plan','102','Plan name should be passed as String')
+        plan_sub_type = "Office365"
+        plan_type = "EXCHANGE"
+        office365_plan_template = self._get_plan_template(plan_type=plan_type,plan_sub_type=plan_sub_type)
+        office365_plan_template["plan"]["summary"]["plan"]["planName"] = plan_name
+        flag, response = self._cvpysdk_object.make_request("POST", self._PLANS ,office365_plan_template)
+        if flag:
+            if response:
+                if response.status_code == 200:
+                    self.refresh()
+                elif response.status_code == 400:
+                    raise SDKException("Plan","102","Bad request")
+                elif response.status_code == 401:
+                    raise SDKException("Plan", "102", "User is unauthorized to perform create operation")
+            else:
+                raise SDKException("Plan","102","Response received is empty")
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
@@ -1568,6 +1910,8 @@ class Plan(object):
         self._plan_type = None
         self._subtype = None
         self._security_associations = {}
+        self._provider_domain_name = None
+        self._resources = None
         self._storage_pool = None
         self._child_policies = {
             'storagePolicy': None,
@@ -1588,6 +1932,9 @@ class Plan(object):
         self._v4_plan_properties = {}
         self.refresh()
         self.plan_v4_helper = _PayloadGeneratorPlanV4(commcell=self._commcell_object)
+        self._data_schedule_policy = None
+        self._log_schedule_policy = None
+        self._snap_schedule_policy = None
 
     def __repr__(self):
         """String representation of the instance of this class."""
@@ -1692,12 +2039,6 @@ class Plan(object):
                                 self._storage_copies[
                                     copy['StoragePolicyCopy']['copyName']]['isSnapCopy'] = True
 
-                    if 'storagePolicy' in self._plan_properties['storage']:
-                        self._commcell_object.storage_policies.refresh()
-                        self._child_policies['storagePolicy'] = self._commcell_object.storage_policies.get(
-                            self._plan_properties['storage']['storagePolicy']['storagePolicyName']
-                        )
-
                 if self._subtype == 33554439:
                     if 'clientGroup' in self._plan_properties['autoCreatedEntities']:
                         self._commcell_object.client_groups.refresh()
@@ -1709,23 +2050,6 @@ class Plan(object):
                     if 'localUserGroup' in self._plan_properties['autoCreatedEntities']:
                         self._user_group = self._plan_properties['autoCreatedEntities'][
                             'localUserGroup']['userGroupName']
-
-                if 'schedule' in self._plan_properties:
-                    if 'task' in self._plan_properties['schedule']:
-                        self._commcell_object.schedule_policies.refresh()
-                        self._child_policies['schedulePolicy'] = {
-                            'data': self._commcell_object.policies.schedule_policies.get(
-                                self._plan_properties['schedule']['task']['taskName']
-                            )
-                        }
-                        # Skip adding database schedules if plan has no database schedule policy
-                        if self._subtype == 33554437 and self._plan_properties.get('database', {}).get('rpoInMinutes'):
-                            self._child_policies['schedulePolicy'].update({
-                                'log': self._commcell_object.policies.schedule_policies.get(
-                                    self._plan_properties[
-                                        'database']['scheduleLog']['task']['taskName']
-                                )
-                            })
 
                 if self._plan_properties['operationWindow']['ruleId'] != 0:
                     self._operation_window = self._plan_properties['operationWindow']
@@ -1805,9 +2129,16 @@ class Plan(object):
                                 )
                             else:
                                 self._security_associations[temp_key] = [association['properties']['role']['roleName']]
+                    if 'tagWithCompany' in self._plan_properties.get('securityAssociations'):
+                        self._provider_domain_name = self._plan_properties.get('securityAssociations', {}).\
+                            get('tagWithCompany', {}).get('providerDomainName')
 
                 if "storageRules" in self._plan_properties:
-                    self._region_id = [x["regions"]["region"][0]["regionId"] for x in self._plan_properties["storageRules"]["rules"]]
+                    self._region_id = [x["regions"]["region"][0]["regionId"]
+                                       for x in self._plan_properties["storageRules"]["rules"]]
+
+                if 'storageResourcePoolMap' in self._plan_properties:
+                    self._resources = self._plan_properties.get('storageResourcePoolMap', {})[0].get('resources')
 
                 self._get_associated_entities()
 
@@ -2936,20 +3267,117 @@ class Plan(object):
                 'Plan', '102', 'Override restrictions must be defined in a dict'
             )
 
+    def __set_storage_policy(self):
+        """Method to set the storage policy of the plan"""
+        self._commcell_object.storage_policies.refresh()
+        storage_policy_name = self._plan_properties.get('storage', {}).get('storagePolicy', {}).get('storagePolicyName')
+        if storage_policy_name and self._commcell_object.storage_policies.has_policy(storage_policy_name):
+            self._child_policies['storagePolicy'] = self._commcell_object.storage_policies.get(storage_policy_name)
+        else:
+            raise SDKException('Plan', '102', f'Failed to fetch storage policy: {storage_policy_name}')
+
     @property
     def storage_policy(self):
         """Treats the plan storage policy as a read-only attribute"""
-        return self._child_policies['storagePolicy']
+        if not self._child_policies.get('storagePolicy'):
+            self.__set_storage_policy()
+
+        return self._child_policies.get('storagePolicy')
 
     @property
     def storage_copies(self):
         """Treats the plan storage policy as a read-only attribute"""
         return self._storage_copies
 
+    def __set_schedule_policies(self):
+        """Sets the schedule policies for the plan"""
+        self._commcell_object.schedule_policies.refresh()
+        data_schedule_policy_exists = self._plan_properties.get('schedule', {}).get('task', {}).get('taskName')
+        log_schedule_policy_exists = self._plan_properties.get('database', {}).get('scheduleLog', {}).get('task', {}).get('taskName')
+        snap_schedule_policy_exists = self._plan_properties.get('snapInfo', {}).get('snapTask', {}).get('task', {}).get('taskName')
+
+        if data_schedule_policy_exists:
+            self._child_policies['schedulePolicy']['data'] = self.data_schedule_policy
+
+        if log_schedule_policy_exists:
+            self._child_policies['schedulePolicy']['log'] = self.log_schedule_policy
+
+        if snap_schedule_policy_exists:
+            self._child_policies['schedulePolicy']['snap'] = self.snap_schedule_policy
+
     @property
     def schedule_policies(self):
         """Treats the plan schedule policies as read-only attribute"""
-        return self._child_policies['schedulePolicy']
+        if not self._child_policies.get('schedulePolicy'):
+            self.__set_schedule_policies()
+
+        return self._child_policies.get('schedulePolicy')
+
+    def __get_schedule_policy(self, policy_type: str) -> object:
+        """
+        Returns the schedule policy object of the given policy type
+
+        Args:
+            policy_type (str)  --  type of schedule policy to be fetched
+                            Eg: 'data', 'log', 'snap'
+
+        Returns:
+            object  --  schedule policy object
+        """
+        policy_name = ''
+        policy_type = policy_type.lower()
+
+        if policy_type == 'data':
+            policy_name = self._plan_properties.get('schedule', {}).get('task', {}).get('taskName', '')
+        elif policy_type == 'log':
+            policy_name = self._plan_properties.get('database', {}).get('scheduleLog', {}).get('task', {}).get('taskName', '')
+        elif policy_type == 'snap':
+            policy_name = self._plan_properties.get('snapInfo', {}).get('snapTask', {}).get('task', {}).get('taskName', '')
+        else:
+            raise SDKException('Plan', '102', 'Invalid schedule policy type')
+
+        schedule_policies = self._commcell_object.schedule_policies
+
+        if not schedule_policies.has_policy(policy_name):
+            raise SDKException('Plan', '102', 'Failed to fetch schedule policies')
+
+        return schedule_policies.get(policy_name)
+
+    @property
+    def data_schedule_policy(self) -> object:
+        """
+            Treats the plan data scheduler policy as read-only attribute
+
+            Returns:
+                object  -   data schedule policy object
+        """
+        if not self._data_schedule_policy:
+            self._data_schedule_policy = self.__get_schedule_policy('data')
+        return self._data_schedule_policy
+
+    @property
+    def log_schedule_policy(self) -> object:
+        """
+            Treats the plan log schedule policy as read-only attribute
+
+            Returns:
+                object  -   log schedule policy object
+        """
+        if not self._log_schedule_policy:
+            self._log_schedule_policy = self.__get_schedule_policy('log')
+        return self._log_schedule_policy
+
+    @property
+    def snap_schedule_policy(self) -> object:
+        """
+            Treats the plan snap schedule policy as read-only attribute
+
+            Returns:
+                object  -   snap schedule policy object
+        """
+        if not self._snap_schedule_policy:
+            self._snap_schedule_policy = self.__get_schedule_policy('snap')
+        return self._snap_schedule_policy
 
     @property
     def addons(self):
@@ -2960,10 +3388,23 @@ class Plan(object):
             )
         return self._addons
 
+    def __set_subclient_policy_ids(self):
+        """Sets the subclient policy ids for the plan"""
+        backup_content = self._plan_properties.get('laptop', {}).get('content', {}).get('backupContent', [])
+
+        self._child_policies['subclientPolicyIds'] = [
+            ida['subClientPolicy']['backupSetEntity']['backupsetId']
+            for ida in backup_content
+            if ida.get('subClientPolicy', {}).get('backupSetEntity', {}).get('backupsetId')
+        ]
+
     @property
     def subclient_policy(self):
         """Treats the plan subclient policy as a read-only attribute"""
-        return self._child_policies['subclientPolicyIds']
+        if not self._child_policies.get('subclientPolicyIds'):
+            self.__set_subclient_policy_ids()
+
+        return self._child_policies.get('subclientPolicyIds')
 
     @property
     def associated_entities(self):
@@ -3023,6 +3464,28 @@ class Plan(object):
         return self._dc_plan_props
 
     @property
+    def content_indexing(self):
+        """Returns the Content Indexing status of O365 plan"""
+        try:
+            ci_status = (self.properties.get("office365Info",{})
+                         .get("o365Exchange",{})
+                         .get("mbArchiving", {})
+                         .get("detail", {})
+                         .get("emailPolicy", {})
+                         .get("archivePolicy", {})
+                         .get("contentIndexProps", {})
+                         .get("enableContentIndex", {}))
+        except:
+            ci_status= None
+        return ci_status
+
+    @content_indexing.setter
+    def content_indexing(self, value: bool):
+        """Sets content indexing value for O365 plan"""
+        self._enable_content_indexing_o365_plan(value)
+
+
+    @property
     def properties(self):
         """Returns the configured properties for the Plan"""
         return self._plan_properties
@@ -3032,6 +3495,26 @@ class Plan(object):
         """Returns the Backup destination region id"""
         return self._region_id
 
+    @property
+    def company(self) -> str:
+        """
+        Returns the company of the plan
+
+        return:
+            str --  company's domain name
+        """
+        return self._provider_domain_name
+
+    @property
+    def resources(self) -> list:
+        """
+        Returns the resources stored in storage resource pool
+
+        return:
+            list --  plan's resources
+        """
+        return self._resources
+
     def refresh(self):
         """Refresh the properties of the Plan."""
         self._properties = self._get_plan_properties()
@@ -3040,7 +3523,17 @@ class Plan(object):
         if self.subtype == 33554437:
             self._v4_plan_properties = self._get_v4_plan_properties()
 
-    def associate_user(self, userlist):
+        # lazy loading of properties
+        self._data_schedule_policy = None
+        self._log_schedule_policy = None
+        self._snap_schedule_policy = None
+        self._child_policies = {
+            'storagePolicy': None,
+            'schedulePolicy': {},
+            'subclientPolicyIds': []
+        } # reset to constructor state
+
+    def associate_user(self, userlist, send_invite=True):
         """associates the users to the plan.
             # TODO: Need to handle user groups.
 
@@ -3061,7 +3554,7 @@ class Plan(object):
                 temp = self._commcell_object.users.get(user)
 
                 temp_dict = {
-                    'sendInvite': True,
+                    'sendInvite': send_invite,
                     'user': {
                         'userName': temp.user_name,
                         'userId': int(temp.user_id)
@@ -3347,7 +3840,42 @@ class Plan(object):
                 # currently we dont have any thing to update in DC plan for FSO app so throw exception
                 raise SDKException('Plan', '102', 'No attributes to Edit for DC Plan with TargetApps as : FSO')
         self._update_plan_props(request_json)
-        
+
+    def _enable_content_indexing_o365_plan(self, value):
+        """Enable CI for O365 plan
+
+            Args:
+                value (bool)  --- specifies whether to content index or not
+
+            Returns:
+                None
+        """
+        request_json = copy.deepcopy(PlanConstants.PLAN_UPDATE_REQUEST_JSON[self.plan_type])
+
+        request_json['summary']['plan']['planName'] = self.plan_name
+        request_json['summary']['plan']['planId'] = int(self.plan_id)
+        o365_arch = request_json['office365Info']['o365Exchange']['mbArchiving']['detail']['emailPolicy']
+        o365_arch['archivePolicy']['contentIndexProps']['enableContentIndex'] = value
+
+        o365_cloud = request_json['office365Info']['o365CloudOffice']['caBackup']['detail']['cloudAppPolicy'][
+            'backupPolicy']
+        o365_cloud['onedrivebackupPolicy']['enableContentIndex'] = value
+        o365_cloud['spbackupPolicy']['enableContentIndex'] = value
+        o365_cloud['teamsbackupPolicy']['enableContentIndex'] = value
+
+        request_json['ciPolicyInfo']['ciPolicy']['detail']['ciPolicy']['filters']['fileFilters'][
+            'includeDocTypes'] = PlanConstants.DEFAULT_INCLUDE_DOC_TYPES
+        request_json['ciPolicyInfo']['ciPolicy']['detail']['ciPolicy']['filters']['fileFilters'][
+            'minDocSize'] = PlanConstants.DEFAULT_MIN_DOC_SIZE
+
+        request_json['ciPolicyInfo']['ciPolicy']['detail']['ciPolicy']['filters']['fileFilters'][
+            'maxDocSize'] = PlanConstants.DEFAULT_MAX_DOC_SIZE
+        request_json['ciPolicyInfo']['ciPolicy']['detail']['ciPolicy'][
+            'opType'] = PlanConstants.INDEXING_METADATA_AND_CONTENT
+        request_json['ciPolicy'] = request_json['ciPolicyInfo']['ciPolicy']
+
+        self._update_plan_props(request_json)
+
     def policy_subclient_ids(self):
         """Returns Policy subclient IDs of the plan
         
@@ -3546,6 +4074,39 @@ class Plan(object):
                     raise SDKException('Plan', 102, 'Failed to get subclient Ids.')
             else:
                 raise SDKException('Plan', 102, response.text)
+
+    def enable_data_aging(self, plan_copy_id: int, is_enable=True):
+
+        """Method is used to enable/disable the data aging for the plan copy
+
+            Args:
+                plan_copy_id(int)      :   copy_id of the plan
+
+                is_enable(bool)       :   value whether to be unable or disable the data aging
+
+                                      example: true = enable
+                                               false = disable
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        payload = {
+            "retentionRules": {
+                "enableDataAging": is_enable
+            }
+        }
+
+        api_url = self._services['ENABLE_DATA_AGING'] % (self._plan_id, plan_copy_id)
+        flag, response = self._cvpysdk_object.make_request(method='PUT',
+                                                           url=api_url, payload=payload)
+        if not flag:
+            raise SDKException('Response', '101',
+                               self._commcell_object._update_response_(response.text))
+        if not response:
+            raise SDKException('Response', '102',
+                               self._commcell_object._update_response_(response.text))
 
     @property
     def applicable_solutions(self):

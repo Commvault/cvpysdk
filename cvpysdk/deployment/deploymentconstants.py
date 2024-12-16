@@ -80,6 +80,7 @@ class UnixDownloadFeatures(Enum):
     DB2_AGENT = 1207
     INFORMIX = 1201
     SYBASE = 1202
+    WEB_SERVER = 1174
 
 
 class WindowsDownloadFeatures(Enum):

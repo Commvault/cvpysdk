@@ -339,14 +339,15 @@ class RecoveryTarget:
                 self._set_policy_type(policy_type)
 
                 if self._policy_type == 1:
-                    self._availability_zone = self._recovery_target_properties.get('cloudDestinationOptions',{}).get('availabilityZone')
+                    self._availability_zone = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('availabilityZone')
                     self._volume_type = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('volumeType')
-                    self._encryption_key = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('encryptionOption',{}).get('encryptionKeyName', 'Auto')
+                    self._encryption_key = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('encryptionKey', {}).get('name')
+                    self._encryption_key_id = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('encryptionKey', {}).get('id')
                     self._iam_role_name = self._recovery_target_properties.get('destinationOptions', {}).get('iamRole', {}).get('name')
                     self._iam_role_id = self._recovery_target_properties.get('destinationOptions', {}).get('iamRole', {}).get('id')
-                    self._destination_network = self._recovery_target_properties.get("networkOptions", {}).get("networkCard", {}).get("destinationNetworks", [])
+                    self._destination_network = self._recovery_target_properties.get('networkOptions', {}).get('networkCard', {}).get('networkDisplayName')
                     self._security_group = self._recovery_target_properties.get('securityOptions', {}).get('securityGroups', [{}])[0].get('name', '')
-                    self._instance_type = self._recovery_target_properties.get('amazonPolicy', {}).get('instanceType', [{}])[0].get('instanceType', {}).get('vmInstanceTypeName','')
+                    self._instance_type = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('instanceTypes', ['Auto'])[0]
                     expiry_hours = self._recovery_target_properties.get("liveMountOptions", {}).get("expirationTime", {}).get("minutesRetainUntil", "")
                     expiry_days = self._recovery_target_properties.get("liveMountOptions", {}).get("expirationTime", {}).get("daysRetainUntil", "")
                     if expiry_hours:
@@ -355,11 +356,11 @@ class RecoveryTarget:
                         self._expiration_time = f'{expiry_days} days'
                     self._test_virtual_network = self._recovery_target_properties.get('networkOptions', {}).get('cloudNetwork', {}).get('label')
                     self._test_security_group = self._recovery_target_properties.get('securityOptions', {}).get('testSecurityGroups', [{}])[0].get('name', '')
-                    self._test_vm_size = (self._recovery_target_properties.get('amazonPolicy', {}).get('vmInstanceTypes', [{}])[0].get('vmInstanceTypeName',''))
+                    self._test_vm_size = self._recovery_target_properties.get('cloudDestinationOptions', {}).get('vmInstanceType', 'Auto')
 
                 elif self._policy_type == 2:
                     self._vm_folder = self._recovery_target_properties.get("destinationOptions", {}).get("dataStore", "")
-                    self._destination_network = self._recovery_target_properties.get("networkOptions", {}).get("networkCard", {}).get("destinationNetworks", [])
+                    self._destination_network = self._recovery_target_properties.get("networkOptions", {}).get("networkCard", {}).get("networkNames")[0]
                     self._destination_host = self._recovery_target_properties.get("destinationOptions", {}).get("destinationHost", "")
                 elif self._policy_type == 7:
                     self._resource_group = self._recovery_target_properties.get("destinationOptions", {}).get("destinationHost", "")

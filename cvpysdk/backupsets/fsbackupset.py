@@ -867,9 +867,9 @@ class FSBackupset(Backupset):
         }
 
         response = self._commcell_object._qoperation_execute(request)
-        cs_user = response['responseFile']['csinfo']['creds']['userName']
-        cs_pwd = response['responseFile']['csinfo']['creds']['password']
-        cs_token = response['responseFile']['csinfo']['creds']['token']
+        cs_user = self._commcell_object.commcell_username
+        cs_pwd = self._commcell_object.auth_token
+        cs_token = self._commcell_object.auth_token[5:]
         cs_name = self._commcell_object.commserv_name
         cs_hostname = self._commcell_object.commserv_hostname
         cs_ip_address = socket.gethostbyname(self._commcell_object.commserv_hostname)

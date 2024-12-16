@@ -961,7 +961,7 @@ class JobManagement(object):
 
     @property
     def error_rules(self):
-        if not  self._error_rules:
+        if not self._error_rules:
             self._error_rules = _ErrorRule(self._comcell)
         return self._error_rules
 
@@ -2004,7 +2004,7 @@ class Job(object):
         self._JOB = self._services['JOB'] % (self.job_id)
 
         if not self._is_valid_job():
-            raise SDKException('Job', '103')
+            raise SDKException('Job', '102', f'No job exists with the specified Job ID: {self.job_id}')
 
         self._JOB_DETAILS = self._services['JOB_DETAILS']
         self.ADVANCED_JOB_DETAILS = AdvancedJobDetailType
@@ -2221,24 +2221,28 @@ class Job(object):
             '%Y-%m-%d %H:%M:%S', time.gmtime(self._summary['jobStartTime'])
         )
 
-    def _wait_for_status(self, status):
+    def _wait_for_status(self, status, timeout=6):
         """Waits for 6 minutes or till the job status is changed to given status,
             whichever is earlier.
 
             Args:
                 status  (str)   --  Job Status
 
+                timeout (int)   --  timeout interval in mins
+
             Returns:
                 None
 
         """
         start_time = time.time()
-
-        while self.status.lower() != status.lower():
-            if (self.is_finished is True) or (time.time() - start_time > 360):
+        current_job_status = self.status
+        current_job_status = current_job_status if current_job_status else self.state
+        while current_job_status.lower() != status.lower():
+            if (self.is_finished is True) or (time.time() - start_time > (timeout * 60)):
                 break
 
             time.sleep(3)
+            current_job_status = self.status
 
     def wait_for_completion(self, timeout=30, **kwargs):
         """Waits till the job is not finished; i.e.; till the value of job.is_finished is not True.
@@ -2279,7 +2283,8 @@ class Job(object):
                 return False
 
             # get the current status of the job
-            status = self.status.lower()
+            status = self.status
+            status = status.lower() if status else self.state.lower()
 
             # set the value of start time as current time
             # if the current status is pending / waiting but the previous status was not
@@ -2490,13 +2495,15 @@ class Job(object):
             self._task_details = self._get_job_task_details()
         return self._task_details
 
-    def pause(self, wait_for_job_to_pause=False):
+    def pause(self, wait_for_job_to_pause=False, timeout=6):
         """Suspends the job.
 
             Args:
                 wait_for_job_to_pause   (bool)  --  wait till job status is changed to Suspended
 
                     default: False
+
+                timeout (int)                   --  timeout interval to wait for job to move to suspend state
 
             Raises:
                 SDKException:
@@ -2528,7 +2535,7 @@ class Job(object):
             raise SDKException('Response', '101', response_string)
 
         if wait_for_job_to_pause is True:
-            self._wait_for_status("SUSPENDED")
+            self._wait_for_status("SUSPENDED", timeout=timeout)
 
     def resume(self, wait_for_job_to_resume=False):
         """Resumes the job.
@@ -2929,9 +2936,9 @@ class _ErrorRule:
                     rule['skip_reporting_error'], int) and isinstance(
                     rule['from_error_code'], int) and isinstance(
                     rule['to_error_code'], int) and isinstance(
-                        rule['job_decision'], int) and rule['job_decision'] in range(
-                            0, 3) and isinstance(
-                                rule['is_enabled'], bool), "Invalid key value pairs provided."
+                    rule['job_decision'], int) and rule['job_decision'] in range(
+                    0, 3) and isinstance(
+                    rule['is_enabled'], bool), "Invalid key value pairs provided."
 
                 rule_dict = {k:v for k,v in rule.items() if k != 'appGroupName'}
 

@@ -16,27 +16,26 @@
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-"""File for operating on a Virtual Server Fusion Compute Instance.
+"""File for operating on a Virtual Server Xen Server Instance.
 
-XenInstance is the only class defined in this file.
+XenServer Instance is the only class defined in this file.
 
 XenInstance: Derived class from VirtualServer  Base class, representing a
-                           Fusion Compute instance, and to perform operations on that instance
+                           Xen Server instance, and to perform operations on that instance
 
-HyperVInstance:
+XenInstance:
 
     __init__(agent_object,instance_name,instance_id)    -- initialize object of FusionCompute
-                                                                Instance object associated with the
-                                                                        VirtualServer Instance
+                                                            Instance object associated with the
+                                                            VirtualServer Instance
 
 
     _get_instance_properties()                          --  VirtualServer Instance class method
-                                                            overwritten to get Fusion Compute
-                                                            Specific instance properties as well
+                                                            overwritten to get Xen Server specific
+                                                            instance properties as well
 
-    _set_instance_properties()                          --  Fusion Compute Instance class method
-                                                                to set Fusion Compute
-                                                                Specific instance properties
+    _set_instance_properties()                          --  Xen Server Instance class method
+                                                            to set Xen Specific instance properties
 
 
 """
@@ -45,21 +44,22 @@ from ..vsinstance import VirtualServerInstance
 
 
 class Xen(VirtualServerInstance):
-    """Class for representing an Hyper-V of the Virtual Server agent."""
+    """Class for representing an Xen Server instance of the Virtual Server agent."""
 
     def __init__(self, agent, instance_name, instance_id=None):
         """Initialize the Instance object for the given Virtual Server instance.
 
             Args:
                 class_object (agent_object,instance_name,instance_id)  --  instance of the
-                                                                                Agent class,
-                                                                                instance name,
-                                                                                instance id
+                                                                            Agent class,
+                                                                            instance name,
+                                                                            instance id
 
         """
         super(Xen, self).__init__(agent, instance_name, instance_id)
         self._vendor_id = 3
         self._server_name = None
+        self._server_host_name = None
 
     def _get_instance_properties(self):
         """
@@ -97,12 +97,16 @@ class Xen(VirtualServerInstance):
 
     @property
     def server_host_name(self):
-        """getter for the domain name in the vmware vendor json"""
-        # Till support for instace is provied, enter server name as list and return eg: return ['2.3.4.5']
-        return None
+        """Getter for server_host_name property"""
+        # This property will be set during TC execution. 
+        return self._server_host_name
 
+    @server_host_name.setter
+    def server_host_name(self, value):
+        """Setter for server_host_name property"""
+        self._server_host_name = value
 
     @property
     def server_name(self):
-        """getter for the domain name in the vmware vendor json"""
+        """Getter for the server_name property"""
         return self._server_name

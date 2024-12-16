@@ -282,10 +282,18 @@ class NetworkTopologies(object):
 
                 client_groups               (list of dict) -- client group names and
                                                               client group types
-
+                Example for Gateway topology
                 [{'group_type':2, 'group_name': "test1", 'is_mnemonic': False },
                 {'group_type':1, 'group_name': "test2", 'is_mnemonic': False },
                 {'group_type':3, 'group_name': "test3", 'is_mnemonic': False }]
+
+
+                Example for Cascading topology
+                [{'group_type':2, 'group_name': "test1", 'is_mnemonic': False },
+                {'group_type':1, 'group_name': "test2", 'is_mnemonic': False },
+                {'group_type':3, 'group_name': "test3", 'is_mnemonic': False },
+                {'group_type':4, 'group_name': "test33", 'is_mnemonic': False }]
+
 
                 ** kwargs               (dict)       -- Key value pairs for supported
                                                         arguments
@@ -299,7 +307,7 @@ class NetworkTopologies(object):
                 is_smart_topology   (boolean)  --   specified as true for smart topology must be set if one mnemonic group is present
                                                  Default value: False
 
-                topology_type        (int)     --   to specify type of network topology
+                topology_type        (int)     --   to specify type of network topology (Please scroll down for input values)
 
                 topology_description (str)     --   to specify topology description
 
@@ -321,18 +329,28 @@ class NetworkTopologies(object):
                 Possible input values:
 
                 topology_type :
-                1 --- for proxy topology
+                1 --- for Network Gateway topology
                 2 --- for one-way topology
                 3 --- for two-way topology
+                4 --- Cascading Gateway's topology
+                5 --- One-way forwarding topology
 
                 display_type:
                 0 --- servers
                 1 --- laptops
 
                 group_type for client_groups:
-                2: first client group in GUI screen
-                1: second client group in GUI screen
-                3: third client group in GUI screen
+                1: for Infrastructure machines
+                2: for Servers
+                3: for Server Gateways
+                4: for DMZ Gateways
+
+                Types of groups required for each topology:
+                Type 1: Servers, Infrastructure machines and Server gateways
+                Type 2: Infrastructure machines and Servers
+                Type 3: Infrastructure machines and Servers
+                Type 4: Servers, Infrastructure machines, Server gateways and DMZ Gateways
+                Type 5: Servers, Infrastructure machines and Server gateways
 
                 is_mnemonic for client_groups:
                 True: if the specified group is a mnemonic

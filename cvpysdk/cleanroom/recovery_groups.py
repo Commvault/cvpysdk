@@ -294,3 +294,24 @@ class RecoveryGroup:
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+
+    def delete(self):
+        """
+        Sends a request to delete a replication Group
+
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+        """
+
+        flag, response = self._cvpysdk_object.make_request('DELETE', self._RECOVERY_GROUP_URL)
+
+        if flag:
+            try:
+                return response.json()
+            except JSONDecodeError:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))

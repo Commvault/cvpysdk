@@ -141,7 +141,8 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
             restore_option=None,
             **kwargs):
 
-        """Restores the FULL Virtual machine specified  in the input  list to the client,
+        """
+        Restores the FULL Virtual machine specified  in the input  list to the client,
             at the specified destination location.
 
 
@@ -189,7 +190,7 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
         """
         restore_option = {}
         extra_options = ['destination_network', 'networks_nic', 'subnetwork_nic', 'vmCustomMetadata',
-                         'createPublicIP', 'publicIPaddress', 'privateIPaddress']
+                         'createPublicIP', 'publicIPaddress', 'privateIPaddress', "serviceAccount"]
         for key in extra_options:
             if key in kwargs:
                 if key == "vmCustomMetadata":
@@ -214,7 +215,7 @@ class GooglecloudVirtualServerSubclient(VirtualServerSubclient):
             restore_option["replicaZones"].append(zone)
             restore_option["replicaZones"].append(kwargs.get("replica_zone"))
 
-        # Set attr for all the option in restore xml from user inputs
+        # set attr for all the option in restore xml from user inputs
         self._set_restore_inputs(
             restore_option,
             vm_to_restore=self._set_vm_to_restore(vm_to_restore),

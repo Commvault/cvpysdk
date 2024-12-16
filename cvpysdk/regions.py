@@ -28,6 +28,8 @@ Regions:
     set_region()                    --  Associate a region to an entity
     get_region()                    --  Gets the Region associated to an Entity
     calculate_region()              --  Calculates the Region to be associated to an Entity
+    add()                           --  Method to add a region
+    delete()                        --  Method to delete regions
 
 Attributes:
 
@@ -36,9 +38,18 @@ Attributes:
 Region:
 =======
     _get_region_id()                --  Returns the region id
+    _get_region_properties()        --  Gets the properties of this region
+    refresh()                       --  Refresh the properties of the regions
 
 Attributes:
     ***region_id***                 --  Id of the given Region
+    ***region_name***               --  Name of the given region
+    ***region_type***               --  type of the given region
+    ***locations***                 --  locations of the given region
+    ***associated_servers_count***  --  associated servers count of the given region
+    ***associated_servers***        --  associated servers of the given region
+    ***associated_plans_count***    --  associated plans count of the given region
+    ***associated_plans***          --  associated plan of the given region
 
 """
 from .exception import SDKException
@@ -52,24 +63,44 @@ class Regions:
         """Initialises the object of Regions class"""
         self._commcell_object = commcell_object
         self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._update_response_ = commcell_object._update_response_
         self._regions_api = self._commcell_object._services['REGIONS']
         self._EDIT_REGION = self._commcell_object._services['EDIT_REGION']
         self._GET_REGION = self._commcell_object._services['GET_REGION']
         self._CALCULATE_REGION = self._commcell_object._services['CALCULATE_REGION']
-        self._regions = {}
+        self._regions = None
         self.refresh()
 
     def _get_regions(self):
         """Gets all the regions created in commcell"""
         flag, response = self._cvpysdk_object.make_request('GET', self._regions_api)
         if flag:
+            regions = {}
             if response.json() and 'regions' in response.json():
-                for region in response.json()['regions']:
-                    name = region['name']
-                    id = region['id']
-                    self._regions[name] = id
 
-                return self._regions
+                name_count = {}
+
+                for region in response.json()['regions']:
+                    temp_name = region['name'].lower()
+                    temp_company = region.get('company', {}).get('name', '').lower()
+
+                    if temp_name in name_count:
+                        name_count[temp_name].add(temp_company)
+                    else:
+                        name_count[temp_name] = {temp_company}
+
+                for region in response.json()['regions']:
+                    temp_name = region['name'].lower()
+                    temp_id = region['id']
+                    temp_company = region.get('company', {}).get('name', '').lower()
+
+                    if len(name_count[temp_name]) > 1:
+                        unique_key = f"{temp_name}_({temp_company})"
+                    else:
+                        unique_key = temp_name
+                    regions[unique_key] = temp_id
+
+                return regions
 
             raise SDKException('Response', '102')
 
@@ -97,7 +128,7 @@ class Regions:
         if not isinstance(name, str):
             raise SDKException('Region', '103')
 
-        return self._regions and (name in self._regions)
+        return self._regions and (name.lower() in self._regions)
 
     def get(self, name):
         """
@@ -115,11 +146,12 @@ class Regions:
                 - If No Region found in commcell with the given region name
         """
         if not isinstance(name, str):
-            raise SDKException('Region', '102',"Invalid input received")
+            raise SDKException('Region', '102', "Invalid input received")
 
-        if self.has_region(name):
-            return Region(self._commcell_object, name, self._regions[name])
-        raise SDKException('Region', '101',"Region not present in commcell")
+        if not self.has_region(name):
+            raise SDKException('Region', '102', f"Region {name.lower()} not present in commcell")
+
+        return Region(self._commcell_object, name, self._regions[name.lower()])
 
     def set_region(self, entity_type, entity_id, entity_region_type, region_id):
         """
@@ -251,11 +283,126 @@ class Regions:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def add(self, region_name: str, region_type: str, locations: list) -> object:
+        """
+        Method to add a region
+
+            Args:
+                region_name    (str)      --      name of the region
+                region_type    (str)      --      type of region
+                locations      (list)     --      list of dictionaries containing details of a location
+                    e.g. locations = [{"city":"city1",
+                                        "state":"stateOfCity1",
+                                        "country":"countryOfCity1",
+                                        "latitude":"latitudeOfCity1",
+                                        "longitude":"longitudeOfCity1"},
+                                        {"city":"city2",
+                                        "state":"stateOfCity2",
+                                        "country":"countryOfCity2",
+                                        "latitude":"latitudeOfCity2",
+                                        "longitude":"longitudeOfCity2"}]]
+
+            Returns:
+                object  --   instance of the region class created by this method
+
+            Raises:
+                SDKException:
+                    if input parameters are incorrect
+
+                    if Plan already exists
+
+                    if invalid region type is passed
+        """
+        valid_region_types = ['USER_CREATED', 'OCI', 'AWS', 'AZURE', 'GCP']
+
+        if not (isinstance(region_name, str) and isinstance(region_type, str) and isinstance(locations, list)):
+            raise SDKException('Region', '101')
+
+        elif self.has_region(region_name):
+            raise SDKException('Region', '102', 'Region "{0}" already exists'.format(region_name))
+
+        elif region_type.upper() not in valid_region_types:
+            raise SDKException('Region', '102', 'Invalid region type')
+
+        request_json = {
+            "name": region_name,
+            "type": region_type,
+            "locations": locations
+        }
+        flag, response = self._cvpysdk_object.make_request('POST', self._regions_api, request_json)
+
+        if flag:
+            if response.json():
+                response_value = response.json()
+                error_message = response_value.get('errorMessage')
+                error_code = response_value.get('errorCode', 0)
+
+                if error_code != 0:
+                    raise SDKException('Region', '102', f'Failed to create new Region\nError: "{error_message}"')
+
+                region_name = response_value['name']
+
+                self.refresh()
+
+                return self.get(region_name)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def delete(self, region_name: str) -> None:
+        """
+        Method to delete regions
+
+            Args:
+                region_name    (str)   --  name of the region
+
+            Returns:
+                None    --  if the region is removed successfully
+
+            Raises:
+                SDKException:
+                    if type of the Region name argument is not string
+
+                    if no region exists with the given name
+
+                    if response is empty
+
+                    if failed to delete the region
+
+        """
+        if not isinstance(region_name, str):
+            raise SDKException('Region', '101')
+
+        else:
+            region_name = region_name.lower()
+
+            if not self.has_region(region_name):
+                raise SDKException('Region', '102', 'No Region exists with name: "{0}"'.format(region_name))
+
+            region_id = self._regions[region_name]
+            delete_region_service = self._commcell_object._services['REGION']%(region_id)
+            flag, response = self._cvpysdk_object.make_request('DELETE', delete_region_service)
+
+            if not flag:
+                response_string = self._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
+            if not response.json():
+                raise SDKException('Response', '102' 'Empty response received from server.')
+            response_json = response.json()
+            error_code = str(response_json.get('errorCode'))
+            error_message = response_json.get('errorMessage')
+
+            if error_code == '0':
+                self.refresh()
+            else:
+                raise SDKException('Region', '102', f'Failed to delete region. Error: {error_message}')
+
     @property
     def all_regions(self):
         """Returns dict consisting of all regions details such as id"""
         return self._regions
-
 
 
 class Region:
@@ -285,12 +432,129 @@ class Region:
         else:
             self._region_id = self._get_region_id()
 
+        self._region_api = self._commcell_object._services['REGION']%(self._region_id)
+        self._region_type = None
+        self._locations = []
+        self._associated_servers_count = None
+        self._associated_servers = []
+        self._associated_plans_count = None
+        self._associated_plans = []
+        self.refresh()
+        self._region_properties = None
+
     def _get_region_id(self):
         """ Returns the ID of the Region """
         regions = Regions(self._commcell_object)
-        id = regions.get(self._region_name).region_id
+        return regions.get(self._region_name).region_id
+
+    def _get_region_properties(self):
+        """Gets the properties of this region"""
+        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._region_api)
+
+        if flag:
+            if response.json():
+                properties = response.json()
+                self._region_id = properties.get('id')
+                self._region_name = properties.get('name')
+                self._region_type = properties.get('regionType')
+                if 'locations' in properties:
+                    self._locations = properties.get('locations')
+                if 'associatedServers' in properties:
+                    self._associated_servers_count = properties.get('associatedServers', {}).get('serversCount')
+                    if 'servers' in properties.get('associatedServers'):
+                        self._associated_servers = properties.get('associatedServers', {}).get('servers')
+                if 'associatedRegionBasedPlans' in properties:
+                    self._associated_plans_count = properties.get('associatedRegionBasedPlans', {}).get('plansCount')
+                    if 'plans' in properties.get('associatedRegionBasedPlans'):
+                        for plan in properties.get('associatedRegionBasedPlans', {}).get('plans'):
+                            self._associated_plans.append(plan.get('plan'))
+            else:
+                raise SDKException('Response', '102')
+
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     @property
-    def region_id(self):
-        """ Get Region ID """
+    def region_id(self) -> int:
+        """
+        Get Region ID
+
+        Returns:
+            int -- region ID
+        """
         return self._region_id
+
+    @property
+    def region_name(self) -> str:
+        """
+        Get Region name
+
+        Returns:
+            str -- name of the region
+        """
+        return self._region_name
+
+    @property
+    def region_type(self) -> str:
+        """
+        Get Region type
+
+        Returns:
+            str -- type of the region
+        """
+        return self._region_type
+
+    @property
+    def locations(self) -> list:
+        """
+        Get locations
+
+        Returns:
+            list -- locations added in the region
+        """
+        return self._locations
+
+    @property
+    def associated_servers_count(self) -> int:
+        """
+         Get associated servers count
+
+        Returns:
+            int -- count of servers associated with the region
+         """
+        return self._associated_servers_count
+
+    @property
+    def associated_servers(self) -> list:
+        """
+         Get associated servers
+
+        Returns:
+            list -- list of servers associated with the region
+         """
+        return self._associated_servers
+
+    @property
+    def associated_plans_count(self) -> int:
+        """
+        Get associated plans count
+
+        Returns:
+            int -- count of plans associated with the region
+        """
+        return self._associated_plans_count
+
+    @property
+    def associated_plans(self) -> list:
+        """
+        Get associated plans
+
+        Returns:
+            list -- list of plans associated with the region
+        """
+        return self._associated_plans
+
+    def refresh(self):
+        """Refresh the properties of the regions."""
+        self._region_properties = self._get_region_properties()

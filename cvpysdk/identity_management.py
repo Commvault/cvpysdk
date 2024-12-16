@@ -162,7 +162,7 @@ class IdentityManagementApps(object):
         """Returns the number of the app added to the Commcell."""
         return len(self.all_apps)
 
-    def _get_apps(self):
+    def _get_apps(self, hard=False):
         """Gets list of all third party apps.
 
             Returns:
@@ -188,6 +188,10 @@ class IdentityManagementApps(object):
                 SDKException:
                         if response is not success
         """
+        if hard:
+            self._cvpysdk_object.make_request(
+                'GET', self._APPS + '?hardRefresh=true'
+            )
         flag, response = self._cvpysdk_object.make_request(
             'GET', self._APPS
         )
@@ -509,7 +513,7 @@ class IdentityManagementApps(object):
         """Creates a commcell app by associating speccified users
 
             Args:
-                IDP_props      (list)     --  dict containing properties of the IDP's identity app
+                idp_props      (list)     --  dict containing properties of the IDP's identity app
 
                     [
                         {
@@ -531,6 +535,10 @@ class IdentityManagementApps(object):
                     ]
 
                 app_name       (str)      --  GUID for the app
+
+                app_display_name (str)    --  display name for the app
+
+                app_description  (str)    --  description for the app
 
                 user_assoc_list (list)    --  list of users for association
 
@@ -642,26 +650,26 @@ class IdentityManagementApps(object):
 
         """
         third_party_json = {
-            "App_SetClientThirdPartyAppPropReq":{
-            "opType": 1,
-            "clientThirdPartyApps": [
-                {
-                    "appName": appname,
-                    "flags": 0,
-                    "appType": 5,
-                    "isEnabled": 1,
-                    "props": {
-                        "nameValues": props
-                    },
-                    "assocTree": [
-                        {
-                            "_type_": 13,
-                            "userName": user_name
-                        } for user_name in user_to_be_added
-                    ]
-                }
-            ]
-        }
+            "App_SetClientThirdPartyAppPropReq": {
+                "opType": 1,
+                "clientThirdPartyApps": [
+                    {
+                        "appName": appname,
+                        "flags": 0,
+                        "appType": 5,
+                        "isEnabled": 1,
+                        "props": {
+                            "nameValues": props
+                        },
+                        "assocTree": [
+                            {
+                                "_type_": 13,
+                                "userName": user_name
+                            } for user_name in user_to_be_added
+                        ]
+                    }
+                ]
+            }
         }
 
         response_json = self._commcell_object.qoperation_execute(third_party_json)
@@ -693,9 +701,14 @@ class IdentityManagementApps(object):
 
         return self._apps and app_name.lower() in self._apps
 
-    def refresh(self):
-        """Refresh the apps associated with the Commcell."""
-        self._apps = self._get_apps()
+    def refresh(self, hard=False):
+        """Refresh the apps associated with the Commcell.
+        
+            Args:
+                hard    (bool)  --  perform a hard refresh of the cache
+                
+        """
+        self._apps = self._get_apps(hard)
 
 
 class IdentityManagementApp(object):
@@ -709,15 +722,12 @@ class IdentityManagementApp(object):
 
                 app_name            (str)       --  name of the app
 
-                app_key             (str)       --  key of the app
-                    default: None
-
-                app_dict            (dict)     -- dict containing the properties of the app
-                    default: None
+                app_dict            (dict)     -- dict containing the properties of the app. default: None
 
             Returns:
                 object - instance of the IdentityManagementApp class
         """
+        self._properties = None
         self._commcell_object = commcell_object
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._update_response_ = commcell_object._update_response_
@@ -860,11 +870,10 @@ class SamlApp(object):
 
                 appname             (string)        saml app name
 
-                properties          (dict)          dict containing properties of saml app
-                    Default: None
+                properties          (dict)          dict containing properties of saml app. Default: None
 
             Returns:
-                object - instnace of the SamlApp class
+                object - instance of the SamlApp class
         """
 
         self._commcell = commcell
@@ -934,7 +943,7 @@ class SamlApp(object):
 
         """
         flag, response = self._cvpysdk_object.make_request(
-            'PUT', self._SAML% self._appname, req_body
+            'PUT', self._SAML % self._appname, req_body
         )
         if flag:
             if response.json() and 'errorCode' in response.json():

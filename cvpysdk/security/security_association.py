@@ -56,8 +56,20 @@ class SecurityAssociation(object):
 
                 class_object         (object)     --    instance of the class on which we want to
                                                             manage security operations
+                                                        default: commcell object will be used
         """
         self._commcell_object = commcell_object
+        if not class_object:
+            class_object = self._commcell_object
+
+        from ..commcell import Commcell
+        if isinstance(class_object, Commcell):
+            self._entity_list = {
+                "entity": [{
+                    "commCellId": class_object.commcell_id,
+                    "_type_": 1
+                }]
+            }
 
         from ..client import Client
         if isinstance(class_object, Client):
@@ -83,6 +95,16 @@ class SecurityAssociation(object):
                 "entity": [{
                     "planId": int(class_object.plan_id),
                     "_type_": 158
+                }]
+            }
+
+        from ..workflow import WorkFlow
+        if isinstance(class_object, WorkFlow):
+            self._entity_list = {
+                "entity": [{
+                    "workflowId": int(class_object.workflow_id),
+                    "_type_": 83,
+                    "entityType": 83
                 }]
             }
 

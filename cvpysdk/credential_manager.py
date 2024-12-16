@@ -45,8 +45,16 @@ Credentials:
 
     get_security_associations() --  Returns the security association dictionary for a given user or user group
 
+    add_db2_database_creds      --  Creates DB2 credential on this commcell
+
+    add_postgres_database_creds --  Creates PostgreSQL credential on this commcell
+
     add_azure_cloud_creds()     --  Creates azure access key based credential on this commcell
 
+    add_azure_cosmosdb_creds()  --  Creates credential for azure cosmos db using azure application
+	                                id and application secret key 
+
+    add_aws_s3_creds()          --  Creates aws s3 credential
 
 Credential:
     __init__()                  --  initiaizes the credential class object
@@ -357,6 +365,102 @@ class Credentials(object):
         }
         return security_association
 
+    def add_db2_database_creds(self, credential_name, username, password, description=None):
+        """Creates db2 credential on this commcell
+            Args:
+
+                credential_name (str)   --  name to be given to credential account
+
+                username  (str)         --  name of the db2 credential
+
+                password   (str)        --  password for the credential
+
+                description (str)       --  description of the credential
+
+            Raises:
+                SDKException:
+                    if credential account is already present on the commcell
+
+                    if response is not successful
+        """
+        if self.has_credential(credential_name):
+            raise SDKException(
+                'Credential', '102', "Credential {0} already exists on this commcell.".format(
+                    credential_name)
+            )
+        password = b64encode(password.encode()).decode()
+        create_credential = {
+            "accountType": "DATABASE_ACCOUNT",
+            "databaseCredentialType": "DB2",
+            "name": credential_name,
+            "username": username,
+            "password": password,
+            "description": description
+        }
+
+        request = self._services['ADD_CREDENTIALS']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', request, create_credential
+        )
+        if flag:
+            if response.json():
+                id = response.json()['id']
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
+        return Credential(self._commcell_object, credential_name, id)
+
+    def add_postgres_database_creds(self, credential_name, username, password, description=None):
+        """Creates PostgreSQL credential on this commcell
+            Args:
+
+                credential_name (str)   --  name to be given to credential account
+
+                username  (str)         --  PostgreSQL username
+
+                password   (str)        --  PostgreSQL password
+
+                description (str)       --  description of the credential
+
+            Raises:
+                SDKException:
+                    if credential account is already present on the commcell
+
+                    if response is not successful
+        """
+        if self.has_credential(credential_name):
+            raise SDKException(
+                'Credential', '102', "Credential {0} already exists on this commcell.".format(
+                    credential_name)
+            )
+        password = b64encode(password.encode()).decode()
+        create_credential = {
+            "accountType": "DATABASE_ACCOUNT",
+            "databaseCredentialType": "POSTGRESQL",
+            "name": credential_name,
+            "username": username,
+            "password": password,
+            "description": description
+        }
+
+        request = self._services['ADD_CREDENTIALS']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', request, create_credential
+        )
+        if flag:
+            if response.json():
+                id = response.json()['id']
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
+        return Credential(self._commcell_object, credential_name, id)
+
     def add_azure_cloud_creds(self, credential_name, account_name, access_key_id, **kwargs):
         """Creates azure access key based credential on this commcell
 
@@ -442,6 +546,186 @@ class Credentials(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
         self.refresh()
+
+    def add_azure_cosmosdb_creds(
+            self,
+            credential_name,
+            tenant_id,
+            application_id,
+            application_secret,
+            description=""):
+        """Creates azure application id and application secret key based credential on this commcell
+
+            Args:
+
+                credential_name (str)   --  name to be given to credential account
+
+                tenant_id  (str)     --    name of tenant id
+
+                application_id   (str)   --  application id
+
+                application_secret  (str)  - application secet
+
+                description(str)            -   description of the credentials
+
+            Raises:
+                SDKException:
+                    if arguments type is incorrect
+
+                    if credential account is already present on the commcell
+
+                    if response is not successful
+
+        """
+
+        if not (
+            isinstance(
+                application_id,
+                str) and isinstance(
+                tenant_id,
+                str) and isinstance(
+                credential_name,
+                str) and isinstance(
+                    application_secret,
+                str)):
+            raise SDKException("Credential", "101")
+
+        if self.has_credential(credential_name):
+            raise SDKException(
+                'Credential',
+                '102',
+                "Credential {0} already exists on this commcell.".format(credential_name))
+
+        password = b64encode(application_secret.encode()).decode()
+
+        create_credential_account = {
+            "credentialRecordInfo": [
+                {
+                    "additionalInformation": {
+                        "azureCredInfo": {
+                            "applicationId": application_id,
+                            "endpoints": {
+                                "activeDirectoryEndpoint": "https://login.microsoftonline.com/",
+                                "resourceManagerEndpoint": "https://management.azure.com/",
+                                "storageEndpoint": "blob.core.windows.net"},
+                            "environment": "AzureCloud",
+                            "tenantId": tenant_id}},
+                    "createAs": {},
+                    "credentialRecord": {
+                        "credentialName": credential_name},
+                    "description": description,
+                    "record": {
+                        "userName": application_id,
+                        "password": password},
+                    "recordType": "AZUREACCOUNT",
+                    "securityAssociations": {
+                        "associations": [],
+                        "associationsOperationType": 1}}]}
+
+        request = self._services['CREDENTIAL']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', request, create_credential_account
+        )
+        if flag:
+            if response.json():
+                response_json = response.json()['error']
+                error_code = response_json['errorCode']
+                error_message = response_json['errorMessage']
+                if not error_code == 0:
+                    raise SDKException('Response', '101', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
+
+    def add_aws_s3_creds(
+            self,
+            credential_name,
+            access_key_id,
+            secret_access_key,
+            description=None):
+        """Creates aws s3 access key based credential on this commcell
+
+            Args:
+
+                credential_name (str)   --  name to be given to credential account
+
+                access_key_id   (str)   --  access key id for aws S3 bucket
+
+                secrete_access_key (str) -- secrete access key for aws s3 bucket
+
+                description(str)         -- description of the credentials
+
+            Raises:
+                SDKException:
+                    if arguments type is incorrect
+
+                    if credential account is already present on the commcell
+
+                    if response is not successful
+
+        """
+
+        if not (
+            isinstance(
+                access_key_id,
+                str) and isinstance(
+                secret_access_key,
+                str) and isinstance(
+                credential_name,
+                str)):
+            raise SDKException("Credential", "101")
+
+        if self.has_credential(credential_name):
+            raise SDKException(
+                'Credential',
+                '102',
+                "Credential {0} already exists on this commcell.".format(credential_name))
+
+        password = b64encode(secret_access_key.encode()).decode()
+        create_credential_account = {
+            "credentialRecordInfo": [
+                {
+                    "createAs": {
+                    },
+                    "credentialRecord": {
+                        "credentialName": credential_name
+                    },
+                    "description": description,
+                    "record": {
+                        "userName": access_key_id,
+                        "password": password
+                    },
+                    "recordType": "AMAZON_S3",
+                    "securityAssociations": {
+                        "associations": [
+                        ],
+                        "associationsOperationType": 1
+                    }
+                }
+            ]
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._services['CREDENTIAL'], payload=create_credential_account)
+        if flag:
+            if response.json():
+                response_json = response.json()['error']
+                error_code = response_json['errorCode']
+                error_message = response_json['errorMessage']
+                if not error_code == 0:
+                    raise SDKException('Response', '101', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
+
 
 
 class Credential(object):

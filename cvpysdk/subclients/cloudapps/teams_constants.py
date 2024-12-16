@@ -27,7 +27,7 @@ class TeamsConstants:
     """Class to maintain all the Teams subclient related constants."""
 
     ADD_DISCOVER_TYPE = 12
-
+    INDEX_APP_TYPE = 200128
     ADD_SUBCLIENT_ENTITY_JSON = {
         "instanceId": None,
         "subclientId": None,

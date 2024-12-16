@@ -55,6 +55,10 @@ TeamsSubclient:
     _json_restore_destinationTeamInfo()         -- Get destinationTeamInfo json for teams restore operation.
     restore_files_to_out_of_place()             -- Restore  files to another team.
     restore_to_original_location()              -- Restore team to original location.
+    refresh_retention_stats()                   -- refresh the retention stats for the client
+    refresh_client_level_stats()                -- refresh the client level stats for the client
+    backup_stats()                    -- Returns the client level stats for the client
+
 """
 
 from __future__ import unicode_literals
@@ -146,17 +150,21 @@ class TeamsSubclient(CloudAppsSubclient):
             request_json['cloudAppAssociation']['cloudAppDiscoverinfo']['groups'] = groups
 
         elif discovery_type.value == 12:
-            discovered_teams = self.discover(discovery_type=const.ClOUD_APP_EDISCOVER_TYPE['Teams'])
-            entities = [discovered_teams[team] for team in entities]
+            is_team_instance = True
+            if isinstance(entities[0], str):
+                is_team_instance = False
+                discovered_teams = self.discover(discovery_type=const.ClOUD_APP_EDISCOVER_TYPE['Teams'])
+                entities = [discovered_teams[team] for team in entities]
             for team in entities:
                 user_json = copy(const.ADD_USER_JSON)
-                user_json['_type_'] = team['user']['_type_']
-                user_json['userGUID'] = team['user']['userGUID']
+                user_json['_type_'] = 13 if is_team_instance else team['user']['_type_']
+                user_json['userGUID'] = team.guid if is_team_instance else team['user']['userGUID']
 
                 user_account_json = deepcopy(const.ADD_TEAM_JSON)
-                user_account_json['displayName'] = team['displayName']
-                user_account_json['smtpAddress'] = team['smtpAddress']
-                user_account_json['msTeamsInfo']['teamsCreatedTime'] = team['msTeamsInfo']['teamsCreatedTime']
+                user_account_json['displayName'] = team.name if is_team_instance else team['displayName']
+                user_account_json['smtpAddress'] = team.mail if is_team_instance else team['smtpAddress']
+                user_account_json['msTeamsInfo']['teamsCreatedTime'] = team.teamsCreatedTime if is_team_instance else \
+                    team['msTeamsInfo']['teamsCreatedTime']
                 user_account_json['user'] = user_json
                 useraccounts.append(user_account_json)
             request_json['cloudAppAssociation']['cloudAppDiscoverinfo']['userAccounts'] = useraccounts
@@ -203,12 +211,13 @@ class TeamsSubclient(CloudAppsSubclient):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def backup(self, teams=None, convert_job_to_full=False):
+    def backup(self, teams=None, convert_job_to_full=False, discovery_type=13):
         """Run an Incremental  or Full backup.
             Args:
                 teams               (list)  --  List of team Email IDs.
                 convert_job_to_full (bool)  --  True if we need to convert job to full otherwise False
                             Default --  False
+                discovery_type   (int)  -- type of the entity we are backing up ex user, team, group etc
 
             Returns:
                 obj   --  Instance of job.
@@ -227,20 +236,25 @@ class TeamsSubclient(CloudAppsSubclient):
         request_json['taskInfo']['associations'] = [self._json_association()]
 
         if teams:
-            discovered_teams = self.discover(refresh_cache=False)
-            teams = [discovered_teams[team] for team in teams]
+            is_team_instance = True
+            if isinstance(teams[0], str):
+                is_team_instance = False
+                discovered_teams = self.discover(refresh_cache=False)
+                teams = [discovered_teams[team] for team in teams]
+
             team_json_list = []
             selected_items_json = []
             for team in teams:
                 team_json = copy(const.BACKUP_TEAM_JSON)
-                team_json['displayName'] = team['displayName']
-                team_json['smtpAddress'] = team['smtpAddress']
-                team_json['msTeamsInfo']['teamsCreatedTime'] = team['msTeamsInfo']['teamsCreatedTime']
-                team_json['user'] = {"userGUID": team['user']['userGUID']}
+                team_json['displayName'] = team.name if is_team_instance else team['displayName']
+                team_json['smtpAddress'] = team.mail if is_team_instance else team['smtpAddress']
+                team_json['msTeamsInfo']['teamsCreatedTime'] = team.teamsCreatedTime if is_team_instance else \
+                    team['msTeamsInfo']['teamsCreatedTime']
+                team_json['user'] = {"userGUID": team.guid if is_team_instance else team['user']['userGUID']}
                 team_json_list.append(team_json)
                 selected_items_json.append({
                     'selectedItems': {
-                        "itemName": team['displayName'], "itemType": "Team"
+                        "itemName": team.name if is_team_instance else team['displayName'], "itemType": "Team"
                     }
                 })
             backup_subtask_json['options']['commonOpts']['jobMetadata'][0]['selectedItems'] = selected_items_json
@@ -1150,3 +1164,74 @@ class TeamsSubclient(CloudAppsSubclient):
         }
 
         return self._process_restore(request_json)
+
+    def refresh_retention_stats(self):
+        """
+        refresh the retention stats for the client
+
+        """
+        request_json = {
+            "appType": const.INDEX_APP_TYPE,
+            "subclientId": int(self._subclient_id)
+        }
+        refresh_retention = self._services['OFFICE365_PROCESS_INDEX_RETENTION_RULES']
+        flag, response = self._cvpysdk_object.make_request('POST', refresh_retention, request_json)
+
+        if flag:
+            if response.json() and 'errorCode' in response.json():
+                error_code = response.json().get('errorCode')
+                if error_code != 0:
+                    error_message = response.json().get('errorMessage')
+                    output_string = f'Failed to refresh retention stats \nError: {error_message}'
+                    raise SDKException('Subclient', '102', output_string)
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def refresh_client_level_stats(self):
+        """
+        refresh the client level stats for the client
+
+        """
+        request_json = {
+            "appType": const.INDEX_APP_TYPE,
+            "oneDriveIdxStatsReq":
+                [{
+                    "subclientId": int(self._subclient_id), "type": 0}]
+        }
+        refresh_backup_stats = self._services['OFFICE365_POPULATE_INDEX_STATS']
+        flag, response = self._cvpysdk_object.make_request('POST', refresh_backup_stats, request_json)
+
+        if flag:
+            if response.json() and 'errorCode' in response.json():
+                error_code = response.json().get('errorCode')
+                if error_code != 0:
+                    error_message = response.json().get('errorMessage')
+                    output_string = f'Failed to refresh client level stats \nError: {error_message}'
+                    raise SDKException('Subclient', '102', output_string)
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    @property
+    def backup_stats(self):
+        """
+        Returns the client level stats for the client
+
+        Retruns:
+
+            response(json)                : returns the client level stats as a json response
+        """
+        backupset_id = int(self._subClientEntity.get('backupsetId'))
+        get_backup_stats = self._services['OFFICE365_OVERVIEW_STATS'] % backupset_id
+        flag, response = self._cvpysdk_object.make_request('GET', get_backup_stats)
+
+        if flag:
+            if response.json() and 'errorCode' in response.json():
+                error_code = response.json().get('errorCode')
+                if error_code != 0:
+                    error_message = response.json().get('errorMessage')
+                    output_string = f'Failed to get client level stats \nError: {error_message}'
+                    raise SDKException('Subclient', '102', output_string)
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+        return response.json()

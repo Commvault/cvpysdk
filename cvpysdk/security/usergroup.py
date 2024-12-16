@@ -37,6 +37,15 @@ UserGroups:
     _get_usergroups()               --  Gets all the usergroups associated with the
                                         commcell specified
 
+    _get_fl_parameters()            --  Returns the fl parameters to be passed in the mongodb caching api call
+
+    _get_sort_parameters()          --  Returns the sort parameters to be passed in the mongodb caching api call
+
+    get_user_groups_cache()         --  Gets all the user groups present in CommcellEntityCache DB.
+
+    all_user_groups_cache()         --  Returns dict of all the user groups and their info present in CommcellEntityCache
+                                        in mongoDB
+
     has_user_group()                --  Checks if a user group exists with the given
                                         name or not
 
@@ -52,6 +61,8 @@ UserGroups:
                                         commcell
 
     all_user_groups()               --  Returns all the usergroups present in the commcell
+
+    non_system_usergroups()         --  Returns all usergroups excluding system created ones
 
 
 UserGroup:
@@ -113,6 +124,8 @@ UserGroup:
 
     allow_multiple_company_members  --  Sets/Gets the value for allowing multiple members for a company
 
+    available_users_for_group       --  Returns dict of users compatible for adding to this group
+
 """
 
 from __future__ import absolute_import
@@ -137,7 +150,7 @@ class UserGroups(object):
         """
         self._commcell_object = commcell_object
         self._user_group = self._commcell_object._services['USERGROUPS']
-
+        self._user_groups_cache = None
         self._user_groups = None
         self.refresh()
 
@@ -161,11 +174,11 @@ class UserGroups(object):
             self._commcell_object.commserv_name
         )
 
-    def _get_user_groups(self, hard=False):
+    def _get_user_groups(self, system_created=True):
         """Gets all the user groups associated with the commcell
 
             Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+                system_created  (bool) --   flag to include system created user groups
 
             Returns:
                 dict - consists of all user group in the commcell
@@ -180,11 +193,8 @@ class UserGroups(object):
 
                     if response is not success
         """
-        if hard:
-            self._commcell_object._cvpysdk_object.make_request('GET', self._commcell_object._services["HARD_REFRESH_CACHE"]%
-                                                               ('usergroup'))
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._user_group
+            'GET', self._user_group % str(system_created).lower()
         )
 
         if flag:
@@ -203,6 +213,166 @@ class UserGroups(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def _get_fl_parameters(self, fl: list = None) -> str:
+        """
+        Returns the fl parameters to be passed in the mongodb caching api call
+
+        Args:
+            fl    (list)  --   list of columns to be passed in API request
+
+        Returns:
+            fl_parameters(str) -- fl parameter string
+        """
+        self.valid_columns = {
+            'groupName': 'userGroups.userGroupEntity.userGroupName',
+            'groupId': 'userGroups.userGroupEntity.userGroupId',
+            'description': 'description',
+            'status': 'enabled',
+            'company': 'companyName'
+        }
+        default_columns = 'userGroups.userGroupEntity.userGroupName'
+
+        if fl:
+            if all(col in self.valid_columns for col in fl):
+                fl_parameters = f"&fl={default_columns},{','.join(self.valid_columns[column] for column in fl)}"
+            else:
+                raise SDKException('UserGroup', '102', 'Invalid column name passed')
+        else:
+            fl_parameters = f"&fl={default_columns},{','.join(column for column in self.valid_columns.values())}"
+
+        return fl_parameters
+
+    def _get_sort_parameters(self, sort: list = None) -> str:
+        """
+        Returns the sort parameters to be passed in the mongodb caching api call
+
+        Args:
+            sort  (list)  --   contains the name of the column on which sorting will be performed and type of sort
+                                valid sor type -- 1 for ascending and -1 for descending
+                                e.g. sort = ['connectName','1']
+
+        Returns:
+            sort_parameters(str) -- sort parameter string
+        """
+        sort_type = str(sort[1])
+        col = sort[0]
+        if col in self.valid_columns.keys() and sort_type in ['1', '-1']:
+            sort_parameter = '&sort=' + self.valid_columns[col] + ':' + sort_type
+        else:
+            raise SDKException('UserGroup', '102', 'Invalid column name passed')
+        return sort_parameter
+
+    def _get_fq_parameters(self, fq: list = None) -> str:
+        """
+        Returns the fq parameters based on the fq list passed
+        Args:
+             fq     (list) --   contains the columnName, condition and value
+                    e.g. fq = [['groupName','contains', test']['status','eq','Enabled']]
+
+        Returns:
+            fq_parameters(str) -- fq parameter string
+        """
+        conditions = ['contains', 'notContain', 'eq', 'neq']
+        params = [""]
+        if fq:
+            for param in fq:
+                if param[0] in self.valid_columns.keys():
+                    if param[1] in conditions:
+                        params.append(f"&fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}")
+                    elif param[1] == 'isEmpty' and len(param) == 2:
+                        params.append(f"&fq={self.valid_columns[param[0]]}:in:null,")
+                    else:
+                        raise SDKException('UserGroup', '102', 'Invalid condition passed')
+                else:
+                    raise SDKException('UserGroup', '102', 'Invalid column Name passed')
+        if params:
+            return "".join(params)
+
+    def get_user_groups_cache(self, hard: bool = False, **kwargs) -> dict:
+        """
+        Gets all the user groups present in CommcellEntityCache DB.
+
+        Args:
+            hard  (bool)          --   Flag to perform hard refresh on user groups cache.
+            **kwargs (dict):
+                fl (list)         --   List of columns to return in response (default: None).
+                sort (list)       --   Contains the name of the column on which sorting will be performed and type of sort.
+                                            Valid sort type: 1 for ascending and -1 for descending
+                                            e.g. sort = ['columnName', '1'] (default: None).
+                limit (list)      --   Contains the start and limit parameter value.
+                                            Default ['0', '100'].
+                search (str)      --   Contains the string to search in the commcell entity cache (default: None).
+                fq (list)         --   Contains the columnName, condition and value.
+                                            e.g. fq = [['groupName', 'contains', 'test'],
+                                            ['status', 'eq', 'Enabled']] (default: None).
+                enum (bool)       --   Flag to return enums in the response (default: True).
+
+        Returns:
+            dict: Dictionary of all the properties present in response.
+        """
+        headers = self._commcell_object._headers.copy()
+        if kwargs.get('enum', True):
+            headers['EnumNames'] = 'True'
+
+        fl_parameters = self._get_fl_parameters(kwargs.get('fl', None))
+        fq_parameters = self._get_fq_parameters(kwargs.get('fq', None))
+        limit = kwargs.get('limit', ['0', '100'])
+        limit_parameters = f'start={limit[0]}&limit={limit[1]}'
+        hard_refresh = '&hardRefresh=true' if hard else ''
+        sort_parameters = self._get_sort_parameters(kwargs.get('sort', None)) if kwargs.get('sort', None) else ''
+        search_parameter = f'&search={",".join(self.valid_columns.values())}:contains:{kwargs.get("search", None)}' if kwargs.get(
+            'search', None) else ''
+
+        request_url = (
+                self._commcell_object._services['USERGROUPS'] + "?" +
+                limit_parameters + sort_parameters + fl_parameters + hard_refresh +
+                search_parameter + fq_parameters
+        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", request_url, headers=headers)
+
+        if not flag:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        user_groups_cache = {}
+        if response.json() and 'userGroups' in response.json():
+            for user in response.json()['userGroups']:
+                name = user.get('userGroupEntity', {}).get('userGroupName')
+                user_groups_config = {
+                    'groupId': user.get('userGroupEntity', {}).get('userGroupId'),
+                    'description': user.get('description', {}),
+                    'status': user.get('enabled'),
+                    'company': user.get('userGroupEntity', {}).get('entityInfo', {}).get('companyName')
+                }
+                user_groups_config = {key: value for key, value in user_groups_config.items() if value is not None}
+                user_groups_cache[name] = user_groups_config
+
+            return user_groups_cache
+        else:
+            raise SDKException('Response', '102')
+
+    @property
+    def all_user_groups_cache(self) -> dict:
+        """Returns dict of all the user groups and their info present in CommcellEntityCache in mongoDB
+
+            dict - consists of all user groups of the in the CommcellEntityCache
+                    {
+                         "userGroup1_name": {
+                                'id': userGroup1_id ,
+                                'description': userGroup1_description,
+                                'status': userGroup1_status,
+                                'company': userGroup1_company
+                                },
+                         "userGroup2_name": {
+                                'id': userGroup2_id ,
+                                'description': userGroup2_description,
+                                'status': userGroup2_status,
+                                'company': userGroup2_company
+                                }
+                    }
+        """
+        return self._user_groups_cache
 
     def has_user_group(self, user_group_name):
         """Checks if a user group exists in the commcell with the input user group name.
@@ -474,14 +644,21 @@ class UserGroups(object):
 
         self._user_groups = self._get_user_groups()
 
-    def refresh(self, hard=False):
+    def refresh(self, **kwargs):
         """
-        Refresh the user groups associated with the Commcell.
+        Refresh the list of user groups on this commcell.
 
             Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+                **kwargs (dict):
+                    mongodb (bool)  -- Flag to fetch user groups cache from MongoDB (default: False).
+                    hard (bool)     -- Flag to hard refresh MongoDB cache for this entity (default: False).
         """
-        self._user_groups = self._get_user_groups(hard)
+        mongodb = kwargs.get('mongodb', False)
+        hard = kwargs.get('hard', False)
+
+        self._user_groups = self._get_user_groups()
+        if mongodb:
+            self._user_groups_cache = self.get_user_groups_cache(hard=hard)
 
     @property
     def all_user_groups(self):
@@ -495,6 +672,18 @@ class UserGroups(object):
 
         """
         return self._user_groups
+
+    def non_system_usergroups(self):
+        """Returns dict of all the user groups associated with this commcell
+
+        dict - consists of all user group in the commcell
+                 {
+                   "user_group1_name": user_group1_id,
+                   "user_group2_name": user_group2_id
+                  }
+
+        """
+        return self._get_user_groups(system_created=False)
 
 
 class UserGroup(object):
@@ -1029,3 +1218,31 @@ class UserGroup(object):
 
         self.refresh()
 
+    def available_users_for_group(self):
+        """Returns the dict of all the users on the commcell, that can be added to this group
+
+        dict of all the users available for adding to group
+                   {
+                        "user1": {
+                            "id": ...,
+                            "name": ...,
+                            "GUID": ...,
+                            ..
+                        }
+                   }
+        """
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self._commcell_object._services['V4_USERS'] + f'&groupContext={self.user_group_id}'
+        )
+
+        if flag:
+            if response.json():
+                users_dict = {}
+                for user in response.json().get('users', []):
+                    users_dict[user.get('name')] = user
+                return users_dict
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)

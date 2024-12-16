@@ -1543,6 +1543,9 @@ class Backupset(object):
         if options['_custom_queries']:
             request_json['queries'] = options['_custom_queries']
 
+        if options.get('live_browse', False):
+            request_json['options']['liveBrowse'] = True
+
         return request_json
 
     def _process_browse_all_versions_response(self, result_set, options):

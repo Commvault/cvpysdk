@@ -189,12 +189,14 @@ class TwoFactorAuthentication:
         )
         self._process_response(flag=flag, response=response)
 
-    def enable_tfa(self, user_groups=None):
+    def enable_tfa(self, user_groups=None, usernameless=False, passwordless=False):
         """
         Enables two factor authentication at commcell/organization level.
 
         Args:
             user_groups     (list)  --  user group names on which two factor authentication needs to be enabled
+            usernameless    (bool)  --  allow usernameless login if True
+            passwordless    (bool)  --  allow passwordless login if True
 
         Returns:
             None
@@ -220,7 +222,11 @@ class TwoFactorAuthentication:
         payload = {
             "twoFactorAuthenticationInfo": {
                 "mode": 2 if user_groups_list else 1,
-                "userGroups": user_groups_list
+                "userGroups": user_groups_list,
+                'webAuthn': {
+                    'allowPasswordlessLogin': passwordless,
+                    'allowUsernamelessLogin': usernameless
+                }
             }
         }
 

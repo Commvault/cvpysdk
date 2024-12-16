@@ -63,7 +63,7 @@ Domain:
 
     set_sso                     --  Enables/Disables single sign on a domain
 
-
+    set_properties              --  Sets/modifies the properties for domain
 """
 
 from __future__ import absolute_import
@@ -490,11 +490,11 @@ class Domains(object):
                     # so the domains object has all the domains
                     self.refresh()
                 else:
+                    error_message = response.json()["errorMessage"]
                     o_str = ('Failed to add domain with error code: "{0}"'
-                             '\nPlease check the documentation for '
-                             'more details on the error')
+                             '\nWith error message: "{1}"')
                     raise SDKException(
-                        'Domain', '102', o_str.format(error_code)
+                        'Domain', '102', o_str.format(error_code, error_message)
                     )
             else:
                 raise SDKException('Response', '102')
@@ -616,6 +616,33 @@ class Domain(object):
                 return
             raise SDKException('Response', '102')
         raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+
+    def set_properties(self, req_body):
+        """Modifies domain properties
+            Args:
+                req_body  (json)       domain properties in json format to pass as payload to API
+
+            Raises:
+                SDKException:
+                    if failed to set properties
+                    if request is not successful
+
+        """
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'PUT', self._commcell_object._services['DOMAIN_SSO'] % self.domain_id, req_body
+        )
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', 0)
+                if error_code != 0:
+                    raise SDKException(
+                        'Response', '101',
+                        self._commcell_object._update_response_(response.text)
+                    )
+                return
+            raise SDKException('Response', '102')
+        raise SDKException(
+            'Response', '101', self._commcell_object._update_response_(response.text))
 
     @property
     def domain_name(self):

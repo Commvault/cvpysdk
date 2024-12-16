@@ -127,6 +127,7 @@ VirtualServerSubclient:
 
     update_properties()                       --  child method to add vsa specific properties to update properties
 
+    index_server                            --  Property to get/set the indexserver client for the subclient
 
 To add a new Virtual Subclient,  create a class in a new module under virtualserver sub package
 
@@ -155,6 +156,7 @@ import xmltodict
 
 from cvpysdk.plan import Plans
 from ..exception import SDKException
+from ..client import Client
 from ..subclient import Subclient
 from ..constants import VSAObjects, HypervisorType
 
@@ -569,6 +571,49 @@ class VirtualServerSubclient(Subclient):
 
         return self._live_sync
 
+    @property
+    def index_server(self):
+        """Returns the index server client set for the subclient. None if no Index Server is set"""
+
+        if 'indexSettings' not in self._commonProperties:
+            return None
+
+        index_settings = self._commonProperties['indexSettings']
+        index_server = None
+
+        if ('currentIndexServer' in index_settings and
+                'clientName' in index_settings['currentIndexServer']):
+            index_server = index_settings['currentIndexServer']['clientName']
+
+        if index_server is None:
+            return None
+
+        return self._commcell_object.clients.get(index_server)
+
+    @index_server.setter
+    def index_server(self, value):
+        """Sets the index server client for the backupset
+
+            Args:
+                value   (object)    --  The index server client object to set
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+
+        if not isinstance(value, Client):
+            raise SDKException('Subclient', '121')
+
+        index_server_name = value.client_name
+
+        self._set_subclient_properties(
+            "_commonProperties['indexSettings']['currentIndexServer']['clientName']",
+            index_server_name)
+
     def _get_disk_provisioning_value(self, provisioningType):
         """
          Returns the provisioning code for the selected type
@@ -658,10 +703,10 @@ class VirtualServerSubclient(Subclient):
                 for each_condition in nested_children:
                     display_name = each_condition['displayName']
                     content_type = VSAObjects(each_condition['type']).name
-                    vm_id = each_condition['name']
+                    vm_id = '' if each_condition.get('name', '') in display_name else each_condition.get('name', '')
                     temp_dict = {
-                        'equal_value': each_condition['equalsOrNotEquals'],
-                        'allOrAnyChildren': each_condition['allOrAnyChildren'],
+                        'equal_value': each_condition.get('equalsOrNotEquals', True),
+                        'allOrAnyChildren': each_condition.get('allOrAnyChildren', True),
                         'id': vm_id,
                         'path': path,
                         'display_name': display_name,
@@ -936,7 +981,9 @@ class VirtualServerSubclient(Subclient):
             "passUnconditionalOverride": value.get("unconditional_overwrite", False),
             "powerOnVmAfterRestore": value.get("power_on", False),
             "registerWithFailoverCluster": value.get("add_to_failover", False),
-            "userPassword": {"userName": vcenter_userpwd or "admin"}
+            "userPassword": {"userName": vcenter_userpwd or "admin"},
+            "redirectWritesToDatastore": value.get("redirectWritesToDatastore", ""),
+            "delayMigrationMinutes": value.get("delayMigrationMinutes", 0)
         }
         if value['in_place']:
             json_disklevel_option_restore["dataStore"] = {}
@@ -1011,6 +1058,12 @@ class VirtualServerSubclient(Subclient):
         if "iamRole" in value and value["iamRole"] is not None:
             self._advanced_option_restore_json["roleInfo"] = {
                 "name": value["iamRole"]
+            }
+        if value.get("serviceAccount", {}).get("email"):
+            self._advanced_option_restore_json["roleInfo"] = {
+                "email": value.get("serviceAccount").get("email"),
+                "name": value.get("serviceAccount").get("displayName"),
+                "id": value.get("serviceAccount").get("uniqueId")
             }
         if self._instance_object.instance_name == 'openstack':
             if "securityGroups" in value and value["securityGroups"] is not None:
@@ -1200,7 +1253,8 @@ class VirtualServerSubclient(Subclient):
                vm_disk_browse=False,
                vm_files_browse=False,
                operation='browse',
-               copy_precedence=0
+               copy_precedence=0,
+               **kwargs
                ):
         """Gets the content of the backup for this subclient at the path
            specified.
@@ -1227,6 +1281,11 @@ class VirtualServerSubclient(Subclient):
                 operation            (str)   -- Type of operation, browser of find
 
                 copy_precedence      (int)   -- The copy precedence to do the operation from
+
+            Kwargs(optional)
+
+                live_browse           (bool)   -- set to True to get live browse content
+                                                    even though file indexing is enabled
 
             Returns:
                 list - list of all folders or files with their full paths
@@ -1267,7 +1326,7 @@ class VirtualServerSubclient(Subclient):
             vm_path = self._parse_vm_path(vm_names, vm_path)
             browse_content = super(VirtualServerSubclient, self).browse(
                 show_deleted_files, vm_disk_browse, True, path=vm_path,
-                vs_file_browse=vm_files_browse, operation=operation
+                vs_file_browse=vm_files_browse, operation=operation, **kwargs
             )
 
         if not vm_ids:
@@ -1870,6 +1929,10 @@ class VirtualServerSubclient(Subclient):
             vm_path, show_deleted_files, restore_index, True, from_date, to_date
         )
 
+    def reinitialize_vm_names_browse(self):
+        self._vm_names_browse = []
+        self._get_vm_ids_and_names_dict_from_browse()
+
     def _get_disk_extension(self, disk_list):
         """
         get the Extension of all disk in the list
@@ -2186,7 +2249,8 @@ class VirtualServerSubclient(Subclient):
         restore_option["disks"] = vm_disks
 
         # prepare nics info json
-        if "nics" not in restore_option or self._instance_object.instance_name == HypervisorType.GOOGLE_CLOUD.value.lower():
+        if "nics" not in restore_option or \
+                self._instance_object.instance_name == HypervisorType.GOOGLE_CLOUD.value.lower():
             nics_list = self._json_nics_advancedRestoreOptions(vm_to_restore, restore_option)
             restore_option["nics"] = nics_list
             if restore_option.get('source_ip') and restore_option.get('destination_ip'):
@@ -2602,7 +2666,7 @@ class VirtualServerSubclient(Subclient):
 
         for _each_vm_to_restore in restore_option['vm_to_restore']:
             if not restore_option["in_place"]:
-                if 'disk_type' in restore_option:
+                if 'disk_type' in restore_option and restore_option['disk_type']:
                     restore_option['restoreAsManagedVM'] = restore_option['disk_type'][
                         _each_vm_to_restore]
                 if ("restore_new_name" in restore_option and

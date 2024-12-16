@@ -1873,7 +1873,7 @@ class Classifiers(object):
 
         if not isinstance(classifier_name, str) or not isinstance(content_analyzer, str):
             raise SDKException('Classifier', '101')
-        if not self._commcell_object.content_analyzers.has_cloud(content_analyzer):
+        if not self._commcell_object.content_analyzers.has_client(content_analyzer):
             raise SDKException('Classifier', '102', "Given CA cloud doesn't exists on this commcell")
         ca_obj = self._commcell_object.content_analyzers.get(content_analyzer)
         request_json = copy.deepcopy(ClassifierConstants.CREATE_REQUEST_JSON)
@@ -1884,7 +1884,6 @@ class Classifiers(object):
         ca_details_json['caUrl'] = ca_obj.cloud_url
         ca_details_json['clientId'] = int(ca_obj.client_id)
         ca_details_json['cloudName'] = content_analyzer
-        ca_details_json['cloudId'] = int(ca_obj.cloud_id)
         port_no = int(ca_obj.cloud_url.split(":")[2])
         # update if it is not default port no of 22000
         if port_no != 22000:
@@ -2489,7 +2488,7 @@ class Classifier(object):
             if 'CAUsedInTraining' in self._entity_xml['classifierDetails']:
                 trained_ca = self._entity_xml['classifierDetails']['CAUsedInTraining']
                 # Mandatory trained CA fields. so no need to use dict.get()
-                self._trained_ca_cloud_id = int(trained_ca['cloudId'])
+                self._trained_ca_cloud_id = int(trained_ca['clientId'])
                 self._last_training_time = trained_ca.get('lastModelTrainTime', 0)
             if 'syncedContentAnalyzers' in self._entity_xml['classifierDetails'] and self._entity_xml[
                     'classifierDetails']['syncedContentAnalyzers'] is not None:

@@ -31,6 +31,15 @@ Roles
 
     _get_roles()            --  gets all the roles on this commcell
 
+    _get_fl_parameters()    --  Returns the fl parameters to be passed in the mongodb caching api call
+
+    _get_sort_parameters()  --  Returns the sort parameters to be passed in the mongodb caching api call
+
+    get_roles_cache()       --  Gets all the roles present in CommcellEntityCache DB.
+
+    all_roles_cache()       --  Returns dict of all the roles and their info present in CommcellEntityCache
+                                in mongoDB
+
     has_role()              --  checks if role with specified role exists
                                 on this commcell
 
@@ -92,7 +101,9 @@ class Roles(object):
                 object - instance of the Clients class
         """
         self._commcell_object = commcell_object
-        self._roles = self._get_roles()
+        self._roles = None
+        self._roles_cache = None
+        self.refresh()
 
     def __str__(self):
         """Representation string consisting of all roles of the commcell.
@@ -114,15 +125,10 @@ class Roles(object):
             self._commcell_object.commserv_name
         )
 
-    def _get_roles(self, hard= False):
+    def _get_roles(self):
         """
         Returns the list of roles configured on this commcell
-
-            Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
         """
-        if hard:
-            self._commcell_object._cvpysdk_object.make_request('GET', self._commcell_object._services["HARD_REFRESH_CACHE"]%'security/roles')
         get_all_roles_service = self._commcell_object._services['ROLES']
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -132,11 +138,28 @@ class Roles(object):
         if flag:
             if response.json() and 'roleProperties' in response.json():
                 roles_dict = {}
+                name_count = {}
+
+                for role in response.json()['roleProperties']:
+                    temp_name = role.get('role', {}).get('roleName', '').lower()
+                    temp_company = role.get('role', {}).get('entityInfo', {}).get('companyName', '').lower()
+
+                    if temp_name in name_count:
+                        name_count[temp_name].add(temp_company)
+                    else:
+                        name_count[temp_name] = {temp_company}
 
                 for role in response.json()['roleProperties']:
                     temp_id = role['role']['roleId']
                     temp_name = role['role']['roleName'].lower()
-                    roles_dict[temp_name] = temp_id
+                    temp_company = role.get('role', {}).get('entityInfo', {}).get('companyName', '').lower()
+
+                    if len(name_count[temp_name]) > 1:
+                        unique_key = f"{temp_name}_({temp_company})"
+                    else:
+                        unique_key = temp_name
+
+                    roles_dict[unique_key] = temp_id
 
                 return roles_dict
             else:
@@ -144,6 +167,161 @@ class Roles(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def _get_fl_parameters(self, fl: list = None) -> str:
+        """
+        Returns the fl parameters to be passed in the mongodb caching api call
+
+        Args:
+            fl    (list)  --   list of columns to be passed in API request
+
+        Returns:
+            fl_parameters(str) -- fl parameter string
+        """
+        self.valid_columns = {
+            'roleName': 'roleProperties.role.roleName',
+            'roleId': 'roleProperties.role.roleId',
+            'status': 'roleProperties.role.flags.disabled',
+            'company': 'companyName'
+        }
+        default_columns = 'roleProperties.role.roleName'
+
+        if fl:
+            if all(col in self.valid_columns for col in fl):
+                fl_parameters = f"&fl={default_columns},{','.join(self.valid_columns[column] for column in fl)}"
+            else:
+                raise SDKException('Role', '102', 'Invalid column name passed')
+        else:
+            fl_parameters = "&fl=roleProperties.role"
+
+        return fl_parameters
+
+    def _get_sort_parameters(self, sort: list = None) -> str:
+        """
+        Returns the sort parameters to be passed in the mongodb caching api call
+
+        Args:
+            sort  (list)  --   contains the name of the column on which sorting will be performed and type of sort
+                                valid sor type -- 1 for ascending and -1 for descending
+                                e.g. sort = ['connectName','1']
+
+        Returns:
+            sort_parameters(str) -- sort parameter string
+        """
+        sort_type = str(sort[1])
+        col = sort[0]
+        if col in self.valid_columns.keys() and sort_type in ['1', '-1']:
+            sort_parameter = '&sort=' + self.valid_columns[col] + ':' + sort_type
+        else:
+            raise SDKException('Role', '102', 'Invalid column name passed')
+        return sort_parameter
+
+    def _get_fq_parameters(self, fq: list = None) -> str:
+        """
+        Returns the fq parameters based on the fq list passed
+        Args:
+             fq     (list) --   contains the columnName, condition and value
+                    e.g. fq = [['roleName','contains', test'],['status','eq', 'Enabled']]
+
+        Returns:
+            fq_parameters(str) -- fq parameter string
+        """
+        conditions = ['contains', 'notContain', 'eq', 'neq']
+        params = [""]
+        if fq:
+            for param in fq:
+                if param[0] in self.valid_columns.keys():
+                    if param[1] in conditions:
+                        params.append(f"&fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}")
+                    elif param[1] == 'isEmpty' and len(param) == 2:
+                        params.append(f"&fq={self.valid_columns[param[0]]}:in:null,")
+                    else:
+                        raise SDKException('Role', '102', 'Invalid condition passed')
+                else:
+                    raise SDKException('Role', '102', 'Invalid column Name passed')
+        if params:
+            return "".join(params)
+
+    def get_roles_cache(self, hard: bool = False, **kwargs) -> dict:
+        """
+        Gets all the roles present in CommcellEntityCache DB.
+
+        Args:
+            hard  (bool)  --   Flag to perform hard refresh on roles cache.
+            **kwargs:
+                fl (list)   -- List of columns to return in response.
+                sort (list) -- Contains the name of the column on which sorting will be performed and type of sort.
+                                Valid sort type: 1 for ascending and -1 for descending
+                                e.g. sort = ['columnName', '1']
+                limit (list)-- Contains the start and limit parameter value.
+                                Default ['0', '100']
+                search (str)-- Contains the string to search in the commcell entity cache.
+                fq (list)   -- Contains the columnName, condition and value.
+                                e.g. fq = [['roleName', 'contains', 'test'], ['status', 'eq', 'Enabled']]
+                enum (bool) -- Flag to return enums in the response.
+
+        Returns:
+            dict: Dictionary of all the properties present in response.
+        """
+        headers = self._commcell_object._headers.copy()
+        if kwargs.get('enum', True):
+            headers['EnumNames'] = 'True'
+
+        fl_parameters = self._get_fl_parameters(kwargs.get('fl'))
+        fq_parameters = self._get_fq_parameters(kwargs.get('fq'))
+        limit = kwargs.get('limit', ['0', '100'])
+        limit_parameters = f'start={limit[0]}&limit={limit[1]}'
+        hard_refresh = '&hardRefresh=true' if hard else ''
+        sort_parameters = self._get_sort_parameters(kwargs.get('sort')) if kwargs.get('sort') else ''
+        search_parameter = f'&search={",".join(self.valid_columns.values())}:contains:{kwargs.get("search")}' if kwargs.get(
+            'search') else ''
+
+        request_url = (
+                self._commcell_object._services['GET_SECURITY_ROLES'] + "?" +
+                limit_parameters + sort_parameters + fl_parameters + hard_refresh +
+                search_parameter + fq_parameters
+        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", request_url, headers=headers)
+
+        if not flag:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        roles_cache = {}
+        if response.json() and 'roleProperties' in response.json():
+            for role in response.json()['roleProperties']:
+                name = role.get('role', {}).get('roleName')
+                roles_config = {
+                    'roleId': role.get('role', {}).get('roleId'),
+                    'status': role.get('role', {}).get('flags', {}).get('disabled'),
+                    'company': role.get('role', {}).get('entityInfo', {}).get('companyName')
+                }
+                roles_config = {key: value for key, value in roles_config.items() if value is not None}
+                roles_cache[name] = roles_config
+
+            return roles_cache
+        else:
+            raise SDKException('Response', '102')
+
+    @property
+    def all_roles_cache(self) -> dict:
+        """Returns dict of all the roles and their info present in CommcellEntityCache in mongoDB
+
+            dict - consists of all roles of the in the CommcellEntityCache
+                    {
+                         "role1_name": {
+                                'id': role1_id ,
+                                'status': role1_status,
+                                'company': role1_company
+                                },
+                         "role2_name": {
+                                'id': role2_id ,
+                                'status': role2_status,
+                                'company': role2_company
+                                }
+                    }
+        """
+        return self._roles_cache
 
     def has_role(self, role_name):
         """Checks if any role with specified name exists on this commcell
@@ -302,14 +480,21 @@ class Roles(object):
             raise SDKException('Response', '101', response_string)
         self.refresh()
 
-    def refresh(self, hard=False):
+    def refresh(self, **kwargs):
         """
         Refresh the list of Roles on this commcell.
 
             Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+                **kwargs (dict):
+                    mongodb (bool)  -- Flag to fetch roles cache from MongoDB (default: False).
+                    hard (bool)     -- Flag to hard refresh MongoDB cache for this entity (default: False).
         """
-        self._roles = self._get_roles(hard)
+        mongodb = kwargs.get('mongodb', False)
+        hard = kwargs.get('hard', False)
+
+        self._roles = self._get_roles()
+        if mongodb:
+            self._roles_cache = self.get_roles_cache(hard=hard)
 
     @property
     def all_roles(self):
@@ -388,7 +573,7 @@ class Role(object):
                             'categoriesPermissionList', []):
                         if 'permissionName' in associations:
                             permission_list.append(associations['permissionName'])
-                        else:
+                        elif 'categoryName' in associations:
                             category_list.append(associations['categoryName'])
 
                 self._role_permissions = {

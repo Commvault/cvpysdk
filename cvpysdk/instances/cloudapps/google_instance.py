@@ -188,6 +188,175 @@ class GoogleInstance(CloudAppsInstance):
         """Returns the proxy client name to this instance"""
         return self._proxy_client
 
+    def _prepare_advsearchgrp(self, source_item_list, subclient_id):
+        """
+                    Utility function to prepare advsearchgrp json for restore job for OneDrive for business clients
+
+                    Args:
+                        source_item_list (list)         --  list of user GUID to process in restore
+
+                        subclient_id                    --  subclient id of the client
+
+                    Returns:
+                        advsearchgrp (dict) - advsearchgrp json for restore job
+        """
+        advsearchgrp = {
+            "fileFilter": [
+                {
+                    "interGroupOP": "FTAnd",
+                    "filter": {
+                        "filters": [
+                            {
+                                "field": "HIDDEN",
+                                "fieldValues": {
+                                    "values": [
+                                        "true"
+                                    ]
+                                },
+                                "intraFieldOp": "FTNot"
+                            },
+                            {
+                                "field": "CV_OBJECT_GUID",
+                                "fieldValues": {
+                                    "values": source_item_list
+                                },
+                                "intraFieldOp": "FTOr"
+                            }
+                        ],
+                        "interFilterOP": "FTAnd"
+                    }
+                }
+            ],
+            "commonFilter": [
+                {
+                    "filter": {
+                        "filters": [
+                            {
+                                "field": "CISTATE",
+                                "fieldValues": {
+                                    "values": [
+                                        "1"
+                                    ]
+                                },
+                                "intraFieldOp": "FTOr",
+                                "groupType": 0
+                            },
+                            {
+                                "field": "IS_VISIBLE",
+                                "fieldValues": {
+                                    "values": [
+                                        "true"
+                                    ],
+                                    "isRange": False,
+                                    "isMoniker": False
+                                },
+                                "intraFieldOp": "FTOr",
+                                "intraFieldOpStr": "None"
+                            }
+                        ],
+                        "interFilterOP": "FTAnd"
+                    }
+                }
+            ],
+            "galaxyFilter": [
+                {
+                    "appIdList": [
+                        subclient_id
+                    ]
+                }
+            ],
+            "graphFilter": [
+                {
+                    "fromField": "PARENT_GUID",
+                    "toField": "CV_OBJECT_GUID",
+                    "returnRoot": True,
+                    "traversalFilter": [
+                        {
+                            "filters": [
+                                {
+                                    "field": "IS_VISIBLE",
+                                    "fieldValues": {
+                                        "values": [
+                                            "true"
+                                        ]
+                                    },
+                                    "intraFieldOp": "FTAnd",
+                                    "groupType": 0
+                                },
+                                {
+                                    "field": "HIDDEN",
+                                    "fieldValues": {
+                                        "values": [
+                                            "true"
+                                        ]
+                                    },
+                                    "intraFieldOp": "FTNot"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+
+        return advsearchgrp
+
+    def _prepare_findquery(self, source_item_list, subclient_id):
+        """
+            Utility function to prepare findquery json for restore job for OneDrive for bussiness clients
+
+            Args:
+                source_item_list (list)         --  list of user GUID to process in restore
+
+                subclient_id                    --  subclient id of the client
+
+            Returns:
+                findquery (dict) - findquery json for restore job
+        """
+
+        findquery = {
+                  "searchProcessingInfo": {
+                    "pageSize": 15,
+                    "resultOffset": 0,
+                    "sortParams": [
+                      {
+                        "sortField": "DATA_TYPE",
+                        "sortDirection": "DESCENDING"
+                      },
+                      {
+                        "sortField": "FileName",
+                        "sortDirection": "ASCENDING"
+                      }
+                    ],
+                    "queryParams": [
+                      {
+                        "param": "ENABLE_MIXEDVIEW",
+                        "value": "true"
+                      },
+                      {
+                        "param": "RESPONSE_FIELD_LIST",
+                        "value": "FAST_URL,BACKUPTIME,SIZEINKB,MODIFIEDTIME,CONTENTID,CV_TURBO_GUID,AFILEID,AFILEOFFSET,COMMCELLNO,FILE_NAME,FILE_FOLDER,CVSTUB,DATA_TYPE,APPID,JOBID,CISTATE,DATE_DELETED,IdxFlags,CV_OBJECT_GUID,PARENT_GUID,CUSTODIAN,OWNER,ObjectType"
+                      },
+                      {
+                        "param": "DO_NOT_AUDIT",
+                        "value": "false"
+                      },
+                      {
+                        "param": "COLLAPSE_FIELD",
+                        "value": "CV_OBJECT_GUID"
+                      },
+                      {
+                        "param": "COLLAPSE_SORT",
+                        "value": "BACKUPTIME DESC"
+                      }
+                    ]
+                  },
+                  "advSearchGrp": self._prepare_advsearchgrp(source_item_list,subclient_id),
+                  "mode": "WebConsole"
+                }
+
+        return findquery
+
     def _prepare_restore_json_v2(self, source_item_list, **kwargs):
 
         """ Utility function to prepare user level restore json for OneDrive for bussiness clients
@@ -216,7 +385,6 @@ class GoogleInstance(CloudAppsInstance):
 
             Raises:
                 SDKException:
-
                     if destination client with given name does not exist
 
                     if type of parameter is invalid
@@ -230,6 +398,8 @@ class GoogleInstance(CloudAppsInstance):
         overwrite = kwargs.get('overwrite', False)
         restore_as_copy = kwargs.get('restore_as_copy', False)
         skip_file_permissions = kwargs.get('skip_file_permissions', False)
+
+
 
         if destination_client:
             if self._commcell_object.clients.all_clients.get(destination_client):
@@ -254,11 +424,16 @@ class GoogleInstance(CloudAppsInstance):
         options = subtasks['options']
         restore_options = options['restoreOptions']
 
-        common_options = restore_options['commonOptions']
-        common_options['skip'] = False if overwrite or restore_as_copy else True
-        common_options['overwriteFiles'] = False if disk_restore else overwrite
-        common_options['unconditionalOverwrite'] = False if disk_restore else overwrite
-        common_options['restoreToDisk'] = disk_restore
+        restore_options["browseOption"] = {
+            "commCellId": self._commcell_object.commcell_id,
+            "showDeletedItems": False
+        }
+
+        restore_options['commonOptions'] = {
+            "overwriteFiles": False,
+            "skip": True,
+            "unconditionalOverwrite": False
+        }
 
         destination = restore_options['destination']
         destination['destAppId'] = AppIDAType.WINDOWS_FILE_SYSTEM.value if disk_restore else AppIDAType.CLOUD_APP.value
@@ -289,6 +464,76 @@ class GoogleInstance(CloudAppsInstance):
                 "restoreToGoogle": False if disk_restore else True
             }
         }
+
+        del subtasks['subTaskOperation']
+        del restore_options['fileOption']
+        del restore_options['impersonation']
+        del restore_options['volumeRstOption']
+        del restore_options['sharePointRstOption']
+        del restore_options['virtualServerRstOption']
+
+        associations = request_json['taskInfo']['associations'][0]
+        subclient_id = associations['subclientId']
+
+        cloudAppsRestoreOptions = restore_options['cloudAppsRestoreOptions']
+        cloudAppsRestoreOptions['googleRestoreOptions']['findQuery'] = self._prepare_findquery(source_item_list, subclient_id)
+
+        destination_option = "Destination"
+        destination_value = "Original location"
+        if out_of_place:
+            destination_option = "Destination user"
+            destination_value = source_item_list[0]
+        if disk_restore:
+            destination_option = "Destination server"
+            destination_value = destination_client
+
+
+        options["commonOpts"] = {
+            "notifyUserOnJobCompletion": False,
+            "jobMetadata": [
+              {
+                "selectedItems": [
+                  {
+                    "itemName": source_item_list[0],
+                    "itemType": "User"
+                  }
+                ],
+                "jobOptionItems": [
+                  {
+                    "option": "Restore destination",
+                    "value": "OneDrive for Business"
+                  },
+                  {
+                    "option": "Source",
+                    "value": source_item_list[0]
+                  },
+                  {
+                    "option": destination_option,
+                    "value": destination_value
+                  },
+                  {
+                    "option": "If the file exists",
+                    "value": "Skip"
+                  },
+                  {
+                    "option": "Skip file permissions",
+                    "value": "Enabled"
+                  },
+                  {
+                    "option": "Include deleted items",
+                    "value": "Disabled"
+                  }
+                ]
+              }
+            ]
+          }
+
+        joboptionitems = options['commonOpts']['jobMetadata'][0]['jobOptionItems']
+
+        if out_of_place:
+            joboptionitems.append({"option": "Destination client","value": destination_client })
+        if disk_restore:
+            joboptionitems.append({"option": "Destination path", "value": destination_path})
 
         return request_json
 

@@ -46,6 +46,14 @@ class AzureAdInstance(Instance):
         """
 
         request_json = self._restore_json(**kwargs)
+        if "to_time" in kwargs:
+            request_json["taskInfo"]["subTasks"][0]["options"] \
+                ["restoreOptions"]["browseOption"]["timeRange"]["toTime"] = \
+                kwargs['to_time']
+
+            del request_json["taskInfo"]["subTasks"][0]["options"] \
+                ["restoreOptions"]["browseOption"]["timeRange"]["toTimeValue"]
+
         if "overwrite" in kwargs['fs_options']:
             request_json["taskInfo"]["subTasks"][0]\
             ["options"]["restoreOptions"]['commonOptions']['unconditionalOverwrite'] = \

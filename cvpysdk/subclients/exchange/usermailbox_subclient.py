@@ -76,6 +76,7 @@ Browse/ Restore/ Backup Methods:
     backup_mailboxes()                  --  Backup selected mailboxes
     restore_in_place()                  --  runs in-place restore for the subclient
     create_recovery_point()             --  Create a recovery point for a mailbox
+    restore_in_place_syntex()           --  runs an in-place restore for the Syntex client
 
 
 
@@ -225,7 +226,7 @@ class UsermailboxSubclient(ExchangeSubclient):
 
     def _association_json_with_plan(self, plan_details):
         """Constructs association json with plan to create association in UserMailbox Subclient.
-
+        
             Args: plan_details = {
                     'plan_name': Plan Name,
                     'plan_id': int or None (Optional)
@@ -803,7 +804,8 @@ class UsermailboxSubclient(ExchangeSubclient):
 
                 for mb_item in discover_users:
 
-                    if mailbox_item.lower() == mb_item['aliasName'].lower():
+                    if mailbox_item.lower() == mb_item['aliasName'].lower() or \
+                            mailbox_item.lower() == mb_item['smtpAdrress'].lower():
                         mailbox_dict = {
                             'smtpAdrress': mb_item['smtpAdrress'],
                             'aliasName': mb_item['aliasName'],
@@ -1049,6 +1051,20 @@ class UsermailboxSubclient(ExchangeSubclient):
 
                         'retention_policy': 'CIPLAN Retention policy',
                     }
+                     -- if use_policies is True --
+
+                        'archive_policy' : "CIPLAN Archiving policy",
+
+                        'cleanup_policy' : 'CIPLAN Clean-up policy',
+
+                        'retention_policy': 'CIPLAN Retention policy'
+
+                        -- if use_policies is False --
+
+                        'plan_name': 'Exchange Plan Name',
+
+                        'plan_id': int or None (Optional)
+                        --
 
         """
         adgroups = []
@@ -1069,7 +1085,6 @@ class UsermailboxSubclient(ExchangeSubclient):
 
                     if adgroup_item.lower() == ad_item['adGroupName'].lower():
                         adgroup_dict = {
-                            "associated": False,
                             'adGroupName': ad_item['adGroupName'],
                         }
                         adgroups.append(adgroup_dict)
@@ -1086,6 +1101,10 @@ class UsermailboxSubclient(ExchangeSubclient):
         else:
             _assocaition_json_ = self._association_json_with_plan(subclient_content)
         _assocaition_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
+        _assocaition_json_["emailAssociation"].update({"emailStatus":0})
+        _assocaition_json_["emailAssociation"].update({"advanceOptions":{
+            "enableAutoDiscovery": subclient_content["is_auto_discover_user"]
+        }})
         self._set_association_request(_assocaition_json_)
 
     def set_o365group_asscoiations(self, subclient_content):
@@ -1308,6 +1327,20 @@ class UsermailboxSubclient(ExchangeSubclient):
 
                         'retention_policy': 'CIPLAN Retention policy',
                     }
+                     -- if use_policies is True --
+
+                        'archive_policy' : "CIPLAN Archiving policy",
+
+                        'cleanup_policy' : 'CIPLAN Clean-up policy',
+
+                        'retention_policy': 'CIPLAN Retention policy'
+
+                        -- if use_policies is False --
+
+                        'plan_name': 'Exchange Plan Name',
+
+                        'plan_id': int or None (Optional)
+                        --
 
         """
         adgroups = []
@@ -1717,3 +1750,77 @@ class UsermailboxSubclient(ExchangeSubclient):
         self._users, self._o365groups = self._get_user_assocaitions()
         self._databases = self._get_database_associations()
         self._adgroups = self._get_adgroup_assocaitions()
+
+    def restore_in_place_syntex(self, **kwargs):
+        """Runs an in-place restore job on the specified Syntex Exchange pseudo client
+
+             Kwargs:
+
+                 paths (list)  --  list of paths of mailboxes/folders to restore
+
+             Returns:
+
+                Job object
+
+            Raises:
+
+                SDKException:
+
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+        """
+        paths = kwargs.get('paths', [])
+        paths = self._filter_paths(paths)
+        self._json_restore_exchange_restore_option({})
+        self._json_backupset()
+        restore_option = {"paths": paths}
+
+        self._instance_object._restore_association = self._subClientEntity
+        request_json = self._restore_json(restore_option=restore_option)
+        request_json['taskInfo']['associations'][0]['subclientName'] = self.subclient_name
+        request_json['taskInfo']['associations'][0][
+            'backupsetName'] = self._backupset_object.backupset_name
+        request_json['taskInfo']['subTasks'][0][
+            'options']['restoreOptions']['exchangeOption'] = self._exchange_option_restore_json
+        request_json["taskInfo"]["subTasks"][0]["options"][
+            "restoreOptions"]["browseOption"]['backupset'] = self._exchange_backupset_json
+
+        mailboxes = self.browse_mailboxes()
+        mailbox_details = {}
+        for path in paths:
+            mailbox_details[path] = next((mailbox for mailbox in mailboxes if mailbox['aliasName'] == path), None)
+        syntex_restore_items = []
+
+        for key, value in mailbox_details.items():
+            syntex_restore_items.append({
+                "displayName": value["displayName"],
+                "guid": value["user"]["userGUID"],
+                "rawId": value["user"]["userGUID"],
+                "restoreType": 1
+            })
+
+        # Get the current time in UTC
+        current_time = datetime.datetime.now(datetime.timezone.utc)
+        current_timestamp = int(current_time.timestamp())
+        current_iso_format = current_time.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"] = {}
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"][
+            "msSyntexRestoreOptions"] = {
+            "msSyntexRestoreItems": {
+                "listMsSyntexRestoreItems": syntex_restore_items
+            },
+            "restoreDate": {
+                "time": current_timestamp,
+                "timeValue": current_iso_format
+            },
+            "restorePointId": "",
+            "restoreType": 1,
+            "useFastRestorePoint": False
+        }
+
+        return self._process_restore_response(request_json)

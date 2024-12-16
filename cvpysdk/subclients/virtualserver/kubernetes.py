@@ -1231,6 +1231,8 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         if not target_cluster_name:
             target_cluster_name = self._client_object.client_name
 
+        self.reinitialize_vm_names_browse()
+
         self._set_restore_inputs(
             restore_options,
             in_place=False,

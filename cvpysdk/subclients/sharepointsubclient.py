@@ -47,13 +47,23 @@ SharepointSubclient:
 
     restore()                           --  restores the databases specified in the input paths list.
 
+    add_azure_app()                     --  adds a single azure app to the sharepoint client
+
+    delete_azure_app()                  --  deletes one/multiple azure app(s) from the sharepoint client
+
     run_manual_discovery()              --  runs the manual disocvery for specified backupset
 
     browse_for_content()                --  returns the user association content
 
     associate_site_collections_and_webs()-- associates the specified site collections/webs
 
-    restore_in_place()                  --  runs a in-place restore job on the specified Sharepoint pseudo client
+    delete_data()                       --  delete backed up data from sharepoint clients
+
+    restore_in_place()                  --  runs an in-place restore job on the specified Sharepoint pseudo client
+
+    restore_in_place_syntex()           --  runs an in-place restore job on the specified Sharepoint Syntex pseudo client
+
+    refresh_license_collection()        --  runs a license collection process
 
 SharepointV1Subclient: Derived class from SharepointSuperSubclient Base class, representing a sharepoint v1 subclient,
 and to perform operations on that subclient
@@ -72,11 +82,14 @@ SharepointV1Subclient:
 """
 
 from __future__ import unicode_literals
+
+import datetime
 from base64 import b64encode
 from ..subclient import Subclient
 from ..exception import SDKException
 from ..constants import SQLDefines
 from ..constants import SharepointDefines
+
 
 class SharepointSuperSubclient(Subclient):
 
@@ -124,9 +137,9 @@ class SharepointSuperSubclient(Subclient):
             return self._process_backup_response(flag, response)
         else:
             return super(SharepointSuperSubclient, self).backup(backup_level=backup_level,
-                                                           incremental_backup=incremental_backup,
-                                                           incremental_level=incremental_level,
-                                                           collect_metadata=collect_metadata)
+                                                                incremental_backup=incremental_backup,
+                                                                incremental_level=incremental_level,
+                                                                collect_metadata=collect_metadata)
 
     def _json_out_of_place_destination_option(self, value):
         """setter for the SharePoint Online out of place restore
@@ -153,6 +166,7 @@ class SharepointSuperSubclient(Subclient):
         super(SharepointSuperSubclient, self)._get_subclient_properties()
         self._sharepoint_subclient_prop = self._subclient_properties.get('sharepointsubclientprop', {})
         self._content = self._subclient_properties.get('content', {})
+
 
 class SharepointSubclient(SharepointSuperSubclient):
     """Derived class from Subclient Base class, representing a Sharepoint subclient,
@@ -576,6 +590,72 @@ class SharepointSubclient(SharepointSuperSubclient):
         else:
             raise SDKException('Subclient', '102', 'Method not supported for SharePoint On-Premise Instance')
 
+    def add_azure_app(self, azure_app_id, azure_app_key_id, azure_directory_id, cert_string=None, cert_password=None):
+        """
+        Adds an azure app to the sharepoint client
+
+        args:
+            azure_app_id        (str)       --      Application id of the azure app
+            azure_app_key_id    (str)       --      Client Secret of the azure app
+            azure_directory_id  (str)       --      Azure directory/tenant ID
+            cert_string         (str)       --      Certificate String
+            cert_password       (str)       --      Certificate Password
+        """
+        properties_dict = self._backupset_object.properties
+        azure_app_list = properties_dict["sharepointBackupSet"]["spOffice365BackupSetProp"].get("azureAppList", {}).get("azureApps", [])
+        azure_app_key_id = b64encode(azure_app_key_id.encode()).decode()
+
+        azure_app_dict = {
+            "azureAppId": azure_app_id,
+            "azureAppKeyValue": azure_app_key_id,
+            "azureDirectoryId": azure_directory_id
+        }
+
+        if cert_string:
+            # cert_string needs to be encoded twice
+            cert_string = b64encode(cert_string).decode()
+            cert_string = b64encode(cert_string.encode()).decode()
+
+            cert_password = b64encode(cert_password.encode()).decode()
+
+            cert_dict = {
+                "certificate": {
+                    "certBase64String": cert_string,
+                    "certPassword": cert_password
+                }
+            }
+            azure_app_dict.update(cert_dict)
+
+        azure_app_list.append(azure_app_dict)
+
+        properties_dict["sharepointBackupSet"]["spOffice365BackupSetProp"]["azureAppList"] =  {
+            "azureApps": azure_app_list
+        }
+
+        self._backupset_object.update_properties(properties_dict)
+
+    def delete_azure_app(self, app_ids):
+        """
+        Deletes azure app from the sharepoint client
+
+        args:
+            app_ids         (str / list[str])   --      Azure App ID or list of Azure App IDs to delete.
+        """
+        if not isinstance(app_ids, list):
+            app_ids = [app_ids]
+
+        properties_dict = self._backupset_object.properties
+        azure_app_list = properties_dict["sharepointBackupSet"]["spOffice365BackupSetProp"]["azureAppList"]["azureApps"]
+        new_app_list = []
+
+        for azure_app_dict in azure_app_list:
+            if not azure_app_dict["azureAppId"] in app_ids:
+                new_app_list.append(azure_app_dict)
+
+        properties_dict["sharepointBackupSet"]["spOffice365BackupSetProp"]["azureAppList"]["azureApps"] = new_app_list
+
+        self._backupset_object.update_properties(properties_dict)
+
     def run_manual_discovery(self):
         """Runs the manual discovery of backupset
 
@@ -927,6 +1007,83 @@ class SharepointSubclient(SharepointSuperSubclient):
         else:
             raise SDKException('Subclient', '102', 'Method not supported for SharePoint On-Premise Instance')
 
+    def delete_data(self, guids=None, search_string=None, folder_delete=False, search_and_select_all=False):
+        """
+        Trigger a bulk delete job or normal delete for files/folders according to input given for SharePoint V2
+
+        Args:
+            guids (list)                    --  List of file/folder object GUIDs or web GUIDs of items we are deleting
+            search_string (string)          --  Search string (needed for search and delete all)
+            folder_delete (bool)            --  Bool value to confirm if a folder is being deleted or not
+            search_and_select_all (bool)    --  Normal delete operation or search and delete all operation
+        """
+        ci_state_values = ["1"]
+        bulk_mode = False
+        if folder_delete or search_and_select_all:
+            bulk_mode = True
+        if search_and_select_all:
+            file_filter = [{"interGroupOP": 2,
+                            "filter": {"interFilterOP": 2, "filters": [
+                                {"field": "HIDDEN", "intraFieldOp": 4, "fieldValues": {"values": ["true"]}}, {
+                                    "field": "SPWebGUID",
+                                    "intraFieldOp": 0,
+                                    "fieldValues": {"values": guids}}]}},
+                           {"interGroupOP": 2, "filter": {"interFilterOP": 0,
+                                                          "filters": [{
+                                                              "field": "FILE_NAME",
+                                                              "intraFieldOp": 0,
+                                                              "fieldValues": {
+                                                                  "values": [search_string, search_string + "*"]}},
+                                                              {
+                                                                  "field": "SPTitle",
+                                                                  "intraFieldOp": 0,
+                                                                  "fieldValues": {"values": [search_string,
+                                                                                             search_string + "*"]}}]}}]
+        else:
+            ci_state_values.extend(["3333", "3334", "3335"])
+            file_filter = [{"interGroupOP": 2, "filter": {"interFilterOP": 2, "filters": [
+                {
+                    "field": "IS_VISIBLE",
+                    "intraFieldOp": 0,
+                    "fieldValues": {"values": ["true"]}},
+                {
+                    "field": "CV_OBJECT_GUID",
+                    "intraFieldOp": 0,
+                    "fieldValues": {"values": guids}}]}}]
+
+        request_json = {"opType": 1, "bulkMode": bulk_mode, "deleteOption": {"folderDelete": bulk_mode},
+                        "searchReq": {
+                            "mode": 4, "advSearchGrp": {"commonFilter": [{"filter": {"interFilterOP": 2,
+                                                                                     "filters": [
+                                                                                         {"field": "CISTATE",
+                                                                                          "intraFieldOp": 0,
+                                                                                          "fieldValues": {
+                                                                                              "values": ci_state_values}}]}}],
+                                                        "fileFilter": file_filter,
+                                                        "emailFilter": [],
+                                                        "galaxyFilter": [{"appIdList": [int(self.subclient_id)]}],
+                                                        "graphFilter": [
+                                                            {
+                                                                "toField": "CV_OBJECT_GUID", "fromField": "PARENT_GUID",
+                                                                "returnRoot": True,
+                                                                "traversalFilter": [{"filters": [
+                                                                    {"field": "IS_VISIBLE", "intraFieldOp": 2,
+                                                                     "fieldValues": {"values": ["true"]}},
+                                                                    {"field": "HIDDEN", "intraFieldOp": 4,
+                                                                     "fieldValues": {"values": ["true"]}}]}]
+                                                            }]},
+                            "searchProcessingInfo": {
+                                "resultOffset": 0, "pageSize": 0,
+                                "queryParams": [{"param": "ENABLE_MIXEDVIEW", "value": "true"}],
+                                "sortParams": []
+                            }
+                        }
+                        }
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['DELETE_DOCUMENTS'], request_json
+        )
+        return self._process_index_delete_response(flag, response)
+
     def restore_in_place(self, **kwargs):
         """Runs a in-place restore job on the specified Sharepoint pseudo client
            This is used by Sharepoint V2 pseudo client
@@ -959,6 +1116,78 @@ class SharepointSubclient(SharepointSuperSubclient):
         if self._backupset_object.is_sharepoint_online_instance:
             self._instance_object._restore_association = self._subClientEntity
             parameter_dict = self._restore_json(**kwargs)
+            return self._process_restore_response(parameter_dict)
+        else:
+            raise SDKException('Subclient', '102', 'Method not supported for SharePoint On-Premise Instance')
+
+    def restore_in_place_syntex(self, **kwargs):
+        """Runs an in-place restore job on the specified Syntex Sharepoint pseudo client
+
+             Kwargs:
+
+                 paths     (list)   --  list of sites or webs to be restored
+                 Example: [
+                    "MB\\<tenant-url>/sites/TestSite\Contents\Shared Documents",
+                    "MB\\<tenant-url>/sites/TestSite\Contents\Test Automation List"
+                    ]
+
+             Returns:
+
+                Job object
+
+            Raises:
+
+                SDKException:
+
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if the method is called by SharePoint On-Premise Instance
+
+        """
+        paths = kwargs.get('paths', [])
+        if self._backupset_object.is_sharepoint_online_instance:
+            site_dict, _ = self.browse_for_content(discovery_type=7)
+            site_details = {}
+            for path in paths:
+                site_details[path] = site_dict[path].get('userAccountInfo', {})
+            self._instance_object._restore_association = self._subClientEntity
+            parameter_dict = self._restore_json(**kwargs)
+
+            syntex_restore_items = []
+
+            for key, value in site_details.items():
+                sharepoint_item = value["EVGui_SharePointItem"][0]
+                syntex_restore_items.append({
+                    "displayName": value["displayName"],
+                    "email": value["smtpAddress"],
+                    "guid": value["user"]["userGUID"],
+                    "rawId": sharepoint_item['siteId']+";"+sharepoint_item['objectId']+";"+sharepoint_item['contentPath'],
+                    "restoreType": 1
+                })
+
+            # Get the current time in UTC
+            current_time = datetime.datetime.now(datetime.timezone.utc)
+            current_timestamp = int(current_time.timestamp())
+            current_iso_format = current_time.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+            parameter_dict["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"] = {}
+            parameter_dict["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"][
+                "msSyntexRestoreOptions"] = {
+                "msSyntexRestoreItems": {
+                    "listMsSyntexRestoreItems": syntex_restore_items
+                },
+                "restoreDate": {
+                    "time": current_timestamp,
+                    "timeValue": current_iso_format
+                },
+                "restorePointId": "",
+                "restoreType": 1,
+                "useFastRestorePoint": True
+            }
+
             return self._process_restore_response(parameter_dict)
         else:
             raise SDKException('Subclient', '102', 'Method not supported for SharePoint On-Premise Instance')
@@ -1084,6 +1313,7 @@ class SharepointSubclient(SharepointSuperSubclient):
         if self._backupset_object.is_sharepoint_online_instance:
             request_json = {
                 "appType": int(self._agent_object.agent_id),
+                "subclientId": int(self.subclient_id),
                 "indexServerClientId": index_server_client_id
             }
             flag, response = self._cvpysdk_object.make_request(
@@ -1105,6 +1335,34 @@ class SharepointSubclient(SharepointSuperSubclient):
                 raise SDKException('Response', '101', self._update_response_(response.text))
         else:
             raise SDKException('Subclient', '102', 'Method not supported for SharePoint On-Premise Instance')
+
+    def refresh_license_collection(self):
+
+        """
+        Method is used to update the License collection status
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+        """
+        payload = {
+            "subClient": {
+                "clientId": int(self._client_object.client_id),
+                "backupsetId": int(self._subClientEntity.get('backupsetId'))
+            }
+        }
+
+        api_url = self._services['LICENSE_COLLECTION']
+        flag, response = self._cvpysdk_object.make_request(method='POST',
+                                                           url=api_url, payload=payload)
+        if not flag:
+            raise SDKException('Response', '101',
+                               self._commcell_object._update_response_(response.text))
+        if not response:
+            raise SDKException('Response', '102',
+                               self._commcell_object._update_response_(response.text))
 
 
 class SharepointV1Subclient(SharepointSuperSubclient):
@@ -1153,8 +1411,8 @@ class SharepointV1Subclient(SharepointSuperSubclient):
                 if len(response['browseResponses'][0]['browseResult']['advConfig']['applicationMining']['browseResp'][
                            'spBrowseResp']['dataPathContents']) > 0:
                     return \
-                    response['browseResponses'][0]['browseResult']['advConfig']['applicationMining']['browseResp'][
-                        'spBrowseResp']['dataPathContents']
+                        response['browseResponses'][0]['browseResult']['advConfig']['applicationMining']['browseResp'][
+                            'spBrowseResp']['dataPathContents']
                 else:
                     raise SDKException('Sites not found')
             else:
@@ -1246,7 +1504,7 @@ class SharepointV1Subclient(SharepointSuperSubclient):
 
         """
         self._instance_object._restore_association = self._subClientEntity
-        parameter_dict = self._restore_json(**kwargs, v1=True )
+        parameter_dict = self._restore_json(**kwargs, v1=True)
         return self._process_restore_response(parameter_dict)
 
     def out_of_place_restore(
@@ -1320,10 +1578,9 @@ class SharepointV1Subclient(SharepointSuperSubclient):
 
         # set the setters
         self._instance_object._restore_association = self._subClientEntity
-        request_json = self._restore_json(restore_option=_restore_option, v1=True )
+        request_json = self._restore_json(restore_option=_restore_option, v1=True)
 
         request_json['taskInfo']['subTasks'][0][
             'options']['restoreOptions'][
             'destination'] = self._out_of_place_destination_json
         return request_json
-

@@ -43,13 +43,17 @@ OracleSubclient:
     backup()                            --  Performs backup database
 
     restore()                           --  Performs restore databases
-    
+
     restore_in_place()                  --  Performs restore for oracle logical dump
 
     backup_archive_log()                --  Getter ans Setter for enaling/disabling
                                             archive log mode
 
     archive_files_per_bfs()             --  Getter and Setter for archive files per BFS
+
+    skip_offline()                      --  Getter and Setter for skip offline option
+
+    skip_read_only()                      --  Getter and Setter for skip read only option
 
     data_sp()                           --  Getters and setters for data storage policy
 
@@ -270,6 +274,53 @@ class OracleSubclient(DatabaseSubclient):
         """
         self._set_subclient_properties(
             "_oracle_subclient_properties['archiveFilesPerBFS']", archive_files_per_bfs)
+
+    @property
+    def skip_offline(self):
+        """
+        Getter to fetch if skip offline is enabled or not
+
+            Returns:
+                    (bool)    --     True if the option is enabled, False if it is disabled
+        """
+        return self._oracle_subclient_properties.get("skipOffline")
+
+    @skip_offline.setter
+    def skip_offline(self, skip_offline=False):
+        """
+        Setter to set skip offline option
+
+            Args:
+               skip_offline    (bool)    --     True to enable the skip offline option,
+                                                False to disable it.
+                                                default=False
+        """
+        self._set_subclient_properties(
+            "_oracle_subclient_properties['skipOffline']", skip_offline)
+
+    @property
+    def skip_read_only(self):
+        """
+        Getter to fetch if skip read only is enabled or not
+
+            Returns:
+                    (bool)    --     True if the option is enabled, False if it is disabled
+        """
+        return self._oracle_subclient_properties.get("skipReadOnly")
+
+    @skip_read_only.setter
+    def skip_read_only(self, skip_read_only=False):
+        """
+        Setter to set skip read only option
+
+            Args:
+               skip_read_only    (bool)    --     True to enable the skip read only option,
+                                                  False to disable it.
+                                                  default=False
+
+        """
+        self._set_subclient_properties(
+            "_oracle_subclient_properties['skipReadOnly']", skip_read_only)
 
     @property
     def data_stream(self):
@@ -533,12 +584,12 @@ class OracleSubclient(DatabaseSubclient):
             dest_instance_name=None,
             destination_path=None):
         """
-        Method to restore the logical dump 
+        Method to restore the logical dump
 
             Args:
-                
+
                 db_password             (str)  -- password for oracle database
-                                    
+
                 database_list           (List) -- List of databases
 
                 dest_client_name        (str)  -- Destination Client name
@@ -561,7 +612,7 @@ class OracleSubclient(DatabaseSubclient):
             dest_instance_name = instance_object.instance_name
 
         instance_object._restore_association = self._subclient_properties["subClientEntity"]
-        
+
         return instance_object.restore_in_place(
             db_password,
             database_list,

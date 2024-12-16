@@ -695,6 +695,74 @@ class PlanConstants:
                     "planId": 0
                 }
             }
+        },
+        6: {
+            "ciPolicyInfo": {
+                "ciPolicy": {
+                    "policyType": 5,
+                    "detail": {
+                        "ciPolicy": {
+                            "opType": 2,
+                            "enableExactSearch": False,
+                            "ciPolicyType": 5,
+                            "filters": {
+                                "fileFilters": {
+                                    "includeDocTypes": "",
+                                    "minDocSize": 0,
+                                    "maxDocSize": 50
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "eePolicyInfo": {},
+            "exchange": {},
+            "office365Info": {
+                "o365Exchange": {
+                    "mbArchiving": {
+                        "policyType": 1,
+                        "agentType": {
+                            "appTypeId": 137
+                        },
+                        "detail": {
+                            "emailPolicy": {
+                                "emailPolicyType": 1,
+                                "archivePolicy": {
+                                    "primaryMailbox": True,
+                                    "contentIndexProps": {}
+                                }
+                            }
+                        }
+                    }
+                },
+                "o365CloudOffice": {
+                    "caBackup": {
+                        "policyType": 6,
+                        "detail": {
+                            "cloudAppPolicy": {
+                                "cloudAppPolicyType": 1,
+                                "backupPolicy": {
+                                    "onedrivebackupPolicy": {},
+                                    "spbackupPolicy": {},
+                                    "teamsbackupPolicy": {}
+                                }
+                            }
+                        }
+
+                    }
+
+                }
+
+            },
+
+            "summary": {
+                "plan": {
+                    "planName": "",
+                    "planId": 0
+                }
+            }
+
         }
     }
 
@@ -927,6 +995,9 @@ class TagConstants:
 class ComplianceConstants:
     """Class to maintain all the Compliance search related constants"""
 
+    SOLR_FIELD_FILE_NAME = "fileName"
+    SOLR_FIELD_SIZE = "sizeKB"
+
     VIEW_PERMISSION = {
         "permissionId": 31,
         "_type_": 122,
@@ -951,11 +1022,16 @@ class ComplianceConstants:
         "_type_": 122
     }
 
+    PERMISSION_ADD_NAME = "Add"
+    PERMISSION_DELETE_NAME = "Delete"
+    PERMISSION_DOWNLOAD_NAME = "Download"
+    PERMISSION_VIEW_NAME = "View"
+
     PERMISSIONS = {
-        "Add": ADD_PERMISSION,
-        "Delete": DELETE_PERMISSION,
-        "Download": DOWNLOAD_PERMISSION,
-        "View": VIEW_PERMISSION
+        PERMISSION_ADD_NAME: ADD_PERMISSION,
+        PERMISSION_DELETE_NAME: DELETE_PERMISSION,
+        PERMISSION_DOWNLOAD_NAME: DOWNLOAD_PERMISSION,
+        PERMISSION_VIEW_NAME: VIEW_PERMISSION
     }
 
     EXPORT_SET_SHARE_REQUEST_JSON = {
@@ -978,6 +1054,181 @@ class ComplianceConstants:
                             DOWNLOAD_PERMISSION
                         ]
                     }
+                }
+            ]
+        }
+    }
+
+    class AppTypes(Enum):
+        EXCHANGE = "EXCHANGE"
+        EXCHANGE_JOURNAL = "EXCHANGE_JOURNAL"
+        SHAREPOINT = "SHAREPOINT"
+        ONEDRIVE = "ONEDRIVE"
+        TEAMS = "TEAMS"
+        FILE_SYSTEM = "FILE_SYSTEM"
+
+    class ExportTypes(Enum):
+        CAB = "CAB"
+        PST = "PST"
+
+    RESTORE_TYPE = {
+        ExportTypes.PST: 1,
+        ExportTypes.CAB: 2
+    }
+
+    FILE_TYPE = "File"
+    EMAIL_TYPE = "Email"
+    FILE_TYPES = [AppTypes.FILE_SYSTEM, AppTypes.SHAREPOINT, AppTypes.ONEDRIVE, AppTypes.TEAMS]
+    EMAIL_TYPES = [AppTypes.EXCHANGE, AppTypes.EXCHANGE_JOURNAL]
+
+    FILE_FILTERS_KEY = "fileFilter"
+    FILE_FILTERS = [
+        {
+            "filter": {
+                "interFilterOP": "FTAnd",
+                "filters": [
+                    {
+                        "field": "CISTATE",
+                        "intraFieldOp": "FTOr",
+                        "fieldValues": {
+                            "values": [
+                                "0",
+                                "1",
+                                "12",
+                                "13",
+                                "14",
+                                "15",
+                                "1014",
+                                "3333",
+                                "3334",
+                                "3335"
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+
+    EMAIL_FILTERS_KEY = "emailView"
+
+    ONEDRIVE_FACET = "200118"
+    TEAMS_FACET = "200128"
+    SHAREPOINT_FACET = "78"
+    CUSTOM_FACETS = {
+        AppTypes.ONEDRIVE: ONEDRIVE_FACET,
+        AppTypes.TEAMS: TEAMS_FACET,
+        AppTypes.SHAREPOINT: SHAREPOINT_FACET
+    }
+
+    CUSTOM_FACETS_NAME = {
+        AppTypes.TEAMS: "TEAMS_NAME",
+        AppTypes.SHAREPOINT: "CUSTODIAN",
+        AppTypes.ONEDRIVE: "CUSTODIAN"
+    }
+
+    FACET_KEY = "facetRequest"
+    FILE_FACET = [
+        {
+            "count": 4,
+            "name": "CUSTODIAN"
+        },
+        {
+            "count": 4,
+            "name": "APPTYPE",
+            "searchFieldName": "APPTYPE",
+            "stringParameter": [
+                {
+                    "name": "33",
+                    "custom": True
+                },
+                {
+                    "name": "29",
+                    "custom": True
+                },
+                {
+                    "name": "63",
+                    "custom": True
+                },
+                {
+                    "name": "21",
+                    "custom": True
+                }
+            ]
+        }
+    ]
+    CUSTOM_FACET = [
+        {
+            "count": 4,
+            "name": "CUSTODIAN"
+        },
+        {
+            "count": 4,
+            "name": "APPTYPE",
+            "searchFieldName": "APPTYPE",
+            "stringParameter": [
+                {
+                    "name": None,
+                    "custom": True
+                }
+            ]
+        }
+    ]
+
+    RESPONSE_FIELD_LIST = ("DATA_TYPE,CLIENTNAME,CONTENTID,CV_OBJECT_GUID,PARENT_GUID,CV_TURBO_GUID,"
+                           "AFILEID,AFILEOFFSET,COMMCELLNO,MODIFIEDTIME,SIZEINKB,BACKUPTIME,CISTATE,DATE_DELETED,"
+                           "TEAMS_ITEM_ID,TEAMS_ITEM_NAME,TEAMS_NAME,TEAMS_SMTP,TEAMS_ITEM_TYPE,TEAMS_CHANNEL_TYPE,"
+                           "TEAMS_TAB_TYPE,TEAMS_GROUP_VISIBILITY,TEAMS_GUID,TEAMS_CONV_ITEM_TYPE,"
+                           "TEAMS_CONV_MESSAGE_TYPE,TEAMS_CONV_SUBJECT,TEAMS_CONV_IMPORTANCE,TEAMS_CONV_SENDER_TYPE,"
+                           "TEAMS_CONV_SENDER_NAME,TEAMS_CONV_HAS_REPLIES,CI_URL,TEAMS_DRIVE_FOLDER_TYPE,APPTYPE,APPID")
+
+    COMPLIANCE_SEARCH_JSON = {
+        "mode": 2,
+        "facetRequests": {},
+        "advSearchGrp": {
+            "commonFilter": [
+                {
+                    "filter": {
+                        "filters": [
+                            {
+                                "field": "CI_STATUS",
+                                "intraFieldOp": 0,
+                                "fieldValues": {
+                                    "values": [
+                                        "1",
+                                        "3"
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            "cvSearchKeyword": {
+                "isExactWordsOptionSelected": False,
+                "keyword": None
+            },
+            "galaxyFilter": [
+                {
+                    "applicationType": None
+                }
+            ]
+        },
+        "userInformation": {
+            "userGuid": None
+        },
+        "listOfCIServer": [
+            {
+                "cloudID": None
+            }
+        ],
+        "searchProcessingInfo": {
+            "resultOffset": 0,
+            "pageSize": 50,
+            "queryParams": [
+                {
+                    "param": "ENABLE_NEW_COMPLIANCE_SEARCH",
+                    "value": "true"
                 }
             ]
         }

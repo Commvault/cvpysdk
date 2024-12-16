@@ -74,6 +74,14 @@ Clients
 
     _get_client_from_displayname()        --  get the client name for given display name
 
+    _get_fl_parameters()                  --  Returns the fl parameters to be passed in the mongodb caching api call
+
+    _get_sort_parameters()                --  Returns the sort parameters to be passed in the mongodb caching api call
+
+    _get_fq_parameters()                  --  Returns the fq parameters based on the fq list passed
+
+    get_clients_cache()                   --  Gets all the clients present in CommcellEntityCache DB.
+
     has_client(client_name)               --  checks if a client exists with the given name or not
 
     has_hidden_client(client_name)        --  checks if a hidden client exists with the given name
@@ -90,11 +98,15 @@ Clients
 
     add_share_point_client()              -- adds a new sharepoint pseudo client to the Commcell
 
-    add_onedrive_v2_client()              -- adds a new OneDrive for Business client to Commcell
+    add_onedrive_for_business_client()              -- adds a new OneDrive for Business client to Commcell
 
     add_exchange_client()                 --  adds a new Exchange Virtual Client to the Commcell
 
     add_splunk_client()                   --  adds a new Splunk Client to the Commcell
+
+    add_yugabyte_client()                 --  adds a new Yugabytedb Client to the Commcell
+
+    add_couchbase_client()                --  adds a new Couchbase Client to the commcell
 
     add_case_client()                     --  adds a new Case Manger Client to the Commcell
 
@@ -112,6 +124,12 @@ Clients
 
     add_onedrive_client()                 --  adds a new onedrive client
 
+    add_cassandra_client()                --  add cassandra client
+
+    add_cockroachdb_client()              --  add cockroachdb client
+
+    add_azure_cosmosdb_client()             --  add client for azure cosmosdb cloud account
+
     get(client_name)                      --  returns the Client class object of the input client
     name
 
@@ -122,12 +140,19 @@ Clients
 
     refresh()                             --  refresh the clients associated with the commcell
 
+    add_azure_ad_client()                   --  add an Azure Active Directory client to the commcel
+
+    add_googleworkspace_client()         --  adds a new google client
+
 
 Clients Attributes
 ------------------
 
     **all_clients**             --  returns the dictionary consisting of all the clients that are
     associated with the commcell and their information such as id and hostname
+
+    **all_clients_cache**       --  returns th dictionary consisting of all the clients and their
+    info from CommcellEntityCache DB in Mongo
 
     **hidden_clients**          --  returns the dictionary consisting of only the hidden clients
     that are associated with the commcell and their information such as id and hostname
@@ -146,7 +171,7 @@ Clients Attributes
 
     **salesforce_clients**      --  Returns the dictionary consisting of all the salesforce clients that are
                                     associated with the commcell
-                                    
+
     **file_server_clients**     --  Returns the dictionary consisting of all the File Server clients
                                     that are associated with the commcell
 
@@ -292,6 +317,8 @@ Client Attributes
 
     **os_info**                     --  returns string consisting of OS information of the client
 
+    **os_type**                     --  returns OSType Enum representing the client's OSType
+
     **is_data_recovery_enabled**    --  boolean specifying whether data recovery is enabled for the
     client or not
 
@@ -368,6 +395,14 @@ Client Attributes
     **associated_client_group**     -- Returns the list of clientgroups that the client is associated to
 
     **company_id**                  -- Returns the company Id of the client
+
+    **network_status**              --  Returns network status for the client
+
+    **is_deleted_client**           --  Returns if the is deleted
+
+    **is_infrastructure**           --  returns if the client is infrastructure
+
+    **update_status**               --  returns the update status of the client
 """
 
 from __future__ import absolute_import
@@ -377,7 +412,7 @@ import os
 import re
 import time
 import copy
-
+import datetime
 from base64 import b64encode
 
 import requests
@@ -396,7 +431,8 @@ from .security.user import Users
 
 from .name_change import NameChange
 from .organization import Organizations
-from .constants import AppIDAType
+from .constants import AppIDAType, AppIDAName, OSType
+from .constants import ResourcePoolAppType
 
 
 class Clients(object):
@@ -412,7 +448,6 @@ class Clients(object):
                 object - instance of the Clients class
         """
         self._commcell_object = commcell_object
-
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
         self._update_response_ = commcell_object._update_response_
@@ -429,8 +464,12 @@ class Clients(object):
         self._GET_VIRTUALIZATION_ACCESS_NODES = self._services['GET_VIRTUALIZATION_ACCESS_NODES']
         self._FS_CLIENTS = self._services['GET_FILE_SERVER_CLIENTS']
         self._ADD_EXCHANGE_CLIENT = self._ADD_SHAREPOINT_CLIENT = self._ADD_SALESFORCE_CLIENT = \
-            self._services['CREATE_PSEUDO_CLIENT']
+            self._ADD_GOOGLE_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
         self._ADD_SPLUNK_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
+        self._ADD_COCKROACHDB_CLIENT = self._services['COCKROACHDB']
+        self._ADD_CASSANDRA_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
+        self._ADD_YUGABYTE_CLIENT = self._services['CREATE_YUGABYTE_CLIENT']
+        self._ADD_COUCHBASE_CLIENT = self._services['CREATE_COUCHBASE_CLIENT']
         self._ADD_NUTANIX_CLIENT = self._services['CREATE_NUTANIX_CLIENT']
         self._ADD_NAS_CLIENT = self._services['CREATE_NAS_CLIENT']
         self._ADD_ONEDRIVE_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
@@ -442,6 +481,7 @@ class Clients(object):
         self._dynamics365_clients = None
         self._salesforce_clients = None
         self._file_server_clients = None
+        self._client_cache = None
         self.refresh()
 
     def __str__(self):
@@ -494,6 +534,52 @@ class Clients(object):
                 return list(filter(lambda x: x[1]['id'] == value, self.all_clients.items()))[0][0]
             except IndexError:
                 raise IndexError('No client exists with the given Name / Id')
+
+    def add_azure_ad_client(self,client_name,plan_name,application_Id,application_Secret,azure_directory_Id):
+        """
+        Function to add a new Azure AD Client
+        Args:
+            plan_name               (str)   --  plan name
+            application_Id          (str)   --  application id of azure ad app
+            application_Secret      (str)   --  application secret of azure ad app
+            azure_directory_Id      (str)   --  directory id of azure ad app
+
+        Raises:
+            SDKException:
+
+                if response is empty
+
+                if response is not success
+        """
+        azure_ad_client=self._services['ADDAZURECLIENT']
+        plan_id=None
+        if self._commcell_object.plans.has_plan(plan_name):
+            server_plan_object = self._commcell_object.plans.get(plan_name)
+            plan_id=int(server_plan_object.plan_id)
+        else:
+            raise SDKException('Plan', '102', 'Provide Valid Plan Name')
+
+        payload = {"name":client_name,
+                   "serverPlan":{
+                       "id":(plan_id),
+                       "name":(plan_name)
+                   },
+                   "azureApp":{
+                       "applicationId":(application_Id),
+                       "applicationSecret":(application_Secret),
+                       "azureDirectoryId":(azure_directory_Id)
+                   }
+                   }
+        flag, response = self._cvpysdk_object.make_request(method='POST', url=azure_ad_client,payload=payload)
+
+        if flag and response:
+            azure_ad_response=response.json()
+            if azure_ad_response.get("errorCode", None)==-1:
+                raise SDKException('Client', '102', azure_ad_response.get("errorMessage"))
+        elif not flag:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+        else:
+            raise SDKException('Response', '102', self._update_response_(response.text))
 
     def _get_clients(self, hard=False):
         """Gets all the clients associated with the commcell
@@ -902,7 +988,7 @@ class Clients(object):
             return fs_clients
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
-    
+
     @staticmethod
     def _get_client_dict(client_object):
         """Returns the client dict for the client object to be appended to member server.
@@ -1024,6 +1110,178 @@ class Clients(object):
                 raise SDKException('Client', '102', 'Multiple clients have the same display name')
         return client_name
 
+    def _get_fl_parameters(self, fl: list = None) -> str:
+        """
+        Returns the fl parameters to be passed in the mongodb caching api call
+
+        Args:
+            fl    (list)  --   list of columns to be passed in API request
+
+        Returns:
+            fl_parameters(str) -- fl parameter string
+        """
+        self.valid_columns = {'clientName': 'clientProperties.client.clientEntity.clientName',
+                              'clientId': 'clientProperties.client.clientEntity.clientId',
+                              'hostName': 'clientProperties.client.clientEntity.hostName',
+                              'displayName': 'clientProperties.client.clientEntity.displayName',
+                              'clientGUID': 'clientProperties.client.clientEntity.clientGUID',
+                              'companyName': 'clientProperties.client.clientEntity.entityInfo.companyName',
+                              'idaList': 'client.idaList',
+                              'clientRoles': 'clientProperties.clientProps.clientRoles',
+                              'isDeletedClient': 'clientProperties.clientProps.IsDeletedClient',
+                              'version': 'clientProperties.client.versionInfo.version',
+                              'OSName': 'client.osInfo.OsDisplayInfo.OSName',
+                              'isInfrastructure': 'clientProperties.clientProps.isInfrastructure',
+                              'updateStatus': 'client.versionInfo.UpdateStatus',
+                              'networkStatus': 'clientProperties.clientProps.networkReadiness.status',
+                              'tags': 'clientProperties.client.clientEntity.tags'
+                              }
+        default_columns = 'clientProperties.client.clientEntity.clientName'
+
+        if fl:
+            if all(col in self.valid_columns for col in fl):
+                fl_parameters = f"&fl={default_columns},{','.join(self.valid_columns[column] for column in fl)}"
+            else:
+                raise SDKException('Client', '102', 'Invalid column name passed')
+        else:
+            fl_parameters = '&fl=clientProperties.client%2CclientProperties.clientProps%2Coverview'
+
+        return fl_parameters
+
+    def _get_sort_parameters(self, sort: list = None) -> str:
+        """
+        Returns the sort parameters to be passed in the mongodb caching api call
+
+        Args:
+            sort  (list)  --   contains the name of the column on which sorting will be performed and type of sort
+                                valid sor type -- 1 for ascending and -1 for descending
+                                e.g. sort = ['ColumnName','1']
+
+        Returns:
+            sort_parameters(str) -- sort parameter string
+        """
+        sort_type = str(sort[1])
+        col = sort[0]
+        if col in self.valid_columns.keys() and sort_type in ['1', '-1']:
+            sort_parameter = '&sort=' + self.valid_columns[col] + ':' + sort_type
+        else:
+            raise SDKException('Client', '102', 'Invalid column name passed')
+        return sort_parameter
+
+    def _get_fq_parameters(self, fq: list = None) -> str:
+        """
+        Returns the fq parameters based on the fq list passed
+        Args:
+             fq     (list) --   contains the columnName, condition and value
+                    e.g. fq = [['displayName','contains', 'test'],['clientRoles','contains', 'Command Center']]
+
+        Returns:
+            fq_parameters(str) -- fq parameter string
+        """
+        conditions = ['contains', 'notContain', 'eq', 'neq']
+        params = ["&fq=clientProperties.isServerClient:eq:true"]
+        if fq:
+            for param in fq:
+                if param[0] in self.valid_columns.keys():
+                    if param[0] == 'tags' and param[1] == 'contains':
+                        params.append(f"&tags={param[2]}")
+                    elif param[1] in conditions:
+                        params.append(f"&fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}")
+                    elif param[1] == 'isEmpty' and len(param) == 2:
+                        params.append(f"&fq={self.valid_columns[param[0]]}:in:null,")
+                    else:
+                        raise SDKException('Client', '102', 'Invalid condition passed')
+                else:
+                    raise SDKException('Client', '102', 'Invalid column Name passed')
+        if params:
+            return "".join(params)
+
+    def get_clients_cache(self, hard: bool = False, **kwargs) -> dict:
+        """
+        Gets all the clients present in CommcellEntityCache DB.
+
+        Args:
+            hard  (bool)        --   Flag to perform hard refresh on clients cache.
+            **kwargs (dict):
+                fl (list)       --   List of columns to return in response (default: None).
+                sort (list)     --   Contains the name of the column on which sorting will be performed and type of sort.
+                                           Valid sort type: 1 for ascending and -1 for descending
+                                           e.g. sort = ['connectName', '1'] (default: None).
+                limit (list)    --   Contains the start and limit parameter value.
+                                            Default ['0', '100'].
+                search (str)    --   Contains the string to search in the commcell entity cache (default: None).
+                fq (list)       --   Contains the columnName, condition and value.
+                                            e.g. fq = [['displayName', 'contains', 'test'],
+                                             ['clientRoles', 'contains', 'Command Center']] (default: None).
+                enum (bool)     --   Flag to return enums in the response (default: True).
+
+        Returns:
+            dict: Dictionary of all the properties present in response.
+        """
+        headers = self._commcell_object._headers.copy()
+        if kwargs.get('enum', True):
+            headers['EnumNames'] = "True"
+        fl_parameters = self._get_fl_parameters(kwargs.get('fl', None))
+        fq_parameters = self._get_fq_parameters(kwargs.get('fq', None))
+        limit = kwargs.get('limit', ['0', '100'])
+        limit_parameters = f'start={limit[0]}&limit={limit[1]}'
+        hard_refresh = '&hardRefresh=true' if hard else ''
+        sort_parameters = self._get_sort_parameters(kwargs.get('sort', None)) if kwargs.get('sort', None) else ''
+        search_parameter = f'&search={",".join(self.valid_columns.values())}:contains:{kwargs.get("search", None)}' if kwargs.get(
+            'search', None) else ''
+
+        request_url = (
+                self._CLIENTS + "?" + limit_parameters + sort_parameters + fl_parameters + fq_parameters +
+                hard_refresh + search_parameter
+        )
+        flag, response = self._cvpysdk_object.make_request("GET", request_url, headers=headers)
+
+        if not flag:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        clients_cache = {}
+        if response.json() and 'clientProperties' in response.json():
+            for client in response.json()['clientProperties']:
+                temp_client = client.get('client', None)
+                name = temp_client.get('clientEntity', None).get('clientName')
+                client_config = {
+                    'clientId': temp_client.get('clientEntity', {}).get('clientId'),
+                    'hostName': temp_client.get('clientEntity', {}).get('hostName'),
+                    'displayName': temp_client.get('clientEntity', {}).get('displayName'),
+                    'clientGUID': temp_client.get('clientEntity', {}).get('clientGUID'),
+                    'companyName': temp_client.get('clientEntity', {}).get('entityInfo', {}).get('companyName'),
+                    'version': temp_client.get('versionInfo', {}).get('version'),
+                    'updateStatus': temp_client.get('versionInfo', {}).get('UpdateStatus')
+                }
+                if 'osInfo' in temp_client:
+                    client_config['OSName'] = temp_client.get('osInfo', {}).get('OsDisplayInfo', {}).get('OSName')
+                if 'idaList' in temp_client:
+                    client_config['idaList'] = [agent.get("idaEntity", {}).get('appName')
+                                                for agent in temp_client.get('idaList', {})]
+                if 'tags' in temp_client.get('clientEntity', {}):
+                    client_config['tags'] = temp_client.get('clientEntity', {}).get('tags')
+                if 'clientProps' in client:
+                    temp_client_prop = client.get('clientProps', {})
+                    status = temp_client_prop.get('networkReadiness', {}).get('status')
+                    status_map = {
+                        'UNKNOWN': 'Not available',
+                        'NOT_APPLICABLE': 'No software installed',
+                        'OFFLINE': 'Offline',
+                        'ONLINE': 'Online'
+                    }
+                    client_config.update({'isDeletedClient': temp_client_prop.get('IsDeletedClient'),
+                                          'isInfrastructure': temp_client_prop.get('isInfrastructure'),
+                                          'networkStatus': status_map.get(status, status.capitalize()
+                                          if status in ['OFFLINE', 'ONLINE'] else status)})
+                    if 'clientRoles' in temp_client_prop:
+                        client_config['clientRoles'] = [role.get('name') for role in
+                                                        temp_client_prop.get('clientRoles', {})]
+                client_config = {key: value for key, value in client_config.items() if value is not None}
+                clients_cache[name] = client_config
+            return clients_cache
+        else:
+            raise SDKException('Response', '102')
 
     @property
     def all_clients(self):
@@ -1045,6 +1303,48 @@ class Clients(object):
 
         """
         return self._clients
+
+    @property
+    def all_clients_cache(self) -> dict:
+        """returns th dictionary consisting of all the clients and their info from CommcellEntityCache DB in Mongo
+
+            dict - consists of all clients in the CommcellEntityCache
+                    {
+                         "client1_name": {
+                                "id": client1_id,
+                                "hostname": client1_hostname,
+                                "displayName": client1 display name,
+                                "clientGUID": client1 GUID,
+                                "company": client1 company,
+                                "version": client1 version,
+                                "OsInfo": client1 os info,
+                                "idaList": client1 ida list,
+                                "tags": client1 tags,
+                                "isDeletedClient": client1 status,
+                                "isInfrastructure": client1 infrastructure flag,
+                                "networkStatus": client1 network status,
+                                "region": client1 region,
+                                "roles": client1 roles
+                        },
+                         "client2_name": {
+                                "id": client2_id,
+                                "hostname": client2_hostname,
+                                "displayName": client2 display name,
+                                "clientGUID": client2 GUID,
+                                "company": client2 company,
+                                "version": client2 version,
+                                "OsInfo": client2 os info,
+                                "idaList": client2 ida list,
+                                "tags": client2 tags,
+                                "isDeletedClient": client2 status,
+                                "isInfrastructure": client2 infrastructure flag,
+                                "networkStatus": client2 network status,
+                                "region": client2 region,
+                                "roles": client2 roles
+                         },
+                    }
+        """
+        return self._client_cache
 
     def create_pseudo_client(self, client_name, client_hostname=None, client_type="windows"):
         """ Creates a pseudo client
@@ -1370,6 +1670,7 @@ class Clients(object):
             api_server_endpoint,
             service_account,
             service_token,
+            encoded_service_token,
             access_nodes=None
     ):
         """Adds a new Kubernetes Cluster client to the Commcell.
@@ -1382,6 +1683,8 @@ class Clients(object):
                 service_account     (str)   --  Name of the Service Account for authentication
 
                 service_token       (str)   --  Token fetched from the Service Account
+
+                encoded_service_token  (str)   -- Base64 encoded Service Account Token
 
                 access_nodes        (list/str)  --  Virtual Server proxy clients as access nodes
 
@@ -1432,6 +1735,7 @@ class Clients(object):
                         "k8s": {
                             "secretName": service_account,
                             "secretKey": service_token,
+                            "secretKeyV2": encoded_service_token,
                             "secretType": "ServiceAccount",
                             "endpointurl": api_server_endpoint
                         },
@@ -1804,7 +2108,11 @@ class Clients(object):
 
                 azure_app_key_id        (str)       --  app key for sharepoint online
 
-                azure_directory_id    (str)   --  azure directory id for sharepoint online
+                azure_directory_id    (str)         --  azure directory id for sharepoint online
+
+                cert_string           (str)         -- certificate string
+
+                cert_password         (str)         -- certificate password
 
                 cloud_region            (int)   --  stores the cloud region for the SharePoint client
                                                     - Default (Global Service) [1]
@@ -1837,17 +2145,18 @@ class Clients(object):
 
         index_server_dict = {}
 
-        if self.has_client(index_server):
-            index_server_cloud = self.get(index_server)
+        if index_server:
+            if self.has_client(index_server):
+                index_server_cloud = self.get(index_server)
 
-            if index_server_cloud.agents.has_agent('big data apps'):
-                index_server_dict = {
-                    "mediaAgentId": int(index_server_cloud.client_id),
-                    "_type_": 11,
-                    "mediaAgentName": index_server_cloud.client_name
-                }
-        else:
-            raise SDKException('IndexServers', '102')
+                if index_server_cloud.agents.has_agent(AppIDAName.BIG_DATA_APPS.value):
+                    index_server_dict = {
+                        "mediaAgentId": int(index_server_cloud.client_id),
+                        "_type_": 11,
+                        "mediaAgentName": index_server_cloud.client_name
+                    }
+            else:
+                raise SDKException('IndexServers', '102')
 
         if self._commcell_object.plans.has_plan(server_plan):
             server_plan_object = self._commcell_object.plans.get(server_plan)
@@ -1883,6 +2192,20 @@ class Clients(object):
                     }
                 }
                 member_servers.append(client_dict)
+
+
+        server_resource_pool_map = server_plan_object._properties.get('storageResourcePoolMap',[])
+        if server_resource_pool_map:
+            server_plan_resources= server_resource_pool_map[0].get('resources', None)
+        else:
+            server_plan_resources = None
+
+        # use resource pool only if resource pool type is Office365 or Sharepoint
+        is_resource_pool_enabled = False
+        if server_plan_resources is not None:
+            for resource in server_plan_resources:
+                if resource.get('appType', 0) in (ResourcePoolAppType.O365.value, ResourcePoolAppType.SHAREPOINT.value):
+                    is_resource_pool_enabled = True
 
         request_json = {
             "clientInfo": {
@@ -1927,17 +2250,38 @@ class Clients(object):
         }
         if global_administrator:
             azure_app_key_id = b64encode(kwargs.get('azure_app_key_id').encode()).decode()
+
+            azure_app_dict = {
+                "azureAppId": kwargs.get('azure_app_id'),
+                "azureAppKeyValue": azure_app_key_id,
+                "azureDirectoryId": kwargs.get('azure_directory_id')
+            }
+
+            if 'cert_string' in kwargs:
+                # cert_string needs to be encoded twice
+                cert_string = b64encode(kwargs.get('cert_string')).decode()
+                cert_string = b64encode(cert_string.encode()).decode()
+
+                cert_password = b64encode(kwargs.get('cert_password').encode()).decode()
+
+                cert_dict = {
+                    "certificate": {
+                        "certBase64String": cert_string,
+                        "certPassword": cert_password
+                    }
+                }
+                azure_app_dict.update(cert_dict)
+
+
+
             global_administrator_password = b64encode(kwargs.get('global_administrator_password').encode()).decode()
             request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
                 "spOffice365BackupSetProp"]["azureAppList"] = {
                     "azureApps": [
-                        {
-                            "azureAppId": kwargs.get('azure_app_id'),
-                            "azureAppKeyValue": azure_app_key_id,
-                            "azureDirectoryId": kwargs.get('azure_directory_id')
-                        }
+                        azure_app_dict
                     ]
                 }
+
             request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
                 "spOffice365BackupSetProp"]["serviceAccounts"] = {
                     "accounts": [
@@ -1966,14 +2310,32 @@ class Clients(object):
                 }
             if kwargs.get('is_modern_auth_enabled'):
                 azure_app_key_id = b64encode(kwargs.get('azure_app_key_id').encode()).decode()
+
+                azure_app_dict = {
+                    "azureAppId": kwargs.get('azure_app_id'),
+                    "azureAppKeyValue": azure_app_key_id,
+                    "azureDirectoryId": kwargs.get('azure_directory_id')
+                }
+
+                if 'cert_string' in kwargs:
+                    # cert_string needs to be encoded twice
+                    cert_string = b64encode(kwargs.get('cert_string')).decode()
+                    cert_string = b64encode(cert_string.encode()).decode()
+
+                    cert_password = b64encode(kwargs.get('cert_password').encode()).decode()
+
+                    cert_dict = {
+                        "certificate": {
+                            "certBase64String": cert_string,
+                            "certPassword": cert_password
+                        }
+                    }
+                    azure_app_dict.update(cert_dict)
+
                 request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
                     "spOffice365BackupSetProp"]["azureAppList"] = {
                     "azureApps": [
-                        {
-                            "azureAppId": kwargs.get('azure_app_id'),
-                            "azureAppKeyValue": azure_app_key_id,
-                            "azureDirectoryId": kwargs.get('azure_directory_id')
-                        }
+                        azure_app_dict
                     ]
                 }
         if kwargs.get('azure_username'):
@@ -2001,6 +2363,9 @@ class Clients(object):
                         "password": b64encode(kwargs.get('shared_jr_directory').get('Password').encode()).decode()
                     }
                 })
+        if is_resource_pool_enabled:
+            request_json["clientInfo"]["useResourcePoolInfo"] = is_resource_pool_enabled
+
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._ADD_SHAREPOINT_CLIENT, request_json
         )
@@ -2156,6 +2521,334 @@ class Clients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def add_yugabyte_client(self,
+                            instance_name,
+                            db_host,
+                            api_token,
+                            universe_name,
+                            config_name,
+                            credential_name,
+                            content,
+                            plan_name,
+                            data_access_nodes,
+                            user_uuid,
+                            universe_uuid,
+                            config_uuid):
+
+        """
+        Adds new yugabyte client
+        Args:
+            instance_name            (str)   --  new yugabyte instance name
+
+            db_host                  (str)   --  hostname of the yugabyteanywhere application
+
+            api_token                (str)   --  apiToken of the yugabyteanywhere user
+
+            universe_name            (str)   --  universe name to be backed up
+
+            config_name              (str)   --  customer configuration name
+
+            credential_name          (str)   --  credential name associated with customer config
+
+            content                  (str)   --  content of the default subclient
+
+            plan_name                (str)   -- name of the plan to be associated
+
+            data_access_nodes        (str)   -- list of data access nodes to be used
+
+            user_uuid                (str)   --  UUID of the yugabytedb user
+
+            universe_uuid            (str)   --  UUID of the yugabytedb universe
+
+            config_uuid              (str)   --  UUID of the yugabytedb user configuration
+
+        Returns:
+                client_object     (obj)   --  client object associated with the new yugabyte client
+
+        Raises:
+            SDKException:
+                if failed to add the client
+
+                if response is empty
+
+                if response is not success
+        """
+
+        content_temp = []
+        for path in content:
+            content_temp.append({"path": path})
+
+        access_nodes = []
+        for node in data_access_nodes:
+            access_nodes.append({"clientName": node})
+
+        apitoken_temp = b64encode(api_token.encode()).decode()
+
+        request_json = {
+            "createPseudoClientRequest": {
+                "clientInfo": {
+                    "clientType": 29,
+                    "plan": {
+                        "planName": plan_name
+                    },
+                    "subclientInfo": {
+                        "contentOperationType": 1,
+                        "content": content_temp
+                    },
+                    "distributedClusterInstanceProperties": {
+                        "clusterType": 19,
+                        "opType": 2,
+                        "instance": {
+                            "instanceId": 0,
+                            "instanceName": instance_name,
+                            "clientName": instance_name,
+                            "applicationId": 64
+                        },
+                        "clusterConfig": {
+                            "yugabytedbConfig": {
+                                "dbHost": db_host,
+                                "apiToken": apitoken_temp,
+                                "customer": {
+                                    "name": "",
+                                    "uuid": user_uuid
+                                },
+                                "universe": {
+                                    "name": universe_name,
+                                    "uuid": universe_uuid
+                                },
+                                "customerConfig": {
+                                    "name": config_name,
+                                    "uuid": config_uuid
+                                }
+                            },
+                            "config": {
+                                "staging": {
+                                    "stagingType": 1,
+                                    "stagingCredentials": {
+                                        "credentialName": credential_name,
+                                    }
+                                }
+                            }
+                        },
+                        "dataAccessNodes": {
+                            "dataAccessNodes": access_nodes
+                        }
+                    }
+                },
+                "entity": {
+                    "clientName": instance_name
+                }
+            }
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._ADD_YUGABYTE_CLIENT, request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json()['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+                        return self.get(instance_name)
+
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_couchbase_client(self,
+                             instance_name,
+                             data_access_nodes,
+                             user_name,
+                             password,
+                             port,
+                             staging_type,
+                             staging_path,
+                             credential_name,
+                             service_host,
+                             plan_name,
+                             ):
+        """
+        Adds new couchbase client
+        Args:
+
+                instance_name            (str)   --  new couchbase instance name
+
+                data_access_nodes        (str)   -- list of data access nodes to be used
+
+                user_name                (str)   --  couchbase admin username
+
+                password                 (str)   --  couchbase admin password
+
+                port                     (str)   --  couchbase db port
+
+                staging_type             (str)   --  staging type : FileSystem or S3
+
+                staging_path             (str)   --  staging path
+
+                credential_name          (str)   --  name of the s3 credential
+
+                service_host             (str)   --  aws service host
+
+                plan_name                (str)   --  name of the plan to be associated
+
+
+
+            Returns:
+                    client_object     (obj)   --  client object associated with the new couchbase client
+
+            Raises:
+                SDKException:
+                    if failed to add the client
+
+                    if response is empty
+
+                    if response is not success"""
+
+        access_nodes = []
+        for node in data_access_nodes:
+            access_nodes.append({"clientName": node})
+        pwd = b64encode(password.encode()).decode()
+
+        port = int(port)
+
+        if staging_type == "FileSystem":
+            request_json = {
+                "createPseudoClientRequest": {
+                    "clientInfo": {
+                        "clientType": 29,
+                        "plan": {
+                            "planName": plan_name
+                        },
+                        "distributedClusterInstanceProperties": {
+                            "clusterType": 17,
+                            "opType": 2,
+                            "instance": {
+                                "instanceId": 0,
+                                "instanceName": instance_name,
+                                "clientName": instance_name,
+                                "applicationId": 64
+                            },
+                            "clusterConfig": {
+                                "couchbaseConfig": {
+                                    "port": port,
+                                    "user": {
+                                        "userName": user_name,
+                                        "password": pwd
+                                    },
+                                    "staging": {
+                                        "stagingType": 0,
+                                        "stagingPath": staging_path
+                                    }
+                                }
+                            },
+                            "dataAccessNodes": {
+                                "dataAccessNodes": access_nodes
+                            }
+                        }
+                    },
+                    "entity": {
+                        "clientName": instance_name
+                    }
+                }
+            }
+
+        else:
+            request_json = {
+                "createPseudoClientRequest": {
+                    "clientInfo": {
+                        "clientType": 29,
+                        "plan": {
+                            "planName": plan_name
+                        },
+                        "distributedClusterInstanceProperties": {
+                            "clusterType": 17,
+                            "opType": 2,
+                            "instance": {
+                                "instanceId": 0,
+                                "instanceName": instance_name,
+                                "clientName": instance_name,
+                                "applicationId": 64
+                            },
+                            "clusterConfig": {
+                                "couchbaseConfig": {
+                                    "port": port,
+                                    "user": {
+                                        "userName": user_name,
+                                        "password": pwd
+                                    },
+                                    "staging": {
+                                        "stagingType": 1,
+                                        "stagingPath": staging_path,
+                                        "serviceHost": service_host,
+                                        "instanceType": 5,
+                                        "cloudURL": "s3.amazonaws.com",
+                                        "recordType": "AMAZON_S3",
+                                        "stagingCredentials": {
+                                            "credentialName": credential_name
+                                        }
+                                    }
+                                }
+                            },
+                            "dataAccessNodes": {
+                                "dataAccessNodes": access_nodes
+                            }
+                        }
+                    },
+                    "entity": {
+                        "clientName": instance_name
+                    }
+                }
+            }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._ADD_COUCHBASE_CLIENT, request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json()['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+                        return self.get(instance_name)
+
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
     def add_exchange_client(
             self,
             client_name,
@@ -2170,7 +2863,7 @@ class Clients(object):
             azure_tenant_name,
             azure_app_key_id,
             environment_type,
-            backupset_type_to_create=1,
+            backupset_type_to_create = 1,
             **kwargs):
         """Adds a new Exchange Mailbox Client to the Commcell.
 
@@ -2182,7 +2875,7 @@ class Clients(object):
                 clients_list            (list)  --  list containing client names / client objects,
                 to associate with the Virtual Client
 
-                server_plan          (str)   --  storage policy to associate with the client
+                server_plan          (str)   --  server_plan to associate with the client
 
                 recall_service_url      (str)   --  recall service for client
 
@@ -2247,7 +2940,7 @@ class Clients(object):
         if self.has_client(index_server):
             index_server_cloud = self.get(index_server)
 
-            if index_server_cloud.agents.has_agent('big data apps'):
+            if index_server_cloud.agents.has_agent(AppIDAName.BIG_DATA_APPS.value):
                 index_server_dict = {
                     "mediaAgentId": int(index_server_cloud.client_id),
                     "_type_": 11,
@@ -2297,12 +2990,22 @@ class Clients(object):
 
         azure_app_key_secret = b64encode(azure_app_key_secret.encode()).decode()
 
+
+        server_plan_resources = server_plan_object._properties.get('storageResourcePoolMap')[0].get('resources')
+
+        # use resource pool only if resource pool type is Office365 or Exchange
+        is_resource_pool_enabled = False
+        if server_plan_resources is not None:
+            for resourse in server_plan_resources:
+                if resourse.get('appType', 0) in (ResourcePoolAppType.O365.value, ResourcePoolAppType.EXCHANGE.value):
+                    is_resource_pool_enabled = True
+
         request_json = {
             "clientInfo": {
                 "clientType": 25,
                 "plan": server_plan_dict,
                 "exchangeOnePassClientProperties": {
-                    "backupSetTypeToCreate": backupset_type_to_create,
+                    "backupSetTypeToCreate" : backupset_type_to_create,
                     "recallService": recall_service_url,
                     "onePassProp": {
                         "environmentType": environment_type,
@@ -2332,7 +3035,9 @@ class Clients(object):
                                 {
                                     "azureDirectoryId": azure_tenant_name,
                                     "azureAppKeyValue": azure_app_key_secret,
-                                    "azureAppId": azure_app_key_id
+                                    "azureAppId": azure_app_key_id,
+                                    "appStatus": 1,
+                                    "azureAppType": 1
                                 }
                             ]
                         }
@@ -2348,8 +3053,11 @@ class Clients(object):
                 "azureDetails"] = azure_app_dict
 
         if int(self._commcell_object.version.split(".")[1]) >= 25 and environment_type == 4:
+            request_json["clientInfo"]["clientType"] = 37 #37 - Office365 Client type. Exchange Online falls under O365 AppType
             request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"][
                 "isModernAuthEnabled"] = kwargs.get('is_modern_auth_enabled', True)
+        if is_resource_pool_enabled:
+            request_json["clientInfo"]["useResourcePoolInfo"] = is_resource_pool_enabled
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._ADD_EXCHANGE_CLIENT, request_json
@@ -2758,7 +3466,7 @@ class Clients(object):
                 'Client', '102', 'Client "{0}" already exists.'.format(
                     client_name)
             )
-        
+
         # IAM Authentication
         if "useIamRole" in amazon_options:
             amazon_options["accessKey"] = ''
@@ -2888,6 +3596,136 @@ class Clients(object):
 
         self._process_add_response(request_json)
 
+    def add_googleworkspace_client(self, plan_name, client_name, indexserver,
+                                   service_account_details, credential_name,
+                                   instance_type, **kwargs):
+        """
+                    Method to add new google cloud client
+                    Args:
+                        plan_name (str): Name of server plan
+                        client_name (str): The name to be assigned to the client.
+                        indexserver (str): The index server address used for the client.
+                        credential_name (str): Credential Name that created in Credential Vault.
+                        instance_type (int): Type of Google client
+                        service_account_details (dict): A dictionary containing service account details
+                                                        required for authentication and authorization.
+                                                           Example:
+                                                           "ServiceAccountDetails": {
+                                                                   "accounts": [
+                                                                     {
+                                                                       "serviceType": "ExampleAgentServiceType",
+                                                                       "AdminSmtpAddress": "example@google.com"
+                                                                     }
+                                                                   ]
+                                                           }
+                        **kwargs (dict) : Additional parameters.
+                                            client_group_name (str) : Access Node Group Name.
+                                            access_node (str) : Access Node name.
+                                            jr_path (str): Job Results Dir path. Mandatory if client_group_name is provided.
+                                          Note:
+                                            Either client_group_name or access_node should be provided.
+                                            If both are given client_group_name will be treated as default.
+                    Returns:
+                        object  -   instance of the Client class for this new client
+                    Raises:
+                        SDKException:
+                            if client_group_name is given None
+
+        """
+        is_client_group = True if kwargs.get('client_group_name') else False
+        proxy_node = kwargs.get('client_group_name') if is_client_group else kwargs.get('access_node')
+        if proxy_node is None:
+            raise SDKException(
+                'Client',
+                '102',
+                "Either client_group_name or access_node should be provided.")
+        account_dict = service_account_details["accounts"]
+        for account in account_dict:
+            if account['serviceType'] == "SYSTEM_ACCOUNT":
+                account["userAccount"]["password"] = b64encode(
+                    account["userAccount"]["password"].encode()).decode()
+                account["userAccount"]["confirmPassword"] = b64encode(
+                    account["userAccount"]["confirmPassword"].encode()).decode()
+
+        request_payload = {
+            "clientInfo": {
+                "clientType": 37,
+                "plan": {
+                    "planName": plan_name
+                },
+                "cloudClonnectorProperties": {
+                    "instanceType": instance_type,
+                    "instance": {
+                        "instance": {
+                            "clientName": client_name,
+                            "instanceName": f"{client_name}_Instance001"
+                        },
+                        "cloudAppsInstance": {
+                            "instanceType": instance_type,
+                            "generalCloudProperties": {
+                                "memberServers": [
+                                    {
+                                        "client": {
+                                            "clientGroupName" if is_client_group else "clientName": proxy_node
+                                        }
+                                    }
+                                ],
+                                "indexServer": {
+                                    "clientName": indexserver
+                                },
+                                "numberOfBackupStreams": 10,
+                                "jobResultsDir": {
+                                    "path": kwargs.get('jr_path') if is_client_group else ""
+                                }
+                            },
+                            "v2CloudAppsInstance": {
+                                "cloudRegion": "DEFAULT",
+                                "serviceAccounts": service_account_details,
+                                "connectionCredential": {
+                                    "credentialName": credential_name
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "entity": {
+                "clientName": client_name
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._ADD_GOOGLE_CLIENT, request_payload
+        )
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json()['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+
+                        return self.get(client_name)
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
     def add_alicloud_client(self, client_name, access_node, alicloud_options):
         """
             Method to add new alicloud cloud client
@@ -2961,7 +3799,232 @@ class Clients(object):
 
         self._process_add_response(request_json)
 
-    def add_onedrive_v2_client(
+    def add_teams_client(self, client_name, server_plan, azure_app_id, azure_directory_id,
+                     azure_app_key_id, **kwargs):
+        """
+            Adds Teams client
+
+            Args:
+                client_name (str) : Client Name
+                server_plan (str) : Server Plan's Name
+                azure_app_id (str) : Azure app ID
+                azure_directory_id (str) : Azure directory ID
+                azure_app_key_id (str) : Azure App key ID
+
+                **kwargs (dict) : Additional parameters
+                    index_server (str) : Index Server's Name
+                    access_nodes_list (list[str/object]) : List of names/objects of access node clients
+                    number_of_backup_streams (int) : Number of backup streams to be associated (default: 10)
+                    user_name (str) : User name for shared job results
+                    user_password (str) : User password for shared job results
+                    shared_jr_directory (str) : Shared Job results directory path
+                    cloud_region(int) : Cloud region for the client which determines the gcc or gcc high configuration
+
+            Returns:
+                object  -   instance of the Client class for this new client
+
+            Raises:
+                SDKException:
+                    if client with given name already exists
+
+                    if server plan  donot exists with the given name
+
+                    if data type of the input(s) is not valid
+
+                    if access node do not exists with the given name
+
+                    if failed to add the client
+
+                    if response is empty
+
+                    if response is not success
+        """
+
+        if self.has_client(client_name):
+            raise SDKException('Client', '102', f'Client "{client_name}" already exists.')
+
+        # Get server plan details
+        server_plan_object = self._commcell_object.plans.get(server_plan)
+        server_plan_id = int(server_plan_object.plan_id)
+        server_plan_resources = server_plan_object._properties.get('storageResourcePoolMap')[0].get('resources')
+
+        access_nodes_list = kwargs.get('access_nodes_list')
+        index_server = kwargs.get('index_server')
+
+        # use resource pool only if resource pool type is Office365 or OneDrive
+        is_resource_pool_enabled = False
+        if server_plan_resources is not None:
+            for resourse in server_plan_resources:
+                if resourse.get('appType', 0) in (1, 5):  # ResourcePoolAppType.O365 or ResourcePoolAppType.OneDrive
+                    is_resource_pool_enabled = True
+
+        number_of_backup_streams = kwargs.get('number_of_backup_streams', 10)
+        user_name = kwargs.get('user_name')
+        user_password = kwargs.get('user_password')
+        shared_jr_directory = kwargs.get('shared_jr_directory')
+        cloud_region = kwargs.get('cloud_region', 1)
+
+        # If server plan is not resource pool enabled and infrastructure details are not provided, raise Exception
+        if not is_resource_pool_enabled and (access_nodes_list is None or index_server is None):
+            error_string = 'For a non resource-pool server plan, access nodes and index server details are necessary'
+            raise SDKException('Client', '102', error_string)
+
+        # If data type of the input(s) is not valid, raise Exception
+        if ((access_nodes_list and not isinstance(access_nodes_list, list)) or
+                (index_server and not isinstance(index_server, str)) or
+                (number_of_backup_streams and not isinstance(number_of_backup_streams, int)) or
+                (user_name and not isinstance(user_name, str)) or
+                (user_password and not isinstance(user_password, str)) or
+                (shared_jr_directory and not isinstance(shared_jr_directory, str))):
+            raise SDKException('Client', '101')
+
+        # For multiple access nodes, make sure service account details are provided
+        if (access_nodes_list and len(access_nodes_list) > 1 and
+                (user_name is None or user_password is None or shared_jr_directory is None)):
+            error_string = 'For creating a multi-access node client service account details are necessary'
+            raise SDKException('Client', '102', error_string)
+
+        # Get index server details
+        index_server_id = None
+        if index_server:
+            index_server_object = self.get(index_server)
+            index_server_id = int(index_server_object.client_id)
+
+        # For each access node create client object
+        member_servers = []
+
+        if access_nodes_list:
+            for client in access_nodes_list:
+                if isinstance(client, str):
+                    client = client.strip().lower()
+
+                    if self.has_client(client):
+                        client_dict = {
+                            "client": {
+                                "clientName": client,
+                                "clientId": int(self.all_clients.get(client).get('id')),
+                                "_type_": 3
+                            }
+                        }
+                        member_servers.append(client_dict)
+                    else:
+                        raise SDKException('Client', '102', f'Client {client} does not exitst')
+
+                elif isinstance(client, Client):
+                    if self.has_client(client):
+                        client_dict = {
+                            "client": {
+                                "clientName": client.client_name,
+                                "clientId": int(client.client_id),
+                                "_type_": 3
+                            }
+                        }
+                        member_servers.append(client_dict)
+                    else:
+                        raise SDKException('Client', '102', f'Client {client} does not exitst')
+
+                else:
+                    raise SDKException('Client', '101')
+
+        azure_app_key_value = b64encode(azure_app_key_id.encode()).decode()
+
+        request_json = {
+            "clientInfo": {
+                "clientType": 37,
+                "useResourcePoolInfo": is_resource_pool_enabled,
+                "plan": {
+                    "planId": server_plan_id
+                },
+                "cloudClonnectorProperties": {
+                    "instanceType": 36,
+                    "instance": {
+                        "instance": {
+                            "clientName": client_name
+                        },
+                        "cloudAppsInstance": {
+                            "instanceType": 36,
+                            "serviceAccounts": {},
+                            "v2CloudAppsInstance": {
+                                "advanceSettings": {
+                                        "channelChatOpMode": 1,
+                                        "isPersonalChatOperationsEnabled": False
+                                    },
+                                "cloudRegion": cloud_region,
+                                "callbackUrl": "",
+                                "createAdditionalSubclients": False,
+                                "infraStructurePoolEnabled": False,
+                                "isAutoDiscoveryEnabled": False,
+                                "isEnterprise": True,
+                                "isModernAuthEnabled": False,
+                                "manageContentAutomatically": False,
+                                "numberofAdditionalSubclients": 0,
+                                "serviceAccounts": {
+                                    "accounts": [
+                                    ]
+                                },
+                                "tenantInfo": {
+                                    "azureTenantID": azure_directory_id
+                                },
+                                "azureAppList": {
+                                    "azureApps": [
+                                        {
+                                            "appStatus": 1,
+                                            "appType": 2,
+                                            "azureDirectoryId": azure_directory_id,
+                                            "azureAppDisplayName": azure_app_id,
+                                            "azureAppKeyValue": azure_app_key_value,
+                                            "azureAppId": azure_app_id
+                                        }
+                                    ]
+                                }
+                            },
+                            "generalCloudProperties": {
+                                "numberOfBackupStreams": number_of_backup_streams,
+                                "jobResultsDir": {
+                                    "path": ""
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "entity": {
+                "clientName": client_name
+            }
+        }
+
+        if not is_resource_pool_enabled:
+            request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"][
+                "generalCloudProperties"]["indexServer"] = {
+                "clientId": index_server_id
+            }
+            request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"][
+                "generalCloudProperties"]["memberServers"] = member_servers
+
+        if access_nodes_list and len(access_nodes_list) > 1:
+            request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"][
+                "generalCloudProperties"]["jobResultsDir"]["path"] = shared_jr_directory
+
+        if user_name:
+            user_password = b64encode(user_password.encode()).decode()
+            request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"][
+                "oneDriveInstance"][
+                "serviceAccounts"] = {
+                "accounts": [
+                    {
+                        "serviceType": 3,
+                        "userAccount": {
+                            "userName": user_name,
+                            "password": user_password
+                        }
+                    }
+                ]
+            }
+
+        self._process_add_response(request_json, self._ADD_ONEDRIVE_CLIENT)
+
+
+    def add_onedrive_for_business_client(
             self,
             client_name,
             server_plan,
@@ -3429,6 +4492,493 @@ class Clients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def add_cassandra_client(self,
+                             new_client_name,
+                             gatewaynode,
+                             cql_port,
+                             cql_username,
+                             cql_password,
+                             jmx_port,
+                             config_file_path,
+                             plan_name):
+        """
+        Adds new cassandra client after clientname and plan validation
+
+        Args:
+            new_client_name       (str)   --  new cassandra client name
+
+            gatewaynode           (str)   --  gateway node
+
+            cql_port              (int)   --  cql port
+
+            jmx_port              (int)   --  jmx port
+
+            cql_username          (str)   --  cql username
+
+            cql_password          (str)   --  cql password
+
+            plan_name             (str)   --  plan name
+
+        Returns:
+                client_object     (obj)   --  client object associated with the new cassandra client
+
+        Raises:
+            SDKException:
+                if plan name is not valid
+
+                if failed to add the client
+
+                if response is empty
+
+                if response is not success
+        """
+        if self._commcell_object.plans.has_plan(plan_name):
+            plan_object = self._commcell_object.plans.get(plan_name)
+            plan_id = int(plan_object.plan_id)
+            plan_type = int(plan_object.plan_type)
+            plan_subtype = int(plan_object.subtype)
+        else:
+            raise SDKException('Plan', '102', 'Provide Valid Plan Name')
+
+        cql_password = b64encode(cql_password.encode()).decode()
+        jmx_port_int = int(jmx_port)
+        cql_port_int = int(cql_port)
+
+        request_json = {
+            "clientInfo": {
+                "clientType": 29,
+                "plan": {
+                    "planName": plan_name
+                },
+                "distributedClusterInstanceProperties": {
+                    "clusterType": 9,
+                    "opType": 2,
+                    "instance": {
+                        "instanceId": 0,
+                        "instanceName": new_client_name,
+                        "clientName": new_client_name,
+                        "applicationId": 64
+                    },
+                    "clusterConfig": {
+                        "cassandraConfig": {
+                            "gateway": {
+                                "node": {
+                                    "clientNode": {
+                                        "clientName": gatewaynode
+                                    },
+                                    "jmxConnection": {
+                                        "port": jmx_port_int
+                                    }
+                                },
+                                "gatewayCQLPort": cql_port_int,
+                                "gatewayCQLUser": {
+                                    "userName": cql_username,
+                                    "password": cql_password,
+                                    "confirmPassword": cql_password
+                                }
+                            },
+                            "configFilePath": config_file_path
+                        }
+                    }
+                }
+            },
+            "entity": {
+                "clientName": new_client_name
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._ADD_CASSANDRA_CLIENT, payload=request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json(
+                        )['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(
+                            error_string)
+
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+                        return self.get(new_client_name)
+
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(
+                        error_string)
+
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException(
+                'Response',
+                '101',
+                self._update_response_(
+                    response.text))
+
+    def add_cockroachdb_client(self,
+                               new_client_name,
+                               s3_credential_name,
+                               cockroachdb_host,
+                               cockroachdb_port,
+                               db_username,
+                               db_password,
+                               sslcert,
+                               sslkey,
+                               sslrootcert,
+                               s3_service_host,
+                               s3_staging_path,
+                               accessnodes,
+                               plan_name):
+        """
+        Adds new cockroachdb client after clientname and plan validation
+
+        Args:
+            new_client_name       (str)   --  new cockroachdb client name
+
+            s3_credential_name    (str)   --  AWS S3 credential name
+
+            cockroachdb_host      (str)   --  cockroachdb host machine name or ip
+
+            cockroachdb_port      (int)   --  cockroachdb port number
+
+            db_username           (str)   --  database user name
+
+            db_password           (str)   --  database password
+
+            sslcert                (str)  --  ssl cert path
+
+            sslkey                 (str)  --  ssl key path
+
+            sslrootcert           (str)   --  ssl root cert path
+
+            s3_service_host       (str)   --  s3 service host
+
+            s3_staging_path       (str)   --  s3 staging path
+
+            accessnodes           (list)  --  list of access nodes
+
+            plan_name             (str)   --  plan assocated with the new client
+
+        Returns:
+                client_object     (obj)   --  client object associated with the new cockroachdb client
+
+        Raises:
+            SDKException:
+                if plan name is not valid
+
+                if failed to add the client
+
+                if response is empty
+
+                if response is not success
+        """
+        if self._commcell_object.plans.has_plan(plan_name):
+            plan_object = self._commcell_object.plans.get(plan_name)
+            plan_id = int(plan_object.plan_id)
+            plan_type = int(plan_object.plan_type)
+            plan_subtype = int(plan_object.subtype)
+        else:
+            raise SDKException('Plan', '102', 'Provide Valid Plan Name')
+
+        access_nodes = []
+        for node in accessnodes:
+            client_object = self._commcell_object.clients.get(node)
+            client_id = int(client_object.client_id)
+            access_node = {
+                "hostName": "",
+                "clientId": client_id,
+                "clientName": client_object.client_name,
+                "displayName": client_object.display_name,
+                "selected": True
+            }
+            access_nodes.append(access_node)
+
+        db_password = b64encode(db_password.encode()).decode()
+        cockroachdb_port = int(cockroachdb_port)
+
+        request_json = {
+            "createPseudoClientRequest": {
+                "clientInfo": {
+                    "clientType": 29,
+                    "distributedClusterInstanceProperties": {
+                        "clusterConfig": {
+                            "cockroachdbConfig": {
+                                "dbCredentials": {
+                                    "credentialId": 0,
+                                    "credentialName": ""
+                                },
+                                "dbHost": cockroachdb_host,
+                                "port": cockroachdb_port,
+                                "sslCert": sslcert,
+                                "sslKey": sslkey,
+                                "sslRootCert": sslrootcert,
+                                "staging": {
+                                    "cloudURL": "s3.amazonaws.com",
+                                    "instanceType": 5,
+                                    "recordType": 102,
+                                    "serviceHost": s3_service_host,
+                                    "stagingCredentials": {
+                                        "credentialName": s3_credential_name
+                                    },
+                                    "stagingPath": s3_staging_path,
+                                    "stagingType": 1
+                                },
+                                "user": {
+                                    "password": db_password,
+                                    "userName": db_username
+                                }
+                            }
+                        },
+                        "clusterType": 18,
+                        "dataAccessNodes": {
+                            "dataAccessNodes": access_nodes
+                        },
+                        "instance": {
+                            "applicationId": 64,
+                            "clientName": new_client_name,
+                            "instanceId": 0,
+                            "instanceName": new_client_name
+                        },
+                        "opType": 2
+                    },
+                    "plan": {
+                        "planName": plan_name,
+                    },
+                    "subclientInfo": {
+                        "content": [
+                            {
+                                "path": "/"
+                            }
+                        ],
+                        "contentOperationType": 1,
+                        "fsSubClientProp": {
+                            "useGlobalFilters": "USE_CELL_LEVEL_POLICY"
+                        },
+                        "useLocalContent": True
+                    }
+                },
+                "entity": {
+                    "clientName": new_client_name
+                }
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._ADD_COCKROACHDB_CLIENT, payload=request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json(
+                        )['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(
+                            error_string)
+
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+                        return self.get(new_client_name)
+
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(
+                        error_string)
+
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException(
+                'Response',
+                '101',
+                self._update_response_(
+                    response.text))
+
+    def add_azure_cosmosdb_client(
+            self,
+            client_name,
+            access_nodes,
+            credential_name,
+            azure_options):
+        """
+            Method to add new azure cosmos db client
+
+            Args:
+
+                client_name     (str)   -- new azure cosmosdb client name
+
+                access_nodes    (str)   -- list of access node name
+
+                credential_name (str)   -- credential name
+
+                azure_options   (dict)  -- dictionary for Azure details:
+                                            Example:
+                                               azure_options = {
+                                                    "subscription_id": 'subscription id',
+                                                    "tenant_id": 'tenant id',
+                                                    "application_id": 'application id',
+                                                    "password": 'application secret',
+                                                    "credential_id": credential_id
+                                                }
+
+            Returns:
+                object  -   instance of the Client class for this new client
+
+            Raises:
+
+                SDKException:
+                    if None value in azure options
+
+                    if pseudo client with same name already exists
+
+                    if failed to add the client
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+
+        if None in azure_options.values():
+            raise SDKException(
+                'Client',
+                '102',
+                "One of the azure parameters is none so cannot proceed with pseudo client creation")
+
+        if self.has_client(client_name):
+            raise SDKException(
+                'Client', '102', 'Client "{0}" already exists.'.format(
+                    client_name)
+            )
+
+        # encodes the plain text password using base64 encoding
+        password = b64encode(azure_options.get("password").encode()).decode()
+
+        memberservers = []
+        for node in access_nodes:
+            client_object = self._commcell_object.clients.get(node)
+            client_object._get_client_properties()
+            client_id = int(client_object.client_id)
+            clienttype = int(client_object._client_type_id)
+            access_node = {
+                "client": {
+                    "_type_": clienttype,
+                    "clientId": client_id,
+                    "clientName": client_object.client_name,
+                    "groupLabel": "Access nodes",
+                    "selected": True
+                }
+            }
+            memberservers.append(access_node)
+
+        request_json = {
+            "clientInfo": {
+                "clientType": 12,
+                "idaInfo": {
+                },
+                "virtualServerClientProperties": {
+                    "allowEmptyMemberServers": False,
+                    "appTypes": [
+                        {
+                            "applicationId": 106
+                        },
+                        {
+                            "applicationId": 134
+                        }
+                    ],
+                    "virtualServerInstanceInfo": {
+                        "associatedClients": {
+                            "memberServers": memberservers
+                        },
+                        "azureResourceManager": {
+                            "credentials": {
+                                "userName": ""
+                            },
+                            "serverName": client_name,
+                            "subscriptionId": azure_options.get("subscription_id", ""),
+                            "tenantId": "",
+                            "useManagedIdentity": False
+                        },
+                        "cloudAppInstanceInfoList": [
+                        ],
+                        "skipCredentialValidation": False,
+                        "virtualServerCredentialinfo": {
+                            "credentialId": azure_options.get("credential_id", 0),
+                            "credentialName": credential_name,
+                            "description": "",
+                            "recordType": 4,
+                            "selected": True
+                        },
+                        "vmwareVendor": {
+                            "vcenterHostName": ""
+                        },
+                        "vsInstanceType": 7
+                    }
+                }
+            },
+            "entity": {
+                "clientName": client_name
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['GET_ALL_CLIENTS'], payload=request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json(
+                        )['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(
+                            error_string)
+
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+                        return self.get(client_name)
+
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(
+                        error_string)
+
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException(
+                'Response',
+                '101',
+                self._update_response_(
+                    response.text))
+
     def get(self, name):
         """Returns a client object if client name or host name or ID or display name matches the client attribute
 
@@ -3436,7 +4986,7 @@ class Clients(object):
             compare specified name with host names of existing clients else if name matches with the ID
 
             Args:
-                name (str/int)  --  name / hostname / ID of the client / display name 
+                name (str/int)  --  name / hostname / ID of the client / display name
 
             Returns:
                 object - instance of the Client class for the given client name
@@ -3491,7 +5041,7 @@ class Clients(object):
 
             Args:
                 client_name (str)  --  name of the client to remove from  commcell
-                
+
                 forceDelete (bool) --  Force delete client if True
             Raises:
                 SDKException:
@@ -3562,20 +5112,27 @@ class Clients(object):
                     'Client', '102', 'No client exists with name: {0}'.format(client_name)
                 )
 
-    def refresh(self, hard=False):
+    def refresh(self, **kwargs):
         """
         Refresh the clients associated with the Commcell.
 
             Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+                **kwargs (dict):
+                    mongodb (bool)  -- Flag to fetch client groups cache from MongoDB (default: False).
+                    hard (bool)     -- Flag to hard refresh MongoDB cache for this entity (default: False).
         """
-        self._clients = self._get_clients(hard)
+        self._clients = self._get_clients()
         self._hidden_clients = self._get_hidden_clients()
         self._virtualization_clients = self._get_virtualization_clients()
         self._virtualization_access_nodes = self._get_virtualization_access_nodes()
         self._office_365_clients = None
         self._file_server_clients = None
         self._salesforce_clients = None
+
+        mongodb = kwargs.get('mongodb', False)
+        hard = kwargs.get('hard', False)
+        if mongodb:
+            self._client_cache = self.get_clients_cache(hard=hard)
 
 
 class Client(object):
@@ -3681,6 +5238,8 @@ class Client(object):
         self._job_start_time = None
         self._timezone = None
         self._is_privacy_enabled = None
+        self._is_command_center = None
+        self._is_web_server = None
 
         self._readiness = None
         self._vm_guid = None
@@ -3691,6 +5250,10 @@ class Client(object):
         self._client_longitude = None
         self._associated_client_groups = None
         self._company_id = None
+        self._is_deleted_client = None
+        self._is_infrastructure = None
+        self._network_status = None
+        self._update_status = None
         self.refresh()
 
     def __repr__(self):
@@ -3749,7 +5312,15 @@ class Client(object):
 
                 self._is_privacy_enabled = client_props.get("clientSecurity", {}).get("enableDataSecurity")
 
-                if 'company' in client_props: self._company_name = client_props['company'].get('connectName')
+                self._is_command_center = True if list(filter(lambda x: x.get("packageId") == 1135,
+                                                              client_props.get("infrastructureMachineDetails",
+                                                                               []))) else False
+                self._is_web_server = True if list(filter(lambda x: x.get("packageId") == 252,
+                                                          client_props.get("infrastructureMachineDetails",
+                                                                           []))) else False
+
+                if 'companyName' in self._properties['client'].get('clientEntity', {}).get('entityInfo', {}):
+                    self._company_name = self._properties['client']['clientEntity']['entityInfo']['companyName']
 
                 activities = client_props["clientActivityControl"]["activityControlOptions"]
 
@@ -3815,6 +5386,17 @@ class Client(object):
                 if 'company' in client_props:
                     self._company_id = client_props.get('company', {}).get('shortName', {}).get('id')
 
+                if 'IsDeletedClient' in client_props:
+                    self._is_deleted_client = client_props.get('IsDeletedClient')
+
+                if 'networkReadiness' in client_props:
+                    self._network_status = client_props.get('networkReadiness', {}).get('status')
+
+                if 'isInfrastructure' in client_props:
+                    self._is_infrastructure= client_props.get('isInfrastructure')
+
+                if 'UpdateStatus' in self._properties.get('client', {}).get('versionInfo'):
+                    self._update_status = self._properties.get('client', {}).get('versionInfo', {}).get('UpdateStatus')
 
             else:
                 raise SDKException('Response', '102')
@@ -4023,9 +5605,10 @@ class Client(object):
                 raise SDKException('Client', '106', 'Error: {0}'.format(output))
 
         elif 'unix' in self.os_info.lower():
-            command = 'cat {0}'.format(os.path.join(self.install_directory + '/', 'galaxy_vm'))
+            command = 'cat'
+            script_arguments = str(os.path.join(self.install_directory + '/', 'galaxy_vm'))
 
-            __, output, error = self.execute_command(command)
+            __, output, error = self.execute_command(command, script_arguments)
 
             if error:
                 raise SDKException('Client', '106', 'Error: {0}'.format(error))
@@ -4163,16 +5746,16 @@ class Client(object):
             service_name = 'ALL'
 
         if 'windows' in self.os_info.lower():
-            
+
             windows_command = operations_dict[operation]['windows_command']
             if service_name == 'ALL' and 'grp' not in windows_command:
                 windows_command = windows_command + 'grp'
-                
+
             command = '"{0}" -consoleMode -{1} {2}'.format(
                 '\\'.join([self.install_directory, 'Base', 'GxAdmin.exe']),
                 windows_command,
                 service_name
-            ) 
+            )
 
             __, output, __ = self.execute_command(command, wait_for_completion=False)
 
@@ -4352,9 +5935,12 @@ class Client(object):
             description    (str)   -- description to be set for the client
 
         """
-        update_properties = self.properties
-        update_properties['client']['clientDescription'] = description
-        self.update_properties(update_properties)
+        update_description = {
+          "client": {
+            "clientDescription": description
+          }
+        }
+        self.update_properties(update_description)
 
     @property
     def timezone(self):
@@ -4421,6 +6007,12 @@ class Client(object):
         return self._os_info
 
     @property
+    def os_type(self):
+        """Treats the os type as a read-only attribute."""
+        os_type = OSType.WINDOWS if OSType.WINDOWS.name.lower() in self.os_info.lower() else OSType.UNIX
+        return os_type
+
+    @property
     def is_data_recovery_enabled(self):
         """Treats the is data recovery enabled as a read-only attribute."""
         return self._is_data_recovery_enabled
@@ -4459,6 +6051,46 @@ class Client(object):
     def is_privacy_enabled(self):
         """Returns if client privacy is enabled"""
         return self._is_privacy_enabled
+
+    @property
+    def is_deleted_client(self) -> bool:
+        """
+        Returns if the is deleted
+
+        Returns:
+            bool  --  True if deleted else false
+        """
+        return self._is_deleted_client
+
+    @property
+    def is_infrastructure(self) -> bool:
+        """
+        returns if the client is infrastructure
+
+        Returns:
+            bool  --  True if infrastructure client else false
+        """
+        return self._is_infrastructure
+
+    @property
+    def update_status(self) -> int:
+        """
+        returns the update status of the client
+
+        Returns:
+            int -- update status flag of the client
+        """
+        return self._update_status
+
+    @property
+    def is_command_center(self):
+        """Returns if a client has command center package installed"""
+        return self._is_command_center
+
+    @property
+    def is_web_server(self):
+        """Returns if a client has web server package installed"""
+        return self._is_web_server
 
     @property
     def install_directory(self):
@@ -4564,6 +6196,16 @@ class Client(object):
     def is_cluster(self):
         """Returns True if the client is of cluster type"""
         return 'clusterGroupAssociation' in self._properties['clusterClientProperties']
+
+    @property
+    def network_status(self) -> int:
+        """
+        Returns network status for the client
+
+        Returns:
+            int  --  network status flag
+        """
+        return self._network_status
 
     def enable_backup(self):
         """Enable Backup for this Client.
@@ -5090,29 +6732,32 @@ class Client(object):
         if not isinstance(command, str):
             raise SDKException('Client', '101')
 
-        import html
-        command = html.escape(command)
 
         script_arguments = '' if script_arguments is None else script_arguments
-        script_arguments = html.escape(script_arguments)
-
-        xml_execute_command = """
-        <App_ExecuteCommandReq arguments="{0}" command="{1}" waitForProcessCompletion="{4}">
-            <processinginstructioninfo>
-                <formatFlags continueOnError="1" elementBased="1" filterUnInitializedFields="0" formatted="0" ignoreUnknownTags="1" skipIdToNameConversion="0" skipNameToIdConversion="0"/>
-            </processinginstructioninfo>
-            <client clientId="{2}" clientName="{3}"/>
-        </App_ExecuteCommandReq>
-        """.format(
-            script_arguments,
-            command,
-            self.client_id,
-            self.client_name,
-            1 if wait_for_completion else 0
-        )
-
+        execute_command_payload = {
+            "App_ExecuteCommandReq": {
+                "arguments": f"{script_arguments}",
+                "command": f"{command}",
+                "waitForProcessCompletion": f"{1 if wait_for_completion else 0}",
+                "processinginstructioninfo": {
+                    "formatFlags": {
+                        "continueOnError": "1",
+                        "elementBased": "1",
+                        "filterUnInitializedFields": "0",
+                        "formatted": "0",
+                        "ignoreUnknownTags": "1",
+                        "skipIdToNameConversion": "0",
+                        "skipNameToIdConversion": "0"
+                    }
+                },
+                "client": {
+                    "clientId": f"{self.client_id}",
+                    "clientName": f"{self.client_name}"
+                }
+            }
+        }
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['EXECUTE_QCOMMAND'], xml_execute_command
+            'POST', self._services['EXECUTE_QCOMMAND'], execute_command_payload
         )
 
         if flag:
@@ -6033,7 +7678,7 @@ class Client(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
-        
+
     def get_configured_additional_settings(self) -> list:
         """Method to get configured additional settings name"""
         url = self._services['GET_ADDITIIONAL_SETTINGS'] % self.client_id
@@ -6398,7 +8043,7 @@ class Client(object):
         """Returns client Type"""
 
         return self._properties.get('pseudoClientInfo', {}).get('clientType', "")
-    
+
     @property
     def vm_guid(self):
         """Returns guid of the vm client"""
@@ -6444,7 +8089,7 @@ class Client(object):
 
             Args:
                 force_uninstall (bool): Uninstalls packages forcibly. Defaults to True.
-                software_list (list): The client_composition will contain the list of components need to be uninstalled. 
+                software_list (list): The client_composition will contain the list of components need to be uninstalled.
 
             Usage:
                 client_obj.uninstall_software(force_uninstall=False,software_list=["Index Store","File System"])
@@ -6513,7 +8158,7 @@ class Client(object):
     def get_environment_details(self):
         """
         Returns a dictionary with the count of fileservers, VM, Laptop for all the service commcells
-        
+
          example output:
             {
             'fileServerCount': {'commcell_name': count},
@@ -6830,13 +8475,13 @@ class _Readiness:
 
                 cs_cc_network_check (bool)  - Performs network readiness check between CS and client alone.
                                                 Default: False
-                
+
                 application_check (bool) - Performs Application Readiness check.
                                              Default: False
-                
+
                 additional_resources (bool) - Include Additional Resources.
                                                Default: False
-                                                       
+
             Raises:
                 SDKException:
                     if response is empty
@@ -6885,7 +8530,7 @@ class _Readiness:
 
                 application_check (bool) - Performs Application Readiness check.
                                              Default: False
-                
+
                 additional_resources (bool) - Include Additional Resources.
                                          Default: False
 

@@ -54,7 +54,7 @@ class VcloudVirtualServerSubclient(VirtualServerSubclient):
 
         super(VcloudVirtualServerSubclient, self).__init__(
             backupset_object, subclient_name, subclient_id)
-        self.diskextension = [".vmdk"]
+        self.diskExtension = [".vmdk"]
 
         self._disk_option = {
             'Original': 0,

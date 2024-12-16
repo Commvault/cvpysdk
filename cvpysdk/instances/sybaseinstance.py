@@ -47,6 +47,8 @@ SybaseInstance:
 
     _restore_sybase_option_json()   -- setter for Sybase restore option property in restore
 
+    _primary_node_properties()      --  Returns Primary Node Properties of sybase hadr instance
+
     sybase_home()                   -- returns string of sybase_home Property of Sybase instance
 
     sybase_instance_name()          -- returns sybase instance name without any case change
@@ -81,8 +83,9 @@ SybaseInstance:
 
     restore_to_disk()               -- Perform restore to disk [Application free restore] for sybase
 
-"""
+    get_node_properties()           --  Returns properties of all sybase hadr nodes or for given node id
 
+"""
 
 from __future__ import unicode_literals
 import datetime
@@ -116,8 +119,10 @@ class SybaseInstance(DatabaseInstance):
         self._destination_restore_json = None
         super(SybaseInstance, self).__init__(
             agent_object, instance_name, instance_id)
+        self._is_hadr = len(self._properties.get('sybaseClusterInstance', {})) > 0
         self._instanceprop = {}  # instance variable to hold instance properties
-
+        self._nodes = self.get_node_properties()
+        self._primarynodeprop = self._primary_node_properties()
 
     @property
     def sybase_home(self):
@@ -128,6 +133,8 @@ class SybaseInstance(DatabaseInstance):
                 (str) - string representing sybase home
 
         """
+        if self.is_hadr:
+            return self._primarynodeprop.get('sybaseProps', {}).get('sybaseHome')
         return self._properties.get('sybaseInstance', {}).get('sybaseHome')
 
     @property
@@ -139,6 +146,8 @@ class SybaseInstance(DatabaseInstance):
                 (str) - string representing sybase instance name
 
         """
+        if self.is_hadr:
+            return self._primarynodeprop.get('sybaseProps', {}).get('backupServer')[:-3]
         return self._properties.get('instance', {}).get('instanceName')
 
     @property
@@ -154,6 +163,8 @@ class SybaseInstance(DatabaseInstance):
                     False - returns False if autodiscosvery is not enabled
 
         """
+        if self.is_hadr:
+            return self._primarynodeprop.get('sybaseProps', {}).get('enableAutoDiscovery')
         return self._properties.get('sybaseInstance', {}).get('enableAutoDiscovery')
 
     @property
@@ -165,6 +176,8 @@ class SybaseInstance(DatabaseInstance):
                 (str) - string representing local admin user
 
         """
+        if self.is_hadr:
+            return self._primarynodeprop.get('sybaseProps', {}).get('localAdministrator', {}).get('userName')
         return self._properties.get('sybaseInstance', {}).get('localAdministrator', {}).get('userName')
 
     @property
@@ -176,6 +189,8 @@ class SybaseInstance(DatabaseInstance):
                 (str) - string representing sa username
 
         """
+        if self.is_hadr:
+            return self._primarynodeprop.get('sybaseProps', {}).get('saUser', {}).get('userName')
         return self._properties.get('sybaseInstance', {}).get('saUser', {}).get('userName')
 
     @property
@@ -198,6 +213,8 @@ class SybaseInstance(DatabaseInstance):
                 (str) - string representing backup server
 
         """
+        if self.is_hadr:
+            return self._primarynodeprop.get('sybaseProps', {}).get('backupServer')
         return self._properties.get('sybaseInstance', {}).get('backupServer')
 
     @property
@@ -209,6 +226,8 @@ class SybaseInstance(DatabaseInstance):
                 (str) - string representing sybase OCS
 
         """
+        if self.is_hadr:
+            return self._primarynodeprop.get('sybaseProps', {}).get('sybaseOCS')
         return self._properties.get('sybaseInstance', {}).get('sybaseOCS')
 
     @property
@@ -220,6 +239,8 @@ class SybaseInstance(DatabaseInstance):
                 (str) - string representing sybase ASE
 
         """
+        if self.is_hadr:
+            return self._primarynodeprop.get('sybaseProps', {}).get('sybaseASE')
         return self._properties.get('sybaseInstance', {}).get('sybaseASE')
 
     @property
@@ -242,6 +263,8 @@ class SybaseInstance(DatabaseInstance):
                 (str) - string representing sybase config file
 
         """
+        if self.is_hadr:
+            return self._primarynodeprop.get('sybaseProps', {}).get('configFile')
         return self._properties.get('sybaseInstance', {}).get('configFile')
 
     @property
@@ -254,7 +277,31 @@ class SybaseInstance(DatabaseInstance):
                             sybase shared memory directory
 
         """
+        if self.is_hadr:
+            return self._primarynodeprop.get('sybaseProps', {}).get('sharedMemoryDirectory')
         return self._properties.get('sybaseInstance', {}).get('sharedMemoryDirectory')
+
+    @property
+    def is_hadr(self):
+        """
+        Returns if current instance is Sybase HADR
+
+            Returns:
+                (bool) - true if instance is HADR
+        """
+        return self._is_hadr
+
+    @property
+    def hadr_primarynode_id(self):
+        """
+        Returns Primary node ID if instance is HADR
+
+            Returns:
+                (str) - Sybase Hadr Primary Node id
+        """
+        if self.is_hadr:
+            return self._properties.get('sybaseClusterInstance', {}).get('primaryNodeId')
+        return None
 
     @property
     def client_name(self):
@@ -266,6 +313,38 @@ class SybaseInstance(DatabaseInstance):
 
         """
         return self._properties.get('instance', {}).get('clientName')
+
+    def _primary_node_properties(self):
+        """
+        Returns Primary Node Properties
+
+            Returns:
+                (dict) - Primary Node Properties
+        """
+        if self.is_hadr:
+            nodes = self._properties.get('sybaseClusterInstance').get('nodes')
+            for node in nodes:
+                if node.get('physicalClient', {}).get('clientId') == self.hadr_primarynode_id:
+                    return node
+
+    def get_node_properties(self, clientId=None):
+        """
+        Returns Nodes Properties
+
+        Args:
+            clientId(str) - Returns Node properties of given ClientId
+
+        Returns:
+            (dict) - Node properties of given Client Id if given,
+                    otherwise all the node properties
+        """
+        if self.is_hadr:
+            nodes = self._properties.get('sybaseClusterInstance').get('nodes')
+            if clientId:
+                for node in nodes:
+                    if node.get('physicalClient', {}).get('clientId') == int(clientId):
+                        return node
+            return nodes
 
     def _restore_common_options_json(self, value):
         """
@@ -325,7 +404,7 @@ class SybaseInstance(DatabaseInstance):
             time_dict = {}
         else:
             time_dict = {
-                "timeValue":value.get("to_time", "")
+                "timeValue": value.get("to_time", "")
             }
         self._sybase_restore_json = {
             "sybaseRecoverType": "STATE_RECOVER",
