@@ -142,6 +142,8 @@ Subclient:
     find_latest_job()           --  Finds the latest job for the subclient
     which includes current running job also.
 
+    run_content_indexing()      -- Runs CI for subclient
+
     refresh()                   --  refresh the properties of the subclient
 
 
@@ -3092,6 +3094,91 @@ c
             raise SDKException('Subclient', '102', "No jobs found")
 
         return Job(self._commcell_object, latest_jobid)
+
+    def run_content_indexing(self,
+                                   pick_failed_items=False,
+                                   pick_only_failed_items=False,
+                                   streams=4,
+                                   proxies=None):
+        """Run content Indexing on job.
+
+            Args:
+               pick_failed_items
+                        default:False   (bool)  --  Pick fail items during Content Indexing
+
+                pick_only_failed_items  (bool)  --  Pick only fail items during Content
+                                                    Indeixng
+                    default: False
+
+                streams                 (int)   --  Streams for Content Indexing job
+
+                    default: 4
+
+                proxies                 (list) --  provide the proxies to run CI
+                    default: None
+
+            Returns:
+                object - instance of the Job class for the ContentIndexing job
+
+        """
+        if not (isinstance(pick_failed_items, bool) and
+                isinstance(pick_only_failed_items, bool)):
+            raise SDKException('Subclient', '101')
+
+        if proxies is None:
+            proxies = {}
+
+        self._media_option_json = {
+            "pickFailedItems": pick_failed_items,
+            "pickFailedItemsOnly": pick_only_failed_items,
+            "auxcopyJobOption": {
+                "maxNumberOfStreams": streams,
+                "allCopies": True,
+                "useMaximumStreams": False,
+                "proxies": proxies
+            }
+        }
+
+        self._content_indexing_option_json= {
+            "reanalyze": False,
+            "fileAnalytics": False,
+            "subClientBasedAnalytics": False
+        }
+        self._subtask_restore_json = {
+            "subTaskType": 1,
+            "operationType": 5020
+        }
+
+        request_json = {
+            "taskInfo": {
+                "associations": [self._subClientEntity],
+                "task": self._json_task,
+                "subTasks": [
+                    {
+                        "subTaskOperation": 1,
+                        "subTask": self._subtask_restore_json,
+                        "options": {
+                            "backupOpts": {
+                                "mediaOpt": self._media_option_json
+                            },
+                            "adminOpts": {
+                                "contentIndexingOption": self._content_indexing_option_json
+                            },
+                            "restoreOptions": {
+                                "virtualServerRstOption": {
+                                    "isBlockLevelReplication": False
+                                },
+                                "browseOption": {
+                                    "backupset": {}
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        return self._process_restore_response(request_json)
 
     def refresh(self):
         """Refresh the properties of the Subclient."""

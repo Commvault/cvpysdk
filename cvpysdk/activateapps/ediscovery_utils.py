@@ -347,17 +347,18 @@ class EdiscoveryClients():
         """
         if not isinstance(client_name, str) or not isinstance(inventory_name, str) or not isinstance(plan_name, str):
             raise SDKException('EdiscoveryClients', '101')
-        if not self._commcell_object.activate.inventory_manager().has_inventory(inventory_name):
-            raise SDKException('EdiscoveryClients', '102', 'Invalid inventory name')
         if not self._commcell_object.plans.has_plan(plan_name):
             raise SDKException('EdiscoveryClients', '102', 'Invalid plan name')
         plan_obj = self._commcell_object.plans.get(plan_name)
-        inv_obj = self._commcell_object.activate.inventory_manager().get(inventory_name)
         req_json = copy.deepcopy(EdiscoveryConstants.CREATE_CLIENT_REQ_JSON)
         req_json['entity']['clientName'] = client_name
         req_json['clientInfo']['plan']['planId'] = int(plan_obj.plan_id)
-        req_json['clientInfo']['edgeDrivePseudoClientProperties']['eDiscoveryInfo']['inventoryDataSource']['seaDataSourceId'] = int(
-            inv_obj.inventory_id)
+        if inventory_name is not None:
+            if not self._commcell_object.activate.inventory_manager().has_inventory(inventory_name):
+                raise SDKException('EdiscoveryClients', '102', 'Invalid inventory name')
+            inv_obj = self._commcell_object.activate.inventory_manager().get(inventory_name)
+            req_json['clientInfo']['edgeDrivePseudoClientProperties']['eDiscoveryInfo']['inventoryDataSource']['seaDataSourceId'] \
+                = int(inv_obj.inventory_id)
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._API_CREATE_CLIENT, req_json)
         if flag:
