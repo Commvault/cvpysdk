@@ -461,7 +461,8 @@ class GoogleInstance(CloudAppsInstance):
                 "filelevelRestore": False,
                 "strDestUserAccount": destination_path if out_of_place else '',
                 "overWriteItems": False if disk_restore else overwrite,
-                "restoreToGoogle": False if disk_restore else True
+                "restoreToGoogle": False if disk_restore else True,
+                "gmailRestoreItemType": 0
             }
         }
 
@@ -495,13 +496,13 @@ class GoogleInstance(CloudAppsInstance):
                 "selectedItems": [
                   {
                     "itemName": source_item_list[0],
-                    "itemType": "User"
+                    "itemType": "User" if self._ca_instance_type=="GDrive" else "Mailbox"
                   }
                 ],
                 "jobOptionItems": [
                   {
                     "option": "Restore destination",
-                    "value": "OneDrive for Business"
+                    "value": "Google Drive" if self._ca_instance_type=="GDrive" else "Gmail"
                   },
                   {
                     "option": "Source",
@@ -647,7 +648,8 @@ class GoogleInstance(CloudAppsInstance):
                 "strDestUserAccount": dest_user_account,
                 "folderGuid": "",
                 "restoreToDifferentAccount": rest_different_account,
-                "restoreToGoogle": restore_to_google
+                "restoreToGoogle": restore_to_google,
+                "gmailRestoreItemType": 0
             }
         }
         return self._process_restore_response(request_json)
