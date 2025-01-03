@@ -99,6 +99,10 @@ Subclient:
 
     _association_json()         --  setter for association property
 
+    _get_preview_metadata()     --  gets the preview metadata for the file
+
+    _get_preview()              --  gets the preview for the file
+
     update_properties()         --  To update the subclient properties
 
     description()               --  update the description of the subclient
@@ -1599,6 +1603,8 @@ class Subclient(object):
         self._BROWSE = self._services['BROWSE']
 
         self._RESTORE = self._services['RESTORE']
+
+        self._PREVIEW_CONTENT = self._services['GET_DOC_PREVIEW']
 
         self._subclient_properties = {}
         self._content = []
@@ -3435,3 +3441,144 @@ c
             })
         else:
             raise SDKException('Subclient', '101')
+
+    def _get_preview_metadata(self, file_path):
+        """Gets the preview metadata for the subclient.
+            params:
+                file_path (str) : file path for which preview metadata is required
+
+            Returns:
+                metadata   (dict)   --  metadata content of the preview
+
+                None - if file not found
+
+        """
+
+        paths, data = self.find()
+
+        for path in paths:
+            if path.lower() == file_path.lower():
+                return data[path]
+        else:
+            return None
+
+    def _get_preview(self, file_path):
+        """Gets the preview content for the subclient.
+            Params:
+                file_path (str) --  file path to get the preview content
+
+            Returns:
+                html   (str)   --  html content of the preview
+
+            Raises:
+                SDKException:
+                    if file is not found
+
+                    if response is empty
+
+                    if response is not success
+        """
+        metadata = self._get_preview_metadata(file_path)
+        if metadata is None:
+            raise SDKException('Subclient', '123')
+
+        if metadata["type"] != "File":
+            raise SDKException('Subclient', '124')
+
+        if metadata["size"] == 0:
+            raise SDKException('Subclient', '125')
+
+        if metadata["size"] > 20 * 1024 * 1024:
+            raise SDKException('Subclient', '126')
+
+        request_json = {
+            "filters": [
+                {
+                    "field": "CONTENTID",
+                    "fieldValues": {
+                        "values": [
+
+                        ]
+                    }
+                },
+                {
+                    "field": "COMMCELL_NUMBER",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["advConfig"]["browseAdvancedConfigResp"][
+                                    "commcellNumber"])
+                        ]
+                    }
+                },
+                {
+                    "field": "CLIENT_ID",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["sourceCommServer"]["commCellId"])
+                        ]
+                    }
+                },
+                {
+                    "field": "SUBCLIENT_ID",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["subclient"]["applicationId"])
+                        ]
+                    }
+                },
+                {
+                    "field": "MODIFIED_TIME",
+                    "fieldValues": {
+                        "values": [
+                            metadata["modified_time"]
+                        ]
+                    }
+                },
+                {
+                    "field": "ITEM_PATH",
+                    "fieldValues": {
+                        "values": [
+                            file_path
+                        ]
+                    }
+                },
+                {
+                    "field": "ITEM_SIZE",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["size"])
+                        ]
+                    }
+                },
+                {
+                    "field": "ARCHIVE_FILE_ID",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["archiveFileId"])
+                        ]
+                    }
+                },
+                {
+                    "field": "ARCHIVE_FILE_OFFSET",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["offset"])
+                        ]
+                    }
+                }
+            ]
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._PREVIEW_CONTENT, request_json)
+
+        if flag:
+            if "Preview not available" not in response.text:
+                return response.text
+            else:
+                raise SDKException('Subclient', '127')
+        else:
+            raise SDKException('Subclient', '102', self._update_response_(response.text))
+
+
+

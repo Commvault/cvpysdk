@@ -52,6 +52,8 @@ FileSystemSubclient:
     restore_out_of_place()              --  Restores the files/folders specified in the input paths list
                                             to the input client, at the specified destionation location
 
+    preview_backedup_file()               -- Get the preview content of the file
+
 
 FileSystemSubclient Instance Attributes:
 =======================================
@@ -2705,3 +2707,21 @@ class FileSystemSubclient(Subclient):
             })
         else:
             raise SDKException('Subclient', '101')
+
+    def preview_backedup_file(self, file_path):
+        """Gets the preview content for the subclient.
+            Params:
+                file_path (str) --  file path to get the preview content
+
+            Returns:
+                html   (str)   --  html content of the preview
+
+            Raises:
+                SDKException:
+                    if file is not found
+
+                    if response is empty
+
+                    if response is not success
+        """
+        return self._get_preview(file_path)

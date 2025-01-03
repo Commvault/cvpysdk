@@ -53,9 +53,13 @@ OracleSubclient:
 
     archive_files_per_bfs()             --  Getter and Setter for archive files per BFS
 
+    oracle_tag()                        --  Getter and Setter for oracle tag
+
     skip_offline()                      --  Getter and Setter for skip offline option
 
     skip_read_only()                    --  Getter and Setter for skip read only option
+
+    skip_inaccessible()                 --  Getter and Setter for skip inaccessible option
 
     data_sp()                           --  Getters and setters for data storage policy
 
@@ -117,7 +121,8 @@ class OracleSubclient(DatabaseSubclient):
         oracle_options = {
             "oracleOptions": {}
         }
-        oracle_options.update(options)
+        if options is not None:
+            oracle_options.update(options)
         request_json = self._backup_json(
             backup_level,
             False,
@@ -305,6 +310,27 @@ class OracleSubclient(DatabaseSubclient):
             "_oracle_subclient_properties['archiveFilesPerBFS']", archive_files_per_bfs)
 
     @property
+    def oracle_tag(self):
+        """
+        Getter to fetch oracle tag
+
+            Returns:
+                    (int)    --     value for oracle tag
+        """
+        return self._oracle_subclient_properties.get("oracleTag")
+
+    @oracle_tag.setter
+    def oracle_tag(self, oracle_tag):
+        """
+        Setter to set parameter for oracle tag
+
+            Args:
+               oracle_tag    (int)    --     value for oracle tag
+        """
+        self._set_subclient_properties(
+            "_oracle_subclient_properties['oracleTag']", oracle_tag)
+
+    @property
     def skip_offline(self):
         """
         Getter to fetch if skip offline is enabled or not
@@ -350,6 +376,30 @@ class OracleSubclient(DatabaseSubclient):
         """
         self._set_subclient_properties(
             "_oracle_subclient_properties['skipReadOnly']", skip_read_only)
+
+    @property
+    def skip_inaccessible(self):
+        """
+        Getter to fetch if skip inaccessible is enabled or not
+
+            Returns:
+                    (bool)    --     True if the option is enabled, False if it is disabled
+        """
+        return self._oracle_subclient_properties.get("skipInaccessible")
+
+    @skip_inaccessible.setter
+    def skip_inaccessible(self, skip_inaccessible=False):
+        """
+        Setter to set skip inaccessible option
+
+            Args:
+               skip_inaccessible    (bool)    --    True to enable the skip inaccessible option,
+                                                    False to disable it.
+                                                    default=False
+
+        """
+        self._set_subclient_properties(
+            "_oracle_subclient_properties['skipInaccessible']", skip_inaccessible)
 
     @property
     def data_stream(self):

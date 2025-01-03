@@ -673,6 +673,12 @@ SERVICES_DICT_TEMPLATE = {
     'ALL_RPStores': '{0}Library?libraryType=RPSTORE',
 
     'RESET_TENANT_PASSWORD': '{0}/user/Password/Forgot',
+
+    'GET_DOC_PREVIEW': '{0}/GetDocPreviewWithFields',
+
+    'GET_VARIOUS_PREVIEW':  '{0}/GetVariousPreview',
+
+    'GET_PREVIEW': '{0}/GetPreview',
 }
 
 

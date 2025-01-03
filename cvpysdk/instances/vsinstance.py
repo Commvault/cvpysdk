@@ -60,27 +60,8 @@ from importlib import import_module
 from inspect import getmembers, isclass, isabstract
 
 from ..instance import Instance
+from ..constants import VsInstanceType
 from ..exception import SDKException
-
-VSINSTANCE_TYPE = {
-    101: "vmware",
-    102: "hyperv",
-    301: "amazon_web_services",
-    401: "azure",
-    402: "azure_resource_manager",
-    403: "azure_stack",
-    501: "red_hat_virtualization",
-    601: "nutanix_ahv",
-    701: "oraclevm",
-    801: "fusioncompute",
-    901: "openstack",
-    1101: "oracle_cloud",
-    1102: "oracle_cloud_infrastructure",
-    1301: "google_cloud_platform",
-    1401: "alibaba_cloud",
-    1503: "vcloud_director",
-    1501: "kubernetes"
-}
 
 
 class VirtualServerInstance(Instance):
@@ -90,7 +71,7 @@ class VirtualServerInstance(Instance):
         """Decides which instance object needs to be created"""
 
         try:
-            instance_name = VSINSTANCE_TYPE[agent_object.instances._vs_instance_type_dict[instance_id]]
+            instance_name = VsInstanceType.VSINSTANCE_TYPE[agent_object.instances._vs_instance_type_dict[instance_id]]
         except KeyError:
             instance_name = re.sub('[^A-Za-z0-9_]+', '', instance_name.replace(" ", "_"))
 

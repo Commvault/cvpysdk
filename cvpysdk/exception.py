@@ -169,7 +169,12 @@ EXCEPTION_DICT = {
         '119': 'Invalid pruning type. Valid inputs "days_based" or "cycles_based".',
         '120': 'Invalid days/cycles value. Please provide an integer value greater than 0.',
         '121': 'IndexServer value should be a client object',
-        '122': 'In-Place restore is not supported with multiple source paths'
+        '122': 'In-Place restore is not supported with multiple source paths',
+        '123': 'Metadata not found for the given file/folder',
+        '124': 'Preview is not supported for directories',
+        '125': 'Preview is not supported for empty files',
+        '126': 'Preview is not supported for files with size greater than 20MB',
+        '127': 'Preview not available',
     },
     'Job': {
         '101': 'Incorrect JobId',

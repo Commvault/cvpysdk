@@ -37,6 +37,8 @@ VSALiveSyncStatus       --  Enum to maintain status of the VSA Live sync
 VSAFailOverStatus       --  Enum to maintain Failover status of the VSA Live sync
 
 ApplicationGroup        --  Enum to maintain Application Group Types.
+
+VsInstanceType         --  Class to store VsInstance dict
 """
 
 from enum import Enum, auto
@@ -877,3 +879,25 @@ class OSType(Enum):
     WINDOWS = 1
     UNIX = 2
 
+class VsInstanceType:
+    """Class to store vsinstance dict"""
+
+    VSINSTANCE_TYPE = {
+        101: "vmware",
+        102: "hyperv",
+        301: "amazon_web_services",
+        401: "azure",
+        402: "azure_resource_manager",
+        403: "azure_stack",
+        501: "red_hat_virtualization",
+        601: "nutanix_ahv",
+        701: "oraclevm",
+        801: "fusioncompute",
+        901: "openstack",
+        1101: "oracle_cloud",
+        1102: "oracle_cloud_infrastructure",
+        1301: "google_cloud_platform",
+        1401: "alibaba_cloud",
+        1503: "vcloud_director",
+        1501: "kubernetes"
+    }

@@ -27,11 +27,17 @@ ExchangeSubclient:
 
     __new__()   --  Method to create object based on the backupset name
 
+    _prepare_attachment_json() -- Method to prepare the requestJSON for attachment restore
 
+    _get_attachment() -- Method to get the content of the attachment
+
+    _get_attachment_preview() -- Method to get the preview content of all the attachments in the attachment list
+
+    preview_backedup_file -- Method to get the preview content of the mail
 """
 
 from __future__ import unicode_literals
-
+import re
 from ..client import Client
 from ..subclient import Subclient
 from ..exception import SDKException
@@ -861,3 +867,264 @@ class ExchangeSubclient(Subclient):
             "createNewIndex": False
         }
         return data_json
+
+    def _prepare_attachment_json(self,metadata, attachment_id):
+        """Prepare the JSON for the attachment files with the options provided.
+            Args:
+                metadata    (dict)  --  metadata of the mail
+                attachment_id(str)  --  attachment id of the file
+            Returns:
+                dict - JSON request to pass to the API
+
+        """
+
+        request_json = {
+            "filters": [
+                {
+                    "field": "CLIENT_ID",
+                    "fieldValues": {
+                        "values": [
+                            str(self._get_client_dict(self._client_object)["client"]["clientId"])
+                        ]
+                    }
+                },
+                {
+                    "field": "SUBCLIENT_ID",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["subclient"]["applicationId"])
+                        ]
+                    }
+                },
+                {
+                    "field": "APP_TYPE",
+                    "fieldValues": {
+                        "values": [
+                            "137"
+                        ]
+                    }
+                },
+                {
+                    "field": "CONTENTID",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["browseMetaData"]["indexing"]["objectGUID"])
+                        ]
+                    }
+                },
+                {
+                    "field": "ATTACHMENTID",
+                    "fieldValues": {
+                        "values": [
+                            attachment_id
+                        ]
+                    }
+                },
+                {
+                    "field": "CV_TURBO_GUID",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["browseMetaData"]["indexing"]["objectGUID"])
+                        ]
+                    }
+                },
+                {
+                    "field": "ARCHIVE_FILE_ID",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["archiveFileId"])
+                        ]
+                    }
+                },
+                {
+                    "field": "ARCHIVE_FILE_OFFSET",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["offset"])
+                        ]
+                    }
+                },
+                {
+                    "field": "COMMCELL_ID",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["advConfig"]["browseAdvancedConfigResp"][
+                                    "commcellNumber"])
+                        ]
+                    }
+                },
+                {
+                    "field": "ITEM_SIZE",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["size"])
+                        ]
+                    }
+                }
+            ]
+        }
+        return request_json
+
+    def _get_attachment(self,metadata,attachmentId):
+        """Get the content of the attachment file with the options provided.
+            Args:
+                metadata    (dict)  --  metadata of the mail
+                attachmentId(str)  --  attachment id of the file
+            Returns:
+                str - content of the attachment file (html content)
+        """
+
+        request_json = self._prepare_attachment_json(metadata,attachmentId)
+        self._GET_VARIOUS_PREVIEW = self._services['GET_VARIOUS_PREVIEW']
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._GET_VARIOUS_PREVIEW, request_json)
+
+        if flag:
+            return response.text
+        else:
+            raise SDKException('Subclient', '102', self._update_response_(response.text))
+
+
+    def _get_attachment_preview(self, attachments, metadata):
+        """
+        Get the preview content of all the attachments in the attachment list
+        Args:
+            attachments (list)  --  list of attachments
+            metadata    (dict)  --  metadata of the mail
+
+        Returns:
+            dict - dictionary with attachment name as key and content as value
+
+        """
+        attachments_preview = {}
+        pattern = re.compile(r'attId=([^&]+)')
+        for attachment in attachments:
+            match = pattern.search(attachment['ciPreviewLink']).group(1)
+            attachments_preview[attachment['name']] = self._get_attachment(metadata, match)
+        return attachments_preview
+
+
+    def preview_backedup_file(self, file_path):
+        """Gets the preview content for the subclient.
+
+            Params:
+                file_path (str)  --  path of the file for which preview is needed
+
+            Returns:
+                html   (str)   --  html content of the preview
+
+            Raises:
+                SDKException:
+                    if file is not found
+
+                    if response is empty
+
+                    if response is not success
+        """
+        self._GET_PREVIEW_CONTENT = self._services['GET_PREVIEW']
+        metadata = self._get_preview_metadata(file_path)
+        if metadata is None:
+            raise SDKException('Subclient', '123')
+
+        if metadata["type"] != "File":
+            raise SDKException('Subclient', '124')
+
+        if metadata["size"] == 0:
+            raise SDKException('Subclient', '125')
+
+        if metadata["size"] > 20 * 1024 * 1024:
+            raise SDKException('Subclient', '126')
+        request_json = {
+            "filters": [
+                {
+                    "field": "CLIENT_ID",
+                    "fieldValues": {
+                        "values": [
+                            str(self._get_client_dict(self._client_object)["client"]["clientId"])
+                        ]
+                    }
+                },
+                {
+                    "field": "SUBCLIENT_ID",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["subclient"]["applicationId"])
+                        ]
+                    }
+                },
+                {
+                    "field": "CONTENTID",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["browseMetaData"]["indexing"]["objectGUID"])
+                        ]
+                    }
+                },
+                {
+                    "field": "ARCHIVE_FILE_ID",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["archiveFileId"])
+                        ]
+                    }
+                },
+                {
+                    "field": "ARCHIVE_FILE_OFFSET",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["offset"])
+                        ]
+                    }
+                },
+                {
+                    "field": "COMMCELL_NUMBER",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["advConfig"]["browseAdvancedConfigResp"][
+                                            "commcellNumber"])
+                        ]
+                    }
+                },
+                {
+                    "field": "ITEM_SIZE",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["size"])
+                        ]
+                    }
+                },
+                {
+                    "field": "ITEM_PATH",
+                    "fieldValues": {
+                        "values": [
+                            file_path
+                        ]
+                    }
+                }
+            ]
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._GET_PREVIEW_CONTENT, request_json)
+
+        if flag:
+            if "Preview not available" not in response.text:
+                response =  response.json()
+            else:
+                raise SDKException('Subclient', '127')
+        else:
+            raise SDKException('Subclient', '102', self._update_response_(response.text))
+
+        result = ""
+        attachments = response["attachments"]
+        del response["attachments"]
+        for key in response:
+            result += key + " : " + str(response[key]) + "\n"
+        # If mail has attachments we add the content of the attachments
+        if len (attachments) != 0:
+            attachments_preview = self._get_attachment_preview(attachments, metadata)
+            result += "Attachments:\n"
+            for file in attachments_preview:
+                result += file + " : " + attachments_preview[file] + "\n"
+        return result
+

@@ -158,7 +158,7 @@ from cvpysdk.plan import Plans
 from ..exception import SDKException
 from ..client import Client
 from ..subclient import Subclient
-from ..constants import VSAObjects, HypervisorType
+from ..constants import VSAObjects, HypervisorType, VsInstanceType
 
 
 class VirtualServerSubclient(Subclient):
@@ -167,8 +167,8 @@ class VirtualServerSubclient(Subclient):
 
     def __new__(cls, backupset_object, subclient_name, subclient_id=None):
         """Decides which instance object needs to be created"""
-        instance_name = backupset_object._instance_object.instance_name
-        instance_name = re.sub('[^A-Za-z0-9_]+', '', instance_name.replace(" ", "_"))
+
+        instance_name = VsInstanceType.VSINSTANCE_TYPE[backupset_object._instance_object._vsinstancetype]
 
         try:
             subclient_module = import_module("cvpysdk.subclients.virtualserver.{}".format(instance_name))

@@ -86,6 +86,8 @@ OneDriveSubclient:
 
     get_client_level_stats()                                            --  Returns the client level stats for the client
 
+    preview_backedup_file() -- Get preview content for onedrive subclient
+
 """
 
 from __future__ import unicode_literals
@@ -1794,6 +1796,20 @@ class OneDriveSubclient(CloudAppsSubclient):
 
         return response.json()
 
+    def preview_backedup_file(self, file_path):
+        """Gets the preview content for onedrive subclient.
+            Params:
+                file_path (str) -- file path of the file for which preview content is needed
 
+            Returns:
+                html   (str)   --  html content of the preview
 
+            Raises:
+                SDKException:
+                    if file is not found
 
+                    if response is empty
+
+                    if response is not success
+        """
+        return self._get_preview(file_path)

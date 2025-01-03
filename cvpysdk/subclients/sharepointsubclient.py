@@ -65,6 +65,8 @@ SharepointSubclient:
 
     refresh_license_collection()        --  runs a license collection process
 
+    preview_backedup_file()               --  gets the preview content for the file
+
 SharepointV1Subclient: Derived class from SharepointSuperSubclient Base class, representing a sharepoint v1 subclient,
 and to perform operations on that subclient
 
@@ -1363,6 +1365,22 @@ class SharepointSubclient(SharepointSuperSubclient):
         if not response:
             raise SDKException('Response', '102',
                                self._commcell_object._update_response_(response.text))
+
+    def preview_backedup_file(self, file_path):
+        """Gets the preview content for the subclient.
+
+            Returns:
+                html   (str)   --  html content of the preview
+
+            Raises:
+                SDKException:
+                    if file is not found
+
+                    if response is empty
+
+                    if response is not success
+        """
+        return self._get_preview(file_path)
 
 
 class SharepointV1Subclient(SharepointSuperSubclient):
