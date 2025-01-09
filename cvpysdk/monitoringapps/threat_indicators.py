@@ -82,6 +82,7 @@ class AnomalyType(enum.Enum):
     FILE_TYPE = 32
     THREAT_ANALYSIS = 64
     FILE_DATA = 128
+    EXTENSION_BASED = 512
 
 
 class TAServers():

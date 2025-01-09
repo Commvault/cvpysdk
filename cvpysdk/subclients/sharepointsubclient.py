@@ -1133,6 +1133,8 @@ class SharepointSubclient(SharepointSuperSubclient):
                     "MB\\<tenant-url>/sites/TestSite\Contents\Test Automation List"
                     ]
 
+                 fast_restore_point   (booL)  -- Whether to use fast restore point or not
+                                                 default: False
              Returns:
 
                 Job object
@@ -1151,6 +1153,8 @@ class SharepointSubclient(SharepointSuperSubclient):
 
         """
         paths = kwargs.get('paths', [])
+        fast_restore_point = kwargs.get('fast_restore_point', False)
+
         if self._backupset_object.is_sharepoint_online_instance:
             site_dict, _ = self.browse_for_content(discovery_type=7)
             site_details = {}
@@ -1187,7 +1191,7 @@ class SharepointSubclient(SharepointSuperSubclient):
                 },
                 "restorePointId": "",
                 "restoreType": 1,
-                "useFastRestorePoint": True
+                "useFastRestorePoint": fast_restore_point
             }
 
             return self._process_restore_response(parameter_dict)

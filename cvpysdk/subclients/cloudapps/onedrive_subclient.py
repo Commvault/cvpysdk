@@ -98,8 +98,9 @@ from ...exception import SDKException
 import time
 from ..casubclient import CloudAppsSubclient
 from ...constants import AppIDAType
-from Application.CloudApps import constants
+from .onedrive_constants import OneDriveConstants
 import re
+
 
 class OneDriveSubclient(CloudAppsSubclient):
     """Derived class from CloudAppsSubclient Base class, representing a OneDrive subclient,
@@ -932,11 +933,14 @@ class OneDriveSubclient(CloudAppsSubclient):
 
         return self._process_restore_response(restore_json)
 
-    def in_place_restore_onedrive_syntex(self, users):
+    def in_place_restore_onedrive_syntex(self, users, fast_restore_point=False):
         """ Runs an in-place restore job for specified users on Syntex OneDrive for business client
 
             Args:
-                users (list) :  List of SMTP addresses of users
+                users (list)                    :  List of SMTP addresses of users
+                fast_restore_point   (booL)     : Whether to use fast restore point or not
+                                                  default: False
+
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -986,7 +990,7 @@ class OneDriveSubclient(CloudAppsSubclient):
             },
             "restorePointId": "",
             "restoreType": 1,
-            "useFastRestorePoint": True
+            "useFastRestorePoint": fast_restore_point
         }
 
         return self._process_restore_response(restore_json)
@@ -1296,7 +1300,7 @@ class OneDriveSubclient(CloudAppsSubclient):
                         if the method is called by Onedrive On-Premise Instance
 
         """
-        if not self._backupset_object._instance_object.ca_instance_type.lower() == constants.ONEDRIVE_INSTANCE.lower():
+        if not self._backupset_object._instance_object.ca_instance_type.lower() == OneDriveConstants.INSTANCE.lower():
             raise SDKException('Subclient', '102', 'Method not supported for Onedrive On-Premise Instance')
 
         self._USER_POLICY_ASSOCIATION = self._services['USER_POLICY_ASSOCIATION']
@@ -1374,7 +1378,7 @@ class OneDriveSubclient(CloudAppsSubclient):
                 if the method is called by Onedrive On-Premise Instance
 
         """
-        if not self._backupset_object._instance_object.ca_instance_type.lower() == constants.ONEDRIVE_INSTANCE.lower():
+        if not self._backupset_object._instance_object.ca_instance_type.lower() == OneDriveConstants.INSTANCE.lower():
             raise SDKException('Subclient', '102', 'Method not supported for Onedrive On-Premise Instance')
 
         properties_dict = {}
@@ -1423,7 +1427,7 @@ class OneDriveSubclient(CloudAppsSubclient):
         user_accounts_list = kwargs.get('user_accounts_list', None)
         groups_list = kwargs.get('groups_list', None)
 
-        if not self._backupset_object._instance_object.ca_instance_type.lower() == constants.ONEDRIVE_INSTANCE.lower():
+        if not self._backupset_object._instance_object.ca_instance_type.lower() == OneDriveConstants.INSTANCE.lower():
             raise SDKException('Subclient', '102', 'Method not supported for Onedrive On-Premise Instance')
 
         properties_dict = self._set_properties_to_update_site_association(operation)
@@ -1665,7 +1669,7 @@ class OneDriveSubclient(CloudAppsSubclient):
 
         """
 
-        if not self._backupset_object._instance_object.ca_instance_type.lower() == constants.ONEDRIVE_INSTANCE.lower():
+        if not self._backupset_object._instance_object.ca_instance_type.lower() == OneDriveConstants.INSTANCE.lower():
             raise SDKException('Subclient', '102', 'Method not supported for Onedrive On-Premise Instance')
 
         # Get Instance, client, Subclient Ids
@@ -1721,7 +1725,7 @@ class OneDriveSubclient(CloudAppsSubclient):
             subclient_id(int)             : subclient id of the client
         """
         request_json = {
-            "appType": constants.ONEDRIVE_INDEX_APPTYPE_ID,
+            "appType": OneDriveConstants.INDEX_APP_TYPE,
             "subclientId": int(subclient_id)
         }
         refresh_retention = self._services['OFFICE365_PROCESS_INDEX_RETENTION_RULES']
@@ -1748,7 +1752,7 @@ class OneDriveSubclient(CloudAppsSubclient):
 
         """
         request_json = {
-            "appType": constants.ONEDRIVE_INDEX_APPTYPE_ID,
+            "appType": OneDriveConstants.INDEX_APP_TYPE,
             "oneDriveIdxStatsReq":
                 [{
                     "subclientId": int(subclient_id), "type": 0}]

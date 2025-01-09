@@ -195,6 +195,8 @@ Plan Attributes
 
     **content_indexing**        --  returns the status of content indexing of O365 plan
 
+    **all_copies**              --  returns all the copies for a plan
+
 """
 from __future__ import unicode_literals
 
@@ -1919,6 +1921,7 @@ class Plan(object):
             'subclientPolicyIds': []
         }
         self._storage_copies = {}
+        self._all_copies = None
         self._user_group = None
         self._client_group = None
         self._override_entities = None
@@ -2010,6 +2013,7 @@ class Plan(object):
 
                 if 'storage' in self._plan_properties:
                     if 'copy' in self._plan_properties['storage']:
+                        self._all_copies = self._plan_properties.get('storage',{}).get('copy',[])
                         for copy in self._plan_properties['storage']['copy']:
                             if 'useGlobalPolicy' in copy:
                                 storage_pool_name = copy['useGlobalPolicy']['storagePolicyName'].lower()
@@ -3283,6 +3287,16 @@ class Plan(object):
             self.__set_storage_policy()
 
         return self._child_policies.get('storagePolicy')
+
+    @property
+    def all_copies(self) -> list:
+        """
+        Treats the plan's all storage copies as a read-only attribute
+
+        Returns:
+            list -- list of all the copies
+        """
+        return self._all_copies
 
     @property
     def storage_copies(self):
