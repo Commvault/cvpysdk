@@ -50,6 +50,7 @@ MSDynamics365Subclient:
     _run_backup()                           --  Method to run backup for the content of a Dynamics 365 subclient
     backup_tables()                         --  Method to run backup for the specified tables of a Dynamics 365 subclient
     backup_environments()                   --  Method to run backup for the specified environments of a Dynamics 365 subclient
+    launch_client_level_full_backup()     --  Method to run client level full backup for the content of a Dynamics 365 subclient
     _restore_content_json()                 --  Restore JSON for restoring content for a Dynamics 365 subclient
     _get_restore_item_path()                --  Get the complete path of the content for running a restore job
     _prepare_restore_json()                 --  Method to prepare JSON/ Python dict for  in- place restore for the content specified.
@@ -349,16 +350,19 @@ class MSDynamics365Subclient(O365AppsSubclient):
             Returns:
                 set_content_association_json    (dict)--    Content Association JSON
         """
-        set_content_association_json = {"LaunchAutoDiscovery": is_environment,
-                                        "cloudAppAssociation": {
+        set_content_association_json = {
+                                            "LaunchAutoDiscovery": is_environment,
+                                            "cloudAppAssociation": {
                                             "accountStatus": 0,
                                             "cloudAppDiscoverinfo": {
                                                 "userAccounts": [
                                                 ],
                                                 "groups": [],
                                                 "discoverByType": 14 if is_environment is False else 15
+                                            },
+                                            "subclientEntity": self._subClientEntity
                                             }
-                                            , "subclientEntity": self._subClientEntity}}
+                                        }
 
         return set_content_association_json
 
@@ -408,22 +412,29 @@ class MSDynamics365Subclient(O365AppsSubclient):
         """
         tables_info: list = list()
         _discovered_tables = self.discovered_tables
+        tables_dict = {}
 
         if not bool(_discovered_tables):
             raise SDKException('Subclient', '101',
                                "Discovered Tables is Empty.")
 
-        for _table in _discovered_tables:
-            _table_name, _parent_env_name = _table["displayName"], _table["ParentWebGuid"]
+        for table in _discovered_tables:
+            if table["ParentWebGuid"] in tables_dict:
+                tables_dict[table["ParentWebGuid"]].update({table["displayName"]: table})
+            else:
+                tables_dict.update({table["ParentWebGuid"]: {}})
 
-            try:
-                if (_table_name, _parent_env_name) in tables_list:
-                    _table_assoc_info = _table
-                    _table_assoc_info["user.userGUID"] = _table.get("user").get("userGUID")
-                    tables_info.append(_table_assoc_info)
-            except TypeError:
-                raise SDKException('Subclient', '101',
-                                   "For Associating tables, content list should be a list of tuples")
+        for table in tables_list:
+            table_name, env_name = table
+            if env_name in tables_dict:
+                if table_name in tables_dict[env_name]:
+                    tables_info.append(tables_dict[env_name][table_name])
+                else:
+                    raise SDKException("Subclient", "101",
+                                       "Table {} not found in the environment {}".format(table_name, env_name))
+            else:
+                raise SDKException("Subclient", "101",
+                                   "Environment {} not found in the list of discovered environments".format(env_name))
 
         if len(tables_info) != len(tables_list):
             raise SDKException("Subclient", "101", "All of the input tables were in the list of discovered tables")
@@ -524,7 +535,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
         _env_association_json["cloudAppAssociation"]["cloudAppDiscoverinfo"]["userAccounts"] = environments_info
         self._set_content_association(content_json=_env_association_json)
 
-    def _json_for_backup_task(self, content_list: list, is_environment: bool = False):
+    def _json_for_backup_task(self, content_list: list, is_environment: bool = False, force_full_backup: bool = False):
         """
             Method to create the association JSON for backing up content for a Dynamics 365 subclient
 
@@ -539,19 +550,25 @@ class MSDynamics365Subclient(O365AppsSubclient):
                         Each list element should be a string of the name of the environment
 
                 is_environment  (bool)--    Content passed to be backed up is environment type content or table type
+                force_full_backup (bool) -- If True, will force a full backup of the content
 
             Returns:
                 _backup_task_json     (list)--    JSON for backing up the content
         """
         _backup_task_json = self._backup_json('Full', False, '')
-        _sub_client_content_json = self._backup_content_json(content_list=content_list, is_environment=is_environment)
-
         backup_options = {
             'backupLevel': 2,  # Incremental
             'cloudAppOptions': {
-                'userAccounts': _sub_client_content_json
             }
         }
+
+        if len(content_list) > 0:
+            _sub_client_content_json = self._backup_content_json(content_list=content_list, is_environment=is_environment)
+            backup_options['cloudAppOptions']['userAccounts'] = _sub_client_content_json
+
+        if force_full_backup is True:
+            backup_options['cloudAppOptions']['forceFullBackup'] = True
+
         _backup_task_json['taskInfo']['subTasks'][0]['options']['backupOpts'] = backup_options
         return _backup_task_json
 
@@ -595,7 +612,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
 
         return _bkp_content_json
 
-    def _run_backup(self, backup_content: list, is_environment: bool = False):
+    def _run_backup(self, backup_content: list, is_environment: bool = False, force_full_backup: bool = False):
         """
             Method to run backup for the content of a Dynamics 365 subclient
 
@@ -614,13 +631,13 @@ class MSDynamics365Subclient(O365AppsSubclient):
             Returns:
                 backup_job          (Job)--     CVPySDK.Job class instance for that particular backup job
         """
-        _backup_json = self._json_for_backup_task(content_list=backup_content, is_environment=is_environment)
+        _backup_json = self._json_for_backup_task(content_list=backup_content, is_environment=is_environment, force_full_backup=force_full_backup)
         backup_endpoint = self._services['CREATE_TASK']
 
         flag, response = self._commcell_object._cvpysdk_object.make_request("POST", backup_endpoint, _backup_json)
         return self._process_backup_response(flag, response)
 
-    def backup_tables(self, tables_list: list):
+    def backup_tables(self, tables_list: list, force_full_backup: bool = False):
         """
             Method to run backup for the specified tables of a Dynamics 365 subclient
 
@@ -637,7 +654,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
             Returns:
                 backup_job          (Job)--     CVPySDK.Job class instance for that particular backup job
         """
-        return self._run_backup(backup_content=tables_list, is_environment=False)
+        return self._run_backup(backup_content=tables_list, is_environment=False, force_full_backup=force_full_backup)
 
     def backup_environments(self, environments_list: list):
         """
@@ -654,6 +671,15 @@ class MSDynamics365Subclient(O365AppsSubclient):
                 backup_job          (Job)--     CVPySDK.Job class instance for that particular backup job
         """
         return self._run_backup(backup_content=environments_list, is_environment=True)
+
+    def launch_client_level_full_backup(self):
+        """
+            Method to run full backup for the Dynamics 365 subclient
+
+            Returns:
+                backup_job          (Job)--     CVPySDK.Job class instance for that particular backup job
+        """
+        return self._run_backup(backup_content=[], is_environment=False, force_full_backup=True)
 
     def _restore_content_json(self):
         """
