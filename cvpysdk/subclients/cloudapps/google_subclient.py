@@ -41,27 +41,35 @@ GoogleSubclient:
 
     add_user()                          --  adds user to the subclient
 
-    add_users_v2()                      --  Adds user to OneDrive for Business Client
+    add_users()                      --  Adds user to OneDrive for Business Client
+
+    add_shared_drives()              --  Adds given SharedDrives to client
 
     search_for_user()                   --  Searches for a specific user's details from discovered list
 
-    disk_restore_v2()                   --  Runs disk restore of selected users for OneDrive for Business Client
+    disk_restore()                   --  Runs disk restore of selected users for OneDrive for Business Client
 
-    out_of_place_restore_v2()           --  Runs out-of-place restore of selected users for OneDrive for Business Client
+    out_of_place_restore()           --  Runs out-of-place restore of selected users for OneDrive for Business Client
 
-    in_place_restore_v2()               --  Runs in-place restore of selected users for OneDrive for Business Client
+    in_place_restore()               --  Runs in-place restore of selected users for OneDrive for Business Client
 
     _get_user_guids()                   --  Retrieve GUIDs for users specified
 
     process_index_retention_rules()     --  Makes API call to process index retention rules
 
-    verify_user_discovery_v2()          --  Makes API call to get discovered users of Google client
+    verify_user_discovery()          --  Makes API call to get discovered users of Google client
 
-    verify_shareddrive_discovery_v2()   --  Makes API call to get discovered shared drives of GDrive client.
+    verify_shareddrive_discovery()   --  Makes API call to get discovered shared drives of GDrive client.
 
     run_user_level_backup()             --  Runs Users level backup for google client
 
     run_client_level_backup()           --  Runs client level backup for Google Client
+    
+    browse_content()                    --  Fetches discovered content based on discovery type
+    
+    verify_groups_discovery()           --  Verifies that groups discovery is complete
+    
+    search_for_shareddrive()            --  Searches for a specific shared drive details from discovered list
 
     _association_users_json()           --  Constructs json for associated users to backup
 
@@ -455,7 +463,7 @@ class GoogleSubclient(CloudAppsSubclient):
         """Returns the users in subclient"""
         return self._get_subclient_users()
 
-    def add_users_v2(self, users, plan_name):
+    def add_users(self, users, plan_name):
         """ Adds given OneDrive users to v2 client
 
             Args:
@@ -525,8 +533,144 @@ class GoogleSubclient(CloudAppsSubclient):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def verify_user_discovery_v2(self):
-        """ Verifies that discovery is complete
+    def add_shared_drives(self, shared_drives, plan_name):
+        """ Adds given SharedDrives to client
+
+            Args:
+
+                shared_drives (list) : List of SharedDrives
+
+                plan_name (str) : Google Workspace plan name to associate with users
+
+            Raises:
+
+                SDKException:
+
+                    if response is not success
+
+                    if response is returned with errors
+        """
+
+        if not (isinstance(shared_drives, list) and isinstance(plan_name, str)):
+            raise SDKException('Subclient', '101')
+
+        # Get GoogleWorkspace plan
+        plan_name = plan_name.strip()
+        google_plan_object = self._commcell_object.plans.get(plan_name)
+        google_plan_id = int(google_plan_object.plan_id)
+
+        # Get client ID
+        client_id = int(self._client_object.client_id)
+
+        drives = []
+
+        for drive in shared_drives:
+            response = self.search_for_shareddrive(drive)
+            response['user'] = {}
+            response['displayName'] = response['folderTitle']
+            response['user']['userGUID'] = response['folderId']
+            response['isAutoDiscoveredUser'] = False
+            drives.append(response)
+
+        request_json = {
+            "LaunchAutoDiscovery": False,
+            "cloudAppAssociation": {
+                "accountStatus": 0,
+                "subclientEntity": {
+                    "subclientId": int(self.subclient_id),
+                    "clientId": client_id,
+                    "instanceId": int(self._instance_object.instance_id),
+                    "applicationId": AppIDAType.CLOUD_APP.value
+                },
+                "cloudAppDiscoverinfo": {
+                    "discoverByType": 32,
+                    "userAccounts": drives
+                },
+                "plan": {
+                    "planId": google_plan_id
+                }
+            }
+        }
+
+        user_associations = self._services['GDRIVE_UPDATE_USERS']
+        flag, response = self._cvpysdk_object.make_request('POST', user_associations, request_json)
+
+        if flag:
+            if response.json() and 'errorCode' in response.json():
+                error_code = response.json().get('errorCode')
+                if error_code != 0:
+                    error_message = response.json().get('errorMessage')
+                    output_string = f'Failed to add user\nError: {error_message}'
+                    raise SDKException('Subclient', '102', output_string)
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def browse_content(self, discovery_type):
+        """ Fetches discovered content based on discovery type
+            Args:
+                discovery_type: Type of content to be discovered.
+                    discovery_type=8 - Users
+                    discovery_type=25 - Shared Drives
+                    discovery_type=5 - Groups
+
+            Returns:
+                    records (list):  content fetched, [] if no content fetched
+
+            Raises:
+
+                 SDKException:
+
+                        if response is not success
+        """
+        # Wait for sometime unitl disco discovery completes before checking actual content.
+        attempt = 0
+        while attempt < 5:
+            flag, response = self._cvpysdk_object.make_request('GET', (
+                        self._services['GOOGLE_DISCOVERY_OVERVIEW'] % (self._backupset_object.backupset_id)))
+            if response.json()['office365ClientOverview']['summary']['discoverState']['discoveryProgress'] == 100:
+                break
+            attempt += 1
+            time.sleep(10)
+
+        browse_content = (self._services['CLOUD_DISCOVERY'] % (self._instance_object.instance_id,
+                                                               self._client_object.client_id,
+                                                               AppIDAType.CLOUD_APP.value))
+
+        # determines the number of accounts to return in response
+        page_size = 500
+        offset = 0
+
+        records = []
+        while True:
+            discover_query = f'{browse_content}&pageSize={page_size}&offset={offset}&eDiscoverType={discovery_type}'
+            flag, response = self._cvpysdk_object.make_request('GET', discover_query)
+            offset += 1
+            if flag:
+                if response and response.json():
+                    if discovery_type==8:
+                        if 'userAccounts' in response.json():
+                            curr_records = response.json().get('userAccounts', [])
+                            records.extend(curr_records)
+                            if len(curr_records) < page_size:
+                                break
+                    elif discovery_type==25:
+                        if 'folders' in response.json():
+                            curr_records = response.json().get('folders', [])
+                            records.extend(curr_records)
+                            if len(curr_records) < page_size:
+                                break
+                    elif discovery_type == 5:
+                        if 'groups' in response.json():
+                            curr_groups = response.json().get('groups', [])
+                            records.extend(curr_groups)
+                            if len(curr_groups) < page_size:
+                                break
+            else:
+                raise SDKException('Response', '101', self._update_response_(response.text))
+        return records
+
+    def verify_groups_discovery(self):
+        """ Verifies that groups discovery is complete
 
             Returns:
 
@@ -544,7 +688,6 @@ class GoogleSubclient(CloudAppsSubclient):
 
                         if response received does not contain pagining info
         """
-
         browse_content = (self._services['CLOUD_DISCOVERY'] % (self._instance_object.instance_id,
                                                                self._client_object.client_id,
                                                                AppIDAType.CLOUD_APP.value))
@@ -553,26 +696,24 @@ class GoogleSubclient(CloudAppsSubclient):
         page_size = 500
         offset = 0
 
-        user_accounts = []
+        groups = []
         while True:
-            discover_query = f'{browse_content}&pageSize={page_size}&offset={offset}'
+            discover_query = f'{browse_content}&pageSize={page_size}&offset={offset}&eDiscoverType=5'
             flag, response = self._cvpysdk_object.make_request('GET', discover_query)
             offset += 1
 
             if flag:
                 if response and response.json():
-                    if 'pagingInfo' in response.json():
-                        no_of_records = response.json().get('pagingInfo', {}).get('totalRecords', -1)
-                        if no_of_records == 0:
+                    if 'groups' in response.json():
+                        curr_groups = response.json().get('groups', [])
+                        groups.extend(curr_groups)
+                        if len(curr_groups) < page_size:
                             break
-                        user_accounts.extend(response.json().get('userAccounts', []))
             else:
                 raise SDKException('Response', '101', self._update_response_(response.text))
-        if len(user_accounts):
-            return True, user_accounts
-        return False, user_accounts
+        return groups
 
-    def verify_shareddrive_discovery_v2(self):
+    def verify_shareddrive_discovery(self):
         """ Verifies all shared drives discovery completed.
 
                     Returns:
@@ -597,7 +738,7 @@ class GoogleSubclient(CloudAppsSubclient):
                                                                AppIDAType.CLOUD_APP.value))
 
         # determines the number of accounts to return in response
-        page_size = 1
+        page_size = 500
         discover_query = f'{browse_content}&pageSize={page_size}&eDiscoverType=25' # for shared drive discovery
 
         flag, response = self._cvpysdk_object.make_request('GET', discover_query)
@@ -794,7 +935,64 @@ class GoogleSubclient(CloudAppsSubclient):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def disk_restore_v2(self, users, destination_client, destination_path, skip_file_permissions=False):
+    def search_for_shareddrive(self, drive):
+        """ Searches for a specific shared drive details from discovered list
+
+            Args:
+                drive (str) : Shared Drive iD
+
+            Returns:
+
+                drive (list): shared drive details' list fetched from discovered content
+                              eg: {
+                                        'folderTitle': '',
+                                        'folderId':'',
+                                        'user': {
+                                             'userGUID': 'UserGuid'
+                                        }
+                                 }
+
+            Raises:
+
+                SDKException:
+
+                    if discovery is not complete
+
+                    if invalid SMTP address is passed
+
+                    if response is empty
+
+                    if response is not success
+        """
+        browse_content = (self._services['CLOUD_DISCOVERY'] % (self._instance_object.instance_id,
+                                                               self._client_object.client_id,
+                                                               AppIDAType.CLOUD_APP.value))
+
+        search_query = f'{browse_content}&search={drive}&eDiscoverType=25'
+
+        flag, response = self._cvpysdk_object.make_request('GET', search_query)
+
+        if flag:
+            if response and response.json():
+                if 'folders' in response.json():
+                    folders = response.json().get('folders', [])
+                    if len(folders) == 0:
+                        error_string = 'Either discovery is not complete or Shared Drive is not available in discovered data'
+                        raise SDKException('Subclient', '102', error_string)
+                    for folder in folders:
+                        if folder['folderTitle'] == drive:
+                            return folder
+                    else:
+                        error_string = 'Shared Drive is not available in discovered data'
+                        raise SDKException('Subclient', '102', error_string)
+                else:
+                    raise SDKException('Response', '102', 'Check if the Shared Drive provided is valid')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def disk_restore(self, users, destination_client, destination_path, skip_file_permissions=False):
         """ Runs an out-of-place restore job for specified users on OneDrive for business client
             By default restore skips the files already present in destination
 
@@ -818,7 +1016,7 @@ class GoogleSubclient(CloudAppsSubclient):
         restore_json = self._instance_object._prepare_restore_json_v2(source_user_list, **kwargs)
         return self._process_restore_response(restore_json)
 
-    def out_of_place_restore_v2(self, users, destination_path, **kwargs):
+    def out_of_place_restore(self, users, destination_path, **kwargs):
         """ Runs an out-of-place restore job for specified users on OneDrive for business client
             By default restore skips the files already present in destination
 
@@ -857,7 +1055,7 @@ class GoogleSubclient(CloudAppsSubclient):
         restore_json = self._instance_object._prepare_restore_json_v2(source_user_list, **kwargs)
         return self._process_restore_response(restore_json)
 
-    def in_place_restore_v2(self, users, **kwargs):
+    def in_place_restore(self, users, **kwargs):
         """ Runs an in-place restore job for specified users on OneDrive for business client
             By default restore skips the files already present in destination
 
@@ -908,11 +1106,18 @@ class GoogleSubclient(CloudAppsSubclient):
         """
         user_guid_list = []
         for user_id in users:
-            user = self.search_for_user(user_id)
-            if len(user)!=0 and user.get('user', {}).get('userGUID') is not None:
-                user_guid_list.append(user.get('user').get('userGUID'))
-            else:
-                raise SDKException('Subclient', '102', 'User details not found in discovered data')
+            try:
+                user = self.search_for_user(user_id)
+                if len(user) != 0 and user.get('user', {}).get('userGUID') is not None:
+                    user_guid_list.append(user.get('user').get('userGUID'))
+                else:
+                    raise SDKException('Subclient', '102', 'User details not found in discovered data')
+            except SDKException:
+                user = self.search_for_shareddrive(user_id)
+                if len(user) != 0 and user.get('folderId') is not None:
+                    user_guid_list.append(user.get('folderId'))
+                else:
+                    raise SDKException('Subclient', '102', 'User details not found in discovered data')
         return  user_guid_list
 
     def process_index_retention_rules(self,index_app_type_id,index_server_client_name):

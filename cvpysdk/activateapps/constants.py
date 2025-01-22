@@ -38,6 +38,8 @@ RequestConstants                -       Maintains constants for request manager 
 
 ComplianceConstants             -       Maintains constants for Compliance Search in Activate
 
+ClientType                      -       Enum class for datasource client type
+
 """
 import copy
 from enum import Enum
@@ -148,6 +150,22 @@ class EdiscoveryConstants:
         MULTI_USER_ACCESS = 4
         NO_RETENTION = 5
         IS_PROTECTED = 6
+
+    class ClientType(Enum):
+        """Different Type of SDG Datasource"""
+        FILE_SYSTEM = 5
+        EXCHANGE = 17
+        ONEDRIVE = 35
+
+    EXCHANGE_AGENT = "exchange mailbox"
+    EXCHANGE_INSTANCE = "defaultinstancename"
+    EXCHANGE_BACKUPSET = "user mailbox"
+    EXCHANGE_SUBCLIENT = "usermailbox"
+
+    ONEDRIVE_AGENT = 'Cloud Apps'
+    ONEDRIVE_INSTANCE = 'OneDrive'
+    ONEDRIVE_BACKUPSET = 'defaultbackupset'
+    ONEDRIVE_SUBCLIENT = 'default'
 
     FSO_SERVERS = "FsoServers"
     FSO_SERVER_GROUPS = "FsoServerGroups"
@@ -378,6 +396,18 @@ class EdiscoveryConstants:
         ]
     }
 
+    ADD_O365_SDG_BACKED_UP_DS_REQ = {
+        "clientId": 0,
+        "followScheduleCrawl": False,
+        "datasources": [
+            {
+                "datasourceName": "",
+                "datasourceType": 0,
+                "properties": []
+            }
+        ]
+    }
+
     FS_DEFAULT_EXPORT_FIELDS = {'FileName', 'Url', 'Size', 'OwnerName', 'CreatedTime', 'AccessTime', 'ModifiedTime'}
     EXPORT_DOWNLOAD_REQ = {
         "appTypeId": 200,
@@ -419,6 +449,7 @@ class EdiscoveryConstants:
         31: 'googledrive',
         32: 'gmail',
         34: 'onedriveindex',
+        35: 'multinodefederated',
         37: 'dynamic365'
     }
 
@@ -857,6 +888,7 @@ class TargetApps(Enum):
     FSO = 1
     CASE_MGR = 4
     FS = 8
+    RA = 128
 
 
 class TrainingStatus(Enum):

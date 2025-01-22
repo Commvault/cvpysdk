@@ -56,6 +56,8 @@ Project:
 
      add_fs_data_source()               --  adds file system data source to project
 
+     add_o365_sdg_data_source()         --  Adds Office365 SDG data source to a project
+
      delete_schedule()                  --  deletes schedule for this project
 
      add_schedule()                     --  creates schedule for this project
@@ -515,6 +517,43 @@ class Project():
             inventory_name=inventory_name,
             plan_name=plan_name,
             source_type=source_type,
+            **kwargs)
+
+    def add_o365_sdg_data_source(self, server_name, data_source_name,
+                                 datasource_type=EdiscoveryConstants.ClientType.ONEDRIVE, **kwargs):
+        """Adds Office365 SDG data source to a project
+
+                Args:
+                    server_name         (str)       --  Server name which needs to be added
+
+                    data_source_name    (str)       --  Name for data source
+
+                    datasource_type     (str)       --  Type of O365 SDG datasource (Exchange/OneDrive)
+
+                Kwargs Arguments:
+
+                    country_name        (str)       --  country name where server is located (default: USA)
+
+                    country_code        (str)       --  Country code (ISO 3166 2-letter code)
+
+                    users               (list)      --  List of users/mailboxes to be added. If empty, all users would be added
+
+                Returns:
+
+                    obj     --  Instance of EdiscoveryDataSource class
+
+                Raises:
+
+                      SDKException:
+
+                            if plan doesn't exists
+        """
+        plan_name = self.project_details['plan']['planName']
+        return self._ediscovery_data_srcs_obj.add_o365_sdg_data_source(
+            server_name=server_name,
+            data_source_name=data_source_name,
+            plan_name=plan_name,
+            datasource_type=datasource_type,
             **kwargs)
 
     @property

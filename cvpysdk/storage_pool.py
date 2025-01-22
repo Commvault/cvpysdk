@@ -57,8 +57,6 @@ StoragePools
     add()                       --  Adds a storage pool, according to given input and returns
                                     StoragePool object
 
-    add_azure_storage_pool()    --  Adds new storage pool with provided name to the commcell
-
     delete()                    --  deletes the specified storage pool
 
     refresh()                   --  refresh the list of storage pools associated with the commcell
@@ -709,91 +707,6 @@ class StoragePools:
         self.refresh()
         self._commcell_object.disk_libraries.refresh()
         return self.get(storage_pool_name)
-
-    def add_azure_storage_pool(self, storage_pool_name, container_name, media_agents, dedup_paths, **kwargs):
-        """ Adds new storage pool with provided name to the commcell
-                 Args:
-                     storage_pool_name (str)     --  name of the storage pool to be created
-
-                     container_name (str)        --  container name to be used with storage pool
-
-                     media_agents (list)         --  list of media agent names to be used for storage pool
-
-                     dedup_paths (list)          --  list of paths for storing deduplication data
-
-                     **kwargs (dict)             --  dict of keyword arguments as follows
-                         username        (str)   --  azure storage credential username
-                         password        (str)   --  azure storage credential password
-                         credential_name (str)   --  Credential name to be used
-
-                 Returns:
-                     Azure storage policy object
-
-                 Raises:
-                     SDKException:
-                         If invalid type arguments are passed
-                         If Storage Pool with given name already exist
-                         Response was not success.
-                         Response was empty.
-
-        """
-        username = kwargs.get("username", "")
-        password = kwargs.get("password", "")
-        credential_name = kwargs.get("credential_name", "")
-        if not (isinstance(storage_pool_name, str) and isinstance(container_name, str)
-                and isinstance(media_agents, list) and isinstance(dedup_paths, list)
-                and isinstance(username, str) and isinstance(password, str)
-                and isinstance(credential_name, str)):
-            raise SDKException('StoragePool', '101')
-        storage_pools = self._commcell_object.storage_pools
-        if storage_pools.has_storage_pool(storage_pool_name):
-            raise SDKException('StoragePool', '103')
-        request_json = copy.deepcopy(StoragePoolConstants.AZURE_STORAGE_REQ_JSON)
-        request_json["storagePolicyName"] = storage_pool_name
-        storage_policy_info = request_json["storagePolicyCopyInfo"]
-        storage_ma = self._commcell_object.media_agents.get(media_agents[0])
-        storage_policy_info["library"]["libraryName"] = container_name
-        storage_policy_info["mediaAgent"]["mediaAgentId"] = int(storage_ma.media_agent_id)
-        storage_policy_info["mediaAgent"]["mediaAgentName"] = storage_ma.media_agent_name
-        ddb_info = []
-        for (ma, ddb_path) in zip(media_agents, dedup_paths):
-            ma_ddb = copy.deepcopy(StoragePoolConstants.MA_INFO_LIST)
-            ma_info = self._commcell_object.media_agents.get(ma)
-            ma_ddb["mediaAgent"]["mediaAgentId"] = int(ma_info.media_agent_id)
-            ma_ddb["mediaAgent"]["mediaAgentName"] = ma_info.media_agent_name
-            ma_ddb["subStoreList"][0]["accessPath"]["path"] = ddb_path
-            ddb_info.append(ma_ddb)
-        storage_policy_info["DDBPartitionInfo"]["maInfoList"] = ddb_info
-        storage_info = request_json["storage"][0]
-        storage_info["path"] = container_name
-        storage_info["mediaAgent"]["mediaAgentId"] = int(storage_ma.media_agent_id)
-        storage_info["mediaAgent"]["mediaAgentName"] = storage_ma.media_agent_name
-        storage_info["credentials"]["userName"] = username
-        storage_info["credentials"]["password"] = password
-        credential = self._commcell_object.credentials.get(credential_name)
-        storage_info["savedCredential"]["credentialId"] = credential.credential_id
-        storage_info["savedCredential"]["credentialName"] = credential.credential_name
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._add_storage_pool_api, request_json
-        )
-
-        if flag:
-            if response.json():
-                error_code = response.json().get('error', {}).get('errorCode', 0)
-                if int(error_code) != 0:
-                    error_message = response.json()['error']['errorMessage']
-                    o_str = 'Failed to create storage policy\nError: "{0}"'
-
-                    raise SDKException('StoragePool', '102', o_str.format(error_message))
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
-        self.refresh()
-        return self.get(request_json["storagePolicyName"])
-
 
     def delete(self, storage_pool_name):
         """deletes the specified storage pool.

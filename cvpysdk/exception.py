@@ -353,6 +353,7 @@ EXCEPTION_DICT = {
         '118': 'Failed to get Ediscovery project properties',
         '119': 'Failed to add Ediscovery client',
         '120': 'Failed to delete Ediscovery client',
+        '121': 'Failed to get datasource client properties'
     },
     'FileStorageOptimization': {
         '101': 'Data type of the input(s) is not valid',

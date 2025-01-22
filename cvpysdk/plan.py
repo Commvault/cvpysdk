@@ -1692,8 +1692,7 @@ class Plans(object):
 
         """
         extraction_policy_list = []
-        if not (isinstance(plan_name, str) and
-                isinstance(index_server, str)):
+        if not (isinstance(plan_name, str)):
             raise SDKException('Plan', '101')
         request_json = self._get_plan_template("DataClassification", "MSP")
         request_json['plan']['summary']['description'] = "DC Plan Created from CvPySDK."
@@ -1704,23 +1703,25 @@ class Plans(object):
                 target_app.value
             ]
         }
-        index_server_client_id = self._commcell_object.index_servers.get(index_server).index_server_client_id
-        request_json['plan']['eDiscoveryInfo']['analyticsIndexServer'] = {
-            'clientId': index_server_client_id
-        }
+        if index_server is not None:
+            # change to support SaaS and unification project
+            index_server_client_id = self._commcell_object.index_servers.get(index_server).index_server_client_id
+            request_json['plan']['eDiscoveryInfo']['analyticsIndexServer'] = {
+                'clientId': index_server_client_id
+            }
         if target_app.value == TargetApps.FSO.value:
             del request_json['plan']['ciPolicy']['detail']['ciPolicy']['filters']
             request_json['plan']['ciPolicy']['detail']['ciPolicy']['opType'] = PlanConstants.INDEXING_ONLY_METADATA
         elif target_app.value == TargetApps.SDG.value:
-            if 'content_analyzer' not in kwargs:
-                raise SDKException('Plan', '103')
-            ca_list = []
-            for ca in kwargs.get('content_analyzer', []):
-                ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
-                ca_list.append({
-                    'clientId': ca_client_id
-                })
-            request_json['plan']['eDiscoveryInfo']['contentAnalyzerClient'] = ca_list
+            if 'content_analyzer' in kwargs:
+                # change to support SaaS and unification project
+                ca_list = []
+                for ca in kwargs.get('content_analyzer', []):
+                    ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
+                    ca_list.append({
+                        'clientId': ca_client_id
+                    })
+                request_json['plan']['eDiscoveryInfo']['contentAnalyzerClient'] = ca_list
             if 'entity_list' not in kwargs and 'classifier_list' not in kwargs:
                 raise SDKException('Plan', '104')
             activate_obj = self._commcell_object.activate
@@ -1748,9 +1749,8 @@ class Plans(object):
 
                 }
             }
-            if 'index_content' in kwargs:
-                request_json['plan']['ciPolicy']['detail']['ciPolicy']['opType'] = kwargs.get(
-                    'index_content', PlanConstants.INDEXING_METADATA_AND_CONTENT)
+            request_json['plan']['ciPolicy']['detail']['ciPolicy']['opType'] = kwargs.get(
+                'index_content', PlanConstants.INDEXING_ONLY_METADATA)
             if 'enable_ocr' in kwargs:
                 request_json['plan']['ciPolicy']['detail']['ciPolicy']['enableImageExtraction'] = kwargs.get(
                     'enable_ocr', False)
@@ -3849,7 +3849,7 @@ class Plan(object):
                         'excludePaths'] = kwargs.get('exclude_path', PlanConstants.DEFAULT_EXCLUDE_LIST)
                 if 'index_content' in kwargs:
                     request_json['ciPolicyInfo']['ciPolicy']['detail']['ciPolicy']['opType'] = kwargs.get(
-                        'index_content', PlanConstants.INDEXING_METADATA_AND_CONTENT)
+                        'index_content', PlanConstants.INDEXING_ONLY_METADATA)
             elif TargetApps.FSO.value in self.content_indexing_props['targetApps']:
                 # currently we dont have any thing to update in DC plan for FSO app so throw exception
                 raise SDKException('Plan', '102', 'No attributes to Edit for DC Plan with TargetApps as : FSO')

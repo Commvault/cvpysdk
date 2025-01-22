@@ -2469,6 +2469,7 @@ class Commcell(object):
                       username=None,
                       password=None,
                       sync_cache=True,
+                      sync_cache_list=None,
                       schedule_pattern=None):
         """copies media from the specified location on the commcell
 
@@ -2482,6 +2483,9 @@ class Commcell(object):
 
                         sync_cache (bool)              --  True if download and sync
                                                            False only download
+
+                        sync_cache_list (list)         --  list of names of remote caches to sync
+                                                   use None to sync all caches
 
                         schedule_pattern(dict)         --  pattern for schedule task
 
@@ -2519,6 +2523,7 @@ class Commcell(object):
             username=username,
             password=password,
             sync_cache=sync_cache,
+            sync_cache_list=sync_cache_list,
             schedule_pattern=schedule_pattern
         )
 
