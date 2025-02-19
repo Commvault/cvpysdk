@@ -230,7 +230,7 @@ class EdiscoveryConstants:
         "clientInfo": {
             "clientType": 19,
             "edgeDrivePseudoClientProperties": {
-                "systemDriveType": 6,
+                "systemDriveType": 7,
                 "edgeDriveAssociations": {},
                 "eDiscoveryInfo": {
                     "eDiscoverySubType": 2,
@@ -681,8 +681,8 @@ class PlanConstants:
     INDEXING_ONLY_METADATA = 1
     INDEXING_METADATA_AND_CONTENT = 2
 
-    DEFAULT_INCLUDE_DOC_TYPES = "*.doc,*.docx,*.xls,*.xlsx,*.ppt,*.pptx,*.msg,*.txt,*.rtf,*.eml,*.pdf,*.htm,*.html," \
-                                "*.csv,*.log,*.ods,*.odt,*.odg,*.odp,*.dot,*.pages,*.xmind"
+    DEFAULT_INCLUDE_DOC_TYPES = "*.doc,*.docx,*.xls,*.xlsx,*.ppt,*.pptx,*.msg,*.txt,*.rtf,*.eml,*.pdf," \
+                                "*.htm,*.html,*.csv,*.log,*.ods,*.odt,*.odg,*.odp,*.dot,*.pages,*.xmind"
     DEFAULT_EXCLUDE_LIST = [
         "C:\\Program Files",
         "C:\\Program Files (x86)",
@@ -880,6 +880,41 @@ class PlanConstants:
             ]
         }
     }
+
+    CREATE_V4_DC_PLAN_REQ = {
+        "application": 2,
+        "contentAnalyzer": [],
+        "contentIndexing": {
+            "extractTextFromImage": False,
+            "fileFilters": {
+                "excludePaths": [
+                ],
+                "includeDocTypes": "",
+                "maxDocSize": 50,
+                "minDocSize": 0
+            },
+            "searchType": "METADATA"
+        },
+        "entityDetection": {
+            "classifiers": [
+            ],
+            "entities": [
+            ]
+        },
+        "indexServer": {},
+        "name": "",
+        "threatAnalysis": False
+    }
+
+    class RAPlanSearchType(Enum):
+        """Class to maintain search types in Risk Analysis Plan"""
+        SEARCH_TYPE_ONLY_METADATA = "METADATA"
+        SEARCH_TYPE_METADATA_AND_CONTENT = "METADATA_CONTENT"
+
+    class RAPlanAppType(Enum):
+        """Class to maintain plan application type"""
+        CLASSIFIED = 2
+        UNIFIED = 6
 
 
 class TargetApps(Enum):

@@ -105,6 +105,7 @@ class CVPySDK(object):
         self._commcell_object = commcell_object
         self._certificate_path = certificate_path
         self._verify_ssl = verify_ssl
+        self._response_headers = {}
 
         if not self._verify_ssl:
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -456,6 +457,7 @@ class CVPySDK(object):
 
             # Processinginfo removal from response. It is under try catch to handle different response cases
             # (Eg:DownloadStream API will return file stream in response)
+            self._response_headers = response.headers
             try:
                 if kwargs.get('remove_processing_info', True) and 'processinginstructioninfo' in response.json():
                     del response.json()['processinginstructioninfo']

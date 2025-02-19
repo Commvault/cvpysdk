@@ -3165,7 +3165,17 @@ class Instance(object):
                 self._fileoption_restore_json["fsCloneOptions"]["cloneCleanupOptions"] = {
                     "cleanupScriptPath": value.get("instant_clone_options").get("clone_cleanup_script")
                 }
-
+        
+        if value.get('advanced_options'):
+            if value['advanced_options'].get("mapFiles"):
+                map_file = value['advanced_options']["mapFiles"]
+                self._fileoption_restore_json["mapFiles"] = {
+                    "useMapFile": True,
+                    "mapFilePath": map_file.get('mapFilePath', ""),
+                    "restoreUnmappedFiles": map_file.get("restoreUnmappedFiles", ""),
+                    "renameFilesSuffix": map_file.get("renameFilesSuffix", ""),
+                    "mapFileClient": {"clientName": map_file.get("clientName", "")}
+                }
 
     def _restore_bigdataapps_option_json(self, value):
         """setter for Big Data Apps restore option in restore JSON"""

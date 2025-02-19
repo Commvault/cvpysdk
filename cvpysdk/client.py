@@ -3969,7 +3969,7 @@ class Clients(object):
                                     "azureApps": [
                                         {
                                             "appStatus": 1,
-                                            "appType": 2,
+                                            "azureAppType": 2,
                                             "azureDirectoryId": azure_directory_id,
                                             "azureAppDisplayName": azure_app_id,
                                             "azureAppKeyValue": azure_app_key_value,
@@ -5138,7 +5138,7 @@ class Clients(object):
 class Client(object):
     """Class for performing client operations for a specific client."""
 
-    def __new__(cls, commcell_object, client_name, client_id=None):
+    def __new__(cls, commcell_object, client_name, client_id=None, username=None, password=None):
         """Decides and creates which client object needs to be created
             Args:
                 commcell_object (object)     --  instance of the Commcell class
@@ -5169,7 +5169,7 @@ class Client(object):
 
         return object.__new__(cls)
 
-    def __init__(self, commcell_object, client_name, client_id=None):
+    def __init__(self, commcell_object, client_name, client_id=None, username=None, password=None):
         """Initialise the Client class instance.
 
             Args:
@@ -5188,6 +5188,9 @@ class Client(object):
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
         self._update_response_ = commcell_object._update_response_
+
+        self._username = username
+        self._password = password
 
         self._client_name = client_name.lower()
 
@@ -6561,7 +6564,7 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def execute_script(self, script_type, script, script_arguments=None, wait_for_completion=True):
+    def execute_script(self, script_type, script, script_arguments=None, wait_for_completion=True, username=None, password=None):
         """Executes the given script of the script type on this client.
 
             **Only scripts of text format are supported**, i.e., the scripts should not have
@@ -6592,6 +6595,15 @@ class Client(object):
                 script execution to finish or not
 
                     default: True
+
+                username                (str)   --  username to execute the script
+
+                    default: None
+
+                password                (str)   --  password of the username to execute the script
+
+                    default: None
+
 
             Returns:
                     (int, str, str)
@@ -6651,8 +6663,16 @@ class Client(object):
         script_arguments = '' if script_arguments is None else script_arguments
         script_arguments = html.escape(script_arguments)
 
+        if username and password:
+            user_impersonation = f'<userImpersonation userName="{username}" password="{password}"/>' if username and password else ""
+        elif self._username and self._password:
+            user_impersonation = f'<userImpersonation userName="{self._username}" password="{self._password}"/>'
+        else:
+            user_impersonation = ""
+
         xml_execute_script = """
         <App_ExecuteCommandReq arguments="{0}" scriptType="{1}" waitForProcessCompletion="{5}">
+            {6}
             <client clientId="{2}" clientName="{3}"/>
             "{4}"
         </App_ExecuteCommandReq>
@@ -6662,7 +6682,8 @@ class Client(object):
             self.client_id,
             self.client_name,
             script_lines,
-            1 if wait_for_completion else 0
+            1 if wait_for_completion else 0,
+            user_impersonation
         )
 
         flag, response = self._cvpysdk_object.make_request(
@@ -6690,7 +6711,7 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def execute_command(self, command, script_arguments=None, wait_for_completion=True):
+    def execute_command(self, command, script_arguments=None, wait_for_completion=True, username=None, password=None):
         """Executes a command on this client.
 
             Args:
@@ -6704,6 +6725,14 @@ class Client(object):
                 script execution to finish or not
 
                     default: True
+
+                username                (str)   --  username to execute the command
+
+                    default: None
+
+                password                (str)   --  password of the username to execute the command
+
+                    default: None
 
             Returns:
                     (int, str, str)
@@ -6756,6 +6785,18 @@ class Client(object):
                 }
             }
         }
+
+        if username and password:
+            execute_command_payload["App_ExecuteCommandReq"]["userImpersonation"] = {
+                "userName": f"{username}",
+                "password": f"{password}"
+            }
+        elif self._username and self._password:
+            execute_command_payload["App_ExecuteCommandReq"]["userImpersonation"] = {
+                "userName": f"{self._username}",
+                "password": f"{self._password}"
+            }
+
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['EXECUTE_QCOMMAND'], execute_command_payload
         )
@@ -8437,6 +8478,29 @@ class Client(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
         self.refresh()
+
+    def read_log_file(self, file_name: str, complete_file: bool = False) -> list:
+        """
+        Reads the log file from the client
+
+        Args:
+            file_name (str)     --  Name of the log file to be read
+            complete_file (bool) --  True if the complete file needs to be read, False otherwise
+
+        Returns:
+            list    --  List of lines in the log file
+        """
+        url_params = f"?LogFileName={file_name}&completeFile={str(complete_file).lower()}"
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['CLIENT_LOGS'] % self.client_id + url_params
+        )
+        if flag:
+            if response.json():
+                return response.json().get('logs', [])
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
 
 class _Readiness:

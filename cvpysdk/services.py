@@ -68,6 +68,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_FILE_SERVER_CLIENTS': '{0}/v4/FileServers',
     'CLIENTFORCEDELETE': '{0}Client/%s?forceDelete=1',
     'CLIENT': '{0}Client/%s',
+    'CLIENT_LOGS': '{0}Client/%s/Logs/Read',
     'GET_ADDITIIONAL_SETTINGS': '{0}Client/%s/AdditionalSettings',
     'FILTER_CLIENTS': '{0}Client?%s',
     'GET_ALL_CLIENTS_PLUS_HIDDEN': '{0}Client?hiddenclients=true',
@@ -347,6 +348,8 @@ SERVICES_DICT_TEMPLATE = {
     'V4_GLOBAL_SERVER_PLANS': '{0}/V4/Global/ServerPlan',
     'V4_SERVER_PLAN_BACKUP_DESTINATION': '{0}V4/ServerPlan/%s/BackupDestination',
     'V4_SERVER_PLAN_COPY': '{0}V4/ServerPlan/%s/BackupDestination/%s',
+    'V4_DC_PLANS': '{0}V4/DCPlan',
+    'V4_DC_PLAN': '{0}V4/DCPlan/%s',
     'V5_SERVER_PLAN_COPY': '{0}V5/ServerPlan/%s/BackupDestination/%s',
     'SERVER_PLAN_REGIONS': '{0}V4/ServerPlan/%s/storageRegion/%s?isRegionIdList=true',
     'SERVER_PLAN_RPO': '{0}V4/ServerPlan/%s/RPO',
@@ -611,8 +614,10 @@ SERVICES_DICT_TEMPLATE = {
     'USER_MAPPINGS': '{0}GetUserMappings',
     'METALLIC_REGISTERED': '{0}CloudServices/Registered',
     'METALLIC_UNLINK': '{0}CloudService/Unsubscribe',
+
     'ADD_OR_GET_SAML': '{0}/v4/SAML',
     'EDIT_SAML': '{0}/v4/SAML/%s',
+    'GET_SAML_PROP': '{0}/ThirdParty/SAML/App?isOpenAPISpec=true',
 
     'REGIONS': '{0}/v4/Regions',
     'REGION': '{0}/v4/Regions/%s',

@@ -492,7 +492,7 @@ class JobController(object):
                                     jobs_dict[job_id] = job_summary
                                 else:
                                     status = job_summary['status']
-                                    operation = job_summary['localizedOperationName']
+                                    operation = job_summary.get('localizedOperationName', '')
                                     percent_complete = job_summary['percentComplete']
                                     backup_level = job_summary.get('backupLevelName')
 

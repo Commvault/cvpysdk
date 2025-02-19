@@ -330,6 +330,8 @@ Commcell instance Attributes
 
     **recovery_targets**        -- Returns the instance of RecoverTargets class
 
+    **cleanroom_targets**       -- -- Returns the instance of CleanroomTargets class
+
     **reports**                 --  Return the instance of Report class
 
     **job_management**          --  Returns an instance of the JobManagement class.
@@ -432,6 +434,7 @@ from .name_change import NameChange
 from .backup_network_pairs import BackupNetworkPairs
 from .reports import report
 from .recovery_targets import RecoveryTargets
+from .cleanroom.target import CleanroomTargets
 from .cleanroom.recovery_groups import RecoveryGroups
 from .drorchestration.replication_groups import ReplicationGroups
 from .drorchestration.failovergroups import FailoverGroups
@@ -605,7 +608,7 @@ class Commcell(object):
                 if force_https:
                     raise
         else:
-            raise SDKException('Commcell', '101')
+            raise SDKException('Commcell', '101', f'[{webconsole_hostname}]')
 
         # Initialize all the services with this commcell service
         self._services = get_services(self._web_service)
@@ -712,6 +715,7 @@ class Commcell(object):
         self._failover_groups = None
         self._recovery_targets = None
         self._recovery_groups = None
+        self._cleanroom_targets = None
         self._threat_indicators = None
         self._blr_pairs = None
         self._job_management = None
@@ -727,6 +731,7 @@ class Commcell(object):
         self._commcell_properties = None
         self._regions = None
         self._tags = None
+        self._additional_settings = None
         self.refresh()
 
         del self._password
@@ -804,6 +809,7 @@ class Commcell(object):
         del self._organizations
         del self._storage_pools
         del self._recovery_targets
+        del self._cleanroom_targets
         del self._threat_indicators
         del self._replication_groups
         del self._blr_pairs
@@ -1804,6 +1810,18 @@ class Commcell(object):
             return USER_LOGGED_OUT_MESSAGE
 
     @property
+    def cleanroom_targets(self):
+        """Returns the instance of RecoveryTargets class"""
+        try:
+            if self._cleanroom_targets is None:
+                self._cleanroom_targets = CleanroomTargets(self)
+
+            return self._cleanroom_targets
+
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
     def blr_pairs(self):
         """Returns the instance of BLRPairs class"""
         try:
@@ -2113,6 +2131,7 @@ class Commcell(object):
         self._deduplication_engines = None
         self._tfa = None
         self._tags = None
+        self._additional_settings = None
 
     def get_remote_cache(self, client_name):
         """Returns the instance of the RemoteCache  class."""
@@ -2290,6 +2309,7 @@ class Commcell(object):
 
         """
         self.commserv_client.add_additional_setting(category, key_name, data_type, value)
+        self._additional_settings = None
 
     def delete_additional_setting(self, category, key_name):
         """Deletes registry key from the commserve property.
@@ -2312,10 +2332,29 @@ class Commcell(object):
 
         """
         self.commserv_client.delete_additional_setting(category, key_name)
+        self._additional_settings = None
 
     def get_configured_additional_setting(self) -> list:
         """Method to get configured additional settings name"""
         return self.commserv_client.get_configured_additional_settings()
+
+    @property
+    def additional_settings(self) -> dict:
+        """
+        property to store dict of additional settings configured on commcell
+
+        Example:
+            {
+                'keyName': ('relativepath', 'keyName', 'type', 'value'),
+                'keyName1': ('relativepath1', 'keyName1', 'type1', 'value1'),
+                ...
+            }
+        """
+        if self._additional_settings is None:
+            self._additional_settings = {
+                cs_key.get('keyName'): cs_key for cs_key in self.get_configured_additional_setting()
+            }
+        return self._additional_settings
 
     def protected_vms(self, days, limit=100):
         """
@@ -3321,15 +3360,13 @@ class Commcell(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def execute_qcommand_v2(self, command, input_xml=None):
+    def execute_qcommand_v2(self, command, input_data=None):
         """Executes the QCommand API on the commcell.
 
             Args:
                 command     (str)   --  qcommand to be executed
 
-                input_xml   (str)   --  xml body (if applicable)
-
-                    default:    None
+                input_data   (str/dict)  --  xml/json/dict body (if applicable)
 
             Returns:
                 object  -   requests.Response object
@@ -3343,7 +3380,17 @@ class Commcell(object):
         """
 
         headers = self._headers.copy()
-        dict_data = xmltodict.parse(input_xml, attr_prefix='')
+        dict_data = dict()
+
+        if input_data and not isinstance(input_data, dict):
+            try:
+                dict_data = xmltodict.parse(input_data, attr_prefix='')
+            except Exception as e:
+                try:
+                    import json
+                    dict_data = json.loads(input_data)
+                except Exception as e:
+                    raise SDKException('Commcell', '107', 'Unable to parse the input data as either XML or JSON')
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', f"{self._services['QCOMMAND']}/{command}", dict_data, headers=headers
@@ -3467,11 +3514,12 @@ class Commcell(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def is_commcell_registered(self, commcell_name):
+    def is_commcell_registered(self, commcell_name, for_routing=False):
         """checks if a commcell is registered in the commcell
                     with the provided name
             Args:
                 commcell_name (str) -- name of the commcell
+                for_routing (bool)  -- if True, will check for routing commcells only
 
             Returns:
                 bool - boolean output whether the commcell is registered or not
@@ -3482,7 +3530,8 @@ class Commcell(object):
         """
         if not isinstance(commcell_name, str):
             raise SDKException('CommcellRegistration', '104')
-        return self.registered_commcells and commcell_name in self.registered_commcells
+
+        return commcell_name in (self.registered_routing_commcells if for_routing else self.registered_commcells)
 
     def register_commcell(
             self,
@@ -3637,11 +3686,11 @@ class Commcell(object):
                 if flag:
                     if response.json():
                         error_code = response.json()['resultCode']
-
                         if error_code != 0:
                             error_string = response.json()['resultMessage']
                             raise SDKException('CommcellRegistration', '103', error_string)
-                        self.refresh()
+                        self._registered_commcells = None
+                        self._registered_routing_commcells = None
                     else:
                         raise SDKException('Response', '102')
                 else:

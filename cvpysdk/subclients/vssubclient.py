@@ -849,6 +849,11 @@ class VirtualServerSubclient(Subclient):
             "isBlockLevelReplication": value.get("block_level", False)
         }
 
+        if value.get('run_security_scan'):
+            self._virtualserver_option_restore_json['securityScanOptions'] = {
+                "runSecurityScan": value.get("run_security_scan", False)
+            }
+
         if value.get('replication_guid'):
             self._virtualserver_option_restore_json['replicationGuid'] = value['replication_guid']
 

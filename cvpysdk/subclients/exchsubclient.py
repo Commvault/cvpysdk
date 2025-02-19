@@ -34,6 +34,18 @@ ExchangeSubclient:
     _get_attachment_preview() -- Method to get the preview content of all the attachments in the attachment list
 
     preview_backedup_file -- Method to get the preview content of the mail
+
+    _get_ad_group_backup_task_json -- Get AD Group back task json
+
+    ad_group_backup -- Run AD Group backup
+
+    _get_ad_group_backup_subtask_json -- Gets the subtask json for ad group backup
+
+    _get_ad_group_backup_options_json -- Gets the option json for ad group backup
+
+    _get_ad_group_backup_backupoptions_json -- Gets the backup option json for ad group backup
+
+
 """
 
 from __future__ import unicode_literals
@@ -868,7 +880,7 @@ class ExchangeSubclient(Subclient):
         }
         return data_json
 
-    def _prepare_attachment_json(self,metadata, attachment_id):
+    def _prepare_attachment_json(self, metadata, attachment_id):
         """Prepare the JSON for the attachment files with the options provided.
             Args:
                 metadata    (dict)  --  metadata of the mail
@@ -1003,7 +1015,6 @@ class ExchangeSubclient(Subclient):
             attachments_preview[attachment['name']] = self._get_attachment(metadata, match)
         return attachments_preview
 
-
     def preview_backedup_file(self, file_path):
         """Gets the preview content for the subclient.
 
@@ -1103,7 +1114,6 @@ class ExchangeSubclient(Subclient):
                 }
             ]
         }
-
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._GET_PREVIEW_CONTENT, request_json)
 
@@ -1128,3 +1138,121 @@ class ExchangeSubclient(Subclient):
                 result += file + " : " + attachments_preview[file] + "\n"
         return result
 
+    @staticmethod
+    def _get_ad_group_backup_common_opt_json(ad_group_name):
+        """
+            Gets the common options json for ad group backup
+            Args:
+                ad_group_name(str):     Name of ad group
+            Return:
+                Common options for da group backup
+        """
+        return {
+            "notifyUserOnJobCompletion": False,
+            "jobMetadata": [
+                {
+                    "selectedItems": [
+                        {
+                            "itemName": ad_group_name,
+                            "itemType": "AD group"
+                        }
+                    ],
+                    "jobOptionItems": [
+                        {
+                            "option": "Total running time",
+                            "value": "Disabled"
+                        }
+                    ]
+                }
+            ]
+        }
+
+    @staticmethod
+    def _get_ad_group_backup_backupoptions_json(ad_group_name):
+        """
+            Gets the backup options json for ad group backup
+            Args:
+                ad_group_name(str):     Name of ad group
+            Returns:
+                Backup options json for ad group backup
+        """
+        return {
+            "backupLevel": 2,
+            "incLevel": 1,
+            "exchOnePassOptions": {
+                "adGroups": [
+                    {
+                        "adGroupName": ad_group_name
+                    }
+                ]
+            },
+            "dataOpt": {
+                "useCatalogServer": False,
+                "followMountPoints": True,
+                "enforceTransactionLogUsage": False,
+                "skipConsistencyCheck": True,
+                "createNewIndex": False
+            }
+        }
+
+    @staticmethod
+    def _get_ad_group_backup_options_json(ad_group_name):
+        """
+            Get options json for ad group backup
+            Args:
+                ad_group_name(str):     Name of ad group
+            Returns:
+                options json for ad group backup
+        """
+        return {
+            "backupOpts": ExchangeSubclient._get_ad_group_backup_backupoptions_json(ad_group_name),
+            "commonOpts": ExchangeSubclient._get_ad_group_backup_common_opt_json(ad_group_name)
+        }
+
+    @staticmethod
+    def _get_ad_group_backup_subtask_json(ad_group_name):
+        """
+            Gets the subtask json for ad group backup
+            Args:
+                ad_group_name(str):     Name of ad group
+            Returns:
+                Sub task json for ad group backup
+        """
+        sub_task_json = [{
+            "subTask": {
+              "subTaskType": 2,
+              "operationType": 2
+            },
+            "options": ExchangeSubclient._get_ad_group_backup_options_json(ad_group_name)
+        }]
+        return sub_task_json
+
+    def _get_ad_group_backup_task_json(self, ad_group_name):
+        """
+            Gets the task json for ad group backup
+            Args:
+                ad_group_name(str):     Name of ad group
+            Returns:
+                Task json for ad group backup
+        """
+        task_json = {
+            "associations": [self._subClientEntity],
+            "task": {"taskType": 1},
+            "subTasks": ExchangeSubclient._get_ad_group_backup_subtask_json(ad_group_name)
+        }
+        return task_json
+    
+    def ad_group_backup(self, ad_group_name):
+        """
+            Run backup of AD Group
+            Args:
+                ad_group_name(str):     Name of ad group
+            Returns:
+                Processed job
+        """
+        task_json = self._get_ad_group_backup_task_json(ad_group_name)
+        create_task = self._services['CREATE_TASK']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', create_task, task_json
+        )
+        return self._process_backup_response(flag, response)

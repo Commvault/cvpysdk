@@ -94,6 +94,8 @@ OneDriveSubclient:
 
     preview_backedup_file() -- Get preview content for onedrive subclient
 
+    run_backup_onedrive_for_business_client()                           -- Runs client level backup
+
 """
 
 from __future__ import unicode_literals
@@ -223,6 +225,37 @@ class OneDriveSubclient(CloudAppsSubclient):
 
         task_json = self._backup_json(backup_level='INCREMENTAL', incremental_backup=False, incremental_level='BEFORE_SYNTH',
                                       advanced_options=advanced_options_dict, common_backup_options=common_options_dict)
+        return task_json
+
+    def _task_json_for_backup(self,**kwargs):
+        """
+        Json for onedrive backup
+        """
+
+        items_selection_option = kwargs.get('items_selection_option', '')
+
+        common_options_dict={
+            "jobMetadata": [
+                {
+                    "selectedItems": [
+                  {
+                    "itemName": "All%20users",
+                    "itemType": "All users"
+                  }
+                ],
+                    "jobOptionItems": [
+                        {
+                            "option": "Total running time",
+                            "value": "Disabled"
+                        }
+                    ]
+                }
+            ]
+        }
+        if items_selection_option!='':
+            common_options_dict["itemsSelectionOption"]=items_selection_option
+
+        task_json = self._backup_json(backup_level='INCREMENTAL',incremental_backup=False,incremental_level='BEFORE_SYNTH',common_backup_options=common_options_dict)
         return task_json
 
     @property
@@ -1279,6 +1312,38 @@ class OneDriveSubclient(CloudAppsSubclient):
         """
         task_json = self._task_json_for_onedrive_backup(
             users_list, custom_groups_list)
+        create_task = self._services['CREATE_TASK']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', create_task, task_json
+        )
+        return self._process_backup_response(flag, response)
+
+    def run_backup_onedrive_for_business_client(self,**kwargs):
+        """
+                Runs the backup
+
+
+                 **kwargs (dict) : Additional parameters
+                    items_selection_option (str) : Item Selection Option
+
+
+                Returns:
+                        object - instance of the Job class for this backup job
+
+                Raises:
+                    SDKException:
+                        if response is empty
+
+                        if response is not success
+
+                """
+        items_selection_option=kwargs.get('items_selection_option', '')
+
+        kwargs = {
+            'items_selection_option': items_selection_option
+        }
+
+        task_json = self._task_json_for_backup(**kwargs)
         create_task = self._services['CREATE_TASK']
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', create_task, task_json

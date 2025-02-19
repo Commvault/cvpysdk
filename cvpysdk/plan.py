@@ -56,6 +56,8 @@ Plans
 
     add_data_classification_plan()-  Adds data classification plan to the commcell
 
+    add_risk_analysis_dc_plan() --  Adds Risk Analysis data classification plan to the commcell
+
     get_supported_solutions()   --  returns the supported solutions for plans
 
     add_exchange_plan()         --  Adds a new exchange plan to the commcell
@@ -116,6 +118,8 @@ Plan
     schedule()                  --  create/delete schedule on DC Plan
 
     edit_plan()                 --  edit plan options
+
+    edit_risk_analysis_dc_plan()--  Edit Risk Analysis Data Classification Plan options
     
     update_security_associations() -- to update security associations of a plan
 
@@ -491,6 +495,7 @@ class Plans(object):
         self._update_response_ = commcell_object._update_response_
 
         self._PLANS = self._services['PLANS']
+        self._V4_DC_PLANS = self._services['V4_DC_PLANS']
         self._V4_PLANS = self._services['V4_SERVER_PLANS']
         self._V4_GLOBAL_PLANS = self._services['V4_GLOBAL_SERVER_PLANS']
         self._plans = None
@@ -1012,6 +1017,7 @@ class Plans(object):
                         # initialize the plan again
                         # so the plan object has all the plan
                         self.refresh()
+                        self._commcell_object.storage_policies.refresh()
                 else:
                     response_string = self._update_response_(response.text)
                     raise SDKException('Response', '101', response_string)
@@ -1809,6 +1815,132 @@ class Plans(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def add_risk_analysis_dc_plan(self, plan_name, app_type=PlanConstants.RAPlanAppType.CLASSIFIED,
+                                  content_analyzer=None, index_server=None, **kwargs):
+        """Adds Risk Analysis data classification plan to the commcell
+            Args:
+                plan_name         (str)             --  Name of plan
+                app_type          (RAPlanAppType)   --  Application Type of the plan
+                content_analyzer  (list)            --  list of Content analyzer client name
+                index_server      (str)             --  Index server name
+                **kwargs
+                    entity_list     (list)          --  list of entities which needs to be extracted
+                    classifier_list (list)          --  list of classifier which needs to be classified
+                    index_content   (RAPlanType)    --  Specifies whether to index content or not to index server
+                    enable_ocr      (bool)          --  specifies whether OCR is enabled or not
+                    ocr_language    (int)           --  Language to be used when doing OCR
+                                                                Default : English (Value-1)
+                        Supported Languages:
+                                    ENGLISH = 1,
+                                    HEBREW = 2,
+                                    SPANISH = 3,
+                                    FRENCH = 4,
+                                    ITALIAN = 5,
+                                    DANISH = 6
+                    include_docs        (str)       --  Include documents type separated by comma
+                    exclude_path        (list)      --  List of paths which needs to be excluded
+                    min_doc_size        (int)       --  Minimum document size in MB
+                    max_doc_size        (int)       --  Maximum document size in MB
+            Returns:
+                object  - Plan object
+            Raises:
+                SDKException:
+                        if input is not valid
+                        if failed to create plan
+                        if failed to find entities/classifier details
+        """
+        if not (isinstance(plan_name, str)):
+            raise SDKException('Plan', '101')
+        request_json = copy.deepcopy(PlanConstants.CREATE_V4_DC_PLAN_REQ)
+
+        request_json['name'] = plan_name
+        request_json['application'] = app_type.value
+        request_json['threatAnalysis'] = False
+
+        if index_server is not None:
+            # change to support SaaS and unification project
+            index_server_client_id = self._commcell_object.index_servers.get(index_server).index_server_client_id
+            request_json['indexServer'] = {
+                'id': index_server_client_id
+            }
+        if content_analyzer is not None:
+            # change to support SaaS and unification project
+            ca_list = []
+            for ca in content_analyzer:
+                ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
+                ca_list.append({
+                    'id': ca_client_id
+                })
+            request_json['contentAnalyzer'] = ca_list
+        if 'entity_list' not in kwargs and 'classifier_list' not in kwargs:
+            raise SDKException('Plan', '104')
+        activate_obj = self._commcell_object.activate
+        if 'entity_list' in kwargs or 'classifier_list' in kwargs:
+            entity_mgr_obj = activate_obj.entity_manager()
+            entity_list = []
+            classifier_list = []
+            entity_ids = entity_mgr_obj.get_entity_ids(kwargs.get('entity_list', []))
+            for entity_id in entity_ids:
+                entity_list.append({"id": entity_id})
+            request_json['entityDetection']["entities"] = entity_list
+
+            classifier_ids = entity_mgr_obj.get_entity_ids(kwargs.get('classifier_list', []))
+            for classifier_id in classifier_ids:
+                classifier_list.append({"id": classifier_id})
+            request_json['entityDetection']["classifiers"] = classifier_list
+        request_json['contentIndexing']["searchType"] = kwargs.get(
+            'index_content', PlanConstants.RAPlanSearchType.SEARCH_TYPE_ONLY_METADATA).value
+        request_json['contentIndexing']["extractTextFromImage"] = kwargs.get('enable_ocr', False)
+        if 'enable_ocr' in kwargs:
+            request_json['contentIndexing']["contentLanguage"] = kwargs.get('ocr_language', 1)
+        request_json['contentIndexing']['fileFilters']['includeDocTypes'] = kwargs.get(
+            'include_docs', PlanConstants.DEFAULT_INCLUDE_DOC_TYPES)
+        request_json['contentIndexing']['fileFilters']['minDocSize'] = kwargs.get(
+            'min_doc_size', PlanConstants.DEFAULT_MIN_DOC_SIZE)
+        request_json['contentIndexing']['fileFilters']['maxDocSize'] = kwargs.get(
+            'max_doc_size', PlanConstants.DEFAULT_MAX_DOC_SIZE)
+        request_json['contentIndexing']['fileFilters']['excludePaths'] = kwargs.get('exclude_path', [])
+
+        headers = self._commcell_object._headers.copy()
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._V4_DC_PLANS, request_json, headers=headers
+        )
+
+        if flag:
+            if response.json():
+                response_value = response.json()
+                error_message = None
+                error_code = 0
+
+                if 'errors' in response_value:
+                    error_code = response_value.get('errors', [{}])[0].get('errorCode', 0)
+                    error_message = response_value.get('errors', [{}])[0].get('errorMessage')
+
+                if error_code > 1:
+                    o_str = 'Failed to create new Plan\nError: "{0}"'.format(
+                        error_message
+                    )
+                    raise SDKException('Plan', '102', o_str)
+
+                if 'plan' in response_value:
+                    plan_name = response_value['plan']['name']
+                    # initialize the plans again
+                    self.refresh()
+
+                    return self.get(plan_name)
+                else:
+                    o_str = ('Failed to create new plan due to error code: "{0}"\n'
+                             'Please check the documentation for '
+                             'more details on the error').format(error_code)
+
+                    raise SDKException('Plan', '102', o_str)
+            else:
+                raise SDKException('Response', 102)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     def get_plans_summary(self) -> dict:
 
         """Returns plan summary in response
@@ -1899,6 +2031,7 @@ class Plan(object):
 
         self._PLAN = self._services['PLAN'] % (self.plan_id)
         self._V4_PLAN = self._services['V4_SERVER_PLAN'] % (self.plan_id)
+        self._V4_DC_PLAN = self._services['V4_DC_PLAN'] % (self.plan_id)
         self._PLAN_RPO = self._services['SERVER_PLAN_RPO'] % (self.plan_id)
         self._ADD_USERS_TO_PLAN = self._services['ADD_USERS_TO_PLAN'] % (self.plan_id)
         self._API_SECURITY = self._services['SECURITY_ASSOCIATION']
@@ -3854,6 +3987,85 @@ class Plan(object):
                 # currently we dont have any thing to update in DC plan for FSO app so throw exception
                 raise SDKException('Plan', '102', 'No attributes to Edit for DC Plan with TargetApps as : FSO')
         self._update_plan_props(request_json)
+
+    def edit_risk_analysis_dc_plan(self, **kwargs):
+        """
+        Edit Risk Analysis Data Classification Plan options
+            Args:
+            **kwargs for risk analysis Data Classification Plan
+            index_content       (bool)      --  Specifies whether to index content or not to index server
+            content_analyzer    (list)      --  list of Content analyzer client name
+            entity_list         (list)      --  list of entities which needs to be extracted
+            classifier_list     (list)      --  list of classifier which needs to be classified
+            enable_ocr          (bool)      --  specifies whether OCR is enabled or not
+            ocr_language        (int)       --  Language to be used when doing OCR
+                                                Default : English (Value-1)
+                Supported Languages:
+                            ENGLISH = 1,
+                            HEBREW = 2,
+                            SPANISH = 3,
+                            FRENCH = 4,
+                            ITALIAN = 5,
+                            DANISH = 6
+            include_docs        (str)       --  Include documents type separated by comma
+            exclude_path        (list)      --  List of paths which needs to be excluded
+            min_doc_size        (int)       --  Minimum document size in MB
+            max_doc_size        (int)       --  Maximum document size in MB
+        """
+        if self.plan_type != PlanTypes.DC.value:
+            raise SDKException('Plan', '102', "Function Not supported for this plan type")
+        request_json = {}
+        if self.plan_type == PlanTypes.DC.value:
+            if 'content_analyzer' in kwargs:
+                # change to support SaaS and unification project
+                ca_list = []
+                for ca in kwargs.get('content_analyzer', []):
+                    ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
+                    ca_list.append({
+                        'id': ca_client_id
+                    })
+                request_json['contentAnalyzer'] = ca_list
+
+            request_json['entityDetection'] = {}
+            activate_obj = self._commcell_object.activate
+            entity_mgr_obj = activate_obj.entity_manager()
+            if 'entity_list' in kwargs:
+                entity_list = []
+                entity_ids = entity_mgr_obj.get_entity_ids(kwargs.get('entity_list', []))
+                for entity_id in entity_ids:
+                    entity_list.append({"id": entity_id})
+                request_json['entityDetection']["entities"] = entity_list
+            if 'classifier_list' in kwargs:
+                classifier_list = []
+                classifier_ids = entity_mgr_obj.get_entity_ids(kwargs.get('classifier_list', []))
+                for classifier_id in classifier_ids:
+                    classifier_list.append({"id": classifier_id})
+                request_json['entityDetection']["classifiers"] = classifier_list
+
+            request_json['contentIndexing'] = {}
+            if 'index_content' in kwargs:
+                request_json['contentIndexing']["searchType"] = kwargs.get(
+                    'index_content', PlanConstants.RAPlanSearchType.SEARCH_TYPE_ONLY_METADATA).value
+            if 'enable_ocr' in kwargs:
+                request_json['contentIndexing']["extractTextFromImage"] = kwargs.get('enable_ocr', False)
+                request_json['contentIndexing']["contentLanguage"] = kwargs.get('ocr_language', 1)
+
+            request_json['contentIndexing']['fileFilters'] = {}
+            if 'include_docs' in kwargs:
+                request_json['contentIndexing']['fileFilters']['includeDocTypes'] = kwargs.get(
+                    'include_docs', PlanConstants.DEFAULT_INCLUDE_DOC_TYPES)
+            if 'min_doc_size' in kwargs:
+                request_json['contentIndexing']['fileFilters']['minDocSize'] = kwargs.get(
+                    'min_doc_size', PlanConstants.DEFAULT_MIN_DOC_SIZE)
+            if 'max_doc_size' in kwargs:
+                request_json['contentIndexing']['fileFilters']['maxDocSize'] = kwargs.get(
+                    'max_doc_size', PlanConstants.DEFAULT_MAX_DOC_SIZE)
+            if 'exclude_path' in kwargs:
+                request_json['contentIndexing']['fileFilters']['excludePaths'] = kwargs.get('exclude_path', [])
+
+        flag, response = self._cvpysdk_object.make_request('PUT', self._V4_DC_PLAN, request_json)
+        self.__handle_response(flag, response, custom_error_message='Failed to edit risk analysis DC plan : '
+                                                                    f'[{self.plan_name}]')
 
     def _enable_content_indexing_o365_plan(self, value):
         """Enable CI for O365 plan

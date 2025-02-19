@@ -1065,6 +1065,7 @@ class GoogleSubclient(CloudAppsSubclient):
                     overwrite (bool) : unconditional overwrite files during restore (default: False)
                     restore_as_copy (bool) : restore files as copy during restore (default: False)
                     skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
+                    end_time (int) : The job end time for Point In Time restore (default: None)
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -1077,6 +1078,7 @@ class GoogleSubclient(CloudAppsSubclient):
         overwrite = kwargs.get('overwrite', False)
         restore_as_copy = kwargs.get('restore_as_copy', False)
         skip_file_permissions = kwargs.get('skip_file_permissions', False)
+        end_time = kwargs.get('end_time', None)
 
         if overwrite and restore_as_copy:
             raise SDKException('Subclient', '102', 'Either select overwrite or restore as copy for file options')
@@ -1089,6 +1091,24 @@ class GoogleSubclient(CloudAppsSubclient):
             'skip_file_permissions': skip_file_permissions
         }
         restore_json = self._instance_object._prepare_restore_json_v2(source_user_list, **kwargs)
+        if end_time:
+            adv_search_bkp_time_dict={
+                    "field": "BACKUPTIME",
+                    "fieldValues": {
+                        "values": [
+                            "0",
+                            str(end_time)
+                        ]
+                    },
+                    "intraFieldOp": "FTOr"
+                }
+
+
+            add_to_time=restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"]
+            add_to_time["timeRange"]={"toTime":end_time}
+            add_backup_time=restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"]["googleRestoreOptions"]["findQuery"]["advSearchGrp"]["fileFilter"][0]["filter"]["filters"]
+            add_backup_time.append(adv_search_bkp_time_dict)
+
         return self._process_restore_response(restore_json)
 
     def _get_user_guids(self, users):

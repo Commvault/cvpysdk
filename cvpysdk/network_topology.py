@@ -334,6 +334,8 @@ class NetworkTopologies(object):
                 3 --- for two-way topology
                 4 --- Cascading Gateway's topology
                 5 --- One-way forwarding topology
+                6 --- Tri Cascading topology. 
+                7 --- Quad Cascading topology. 
 
                 display_type:
                 0 --- servers
