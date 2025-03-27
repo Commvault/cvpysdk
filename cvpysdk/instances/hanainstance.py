@@ -146,7 +146,7 @@ class SAPHANAInstance(Instance):
             check_access=False,
             destination_instance_dir=None,
             ignore_delta_backups=False,
-            no_of_streams=2
+            no_of_streams=2,
             catalog_time=None):
         """Returns the JSON request to pass to the API as per the options selected by the user.
 
@@ -281,7 +281,7 @@ class SAPHANAInstance(Instance):
                                 "destClientName": destination_hana_client,
                                 "databases": databases,
                                 "recoverTime": recover_time,
-                                "pointInTime": point_in_time
+                                "pointInTime": point_in_time,
                                 "catalogPointInTime": catalog_time,
                                 "catalogRecoverTime": catalog_recover_time
                             },
