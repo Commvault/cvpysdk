@@ -259,7 +259,9 @@ EXCEPTION_DICT = {
         '106': 'Failed to clear anomalies for this client',
         '107': 'Storage pool name is missing in inputs',
         '108': 'Index server name is missing in inputs',
-        '109': 'Failed to start threat anomaly scan on client'
+        '109': 'Failed to start threat anomaly scan on client',
+        '110': 'Failed to fetch client count details for threat indicators',
+        '111': 'Failed to fetch monitored vm details for threat indicators'
     },
     'ContentAnalyzer': {
         '101': 'Data type of the input(s) is not valid',
@@ -410,7 +412,13 @@ EXCEPTION_DICT = {
     'User': {
         '101': 'Data type of input(s) is not valid',
         '102': '',
-        '103': 'User with same name already exists'
+        '103': 'User with same name already exists',
+        '104': 'Unable to create Access token for user',
+        '105': 'invalid inputs for update access token operations',
+        '106': 'Unable to update Access token details',
+        '107': 'Unable to delete Access token',
+        '108': 'Unable to get Access tokens for user',
+        '109': 'Unable to renew Access tokens'
     },
     'Role': {
         '101': 'Data type of input(s) is not valid',

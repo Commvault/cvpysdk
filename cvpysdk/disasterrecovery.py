@@ -655,8 +655,9 @@ class DisasterRecoveryManagement(object):
 
         """
         self._commcell = commcell
-        self._service = commcell._services.get('DISASTER_RECOVERY_PROPERTIES')
-        self._cvpysdk_object = commcell._cvpysdk_object
+        self.services = self._commcell._services
+        self._service = self.services['DISASTER_RECOVERY_PROPERTIES']
+        self._cvpysdk_object = self._commcell._cvpysdk_object
         self.refresh()
 
     def _get_dr_properties(self):
@@ -716,6 +717,88 @@ class DisasterRecoveryManagement(object):
         else:
             raise SDKException('Response', '101')
 
+    def _get_drbackup_options(self):
+        """
+        Returns : dict of dr backup options
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            method='GET',
+            url=self.services['DISASTER_RECOVERY_OPTIONS']
+        )
+        if flag:
+            if response and response.json():
+                return response.json()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
+
+    def get_cloud_regions(self):
+        """
+        Returns : dict of available dr backup regions.
+                    Ex:
+                    {
+                        "defaultRegion": "southindia",
+                        "regions": [
+                            {
+                                "regionCode": "eastus2",
+                                "displayName": "East US 2"
+                            }
+                            {
+                                "regionCode": "southindia",
+                                "displayName": "(Asia Pacific) South India"
+                            }
+                        ]
+                    }
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            method='GET',
+            url=self.services['DRBACKUP_REGIONS']
+        )
+        if flag:
+            if response and response.json():
+                return response.json()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
+
+    def _set_commvault_cloud_upload(self, flag, region=None):
+        """
+        Executes a request on the server, to set the dr settings for commvault cloud upload.
+         Args:
+             flag   (bool)   : True to enable commvault cloud upload, False to disable
+             region (str)    : To select the region for the DR backup to be uploaded to.
+                                None will leave the region to be in default region.
+         Returns:
+               None
+         Raises:
+              SDKException:
+                    if given inputs are invalid.
+
+        """
+        current_options = self._get_drbackup_options()
+        current_options['properties']['uploadBackupMetadataToCloud'] = flag
+        if flag:
+            current_options['properties']['region'] = region if region else self.get_cloud_regions()['defaultRegion']
+
+        flag, response = self._cvpysdk_object.make_request(
+                                    method='POST',
+                                    url=self.services['DISASTER_RECOVERY_OPTIONS'],
+                                    payload=current_options
+                                )
+        if flag:
+            if response and response.json():
+                if response.json().get('errorCode') != 0:
+                    raise SDKException('DisasterRecovery', '102', 'Failed to set dr properties. Error: {0}'.format(
+                        response.json().get('errorMessage')
+                    ))
+                self.refresh()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
+
 
     def refresh(self):
         """
@@ -766,7 +849,7 @@ class DisasterRecoveryManagement(object):
         else:
             raise SDKException('DisasterRecovery', '101')
 
-    def upload_metdata_to_commvault_cloud(self, flag, username=None, password=None):
+    def upload_metdata_to_commvault_cloud(self, flag, username=None, password=None, region=None):
         """
         Enable/Disable upload metadata to commvault cloud setting.
 
@@ -776,6 +859,8 @@ class DisasterRecoveryManagement(object):
                  username   (str)       --      username of the commvault cloud.
 
                  password   (str)       --      password of the commvault cloud.
+
+                 region     (str)       --      region to upload the DRBackup, None will set to default region
 
             Returns:
                  None
@@ -788,7 +873,7 @@ class DisasterRecoveryManagement(object):
                     self._export_settings['cloudCredentials']['password'] = b64encode(password.encode()).decode()
                 else:
                     raise SDKException('DisasterRecovery', '101')
-            self._set_dr_properties()
+            self._set_commvault_cloud_upload(flag)
         else:
             raise SDKException('DisasterRecovery', '101')
 
@@ -854,6 +939,16 @@ class DisasterRecoveryManagement(object):
                   True/False
         """
         return self._prepost_settings.get('useImpersonateUser')
+
+    @property
+    def region(self):
+        """
+        gets the current region set to upload DRBackups
+
+            Returns:
+                region (str)
+        """
+        return self._get_drbackup_options()['properties']['region']
 
     @property
     def number_of_metadata(self):

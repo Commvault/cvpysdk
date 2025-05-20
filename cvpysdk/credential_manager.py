@@ -49,6 +49,8 @@ Credentials:
 
     add_postgres_database_creds --  Creates PostgreSQL credential on this commcell
 
+    add_mysql_database_creds    --  Creates MySQL credential on this commcell
+
     add_azure_cloud_creds()     --  Creates azure access key based credential on this commcell
 
     add_azure_cosmosdb_creds()  --  Creates credential for azure cosmos db using azure application
@@ -440,6 +442,54 @@ class Credentials(object):
         create_credential = {
             "accountType": "DATABASE_ACCOUNT",
             "databaseCredentialType": "POSTGRESQL",
+            "name": credential_name,
+            "username": username,
+            "password": password,
+            "description": description
+        }
+
+        request = self._services['ADD_CREDENTIALS']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', request, create_credential
+        )
+        if flag:
+            if response.json():
+                id = response.json()['id']
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
+        return Credential(self._commcell_object, credential_name, id)
+
+    def add_mysql_database_creds(self, credential_name, username, password, description=None):
+        """Creates MySQL credential on this commcell
+            Args:
+
+                credential_name (str)   --  name to be given to credential account
+
+                username  (str)         --  MySQL username
+
+                password   (str)        --  MySQL password
+
+                description (str)       --  description of the credential
+
+            Raises:
+                SDKException:
+                    if credential account is already present on the commcell
+
+                    if response is not successful
+        """
+        if self.has_credential(credential_name):
+            raise SDKException(
+                'Credential', '102', "Credential {0} already exists on this commcell.".format(
+                    credential_name)
+            )
+        password = b64encode(password.encode()).decode()
+        create_credential = {
+            "accountType": "DATABASE_ACCOUNT",
+            "databaseCredentialType": "MYSQL",
             "name": credential_name,
             "username": username,
             "password": password,

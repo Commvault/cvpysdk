@@ -480,13 +480,15 @@ class Download(object):
         else:
             raise SDKException('Response', '101')
 
-    def sync_remote_cache(self, client_list=None):
+    def sync_remote_cache(self, client_list=None, schedule_pattern=None):
         """Syncs remote cache
 
             Args:
 
                 client_list  --  list of client names
                 Default is None. By default all remote cache clients are synced
+
+                schedule_pattern (dict)        --  Pattern to schedule Sync Job
 
             Returns:
                 object - instance of the Job class for sync job
@@ -559,6 +561,9 @@ class Download(object):
             }
         }
 
+        if schedule_pattern:
+            request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+
         flag, response = self._cvpysdkcommcell_object.make_request(
             'POST', self._services['CREATE_TASK'], request_json
         )
@@ -567,6 +572,9 @@ class Download(object):
             if response.json():
                 if "jobIds" in response.json():
                     return Job(self.commcell_object, response.json()['jobIds'][0])
+
+                elif "taskId" in response.json():
+                    return Schedules(self.commcell_object).get(task_id=response.json()['taskId'])
 
                 else:
                     raise SDKException('Download', '101')

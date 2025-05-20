@@ -528,6 +528,7 @@ class HypervisorType(Enum):
     Nutanix = "Nutanix AHV"
     ORACLE_CLOUD_INFRASTRUCTURE = "Oracle Cloud Infrastructure"
     OPENSHIFT = "Red Hat OpenShift"
+    PROXMOX = "Proxmox ve"
 
 
 class AppIDAType(Enum):
@@ -796,6 +797,7 @@ class VsInstanceType:
 
     VSINSTANCE_TYPE = {
         101: "vmware",
+        201: "xen",
         102: "hyperv",
         301: "amazon_web_services",
         401: "azure",
@@ -811,5 +813,6 @@ class VsInstanceType:
         1301: "google_cloud_platform",
         1401: "alibaba_cloud",
         1503: "vcloud_director",
-        1501: "kubernetes"
+        1501: "kubernetes",
+        1600: "proxmox_ve"
     }

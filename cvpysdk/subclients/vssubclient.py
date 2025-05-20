@@ -129,6 +129,10 @@ VirtualServerSubclient:
 
     index_server                            --  Property to get/set the indexserver client for the subclient
 
+    quiesce_file_system                     -- Property to get/set quiesce value for the vsa subclient
+
+    snapshot_storage_type                   -- Property to get snapshot storage type for the vsa subclient
+
 To add a new Virtual Subclient,  create a class in a new module under virtualserver sub package
 
 
@@ -414,6 +418,7 @@ class VirtualServerSubclient(Subclient):
                 elif 'content' not in entity:
                     entity = {'content': entity}
                 virtual_server_dict['allOrAnyChildren'] = entity.get('allOrAnyChildren', True)
+                virtual_server_dict['equalsOrNotEquals'] = entity.get('equalsOrNotEquals', True)
                 virtual_server_dict['children'] = []
 
                 def add_childrens(item, multiple_rule=False):
@@ -427,12 +432,12 @@ class VirtualServerSubclient(Subclient):
                     temp = {
                         'allOrAnyChildren': item.get('allOrAnyChildren', True),
                         'equalsOrNotEquals': item.get('equal_value', True),
-                        'name': item.get('name', ""),
+                        'name': item.get('name', item.get('id', '')),
                         'displayName': item.get('display_name', ''),
                         'path': '',
                         'type': item['type'] if (
                                 isinstance(item['type'], int) or isinstance(item['type'], str)) else
-                        item['type'].value
+                        item['type'].value   
                     }
                     if item['type'] == VSAObjects.VMNotes:
                         temp['value'] = item['display_name']
@@ -450,6 +455,8 @@ class VirtualServerSubclient(Subclient):
                         temp['name'] = "PoweredState"
                         temp['value'] = "0"
                         temp['displayName'] = "Powered Off"
+                    if item['type'] == VSAObjects.VMCustomAttribute.name:
+                        temp['value'] = item.get('value', '')
                     if multiple_rule:
                         virtual_server_dict.get('children').append(temp)
                     else:
@@ -490,25 +497,69 @@ class VirtualServerSubclient(Subclient):
                        POST Subclient API
         """
         vm_filter = []
-
         try:
-            for temp_dict in subclient_filter:
-                content_type_id = ""
-                for type_id, type_name in self.content_types.items():
-                    if type_name == temp_dict['type']:
-                        content_type_id = type_id
-                        break
+            for entity in subclient_filter:
+                virtual_server_dict = dict()
+                if not isinstance(entity, dict):
+                    entity = {'content': entity}
+                elif 'content' not in entity:
+                    entity = {'content': entity}
+                virtual_server_dict['allOrAnyChildren'] = entity.get('allOrAnyChildren', True)
+                virtual_server_dict['equalsOrNotEquals'] = entity.get('equalsOrNotEquals', True)
+                virtual_server_dict['children'] = []
 
-                virtual_server_dict = {
-                    'allOrAnyChildren': True,
-                    'equalsOrNotEquals': temp_dict["equal_value"],
-                    'name': temp_dict['id'],
-                    'displayName': temp_dict['display_name'],
-                    'path': temp_dict['path'],
-                    'type': content_type_id
-                }
+                def add_childrens(item, multiple_rule=False):
+                    """
+                    add filters in the hierarchy
+                    Args:
+                        item                (dict)  :   content's filters item to be added
+                        multiple_rule       (bool)  :   If multiple rule present or not
 
-                vm_filter.append(virtual_server_dict)
+                    """
+                    temp = {
+                        'allOrAnyChildren': item.get('allOrAnyChildren', True),
+                        'equalsOrNotEquals': item.get('equal_value', True),
+                        'name': item.get('name', item.get('id', '')),
+                        'displayName': item.get('display_name', ''),
+                        'path': '',
+                        'type': item['type'] if (
+                                isinstance(item['type'], int) or isinstance(item['type'], str)) else
+                        item['type'].value   
+                    }
+                    if item['type'] == VSAObjects.VMNotes:
+                        temp['value'] = item['display_name']
+                        temp['displayName'] = item['display_name']
+                        temp['name'] = "Notes"
+                    if (item['type'] ==
+                            VSAObjects.VMPowerState and
+                            item['state'] == 'true'):
+                        temp['name'] = "PoweredState"
+                        temp['value'] = "1"
+                        temp['displayName'] = "Powered On"
+                    if (item['type'] ==
+                            VSAObjects.VMPowerState and
+                            item['state'] == 'false'):
+                        temp['name'] = "PoweredState"
+                        temp['value'] = "0"
+                        temp['displayName'] = "Powered Off"
+                    if item['type'] == VSAObjects.VMCustomAttribute.name:
+                        temp['value'] = item.get('value', '')
+                    if multiple_rule:
+                        virtual_server_dict.get('children').append(temp)
+                    else:
+                        vm_filter.append(temp)
+                if not isinstance(entity, list):
+                    entity = [entity]
+                if len(entity[0]['content']) == 1 or isinstance(entity[0]['content'], dict):
+                    if isinstance(entity[0]['content'], list):
+                        add_childrens(entity[0]['content'][0])
+                    else:
+                        add_childrens(entity[0]['content'])
+                else:
+                    for items in entity:
+                        for item in items['content']:
+                            add_childrens(item, True)
+                        vm_filter.append(virtual_server_dict)            
 
         except KeyError as err:
             raise SDKException('Subclient', '102',
@@ -614,6 +665,39 @@ class VirtualServerSubclient(Subclient):
             "_commonProperties['indexSettings']['currentIndexServer']['clientName']",
             index_server_name)
 
+    @property
+    def quiesce_file_system(self):
+        """
+            Gets the quiesce value set for the vsa subclient
+
+        Returns:
+            (Boolean)    True/False
+        """
+        return self._vsaSubclientProp.get('quiesceGuestFileSystemAndApplications')
+
+    @quiesce_file_system.setter
+    def quiesce_file_system(self, value):
+        """
+        Sets the quiesce value for the vsa subclient
+
+        Args:
+            value   (Boolean)   True/False
+
+        """
+        update_properties = self.properties
+        update_properties['vsaSubclientProp']['quiesceGuestFileSystemAndApplications'] = value
+        self.update_properties(update_properties)
+
+    @property
+    def snapshot_storage_type(self):
+        """
+            Gets the snapshot storage type set for the vsa subclient
+
+        Returns:
+            (Boolean)    True/False
+        """
+        return self._vsaSubclientProp.get('snapshotStorageType')
+
     def _get_disk_provisioning_value(self, provisioningType):
         """
          Returns the provisioning code for the selected type
@@ -694,40 +778,48 @@ class VirtualServerSubclient(Subclient):
 
         content_list = []
         for child in children:
-            path = child['path'] if 'path' in child else None
+            path = child['path'] if 'path' in child else ''
             allOrAnyChildren = child['allOrAnyChildren'] if 'allOrAnyChildren' in child else None
+            equalsOrNotEquals = child['equalsOrNotEquals'] if 'equalsOrNotEquals' in child else None
             _temp_list = []
             _temp_dict = {}
             if 'children' in child:
                 nested_children = child['children']
                 for each_condition in nested_children:
                     display_name = each_condition['displayName']
-                    content_type = VSAObjects(each_condition['type']).name
+                    content_type = VSAObjects(each_condition['type']).name if isinstance(each_condition['type'],
+                                                                                         int) else each_condition[
+                        'type']
                     vm_id = '' if each_condition.get('name', '') in display_name else each_condition.get('name', '')
                     temp_dict = {
                         'equal_value': each_condition.get('equalsOrNotEquals', True),
                         'allOrAnyChildren': each_condition.get('allOrAnyChildren', True),
-                        'id': vm_id,
-                        'path': path,
                         'display_name': display_name,
                         'type': content_type
                     }
+                    if content_type != 'VMCustomAttribute':
+                        temp_dict.update({'id': vm_id, 'path': path})
+                    else:
+                        temp_dict.update({'name': vm_id, 'value': each_condition['value']})
                     _temp_list.append(temp_dict)
                 _temp_dict['allOrAnyChildren'] = allOrAnyChildren
+                _temp_dict['equalsOrNotEquals'] = equalsOrNotEquals
                 _temp_dict['content'] = _temp_list
                 content_list.append(_temp_dict)
             else:
                 display_name = child['displayName']
-                content_type = VSAObjects(child['type']).name
+                content_type = VSAObjects(child['type']).name if isinstance(child['type'], int) else child['type']
                 vm_id = child.get('name', '')
                 temp_dict = {
-                    'equal_value': child['equalsOrNotEquals'],
-                    'allOrAnyChildren': child.get('allOrAnyChildren', True),
-                    'id': vm_id,
-                    'path': path,
-                    'display_name': display_name,
-                    'type': content_type
-                }
+                        'equal_value': child['equalsOrNotEquals'],
+                        'allOrAnyChildren': child.get('allOrAnyChildren', True),
+                        'display_name': display_name,
+                        'type': content_type
+                    }
+                if content_type != 'VMCustomAttribute':
+                    temp_dict.update({'id': vm_id, 'path': path})
+                else:
+                    temp_dict.update({'name': vm_id, 'value': child['value']})
                 content_list.append(temp_dict)
         return content_list
 
@@ -987,8 +1079,8 @@ class VirtualServerSubclient(Subclient):
             "powerOnVmAfterRestore": value.get("power_on", False),
             "registerWithFailoverCluster": value.get("add_to_failover", False),
             "userPassword": {"userName": vcenter_userpwd or "admin"},
-            "redirectWritesToDatastore": value.get("redirectWritesToDatastore", ""),
-            "delayMigrationMinutes": value.get("delayMigrationMinutes", 0)
+            "redirectWritesToDatastore": value.get("redirectWritesToDatastore") or "",
+            "delayMigrationMinutes": value.get("delayMigrationMinutes") or 0
         }
         if value['in_place']:
             json_disklevel_option_restore["dataStore"] = {}
@@ -1029,9 +1121,11 @@ class VirtualServerSubclient(Subclient):
             "cluster": value.get("cluster", ""),
             "name": value.get("name", ""),
             "nics": value.get("nics", []),
+            "vmTags":  value.get('vmTags') or [],
             "vmIPAddressOptions": value.get("vm_ip_address_options", []),
             "FolderPath": value.get("FolderPath", ""),
             "resourcePoolPath": value.get("ResourcePool", ""),
+            "restoreVMTags": False if value.get('vmTags') else True,
             "volumeType": value.get("volumeType", "Auto"),
             "vmCustomMetadata": value.get("vmCustomMetadata",[])
         }
@@ -2270,6 +2364,13 @@ class VirtualServerSubclient(Subclient):
                     restore_option["cluster"] = vs_metadata['clusterName']
                     vs_metadata["esxHost"] = vs_metadata['clusterName']
 
+        #adding tag to restored vm
+        if restore_option.get('vmTags'):
+            vm_tags = restore_option.get('vmTags')
+            if isinstance(vm_tags, str) or isinstance(vm_tags, dict):
+                vm_tags = [vm_tags]
+            restore_option["vmTags"] = vm_tags
+
         # populate VM Specific values
         self._set_restore_inputs(
             restore_option,
@@ -3027,27 +3128,3 @@ class VirtualServerSubclient(Subclient):
                 '102',
                 self._update_response_(
                     response.text))
-
-    @property
-    def quiesce_file_system(self):
-        """
-            Gets the quiesce value set for the vsa subclient
-
-        Returns:
-            (Boolean)    True/False
-        """
-        quiesce_file_system = r'quiesceGuestFileSystemAndApplications'
-        return self._vsaSubclientProp.get(quiesce_file_system)
-
-    @quiesce_file_system.setter
-    def quiesce_file_system(self, value):
-        """
-        Sets the quiesce value for the vsa subclient
-
-        Args:
-            value   (Boolean)   True/False
-
-        """
-        update_properties = self.properties
-        update_properties['vsaSubclientProp']['quiesceGuestFileSystemAndApplications'] = value
-        self.update_properties(update_properties)

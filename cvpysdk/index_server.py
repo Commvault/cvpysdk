@@ -1173,7 +1173,7 @@ class IndexServer(object):
             Returns:
                 dict - containing the plan information
         """
-        client = self._commcell_obj.clients.get(self.index_server_client_id)
+        client = self._commcell_obj.clients.get(self.engine_name)
         instance_props = client.properties.get("pseudoClientInfo", {}).get("distributedClusterInstanceProperties", {})
         plan_details = instance_props.get("clusterConfig",{}).get("cloudInfo", {}).get("planInfo", {})
         return plan_details
@@ -1355,7 +1355,9 @@ class IndexNode(object):
         self.data_index = self.index_server.client_name.index(self.index_node_name)
         self.commcell.clients.refresh()
         self.index_node_client = self.commcell.clients.get(self.index_node_name)
-        self.index_client_properties = self.index_node_client.properties['pseudoClientInfo']['indexServerProperties']
+        # TODO: Rewrite Index server API logic to access client properties
+        self.index_client_properties = (self.index_node_client.properties.get('pseudoClientInfo', {}).
+                                        get('indexServerProperties', {}))
 
     @property
     def node_name(self):

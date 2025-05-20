@@ -97,8 +97,8 @@ class SharepointInstance(Instance):
 
             paths   (list)  --  list of sites or webs to be restored
                 Example : [
-                        "MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\\/\\Shared Documents\\TestFolder",
-                        "MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\\/\\Lists\\TestList",
+                        "MB\\https://<tenant_name>.sharepoint.com/sites/TestSite\\/\\Shared Documents\\TestFolder",
+                        "MB\\https://<tenant_name>.sharepoint.com/sites/TestSite\\/\\Lists\\TestList",
                         ]
         Returns:
 
@@ -131,8 +131,8 @@ class SharepointInstance(Instance):
 
             paths   (list)  --  list of sites or webs to be restored
                 Example : [
-                        "MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\\/\\Shared Documents\\TestFolder",
-                        "MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\\/\\Lists\\TestList",
+                        "MB\\https://<tenant_name>.sharepoint.com/sites/TestSite\\/\\Shared Documents\\TestFolder",
+                        "MB\\https://<tenant_name>.sharepoint.com/sites/TestSite\\/\\Lists\\TestList",
                         ]
         Returns:
 

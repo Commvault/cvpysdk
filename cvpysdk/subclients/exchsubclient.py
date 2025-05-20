@@ -53,6 +53,8 @@ import re
 from ..client import Client
 from ..subclient import Subclient
 from ..exception import SDKException
+from .exchange.constants import JobOptionKeys, JobOptionValues, JobOptionIntegers, ExchangeConstants
+
 
 
 class ExchangeSubclient(Subclient):
@@ -264,6 +266,152 @@ class ExchangeSubclient(Subclient):
                 "clientName": self._client_object.client_name
             },
         }
+
+    def _json_job_option_items(self, value):
+        """
+        Generates JSON for job options.
+        Args:
+            value (dict): Dictionary containing job options.
+        Returns:
+            dict: JSON representation of job options.
+        """
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        additional_options = []
+        message_exist = value.get("if_message_exists", JobOptionValues.SKIP.value)
+        stub_rehydration = value.get('stub_rehydration', JobOptionValues.DISABLED.value)
+        include_deleted_items = value.get('include_deleted_items', JobOptionValues.DISABLED.value)
+        match_destination_user = value.get('match_destination_user', JobOptionValues.DISABLED.value)
+        stub_rehydration_option = value.get('stub_rehydration_option',
+                                            JobOptionValues.RECOVER_STUBS.value)
+        email_level_reporting = value.get('email_level_reporting', JobOptionValues.DISABLED.value)
+        old_link = value.get('old_recall_link', None)
+        new_link = value.get('new_recall_link', None)
+
+        self._job_option_items_json = [
+            {"option": JobOptionKeys.RESTORE_DESTINATION.value, "value": JobOptionValues.EXCHANGE.value},
+            {"option": JobOptionKeys.DESTINATION.value, "value": JobOptionValues.ORIGINAL_LOCATION.value},
+            {"option": JobOptionKeys.IF_MESSAGE_EXISTS.value, "value": message_exist},
+            {"option": JobOptionKeys.INCLUDE_DELETED_ITEMS.value, "value": include_deleted_items},
+            {"option": JobOptionKeys.MATCH_DESTINATION_USER.value, "value": match_destination_user},
+            {"option": JobOptionKeys.STUB_REHYDRATION.value, "value": stub_rehydration},
+        ]
+
+        if stub_rehydration != JobOptionValues.DISABLED.value:
+            if stub_rehydration_option == JobOptionValues.RECOVER_STUBS.value:
+                additional_options = []
+            elif stub_rehydration_option == JobOptionValues.STUB_REPORTING.value:
+                additional_options = [
+                    {"option": JobOptionKeys.MAILBOX_LEVEL_REPORTING.value, "value": JobOptionValues.ENABLED.value},
+                    {"option": JobOptionKeys.EMAIL_LEVEL_REPORTING.value, "value": email_level_reporting},
+                ]
+            elif stub_rehydration_option == JobOptionValues.UPDATE_RECALL_LINK.value:
+                additional_options = [
+                    {"option": JobOptionKeys.OLD_RECALL_LINK.value, "value": old_link},
+                    {"option": JobOptionKeys.NEW_RECALL_LINK.value, "value": new_link},
+                ]
+
+        if additional_options:
+            self._job_option_items_json.extend(additional_options)
+
+        self._job_option_items_json.append({
+            "option": JobOptionKeys.STUB_REHYDRATION_OPTION.value,
+            "value": stub_rehydration_option
+        })
+
+        return self._job_option_items_json
+
+    def _exchange_option_restore_json_rehydration(self, value):
+        """
+        Generates JSON for Exchange restore rehydration options.
+        Args:
+            value (dict): Dictionary containing rehydration options.
+        Returns:
+            dict: JSON representation of rehydration options.
+        """
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        mapping = {
+            JobOptionValues.RECOVER_STUBS.value: JobOptionIntegers.RECOVER_STUBS.value,
+            JobOptionValues.STUB_REPORTING.value: JobOptionIntegers.STUB_REPORTING.value,
+            JobOptionValues.UPDATE_RECALL_LINK.value: JobOptionIntegers.UPDATE_RECALL_LINK.value
+        }
+
+        stub_rehydration_option = mapping.get(
+            value.get('stub_rehydration_option', JobOptionValues.RECOVER_STUBS.value)
+        )
+
+        email_level_reporting = value.get('email_level_reporting', JobOptionValues.DISABLED.value)
+        old_link = value.get('old_recall_link', None)
+        new_link = value.get('new_recall_link', None)
+
+        base = {
+            JobOptionKeys.STUB_REHYDRATION.value: True,
+            JobOptionKeys.STUB_REHYDRATION_OPTION.value: stub_rehydration_option
+        }
+
+        additional_options = {}
+        if stub_rehydration_option == JobOptionIntegers.RECOVER_STUBS.value:
+            additional_options = {}
+        elif stub_rehydration_option == JobOptionIntegers.STUB_REPORTING.value:
+            additional_options = {
+                "stubReportOption": {
+                    "messageLevelReport": email_level_reporting == JobOptionValues.ENABLED.value,
+                    "mailboxLevelReport": True
+                }
+            }
+        elif stub_rehydration_option == JobOptionIntegers.UPDATE_RECALL_LINK.value:
+            additional_options = {
+                "stubOldRecallLink": old_link,
+                "stubRecallLink": new_link
+            }
+
+        base.update(additional_options)
+
+        self._json_exchange_options = {
+            JobOptionKeys.EXCHANGE_RESTORE_CHOICE.value: JobOptionIntegers.EXCHANGE_RESTORE_CHOICE.value,
+            JobOptionKeys.EXCHANGE_RESTORE_DRIVE.value: JobOptionIntegers.EXCHANGE_RESTORE_DRIVE.value,
+            JobOptionKeys.IS_JOURNAL_REPORT.value: value.get("journal_report", False),
+            JobOptionKeys.PST_FILE_PATH.value: "",
+            JobOptionKeys.TARGET_MAILBOX.value: value.get("target_mailbox", None),
+            JobOptionKeys.STUB_REHYDRATION.value: base
+        }
+
+        return self._json_exchange_options
+
+    def _browse_filter_xml(self, value):
+        """
+        Generates an XML query for browsing with a filter.
+        Args:
+            value (dict): Dictionary containing the filter value with the key 'keyword'.
+        Returns:
+            str: XML query string for the filter.
+        """
+        xml_query = f"""<?xml version='1.0' encoding='UTF-8'?>
+        <databrowse_Query type="0" queryId="0" isFacet="1">
+            <whereClause connector="0">
+                <criteria field="29">
+                    <values val="{value["keyword"]}"/>
+                </criteria>
+            </whereClause>
+        </databrowse_Query>"""
+        return xml_query
+
+    def _request_json_search_in_restore(self, filters):
+        """
+        Generates a JSON request for searching within a restore operation.
+        Args:
+            filters (dict): Dictionary containing the search filter parameters.
+                               Expected keys are 'keyword' and 'appID'.
+        Returns:
+            dict: JSON request for the search operation.
+        """
+        req_json = ExchangeConstants.SEARCH_IN_RESTORE_PAYLOAD
+        req_json["advSearchGrp"]["cvSearchKeyword"]["keyword"] = filters.get("keyword", "")
+        req_json["advSearchGrp"]["galaxyFilter"][0]["appIdList"] = filters.get("appID", [])
+        return req_json
 
     def _json_disk_restore_exchange_restore_option(self, value):
         """Setter for  the Exchange Mailbox Disk restore option
@@ -504,7 +652,8 @@ class ExchangeSubclient(Subclient):
             overwrite=True,
             journal_report=False,
             restore_as_stub=None,
-            recovery_point_id=None):
+            recovery_point_id=None,
+            **kwargs):
         """Restores the mailboxes/folders specified in the input paths list to the same location.
 
             Args:
@@ -519,6 +668,14 @@ class ExchangeSubclient(Subclient):
                 restore_as_stub         (dict)  --  setters for common options
 
                 recovery_point_id       (int)   --  ID of the recovery point to which the mailbox is to be restored to
+                    Default: None
+
+                **kwargs:
+                Expected:
+                stub_rehydration        (dict)  --  stub rules to rehydrate items during restore
+                    Default: None
+
+                filters                  (dict)  --  filter values for find and restore
                     Default: None
 
             Returns:
@@ -555,12 +712,33 @@ class ExchangeSubclient(Subclient):
             request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
                 'commonOptions'] = self._json_restore_exchange_common_option(restore_as_stub)
 
+        stub_rehydration = kwargs.get("stub_rehydration")
+        if stub_rehydration:
+            request_json['taskInfo']['subTasks'][0]['options']['commonOpts'][
+                'jobOptionItems'] = self._json_job_option_items(stub_rehydration)
+            request_json['taskInfo']['subTasks'][0][
+                'options']['restoreOptions']['exchangeOption'] = self._exchange_option_restore_json_rehydration(stub_rehydration)
+
         request_json["taskInfo"]["subTasks"][0]["options"][
             "restoreOptions"]["browseOption"]['backupset'] = self._exchange_backupset_json
 
         if recovery_point_id is not None:
             request_json["taskInfo"]["subTasks"][0]["options"][
                 "restoreOptions"]['exchangeOption']["recoveryPointId"] = recovery_point_id
+
+        filters = kwargs.get("filters")
+        if filters:
+            if (filters.get("restore_all_matching")):
+                request_json["taskInfo"]["subTasks"][0]["options"][
+                    "restoreOptions"]["exchangeOption"]["restoreAllMatching"] = filters.get("restore_all_matching",
+                                                                                           False)
+                request_json["taskInfo"]["subTasks"][0]["options"][
+                    "restoreOptions"]["fileOption"]["browseFilters"] = [self._browse_filter_xml(filters)]
+            if (filters.get("restore_selected_items")):
+                req = self._request_json_search_in_restore(filters)
+                result = self._process_search_response(req)
+                request_json["taskInfo"]["subTasks"][0]["options"][
+                    "restoreOptions"]["fileOption"]["sourceItem"] = result
 
         return self._process_restore_response(request_json)
 

@@ -330,16 +330,16 @@ class CaseSubclient(Subclient):
                 custodian_info = [
 
                     {
-                      "smtp": "ee2@testexch.commvault.com",
-                      "name": "ee2",
-                      "guid": "1b690719-72af-4d13-9ce0-577962cd165d"
+                      "smtp": "",
+                      "name": "",
+                      "guid": ""
 
                     },
 
                     {
-                      "smtp": "ee15@testexch.commvault.com",
-                      "name": "ee15",
-                      "guid": "86139703-b8e7-41b9-824f-47f3f4b0dde1"
+                      "smtp": "",
+                      "name": "",
+                      "guid": ""
 
                     }
 

@@ -64,6 +64,8 @@ Domain:
     set_sso                     --  Enables/Disables single sign on a domain
 
     set_properties              --  Sets/modifies the properties for domain
+
+    set_domain_status           --  Enables/Disables the domain
 """
 
 from __future__ import absolute_import
@@ -526,6 +528,7 @@ class Domain(object):
             self._domain_id = domain_id
 
         self._domain = self._commcell_object._services['DOMAIN_PROPERTIES'] % (self._domain_id)
+        self._DOMAIN_CONTROLER = self._commcell_object._services['DOMAIN_CONTROLER']
         self._properties = None
         self._get_domain_properties()
 
@@ -643,6 +646,39 @@ class Domain(object):
             raise SDKException('Response', '102')
         raise SDKException(
             'Response', '101', self._commcell_object._update_response_(response.text))
+
+    def set_domain_status(self, enable: bool) -> None:
+        """Enables/Disables the domain
+            Args:
+                enable(bool)      --  True    - enables domain
+                                      False   - disables domain
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if response is not success
+        """
+
+        self._properties['enabled'] = 1 if enable else 0
+        req_json = {"operation": 3,
+                    "provider": self._properties}
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', self._DOMAIN_CONTROLER, req_json)
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', 0)
+                if error_code != 0:
+                    raise SDKException(
+                        'Domain', '102',
+                        response.json().get('errorMessage', 'Unable to update domain status')
+                    )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException(
+                'Response', '101',
+                response.json().get('errorMessage', 'Unable to update domain status'))
 
     @property
     def domain_name(self):

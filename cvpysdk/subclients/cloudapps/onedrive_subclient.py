@@ -886,8 +886,8 @@ class OneDriveSubclient(CloudAppsSubclient):
                 groups (list): group details' list fetched from discovered content
                               eg: [
                                       {
-                                         "name": "g1",
-                                         "id": "df1f794a-ceee-4e91-b644-6f34a0416917"
+                                         "name": "",
+                                         "id": ""
                                        }
                                   ]
 
@@ -1629,6 +1629,8 @@ class OneDriveSubclient(CloudAppsSubclient):
                 if response is not success
                 if response is returned with errors
         """
+
+        self.custom_counter = 0
 
         def get_field_number(field_name):
             """ Gets the indexed number for each type of field"""

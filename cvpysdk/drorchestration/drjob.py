@@ -164,3 +164,24 @@ class DRJob(Job):
                 })
             job_stats[str(pair_stats.get('client', {}).get('clientName', ''))] = phases
         return job_stats
+
+    def get_storagepolicy_restore_vm(self, source):
+        """
+        Fetches storage policy details for RESTORE_VM phases.
+        """
+
+        fetched_value = {}
+        phases = self.get_phases().get(source, [])
+        for phase in phases:
+            if phase.get('phase_name').name == "RESTORE_VM":
+                values = DRJob(self._commcell_object, phase.get('job_id')).task_details
+                fetched_value = {
+                    'copyId': str(
+                        values.get('subTasks', [])[0].get('options', {}).get('restoreOptions', {}).get(
+                            'storagePolicy', {}).get('copyId')),
+                    'copyName': str(
+                        values.get('subTasks', [])[0].get('options', {}).get('restoreOptions', {}).get(
+                            'storagePolicy', {}).get('copyName'))
+                }
+
+        return fetched_value

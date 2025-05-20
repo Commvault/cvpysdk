@@ -194,7 +194,7 @@ class ContentStoreMailboxSubclient(ExchangeSubclient):
         """"Returns the list of discovered users for the UserMailbox subclient."""
         return self._content_store_mailboxes
 
-    def set_contentstore_assocaition(self, subclient_content):
+    def set_contentstore_assocaition(self, subclient_content, use_policies=True):
         """Create User assocaition for UserMailboxSubclient.
 
             Args:
@@ -202,50 +202,34 @@ class ContentStoreMailboxSubclient(ExchangeSubclient):
 
                     subclient_content = {
 
-                        'mailboxNames' : ["AutoCi2"],,
+                        'mailboxNames' : ["List of mailbox alias"],,
 
-                        'contentStoreClients' : [shindex],
+                        'contentStoreClients' : [List of Content Store clients],
 
+                        -- if use_policies is True --
                         'archive_policy' : "CIPLAN Archiving policy",
 
                         'cleanup_policy' : 'CIPLAN Clean-up policy',
 
                         'retention_policy': 'CIPLAN Retention policy'
+
+                        -- if use_policies is False --
+                        'plan_name': Plan Name,
+                        'plan_id': int or None (Optional)
                     }
+
+                use_policies (bool) -- If True uses policies else uses Plan
 
         """
         users = []
 
         if not isinstance(subclient_content, dict):
             raise SDKException('Subclient', '101')
-
-        from ...policies.configuration_policies import ConfigurationPolicy
-
-        if not (isinstance(subclient_content[
-                'journal_policy'], (ConfigurationPolicy, str)) and
-                isinstance(subclient_content[
-                    'retention_policy'], (ConfigurationPolicy, str)) and
-                isinstance(subclient_content['mailboxNames'], list)):
-            raise SDKException('Subclient', '101')
-
-        if isinstance(subclient_content['journal_policy'], ConfigurationPolicy):
-            journal_policy = subclient_content['journal_policy']
-        elif isinstance(subclient_content['journal_policy'], str):
-            journal_policy = ConfigurationPolicy(
-                self._commcell_object, subclient_content['journal_policy'])
-
-        if isinstance(subclient_content['retention_policy'], ConfigurationPolicy):
-            retention_policy = subclient_content['retention_policy']
-        elif isinstance(subclient_content['retention_policy'], str):
-            retention_policy = ConfigurationPolicy(
-                self._commcell_object, subclient_content['retention_policy'])
-        content_store_server = self._content_store_servers(
-            subclient_content['contentStoreClients'])
-
         try:
+            content_store_server = self._content_store_servers(
+                subclient_content['contentStoreClients'])
 
             for mailbox_item in subclient_content['mailboxNames']:
-
                 mailbox_dict = {
                     'smtpAdrress': mailbox_item['smtpAdrress'],
                     'mailBoxType': 3,
@@ -254,57 +238,102 @@ class ContentStoreMailboxSubclient(ExchangeSubclient):
 
                 }
                 users.append(mailbox_dict)
-
         except KeyError as err:
             raise SDKException('Subclient', '102', '{} not given in content'.format(err))
 
-        associations_json = {
-            "emailAssociation": {
-                "advanceOptions": {},
-                "subclientEntity": self._subClientEntity,
-                "emailDiscoverinfo": {
-                    "discoverByType": 6,
-                    "contentStoreMailboxes": users
-                },
-                "policies": {
-                    "emailPolicies": [
-                        {
-                            "policyType": 1,
-                            "flags": 0,
-                            "agentType": {
-                                "appTypeId": 137
-                            },
-                            "detail": {
-                                "emailPolicy": {
-                                    "emailPolicyType": 4
-                                }
-                            },
-                            "policyEntity": {
-                                "policyId": int(journal_policy.configuration_policy_id),
-                                "policyName": journal_policy.configuration_policy_name
-                            }
+        if use_policies:
+            from ...policies.configuration_policies import ConfigurationPolicy
 
-                        },
-                        {
-                            "policyType": 1,
-                            "flags": 0,
-                            "agentType": {
-                                "appTypeId": 137
-                            },
-                            "detail": {
-                                "emailPolicy": {
-                                    "emailPolicyType": 3
+            if not (isinstance(subclient_content[
+                    'journal_policy'], (ConfigurationPolicy, str)) and
+                    isinstance(subclient_content[
+                        'retention_policy'], (ConfigurationPolicy, str)) and
+                    isinstance(subclient_content['mailboxNames'], list)):
+                raise SDKException('Subclient', '101')
+
+            if isinstance(subclient_content['journal_policy'], ConfigurationPolicy):
+                journal_policy = subclient_content['journal_policy']
+            elif isinstance(subclient_content['journal_policy'], str):
+                journal_policy = ConfigurationPolicy(
+                    self._commcell_object, subclient_content['journal_policy'])
+
+            if isinstance(subclient_content['retention_policy'], ConfigurationPolicy):
+                retention_policy = subclient_content['retention_policy']
+            elif isinstance(subclient_content['retention_policy'], str):
+                retention_policy = ConfigurationPolicy(
+                    self._commcell_object, subclient_content['retention_policy'])
+            associations_json = {
+                "emailAssociation": {
+                    "advanceOptions": {},
+                    "subclientEntity": self._subClientEntity,
+                    "emailDiscoverinfo": {
+                        "discoverByType": 6,
+                        "contentStoreMailboxes": users
+                    },
+                    "policies": {
+                        "emailPolicies": [
+                            {
+                                "policyType": 1,
+                                "flags": 0,
+                                "agentType": {
+                                    "appTypeId": 137
+                                },
+                                "detail": {
+                                    "emailPolicy": {
+                                        "emailPolicyType": 4
+                                    }
+                                },
+                                "policyEntity": {
+                                    "policyId": int(journal_policy.configuration_policy_id),
+                                    "policyName": journal_policy.configuration_policy_name
                                 }
+
                             },
-                            "policyEntity": {
-                                "policyId": int(retention_policy._configuration_policy_id),
-                                "policyName": retention_policy._configuration_policy_name
+                            {
+                                "policyType": 1,
+                                "flags": 0,
+                                "agentType": {
+                                    "appTypeId": 137
+                                },
+                                "detail": {
+                                    "emailPolicy": {
+                                        "emailPolicyType": 3
+                                    }
+                                },
+                                "policyEntity": {
+                                    "policyId": int(retention_policy._configuration_policy_id),
+                                    "policyName": retention_policy._configuration_policy_name
+                                }
                             }
-                        }
-                    ]
+                        ]
+                    }
                 }
             }
-        }
+
+        else:
+            if 'plan_name' not in subclient_content:
+                raise SDKException('Subclient', '102', "'plan_name' not given in content")
+
+            if not self._commcell_object.plans.has_plan(subclient_content['plan_name']):
+                raise SDKException('Subclient', '102',
+                                   'Plan Name {} not found'.format(subclient_content['plan_name']))
+            if 'plan_id' not in subclient_content or subclient_content['plan_id'] is None:
+                plan_id = self._commcell_object.plans[subclient_content['plan_name'].lower()]
+            else:
+                plan_id = subclient_content['plan_id']
+
+            associations_json = {
+                "emailAssociation": {
+                    "advanceOptions": {"enableAutoDiscovery": False},
+                    "subclientEntity": self._subClientEntity,
+                    "emailDiscoverinfo": {
+                        "discoverByType": 6,
+                        "contentStoreMailboxes": users
+                    },
+                    "emailStatus": 0,
+                    "plan": {"planId": int(plan_id)}
+                }
+            }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'PUT', self._SET_EMAIL_POLICY_ASSOCIATIONS, associations_json

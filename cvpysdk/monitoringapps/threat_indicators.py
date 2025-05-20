@@ -27,6 +27,10 @@ TAServers:
 
     __init__()                          --  initialise object of the TAServers class
 
+    _get_clients_count()                --  returns total client on threat indicators for this CS
+
+    _get_monitored_vm_count()           --  returns monitored vm count on threat indicators for this CS
+
     _get_threat_indicators()            --  returns the list of threat indicators client for this CS
 
     _response_not_success()             --  parses through the exception response, and raises SDKException
@@ -38,6 +42,12 @@ TAServers:
     get()                               --  returns the server class object for given server name
 
     run_scan()                          --  runs anomaly scan on given server
+
+TAServers Attributes:
+
+    **clients_count**       --  returns the total clients stats from threat indicators from CS
+
+    **monitored_vms**       --  returns the monitored vms stats from threat indicators from CS
 
 TAServer:
 
@@ -83,6 +93,7 @@ class AnomalyType(enum.Enum):
     THREAT_ANALYSIS = 64
     FILE_DATA = 128
     EXTENSION_BASED = 512
+    DATA_WRITTEN = 4096
 
 
 class TAServers():
@@ -105,8 +116,12 @@ class TAServers():
         self._services = commcell_object._services
         self._threat_indicators = []
         self._servers = []
+        self._total_clients = None
+        self._monitored_vms = None
         self._API_GET_ALL_INDICATORS = self._services['GET_THREAT_INDICATORS']
         self._API_RUN_SCAN = self._services['RUN_ANOMALY_SCAN']
+        self._API_CLIENTS_COUNT = self._services['ANOMALY_CLIENTS_COUNT']
+        self._API_MONITORED_VMS = self._services['MONITORED_VM_COUNT']
         self.refresh()
 
     def _response_not_success(self, response):
@@ -119,6 +134,57 @@ class TAServers():
 
         """
         raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+
+    def _get_clients_count(self):
+        """returns the client count details for Threat inidcators on this CS
+
+            Args:
+
+                None
+
+            Returns:
+
+                dict  - Containing total client stats [stats for client type = fileserver,vm,laptop]
+
+            Raises:
+
+                SDKException:
+
+                    if failed to fetch details
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._API_CLIENTS_COUNT)
+        if flag:
+            if response.json():
+                return response.json()
+            elif bool(response.json()):
+                raise SDKException('ThreatIndicators', '110')
+        self._response_not_success(response)
+
+    def _get_monitored_vm_count(self):
+        """returns the monitored vm count stats for Threat inidcators on this CS
+
+            Args:
+
+                None
+
+            Returns:
+
+                dict  - Containing total monitored vm stats
+
+            Raises:
+
+                SDKException:
+
+                    if failed to fetch details
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._API_MONITORED_VMS)
+        if flag:
+            if response.json():
+                return response.json()
+            elif bool(response.json()):
+                raise SDKException('ThreatIndicators', '111')
+        self._response_not_success(response)
+
 
     def _get_threat_indicators(self):
         """returns the list of threat indicators for this CS
@@ -304,7 +370,34 @@ class TAServers():
     def refresh(self):
         """Refresh the threat indicator servers associated with CS"""
         self._servers = []
+        self._total_clients = None
+        self._monitored_vms = None
         self._threat_indicators = self._get_threat_indicators()
+        self._total_clients = self._get_clients_count()
+        self._monitored_vms = self._get_monitored_vm_count()
+
+    @property
+    def monitored_vms(self):
+        """returns the monitored vms stats from threat indicators on this CS
+
+            Returns:
+
+                dict --  client stats
+
+        """
+        return self._monitored_vms
+
+    @property
+    def clients_count(self):
+        """returns the client stats from threat indicators on this CS
+
+            Returns:
+
+                dict --  client stats
+
+        """
+        return self._total_clients
+
 
 
 class TAServer:

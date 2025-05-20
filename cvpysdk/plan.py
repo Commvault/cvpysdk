@@ -71,7 +71,7 @@ Plans
     _get_fq_parameters()        --  Returns the fq parameters based on the fq list passed
 
     get_plans_cache()           --  Returns plan cache in response
-    
+
 Attributes
 ----------
 
@@ -79,6 +79,7 @@ Attributes
 
     **all_plans_cache** --  Returns the dictionary consisting of all the plans cache present in mongoDB
 
+    **all_plans_prop**  --  Return complete GET API response
 
 Plan
 ====
@@ -488,6 +489,7 @@ class Plans(object):
                 object - instance of Plans class
         """
 
+        self._all_plans_props = None
         self._commcell_object = commcell_object
 
         self._cvpysdk_object = commcell_object._cvpysdk_object
@@ -500,6 +502,7 @@ class Plans(object):
         self._V4_GLOBAL_PLANS = self._services['V4_GLOBAL_SERVER_PLANS']
         self._plans = None
         self._plans_cache = None
+        self.filter_query_count = 0
         self.refresh()
 
     def __str__(self):
@@ -553,9 +556,10 @@ class Plans(object):
             except IndexError:
                 raise IndexError('No plan exists with the given Name / Id')
 
-    def _get_plans(self):
+    def _get_plans(self, full_response: bool = False):
         """Gets all the plans associated with the commcell
-
+            Args:
+                full_response(bool) --  flag to return complete response
             Returns:
                 dict - consists of all plans in the commcell
                     {
@@ -575,11 +579,12 @@ class Plans(object):
             plans = {}
 
             if response.json() and 'plans' in response.json():
-                response_value = response.json()['plans']
+                if full_response:
+                    return response.json()
 
                 name_count = {}
 
-                for temp in response_value:
+                for temp in response.json()['plans']:
                     temp_name = temp.get('plan', {}).get('planName', '').lower()
                     temp_company = temp.get('plan', {}).get('entityInfo', {}).get('companyName', '').lower()
 
@@ -588,7 +593,7 @@ class Plans(object):
                     else:
                         name_count[temp_name] = {temp_company}
 
-                for temp in response_value:
+                for temp in response.json()['plans']:
                     temp_name = temp.get('plan', {}).get('planName', '').lower()
                     temp_id = str(temp['plan']['planId']).lower()
                     temp_company = temp.get('plan', {}).get('entityInfo', {}).get('companyName', '').lower()
@@ -663,12 +668,13 @@ class Plans(object):
             'planName': 'plans.plan.planName',
             'planId': 'plans.plan.planId',
             'planType': 'plans.subtype',
+            'description': 'plans.description',
             'numAssocEntities': 'plans.numAssocEntities',
             'rpoInMinutes': 'plans.rpoInMinutes',
             'numCopies': 'plans.numCopies',
             'planStatusFlag': 'plans.planStatusFlag',
             'storage': 'plans.storageResourcePoolMaps.resources.resourcePool',
-            'company': 'plans.plan.entityInfo.companyName',
+            'companyName': 'plans.plan.entityInfo.companyName',
             'tags': 'tags'
         }
         default_columns = 'plans.plan.planName,plans.plan.planId'
@@ -713,28 +719,28 @@ class Plans(object):
         Returns:
             fq_parameters(str) -- fq parameter string
         """
-        conditions = ['contains', 'notContain', 'eq', 'neq', 'gt', 'lt']
-        params = [""]
-        if fq:
+        conditions = {"contains", "notContain", "eq", "neq", "gt", "lt"}
+        params = []
 
-            for param in fq:
-                if param[0] in self.valid_columns.keys():
-                    if param[0] == 'tags' and param[1] =='contains':
-                        params.append(f"&tags={param[2]}")
-                    elif param[1] in conditions:
-                        params.append(f"&fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}")
-                    elif param[1] == 'isEmpty' and len(param) == 2:
-                        params.append(f"&fq={self.valid_columns[param[0]]}:in:null,")
-                    elif param[1] == 'between' and '-' in param[2]:
-                        ranges = param[2].split('-')
-                        params.append(f"&fq={self.valid_columns[param[0]]}:gteq:{ranges[0]}")
-                        params.append(f"&fq={self.valid_columns[param[0]]}:lteq:{ranges[1]}")
-                    else:
-                        raise SDKException('Plan', '102', 'Invalid condition passed')
-                else:
-                    raise SDKException('Plan', '102', 'Invalid column Name passed')
-        if params:
-            return "".join(params)
+        for column, condition, *value in fq or []:
+            if column not in self.valid_columns:
+                raise SDKException('Plan', '102', 'Invalid column name passed')
+
+            # Handle 'tags' column separately
+            if column == "tags" and condition == "contains":
+                params.append(f"&tags={value[0]}")
+            elif condition in conditions:
+                params.append(f"&fq={self.valid_columns[column]}:{condition.lower()}:{value[0]}")
+            elif condition == "isEmpty" and not value:
+                params.append(f"&fq={self.valid_columns[column]}:in:null,")
+            elif condition == "between" and value and "-" in value[0]:
+                start, end = value[0].split("-", 1)
+                params.append(f"&fq={self.valid_columns[column]}:gteq:{start}")
+                params.append(f"&fq={self.valid_columns[column]}:lteq:{end}")
+            else:
+                raise SDKException('Plan', '102', 'Invalid condition passed')
+
+        return "".join(params)
 
     def get_plans_cache(self, hard: bool = False, **kwargs) -> dict:
         """
@@ -753,29 +759,33 @@ class Plans(object):
                 fq (list)   --   Contains the columnName, condition, and value.
                                         e.g. fq = [['planName', 'contains', 'test'],
                                         ['numAssocEntities', 'between', '0-1']] (default: None).
-                enum (bool) --   Flag to return enums in the response (default: True).
 
         Returns:
             dict: Dictionary of all the properties present in response.
         """
-        headers = self._commcell_object._headers.copy()
-        if kwargs.get('enum', True):
-            headers['EnumNames'] = "True"
-
+        # computing parameters
         fl_parameters = self._get_fl_parameters(kwargs.get('fl', None))
         fq_parameters = self._get_fq_parameters(kwargs.get('fq', None))
-        limit = kwargs.get('limit', ['0', '100'])
-        limit_parameters = f'start={limit[0]}&limit={limit[1]}'
+        limit = kwargs.get('limit', None)
+        limit_parameters = f'start={limit[0]}&limit={limit[1]}' if limit else ''
         hard_refresh = '&hardRefresh=true' if hard else ''
         sort_parameters = self._get_sort_parameters(kwargs.get('sort', None)) if kwargs.get('sort', None) else ''
-        search_parameter = f'&search={",".join(self.valid_columns.values())}:contains:{kwargs.get("search", None)}' if kwargs.get(
-            'search', None) else ''
 
-        request_url = (
-                self._PLANS + "?" + limit_parameters + sort_parameters + fl_parameters + fq_parameters +
-                hard_refresh + search_parameter
-        )
-        flag, response = self._cvpysdk_object.make_request("GET", request_url, headers=headers)
+        # Search operation can only be performed on limited columns, so filtering out the columns on which search works
+        searchable_columns = ["planName","planType","planStatusFlag","companyName","description"]
+        search_parameter = (f'&search=tagName,tagValue,{",".join(self.valid_columns[col] for col in searchable_columns)}'
+                            f':contains:{kwargs.get("search", None)}') if kwargs.get('search', None) else ''
+
+        params = [
+            limit_parameters,
+            sort_parameters,
+            fl_parameters,
+            hard_refresh,
+            search_parameter,
+            fq_parameters
+        ]
+        request_url = f"{self._PLANS}?" + "".join(params)
+        flag, response = self._cvpysdk_object.make_request("GET", request_url)
 
         if not flag:
             response_string = self._update_response_(response.text)
@@ -783,26 +793,33 @@ class Plans(object):
 
         plans_summary = {}
         if response.json() and 'plans' in response.json():
+            self.filter_query_count = response.json().get('filterQueryCount',0)
             for plan in response.json()['plans']:
                 name = plan.get("plan", {}).get("planName", None)
+                company = plan.get('plan', {}).get('entityInfo', {}).get('companyName', None)
+
                 plan_config = {
+                    'planName':name,
                     'planId': plan.get('plan', {}).get('planId', None),
                     'planType': plan.get('subtype'),
+                    'description': plan.get('description'),
                     'numCopies': plan.get('numCopies'),
                     'numAssocEntities': plan.get('numAssocEntities'),
-                    'rpoInMinutes': plan.get('rpoInMinutes'),
+                    'rpoInMinutes': plan.get('rpoInMinutes',0),
                     'planStatusFlag': plan.get('planStatusFlag'),
-                    'company': plan.get('plan', {}).get('entityInfo', {}).get('companyName', None)
+                    'companyName': company,
+                    'tags': (plan.get('plan') or {}).get('tags') or []
                 }
                 if 'storageResourcePoolMaps' in plan and 'resources' in plan.get('storageResourcePoolMaps', {})[0]:
-                    plan_config['storage'] = [
+                    plan_config['resourcePool'] = [
                         resource.get('resourcePool', {}).get('resourcePoolName')
                         for resource in plan.get('storageResourcePoolMaps', {})[0].get('resources')
                     ]
-                if 'tags' in plan.get('plan'):
-                    plan_config['tags'] = plan.get('plan', None).get('tags')
-                plan_config = {key: value for key, value in plan_config.items() if value is not None}
-                plans_summary[name] = plan_config
+                # Check if plan name already exists for a different company
+                unique_name = name
+                if name in plans_summary and plans_summary[name].get('companyName') != company:
+                    unique_name = f"{name}_({company})"
+                plans_summary[unique_name] = plan_config
 
             return plans_summary
         else:
@@ -858,8 +875,10 @@ class Plans(object):
                     }
 
                 """
+        if not self._plans_cache:
+            self._plans_cache = self.get_plans_cache()
         return self._plans_cache
-    
+
     def filter_plans(self, plan_type, company_name=None):
         """
         Returns the dictionary consisting of specified type and company plans.
@@ -1052,6 +1071,11 @@ class Plans(object):
                         number_of_days_src_pruning          (int)   -- Number of days for source pruning
                         include_msgs_older_than             (int)   -- Include messages older than for archiving
                         include_msgs_larger_than            (int)   -- Inlcude messages larger than for archiving
+                        exclude_folder_filter               (list)  -- Exclude folder filter
+                        include_folder_filter               (list)  -- Include folder filter
+                        enable_message_rules                (bool)  -- Enable message rules
+                        truncate_body                       (bool)  -- Truncate body
+                        truncate_body_to_size               (int)   -- Size to which body should be truncated (default: 1024)
 
             Returns:
                 Plan object of the created plan
@@ -1078,6 +1102,22 @@ class Plans(object):
             exch_cleanup = request_json['plan']['exchange']['mbCleanup']['detail']['emailPolicy']['cleanupPolicy']
             exch_cleanup['excludeFolderFilter']['folderPatternsSelected'].remove('Drafts')
             exch_cleanup['excludeFolderFilter']['folderPatternsAvailable'].append('Drafts')
+            if kwargs.get('enable_message_rules'):
+                exch_cleanup['enableMessageRules'] = True
+            exclude_folders = kwargs.get('exclude_folder_filter', [])
+            for folder in exclude_folders:
+                if folder in exch_cleanup['excludeFolderFilter']['folderPatternsAvailable']:
+                    exch_cleanup['excludeFolderFilter']['folderPatternsAvailable'].remove(folder)
+                exch_cleanup['excludeFolderFilter']['folderPatternsSelected'].append(folder)
+            include_folders = kwargs.get('include_folder_filter', [])
+            exch_cleanup['includeFolderFilter']['folderPatternsSelected'] = []
+            for folder in include_folders:
+                if folder in exch_cleanup['includeFolderFilter']['folderPatternsAvailable']:
+                    exch_cleanup['includeFolderFilter']['folderPatternsAvailable'].remove(folder)
+                exch_cleanup['includeFolderFilter']['folderPatternsSelected'].append(folder)
+            if kwargs.get('truncate_body'):
+                exch_cleanup['truncateBody'] = True
+                exch_cleanup['truncateBodyToSize'] = kwargs.get('truncate_body_to_size', 1024)
             exch_cleanup['archiveMailbox'] = kwargs.get('enable_cleanup_archive_mailbox', False)
             exch_cleanup['collectMsgsDaysAfter'] = kwargs.get('cleanup_msg_older_than', 0)
             exch_cleanup['collectMsgsLargerThan'] = kwargs.get('cleanup_msg_larger_than', 0)
@@ -1995,6 +2035,14 @@ class Plans(object):
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    @property
+    def all_plans_prop(self)->list[dict]:
+        """
+        Returns complete GET API response
+        """
+        self._all_plans_props = self._get_plans(full_response=True).get("plans",[])
+        return self._all_plans_props
 
 
 class Plan(object):

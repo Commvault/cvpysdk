@@ -51,6 +51,7 @@ class AzureSubclient(VirtualServerSubclient):
                                      restore_new_name=None,
                                      overwrite=False,
                                      power_on=False,
+                                     run_security_scan=False,
                                      copy_precedence=0,
                                      restore_option=None,
                                      **kwargs):
@@ -69,6 +70,9 @@ class AzureSubclient(VirtualServerSubclient):
 
                 poweron
                         default:False   (bool)      --  power on the  restored VM
+
+                run_security_scan
+                        default:False  (bool)       -- run threat analysis on VM
 
                 restore_option      (dict)     --  complete dictionary with all advanced optio
                     default: {}
@@ -111,6 +115,7 @@ class AzureSubclient(VirtualServerSubclient):
             vm_to_restore=self._set_vm_to_restore(vm_to_restore),
             unconditional_overwrite=overwrite,
             power_on=power_on,
+            run_security_scan=run_security_scan,
             copy_precedence=copy_precedence,
             volume_level_restore=1,
             esx_host=cloud_service,

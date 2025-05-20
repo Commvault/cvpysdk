@@ -1070,6 +1070,7 @@ class Backupset(object):
         self._restore_methods = [
             '_process_restore_response',
             '_filter_paths',
+            '_process_search_response',
             '_restore_json',
             '_impersonation_json',
             '_restore_browse_option_json',
@@ -1135,6 +1136,8 @@ class Backupset(object):
             'compute_folder_size': False,
             'vs_volume_browse': False,
             'browse_view_name': 'VOLUMEVIEW',
+            'compare_backups_req': 0,
+            'comparison_job_id': 0,
 
             '_subclient_id': 0,
             '_raw_response': False,
@@ -1545,6 +1548,18 @@ class Backupset(object):
 
         if options.get('live_browse', False):
             request_json['options']['liveBrowse'] = True
+
+        if options.get('compare_backups_req', 0) != 0:
+            request_json['mode']['mode'] = 3
+            request_json['advOptions']['advConfig'] = {
+                'compareBackupsReqType': int(options.get('compare_backups_req'))
+            }
+            if options.get('comparison_job_id', 0) != 0:
+                request_json['applicationInfo'] = {
+                    'indexingInfo': {
+                        'jobId': int(options.get('comparison_job_id'))
+                    }
+                }
 
         return request_json
 

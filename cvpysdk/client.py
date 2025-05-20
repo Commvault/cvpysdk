@@ -154,6 +154,8 @@ Clients Attributes
     **all_clients_cache**       --  returns th dictionary consisting of all the clients and their
     info from CommcellEntityCache DB in Mongo
 
+    **all_client_props**        --  returns complete GET api response
+
     **hidden_clients**          --  returns the dictionary consisting of only the hidden clients
     that are associated with the commcell and their information such as id and hostname
 
@@ -482,6 +484,8 @@ class Clients(object):
         self._salesforce_clients = None
         self._file_server_clients = None
         self._client_cache = None
+        self._all_clients_props = None
+        self.filter_query_count = 0
         self.refresh()
 
     def __str__(self):
@@ -581,11 +585,11 @@ class Clients(object):
         else:
             raise SDKException('Response', '102', self._update_response_(response.text))
 
-    def _get_clients(self, hard=False):
+    def _get_clients(self, full_response: bool = False):
         """Gets all the clients associated with the commcell
 
             Args:
-                hard    (bool)      --      flag to hard refresh mongo cache for this entity
+                full_response(bool) --  flag to return complete response
 
             Returns:
                 dict    -   consists of all clients in the commcell
@@ -619,13 +623,13 @@ class Clients(object):
         """
         attempts = 0
         while attempts < 5:
-            if hard:
-                self._cvpysdk_object.make_request('GET', self._services["HARD_REFRESH_CACHE"] % 'Client')
             flag, response = self._cvpysdk_object.make_request('GET', self._CLIENTS)
             attempts += 1
 
             if flag:
                 if response.json() and 'clientProperties' in response.json():
+                    if full_response:
+                        return response.json()
                     clients_dict = {}
 
                     for dictionary in response.json()['clientProperties']:
@@ -728,19 +732,15 @@ class Clients(object):
         flag, response = self._cvpysdk_object.make_request('GET', self._DYNAMICS365_CLIENTS)
 
         if flag:
+            clients_dict = {}
             if response.json() and "o365Client" in response.json():
-                clients_dict = {}
-
                 for dictionary in response.json()['o365Client']:
                     client_name = dictionary['clientName'].lower()
                     client_id = str(dictionary['clientId']).lower()
                     clients_dict[client_name] = {
                         'id': client_id
                     }
-
-                return clients_dict
-            else:
-                raise SDKException('Response', '102')
+            return clients_dict
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
@@ -1126,7 +1126,7 @@ class Clients(object):
                               'displayName': 'clientProperties.client.clientEntity.displayName',
                               'clientGUID': 'clientProperties.client.clientEntity.clientGUID',
                               'companyName': 'clientProperties.client.clientEntity.entityInfo.companyName',
-                              'idaList': 'client.idaList',
+                              'idaList': 'client.idaList.idaEntity.appName',
                               'clientRoles': 'clientProperties.clientProps.clientRoles',
                               'isDeletedClient': 'clientProperties.clientProps.IsDeletedClient',
                               'version': 'clientProperties.client.versionInfo.version',
@@ -1170,31 +1170,47 @@ class Clients(object):
 
     def _get_fq_parameters(self, fq: list = None) -> str:
         """
-        Returns the fq parameters based on the fq list passed
+        Returns the fq parameters based on the fq list passed.
+
         Args:
-             fq     (list) --   contains the columnName, condition and value
-                    e.g. fq = [['displayName','contains', 'test'],['clientRoles','contains', 'Command Center']]
+            fq (list): Contains the columnName, condition, and value.
+                       e.g. fq = [['displayName','contains', 'test'],['clientRoles','contains', 'Command Center']]
 
         Returns:
-            fq_parameters(str) -- fq parameter string
+            str: fq parameter string.
         """
-        conditions = ['contains', 'notContain', 'eq', 'neq']
+        conditions = {"contains", "notContains", "eq", "neq"}
         params = ["&fq=clientProperties.isServerClient:eq:true"]
-        if fq:
-            for param in fq:
-                if param[0] in self.valid_columns.keys():
-                    if param[0] == 'tags' and param[1] == 'contains':
-                        params.append(f"&tags={param[2]}")
-                    elif param[1] in conditions:
-                        params.append(f"&fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}")
-                    elif param[1] == 'isEmpty' and len(param) == 2:
-                        params.append(f"&fq={self.valid_columns[param[0]]}:in:null,")
-                    else:
-                        raise SDKException('Client', '102', 'Invalid condition passed')
-                else:
-                    raise SDKException('Client', '102', 'Invalid column Name passed')
-        if params:
-            return "".join(params)
+
+        for column, condition, *value in (fq or []):
+            if column not in self.valid_columns:
+                raise SDKException("Client", "102", "Invalid column name passed")
+
+            #  Handle networkStatus mapping
+            if column == "networkStatus" and value:
+                network_status_map = {
+                    'Not available': 'UNKNOWN',
+                    'No software installed': 'NOT_APPLICABLE',
+                    'Offline': 'OFFLINE',
+                    'Online': 'ONLINE'
+                }
+                value[0] = network_status_map.get(value[0], value[0])  # Convert back to enum key if needed
+
+            # isDeletedClient is always passed as 'eq:true' or 'neq:true'
+            if column == "isDeletedClient":
+                condition = "neq" if value and value[0] is False else "eq"
+                value = ["true"]
+
+            if column == "tags" and condition == "contains":
+                params.append(f"&tags={value[0]}")
+            elif condition in conditions:
+                params.append(f"&fq={self.valid_columns[column]}:{condition}:{value[0]}")
+            elif condition == "isEmpty" and not value:
+                params.append(f"&fq={self.valid_columns[column]}:in:null,")
+            else:
+                raise SDKException("Client", "102", "Invalid condition passed")
+
+        return "".join(params)
 
     def get_clients_cache(self, hard: bool = False, **kwargs) -> dict:
         """
@@ -1218,23 +1234,30 @@ class Clients(object):
         Returns:
             dict: Dictionary of all the properties present in response.
         """
-        headers = self._commcell_object._headers.copy()
-        if kwargs.get('enum', True):
-            headers['EnumNames'] = "True"
+        # computing params
         fl_parameters = self._get_fl_parameters(kwargs.get('fl', None))
         fq_parameters = self._get_fq_parameters(kwargs.get('fq', None))
-        limit = kwargs.get('limit', ['0', '100'])
-        limit_parameters = f'start={limit[0]}&limit={limit[1]}'
+        limit = kwargs.get('limit', None)
+        limit_parameters = f'start={limit[0]}&limit={limit[1]}' if limit else ''
         hard_refresh = '&hardRefresh=true' if hard else ''
         sort_parameters = self._get_sort_parameters(kwargs.get('sort', None)) if kwargs.get('sort', None) else ''
-        search_parameter = f'&search={",".join(self.valid_columns.values())}:contains:{kwargs.get("search", None)}' if kwargs.get(
-            'search', None) else ''
 
-        request_url = (
-                self._CLIENTS + "?" + limit_parameters + sort_parameters + fl_parameters + fq_parameters +
-                hard_refresh + search_parameter
-        )
-        flag, response = self._cvpysdk_object.make_request("GET", request_url, headers=headers)
+        # Search operation can only be performed on limited columns, so filtering out the columns on which search works
+        searchable_columns= ["hostName","displayName","companyName","idaList","version","OSName"]
+        search_parameter = (f'&search={",".join(self.valid_columns[col] for col in searchable_columns)}:contains:'
+                            f'{kwargs.get("search", None)}') if kwargs.get('search', None) else ''
+
+        params = [
+            limit_parameters,
+            sort_parameters,
+            fl_parameters,
+            hard_refresh,
+            search_parameter,
+            fq_parameters
+        ]
+
+        request_url = f"{self._CLIENTS}?" + "".join(params)
+        flag, response = self._cvpysdk_object.make_request("GET", request_url,)
 
         if not flag:
             response_string = self._update_response_(response.text)
@@ -1242,42 +1265,41 @@ class Clients(object):
 
         clients_cache = {}
         if response.json() and 'clientProperties' in response.json():
+            self.filter_query_count = response.json().get('filterQueryCount',0)
             for client in response.json()['clientProperties']:
                 temp_client = client.get('client', None)
                 name = temp_client.get('clientEntity', None).get('clientName')
                 client_config = {
+                    'clientName':temp_client.get('clientEntity', None).get('clientName'),
                     'clientId': temp_client.get('clientEntity', {}).get('clientId'),
                     'hostName': temp_client.get('clientEntity', {}).get('hostName'),
                     'displayName': temp_client.get('clientEntity', {}).get('displayName'),
                     'clientGUID': temp_client.get('clientEntity', {}).get('clientGUID'),
                     'companyName': temp_client.get('clientEntity', {}).get('entityInfo', {}).get('companyName'),
-                    'version': temp_client.get('versionInfo', {}).get('version'),
-                    'updateStatus': temp_client.get('versionInfo', {}).get('UpdateStatus')
+                    'version': temp_client.get('versionInfo', {}).get('version',''),
+                    'updateStatus': temp_client.get('versionInfo', {}).get('UpdateStatus'),
+                    'idaList': [agent.get("idaEntity", {}).get('appName', None)
+                                            for agent in temp_client.get('idaList', [])] or []
                 }
                 if 'osInfo' in temp_client:
                     client_config['OSName'] = temp_client.get('osInfo', {}).get('OsDisplayInfo', {}).get('OSName')
-                if 'idaList' in temp_client:
-                    client_config['idaList'] = [agent.get("idaEntity", {}).get('appName')
-                                                for agent in temp_client.get('idaList', {})]
                 if 'tags' in temp_client.get('clientEntity', {}):
-                    client_config['tags'] = temp_client.get('clientEntity', {}).get('tags')
+                    client_config['tags'] = temp_client.get('clientEntity', {}).get('tags',[])
                 if 'clientProps' in client:
-                    temp_client_prop = client.get('clientProps', {})
+                    temp_client_prop = client['clientProps']
                     status = temp_client_prop.get('networkReadiness', {}).get('status')
-                    status_map = {
+                    network_status_map = {
                         'UNKNOWN': 'Not available',
                         'NOT_APPLICABLE': 'No software installed',
                         'OFFLINE': 'Offline',
                         'ONLINE': 'Online'
                     }
-                    client_config.update({'isDeletedClient': temp_client_prop.get('IsDeletedClient'),
-                                          'isInfrastructure': temp_client_prop.get('isInfrastructure'),
-                                          'networkStatus': status_map.get(status, status.capitalize()
-                                          if status in ['OFFLINE', 'ONLINE'] else status)})
-                    if 'clientRoles' in temp_client_prop:
-                        client_config['clientRoles'] = [role.get('name') for role in
-                                                        temp_client_prop.get('clientRoles', {})]
-                client_config = {key: value for key, value in client_config.items() if value is not None}
+                    client_config.update({
+                        'isDeletedClient': temp_client_prop.get('IsDeletedClient', False),
+                        'isInfrastructure': temp_client_prop.get('isInfrastructure'),
+                        'networkStatus': network_status_map.get(status, status) if kwargs.get('enum', True) else status,
+                        'clientRoles': [role.get('name') for role in temp_client_prop.get('clientRoles', [])]
+                    })
                 clients_cache[name] = client_config
             return clients_cache
         else:
@@ -1311,6 +1333,7 @@ class Clients(object):
             dict - consists of all clients in the CommcellEntityCache
                     {
                          "client1_name": {
+                                "clientName": client1_unique_client_specifier
                                 "id": client1_id,
                                 "hostname": client1_hostname,
                                 "displayName": client1 display name,
@@ -1327,6 +1350,7 @@ class Clients(object):
                                 "roles": client1 roles
                         },
                          "client2_name": {
+                                "clientName": client2_unique_client_specifier
                                 "id": client2_id,
                                 "hostname": client2_hostname,
                                 "displayName": client2 display name,
@@ -1344,7 +1368,17 @@ class Clients(object):
                          },
                     }
         """
+        if not self._client_cache:
+            self._client_cache = self.get_clients_cache()
         return self._client_cache
+
+    @property
+    def all_clients_prop(self)->list[dict]:
+        """
+        Returns complete GET API response
+        """
+        self._all_clients_props = self._get_clients(full_response=True).get('clientProperties',[])
+        return self._all_clients_props
 
     def create_pseudo_client(self, client_name, client_hostname=None, client_type="windows"):
         """ Creates a pseudo client
@@ -3052,7 +3086,7 @@ class Clients(object):
             request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"][
                 "azureDetails"] = azure_app_dict
 
-        if int(self._commcell_object.version.split(".")[1]) >= 25 and environment_type == 4:
+        if int(self._commcell_object.version.split(".")[1]) >= 25 and (environment_type == 4 or environment_type == 2) :
             request_json["clientInfo"]["clientType"] = 37 #37 - Office365 Client type. Exchange Online falls under O365 AppType
             request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"][
                 "isModernAuthEnabled"] = kwargs.get('is_modern_auth_enabled', True)
@@ -3622,6 +3656,7 @@ class Clients(object):
                                             client_group_name (str) : Access Node Group Name.
                                             access_node (str) : Access Node name.
                                             jr_path (str): Job Results Dir path. Mandatory if client_group_name is provided.
+                                            no_of_streams(int): Number of streams to create a client.
                                           Note:
                                             Either client_group_name or access_node should be provided.
                                             If both are given client_group_name will be treated as default.
@@ -3673,7 +3708,7 @@ class Clients(object):
                                 "indexServer": {
                                     "clientName": indexserver
                                 },
-                                "numberOfBackupStreams": 10,
+                                "numberOfBackupStreams": kwargs.get('no_of_streams', 10),
                                 "jobResultsDir": {
                                     "path": kwargs.get('jr_path') if is_client_group else ""
                                 }
@@ -5866,6 +5901,7 @@ class Client(object):
         }
 
         request_json['clientProperties'].update(properties_dict)
+        request_json['clientProperties']['clientProps'].pop("CVS3BucketName")
         self._process_update_request(request_json)
 
     @property
@@ -6665,7 +6701,7 @@ class Client(object):
 
         if username and password:
             user_impersonation = f'<userImpersonation userName="{username}" password="{password}"/>' if username and password else ""
-        elif self._username and self._password:
+        elif self._username and self._password is not None:
             user_impersonation = f'<userImpersonation userName="{self._username}" password="{self._password}"/>'
         else:
             user_impersonation = ""
@@ -6791,7 +6827,7 @@ class Client(object):
                 "userName": f"{username}",
                 "password": f"{password}"
             }
-        elif self._username and self._password:
+        elif self._username and self._password is not None:
             execute_command_payload["App_ExecuteCommandReq"]["userImpersonation"] = {
                 "userName": f"{self._username}",
                 "password": f"{self._password}"

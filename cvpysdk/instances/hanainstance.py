@@ -146,7 +146,8 @@ class SAPHANAInstance(Instance):
             check_access=False,
             destination_instance_dir=None,
             ignore_delta_backups=False,
-            no_of_streams=2):
+            no_of_streams=2,
+            catalog_time=None):
         """Returns the JSON request to pass to the API as per the options selected by the user.
 
             Args:
@@ -192,6 +193,10 @@ class SAPHANAInstance(Instance):
                 no_of_streams               (int)   --  number of streams to be used for restore
 
                     default: 2
+
+                catalog_time                (str)   --  catalog time to which should be used to restore
+
+                    default: None
 
             Returns:
                 dict    -   JSON request to pass to the API
@@ -287,6 +292,16 @@ class SAPHANAInstance(Instance):
                 }]
             }
         }
+        if catalog_time:
+            if not isinstance(catalog_time, str):
+                raise SDKException('Instance', 103)
+            catalog_time = {
+                'time': int(catalog_time)
+            }
+            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+                'hanaOpt']['catalogPointInTime'] = catalog_time
+            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+                'hanaOpt']['catalogRecoverTime'] = 1
 
         if destination_instance_dir is not None:
             instance_dir = {
@@ -395,7 +410,8 @@ class SAPHANAInstance(Instance):
             check_access=True,
             destination_instance_dir=None,
             ignore_delta_backups=True,
-            no_of_streams=2):
+            no_of_streams=2,
+            catalog_time=None):
         """Restores the databases specified in the input paths list.
 
             Args:
@@ -442,6 +458,10 @@ class SAPHANAInstance(Instance):
 
                     default: 2
 
+                catalog_time                (str)   --  catalog time to which should be used to restore
+
+                    default: None
+
             Returns:
                 object  -   instance of the Job class for this restore job
 
@@ -469,7 +489,8 @@ class SAPHANAInstance(Instance):
             check_access,
             destination_instance_dir,
             ignore_delta_backups,
-            no_of_streams
+            no_of_streams,
+            catalog_time
         )
 
         return self._process_restore_response(request_json)

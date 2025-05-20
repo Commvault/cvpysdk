@@ -62,6 +62,7 @@ TeamsSubclient:
     do_web_search()                             --  Method to perform a web search using the /Search endpoint
     find_teams()                                --  Method to find the list of files and their metadata
     preview_backed_file()                       --  Method to preview the backed up content
+    run_restore_for_chat_to_onedrive()  -- Restore user chats to onedrive.
 """
 
 from __future__ import unicode_literals
@@ -215,7 +216,7 @@ class TeamsSubclient(CloudAppsSubclient):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def backup(self, teams=None, convert_job_to_full=False, discovery_type=13):
+    def backup(self, teams=None, convert_job_to_full=False, discovery_type=13, **kwargs):
         """Run an Incremental  or Full backup.
             Args:
                 teams               (list)  --  List of team Email IDs.
@@ -223,6 +224,8 @@ class TeamsSubclient(CloudAppsSubclient):
                             Default --  False
                 discovery_type   (int)  -- type of the entity we are backing up ex user, team, group etc
 
+            **kwargs (dict) : Additional parameters
+                items_selection_option (str) : Item Selection Option (Example: "7" for selecting backed up recently entities)
             Returns:
                 obj   --  Instance of job.
 
@@ -234,6 +237,8 @@ class TeamsSubclient(CloudAppsSubclient):
                     If response is not success.
 
         """
+        items_selection_option = kwargs.get('items_selection_option', '')
+
         url = self._services['CREATE_TASK']
         backup_subtask_json = copy(const.BACKUP_SUBTASK_JSON)
         request_json = deepcopy(const.BACKUP_REQUEST_JSON)
@@ -272,6 +277,10 @@ class TeamsSubclient(CloudAppsSubclient):
         if convert_job_to_full:
             backup_subtask_json['options']['backupOpts']['cloudAppOptions']["forceFullBackup"] = convert_job_to_full
             backup_subtask_json['options']['commonOpts']['jobMetadata'][0]['jobOptionItems'][0]['value'] = "Enabled"
+
+        if items_selection_option!='':
+            backup_subtask_json['options']['commonOpts']['itemsSelectionOption']=items_selection_option
+            
         request_json['taskInfo']['subTasks'].append(backup_subtask_json)
         flag, response = self._cvpysdk_object.make_request('POST', url, request_json)
 
@@ -1198,7 +1207,7 @@ class TeamsSubclient(CloudAppsSubclient):
         """
         request_json = {
             "appType": const.INDEX_APP_TYPE,
-            "oneDriveIdxStatsReq":
+            "teamsIdxStatsReq":
                 [{
                     "subclientId": int(self._subclient_id), "type": 0}]
         }
@@ -1494,4 +1503,64 @@ class TeamsSubclient(CloudAppsSubclient):
                 raise SDKException('Subclient', '127')
         else:
             raise SDKException('Subclient', '102', self._update_response_(response.text))
+
+
+    from copy import copy
+
+    def run_restore_for_chat_to_onedrive(self, user_email):
+        """
+        Runs restore for user to onedrive
+        Args:
+            user_email (str) : Email id of a user
+        Returns:
+                       obj   --  Instance of Restore job.
+        """
+        discovered_teams = self.discover(discovery_type=const.ClOUD_APP_EDISCOVER_TYPE['Users'])
+        if user_email not in discovered_teams:
+            raise SDKException('Subclient', '102', f"User {user_email} not found in discovered teams")
+        source_user = discovered_teams[user_email]
+        request_json = copy(const.USER_ONEDRIVE_RESTORE_JSON)
+        request_json["taskInfo"]["associations"] = [self._subClientEntity]
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'cloudAppsRestoreOptions']["msTeamsRestoreOptions"]['selectedItemsToRestore'] = [{
+                    "itemId": source_user['user']['userGUID'].lower(),
+                    "itemType": 50,
+                    "isDirectory": True,
+                    "entityGUID": source_user['user']['userGUID'].lower()
+                  }]
+
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'cloudAppsRestoreOptions']["msTeamsRestoreOptions"]['destLocation'] = f"{source_user['displayName']}/"
+        destionation_onedrive_info = copy(const.DESTINATION_ONEDRIVE_INFO)
+        destionation_onedrive_info['userSMTP'] = source_user['smtpAddress']
+        destionation_onedrive_info['userGUID'] = source_user['user']['userGUID']
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+            'cloudAppsRestoreOptions']["msTeamsRestoreOptions"]['destinationOneDriveInfo'] = destionation_onedrive_info
+        request_json['taskInfo']['subTasks'][0]["options"]["restoreOptions"]["destination"]["destPath"]= \
+            [source_user['displayName']+"/"]
+        request_json['taskInfo']['subTasks'][0]["options"]["restoreOptions"]["destination"]["destClient"] = {
+                "clientId": self._subClientEntity['clientId'],
+                "clientName": self._subClientEntity['displayName']
+        }
+        request_json['taskInfo']['subTasks'][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"]\
+            ["msTeamsRestoreOptions"]["findQuery"]["advSearchGrp"]["galaxyFilter"]=\
+            [{"appIdList": [self._subClientEntity["subclientId"]]}]
+
+
+        url = self._services['CREATE_TASK']
+        flag, response = self._cvpysdk_object.make_request('POST', url, request_json)
+
+        if flag:
+            response_json = response.json()
+            if response_json:
+                if 'jobIds' in response_json:
+                    return Job(self._commcell_object, response_json['jobIds'][0])
+        
+                elif "errorCode" in response_json:
+                    error_message = response_json['errorMessage']
+
+            raise SDKException('Response', '102')
+
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException('Response', '101', response_string)
 

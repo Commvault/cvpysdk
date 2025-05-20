@@ -64,6 +64,7 @@ UserGroups:
 
     non_system_usergroups()         --  Returns all usergroups excluding system created ones
 
+    all_usergroups_prop()           --   Returns complete GET API response
 
 UserGroup:
     __init__(commcell_object,
@@ -148,10 +149,12 @@ class UserGroups(object):
                 object - instance of the UserGroups class
 
         """
+        self._all_usergroups_prop = None
         self._commcell_object = commcell_object
         self._user_group = self._commcell_object._services['USERGROUPS']
         self._user_groups_cache = None
         self._user_groups = None
+        self.filter_query_count = 0
         self.refresh()
 
     def __str__(self):
@@ -174,11 +177,12 @@ class UserGroups(object):
             self._commcell_object.commserv_name
         )
 
-    def _get_user_groups(self, system_created=True):
+    def _get_user_groups(self, system_created=True, full_response: bool = False):
         """Gets all the user groups associated with the commcell
 
             Args:
                 system_created  (bool) --   flag to include system created user groups
+                full_response   (bool) --  flag to return complete response
 
             Returns:
                 dict - consists of all user group in the commcell
@@ -193,16 +197,19 @@ class UserGroups(object):
 
                     if response is not success
         """
+        request_url = f'{self._user_group % str(system_created).lower()}&level=10'
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._user_group % str(system_created).lower()
+            'GET', request_url
         )
 
         if flag:
             if response.json() and 'userGroups' in response.json():
-                response_value = response.json()['userGroups']
+                if full_response:
+                    return response.json()
+                self._all_usergroups_prop = response.json()['userGroups']
                 user_groups_dict = {}
 
-                for temp in response_value:
+                for temp in self._all_usergroups_prop:
                     temp_name = temp['userGroupEntity']['userGroupName'].lower()
                     temp_id = str(temp['userGroupEntity']['userGroupId']).lower()
                     user_groups_dict[temp_name] = temp_id
@@ -227,8 +234,8 @@ class UserGroups(object):
         self.valid_columns = {
             'groupName': 'userGroups.userGroupEntity.userGroupName',
             'groupId': 'userGroups.userGroupEntity.userGroupId',
-            'description': 'description',
-            'status': 'enabled',
+            'description': 'userGroups.description',
+            'status': 'userGroups.enabled',
             'company': 'companyName'
         }
         default_columns = 'userGroups.userGroupEntity.userGroupName'
@@ -273,21 +280,21 @@ class UserGroups(object):
         Returns:
             fq_parameters(str) -- fq parameter string
         """
-        conditions = ['contains', 'notContain', 'eq', 'neq']
-        params = [""]
-        if fq:
-            for param in fq:
-                if param[0] in self.valid_columns.keys():
-                    if param[1] in conditions:
-                        params.append(f"&fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}")
-                    elif param[1] == 'isEmpty' and len(param) == 2:
-                        params.append(f"&fq={self.valid_columns[param[0]]}:in:null,")
-                    else:
-                        raise SDKException('UserGroup', '102', 'Invalid condition passed')
-                else:
-                    raise SDKException('UserGroup', '102', 'Invalid column Name passed')
-        if params:
-            return "".join(params)
+        conditions = {"contains", "notContain", "eq", "neq"}
+        params = []
+
+        for column, condition, *value in fq or []:
+            if column not in self.valid_columns:
+                raise SDKException('UserGroup', '102', 'Invalid column name passed')
+
+            if condition in conditions:
+                params.append(f"&fq={self.valid_columns[column]}:{condition.lower()}:{value[0]}")
+            elif condition == "isEmpty" and not value:
+                params.append(f"&fq={self.valid_columns[column]}:in:null,")
+            else:
+                raise SDKException('UserGroup', '102', 'Invalid condition passed')
+
+        return "".join(params)
 
     def get_user_groups_cache(self, hard: bool = False, **kwargs) -> dict:
         """
@@ -306,47 +313,65 @@ class UserGroups(object):
                 fq (list)         --   Contains the columnName, condition and value.
                                             e.g. fq = [['groupName', 'contains', 'test'],
                                             ['status', 'eq', 'Enabled']] (default: None).
-                enum (bool)       --   Flag to return enums in the response (default: True).
 
         Returns:
             dict: Dictionary of all the properties present in response.
         """
-        headers = self._commcell_object._headers.copy()
-        if kwargs.get('enum', True):
-            headers['EnumNames'] = 'True'
-
+        # computing params
         fl_parameters = self._get_fl_parameters(kwargs.get('fl', None))
         fq_parameters = self._get_fq_parameters(kwargs.get('fq', None))
-        limit = kwargs.get('limit', ['0', '100'])
-        limit_parameters = f'start={limit[0]}&limit={limit[1]}'
+        limit = kwargs.get('limit', None)
+        limit_parameters = f'start={limit[0]}&limit={limit[1]}' if limit else ''
         hard_refresh = '&hardRefresh=true' if hard else ''
         sort_parameters = self._get_sort_parameters(kwargs.get('sort', None)) if kwargs.get('sort', None) else ''
-        search_parameter = f'&search={",".join(self.valid_columns.values())}:contains:{kwargs.get("search", None)}' if kwargs.get(
-            'search', None) else ''
 
-        request_url = (
-                self._commcell_object._services['USERGROUPS'] + "?" +
-                limit_parameters + sort_parameters + fl_parameters + hard_refresh +
-                search_parameter + fq_parameters
-        )
-        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", request_url, headers=headers)
+        # Search operation can only be performed on limited columns, so filtering out the columns on which search works
+        searchable_columns = ["groupName","description","company"]
+        search_parameter = (f'&search={",".join(self.valid_columns[col] for col in searchable_columns)}:contains:'
+                            f'{kwargs.get("search", None)}') if kwargs.get('search', None) else ''
 
+        params = [
+            limit_parameters,
+            sort_parameters,
+            fl_parameters,
+            hard_refresh,
+            search_parameter,
+            fq_parameters
+        ]
+        request_url = f"{self._commcell_object._services['USERGROUPS']}?" + "".join(params)
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", request_url)
         if not flag:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
         user_groups_cache = {}
         if response.json() and 'userGroups' in response.json():
-            for user in response.json()['userGroups']:
-                name = user.get('userGroupEntity', {}).get('userGroupName')
+            self.filter_query_count = response.json().get('filterQueryCount',0)
+            for group in response.json()['userGroups']:
+                name = group.get('userGroupEntity', {}).get('userGroupName')
                 user_groups_config = {
-                    'groupId': user.get('userGroupEntity', {}).get('userGroupId'),
-                    'description': user.get('description', {}),
-                    'status': user.get('enabled'),
-                    'company': user.get('userGroupEntity', {}).get('entityInfo', {}).get('companyName')
+                    'groupName':name,
+                    'groupId': group.get('userGroupEntity', {}).get('userGroupId'),
+                    'description': group.get('description', ''),
+                    'status': group.get('enabled'),
+                    'company': group.get('userGroupEntity', {}).get('entityInfo', {}).get('companyName')
                 }
-                user_groups_config = {key: value for key, value in user_groups_config.items() if value is not None}
-                user_groups_cache[name] = user_groups_config
+                if self._commcell_object.is_global_scope():
+                    user_groups_config['commcell'] = group.get('userGroupEntity', {}).get('entityInfo', {}).get('multiCommcellName','')
+
+                    # Handle duplicate names for different commcells
+                    unique_name = name
+                    i = 1
+                    while unique_name in user_groups_cache:
+                        existing_user = user_groups_cache[unique_name]
+                        if existing_user.get('commcell') != user_groups_config.get('commcell'):
+                            unique_name = f"{name}__{i}"
+                            i += 1
+                        else:
+                            break
+                    user_groups_cache[unique_name] = user_groups_config
+                else:
+                    user_groups_cache[name] = user_groups_config
 
             return user_groups_cache
         else:
@@ -372,6 +397,8 @@ class UserGroups(object):
                                 }
                     }
         """
+        if not self._user_groups_cache:
+            self._user_groups_cache = self.get_user_groups_cache()
         return self._user_groups_cache
 
     def has_user_group(self, user_group_name):
@@ -684,6 +711,14 @@ class UserGroups(object):
 
         """
         return self._get_user_groups(system_created=False)
+
+    @property
+    def all_usergroups_prop(self)->list[dict]:
+        """
+        Returns complete GET API response
+        """
+        self._all_usergroups_prop = self._get_user_groups(full_response=True).get("userGroups",[])
+        return self._all_usergroups_prop
 
 
 class UserGroup(object):

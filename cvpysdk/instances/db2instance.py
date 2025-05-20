@@ -332,8 +332,6 @@ class DB2Instance(Instance):
             from_time_value=from_time_value,
             to_time_value=to_time_value
         )
-        request_json['taskInfo']["subTasks"][0]["options"]["restoreOptions"][
-            "browseOption"]["backupset"]["backupsetName"] = dest_database_name
 
         return self._process_restore_response(request_json)
 
@@ -476,9 +474,6 @@ class DB2Instance(Instance):
                     redirect_info.append(table_string)
                 request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["db2Option"][
                     "redirectInfo"] = redirect_info
-
-        request_json['taskInfo']["subTasks"][0]["options"]["restoreOptions"][
-            "browseOption"]["backupset"]["backupsetName"] = dest_backupset_name
 
         return self._process_restore_response(request_json)
 

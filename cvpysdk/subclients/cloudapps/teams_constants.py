@@ -90,6 +90,10 @@ class TeamsConstants:
         "user": None
     }
 
+    BACKUP_USER_JSON = {
+        "user": None
+    }
+
     ASSOCIATIONS = {
         "subclientId": None,
         "applicationId": None,
@@ -185,4 +189,152 @@ class TeamsConstants:
         "Teams": 8,
         "Users": 7,
         "Groups": 22
+    }
+
+    DESTINATION_ONEDRIVE_INFO = {
+        "userSMTP": None,
+        "userGUID": None,
+         "folder": "/"
+    }
+
+    USER_ONEDRIVE_RESTORE_JSON = {
+      "taskInfo": {
+        "associations": None,
+        "task": {
+            "taskType": 1,
+            "initiatedFrom": 1
+        },
+        "subTasks": [
+          {
+            "subTask": {
+              "subTaskType": 3,
+              "operationType": 1001
+            },
+            "options": {
+              "commonOpts": {
+                "notifyUserOnJobCompletion": False,
+                "jobMetadata": [
+                  {
+                    "selectedItems": [],
+                    "jobOptionItems": []
+                  }
+                ]
+              },
+              "restoreOptions": {
+                "browseOption": {
+                  "commCellId": 2
+                },
+                "destination": {
+                  "inPlace": False,
+                  "destClient": {},
+                  "destPath": None,
+                  "destAppId": 134
+                },
+                "commonOptions": {
+                  "unconditionalOverwrite": False,
+                  "overwriteFiles": False,
+                  "skip": True
+                },
+                "cloudAppsRestoreOptions": {
+                  "instanceType": 36,
+                  "msTeamsRestoreOptions": {
+                    "restoreToTeams": False,
+                    "restoreToOneDrive": True,
+                    "destLocation": None,
+                    "overWriteItems": False,
+                    "restoreUsingFindQuery": False,
+                    "findQuery": {
+                      "mode": 4,
+                      "advSearchGrp": {
+                        "commonFilter": [
+                          {
+                            "filter": {
+                              "interFilterOP": 2,
+                              "filters": [
+                                {
+                                  "field": "CISTATE",
+                                  "intraFieldOp": 0,
+                                  "fieldValues": {
+                                    "values": [
+                                      "1"
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ],
+                        "fileFilter": [
+                          {
+                            "interGroupOP": 2,
+                            "filter": {
+                              "interFilterOP": 2,
+                              "filters": [
+                                {
+                                  "field": "TEAMS_ITEM_TYPE",
+                                  "intraFieldOp": 0,
+                                  "fieldValues": {
+                                    "values": [
+                                      "55"
+                                    ]
+                                  }
+                                },
+                                {
+                                  "field": "TEAMS_USER_ID",
+                                  "intraFieldOp": 0,
+                                  "fieldValues": {
+                                    "values": []
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ],
+                        "emailFilter": [],
+                        "galaxyFilter": [
+                          {
+                            "appIdList": None
+                          }
+                        ]
+                      },
+                      "searchProcessingInfo": {
+                        "resultOffset": 0,
+                        "pageSize": 15,
+                        "queryParams": [
+                          {
+                            "param": "ENABLE_MIXEDVIEW",
+                            "value": "true"
+                          },
+                          {
+                            "param": "RESPONSE_FIELD_LIST",
+                            "value": "DATA_TYPE,CONTENTID,CV_OBJECT_GUID"
+                                     ",PARENT_GUID,CV_TURBO_GUID,AFILEID"
+                                     ",AFILEOFFSET,COMMCELLNO,MODIFIEDTIME"
+                                     ",SIZEINKB,BACKUPTIME,CISTATE,DATE_DELETED"
+                                     ",TEAMS_ITEM_ID,TEAMS_ITEM_NAME,TEAMS_NAME"
+                                     ",TEAMS_SMTP,TEAMS_ITEM_TYPE,TEAMS_CHANNEL_TYPE"
+                                     ",TEAMS_TAB_TYPE,TEAMS_GROUP_VISIBILITY"
+                                     ",TEAMS_GUID,TEAMS_CONV_ITEM_TYPE,TEAMS_CONV_MESSAGE_TYPE"
+                                     ",TEAMS_CONV_SUBJECT,TEAMS_CONV_IMPORTANCE,TEAMS_CONV_SENDER_TYPE"
+                                     ",TEAMS_CONV_SENDER_NAME,TEAMS_CONV_HAS_REPLIES,CI_URL,TEAMS_DRIVE_FOLDER_TYPE"
+                          }
+                        ],
+                        "sortParams": [
+                          {
+                            "sortDirection": 0,
+                            "sortField": "TEAMS_NAME"
+                          }
+                        ]
+                      }
+                    },
+                    "selectedItemsToRestore": None,
+                    "destinationOneDriveInfo": None,
+                    "restorePostsAsHtml": True
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
     }

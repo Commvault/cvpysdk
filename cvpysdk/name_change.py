@@ -360,30 +360,29 @@ class NameChange(object):
         )
         if flag:
             if response.json():
-                if 'errorCode' in response.json().get('error'):
-                    error_code = int(
-                        response.json().get('error').get('errorCode'))
-                    if error_code != 1:
-                        # for errorString: "Failed to set Client properties."
-                        # errorCode: 0 or others
-                        error_message = "Failed to do namechange on commserver " \
-                                        "with errorCode [{0}], errorString [{1}]".format(
-                                            response.json().get('error').get('errorCode'),
-                                            response.json().get('error').get('errorString')
-                                        )
-                        raise SDKException('Client', '102', error_message)
-
-                    elif error_code == 1:
-                        return True
-
-                elif 'errorMessage' in response.json():
-                        # for errorMessage: "Operation Failed" errorCode: 7
+                if 'errorMessage' in response.json():
+                    # for errorMessage: "Operation Failed" errorCode: 7
                     error_message = "Failed to do namechange on commserver " \
                                     "with errorCode [{0}], errorMessage [{1}]".format(
-                                        response.json().get('errorCode'),
-                                        response.json().get('errorMessage')
-                                    )
+                        response.json().get('errorCode'),
+                        response.json().get('errorMessage')
+                    )
                     raise SDKException('Client', '102', error_message)
+                
+                elif not 'errorMessage' in response.json():
+                    return True
+
+                elif 'errorCode' in response.json().get('error'):
+                    error_code = int(
+                        response.json().get('error').get('errorCode'))
+
+                    error_message = "Failed to do namechange on commserver " \
+                                    "with errorCode [{0}], errorString [{1}]".format(
+                        response.json().get('error').get('errorCode'),
+                        response.json().get('error').get('errorString')
+                    )
+                    raise SDKException('Client', '102', error_message)
+
                 else:
                     raise SDKException('Response', '102')
             else:

@@ -133,6 +133,12 @@ from .security.security_association import SecurityAssociation
 from .constants import StoragePoolConstants
 from .policies.storage_policies import StoragePolicyCopy
 
+class StorageType(IntEnum):
+    """Class IntEnum to represent different storage types"""
+    DISK = 1,
+    CLOUD = 2,
+    HYPERSCALE = 3,
+    TAPE = 4
 
 class StoragePools:
     """Class for doing operations on Storage Pools, like get storage poo ID."""
@@ -157,6 +163,7 @@ class StoragePools:
         self._storage_pools_api = self._services['STORAGE_POOL']
 
         self._metallic_storage_api = self._services['GET_METALLIC_STORAGE_DETAILS']
+        self.__get_agp_storage_api = self._services['GET_AGP_STORAGE']
         self._storage_pools = None
 
         self.refresh()
@@ -263,6 +270,63 @@ class StoragePools:
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+    
+    def get_storage_pools_for_a_company(self, company_id, storage_type: StorageType = None):
+        """Gets all the storage pools associated with the Commcell environment.
+
+            Args:
+                company_id - id of the company for which the associated storge pools are to be fetched
+
+            Returns:
+                dict    -   consists of all storage pools added to the commcell
+
+                    {
+                        "storage_pool1_name": storage_pool1_id,
+
+                        "storage_pool2_name": storage_pool2_id
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        headers = self._commcell_object._headers.copy()
+        headers['Accept'] = 'application/json'
+        headers['onlygetcompanyownedentities'] = '1'
+        headers['operatorcompanyid'] = f'{company_id}'
+
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._storage_pools_api, headers=headers
+        )
+
+        if flag:
+            storage_pools = {}
+            response = response.json()
+            if response is None or response.get('storagePoolList') is None:
+                storage_pool_list = []
+            else:
+                storage_pool_list = response['storagePoolList']
+            if not isinstance(storage_pool_list, list):
+                storage_pool_list = [storage_pool_list]
+            if response:
+                for pool in storage_pool_list:
+                    if storage_type and pool['storageType'] != storage_type:
+                        continue
+                    # skip agp pools for cloud storage type
+                    if storage_type == StorageType.CLOUD and 401 <= pool['libraryVendorType'] <= 499:
+                        continue
+                    name = pool['storagePoolEntity']['storagePoolName']
+                    storage_pool_id = pool['storagePoolEntity']['storagePoolId']
+
+                    storage_pools[name] = storage_pool_id
+
+            return storage_pools
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     @property
     def all_storage_pools(self):
@@ -306,6 +370,7 @@ class StoragePools:
                     if no storage pool exists with the given name
 
         """
+        self.refresh()
         name = name.lower()
 
         if self.has_storage_pool(name):
@@ -469,6 +534,59 @@ class StoragePools:
         return self.add(storage_pool_name=storage_pool_name, mountpath=None, media_agent=media_agent, ddb_ma=ddb_ma,
                         dedup_path=dedup_path, cloud_server_type=cloud_server_type, region=region, vendor_id=vendor_id,
                         display_vendor_id=display_vendor_id)
+        
+    def get_air_gap_protect(self, company_id = None):
+        """
+        Returns the list of air gap protect storage pools in the commcell.
+        
+        Args:
+            company_id (int) -- id of the company to get the air gap protect storage pools for
+                                (optional, default is None which returns all air gap protect storage pools)
+        
+        Returns:
+            dict - dictionary of air gap protect storage pools with name as key and id as value
+                
+                    {
+                        "storage_pool1_name": storage_pool1_id,
+                        "storage_pool2_name": storage_pool2_id
+                    }  
+        
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+        """
+        headers = self._commcell_object._headers.copy()
+        headers['Accept'] = 'application/json'
+        if company_id:
+            headers['onlygetcompanyownedentities'] = '1'
+            headers['operatorcompanyid'] = f'{company_id}'
+
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self.__get_agp_storage_api, headers=headers
+        )
+
+        if flag:
+            storage_pools = {}
+            response = response.json()
+            if response is None or response.get('cloudStorage') is None:
+                storage_pool_list = []
+            else:
+                storage_pool_list = response['cloudStorage']
+            if not isinstance(storage_pool_list, list):
+                storage_pool_list = [storage_pool_list]
+            if response:
+                for pool in storage_pool_list:
+                    name = pool['name']
+                    storage_pool_id = pool['id']
+
+                    storage_pools[name] = storage_pool_id
+
+            return storage_pools
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def add(self, storage_pool_name, mountpath, media_agent, ddb_ma=None, dedup_path=None, **kwargs):
         """
@@ -503,6 +621,8 @@ class StoragePools:
 
                 region_id        (int)      --  Cloud Hypervisor specific region ID
 
+                tape_storage (boolean)      -- if library passed is tape library. 
+
         Returns:
             StoragePool object if creation is successful
 
@@ -514,11 +634,18 @@ class StoragePools:
         credential_name = kwargs.get('credential_name', None)
         cloud_server_type = kwargs.get('cloud_server_type', None)
         library_name = kwargs.get('library_name', None)
+        tape_storage = False
 
         region = kwargs.get('region', None)
         vendor_id = kwargs.get('vendor_id', None)
         display_vendor_id = kwargs.get('display_vendor_id', None)
         region_id = kwargs.get('region_id', None)
+
+        if library_name:
+            library_object = self._commcell_object.disk_libraries.get(library_name)
+            library_type = library_object.library_properties.get('libraryType', None)
+            tape_storage = True if library_type == 1 else tape_storage
+
 
         if ((ddb_ma is not None and not (isinstance(dedup_path, str) or isinstance(dedup_path, list))) or
                 not (isinstance(storage_pool_name, str) or not isinstance(mountpath, str))):
@@ -656,6 +783,18 @@ class StoragePools:
                     "maInfoList": maInfoList
                 }
             })
+        elif tape_storage:
+            request_json["storagePolicyCopyInfo"].update({
+                "storagePolicyFlags": {
+                    "globalAuxCopyPolicy": "SET_TRUE"
+                },
+                "copyFlags": {
+                    "preserveEncryptionModeAsInSource": "SET_TRUE"
+                },
+                "extendedFlags": {
+                    "globalAuxCopyPolicy": "SET_TRUE"
+                }
+            })
         else:
             request_json["storagePolicyCopyInfo"].update({
                 "storagePolicyFlags": {
@@ -772,14 +911,6 @@ class StoragePoolType(IntEnum):
     SECONDARY_COPY = 2,
     NON_DEDUPLICATION = 3,
     SCALE_OUT = 4
-
-
-class StorageType(IntEnum):
-    """Class IntEnum to represent different storage types"""
-    DISK = 1,
-    CLOUD = 2,
-    HYPERSCALE = 3,
-    TAPE = 4
 
 
 class WORMLockType(IntFlag):

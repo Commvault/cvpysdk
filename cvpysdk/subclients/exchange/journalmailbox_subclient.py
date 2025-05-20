@@ -501,7 +501,7 @@ class JournalMailboxSubclient(ExchangeSubclient):
                 'discoverByType': 9,
                 'pstIngestion': pst_dict
             }
-            _assocaition_json_ = {
+            _associations_json = {
                 "emailAssociation":
                     {
                         "emailDiscoverinfo": discover_info,

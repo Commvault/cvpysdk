@@ -123,6 +123,7 @@ SERVICES_DICT_TEMPLATE = {
     'DETECT_TAPE_LIBRARY': '{0}Library?Action=detect',
     'CONFIGURE_TAPE_LIBRARY': '{0}Library?Action=configureTape',
     'EDIT_CLOUD_CONTROLLER': '{0}V4/Storage/Cloud/0/Bucket/%s/AccessPath/%s',
+    'GET_AGP_STORAGE': '{0}V4/Storage/Cloud?additionalProperties=true&storageSubType=4',
 
     'GET_MOVE_MOUNTPATH_DETAILS': '{0}MountPath/%s/Move',
     'MOVE_MOUNTPATH': '{0}MountPath/Move',
@@ -132,6 +133,7 @@ SERVICES_DICT_TEMPLATE = {
     'STORAGE_POLICY': '{0}StoragePolicy',
     'GET_STORAGE_POLICY': '{0}StoragePolicy/%s',
     'DELETE_STORAGE_POLICY': '{0}V2/StoragePolicy',
+    'UPDATE_STORAGE_POLCY': '{0}V2/StoragePolicy/%s',
     'GET_STORAGE_POLICY_ADVANCED': '{0}v2/StoragePolicy/%s?propertyLevel=10',
     'CREATE_STORAGE_POLICY_COPY': '{0}StoragePolicy?Action=createCopy',
     'DELETE_STORAGE_POLICY_COPY': '{0}StoragePolicy?Action=deleteCopy',
@@ -203,6 +205,9 @@ SERVICES_DICT_TEMPLATE = {
     'BROWSE': '{0}DoBrowse',
     'RESTORE': '{0}CreateTask',
     'DELETE': '{0}DeleteDocuments',
+    'DATABASES': '{0}databases',
+    'DB_INSTANCES': '{0}databases/instances',
+    'DB_CLONES': '{0}databases/clones',
     'SQL_CLONES': '{0}sql/clones',
     'SQL_DATABASE': '{0}sql/databases?instance=%s&databaseName=%s',
     'SQL_DATABASES': '{0}sql/databases?databaseName=%s',
@@ -359,7 +364,9 @@ SERVICES_DICT_TEMPLATE = {
     'DOMAIN_PROPERTIES': '{0}CommCell/DomainController?domainId=%s',
 
     'DRBACKUP': '{0}/CommServ/DRBackup',
+    'DRBACKUP_REGIONS': '{0}/V4/DRBackup/Regions',
     'DISASTER_RECOVERY_PROPERTIES': '{0}/Commcell/DRBackup/Properties',
+    'DISASTER_RECOVERY_OPTIONS': '{0}/Commcell/DRBackup/Options',
     'CVDRBACKUP_STATUS': '{0}/cvdrbackup/status?commcellid=%s',
     'CVDRBACKUP_INFO': '{0}/cvdrbackup/info',
     'CVDRBACKUP_DOWNLOAD': '{0}/cvdrbackup/download',
@@ -433,6 +440,8 @@ SERVICES_DICT_TEMPLATE = {
     'CHECK_ELIGIBILITY_MIGRATION': '{0}Company/%s/migration-entities',
     'COMPANY_ENTITIES': '{0}Company/%s/AssociatedEntities',
     'MIGRATE_CLIENTS': '{0}Company/%s/company-association',
+    'COMPANY_OPERATORS': '{0}V4/Company/Operator',
+    "ORGANIZATION_ADDITIONAL_SETTINGS": '{0}v4/workload/AdditionalSettings',
 
     'STORAGE_POOL': '{0}StoragePool',
     'GET_STORAGE_POOL': '{0}StoragePool/%s',
@@ -493,6 +502,8 @@ SERVICES_DICT_TEMPLATE = {
     'UPDATE_USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/UpdateUserPolicyAssociation',
     'GDRIVE_UPDATE_USERS': '{0}GoogleWorkspace/GDrive/UpdateUsers',
     'GMAIL_UPDATE_USERS': '{0}GoogleWorkspace/GMail/UpdateUsers',
+    'GDRIVE_GET_USERS': '{0}GoogleWorkspace/GDrive/GetUsers',
+    'GMAIL_GET_USERS': '{0}GoogleWorkspace/GMail/GetUsers',
     'OFFICE365_MOVE_JOB_RESULT_DIRECTORY': '{0}Office365/MoveJobResultsDirectory',
     'OFFICE365_PROCESS_INDEX_RETENTION_RULES': '{0}Office365/ProcessIdxRetentionRules',
     'OFFICE365_POPULATE_INDEX_STATS': '{0}Office365/PopulateIdxStats',
@@ -503,8 +514,8 @@ SERVICES_DICT_TEMPLATE = {
     'GET_CONFIGURATION_POLICIES_FS': '{0}ConfigurationPolicies?policyType=filesytem',
     'GET_CONFIGURATION_POLICY': '{0}ConfigurationPolicies/%s',
     'DELETE_CONFIGURATION_POLICY': '{0}ConfigurationPolicies/%s',
-    'EMAIL_DISCOVERY': '{0}Backupset/%s/mailboxDiscover?discoveryType=%s',
-    'EMAIL_DISCOVERY_WITHOUT_REFRESH': '{0}Backupset/%s/mailboxDiscover?discoveryType=%s&refreshMailboxDb=false',
+    'EMAIL_DISCOVERY': '{0}Backupset/%s/mailboxDiscover?discoveryType=%s&pageSize=-1',
+    'EMAIL_DISCOVERY_WITHOUT_REFRESH': '{0}Backupset/%s/mailboxDiscover?discoveryType=%s&refreshMailboxDb=false&pageSize=-1',
     'GET_EMAIL_POLICY_ASSOCIATIONS': '{0}Subclient/%s/EmailPolicyAssociation?discoveryType=%s',
     'SET_EMAIL_POLICY_ASSOCIATIONS': '{0}/Subclient/EmailPolicyAssociation',
     'DELETE_DOCUMENTS': '{0}/DeleteDocuments',
@@ -605,6 +616,8 @@ SERVICES_DICT_TEMPLATE = {
     'GET_ALL_CLIENT_ANOMALIES': '{0}/Client/AnomalyRecord?filter=%s&clients=%s',
     'CLEAR_ANOMALIES': '{0}/Client/PruneAnomalyRecord',
     'RUN_ANOMALY_SCAN': '{0}/EDiscoveryClients/OnDemandAnalytics',
+    'ANOMALY_CLIENTS_COUNT':'{0}/clients/count?type=fileserver,vm,laptop',
+    'MONITORED_VM_COUNT':'{0}/Client/Anomaly/MonitoredVMCount',
     'GET_SWAGGER': '{0}swagger/V3/swagger.json',
 
     'COMMCELL_METADATA': '{0}Commcell/MetaData',
@@ -633,10 +646,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_SLA': '{0}GetSLAConfiguration',
     'WORKLOAD_REGION': '{0}entity/COMMCELL/%s/region?entityRegionType=WORKLOAD',
 
-    'GET_USER_SUGGESTIONS': '{0}getADUserSuggestions?namePattern=%s&getDomainUsers=true&getCommcellUsers=true&'
-                            'getDomainGroups=true&returnDomain=true&getCommCellGroups=true&searchOnDisplayName=true'
-                            '&searchOnAliasName=true&searchOnSmtp=1&ignoreSmtpRule=1&getOrganizationUsers=false&'
-                            'getOrganizationGroups=false',
+    'GET_USER_SUGGESTIONS': '{0}getADUserSuggestions',
     'DOMAIN_SSO': '{0}V4/LDAP/%s',
 
     'LAUNCH_O365_LICENSING': '{0}Office365/License',
@@ -648,6 +658,7 @@ SERVICES_DICT_TEMPLATE = {
     'ALL_RECOVERY_GROUPS': '{0}RecoveryGroups',
     'RECOVERY_GROUP': '{0}RecoveryGroup/%s?getEntityDetails=true',
     'RECOVERY_GROUP_RECOVER': '{0}RecoveryGroup/%s/Recover',
+    'CLEANUP_RECOVERY_GROUP': '{0}RecoveryGroup/CleanupRecovery',
 
 
     'ADCOMPAREID': '{0}/ActiveDirectory/Subclient/%s/Comparison',
@@ -691,6 +702,16 @@ SERVICES_DICT_TEMPLATE = {
     'GET_VARIOUS_PREVIEW':  '{0}/GetVariousPreview',
 
     'GET_PREVIEW': '{0}/GetPreview',
+
+    'CREATE_ACCESS_TOKEN': '{0}/V4/AccessToken',
+
+    'UPDATE_ACCESS_TOKEN': '{0}/V4/AccessToken/%s',
+
+    'REVOKE_ACCESS_TOKEN': '{0}/V4/AccessToken/%s',
+
+    'GET_ACCESS_TOKENS': '{0}/V4/AccessToken/?userId=%s',
+
+    'RENEW_TOKEN': '{0}/V4/AccessToken/Renew'
 }
 
 

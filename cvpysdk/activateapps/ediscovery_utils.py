@@ -957,7 +957,7 @@ class EdiscoveryClientOperations():
 
             Returns:
 
-                int,list(dict),dict    --  Containing document count, document  details & facet details(if any)
+                int,list(dict),dict    --  Containing document count, document  details & facet/stats details(if any)
 
 
             Raises:
@@ -982,10 +982,14 @@ class EdiscoveryClientOperations():
                         '102',
                         f"Failed to perform search - {response.json().get('errLogMessage','')}")
                 if 'response' in response.json() and 'docs' in response.json()['response']:
-                    if 'facets' not in response.json():
+                    if 'facets' in response.json():
+                        return response.json()['response']['numFound'], response.json()[
+                            'response']['docs'], response.json()['facets']
+                    elif 'stats' in response.json():
+                        return response.json()['response']['numFound'], response.json()[
+                            'response']['docs'], response.json()['stats']
+                    else:
                         return response.json()['response']['numFound'], response.json()['response']['docs'], {}
-                    return response.json()['response']['numFound'], response.json()[
-                        'response']['docs'], response.json()['facets']
                 raise SDKException('EdiscoveryClients', '102', f"Failed to search with response - {response.json()}")
             raise SDKException('EdiscoveryClients', '112')
         self._response_not_success(response)
@@ -1746,18 +1750,19 @@ class EdiscoveryDataSources():
             if response.json() and 'statusResp' in response.json():
                 status = response.json()['statusResp']
                 if 'collections' in status:
-                    collection = status['collections'][0]
-                    if 'datasources' in collection:
-                        data_sources = collection['datasources']
-                        for data_source in data_sources:
-                            ds_props = {
-                                EdiscoveryConstants.FIELD_DATA_SOURCE_DISPLAY_NAME: data_source[EdiscoveryConstants.FIELD_DISPLAY_NAME],
-                                EdiscoveryConstants.FIELD_DATA_SOURCE_TYPE: data_source[EdiscoveryConstants.FIELD_DATA_SOURCE_TYPE],
-                                EdiscoveryConstants.FIELD_DATA_SOURCE_ID: data_source[EdiscoveryConstants.FIELD_DATA_SOURCE_ID_NON_SEA],
-                                EdiscoveryConstants.FIELD_DOCUMENT_COUNT: data_source.get('status', {}).get('totalcount', 0)
-                            }
-                            output[data_source[EdiscoveryConstants.FIELD_DISPLAY_NAME].lower()] = ds_props
-                        return output
+                    # Change to return all datasources in a project
+                    for collection in status['collections']:
+                        if 'datasources' in collection:
+                            data_sources = collection['datasources']
+                            for data_source in data_sources:
+                                ds_props = {
+                                    EdiscoveryConstants.FIELD_DATA_SOURCE_DISPLAY_NAME: data_source[EdiscoveryConstants.FIELD_DISPLAY_NAME],
+                                    EdiscoveryConstants.FIELD_DATA_SOURCE_TYPE: data_source[EdiscoveryConstants.FIELD_DATA_SOURCE_TYPE],
+                                    EdiscoveryConstants.FIELD_DATA_SOURCE_ID: data_source[EdiscoveryConstants.FIELD_DATA_SOURCE_ID_NON_SEA],
+                                    EdiscoveryConstants.FIELD_DOCUMENT_COUNT: data_source.get('status', {}).get('totalcount', 0)
+                                }
+                                output[data_source[EdiscoveryConstants.FIELD_DISPLAY_NAME].lower()] = ds_props
+                    return output
                 return {}  # no data sources exists
             if response.json() and 'response' in response.json():
                 response = response.json()['response']

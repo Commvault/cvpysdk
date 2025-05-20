@@ -820,7 +820,7 @@ class Instances(object):
                                     'log_storage_policy': 'log_sp',
                                     'command_storage_policy': 'cmd_sp',
                                     'home_directory':'/home/db2inst1',
-                                    'password':'db2inst1',
+                                    'password':'#####',
                                     'user_name':'db2inst1',
                                     'credential_name': 'cred_name'
                                 }
@@ -1360,9 +1360,9 @@ class Instances(object):
 
             Raises:
                 SDKException:
-                    if None value in mysql options
+                    if None value in postgres options
 
-                    if mysql instance with same name already exists
+                    if postgres instance with same name already exists
 
                     if given storage policy does not exist in commcell
         """
@@ -1582,7 +1582,7 @@ class Instances(object):
                             'storage_policy': 'sai-sp',
                             'port': 'hotsname:port',
                             'mysql_user_name': 'mysqlusername'
-                            'mysql_password': 'password',
+                            'mysql_password': '######',
                             'version': '5.7',
                             'binary_directory': "",
                             'config_file': "",
@@ -1622,7 +1622,11 @@ class Instances(object):
                 'Storage Policy: "{0}" does not exist in the Commcell'.format(
                     database_options["storage_policy"])
             )
-        password = b64encode(database_options["mysql_password"].encode()).decode()
+        if not self._commcell_object.credentials.has_credential(database_options.get("credential_name")):
+            self._commcell_object.credentials.add_mysql_database_creds(
+                database_options.get("credential_name"),
+                database_options.get("mysql_user_name"),
+                database_options.get("mysql_password"))
 
         request_json = {
             "instanceProperties": {
@@ -1634,6 +1638,9 @@ class Instances(object):
                     "applicationId": 104,
                     "_type_": 0
                 },
+                "credentialEntity": {
+                    "credentialName": database_options.get("credential_name", "")
+                },
                 "mySqlInstance": {
                     "BinaryDirectory": database_options.get("binary_directory", ""),
                     "ConfigFile": database_options.get("config_file", ""),
@@ -1644,17 +1651,18 @@ class Instances(object):
                     "version": database_options.get("version", "5.7"),
                     "sslCAFile": database_options.get("sslca_file_path", ""),
                     "SAUser": {
-                        "password": password,
-                        "userName": database_options.get("mysql_user_name", "mysql")
+                    },
+                    "proxySettings": {
+                        "isProxyEnabled": False,
+                        "isUseSSL": False,
+                        "runBackupOnProxy": False
                     },
                     "mysqlStorageDevice": {
                         "commandLineStoragePolicy": {
                             "storagePolicyName": database_options.get("storage_policy", "")
                         },
-                        "proxySettings": {
-                            "isProxyEnabled": True,
-                            "isUseSSL": True,
-                            "runBackupOnProxy": True
+                        "logBackupStoragePolicy": {
+                            "storagePolicyName": database_options.get("storage_policy", "")
                         }
                     }
                 }
@@ -1909,7 +1917,7 @@ class Instance(object):
             self._agent_object._client_object.client_id
         )
         self._RESTORE = self._services['RESTORE']
-
+        self._SEARCH_DURING_RESTORE = self._services['DO_WEB_SEARCH']
         self._properties = None
         self._restore_association = None
 
@@ -2104,6 +2112,36 @@ class Instance(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def _process_search_response(self, request_json):
+        """Runs the Search API with the request JSON provided for Find and Restore,
+                    and returns the contents after parsing the response.
+            Args:
+                request_json    (dict)  --  JSON request to run for the API
+            Returns:
+                result          (list)  -- list of messages eligible for restore for as per request json
+                    Raises:
+                        SDKException:
+                            if response is empty
+                            if response is not success
+        """
+        flag, response = self._cvpysdk_object.make_request('POST', self._SEARCH_DURING_RESTORE, request_json)
+        self._restore_association = None
+        result = []
+        if flag:
+            if response.json():
+                res = response.json()
+                result_item_result = res.get("searchResult", {}).get("resultItem", [])
+                for item in result_item_result:
+                    app_specific = item.get("appSpecific", {})
+                    e_mail = app_specific.get("eMail", {})
+                    link = e_mail.get("links")
+                    result.append(link)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+        return result
 
     def _process_restore_response(self, request_json):
         """Runs the CreateTask API with the request JSON provided for Restore,
@@ -2341,7 +2379,7 @@ class Instance(object):
 
         if restore_option.get('index_free_restore', False):
             request_json["taskInfo"]["subTasks"][0]["subTask"] = self._json_restore_by_job_subtask
-            jobs_list = restore_option.get('restore_jobs')
+            jobs_list = restore_option.get('backup_job_ids')
             request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["jobIds"] = jobs_list
             source_item = []
             for i in jobs_list:
@@ -3360,3 +3398,4 @@ class Instance(object):
         self._get_instance_properties()
         self._backupsets = None
         self._subclients = None
+

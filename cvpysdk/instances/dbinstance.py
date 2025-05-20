@@ -95,6 +95,7 @@ class DatabaseInstance(Instance):
             destination_client=destination_client,
             destination_path=destination_path,
             index_free_restore=True,
+            backup_job_ids=backup_job_ids,
             restore_to_disk=True,
             impersonate_user=user_name,
             impersonate_password=encoded_password

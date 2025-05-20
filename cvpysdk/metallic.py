@@ -78,7 +78,7 @@ class Metallic(object):
         self._metallic_details = None
         self._metallic_web_url = None
         self._metallic_obj = None
-        self._cloudservices_details = {}
+        self._cloudservices_details = None
 
     def _metallic_commcell_object(self, cloud_webconsole_hostname, cloud_username, cloud_password):
         """Gets the metallic commcell object.

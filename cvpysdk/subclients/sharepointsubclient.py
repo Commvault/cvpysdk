@@ -100,7 +100,8 @@ class SharepointSuperSubclient(Subclient):
                incremental_backup=False,
                incremental_level='BEFORE_SYNTH',
                collect_metadata=False,
-               advanced_options=None):
+               advanced_options=None,
+               common_backup_options=None):
         """Runs a backup job for the subclient of the level specified.
             Args:
                 backup_level            (str)   --  level of backup the user wish to run
@@ -125,12 +126,13 @@ class SharepointSuperSubclient(Subclient):
         backup_level = backup_level.lower()
         if backup_level not in ['full', 'incremental']:
             raise SDKException('Subclient', '103')
-        if advanced_options:
+        if advanced_options or common_backup_options:
             request_json = self._backup_json(
                 backup_level=backup_level,
                 incremental_backup=incremental_backup,
                 incremental_level=incremental_level,
-                advanced_options=advanced_options
+                advanced_options=advanced_options,
+                common_backup_options=common_backup_options
             )
             backup_service = self._commcell_object._services['CREATE_TASK']
             flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -518,7 +520,7 @@ class SharepointSubclient(SharepointSuperSubclient):
 
         return request_json
 
-    def _prepare_out_of_place_restore_json(self, _restore_option):
+    def _prepare_out_of_place_restore_json(self, _restore_option, common_options: dict):
         """
         Prepare out of place retsore Json with all getters
 
@@ -534,7 +536,8 @@ class SharepointSubclient(SharepointSuperSubclient):
                 overwrite (bool)        --  unconditional overwrite files during restore
                     default: True
 
-
+            common_options      (dict)  -- common options for restore job payload
+            
         returns:
             request_json        -  complete json for performing disk Restore options
 
@@ -554,6 +557,9 @@ class SharepointSubclient(SharepointSuperSubclient):
         request_json['taskInfo']['subTasks'][0][
             'options']['restoreOptions'][
             'destination'] = self._out_of_place_destination_json
+        
+        if common_options:
+            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['commonOptions'].update(common_options)
         return request_json
 
     def _set_properties_to_update_site_association(self, operation):
@@ -1094,8 +1100,8 @@ class SharepointSubclient(SharepointSuperSubclient):
 
                  paths     (list)   --  list of sites or webs to be restored
                  Example: [
-                    "MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\\Contents\\Shared Documents",
-                    "MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\\Contents\\Test Automation List"
+                    "MB\\https://<tenant_name>.sharepoint.com/sites/TestSite\\Contents\\Shared Documents",
+                    "MB\\https://<tenant_name>.sharepoint.com/sites/TestSite\\Contents\\Test Automation List"
                     ]
 
              Returns:
@@ -1202,7 +1208,8 @@ class SharepointSubclient(SharepointSuperSubclient):
             self,
             paths,
             destination_path,
-            overwrite=True):
+            overwrite=True,
+            common_options: dict = None):
         """Restores the SharePoint list/libraries specified in the input paths list to the different site
 
             Args:
@@ -1213,6 +1220,7 @@ class SharepointSubclient(SharepointSuperSubclient):
                 overwrite               (bool)  --  unconditional overwrite files during restore
                     default: True
 
+                common_options          (dict)  -- add common options for restoring all versions
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -1237,7 +1245,7 @@ class SharepointSubclient(SharepointSuperSubclient):
             restore_option['paths'] = paths
             restore_option['destination_path'] = destination_path
             restore_option['in_place'] = False
-            request_json = self._prepare_out_of_place_restore_json(restore_option)
+            request_json = self._prepare_out_of_place_restore_json(restore_option, common_options)
             return self._process_restore_response(request_json)
         else:
             raise SDKException('Subclient', '102', 'Method not supported for SharePoint On-Premise Instance')
@@ -1504,8 +1512,8 @@ class SharepointV1Subclient(SharepointSuperSubclient):
 
                  paths     (list)   --  list of sites or webs to be restored
                  Example: [
-                    "MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\\Contents\\Shared Documents",
-                    "MB\\https://cvdevtenant.sharepoint.com/sites/TestSite\\Contents\\Test Automation List"
+                    "MB\\https://<tenant_name>.sharepoint.com/sites/TestSite\\Contents\\Shared Documents",
+                    "MB\\https://<tenant_name>.sharepoint.com/sites/TestSite\\Contents\\Test Automation List"
                     ]
 
              Returns:

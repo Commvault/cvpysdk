@@ -64,16 +64,24 @@ GoogleSubclient:
     run_user_level_backup()             --  Runs Users level backup for google client
 
     run_client_level_backup()           --  Runs client level backup for Google Client
-    
+
     browse_content()                    --  Fetches discovered content based on discovery type
-    
+
     verify_groups_discovery()           --  Verifies that groups discovery is complete
-    
+
     search_for_shareddrive()            --  Searches for a specific shared drive details from discovered list
 
     _association_users_json()           --  Constructs json for associated users to backup
 
     _task_json_for_google_backup()      --  Constructs json for google backup for selected users
+    
+    refresh_retention_stats()           --  Refreshes the retention stats for the client
+
+    refresh_stats_status()              --  refresh the client level or user level stats for the client
+
+    get_client_level_stats()            --  Returns the client level stats for the client
+
+    get_user_level_stats()              --  Returns the user level stats
 
 """
 
@@ -82,6 +90,8 @@ from ...exception import SDKException
 import time
 from ..casubclient import CloudAppsSubclient
 from ...constants import AppIDAType
+from . import google_constants as constants
+
 
 class GoogleSubclient(CloudAppsSubclient):
     """Derived class from CloudAppsSubclient Base class, representing a GMail/GDrive/OneDrive subclient,
@@ -626,7 +636,7 @@ class GoogleSubclient(CloudAppsSubclient):
         attempt = 0
         while attempt < 5:
             flag, response = self._cvpysdk_object.make_request('GET', (
-                        self._services['GOOGLE_DISCOVERY_OVERVIEW'] % (self._backupset_object.backupset_id)))
+                    self._services['GOOGLE_DISCOVERY_OVERVIEW'] % (self._backupset_object.backupset_id)))
             if response.json()['office365ClientOverview']['summary']['discoverState']['discoveryProgress'] == 100:
                 break
             attempt += 1
@@ -647,13 +657,13 @@ class GoogleSubclient(CloudAppsSubclient):
             offset += 1
             if flag:
                 if response and response.json():
-                    if discovery_type==8:
+                    if discovery_type == 8:
                         if 'userAccounts' in response.json():
                             curr_records = response.json().get('userAccounts', [])
                             records.extend(curr_records)
                             if len(curr_records) < page_size:
                                 break
-                    elif discovery_type==25:
+                    elif discovery_type == 25:
                         if 'folders' in response.json():
                             curr_records = response.json().get('folders', [])
                             records.extend(curr_records)
@@ -739,7 +749,7 @@ class GoogleSubclient(CloudAppsSubclient):
 
         # determines the number of accounts to return in response
         page_size = 500
-        discover_query = f'{browse_content}&pageSize={page_size}&eDiscoverType=25' # for shared drive discovery
+        discover_query = f'{browse_content}&pageSize={page_size}&eDiscoverType=25'  # for shared drive discovery
 
         flag, response = self._cvpysdk_object.make_request('GET', discover_query)
 
@@ -773,13 +783,17 @@ class GoogleSubclient(CloudAppsSubclient):
             users_json.append(user_info)
         return users_json
 
-    def _task_json_for_google_backup(self, is_mailbox, users_list=None):
+    def _task_json_for_google_backup(self, is_mailbox, users_list=None, **kwargs):
         """
         Json for google backup for selected users
 
         Args:
                 is_mailbox (boolean) : used to determine Gmail or GDrive
                 users_list (list) : list of SMTP addresses of users
+                **kwargs (dict) : contains some optional fields like full_backup, etc
+                        Ex: **{
+                            'full_backup'(boolean): Flag whether to run full backup or not.
+                        }
         Returns:
                 task_json(dict): Task request used as backup payload
         """
@@ -816,6 +830,10 @@ class GoogleSubclient(CloudAppsSubclient):
                         {
                             "option": "Total running time",
                             "value": "Disabled"
+                        },
+                        {
+                            "option": "Convert job to full",
+                            "value": "Enabled" if kwargs.get('full_backup', False) else "Disabled"
                         }
                     ]
                 }
@@ -826,13 +844,18 @@ class GoogleSubclient(CloudAppsSubclient):
                                       common_backup_options=common_options_dict)
         return task_json
 
-    def run_user_level_backup(self, users_list, is_mailbox):
+    def run_user_level_backup(self, users_list, is_mailbox, **kwargs):
         """
         Runs the backup for the users in users list
         Args:
                 users_list (list) : list of SMTP addresses of users
 
                 is_mailbox (boolean) : flag to determine GMail Mailbox or not
+
+                **kwargs (dict) : contains some optional fields like full_backup, etc
+                        Ex: **{
+                            'full_backup'(boolean): Flag whether to run full backup or not.
+                        }
 
         Returns:
                 object - instance of the Job class for this backup job
@@ -844,18 +867,22 @@ class GoogleSubclient(CloudAppsSubclient):
                 if response is not success
 
         """
-        task_json = self._task_json_for_google_backup(is_mailbox, users_list=users_list)
+        task_json = self._task_json_for_google_backup(is_mailbox, users_list=users_list, **kwargs)
         create_task = self._services['CREATE_TASK']
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', create_task, task_json
         )
         return self._process_backup_response(flag, response)
 
-    def run_client_level_backup(self, is_mailbox):
+    def run_client_level_backup(self, is_mailbox, **kwargs):
         """
                 Runs the backup for the client
                 Args:
                         is_mailbox (boolean) : flag to determine GMail Mailbox or not
+                        **kwargs (dict) : contains some optional fields like full_backup, etc
+                        Ex: **{
+                            'full_backup'(boolean): Flag whether to run full backup or not.
+                        }
 
                 Returns:
                         object - instance of the Job class for this backup job
@@ -867,7 +894,7 @@ class GoogleSubclient(CloudAppsSubclient):
                         if response is not success
 
                 """
-        task_json = self._task_json_for_google_backup(is_mailbox)
+        task_json = self._task_json_for_google_backup(is_mailbox, **kwargs)
         create_task = self._services['CREATE_TASK']
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', create_task, task_json
@@ -1013,7 +1040,7 @@ class GoogleSubclient(CloudAppsSubclient):
             'destination_client': destination_client,
             'skip_file_permissions': skip_file_permissions
         }
-        restore_json = self._instance_object._prepare_restore_json_v2(source_user_list, **kwargs)
+        restore_json = self._instance_object._prepare_restore_json(source_user_list, **kwargs)
         return self._process_restore_response(restore_json)
 
     def out_of_place_restore(self, users, destination_path, **kwargs):
@@ -1027,44 +1054,7 @@ class GoogleSubclient(CloudAppsSubclient):
                     overwrite (bool) : unconditional overwrite files during restore (default: False)
                     restore_as_copy (bool) : restore files as copy during restore (default: False)
                     skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-
-                    if overwrite and restore as copy file options are both selected
-        """
-        overwrite = kwargs.get('overwrite', False)
-        restore_as_copy = kwargs.get('restore_as_copy', False)
-        skip_file_permissions = kwargs.get('skip_file_permissions', False)
-
-        if overwrite and restore_as_copy:
-            raise SDKException('Subclient', '102', 'Either select overwrite or restore as copy for file options')
-
-        self._instance_object._restore_association = self._subClientEntity
-        source_user_list = self._get_user_guids(users)
-        kwargs = {
-            'out_of_place': True,
-            'destination_path': destination_path,
-            'overwrite': overwrite,
-            'restore_as_copy': restore_as_copy,
-            'skip_file_permissions': skip_file_permissions
-        }
-        restore_json = self._instance_object._prepare_restore_json_v2(source_user_list, **kwargs)
-        return self._process_restore_response(restore_json)
-
-    def in_place_restore(self, users, **kwargs):
-        """ Runs an in-place restore job for specified users on OneDrive for business client
-            By default restore skips the files already present in destination
-
-            Args:
-                users (list) :  List of SMTP addresses of users
-                **kwargs (dict) : Additional parameters
-                    overwrite (bool) : unconditional overwrite files during restore (default: False)
-                    restore_as_copy (bool) : restore files as copy during restore (default: False)
-                    skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
+                    destination_type (str) : type of destination for OOP Restore
                     end_time (int) : The job end time for Point In Time restore (default: None)
 
             Returns:
@@ -1085,28 +1075,104 @@ class GoogleSubclient(CloudAppsSubclient):
 
         self._instance_object._restore_association = self._subClientEntity
         source_user_list = self._get_user_guids(users)
+        accountInfo = {}
+        destination_type = kwargs.get("destination_type")
+        if  destination_type == 'USER':
+            destination_user_info = self.search_for_user(destination_path)
+            accountInfo['userDisplayName'] = destination_user_info.get('displayName', '')
+            accountInfo['userGUID'] = destination_user_info.get('user').get('userGUID', '')
+            accountInfo['userSMTP'] = destination_user_info.get('smtpAddress', '')
+        else:
+            destination_user_info = self.search_for_shareddrive(destination_path)
+            accountInfo['userDisplayName'] = destination_user_info.get('folderTitle', '')
+            accountInfo['userGUID'] = destination_user_info.get('folderId', '')
+
+        kwargs = {
+            'out_of_place': True,
+            'overwrite': overwrite,
+            'restore_as_copy': restore_as_copy,
+            'skip_file_permissions': skip_file_permissions,
+            'accountInfo': accountInfo,
+            'destination_type': destination_type,
+            'destination_path': destination_path,
+        }
+        restore_json = self._instance_object._prepare_restore_json(source_user_list, **kwargs)
+        if end_time:
+            adv_search_bkp_time_dict = {
+                "field": "BACKUPTIME",
+                "fieldValues": {
+                    "values": [
+                        "0",
+                        str(end_time)
+                    ]
+                },
+                "intraFieldOp": "FTOr"
+            }
+
+            add_to_time = restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"]
+            add_to_time["timeRange"] = {"toTime": end_time}
+            add_backup_time = \
+                restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"][
+                    "googleRestoreOptions"]["findQuery"]["advSearchGrp"]["fileFilter"][0]["filter"]["filters"]
+            add_backup_time.append(adv_search_bkp_time_dict)
+        return self._process_restore_response(restore_json)
+
+    def in_place_restore(self, users, **kwargs):
+        """ Runs an in-place restore job for specified users on OneDrive for business client
+            By default restore skips the files already present in destination
+
+            Args:
+                users (list) :  List of SMTP addresses of users
+                **kwargs (dict) : Additional parameters
+                    overwrite (bool) : unconditional overwrite files during restore (default: False)
+                    restore_as_copy (bool) : restore files as copy during restore (default: False)
+                    skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
+                    include_deleted_items (bool) : If True, Deleted items are also included in restore (default: False)
+                    end_time (int) : The job end time for Point In Time restore (default: None)
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+
+                    if overwrite and restore as copy file options are both selected
+        """
+        overwrite = kwargs.get('overwrite', False)
+        restore_as_copy = kwargs.get('restore_as_copy', False)
+        skip_file_permissions = kwargs.get('skip_file_permissions', False)
+        include_deleted_items = kwargs.get('include_deleted_items', False)
+        end_time = kwargs.get('end_time', None)
+
+        if overwrite and restore_as_copy:
+            raise SDKException('Subclient', '102', 'Either select overwrite or restore as copy for file options')
+
+        self._instance_object._restore_association = self._subClientEntity
+        source_user_list = self._get_user_guids(users)
         kwargs = {
             'overwrite': overwrite,
             'restore_as_copy': restore_as_copy,
-            'skip_file_permissions': skip_file_permissions
+            'skip_file_permissions': skip_file_permissions,
+            'include_deleted_items': include_deleted_items
         }
-        restore_json = self._instance_object._prepare_restore_json_v2(source_user_list, **kwargs)
+        restore_json = self._instance_object._prepare_restore_json(source_user_list, **kwargs)
         if end_time:
-            adv_search_bkp_time_dict={
-                    "field": "BACKUPTIME",
-                    "fieldValues": {
-                        "values": [
-                            "0",
-                            str(end_time)
-                        ]
-                    },
-                    "intraFieldOp": "FTOr"
-                }
+            adv_search_bkp_time_dict = {
+                "field": "BACKUPTIME",
+                "fieldValues": {
+                    "values": [
+                        "0",
+                        str(end_time)
+                    ]
+                },
+                "intraFieldOp": "FTOr"
+            }
 
-
-            add_to_time=restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"]
-            add_to_time["timeRange"]={"toTime":end_time}
-            add_backup_time=restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"]["googleRestoreOptions"]["findQuery"]["advSearchGrp"]["fileFilter"][0]["filter"]["filters"]
+            add_to_time = restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"]
+            add_to_time["timeRange"] = {"toTime": end_time}
+            add_backup_time = \
+                restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"][
+                    "googleRestoreOptions"]["findQuery"]["advSearchGrp"]["fileFilter"][0]["filter"]["filters"]
             add_backup_time.append(adv_search_bkp_time_dict)
 
         return self._process_restore_response(restore_json)
@@ -1138,9 +1204,9 @@ class GoogleSubclient(CloudAppsSubclient):
                     user_guid_list.append(user.get('folderId'))
                 else:
                     raise SDKException('Subclient', '102', 'User details not found in discovered data')
-        return  user_guid_list
+        return user_guid_list
 
-    def process_index_retention_rules(self,index_app_type_id,index_server_client_name):
+    def process_index_retention_rules(self, index_app_type_id, index_server_client_name):
         """
          Makes API call to process index retention rules
 
@@ -1185,3 +1251,132 @@ class GoogleSubclient(CloudAppsSubclient):
                 raise SDKException('Response', '101', self._update_response_(response.text))
         else:
             raise SDKException('IndexServers', '102')
+    
+    def refresh_retention_stats(self):
+        """
+        refresh the retention stats for the client
+        """
+        request_json = {
+            "appType": constants.GMAIL_INDEX_APP_TYPE if self._instance_object.ca_instance_type == 'GMAIL' else constants.GDRIVE_INDEX_APP_TYPE,
+            "subclientId": int(self.subclient_id)
+        }
+        refresh_retention = self._services['OFFICE365_PROCESS_INDEX_RETENTION_RULES']
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', refresh_retention, request_json)
+
+        if flag:
+            if response.json() and 'errorCode' in response.json():
+                error_code = response.json().get('errorCode')
+                if error_code != 0:
+                    error_message = response.json().get('errorMessage')
+                    raise SDKException('Subclient', '102', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101',
+                                self._update_response_(response.text))
+
+    def refresh_stats_status(self, user_level):
+        """
+        refresh the client level or user level stats for the client
+            Args:
+                 user_level (bool) :  Option to refresh client level or user level stats
+        """
+        if self._instance_object.ca_instance_type == 'GMAIL':
+            request_json = {
+                "appType": constants.GMAIL_INDEX_APP_TYPE,
+                "gmailIdxStatsReq":
+                    [{
+                        "subclientId": int(self.subclient_id), "type": 1 if user_level else 0}]
+            }
+        else:
+            request_json = {
+                "appType": constants.GDRIVE_INDEX_APP_TYPE,
+                "googleDriveIdxStatsReq":
+                    [{
+                        "subclientId": int(self.subclient_id), "type": 1 if user_level else 0}]
+            }
+        refresh_backup_stats = self._services['OFFICE365_POPULATE_INDEX_STATS']
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', refresh_backup_stats, request_json)
+
+        if flag:
+            if response.json() and 'errorCode' in response.json():
+                error_code = response.json().get('errorCode')
+                if error_code != 0:
+                    error_message = response.json().get('errorMessage')
+                    raise SDKException('Subclient', '102', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101',
+                               self._update_response_(response.text))
+
+    def get_client_level_stats(self):
+        """
+        Returns the client level stats for the client
+
+        Retruns:
+
+            response(json)                : returns the client level stats as a json response
+        """
+        get_backup_stats = self._services['OFFICE365_OVERVIEW_STATS'] % self._backupset_object.backupset_id
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', get_backup_stats)
+
+        if flag:
+            if response.json() and 'errorCode' in response.json():
+                error_code = response.json().get('errorCode')
+                if error_code != 0:
+                    error_message = response.json().get('errorMessage')
+                    raise SDKException('Subclient', '102', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101',
+                               self._update_response_(response.text))
+
+        return response.json()
+
+    def get_user_level_stats(self):
+        """
+        Returns the user level stats
+
+        Retruns:
+
+            response(json)                : returns the entity level stats as a json response
+        """
+        request_json = {
+            "bIncludeDeleted": False,
+            "pagingInfo": {
+                "pageNumber": 0,
+                "pageSize": 100
+            },
+            "discoverByType": constants.GMAIL_DISCOVERY_TYPE if self._instance_object.ca_instance_type == 'GMAIL' else constants.GDRIVE_DISCOVERY_TYPE,
+            "cloudAppAssociation": {
+                "subclientEntity": {
+                    "subclientId": int(self.subclient_id),
+                    "applicationId": AppIDAType.CLOUD_APP.value
+                }
+            }
+        }
+        if self._instance_object.ca_instance_type == 'GMAIL':
+            get_backup_stats = self._services['GMAIL_GET_USERS']
+        else:
+            get_backup_stats = self._services['GDRIVE_GET_USERS']
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', get_backup_stats, request_json)
+
+        if flag:
+            if response.json() and 'errorCode' in response.json():
+                error_code = response.json().get('errorCode')
+                if error_code != 0:
+                    error_message = response.json().get('errorMessage')
+                    raise SDKException('Subclient', '102', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101',
+                               self._update_response_(response.text))
+
+        return response.json()

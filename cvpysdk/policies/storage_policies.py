@@ -69,6 +69,8 @@ StoragePolicy:
 
     edit_block_size_on_gdsp                 --  edits the sidb block size on GDSP
 
+    edit_max_device_stream                  --  edit_max_device_stream
+
     has_copy()                              --  checks if copy with given name exists
 
     create_secondary_copy()                 --  creates a storage policy copy
@@ -212,6 +214,10 @@ StoragePolicyCopy:
     enable_compliance_lock()                -- Sets compliance lock (wormCopy flag)
 
     disable_compliance_lock()               -- Unsets compliance lock (wormCopy flag)
+
+    is_media_refresh_enabled()              -- Checks whether Media Refresh on copy is enabled or not
+
+    update_media_refresh()                  -- update media refresh (enable/disable) on storage pool/policy copy property.
 
 Attributes
 ----------
@@ -1126,6 +1132,47 @@ class StoragePolicy(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+    
+    def edit_max_device_stream(self, stream=50):
+        """
+        edit the max device stream
+
+        Args:
+                stream (int) - max device stream to be set on storage policy.
+
+
+        Raises:
+            SDKException:
+                    if error in response
+
+                    if response received is empty
+
+                    if response is not success
+        """
+        request_json = {
+            "numberOfStreams": stream
+        }
+        url = self._commcell_object._services['UPDATE_STORAGE_POLCY']%(self.storage_policy_id)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'PUT', self._commcell_object._services['UPDATE_STORAGE_POLCY']%(self.storage_policy_id), request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'error' in response.json():
+                    error_code = int(response.json()['error']['errorCode'])
+                    if error_code != 0:
+                        if 'errorMessage' in response.json()['error']:
+                            error_message = "Failed to update device stream with error \
+                                    {0}".format(str(response.json()['error']['errorMessage']))
+                        else:
+                            error_message = "Failed to update max device stream"
+                        raise SDKException('Storage', '102', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def has_copy(self, copy_name):
         """Checks if a storage policy copy exists for this storage
@@ -1199,13 +1246,16 @@ class StoragePolicy(object):
             global_policy = self._commcell_object.storage_pools.get(global_policy)
 
             global_policy_copy = StoragePolicyCopy (self._commcell_object, global_policy.storage_pool_name, global_policy.copy_name)
+            
+            copy_details = global_policy_copy.storage_policy.storage_policy_properties.get('copy', [])
+            global_aux_policy = next(iter(copy_details), {}).get('extendedFlags', {}).get('globalAuxCopyPolicy', 0)
 
             is_global_dedupe_policy = global_policy_copy._dedupe_flags.get('enableDeduplication', 0)
             
             request = {
                        "copyName": copy_name,
                        "storagePolicyCopyInfo": {
-                          "copyType": 0,
+                          "copyType": 1,
                           "isDefault": 0,
                           "isMirrorCopy": 0,
                           "isSnapCopy": 0,
@@ -1222,16 +1272,23 @@ class StoragePolicy(object):
                           "dedupeFlags": {
                               "enableDeduplication": is_global_dedupe_policy,
                               "useGlobalDedupStore": is_global_dedupe_policy
-                          },
-                           "useGlobalPolicy":{
-                               "storagePolicyName": global_policy.storage_pool_name
-                           },
-                           "extendedFlags":{
-                               "useGlobalStoragePolicy": 1
-                           }
+                          }
                        }
                     }
-
+            if global_aux_policy:
+                request["storagePolicyCopyInfo"]["extendedFlags"] = {
+                    "useGlobalAuxCopyPolicy": 1
+                }
+                request["storagePolicyCopyInfo"]["globalAuxCopy"]= {
+                    "storagePolicyName": global_policy.storage_pool_name
+                }
+            else:
+                request["storagePolicyCopyInfo"]["extendedFlags"] = {
+                    "useGlobalStoragePolicy" : 1
+                }
+                request["storagePolicyCopyInfo"]["useGlobalPolicy"] = {
+                    "storagePolicyName": global_policy.storage_pool_name
+                }
         else:
             if not (isinstance(copy_name, str) and
                     isinstance(library_name, str) and
@@ -1947,7 +2004,10 @@ class StoragePolicy(object):
             else:
                 defferred_catalog_value = backup_copy_value = 3
         else:
-            if enable_backup_copy:
+            if not enable_snapshot_catalog and enable_backup_copy:
+                defferred_catalog_value = 0
+                backup_copy_value = 3
+            elif enable_backup_copy:
                 defferred_catalog_value = 16
                 backup_copy_value = 3
             else:
@@ -3502,7 +3562,9 @@ class StoragePolicyCopy(object):
                 self._extended_flags = self._copy_properties.get('extendedFlags')
 
                 self._data_path_config = self._copy_properties.get('dataPathConfiguration')
-
+                
+                if not self._copy_properties.get('mediaProperties'):
+                    self._copy_properties['mediaProperties'] = {}
                 self._media_properties = self._copy_properties.get('mediaProperties')
 
                 self._retention_rules = self._copy_properties.get('retentionRules')
@@ -4775,3 +4837,49 @@ class StoragePolicyCopy(object):
 
         if self.is_compliance_lock_enabled:
             raise SDKException('Response', '101', 'Failed to unset compliance lock')
+    
+    def is_media_refresh_enabled(self):
+        """Checks whether Media Refresh on copy is enabled or not"""
+        mediaRefreshEnabled = self._copy_flags.get('enableMediaRefresh', 0)
+        return mediaRefreshEnabled == 1
+
+    def update_media_refresh(self, enable=True, **kwargs):
+        """
+        update media refresh (enable/disable) on storage pool/policy copy property.
+        
+        Args:
+                enable                  (boolean)   --  True to enable media refresh, False to disable media refresh 
+                                                        (default: True)
+
+                monthsBeforeMediaAged   (int)       --  months before media is aged.
+                                                        (default: 3)
+
+                monthsAfterMediaWritten (int)       --  months after media is wrtten.
+                                                        (default: 12)
+
+                percentage              (int)       --  percentage of media capacity is used.
+                                                        (default:  51)
+
+        Raises:
+            SDKException:
+                if response is not success.
+                if response is empty.
+        """
+        monthsBeforeMediaAged = kwargs.get('monthsBeforeMediaAged', 3)
+        monthsAfterMediaWritten = kwargs.get('monthsAfterMediaWritten', 12)
+        percentage = kwargs.get('percentage', 51)
+
+        self._copy_flags['enableMediaRefresh'] = 1 if enable else 0
+        if enable:
+            self._media_properties['mediaRefreshProperties'] = {
+                "percentage": percentage,
+                "monthsBeforeMediaAged": {
+                    "months": monthsBeforeMediaAged
+                },
+                "monthsAfterMediaWritten": {
+                    "months": monthsAfterMediaWritten
+                }
+            }
+        self._set_copy_properties()
+        if self.is_media_refresh_enabled() != enable:
+            raise SDKException('Response', '101', f"Failed to {'enable' if enable else 'disable'} Media Refresh")

@@ -448,7 +448,14 @@ class WorkFlows(object):
                     if HTTP Status Code is not SUCCESS / importing workflow failed
 
         """
-        if not isinstance(workflow_xml, str):
+        # Added a check for bytes input and decoding it using UTF-8, previously failing the str check
+        # making it compatible if the user passes bytes object using ET.tostring() method
+        if isinstance(workflow_xml, bytes):
+            try:
+                workflow_xml = workflow_xml.decode('utf-8')
+            except UnicodeDecodeError:
+                raise SDKException('Workflow', '101', 'workflow_xml must be UTF-8 encoded bytes')
+        elif not isinstance(workflow_xml, str):
             raise SDKException('Workflow', '101')
 
         if os.path.isfile(workflow_xml):

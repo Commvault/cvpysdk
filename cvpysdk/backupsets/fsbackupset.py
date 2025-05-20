@@ -1057,10 +1057,6 @@ class FSBackupset(Backupset):
             'skipIfExists' : restore_options.get('run_FS_restore', False),
             'SyncRestore' : False
         }
-        one_touch_option = {
-            'fromTime': restore_options.get('fromTime', 0),
-            'toTime': restore_options.get('toTime', 0)
-        }
         response_data = {
                 "clients": [{
                     "clone": is_clone,
@@ -1119,7 +1115,25 @@ class FSBackupset(Backupset):
                     'dns']['nameservers'][0]['address'] = restore_options.get('dns_ip', None)
         request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['oneTouchRestoreOption']['responseData'][
             0] = response_data
-        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['oneTouchOption'] = one_touch_option
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['oneTouchRestoreOption'][
+            'restoreFromBackupBeforeDate'] = True if restore_options.get('restoreFromBackupBeforeDate') else False
+        if restore_options.get('onetouch_backup_jobid') is not None:
+            _job = self._commcell_object.job_controller.get(restore_options.get('onetouch_backup_jobid'))
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"][
+                "timeRange"]["toTime"] = _job.end_timestamp
+            request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"][
+                "timeRange"]["fromTime"] = _job.start_timestamp
+
+            request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['vmProvisioningOption'][
+                'virtualMachineOption'][0]['oneTouchResponse']['dataBrowseTime'][
+                'TimeZoneName'] = self._commcell_object.commserv_timezone
+            request_json['taskInfo']['subTasks'][0]['options']['adminOpts']['vmProvisioningOption'][
+                'virtualMachineOption'][0]['oneTouchResponse']['dataBrowseTime']['time'] = _job.end_timestamp
+
+            one_touch_option = {'fromTime': 0, 'toTime': _job.end_timestamp}
+            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['oneTouchOption'] = one_touch_option
+            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['fileOption'][
+                'sourceItem'] = ([f'2:{_job.job_id}'])
         return self._process_restore_response(request_json)
 
     @property

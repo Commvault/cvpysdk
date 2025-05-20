@@ -1569,6 +1569,7 @@ class Subclient(object):
         self._restore_methods = [
             '_process_restore_response',
             '_filter_paths',
+            '_process_search_response',
             '_restore_json',
             '_impersonation_json',
             '_restore_browse_option_json',

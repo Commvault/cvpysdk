@@ -338,6 +338,8 @@ Commcell instance Attributes
 
     **hac_clusters**            --  Returns an instance of the HAC Clusters class
 
+    **network_topologies**      --  Returns an instance of NetworkTopologies class
+
     **index_pools**             --  Returns an instance of the IndexPools class
 
     **deduplications_engines    --  Returnes the instance of the DeduplicationEngines class
@@ -368,6 +370,12 @@ Commcell instance Attributes
 
     **commcells_for_switching**     -- Returns info regarding all commcells available for all users
 
+    **databases**                    -- Returns the list of databases on the commcell
+
+    **database_instances**           -- Returns the list of database instances on the commcell
+
+    **database_instant_clones**      -- Returns the list of database instant clone jobs active on the commcell
+
 """
 
 from __future__ import absolute_import
@@ -375,6 +383,8 @@ from __future__ import unicode_literals
 
 import getpass
 import socket
+from contextlib import contextmanager
+
 import xmltodict
 
 from base64 import b64encode
@@ -404,6 +414,7 @@ from .clientgroup import ClientGroups
 from .globalfilter import GlobalFilters
 from .datacube.datacube import Datacube
 from .content_analyzer import ContentAnalyzers
+from .network_topology import NetworkTopologies
 from .plan import Plans
 from .job import JobController
 from .security.user import Users, User
@@ -412,7 +423,7 @@ from .security.two_factor_authentication import TwoFactorAuthentication
 from .credential_manager import Credentials
 from .download_center import DownloadCenter
 from .resource_pool import ResourcePools
-from .organization import Organizations, Organization
+from .organization import Organizations, Organization, RemoteOrganization
 from .storage_pool import StoragePools
 from .monitoring import MonitoringPolicies
 from .policy import Policies
@@ -721,6 +732,7 @@ class Commcell(object):
         self._job_management = None
         self._index_servers = None
         self._hac_clusters = None
+        self._nw_topo = None
         self._index_pools = None
         self._deduplication_engines = None
         self._redirect_cc_idp = None
@@ -732,6 +744,9 @@ class Commcell(object):
         self._regions = None
         self._tags = None
         self._additional_settings = None
+        self._databases = None
+        self._database_instances = None
+        self._database_instant_clones = None
         self.refresh()
 
         del self._password
@@ -832,6 +847,7 @@ class Commcell(object):
         del self._job_management
         del self._index_servers
         del self._hac_clusters
+        del self._nw_topo
         del self._index_pools
         del self._deduplication_engines
         del self._is_service_commcell
@@ -900,13 +916,15 @@ class Commcell(object):
                         version_info = version_info.replace(key, value)
 
                     self._version_info = version_info + '.0' * (3 - len(version_info.split('.')))
+                    self._commserv_details_loaded = True
 
                 except KeyError as error:
                     raise SDKException('Commcell', '103', 'Key does not exist: {0}'.format(error))
             else:
                 raise SDKException('Response', '102')
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException('Response', '101', self._update_response_(response.text) + 
+                               ". You may need to provide View Commcell permission to the logged-in user. ")
 
     def _qoperation_execute(self, request_xml, return_xml=False):
         """Makes a qoperation execute rest api call
@@ -1158,26 +1176,36 @@ class Commcell(object):
     @property
     def commserv_guid(self):
         """Returns the GUID of the CommServ."""
+        if not self._commserv_details_loaded:
+            self._get_commserv_details()
         return self._commserv_guid
 
     @property
     def commserv_hostname(self):
         """Returns the hostname of the CommServ."""
+        if not self._commserv_details_loaded:
+            self._get_commserv_details()
         return self._commserv_hostname
 
     @property
     def commserv_name(self):
         """Returns the name of the CommServ."""
+        if not self._commserv_details_loaded:
+            self._get_commserv_details()
         return self._commserv_name
 
     @property
     def commserv_timezone(self):
         """Returns the time zone of the CommServ."""
+        if not self._commserv_details_loaded:
+            self._get_commserv_details()
         return self._commserv_timezone
 
     @property
     def commserv_timezone_name(self):
         """Returns the name of the time zone of the CommServ."""
+        if not self._commserv_details_loaded:
+            self._get_commserv_details()
         return self._commserv_timezone_name
 
     @property
@@ -1187,6 +1215,8 @@ class Commcell(object):
             Example: 19
 
         """
+        if not self._commserv_details_loaded:
+            self._get_commserv_details()
         return self._commserv_version
 
     @property
@@ -1196,6 +1226,8 @@ class Commcell(object):
             Example: 11.19.1
 
         """
+        if not self._commserv_details_loaded:
+            self._get_commserv_details()
         return self._version_info
 
     @property
@@ -1205,6 +1237,8 @@ class Commcell(object):
             Example: 2024E
 
         """
+        if not self._commserv_details_loaded:
+            self._get_commserv_details()
         return self._release_name
 
     @property
@@ -1276,6 +1310,17 @@ class Commcell(object):
                 self._hac_clusters = HACClusters(self)
 
             return self._hac_clusters
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def network_topologies(self):
+        """Returns the instance of the Network Topologies class."""
+        try:
+            if self._nw_topo is None:
+                self._nw_topo = NetworkTopologies(self)
+
+            return self._nw_topo
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
 
@@ -2120,13 +2165,14 @@ class Commcell(object):
         self._identity_management = None
         self._commcell_migration = None
         self._grc = None
-        self._get_commserv_details()
+        self._commserv_details_loaded = False
         self._registered_commcells = None
         self._registered_routing_commcells = None
         self._switcher_commcells = None
         self._all_rules_service = None
         self._index_servers = None
         self._hac_clusters = None
+        self._nw_topo = None
         self._index_pools = None
         self._deduplication_engines = None
         self._tfa = None
@@ -2267,6 +2313,10 @@ class Commcell(object):
                     error_message = response['errList'][0]['errLogMessage']
                     error_code = response['errList'][0]['errorCode']
 
+                    if 'relogin required' in error_message.lower():
+                        self._headers['Authtoken'] = self._cvpysdk_object._renew_login_token()
+                        return self.get_saml_token(validity)
+
                     raise SDKException(
                         'Commcell',
                         '106',
@@ -2388,13 +2438,15 @@ class Commcell(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def sync_remote_cache(self, client_list=None):
+    def sync_remote_cache(self, client_list=None, schedule_pattern=None):
         """Syncs remote cache
 
             Args:
 
                 client_list (list) --  list of client names.
                 Default is None. By default all remote cache clients are synced
+
+                schedule_pattern (dict)        --  Pattern to schedule Sync Job
 
             Returns:
                 object - instance of the Job class for sync job
@@ -2412,7 +2464,7 @@ class Commcell(object):
         """
         download = Download(self)
         return download.sync_remote_cache(
-            client_list=client_list)
+            client_list=client_list, schedule_pattern=schedule_pattern)
 
     def download_software(self,
                           options=None,
@@ -3857,14 +3909,73 @@ class Commcell(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def _prepare_entity_association_json(self, entity_name):
+        """
+        prepares the entity json for adding commcell associations
+
+        Args:
+            entity_name (object)    --  object of User, UserGroup, Domain or Organization class
+
+        Returns:
+            dict - entity json for adding commcell associations
+        """
+        entity_json = {
+            "userOrGroup": {},
+            "properties": {
+                "role": {
+                    "_type_": 120,
+                    "roleId": 3,
+                    "roleName": "View"
+                }
+            }
+        }
+
+        if isinstance(entity_name, User):
+            entity_json['userOrGroup']['userId'] = int(entity_name.user_id)
+            entity_json['userOrGroup']['userName'] = entity_name.user_name
+            entity_json['userOrGroup']['_type_'] = 13
+
+        if isinstance(entity_name, UserGroup):
+            entity_json['userOrGroup']['userGroupId'] = int(entity_name.user_group_id)
+            entity_json['userOrGroup']['userGroupName'] = entity_name.user_group_name
+            entity_json['userOrGroup']['_type_'] = 15
+
+        if isinstance(entity_name, Organization) or isinstance(entity_name, RemoteOrganization):
+            entity_json['providerType'] = 5
+            entity_json['userOrGroup']['providerId'] = int(entity_name.organization_id)
+            entity_json['userOrGroup']['providerDomainName'] = entity_name.domain_name
+            entity_json['userOrGroup']['_type_'] = 61
+            with self.global_scope():
+                org_det = self.get_user_suggestions(
+                    entity_name.domain_name, {
+                        'getOrganizationUsers': False,
+                        'getOrganizationGroups': False,
+                        'returnDomain': True,
+                    }
+                )
+            if len(org_det) > 0:
+                entity_json['userOrGroup']['GUID'] = org_det[0].get('umGuid', '')
+                entity_json['userOrGroup']['entityInfo'] = org_det[0].get('company',{}).get('entityInfo', '')
+
+        if isinstance(entity_name, Domain):
+            entity_json['providerType'] = 2
+            entity_json['userOrGroup']['providerId'] = int(entity_name.domain_id)
+            entity_json['userOrGroup']['providerDomainName'] = entity_name.domain_name
+            entity_json['userOrGroup']['_type_'] = 61
+
+        return entity_json
+
     def add_service_commcell_associations(self, entity_name, service_commcell, **kwargs):
-        """adds an association for an entity on a service commcell
+        """
+        adds an association for an entity on a service commcell
 
         Args:
 
             entity_name  (object)     -- entity_name can be object of User,UserGroup,Domain and Organization Class
+                                         or a list of the above entities
 
-            service_commcell (str)    --  name of the service commcell to which above entities can be associated
+            service_commcell (str/list)   --  name of the service commcell to which above entities can be associated
+                                              or list of service commcells
 
             kwargs:
                 include_warning (bool)    --  includes warning responses also as errors and raises SDKException
@@ -3877,61 +3988,33 @@ class Commcell(object):
 
                 if response is not success
         """
+        if not isinstance(entity_name, list):
+            entity_name = [entity_name]
+        if isinstance(service_commcell, str):
+            service_commcell = [service_commcell]
 
-        if not isinstance(service_commcell, str):
-            raise SDKException('User', '101')
 
-        request_json = {
-            "userOrGroup": {
-            },
-            "entity": {
-                "entityType": 194,
-                "entityName": self.registered_routing_commcells[service_commcell]['commCell']['commCellName'],
-                "_type_": 150,
-                "entityId": self.registered_routing_commcells[service_commcell]['commCell']['commCellId'],
-                "flags": {
-                    "includeAll": False
+        assocs_json = self._service_commcells_association()
+
+        for each_entity in entity_name:
+            entity_json = self._prepare_entity_association_json(each_entity)
+            for sc in service_commcell:
+                commcell_entity_json = {
+                    "entity": {
+                        "entityType": 194,
+                        "entityName": self.registered_routing_commcells[sc]['commCell']['commCellName'],
+                        "_type_": 150,
+                        "entityId": self.registered_routing_commcells[sc]['commCell']['commCellId'],
+                        "flags": {
+                            "includeAll": False
+                        }
+                    }
                 }
-            },
-            "properties": {
-                "role": {
-                    "_type_": 120,
-                    "roleId": 3,
-                    "roleName": "View"
-                }
-            }
-        }
+                commcell_entity_json.update(entity_json)
+                assocs_json['associations'].append(commcell_entity_json)
 
-        if isinstance(entity_name, User):
-            request_json['userOrGroup']['userId'] = int(entity_name.user_id)
-            request_json['userOrGroup']['userName'] = entity_name.user_name
-            request_json['userOrGroup']['_type_'] = 13
-
-        if isinstance(entity_name, UserGroup):
-            request_json['userOrGroup']['userGroupId'] = int(entity_name.user_group_id)
-            request_json['userOrGroup']['userGroupName'] = entity_name.user_group_name
-            request_json['userOrGroup']['_type_'] = 15
-
-        if isinstance(entity_name, Organization):
-            request_json['providerType'] = 5
-            request_json['userOrGroup']['providerId'] = int(entity_name.organization_id)
-            request_json['userOrGroup']['providerDomainName'] = entity_name.domain_name
-            request_json['userOrGroup']['_type_'] = 61
-            org_det = self.get_user_suggestions(entity_name.domain_name)
-            if len(org_det)>0:
-                request_json['userOrGroup']['GUID'] = org_det[0].get('umGuid', '')
-                request_json['userOrGroup']['entityInfo'] = org_det[0].get('company',{}).get('entityInfo', '')
-
-        if isinstance(entity_name, Domain):
-            request_json['providerType'] = 2
-            request_json['userOrGroup']['providerId'] = int(entity_name.domain_id)
-            request_json['userOrGroup']['providerDomainName'] = entity_name.domain_name
-            request_json['userOrGroup']['_type_'] = 61
-
-        res_json = self._service_commcells_association()
-        res_json['associations'].append(request_json)
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._services['SERVICE_COMMCELL_ASSOC'], res_json
+            'POST', self._services['SERVICE_COMMCELL_ASSOC'], assocs_json
         )
         if flag:
             if response.json():
@@ -3969,6 +4052,8 @@ class Commcell(object):
 
         Args:
             entity_name  (object)     -- entity_name can be object of User,UserGroup,Domain and Organization Class
+                                         or a string of the entity name
+                                         or a list of the above
 
         Returns:
             list - list of dicts, each dict containing details of the entity's association with a service commcell
@@ -4005,24 +4090,36 @@ class Commcell(object):
 
         """
         res_json = self._service_commcells_association()
+        if not isinstance(entity_name, list):
+            entity_name = [entity_name]
+        
         entity_associations = []
         for association in res_json['associations']:
-            if isinstance(entity_name, User) and \
-                association['userOrGroup'].get('userName', '').lower() == entity_name.user_name.lower() and \
-                association['userOrGroup'].get('_type_') == 13:
-                entity_associations.append(association)
-            elif isinstance(entity_name, UserGroup) and \
-                association['userOrGroup'].get('userGroupName', '').lower() == entity_name.user_group_name.lower() and \
-                association['userOrGroup'].get('_type_') == 15:
-                entity_associations.append(association)
-            elif isinstance(entity_name, Organization) and \
-                association.get('providerType') in [5, 15] and \
-                association['userOrGroup'].get('providerDomainName', '').lower() == entity_name.domain_name.lower():
-                entity_associations.append(association)
-            elif isinstance(entity_name, Domain) and \
-                association.get('providerType') == 2 and \
-                association['userOrGroup'].get('providerDomainName', '').lower() == entity_name.domain_name.lower():
-                entity_associations.append(association)
+            for each_entity in entity_name:
+                if isinstance(each_entity, User) and \
+                    association['userOrGroup'].get('userName', '').lower() == each_entity.user_name.lower() and \
+                    association['userOrGroup'].get('_type_') == 13:
+                    entity_associations.append(association)
+                elif isinstance(each_entity, UserGroup) and \
+                    association['userOrGroup'].get('userGroupName', '').lower() == each_entity.user_group_name.lower() and \
+                    association['userOrGroup'].get('_type_') == 15:
+                    entity_associations.append(association)
+                elif isinstance(each_entity, Organization) and \
+                    association.get('providerType') in [5, 15] and \
+                    association['userOrGroup'].get('providerDomainName', '').lower() == each_entity.domain_name.lower():
+                    entity_associations.append(association)
+                elif isinstance(each_entity, Domain) and \
+                    association.get('providerType') == 2 and \
+                    association['userOrGroup'].get('providerDomainName', '').lower() == each_entity.domain_name.lower():
+                    entity_associations.append(association)
+                elif isinstance(each_entity, str):
+                    names = [
+                        association['userOrGroup'].get('userName', '').lower(),
+                        association['userOrGroup'].get('userGroupName', '').lower(),
+                        association['userOrGroup'].get('providerDomainName', '').lower()
+                    ]
+                    if each_entity.lower() in names:
+                        entity_associations.append(association)
         return entity_associations
 
     def remove_service_commcell_associations(self, entity_name):
@@ -4031,6 +4128,8 @@ class Commcell(object):
         Args:
 
             entity_name  (object)     -- entity_name can be object of User,UserGroup,Domain and Organization Class
+                                         or just string of the entity name
+                                         or a list of the above
 
         Raises:
             SDKException:
@@ -4140,6 +4239,51 @@ class Commcell(object):
         org_prop = self.get_commcell_organization_properties()
         return True if org_prop.get('advancedPrivacySettings', {}).get('authType', 0) == 2 else False
 
+    @property
+    def databases(self):
+        """Returns the list of databases associated with the Commcell"""
+        if self._databases is None:
+            flag, response = self._cvpysdk_object.make_request('GET', self._services['DATABASES'])
+            if flag:
+                if response.json():
+                    response = response.json()
+                    self._databases = [database['backupset']['backupsetName'] for database in response['dbInstance']]
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '101', self._update_response_(response.text))
+        return self._databases
+
+    @property
+    def database_instances(self):
+        """Returns the list of database instances associated with the Commcell"""
+        if self._db_instances is None:
+            flag, response = self._cvpysdk_object.make_request('GET', self._services['DB_INSTANCES'])
+            if flag:
+                if response.json():
+                    response = response.json()
+                    self._db_instances = [instance['instance']['instanceName'] for instance in response['dbInstance']]
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '101', self._update_response_(response.text))
+        return self._db_instances
+
+    @property
+    def database_instant_clones(self):
+        """Returns the list of database instant clones jobs active on the Commcell"""
+        if self._db_instant_clones is None:
+            flag, response = self._cvpysdk_object.make_request('GET', self._services['DB_INSTANT_CLONES'])
+            if flag:
+                if response.json():
+                    response = response.json()
+                    self._db_instant_clones = [clone['cloneJobId'] for clone in response['clones']]
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '101', self._update_response_(response.text))
+        return self._db_instant_clones
+
     def enable_tfa(self, user_groups=None, usernameless=False, passwordless=False):
         """
         Enables two factor authentication option on this commcell.
@@ -4229,6 +4373,20 @@ class Commcell(object):
         if 'operatorCompanyId' in self._headers:
             self._headers.pop('operatorCompanyId')
 
+    @contextmanager
+    def as_operator_of(self, company_name):
+        """
+        Context manager for switching to Company as Operator and returning to Commcell level
+
+        Args:
+            company_name (str)  -   company name to switch to
+        """
+        self.switch_to_company(company_name)
+        try:
+            yield
+        finally:
+            self.reset_company()
+
     def switch_to_global(self, target_commcell=None, comet_header=False):
         """
         Switching to Global scope in Multi-commcell configuration
@@ -4237,7 +4395,7 @@ class Commcell(object):
             target_commcell (str)   -   target commcell name if _cn header is needed
             comet_header    (bool)  -   if Comet-Commcells header also needed for target commcell
         """
-        self._headers['Cvcontext'] = 'Comet'
+        self._headers['CVContext'] = 'comet'
         if target_commcell:
             self._headers['_cn'] = target_commcell
         if comet_header:
@@ -4258,13 +4416,43 @@ class Commcell(object):
             if header in self._headers:
                 del self._headers[header]
 
+    @contextmanager
+    def global_scope(self, target_commcell=None, comet_header=False):
+        """
+        Context manager for switching to Global scope and returning to local scope
+
+        Args:
+            target_commcell (str)   -   target commcell name if _cn header is needed
+            comet_header    (bool)  -   if Comet-Commcells header also needed for target commcell
+        """
+        self.switch_to_global(target_commcell, comet_header)
+        try:
+            yield
+        finally:
+            self.reset_to_local()
+
+    @contextmanager
+    def custom_headers(self, **headers):
+        """
+        Context manager for passing additional header
+
+        Args:
+            **headers (kwargs) -- contains each header as kwargs
+        """
+        old_headers = self._headers.copy()
+        self._headers.update(headers)
+        try:
+            yield
+        finally:
+            self._headers = old_headers
+
     def passkey(self, current_password, action, new_password=None):
         """"
         Updates Passkey properties of the commcell
 
         Args:
             current_password (str) --  User Current Passkey to perform actions
-            action (str)           --  'enable' | 'disable' | 'change passkey' | 'authorise'
+            action (str)           --  'enable' | 'disable' | 'change passkey' | 'authorize' | 'unauthorize'
             new_password (str)     --  Resetting existing Passkey
 
         Raises:
@@ -4306,11 +4494,11 @@ class Commcell(object):
             else:
                 raise SDKException('Commcell', 102, 'New password is missing in input')
 
-        elif action.lower() == 'authorise':
+        elif action.lower() in ['authorize', 'unauthorize']:
             req_json = {
                 "passkey": current_password,
                 "passkeySettings": {
-                    "enableAuthorizeForRestore": True,
+                    "enableAuthorizeForRestore": action.lower() == 'authorize',
                     "passkeyExpirationInterval": {
                         "toTime": 1800
                     }
@@ -4436,10 +4624,12 @@ class Commcell(object):
             region_id = 0
         self.regions.set_region('COMMCELL', self.commcell_id, 'WORKLOAD', region_id)
 
-    def get_user_suggestions(self, term: str)->list:
-        """Makes a multicommcell api call to get user suggestions for entities
+    def get_user_suggestions(self, term: str, additional_params: dict = None) -> list:
+        """
+        Makes api call to get user suggestions for entities
             Args:
-                term (str) - the entity name to get matched suggestions of
+                term               (str) - the entity name to get matched suggestions of
+                additional_params (dict) - additional parameters to be passed in the url
 
             Returns:
                 list    -   list of dicts with details of entity whose name matches for given term
@@ -4465,12 +4655,27 @@ class Commcell(object):
                     if response is not success
 
         """
+        from urllib.parse import urlencode
 
-        headers = self._headers.copy()
-        headers['CVContext'] = 'comet'
-        flag, response = self._cvpysdk_object.make_request(
-            'GET', self._services['GET_USER_SUGGESTIONS']%term, headers=headers
-        )
+        if additional_params is None:
+            additional_params = {}
+
+        url_params = {
+            'namePattern': term,
+            'getDomainUsers': True,
+            'getCommcellUsers': True,
+            'getCommCellGroups': True,
+            'getDomainGroups': True,
+            'searchOnDisplayName': True,
+            'searchOnAliasName': True,
+            'searchOnSmtp': 1,
+            'ignoreSmtpRule': 1,
+        }
+        url_params.update(additional_params)
+        url_params.update({k: str(v).lower() for k, v in url_params.items() if v in [True, False]})
+
+        api_endpoint = self._services['GET_USER_SUGGESTIONS'] + '?' + urlencode(url_params)
+        flag, response = self._cvpysdk_object.make_request('GET', api_endpoint)
 
         if flag:
             if response.json():
