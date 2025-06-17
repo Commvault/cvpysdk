@@ -35,7 +35,7 @@ sync_remote_cache()                   --  syncs remote cache
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/deployment/download.py#L1-L543" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/deployment/download.py#L1-L585" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -197,25 +197,18 @@ class Download(object):
             self.update_option = {
                 &#39;upgradeToLatestRelease&#39;: False,
                 &#39;latestFixesForCurrentRelease&#39;: True,
-                &#34;featureRelease&#34;: self.commcell_object.version,
                 &#39;SPName&#39;: &#39;hotfix&#39;,
                 &#39;IsSPName&#39;: False,
                 &#39;isSpDelayedDays&#39;: True,
                 &#39;isHotfixesDownload&#39;: True
             }
         elif DownloadOptions.SERVICEPACK_AND_HOTFIXES.value == options:
-            if not (service_pack or cu_number):
+            if service_pack is None:
                 raise SDKException(&#39;Download&#39;, &#39;102&#39;)
             self.update_option = {
                 &#39;upgradeToLatestRelease&#39;: False,
                 &#39;latestFixesForCurrentRelease&#39;: False,
-                &#34;featureRelease&#34;: &#34;11.&#34; + service_pack + &#34;.&#34; + cu_number
-            }
-        else:
-            if service_pack is None:
-                raise SDKException(&#39;Download&#39;, &#39;102&#39;)
-
-            self.update_option = {
+                &#34;featureRelease&#34;: &#34;11.&#34; + str(service_pack) + &#34;.&#34; + str(cu_number),
                 &#39;SPName&#39;: str(service_pack),
                 &#39;IsSPName&#39;: True,
                 &#39;isSpDelayedDays&#39;: False,
@@ -224,7 +217,7 @@ class Download(object):
 
         # to set the default value if os_list is none
         if os_list is None:
-            os_list = [&#39;Windows(X64)&#39;]
+            os_list = [&#39;WINDOWS_X64&#39;]
 
         client_groups = []
         if sync_cache and sync_cache_list:
@@ -240,7 +233,8 @@ class Download(object):
                 flag_1, response_1 = self._cvpysdkcommcell_object.make_request(&#39;GET&#39;, self._services[&#39;CREATE_RC&#39;])
                 cache_list = []
                 for obj in response_1.json()[&#39;softwareCacheDetailList&#39;]:
-                    cache_list.append(obj[&#39;cache&#39;][&#39;name&#39;])
+                    if obj[&#39;cache&#39;][&#39;id&#39;] != 2:
+                        cache_list.append(obj[&#39;cache&#39;][&#39;name&#39;])
                 for client in cache_list:
                     client_groups.append({&#34;type&#34;: &#34;CLIENT_ENTITY&#34;,
                                           &#34;clientName&#34;: client,
@@ -249,7 +243,7 @@ class Download(object):
         if version &gt;= 36:
             win_os_list = []
             unix_os_list = []
-            temp_win = [&#39;Windows(X64)&#39;, &#39;Windows(32)&#39;]
+            temp_win = [&#39;WINDOWS_X64&#39;, &#39;WINDOWS_X32&#39;, &#39;WINDOWS_ARM64&#39;]
 
             for os in os_list:
                 if os in temp_win:
@@ -260,7 +254,6 @@ class Download(object):
                 &#34;downloadConfiguration&#34;: {
                     &#34;upgradeToLatestRelease&#34;: self.update_option[&#39;upgradeToLatestRelease&#39;],
                     &#34;latestFixesForCurrentRelease&#34;: self.update_option[&#39;latestFixesForCurrentRelease&#39;],
-                    &#34;featureRelease&#34;: self.update_option[&#39;featureRelease&#39;],
                     &#34;windowsDownloadOptions&#34;: win_os_list,
                     &#34;unixDownloadOptions&#34;: unix_os_list,
                 },
@@ -268,6 +261,8 @@ class Download(object):
                 &#34;entities&#34;: client_groups
 
             }
+            if DownloadOptions.SERVICEPACK_AND_HOTFIXES.value == options:
+                request_json[&#34;downloadConfiguration&#34;][&#34;featureRelease&#34;] = self.update_option[&#39;featureRelease&#39;]
         else:
             request_json = {
                 &#34;taskInfo&#34;: {
@@ -305,26 +300,26 @@ class Download(object):
                                         &#34;copySoftwareAndUpdates&#34;: False,
                                         &#34;isUnix&#34;: True,
                                         &#34;unixDownloadPackages&#34;: {
-                                            &#34;linuxosX64&#34;: &#39;Linux X86_64&#39; in os_list,
-                                            &#34;solarisosX64&#34;: &#39;Solaris X86_64&#39; in os_list,
+                                            &#34;linuxosX64&#34;: &#39;LINUX_X86_64&#39; in os_list,
+                                            &#34;solarisosX64&#34;: &#39;SOLARIS_X86_64&#39; in os_list,
                                             &#34;solsparcos&#34;: &#39;Solaris-SPARC-X86&#39; in os_list,
-                                            &#34;freeBSDos&#34;: &#39;Freebsd X86&#39; in os_list,
-                                            &#34;linuxos&#34;: &#39;Linux X86&#39; in os_list,
-                                            &#34;linuxosPPC64le&#34;: &#39;Linux PPC64le&#39; in os_list,
-                                            &#34;freeBSDosX64&#34;: &#39;Freebsd X86_64&#39; in os_list,
-                                            &#34;solarisos&#34;: &#39;Solaris SPARC&#39; in os_list,
+                                            &#34;freeBSDos&#34;: &#39;FREEBSD_X86&#39; in os_list,
+                                            &#34;linuxos&#34;: &#39;LINUX_X86&#39; in os_list,
+                                            &#34;linuxosPPC64le&#34;: &#39;LINUX_PPC64LE&#39; in os_list,
+                                            &#34;freeBSDosX64&#34;: &#39;FREEBSD_X86_64&#39; in os_list,
+                                            &#34;solarisos&#34;: &#39;SOLARIS_SPARC&#39; in os_list,
                                             &#34;linuxs390os&#34;: &#39;Linux-S390-31&#39; in os_list,
-                                            &#34;darwinos&#34;: &#39;macOS&#39; in os_list,
+                                            &#34;darwinos&#34;: &#39;MAC_OS&#39; in os_list,
                                             &#34;linuxosS390&#34;: &#39;Linux-S390&#39; in os_list,
                                             &#34;aixppcos&#34;: &#39;Aix-PPC-32&#39; in os_list,
-                                            &#34;linuxosPPC64&#34;: &#39;Linux-PPC-64&#39; in os_list,
-                                            &#34;aixos&#34;: &#39;Aix PPC&#39; in os_list,
-                                            &#34;hpos&#34;: &#39;HP IA64&#39; in os_list,
+                                            &#34;linuxosPPC64&#34;: &#39;LINUX_PPC64&#39; in os_list,
+                                            &#34;aixos&#34;: &#39;AIX_PPC&#39; in os_list,
+                                            &#34;hpos&#34;: &#39;HP_IA64&#39; in os_list,
                                             &#34;solos&#34;: &#39;Solaris X86&#39; in os_list
                                         },
                                         &#34;windowsDownloadPackages&#34;: {
-                                            &#34;windowsX64&#34;: &#39;Windows(X64)&#39; in os_list,
-                                            &#34;windows32&#34;: &#39;Windows(32)&#39; in os_list
+                                            &#34;windowsX64&#34;: &#39;WINDOWS_X64&#39; in os_list,
+                                            &#34;windows32&#34;: &#39;WINDOWS_X32&#39; in os_list
                                         },
                                         &#34;clientAndClientGroups&#34;: client_groups,
                                         &#34;downloadUpdatesJobOptions&#34;: {
@@ -365,7 +360,7 @@ class Download(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;)
 
-    def copy_software(self, media_loc, username=None, password=None, sync_cache=True, schedule_pattern=None):
+    def copy_software(self, media_loc, username=None, password=None, sync_cache=True, sync_cache_list=None, schedule_pattern=None):
         &#34;&#34;&#34;copies media from the specified location on the commcell
 
                     Args:
@@ -378,6 +373,9 @@ class Download(object):
 
                         sync_cache (bool)              --  True if download and sync
                                                            False only download
+
+                        sync_cache_list (list)         --  list of names of remote caches to sync
+                                                            use None to sync all caches
 
                         schedule_pattern(dict)         --  pattern for schedule task
 
@@ -409,6 +407,7 @@ class Download(object):
                             password = &#34;base64encoded password&#34;
                             )
                 &#34;&#34;&#34;
+        version = self.commcell_object.commserv_version
         client_auth = {}
         if username:
             if password is None:
@@ -417,62 +416,97 @@ class Download(object):
                 &#34;userName&#34;: username,
                 &#34;password&#34;: password
             }
-        request_json = {
-            &#34;taskInfo&#34;: {
-                &#34;task&#34;: {
-                    &#34;taskType&#34;: 1,
-                    &#34;initiatedFrom&#34;: 2,
-                    &#34;policyType&#34;: 0,
-                    &#34;alert&#34;: {
-                        &#34;alertName&#34;: &#34;&#34;
-                    },
-                    &#34;taskFlags&#34;: {
-                        &#34;isEdgeDrive&#34;: False,
-                        &#34;disabled&#34;: False
-                    }
+
+        if version &gt;= 36:
+            client_groups = []
+            if sync_cache:
+                if sync_cache_list:
+                    for cache in sync_cache_list:
+                        client_groups.append({&#34;type&#34;: &#34;CLIENT_ENTITY&#34;,
+                                              &#34;clientName&#34;: cache,
+                                              &#34;id&#34;: self.commcell_object.clients.get(cache).client_id
+                                              })
+                else:
+                    flag_1, response_1 = self._cvpysdkcommcell_object.make_request(&#39;GET&#39;, self._services[&#39;CREATE_RC&#39;])
+                    cache_list = []
+                    for obj in response_1.json()[&#39;softwareCacheDetailList&#39;]:
+                        if obj[&#39;cache&#39;][&#39;id&#39;] != 2:
+                            cache_list.append(obj[&#39;cache&#39;][&#39;name&#39;])
+                    for client in cache_list:
+                        client_groups.append({&#34;type&#34;: &#34;CLIENT_ENTITY&#34;,
+                                              &#34;clientName&#34;: client,
+                                              &#34;id&#34;: int(self.commcell_object.clients.all_clients[client][&#39;id&#39;])})
+            request_json = {
+                &#34;copyConfiguration&#34;: {
+                    &#34;downloadPath&#34;: media_loc
                 },
-                &#34;subTasks&#34;: [
-                    {
-                        &#34;subTaskOperation&#34;: 1,
-                        &#34;subTask&#34;: {
-                            &#34;subTaskType&#34;: 1,
-                            &#34;operationType&#34;: 4019
+                &#34;notifyWhenJobCompletes&#34;: False,
+                &#34;entities&#34;: client_groups
+            }
+            if client_auth:
+                request_json[&#39;copyConfiguration&#39;][&#39;username&#39;] = username
+                request_json[&#39;copyConfiguration&#39;][&#39;password&#39;] = password
+        else:
+            request_json = {
+                &#34;taskInfo&#34;: {
+                    &#34;task&#34;: {
+                        &#34;taskType&#34;: 1,
+                        &#34;initiatedFrom&#34;: 2,
+                        &#34;policyType&#34;: 0,
+                        &#34;alert&#34;: {
+                            &#34;alertName&#34;: &#34;&#34;
                         },
-                        &#34;options&#34;: {
-                            &#34;adminOpts&#34;: {
-                                &#34;updateOption&#34;: {
-                                    &#34;syncUpdateCaches&#34;: sync_cache,
-                                    &#34;copyUpdates&#34;: True,
-                                    &#34;copySoftwareAndUpdates&#34;: True,
-                                    &#34;clientAndClientGroups&#34;: [
-                                        {
-                                            &#34;_type_&#34;: 2
+                        &#34;taskFlags&#34;: {
+                            &#34;isEdgeDrive&#34;: False,
+                            &#34;disabled&#34;: False
+                        }
+                    },
+                    &#34;subTasks&#34;: [
+                        {
+                            &#34;subTaskOperation&#34;: 1,
+                            &#34;subTask&#34;: {
+                                &#34;subTaskType&#34;: 1,
+                                &#34;operationType&#34;: 4019
+                            },
+                            &#34;options&#34;: {
+                                &#34;adminOpts&#34;: {
+                                    &#34;updateOption&#34;: {
+                                        &#34;syncUpdateCaches&#34;: sync_cache,
+                                        &#34;copyUpdates&#34;: True,
+                                        &#34;copySoftwareAndUpdates&#34;: True,
+                                        &#34;clientAndClientGroups&#34;: [
+                                            {
+                                                &#34;_type_&#34;: 2
+                                            }
+                                        ],
+                                        &#34;downloadUpdatesJobOptions&#34;: {
+                                            &#34;downloadSoftware&#34;: True,
+                                            &#34;updateCachePath&#34;: media_loc,
+                                            &#34;clientAuth&#34;: client_auth
                                         }
-                                    ],
-                                    &#34;downloadUpdatesJobOptions&#34;: {
-                                        &#34;downloadSoftware&#34;: True,
-                                        &#34;updateCachePath&#34;: media_loc,
-                                        &#34;clientAuth&#34;: client_auth
                                     }
                                 }
                             }
                         }
-                    }
-                ]
+                    ]
+                }
             }
-        }
 
         if schedule_pattern:
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
+        method = &#39;PUT&#39; if version &gt;= 36 else &#39;POST&#39;
+        url = self._services[&#39;DOWNLOAD_SOFTWARE&#39;] if version &gt;= 36 else self._services[&#39;CREATE_TASK&#39;]
+
         flag, response = self._cvpysdkcommcell_object.make_request(
-            &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
+            method, url, request_json
         )
 
         if flag:
             if response.json():
-                if &#34;jobIds&#34; in response.json():
-                    return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+                if &#34;jobId&#34; in response.json() or &#34;jobIds&#34; in response.json():
+                    return Job(self.commcell_object, response.json()[&#39;jobId&#39;]) if version &gt;= 36 \
+                        else Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
 
                 elif &#34;taskId&#34; in response.json():
                     return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
@@ -485,13 +519,15 @@ class Download(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;)
 
-    def sync_remote_cache(self, client_list=None):
+    def sync_remote_cache(self, client_list=None, schedule_pattern=None):
         &#34;&#34;&#34;Syncs remote cache
 
             Args:
 
                 client_list  --  list of client names
                 Default is None. By default all remote cache clients are synced
+
+                schedule_pattern (dict)        --  Pattern to schedule Sync Job
 
             Returns:
                 object - instance of the Job class for sync job
@@ -564,6 +600,9 @@ class Download(object):
             }
         }
 
+        if schedule_pattern:
+            request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+
         flag, response = self._cvpysdkcommcell_object.make_request(
             &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
         )
@@ -572,6 +611,9 @@ class Download(object):
             if response.json():
                 if &#34;jobIds&#34; in response.json():
                     return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+
+                elif &#34;taskId&#34; in response.json():
+                    return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
 
                 else:
                     raise SDKException(&#39;Download&#39;, &#39;101&#39;)
@@ -607,7 +649,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/deployment/download.py#L39-L543" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/deployment/download.py#L39-L585" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Download(object):
     &#34;&#34;&#34;&#34;class for downloading software packages&#34;&#34;&#34;
@@ -731,25 +773,18 @@ instance of the Commcell class</p>
             self.update_option = {
                 &#39;upgradeToLatestRelease&#39;: False,
                 &#39;latestFixesForCurrentRelease&#39;: True,
-                &#34;featureRelease&#34;: self.commcell_object.version,
                 &#39;SPName&#39;: &#39;hotfix&#39;,
                 &#39;IsSPName&#39;: False,
                 &#39;isSpDelayedDays&#39;: True,
                 &#39;isHotfixesDownload&#39;: True
             }
         elif DownloadOptions.SERVICEPACK_AND_HOTFIXES.value == options:
-            if not (service_pack or cu_number):
+            if service_pack is None:
                 raise SDKException(&#39;Download&#39;, &#39;102&#39;)
             self.update_option = {
                 &#39;upgradeToLatestRelease&#39;: False,
                 &#39;latestFixesForCurrentRelease&#39;: False,
-                &#34;featureRelease&#34;: &#34;11.&#34; + service_pack + &#34;.&#34; + cu_number
-            }
-        else:
-            if service_pack is None:
-                raise SDKException(&#39;Download&#39;, &#39;102&#39;)
-
-            self.update_option = {
+                &#34;featureRelease&#34;: &#34;11.&#34; + str(service_pack) + &#34;.&#34; + str(cu_number),
                 &#39;SPName&#39;: str(service_pack),
                 &#39;IsSPName&#39;: True,
                 &#39;isSpDelayedDays&#39;: False,
@@ -758,7 +793,7 @@ instance of the Commcell class</p>
 
         # to set the default value if os_list is none
         if os_list is None:
-            os_list = [&#39;Windows(X64)&#39;]
+            os_list = [&#39;WINDOWS_X64&#39;]
 
         client_groups = []
         if sync_cache and sync_cache_list:
@@ -774,7 +809,8 @@ instance of the Commcell class</p>
                 flag_1, response_1 = self._cvpysdkcommcell_object.make_request(&#39;GET&#39;, self._services[&#39;CREATE_RC&#39;])
                 cache_list = []
                 for obj in response_1.json()[&#39;softwareCacheDetailList&#39;]:
-                    cache_list.append(obj[&#39;cache&#39;][&#39;name&#39;])
+                    if obj[&#39;cache&#39;][&#39;id&#39;] != 2:
+                        cache_list.append(obj[&#39;cache&#39;][&#39;name&#39;])
                 for client in cache_list:
                     client_groups.append({&#34;type&#34;: &#34;CLIENT_ENTITY&#34;,
                                           &#34;clientName&#34;: client,
@@ -783,7 +819,7 @@ instance of the Commcell class</p>
         if version &gt;= 36:
             win_os_list = []
             unix_os_list = []
-            temp_win = [&#39;Windows(X64)&#39;, &#39;Windows(32)&#39;]
+            temp_win = [&#39;WINDOWS_X64&#39;, &#39;WINDOWS_X32&#39;, &#39;WINDOWS_ARM64&#39;]
 
             for os in os_list:
                 if os in temp_win:
@@ -794,7 +830,6 @@ instance of the Commcell class</p>
                 &#34;downloadConfiguration&#34;: {
                     &#34;upgradeToLatestRelease&#34;: self.update_option[&#39;upgradeToLatestRelease&#39;],
                     &#34;latestFixesForCurrentRelease&#34;: self.update_option[&#39;latestFixesForCurrentRelease&#39;],
-                    &#34;featureRelease&#34;: self.update_option[&#39;featureRelease&#39;],
                     &#34;windowsDownloadOptions&#34;: win_os_list,
                     &#34;unixDownloadOptions&#34;: unix_os_list,
                 },
@@ -802,6 +837,8 @@ instance of the Commcell class</p>
                 &#34;entities&#34;: client_groups
 
             }
+            if DownloadOptions.SERVICEPACK_AND_HOTFIXES.value == options:
+                request_json[&#34;downloadConfiguration&#34;][&#34;featureRelease&#34;] = self.update_option[&#39;featureRelease&#39;]
         else:
             request_json = {
                 &#34;taskInfo&#34;: {
@@ -839,26 +876,26 @@ instance of the Commcell class</p>
                                         &#34;copySoftwareAndUpdates&#34;: False,
                                         &#34;isUnix&#34;: True,
                                         &#34;unixDownloadPackages&#34;: {
-                                            &#34;linuxosX64&#34;: &#39;Linux X86_64&#39; in os_list,
-                                            &#34;solarisosX64&#34;: &#39;Solaris X86_64&#39; in os_list,
+                                            &#34;linuxosX64&#34;: &#39;LINUX_X86_64&#39; in os_list,
+                                            &#34;solarisosX64&#34;: &#39;SOLARIS_X86_64&#39; in os_list,
                                             &#34;solsparcos&#34;: &#39;Solaris-SPARC-X86&#39; in os_list,
-                                            &#34;freeBSDos&#34;: &#39;Freebsd X86&#39; in os_list,
-                                            &#34;linuxos&#34;: &#39;Linux X86&#39; in os_list,
-                                            &#34;linuxosPPC64le&#34;: &#39;Linux PPC64le&#39; in os_list,
-                                            &#34;freeBSDosX64&#34;: &#39;Freebsd X86_64&#39; in os_list,
-                                            &#34;solarisos&#34;: &#39;Solaris SPARC&#39; in os_list,
+                                            &#34;freeBSDos&#34;: &#39;FREEBSD_X86&#39; in os_list,
+                                            &#34;linuxos&#34;: &#39;LINUX_X86&#39; in os_list,
+                                            &#34;linuxosPPC64le&#34;: &#39;LINUX_PPC64LE&#39; in os_list,
+                                            &#34;freeBSDosX64&#34;: &#39;FREEBSD_X86_64&#39; in os_list,
+                                            &#34;solarisos&#34;: &#39;SOLARIS_SPARC&#39; in os_list,
                                             &#34;linuxs390os&#34;: &#39;Linux-S390-31&#39; in os_list,
-                                            &#34;darwinos&#34;: &#39;macOS&#39; in os_list,
+                                            &#34;darwinos&#34;: &#39;MAC_OS&#39; in os_list,
                                             &#34;linuxosS390&#34;: &#39;Linux-S390&#39; in os_list,
                                             &#34;aixppcos&#34;: &#39;Aix-PPC-32&#39; in os_list,
-                                            &#34;linuxosPPC64&#34;: &#39;Linux-PPC-64&#39; in os_list,
-                                            &#34;aixos&#34;: &#39;Aix PPC&#39; in os_list,
-                                            &#34;hpos&#34;: &#39;HP IA64&#39; in os_list,
+                                            &#34;linuxosPPC64&#34;: &#39;LINUX_PPC64&#39; in os_list,
+                                            &#34;aixos&#34;: &#39;AIX_PPC&#39; in os_list,
+                                            &#34;hpos&#34;: &#39;HP_IA64&#39; in os_list,
                                             &#34;solos&#34;: &#39;Solaris X86&#39; in os_list
                                         },
                                         &#34;windowsDownloadPackages&#34;: {
-                                            &#34;windowsX64&#34;: &#39;Windows(X64)&#39; in os_list,
-                                            &#34;windows32&#34;: &#39;Windows(32)&#39; in os_list
+                                            &#34;windowsX64&#34;: &#39;WINDOWS_X64&#39; in os_list,
+                                            &#34;windows32&#34;: &#39;WINDOWS_X32&#39; in os_list
                                         },
                                         &#34;clientAndClientGroups&#34;: client_groups,
                                         &#34;downloadUpdatesJobOptions&#34;: {
@@ -899,7 +936,7 @@ instance of the Commcell class</p>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;)
 
-    def copy_software(self, media_loc, username=None, password=None, sync_cache=True, schedule_pattern=None):
+    def copy_software(self, media_loc, username=None, password=None, sync_cache=True, sync_cache_list=None, schedule_pattern=None):
         &#34;&#34;&#34;copies media from the specified location on the commcell
 
                     Args:
@@ -912,6 +949,9 @@ instance of the Commcell class</p>
 
                         sync_cache (bool)              --  True if download and sync
                                                            False only download
+
+                        sync_cache_list (list)         --  list of names of remote caches to sync
+                                                            use None to sync all caches
 
                         schedule_pattern(dict)         --  pattern for schedule task
 
@@ -943,6 +983,7 @@ instance of the Commcell class</p>
                             password = &#34;base64encoded password&#34;
                             )
                 &#34;&#34;&#34;
+        version = self.commcell_object.commserv_version
         client_auth = {}
         if username:
             if password is None:
@@ -951,62 +992,97 @@ instance of the Commcell class</p>
                 &#34;userName&#34;: username,
                 &#34;password&#34;: password
             }
-        request_json = {
-            &#34;taskInfo&#34;: {
-                &#34;task&#34;: {
-                    &#34;taskType&#34;: 1,
-                    &#34;initiatedFrom&#34;: 2,
-                    &#34;policyType&#34;: 0,
-                    &#34;alert&#34;: {
-                        &#34;alertName&#34;: &#34;&#34;
-                    },
-                    &#34;taskFlags&#34;: {
-                        &#34;isEdgeDrive&#34;: False,
-                        &#34;disabled&#34;: False
-                    }
+
+        if version &gt;= 36:
+            client_groups = []
+            if sync_cache:
+                if sync_cache_list:
+                    for cache in sync_cache_list:
+                        client_groups.append({&#34;type&#34;: &#34;CLIENT_ENTITY&#34;,
+                                              &#34;clientName&#34;: cache,
+                                              &#34;id&#34;: self.commcell_object.clients.get(cache).client_id
+                                              })
+                else:
+                    flag_1, response_1 = self._cvpysdkcommcell_object.make_request(&#39;GET&#39;, self._services[&#39;CREATE_RC&#39;])
+                    cache_list = []
+                    for obj in response_1.json()[&#39;softwareCacheDetailList&#39;]:
+                        if obj[&#39;cache&#39;][&#39;id&#39;] != 2:
+                            cache_list.append(obj[&#39;cache&#39;][&#39;name&#39;])
+                    for client in cache_list:
+                        client_groups.append({&#34;type&#34;: &#34;CLIENT_ENTITY&#34;,
+                                              &#34;clientName&#34;: client,
+                                              &#34;id&#34;: int(self.commcell_object.clients.all_clients[client][&#39;id&#39;])})
+            request_json = {
+                &#34;copyConfiguration&#34;: {
+                    &#34;downloadPath&#34;: media_loc
                 },
-                &#34;subTasks&#34;: [
-                    {
-                        &#34;subTaskOperation&#34;: 1,
-                        &#34;subTask&#34;: {
-                            &#34;subTaskType&#34;: 1,
-                            &#34;operationType&#34;: 4019
+                &#34;notifyWhenJobCompletes&#34;: False,
+                &#34;entities&#34;: client_groups
+            }
+            if client_auth:
+                request_json[&#39;copyConfiguration&#39;][&#39;username&#39;] = username
+                request_json[&#39;copyConfiguration&#39;][&#39;password&#39;] = password
+        else:
+            request_json = {
+                &#34;taskInfo&#34;: {
+                    &#34;task&#34;: {
+                        &#34;taskType&#34;: 1,
+                        &#34;initiatedFrom&#34;: 2,
+                        &#34;policyType&#34;: 0,
+                        &#34;alert&#34;: {
+                            &#34;alertName&#34;: &#34;&#34;
                         },
-                        &#34;options&#34;: {
-                            &#34;adminOpts&#34;: {
-                                &#34;updateOption&#34;: {
-                                    &#34;syncUpdateCaches&#34;: sync_cache,
-                                    &#34;copyUpdates&#34;: True,
-                                    &#34;copySoftwareAndUpdates&#34;: True,
-                                    &#34;clientAndClientGroups&#34;: [
-                                        {
-                                            &#34;_type_&#34;: 2
+                        &#34;taskFlags&#34;: {
+                            &#34;isEdgeDrive&#34;: False,
+                            &#34;disabled&#34;: False
+                        }
+                    },
+                    &#34;subTasks&#34;: [
+                        {
+                            &#34;subTaskOperation&#34;: 1,
+                            &#34;subTask&#34;: {
+                                &#34;subTaskType&#34;: 1,
+                                &#34;operationType&#34;: 4019
+                            },
+                            &#34;options&#34;: {
+                                &#34;adminOpts&#34;: {
+                                    &#34;updateOption&#34;: {
+                                        &#34;syncUpdateCaches&#34;: sync_cache,
+                                        &#34;copyUpdates&#34;: True,
+                                        &#34;copySoftwareAndUpdates&#34;: True,
+                                        &#34;clientAndClientGroups&#34;: [
+                                            {
+                                                &#34;_type_&#34;: 2
+                                            }
+                                        ],
+                                        &#34;downloadUpdatesJobOptions&#34;: {
+                                            &#34;downloadSoftware&#34;: True,
+                                            &#34;updateCachePath&#34;: media_loc,
+                                            &#34;clientAuth&#34;: client_auth
                                         }
-                                    ],
-                                    &#34;downloadUpdatesJobOptions&#34;: {
-                                        &#34;downloadSoftware&#34;: True,
-                                        &#34;updateCachePath&#34;: media_loc,
-                                        &#34;clientAuth&#34;: client_auth
                                     }
                                 }
                             }
                         }
-                    }
-                ]
+                    ]
+                }
             }
-        }
 
         if schedule_pattern:
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
+        method = &#39;PUT&#39; if version &gt;= 36 else &#39;POST&#39;
+        url = self._services[&#39;DOWNLOAD_SOFTWARE&#39;] if version &gt;= 36 else self._services[&#39;CREATE_TASK&#39;]
+
         flag, response = self._cvpysdkcommcell_object.make_request(
-            &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
+            method, url, request_json
         )
 
         if flag:
             if response.json():
-                if &#34;jobIds&#34; in response.json():
-                    return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+                if &#34;jobId&#34; in response.json() or &#34;jobIds&#34; in response.json():
+                    return Job(self.commcell_object, response.json()[&#39;jobId&#39;]) if version &gt;= 36 \
+                        else Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
 
                 elif &#34;taskId&#34; in response.json():
                     return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
@@ -1019,13 +1095,15 @@ instance of the Commcell class</p>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;)
 
-    def sync_remote_cache(self, client_list=None):
+    def sync_remote_cache(self, client_list=None, schedule_pattern=None):
         &#34;&#34;&#34;Syncs remote cache
 
             Args:
 
                 client_list  --  list of client names
                 Default is None. By default all remote cache clients are synced
+
+                schedule_pattern (dict)        --  Pattern to schedule Sync Job
 
             Returns:
                 object - instance of the Job class for sync job
@@ -1098,6 +1176,9 @@ instance of the Commcell class</p>
             }
         }
 
+        if schedule_pattern:
+            request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+
         flag, response = self._cvpysdkcommcell_object.make_request(
             &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
         )
@@ -1106,6 +1187,9 @@ instance of the Commcell class</p>
             if response.json():
                 if &#34;jobIds&#34; in response.json():
                     return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+
+                elif &#34;taskId&#34; in response.json():
+                    return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
 
                 else:
                     raise SDKException(&#39;Download&#39;, &#39;101&#39;)
@@ -1118,7 +1202,7 @@ instance of the Commcell class</p>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.deployment.download.Download.copy_software"><code class="name flex">
-<span>def <span class="ident">copy_software</span></span>(<span>self, media_loc, username=None, password=None, sync_cache=True, schedule_pattern=None)</span>
+<span>def <span class="ident">copy_software</span></span>(<span>self, media_loc, username=None, password=None, sync_cache=True, sync_cache_list=None, schedule_pattern=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>copies media from the specified location on the commcell</p>
@@ -1139,6 +1223,10 @@ password to authenticate to external location</p>
 &ndash;
 True if download and sync
 False only download</p>
+<p>sync_cache_list (list)
+&ndash;
+list of names of remote caches to sync
+use None to sync all caches</p>
 <p>schedule_pattern(dict)
 &ndash;
 pattern for schedule task</p>
@@ -1184,9 +1272,9 @@ password = "base64encoded password"
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/deployment/download.py#L329-L447" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/deployment/download.py#L324-L481" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def copy_software(self, media_loc, username=None, password=None, sync_cache=True, schedule_pattern=None):
+<pre><code class="python">def copy_software(self, media_loc, username=None, password=None, sync_cache=True, sync_cache_list=None, schedule_pattern=None):
     &#34;&#34;&#34;copies media from the specified location on the commcell
 
                 Args:
@@ -1199,6 +1287,9 @@ password = "base64encoded password"
 
                     sync_cache (bool)              --  True if download and sync
                                                        False only download
+
+                    sync_cache_list (list)         --  list of names of remote caches to sync
+                                                        use None to sync all caches
 
                     schedule_pattern(dict)         --  pattern for schedule task
 
@@ -1230,6 +1321,7 @@ password = "base64encoded password"
                         password = &#34;base64encoded password&#34;
                         )
             &#34;&#34;&#34;
+    version = self.commcell_object.commserv_version
     client_auth = {}
     if username:
         if password is None:
@@ -1238,62 +1330,97 @@ password = "base64encoded password"
             &#34;userName&#34;: username,
             &#34;password&#34;: password
         }
-    request_json = {
-        &#34;taskInfo&#34;: {
-            &#34;task&#34;: {
-                &#34;taskType&#34;: 1,
-                &#34;initiatedFrom&#34;: 2,
-                &#34;policyType&#34;: 0,
-                &#34;alert&#34;: {
-                    &#34;alertName&#34;: &#34;&#34;
-                },
-                &#34;taskFlags&#34;: {
-                    &#34;isEdgeDrive&#34;: False,
-                    &#34;disabled&#34;: False
-                }
+
+    if version &gt;= 36:
+        client_groups = []
+        if sync_cache:
+            if sync_cache_list:
+                for cache in sync_cache_list:
+                    client_groups.append({&#34;type&#34;: &#34;CLIENT_ENTITY&#34;,
+                                          &#34;clientName&#34;: cache,
+                                          &#34;id&#34;: self.commcell_object.clients.get(cache).client_id
+                                          })
+            else:
+                flag_1, response_1 = self._cvpysdkcommcell_object.make_request(&#39;GET&#39;, self._services[&#39;CREATE_RC&#39;])
+                cache_list = []
+                for obj in response_1.json()[&#39;softwareCacheDetailList&#39;]:
+                    if obj[&#39;cache&#39;][&#39;id&#39;] != 2:
+                        cache_list.append(obj[&#39;cache&#39;][&#39;name&#39;])
+                for client in cache_list:
+                    client_groups.append({&#34;type&#34;: &#34;CLIENT_ENTITY&#34;,
+                                          &#34;clientName&#34;: client,
+                                          &#34;id&#34;: int(self.commcell_object.clients.all_clients[client][&#39;id&#39;])})
+        request_json = {
+            &#34;copyConfiguration&#34;: {
+                &#34;downloadPath&#34;: media_loc
             },
-            &#34;subTasks&#34;: [
-                {
-                    &#34;subTaskOperation&#34;: 1,
-                    &#34;subTask&#34;: {
-                        &#34;subTaskType&#34;: 1,
-                        &#34;operationType&#34;: 4019
+            &#34;notifyWhenJobCompletes&#34;: False,
+            &#34;entities&#34;: client_groups
+        }
+        if client_auth:
+            request_json[&#39;copyConfiguration&#39;][&#39;username&#39;] = username
+            request_json[&#39;copyConfiguration&#39;][&#39;password&#39;] = password
+    else:
+        request_json = {
+            &#34;taskInfo&#34;: {
+                &#34;task&#34;: {
+                    &#34;taskType&#34;: 1,
+                    &#34;initiatedFrom&#34;: 2,
+                    &#34;policyType&#34;: 0,
+                    &#34;alert&#34;: {
+                        &#34;alertName&#34;: &#34;&#34;
                     },
-                    &#34;options&#34;: {
-                        &#34;adminOpts&#34;: {
-                            &#34;updateOption&#34;: {
-                                &#34;syncUpdateCaches&#34;: sync_cache,
-                                &#34;copyUpdates&#34;: True,
-                                &#34;copySoftwareAndUpdates&#34;: True,
-                                &#34;clientAndClientGroups&#34;: [
-                                    {
-                                        &#34;_type_&#34;: 2
+                    &#34;taskFlags&#34;: {
+                        &#34;isEdgeDrive&#34;: False,
+                        &#34;disabled&#34;: False
+                    }
+                },
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTaskOperation&#34;: 1,
+                        &#34;subTask&#34;: {
+                            &#34;subTaskType&#34;: 1,
+                            &#34;operationType&#34;: 4019
+                        },
+                        &#34;options&#34;: {
+                            &#34;adminOpts&#34;: {
+                                &#34;updateOption&#34;: {
+                                    &#34;syncUpdateCaches&#34;: sync_cache,
+                                    &#34;copyUpdates&#34;: True,
+                                    &#34;copySoftwareAndUpdates&#34;: True,
+                                    &#34;clientAndClientGroups&#34;: [
+                                        {
+                                            &#34;_type_&#34;: 2
+                                        }
+                                    ],
+                                    &#34;downloadUpdatesJobOptions&#34;: {
+                                        &#34;downloadSoftware&#34;: True,
+                                        &#34;updateCachePath&#34;: media_loc,
+                                        &#34;clientAuth&#34;: client_auth
                                     }
-                                ],
-                                &#34;downloadUpdatesJobOptions&#34;: {
-                                    &#34;downloadSoftware&#34;: True,
-                                    &#34;updateCachePath&#34;: media_loc,
-                                    &#34;clientAuth&#34;: client_auth
                                 }
                             }
                         }
                     }
-                }
-            ]
+                ]
+            }
         }
-    }
 
     if schedule_pattern:
         request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
+    method = &#39;PUT&#39; if version &gt;= 36 else &#39;POST&#39;
+    url = self._services[&#39;DOWNLOAD_SOFTWARE&#39;] if version &gt;= 36 else self._services[&#39;CREATE_TASK&#39;]
+
     flag, response = self._cvpysdkcommcell_object.make_request(
-        &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
+        method, url, request_json
     )
 
     if flag:
         if response.json():
-            if &#34;jobIds&#34; in response.json():
-                return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+            if &#34;jobId&#34; in response.json() or &#34;jobIds&#34; in response.json():
+                return Job(self.commcell_object, response.json()[&#39;jobId&#39;]) if version &gt;= 36 \
+                    else Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
 
             elif &#34;taskId&#34; in response.json():
                 return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
@@ -1422,7 +1549,7 @@ cu_number=42
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/deployment/download.py#L58-L327" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/deployment/download.py#L58-L322" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def download_software(
         self,
@@ -1527,25 +1654,18 @@ cu_number=42
         self.update_option = {
             &#39;upgradeToLatestRelease&#39;: False,
             &#39;latestFixesForCurrentRelease&#39;: True,
-            &#34;featureRelease&#34;: self.commcell_object.version,
             &#39;SPName&#39;: &#39;hotfix&#39;,
             &#39;IsSPName&#39;: False,
             &#39;isSpDelayedDays&#39;: True,
             &#39;isHotfixesDownload&#39;: True
         }
     elif DownloadOptions.SERVICEPACK_AND_HOTFIXES.value == options:
-        if not (service_pack or cu_number):
+        if service_pack is None:
             raise SDKException(&#39;Download&#39;, &#39;102&#39;)
         self.update_option = {
             &#39;upgradeToLatestRelease&#39;: False,
             &#39;latestFixesForCurrentRelease&#39;: False,
-            &#34;featureRelease&#34;: &#34;11.&#34; + service_pack + &#34;.&#34; + cu_number
-        }
-    else:
-        if service_pack is None:
-            raise SDKException(&#39;Download&#39;, &#39;102&#39;)
-
-        self.update_option = {
+            &#34;featureRelease&#34;: &#34;11.&#34; + str(service_pack) + &#34;.&#34; + str(cu_number),
             &#39;SPName&#39;: str(service_pack),
             &#39;IsSPName&#39;: True,
             &#39;isSpDelayedDays&#39;: False,
@@ -1554,7 +1674,7 @@ cu_number=42
 
     # to set the default value if os_list is none
     if os_list is None:
-        os_list = [&#39;Windows(X64)&#39;]
+        os_list = [&#39;WINDOWS_X64&#39;]
 
     client_groups = []
     if sync_cache and sync_cache_list:
@@ -1570,7 +1690,8 @@ cu_number=42
             flag_1, response_1 = self._cvpysdkcommcell_object.make_request(&#39;GET&#39;, self._services[&#39;CREATE_RC&#39;])
             cache_list = []
             for obj in response_1.json()[&#39;softwareCacheDetailList&#39;]:
-                cache_list.append(obj[&#39;cache&#39;][&#39;name&#39;])
+                if obj[&#39;cache&#39;][&#39;id&#39;] != 2:
+                    cache_list.append(obj[&#39;cache&#39;][&#39;name&#39;])
             for client in cache_list:
                 client_groups.append({&#34;type&#34;: &#34;CLIENT_ENTITY&#34;,
                                       &#34;clientName&#34;: client,
@@ -1579,7 +1700,7 @@ cu_number=42
     if version &gt;= 36:
         win_os_list = []
         unix_os_list = []
-        temp_win = [&#39;Windows(X64)&#39;, &#39;Windows(32)&#39;]
+        temp_win = [&#39;WINDOWS_X64&#39;, &#39;WINDOWS_X32&#39;, &#39;WINDOWS_ARM64&#39;]
 
         for os in os_list:
             if os in temp_win:
@@ -1590,7 +1711,6 @@ cu_number=42
             &#34;downloadConfiguration&#34;: {
                 &#34;upgradeToLatestRelease&#34;: self.update_option[&#39;upgradeToLatestRelease&#39;],
                 &#34;latestFixesForCurrentRelease&#34;: self.update_option[&#39;latestFixesForCurrentRelease&#39;],
-                &#34;featureRelease&#34;: self.update_option[&#39;featureRelease&#39;],
                 &#34;windowsDownloadOptions&#34;: win_os_list,
                 &#34;unixDownloadOptions&#34;: unix_os_list,
             },
@@ -1598,6 +1718,8 @@ cu_number=42
             &#34;entities&#34;: client_groups
 
         }
+        if DownloadOptions.SERVICEPACK_AND_HOTFIXES.value == options:
+            request_json[&#34;downloadConfiguration&#34;][&#34;featureRelease&#34;] = self.update_option[&#39;featureRelease&#39;]
     else:
         request_json = {
             &#34;taskInfo&#34;: {
@@ -1635,26 +1757,26 @@ cu_number=42
                                     &#34;copySoftwareAndUpdates&#34;: False,
                                     &#34;isUnix&#34;: True,
                                     &#34;unixDownloadPackages&#34;: {
-                                        &#34;linuxosX64&#34;: &#39;Linux X86_64&#39; in os_list,
-                                        &#34;solarisosX64&#34;: &#39;Solaris X86_64&#39; in os_list,
+                                        &#34;linuxosX64&#34;: &#39;LINUX_X86_64&#39; in os_list,
+                                        &#34;solarisosX64&#34;: &#39;SOLARIS_X86_64&#39; in os_list,
                                         &#34;solsparcos&#34;: &#39;Solaris-SPARC-X86&#39; in os_list,
-                                        &#34;freeBSDos&#34;: &#39;Freebsd X86&#39; in os_list,
-                                        &#34;linuxos&#34;: &#39;Linux X86&#39; in os_list,
-                                        &#34;linuxosPPC64le&#34;: &#39;Linux PPC64le&#39; in os_list,
-                                        &#34;freeBSDosX64&#34;: &#39;Freebsd X86_64&#39; in os_list,
-                                        &#34;solarisos&#34;: &#39;Solaris SPARC&#39; in os_list,
+                                        &#34;freeBSDos&#34;: &#39;FREEBSD_X86&#39; in os_list,
+                                        &#34;linuxos&#34;: &#39;LINUX_X86&#39; in os_list,
+                                        &#34;linuxosPPC64le&#34;: &#39;LINUX_PPC64LE&#39; in os_list,
+                                        &#34;freeBSDosX64&#34;: &#39;FREEBSD_X86_64&#39; in os_list,
+                                        &#34;solarisos&#34;: &#39;SOLARIS_SPARC&#39; in os_list,
                                         &#34;linuxs390os&#34;: &#39;Linux-S390-31&#39; in os_list,
-                                        &#34;darwinos&#34;: &#39;macOS&#39; in os_list,
+                                        &#34;darwinos&#34;: &#39;MAC_OS&#39; in os_list,
                                         &#34;linuxosS390&#34;: &#39;Linux-S390&#39; in os_list,
                                         &#34;aixppcos&#34;: &#39;Aix-PPC-32&#39; in os_list,
-                                        &#34;linuxosPPC64&#34;: &#39;Linux-PPC-64&#39; in os_list,
-                                        &#34;aixos&#34;: &#39;Aix PPC&#39; in os_list,
-                                        &#34;hpos&#34;: &#39;HP IA64&#39; in os_list,
+                                        &#34;linuxosPPC64&#34;: &#39;LINUX_PPC64&#39; in os_list,
+                                        &#34;aixos&#34;: &#39;AIX_PPC&#39; in os_list,
+                                        &#34;hpos&#34;: &#39;HP_IA64&#39; in os_list,
                                         &#34;solos&#34;: &#39;Solaris X86&#39; in os_list
                                     },
                                     &#34;windowsDownloadPackages&#34;: {
-                                        &#34;windowsX64&#34;: &#39;Windows(X64)&#39; in os_list,
-                                        &#34;windows32&#34;: &#39;Windows(32)&#39; in os_list
+                                        &#34;windowsX64&#34;: &#39;WINDOWS_X64&#39; in os_list,
+                                        &#34;windows32&#34;: &#39;WINDOWS_X32&#39; in os_list
                                     },
                                     &#34;clientAndClientGroups&#34;: client_groups,
                                     &#34;downloadUpdatesJobOptions&#34;: {
@@ -1697,7 +1819,7 @@ cu_number=42
 </details>
 </dd>
 <dt id="cvpysdk.deployment.download.Download.sync_remote_cache"><code class="name flex">
-<span>def <span class="ident">sync_remote_cache</span></span>(<span>self, client_list=None)</span>
+<span>def <span class="ident">sync_remote_cache</span></span>(<span>self, client_list=None, schedule_pattern=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Syncs remote cache</p>
@@ -1706,6 +1828,9 @@ cu_number=42
 &ndash;
 list of client names
 Default is None. By default all remote cache clients are synced</p>
+<p>schedule_pattern (dict)
+&ndash;
+Pattern to schedule Sync Job</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for sync job</p>
 <h2 id="raises">Raises</h2>
@@ -1720,15 +1845,17 @@ if another sync job is running with the given client
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/deployment/download.py#L449-L543" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/deployment/download.py#L483-L585" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def sync_remote_cache(self, client_list=None):
+<pre><code class="python">def sync_remote_cache(self, client_list=None, schedule_pattern=None):
     &#34;&#34;&#34;Syncs remote cache
 
         Args:
 
             client_list  --  list of client names
             Default is None. By default all remote cache clients are synced
+
+            schedule_pattern (dict)        --  Pattern to schedule Sync Job
 
         Returns:
             object - instance of the Job class for sync job
@@ -1801,6 +1928,9 @@ if another sync job is running with the given client
         }
     }
 
+    if schedule_pattern:
+        request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
+
     flag, response = self._cvpysdkcommcell_object.make_request(
         &#39;POST&#39;, self._services[&#39;CREATE_TASK&#39;], request_json
     )
@@ -1809,6 +1939,9 @@ if another sync job is running with the given client
         if response.json():
             if &#34;jobIds&#34; in response.json():
                 return Job(self.commcell_object, response.json()[&#39;jobIds&#39;][0])
+
+            elif &#34;taskId&#34; in response.json():
+                return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
 
             else:
                 raise SDKException(&#39;Download&#39;, &#39;101&#39;)

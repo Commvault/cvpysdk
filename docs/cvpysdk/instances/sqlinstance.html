@@ -127,7 +127,7 @@ database_list           --  returns the list of protected databases
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sqlinstance.py#L1-L1624" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/sqlinstance.py#L1-L1627" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -521,6 +521,11 @@ class SQLServerInstance(Instance):
                                 &#34;destClient&#34;: {
                                     &#34;clientId&#34;: destination_client_id
                                 }
+                            },
+                            &#34;browseOption&#34;: {
+                                &#34;timeZone&#34;: {
+                                    &#34;TimeZoneName&#34;: self._agent_object._client_object.timezone
+                                }
                             }
                         }
                     }
@@ -573,13 +578,11 @@ class SQLServerInstance(Instance):
             if isinstance(to_time, int):
                 to_time_type = &#34;toTime&#34;
             to_time_dict = {
-                &#34;browseOption&#34;: {
-                    &#34;timeRange&#34;: {
-                        to_time_type: to_time
-                    }
+                &#34;timeRange&#34;: {
+                    &#34;toTimeValue&#34;: to_time
                 }
             }
-            request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;].update(to_time_dict)
+            request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;browseOption&#39;].update(to_time_dict)
 
         if schedule_pattern is not None:
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
@@ -1791,7 +1794,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sqlinstance.py#L118-L1624" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/sqlinstance.py#L118-L1627" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SQLServerInstance(Instance):
     &#34;&#34;&#34;Derived class from Instance Base class, representing a SQL Server instance,
@@ -2068,6 +2071,11 @@ default: None</p>
                                 &#34;destClient&#34;: {
                                     &#34;clientId&#34;: destination_client_id
                                 }
+                            },
+                            &#34;browseOption&#34;: {
+                                &#34;timeZone&#34;: {
+                                    &#34;TimeZoneName&#34;: self._agent_object._client_object.timezone
+                                }
                             }
                         }
                     }
@@ -2120,13 +2128,11 @@ default: None</p>
             if isinstance(to_time, int):
                 to_time_type = &#34;toTime&#34;
             to_time_dict = {
-                &#34;browseOption&#34;: {
-                    &#34;timeRange&#34;: {
-                        to_time_type: to_time
-                    }
+                &#34;timeRange&#34;: {
+                    &#34;toTimeValue&#34;: to_time
                 }
             }
-            request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;].update(to_time_dict)
+            request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;browseOption&#39;].update(to_time_dict)
 
         if schedule_pattern is not None:
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
@@ -3313,7 +3319,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sqlinstance.py#L122-L125" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/sqlinstance.py#L122-L125" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def ag_group_name(self):
@@ -3327,7 +3333,7 @@ def ag_group_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sqlinstance.py#L137-L140" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/sqlinstance.py#L137-L140" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def ag_listener_list(self):
@@ -3341,7 +3347,7 @@ def ag_listener_list(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sqlinstance.py#L127-L130" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/sqlinstance.py#L127-L130" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def ag_primary_replica(self):
@@ -3355,7 +3361,7 @@ def ag_primary_replica(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sqlinstance.py#L132-L135" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/sqlinstance.py#L132-L135" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def ag_replicas_list(self):
@@ -3369,7 +3375,7 @@ def ag_replicas_list(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sqlinstance.py#L142-L145" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/sqlinstance.py#L142-L145" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def database_list(self):
@@ -3383,7 +3389,7 @@ def database_list(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sqlinstance.py#L147-L150" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/sqlinstance.py#L147-L150" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def mssql_instance_prop(self):
@@ -3405,7 +3411,7 @@ the subclients in the backupset</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sqlinstance.py#L1076-L1099" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/sqlinstance.py#L1079-L1102" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(self):
     &#34;&#34;&#34;Run full backup job for all subclients in this instance.
@@ -3453,7 +3459,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sqlinstance.py#L1101-L1122" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/sqlinstance.py#L1104-L1125" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, get_full_details=False):
     &#34;&#34;&#34;Gets the list of the backed up databases for this instance.
@@ -3516,7 +3522,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sqlinstance.py#L1124-L1173" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/sqlinstance.py#L1127-L1176" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse_in_time(self, from_date=None, to_date=None, full_details=None):
     &#34;&#34;&#34;Gets the list of the backed up databases for this instance in the given time frame.
@@ -3599,7 +3605,7 @@ recovery_point_name (str) : name of the database created
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sqlinstance.py#L1320-L1368" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/sqlinstance.py#L1323-L1371" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_recovery_point(self,
                           database_name,
@@ -3678,7 +3684,7 @@ if Credentials for impersonation does not exist</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sqlinstance.py#L1479-L1602" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/sqlinstance.py#L1482-L1605" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_sql_ag(self, client_name, ag_group_name, credentials=None):
     &#34;&#34;&#34;Creates a new SQL Availability Group client and instance.
@@ -3820,7 +3826,7 @@ name of database to get database details</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sqlinstance.py#L1604-L1624" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/sqlinstance.py#L1607-L1627" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def database_details(self, database_name):
     &#34;&#34;&#34;Gets the database details
@@ -3855,7 +3861,7 @@ object (list) - list of all the recovery points and clones</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sqlinstance.py#L1303-L1318" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/sqlinstance.py#L1306-L1321" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_recovery_points(self):
     &#34;&#34;&#34;
@@ -3891,7 +3897,7 @@ Defaults to local system account if enabled is True and credential name not prov
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sqlinstance.py#L1441-L1477" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/sqlinstance.py#L1444-L1480" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def impersonation(self, enable, credentials=None):
     &#34;&#34;&#34;Sets impersonation on SQL instance with local system account or provided credentials.
@@ -3998,7 +4004,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sqlinstance.py#L1175-L1257" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/sqlinstance.py#L1178-L1260" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore(
         self,
@@ -4118,7 +4124,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sqlinstance.py#L1259-L1301" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/sqlinstance.py#L1262-L1304" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_to_destination_server(
         self,
@@ -4185,7 +4191,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sqlinstance.py#L1370-L1411" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/sqlinstance.py#L1373-L1414" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def table_level_restore(self,
                         src_db_name,
@@ -4243,7 +4249,7 @@ value of vdi timeout for sql vdi operations</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sqlinstance.py#L1427-L1439" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/sqlinstance.py#L1430-L1442" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def vdi_timeout(self, value):
     &#34;&#34;&#34;Sets the SQL VDI timeout value on SQL instance
@@ -4272,7 +4278,7 @@ Boolean value whether to set VSS option on or off</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/sqlinstance.py#L1413-L1425" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/sqlinstance.py#L1416-L1428" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def vss_option(self, value):
     &#34;&#34;&#34;Enables or disables VSS option on SQL instance

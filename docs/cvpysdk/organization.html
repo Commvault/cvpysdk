@@ -323,7 +323,7 @@ get_entity_counts()         --  To get the counts of associated entities for com
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1-L4214" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1-L4328" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -695,6 +695,7 @@ class Organizations:
         self._organizations = None
         self._organizations_cache = None
         self._fanout = False
+        self.filter_query_count = 0
 
         self.refresh()
 
@@ -715,9 +716,7 @@ class Organizations:
 
     def __repr__(self):
         &#34;&#34;&#34;Returns the string representation of an instance of this class.&#34;&#34;&#34;
-        return &#34;Organizations class instance for Commcell: &#39;{0}&#39;&#34;.format(
-            self._commcell_object.commserv_name
-        )
+        return &#34;Organizations class instance for Commcell&#34;
 
     def __len__(self):
         &#34;&#34;&#34;Returns the number of the organizations configured on the Commcell.&#34;&#34;&#34;
@@ -751,9 +750,10 @@ class Organizations:
         except IndexError:
             raise IndexError(&#39;No organization exists with the given Name / Id&#39;)
 
-    def _get_organizations(self):
+    def _get_organizations(self, full_response: bool = False):
         &#34;&#34;&#34;Gets all the organizations associated with the Commcell environment.
-
+            Args:
+                full_response(bool) --  flag to return complete response
             Returns:
                 dict    -   consists of all organizations added to the commcell
 
@@ -775,6 +775,8 @@ class Organizations:
             organizations = {}
             self._adv_config = {}
             if response.json() and &#39;providers&#39; in response.json():
+                if full_response:
+                    return response.json()
                 for provider in response.json()[&#39;providers&#39;]:
                     name = provider[&#39;connectName&#39;].lower()
                     if self._fanout and &#34;idpCompanyDetails&#34; in provider:
@@ -791,10 +793,13 @@ class Organizations:
                         get(&#34;cloudService&#34;, {}).get(&#39;redirectUrl&#39;)
                     organizations[name] = organization_id
                     self._adv_config[name] = self._adv_config.get(name, {}) | {
+                        &#39;id&#39;: organization_id,
                         &#39;GUID&#39;: organization_guid,
                         &#39;redirect_url&#39;: cloud_service_organizations,
                         &#39;home_commcell&#39;: provider.get(&#39;commcell&#39;, {}).get(&#39;commCellName&#39;),
                         &#39;parent_company&#39;: provider.get(&#39;ownerCompanyName&#39;),
+                        &#39;full_name&#39;: [contact.get(&#39;fullName&#39;,&#39;&#39;) for contact in provider.get(&#39;primaryContacts&#39;,[])],
+                        &#39;flags&#39;: provider.get(&#39;flags&#39;)
                     }
                     if &#39;workloads&#39; not in self._adv_config[name]:
                         self._adv_config[name][&#39;workloads&#39;] = []
@@ -873,13 +878,16 @@ class Organizations:
             fl_parameters(str) -- fl parameter string
         &#34;&#34;&#34;
         self.valid_columns = {
-            &#39;connectName&#39;: &#39;providers.connectName&#39;,
+            &#39;name&#39;: &#39;providers.connectName&#39;,
             &#39;id&#39;: &#39;providers.shortname.id&#39;,
             &#39;fullName&#39;: &#39;providers.primaryContacts.fullName&#39;,
             &#39;associatedEntitiesCount&#39;: &#39;providers.associatedEntitiesCount&#39;,
             &#39;status&#39;: &#39;providers.status&#39;,
             &#39;providerGUID&#39;: &#39;providers.providerGUID&#39;,
-            &#39;tags&#39;: &#39;providers.provider.tags&#39;
+            &#39;tags&#39;: &#39;providers.provider.tags&#39;,
+            &#39;reseller&#39;: &#39;providers.canCreateCompanies&#39;,
+            &#39;parentCompany&#39;: &#39;providers.ownerCompanyName&#39;,
+            &#39;commcell&#39;: &#39;providers.commcell&#39;
         }
         default_columns = &#39;providers.connectName,providers.shortName&#39;
 
@@ -917,32 +925,32 @@ class Organizations:
         Returns the fq parameters based on the fq list passed
         Args:
              fq     (list) --   contains the columnName, condition and value
-                    e.g. fq = [[&#39;connectName&#39;,&#39;contains&#39;,&#39;test&#39;],[&#39;status&#39;,&#39;equals&#39;,&#39;active&#39;]]
+                    e.g. fq = [[&#39;name&#39;,&#39;contains&#39;,&#39;test&#39;],[&#39;status&#39;,&#39;eq&#39;,&#39;ACTIVE&#39;]]
 
         Returns:
             fq_parameters(str) -- fq parameter string
         &#34;&#34;&#34;
-        conditions = [&#39;contains&#39;, &#39;notContain&#39;, &#39;eq&#39;, &#39;neq&#39;, &#39;gt&#39;, &#39;lt&#39;]
-        params = [&#34;&amp;fq=providers.status:eq:ACTIVE&#34;]
-        if fq:
-            for param in fq:
-                if param[0] in self.valid_columns.keys():
-                    if param[0] == &#39;tags&#39;:
-                        params.append(f&#34;&amp;fq=providers.provider.tags.name:contains:{param[2]}&#34;)
-                    elif param[1] in conditions:
-                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}&#34;)
-                    elif param[1] == &#39;isEmpty&#39; and len(param) == 2:
-                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:in:null,&#34;)
-                    elif param[1] == &#39;between&#39; and &#39;-&#39; in param[2]:
-                        ranges = param[2].split(&#39;-&#39;)
-                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:gteq:{ranges[0]}&#34;)
-                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:lteq:{ranges[1]}&#34;)
-                    else:
-                        raise SDKException(&#39;Organization&#39;, &#39;102&#39;, &#39;Invalid condition passed&#39;)
-                else:
-                    raise SDKException(&#39;Organization&#39;, &#39;102&#39;, &#39;Invalid column Name passed&#39;)
-        if params:
-            return &#34;&#34;.join(params)
+        conditions = {&#34;contains&#34;, &#34;notContain&#34;, &#34;eq&#34;, &#34;neq&#34;, &#34;gt&#34;, &#34;lt&#34;, &#34;nin&#34;}
+        params = []
+
+        for column, condition, *value in fq or []:
+            if column not in self.valid_columns:
+                raise SDKException(&#34;Organization&#34;, &#34;102&#34;, &#34;Invalid column name passed&#34;)
+
+            if column == &#34;tags&#34;:
+                params.append(f&#34;&amp;fq=providers.provider.tags.name:contains:{value[0]}&#34;)
+            elif condition in conditions:
+                params.append(f&#34;&amp;fq={self.valid_columns[column]}:{condition.lower()}:{value[0]}&#34;)
+            elif condition == &#34;isEmpty&#34; and not value:
+                params.append(f&#34;&amp;fq={self.valid_columns[column]}:in:null,&#34;)
+            elif condition == &#34;between&#34; and &#34;-&#34; in value[0]:
+                start, end = value[0].split(&#34;-&#34;)
+                params.append(f&#34;&amp;fq={self.valid_columns[column]}:gteq:{start}&#34;)
+                params.append(f&#34;&amp;fq={self.valid_columns[column]}:lteq:{end}&#34;)
+            else:
+                raise SDKException(&#34;Organization&#34;, &#34;102&#34;, &#34;Invalid condition passed&#34;)
+
+        return &#34;&#34;.join(params)
 
     def get_organizations_cache(self, hard: bool = False, **kwargs) -&gt; dict:
         &#34;&#34;&#34;
@@ -954,36 +962,44 @@ class Organizations:
                 fl    (list)  --   list of columns to return in response (default: None).
                 sort  (list)  --   contains the name of the column on which sorting will be performed and type of sort
                                         valid sor type: 1 for ascending and -1 for descending
-                                        e.g. sort = [&#39;connectName&#39;,&#39;1&#39;] (default: None).
+                                        e.g. sort = [&#39;name&#39;,&#39;1&#39;] (default: None).
                 limit (list)  --   contains the start and limit parameter value
                                         limit = [&lt;startValue&gt;,&lt;limitValue&gt;]
                                         default [&#39;0&#39;,&#39;25&#39;]
                 search (str)  --   contains the string to search in the commcell entity cache (default: None).
                 fq     (list) --   contains the columnName, condition and value as a sublist of a list (default: None).
-                                        e.g. fq = [[&#39;connectName&#39;,&#39;contains&#39;,&#39;test&#39;],[&#39;status&#39;,&#39;equals&#39;,&#39;active&#39;]]
-                enum   (bool) --    flag to return enums in the response (default: True).
+                                        e.g. fq = [[&#39;name&#39;,&#39;contains&#39;,&#39;test&#39;],[&#39;status&#39;,&#39;equals&#39;,&#39;active&#39;]]
 
         Returns:
             dict: Dictionary of all the properties present in response.
         &#34;&#34;&#34;
-        headers = self._commcell_object._headers.copy()
-        if kwargs.get(&#39;enum&#39;, True):
-            headers[&#39;EnumNames&#39;] = &#39;True&#39;
-
+        # computing params
         fl_parameters = self._get_fl_parameters(kwargs.get(&#39;fl&#39;, None))
         fq_parameters = self._get_fq_parameters(kwargs.get(&#39;fq&#39;, None))
-        limit = kwargs.get(&#39;limit&#39;, [&#39;0&#39;, &#39;100&#39;])
-        limit_parameters = f&#39;start={limit[0]}&amp;limit={limit[1]}&#39;
+        limit = kwargs.get(&#39;limit&#39;, None)
+        limit_parameters = f&#39;start={limit[0]}&amp;limit={limit[1]}&#39; if limit else &#39;&#39;
         hard_refresh = &#39;&amp;hardRefresh=true&#39; if hard else &#39;&#39;
         sort_parameters = self._get_sort_parameters(kwargs.get(&#39;sort&#39;, None)) if kwargs.get(&#39;sort&#39;, None) else &#39;&#39;
-        search_parameter = f&#39;&amp;search={&#34;,&#34;.join(self.valid_columns.values())}:contains:{kwargs.get(&#34;search&#34;, None)}&#39; if kwargs.get(
-            &#39;search&#39;, None) else &#39;&#39;
 
-        request_url = (
-                self._organizations_api + &#34;?&#34; + limit_parameters + sort_parameters + fl_parameters +
-                hard_refresh + search_parameter + fq_parameters
-        )
-        flag, response = self._cvpysdk_object.make_request(&#34;GET&#34;, request_url, headers=headers)
+        # Search operation can only be performed on limited columns, so filtering out the columns on which search works
+        searchable_columns = [&#34;name&#34;, &#34;fullName&#34;, &#34;providerGUID&#34;, &#34;status&#34;]
+        search_parameter = (f&#39;&amp;search={&#34;,&#34;.join(self.valid_columns[col] for col in searchable_columns)}:contains:&#39;
+                            f&#39;{kwargs.get(&#34;search&#34;, None)}&#39;) if kwargs.get(&#39;search&#39;, None) else &#39;&#39;
+        params = [
+            limit_parameters,
+            sort_parameters,
+            fl_parameters,
+            hard_refresh,
+            search_parameter,
+            fq_parameters
+        ]
+
+        # adding required additional param for comet layer
+        if self._commcell_object.is_global_scope():
+            params.append(&#34;&amp;fq=providers.idpCompanyDetails:eq:null&#34;)
+
+        request_url = f&#34;{self._organizations_api}?&#34; + &#34;&#34;.join(params)
+        flag, response = self._cvpysdk_object.make_request(&#34;GET&#34;, request_url)
 
         if not flag:
             response_string = self._update_response_(response.text)
@@ -991,22 +1007,39 @@ class Organizations:
 
         organizations_cache = {}
         if response.json() and &#39;providers&#39; in response.json():
+            self.filter_query_count = response.json().get(&#39;filterQueryCount&#39;,0)
             for provider in response.json()[&#39;providers&#39;]:
                 name = provider[&#39;connectName&#39;].lower()
                 organization_config = {
+                    &#39;name&#39;: provider[&#39;connectName&#39;].lower(),
                     &#39;id&#39;: provider.get(&#39;shortName&#39;, {}).get(&#39;id&#39;),
                     &#39;providerGUID&#39;: provider.get(&#39;providerGUID&#39;),
                     &#39;status&#39;: provider.get(&#39;status&#39;),
-                    &#39;associatedEntitiesCount&#39;: provider.get(&#39;associatedEntitiesCount&#39;)
+                    &#39;associatedEntitiesCount&#39;: provider.get(&#39;associatedEntitiesCount&#39;),
+                    &#39;fullName&#39;:[contact.get(&#39;fullName&#39;,&#39;&#39;) for contact in provider.get(&#39;primaryContacts&#39;,[])],
+                    &#39;reseller&#39;: provider.get(&#39;canCreateCompanies&#39;, False),
+                    &#39;parentCompany&#39;: provider.get(&#39;ownerCompanyName&#39;, &#39;&#39;)
                 }
-                if &#39;primaryContacts&#39; in provider:
-                    organization_config[&#39;fullName&#39;] = [
-                        contact.get(&#39;fullName&#39;) for contact in provider.get(&#39;primaryContacts&#39;)
-                    ]
                 if provider.get(&#39;provider&#39;) is not None and &#39;tags&#39; in provider[&#39;provider&#39;]:
                     organization_config[&#39;tags&#39;] = provider.get(&#39;provider&#39;, {}).get(&#39;tags&#39;)
-                organization_config = {key: value for key, value in organization_config.items() if value is not None}
-                organizations_cache[name] = organization_config
+                if self._commcell_object.is_global_scope():
+                    organization_config.update(
+                        {&#34;commcell&#34;: provider.get(&#39;commcell&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;multiCommcellName&#39;,&#39;&#39;)}
+                    )
+
+                    # Handle duplicate names for different commcells
+                    unique_name = name
+                    i = 1
+                    while unique_name in organizations_cache:
+                        existing_user = organizations_cache[unique_name]
+                        if existing_user.get(&#39;commcell&#39;) != organization_config.get(&#39;commcell&#39;):
+                            unique_name = f&#34;{name}__{i}&#34;
+                            i += 1
+                        else:
+                            break
+                    organizations_cache[unique_name] = organization_config
+                else:
+                    organizations_cache[name] = organization_config
             return organizations_cache
         else:
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -1038,6 +1071,8 @@ class Organizations:
                     }
 
                 &#34;&#34;&#34;
+        if not self._organizations_cache:
+            self._organizations_cache = self.get_organizations_cache()
         return self._organizations_cache
 
     @property
@@ -2299,38 +2334,39 @@ class Organization:
         self._update_properties()
 
     @property
-    def operators(self) -&gt; list:
+    def operators(self) -&gt; list[tuple[str, str]]:
         &#34;&#34;&#34;
         Returns the list of operators and roles associated to this organization
 
         Returns:
-            list    -   list of dicts containing operator details
+            list    -   list of (operator, role) tuple pairs
 
         Example:
             [
-                {
-                    &#39;role&#39;: {name:&#39;&lt;name of role&gt;&#39;, id:&lt;role id&gt;},
-                    &#39;userGroup&#39;: {userGroupName:&#39;&lt;usergroupname&gt;&#39;, userGroupId:&lt;id&gt;}
-                },
-                {
-                    &#39;role&#39;:{name:&#39;&lt;name of role&gt;&#39;, id:&lt;role id&gt;},
-                    &#39;user&#39;:{userName:&#39;&lt;user name&gt;&#39;, userId:&lt;id&gt;}
-                }
+                (&#39;&lt;user name&gt;&#39;, &#39;&lt;role name&gt;&#39;),
+                (&#39;&lt;usergroup name&gt;&#39;, &#39;&lt;role name&gt;&#39;),
+                ...
             ]
         &#34;&#34;&#34;
-        return self._operators
+        return sorted([
+            (
+                op.get(&#39;user&#39;, {}).get(&#39;userName&#39;) or op.get(&#39;userGroup&#39;, {}).get(&#39;userGroupName&#39;),
+                op.get(&#39;role&#39;, {}).get(&#39;roleName&#39;)
+            ) for op in self._operators
+        ])
 
     @operators.setter
-    def operators(self, operator_list: list) -&gt; None:
+    def operators(self, operator_list: list[tuple[str, str]]) -&gt; None:
         &#34;&#34;&#34;
         Overwrites the operator:role associations of the organization
 
         Args:
-            operators (list): list of dicts with role and user/userGroup keys
+            operator_list (list): list of (userOrGroup, role) tuple pairs
 
             [
-                {&#39;role&#39;:&#39;&lt;name of role&gt;&#39;,&#39;userGroup&#39;:&#39;&lt;usergroupname&gt;&#39;},
-                {&#39;role&#39;:&#39;&lt;name of role&gt;&#39;,&#39;user&#39;:&#39;&lt;username&gt;&#39;}
+                (&#39;&lt;user name&gt;&#39;, &#39;&lt;role name&gt;&#39;),
+                (&#39;&lt;usergroup name&gt;&#39;, &#39;&lt;role name&gt;&#39;),
+                ...
             ]
 
         Returns:
@@ -2344,23 +2380,26 @@ class Organization:
 
         &#34;&#34;&#34;
         operators_list = []
-        for operator in operator_list:
-            operator_dict = {&#34;role&#34;:
-                {
-                    &#34;roleName&#34;: operator[&#34;role&#34;],
-                    &#34;roleId&#34;: int(self._commcell_object.roles.get(operator[&#34;role&#34;]).role_id)
+        for user_or_group_name, role_name in operator_list:
+            operator_dict = {
+                &#34;role&#34;: {
+                    &#34;roleName&#34;: role_name,
+                    &#34;roleId&#34;: int(self._commcell_object.roles.get(role_name).role_id)
                 }
             }
-            if &#39;user&#39; in operator:
+
+            if user_id := self._commcell_object.users.all_users.get(user_or_group_name.lower()):
                 operator_dict[&#39;user&#39;] = {
-                    &#39;userName&#39;: operator[&#39;user&#39;],
-                    &#39;userId&#39;: int(self._commcell_object.users.get(operator[&#39;user&#39;]).user_id)
+                    &#39;userName&#39;: user_or_group_name,
+                    &#39;userId&#39;: int(user_id)
                 }
-            if &#39;userGroup&#39; in operator:
+            elif user_group_id := self._commcell_object.user_groups.all_user_groups.get(user_or_group_name.lower()):
                 operator_dict[&#39;userGroup&#39;] = {
-                    &#39;userGroupName&#39;: operator[&#39;userGroup&#39;],
-                    &#39;userGroupId&#39;: int(self._commcell_object.user_groups.get(operator[&#39;userGroup&#39;]).user_group_id)
+                    &#39;userGroupName&#39;: user_or_group_name,
+                    &#39;userGroupId&#39;: int(user_group_id)
                 }
+            else:
+                raise SDKException(&#39;Organization&#39;, &#39;110&#39;, f&#39;Invalid User or User Group name: {user_or_group_name}&#39;)
             operators_list.append(operator_dict)
 
         request_json = {
@@ -3890,6 +3929,52 @@ class Organization:
         &#34;&#34;&#34;
         return self._organization_info.get(&#39;organization&#39;, {}).get(&#39;providerGUID&#39;)
 
+    def add_additional_settings(self, key_name, category, data_type, value, comment=&#34;Added using automation&#34;, enabled=1):
+        &#34;&#34;&#34;Adds additional settings on company level
+
+        Args:
+            key_name (str):
+
+        &#34;&#34;&#34;
+        properties_dict = {
+            &#34;additionalSettings&#34;: [
+                {
+                    &#34;entityInfo&#34;: {
+                        &#34;entityId&#34;: int(self.organization_id),
+                        &#34;entityType&#34;: 189,
+                        &#34;_type_&#34;: 189
+                    },
+                    &#34;registryKeys&#34;: [
+                        {
+                            &#34;relativepath&#34;: category,
+                            &#34;keyName&#34;: key_name,
+                            &#34;type&#34;: data_type,
+                            &#34;value&#34;: value,
+                            &#34;enabled&#34;: enabled,
+                            &#34;comment&#34;: comment
+                        }
+                    ]
+                }
+            ]
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;ORGANIZATION_ADDITIONAL_SETTINGS&#39;], properties_dict
+        )
+
+        if flag:
+            if response and response.json():
+                error_message = response.json().get(&#39;errorMessage&#39;)
+                if response.json().get(&#39;error&#39;, {}).get(&#39;errorCode&#39;, -1) != 0:
+                    raise SDKException(&#39;Organization&#39;, &#39;102&#39;, error_message)
+
+                self.refresh()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+
 
 class RemoteOrganization:
     &#34;&#34;&#34;Class for performing remote operations on an Organization.&#34;&#34;&#34;
@@ -3940,7 +4025,7 @@ class RemoteOrganization:
         self._login_disabled = None
         self._restore_disabled = None
         self._domain_name = None
-        self._operators = None
+        self._operators = []
         self._parent_company = None
 
         self.refresh()
@@ -4026,7 +4111,7 @@ class RemoteOrganization:
                 self._login_disabled = organization.get(&#39;deactivateOptions&#39;, {}).get(&#39;disableLogin&#39;)
                 self._reseller_enabled = organization_properties.get(&#39;canCreateCompanies&#39;)
 
-                self._operators = organization_properties.get(&#34;operators&#34;)
+                self._operators = organization_properties.get(&#34;operators&#34;, [])
                 self._parent_company = organization_properties.get(&#34;resellerCompany&#34;)
 
                 return self._organization_info
@@ -4181,38 +4266,51 @@ class RemoteOrganization:
         self._properties = self._get_properties()
 
     @property
-    def operators(self)-&gt;list:
+    def operators(self) -&gt; list[tuple[str, str]]:
         &#34;&#34;&#34;
         Returns the list of operators and roles associated to this organization
 
         Returns:
-            list    -   list of dicts containing operator details
+            list    -   list of (operator, role) tuple pairs
 
         Example:
             [
-                {
-                    &#39;role&#39;: {name:&#39;&lt;name of role&gt;&#39;, id:&lt;role id&gt;},
-                    &#39;userGroup&#39;: {userGroupName:&#39;&lt;usergroupname&gt;&#39;, userGroupId:&lt;id&gt;}
-                },
-                {
-                    &#39;role&#39;:{name:&#39;&lt;name of role&gt;&#39;, id:&lt;role id&gt;},
-                    &#39;user&#39;:{userName:&#39;&lt;user name&gt;&#39;, userId:&lt;id&gt;}
-                }
+                (&#39;&lt;user name&gt;&#39;, &#39;&lt;role name&gt;&#39;),
+                (&#39;&lt;usergroup name&gt;&#39;, &#39;&lt;role name&gt;&#39;),
+                ...
             ]
         &#34;&#34;&#34;
-        return self._operators
+        return sorted([
+            (
+                op.get(&#39;user&#39;, {}).get(&#39;userName&#39;) or op.get(&#39;userGroup&#39;, {}).get(&#39;userGroupName&#39;),
+                op.get(&#39;role&#39;, {}).get(&#39;roleName&#39;)
+            ) for op in self._operators
+        ])
+
+    def lookup_operator(self, user_or_group: str, role: str) -&gt; dict:
+        &#34;&#34;&#34;
+        Gets the user id role id full dictionary for given user/group and role
+        &#34;&#34;&#34;
+        for operator in self._operators:
+            this_role = operator.get(&#39;role&#39;, {}).get(&#39;roleName&#39;)
+            this_user_or_group = (operator.get(&#39;user&#39;, {}).get(&#39;userName&#39;) or
+                                  operator.get(&#39;userGroup&#39;, {}).get(&#39;userGroupName&#39;))
+            if this_role == role and this_user_or_group == user_or_group:
+                return operator
+        return {}
 
     @operators.setter
-    def operators(self, operator_list:list)-&gt;None:
+    def operators(self, operator_list: list[tuple[str, str]]) -&gt; None:
         &#34;&#34;&#34;
-        Overwrites the operator:role associations of the organization remotely
+        Overwrites the operator:role associations of the remote organization
 
         Args:
-            operators (list): list of dicts with role and user/userGroup keys
+            operator_list (list): list of (userOrGroup, role) tuple pairs
 
             [
-                {&#39;role&#39;:&#39;&lt;name of role&gt;&#39;,&#39;userGroup&#39;:&#39;&lt;usergroupname&gt;&#39;},
-                {&#39;role&#39;:&#39;&lt;name of role&gt;&#39;,&#39;user&#39;:&#39;&lt;username&gt;&#39;}
+                (&#39;&lt;user name&gt;&#39;, &#39;&lt;role name&gt;&#39;),
+                (&#39;&lt;usergroup name&gt;&#39;, &#39;&lt;role name&gt;&#39;),
+                ...
             ]
 
         Returns:
@@ -4226,23 +4324,30 @@ class RemoteOrganization:
 
         &#34;&#34;&#34;
         operators_list = []
-        for operator in operator_list:
-            operator_dict = {&#34;role&#34;:
-                {
-                    &#34;roleName&#34;: operator[&#34;role&#34;],
-                    &#34;roleId&#34;: int(self._commcell_object.roles.get(operator[&#34;role&#34;]).role_id)
+        for user_or_group_name, role_name in operator_list:
+            if operator_dict := self.lookup_operator(user_or_group_name, role_name):
+                operators_list.append(operator_dict)
+                continue
+
+            operator_dict = {
+                &#34;role&#34;: {
+                    &#34;roleName&#34;: role_name,
+                    &#34;roleId&#34;: int(self._commcell_object.roles.get(role_name).role_id)
                 }
             }
-            if &#39;user&#39; in operator:
+
+            if user_id := self._commcell_object.users.all_users.get(user_or_group_name.lower()):
                 operator_dict[&#39;user&#39;] = {
-                    &#39;userName&#39;: operator[&#39;user&#39;],
-                    &#39;userId&#39;: int(self._commcell_object.users.get(operator[&#39;user&#39;]).user_id)
+                    &#39;userName&#39;: user_or_group_name,
+                    &#39;userId&#39;: int(user_id)
                 }
-            if &#39;userGroup&#39; in operator:
+            elif user_group_id := self._commcell_object.user_groups.all_user_groups.get(user_or_group_name.lower()):
                 operator_dict[&#39;userGroup&#39;] = {
-                    &#39;userGroupName&#39;: operator[&#39;userGroup&#39;],
-                    &#39;userGroupId&#39;: int(self._commcell_object.user_groups.get(operator[&#39;userGroup&#39;]).user_group_id)
+                    &#39;userGroupName&#39;: user_or_group_name,
+                    &#39;userGroupId&#39;: int(user_group_id)
                 }
+            else:
+                raise SDKException(&#39;RemoteOrganization&#39;, &#39;101&#39;, f&#39;User/Group not found: {user_or_group_name}&#39;)
             operators_list.append(operator_dict)
 
         request_json = {
@@ -4251,21 +4356,30 @@ class RemoteOrganization:
                     &#34;shortName&#34;: {&#34;domainName&#34;: self.name, &#34;id&#34;: int(self._organization_id)}
                 },
                 &#34;organizationProperties&#34;: {
-                    &#34;operatorsOperationType&#34;: 1,
+                    &#34;operatorsOperationType&#34;: &#34;OVERWRITE&#34;,
                     &#34;operators&#34;: operators_list
                 },
             }
         }
+        api_endpoint = self._services[&#39;COMPANY_OPERATORS&#39;]
+
+        try:
+            sp_version = self._commcell_object.version.split(&#39;.&#39;)
+            if len(sp_version) &gt; 2 and int(sp_version[1]) &lt;= 38 and int(sp_version[2]) &lt;= 20:
+                api_endpoint = self._services[&#39;UPDATE_ORGANIZATION&#39;] % self.organization_id
+        except:
+            pass
+
         __, response = self._cvpysdk_object.make_request(
-            &#39;PUT&#39;, self._services[&#39;UPDATE_ORGANIZATION&#39;] % self.organization_id, request_json, headers=self._headers.copy()
+            &#39;PUT&#39;, api_endpoint, request_json, headers=self._headers.copy()
         )
         self.refresh()
         if response.json():
             if &#39;error&#39; in response.json():
-                error_code = response.json()[&#39;error&#39;][&#39;errorCode&#39;]
+                error_code = response.json()[&#39;error&#39;].get(&#39;errorCode&#39;)
                 error_message = response.json()[&#39;error&#39;].get(&#39;errorMessage&#39;, &#39;&#39;)
             else:
-                error_code = response.json()[&#39;errorCode&#39;]
+                error_code = response.json().get(&#39;errorCode&#39;)
                 error_message = response.json().get(&#39;errorMessage&#39;, &#39;&#39;)
 
             if error_code != 0:
@@ -4520,7 +4634,7 @@ class RemoteOrganization:
                 }
             },
             &#34;tenantCompany&#34;: {
-                &#34;providerGUID&#34;: self.provider_guid
+                &#34;providerGUID&#34;: self.provider_guid.lower()
             }
         }
 
@@ -4578,7 +4692,7 @@ instance of the Organization class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1259-L3564" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1294-L3648" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Organization:
     &#34;&#34;&#34;Class for performing operations on an Organization.&#34;&#34;&#34;
@@ -5296,38 +5410,39 @@ instance of the Organization class</p></div>
         self._update_properties()
 
     @property
-    def operators(self) -&gt; list:
+    def operators(self) -&gt; list[tuple[str, str]]:
         &#34;&#34;&#34;
         Returns the list of operators and roles associated to this organization
 
         Returns:
-            list    -   list of dicts containing operator details
+            list    -   list of (operator, role) tuple pairs
 
         Example:
             [
-                {
-                    &#39;role&#39;: {name:&#39;&lt;name of role&gt;&#39;, id:&lt;role id&gt;},
-                    &#39;userGroup&#39;: {userGroupName:&#39;&lt;usergroupname&gt;&#39;, userGroupId:&lt;id&gt;}
-                },
-                {
-                    &#39;role&#39;:{name:&#39;&lt;name of role&gt;&#39;, id:&lt;role id&gt;},
-                    &#39;user&#39;:{userName:&#39;&lt;user name&gt;&#39;, userId:&lt;id&gt;}
-                }
+                (&#39;&lt;user name&gt;&#39;, &#39;&lt;role name&gt;&#39;),
+                (&#39;&lt;usergroup name&gt;&#39;, &#39;&lt;role name&gt;&#39;),
+                ...
             ]
         &#34;&#34;&#34;
-        return self._operators
+        return sorted([
+            (
+                op.get(&#39;user&#39;, {}).get(&#39;userName&#39;) or op.get(&#39;userGroup&#39;, {}).get(&#39;userGroupName&#39;),
+                op.get(&#39;role&#39;, {}).get(&#39;roleName&#39;)
+            ) for op in self._operators
+        ])
 
     @operators.setter
-    def operators(self, operator_list: list) -&gt; None:
+    def operators(self, operator_list: list[tuple[str, str]]) -&gt; None:
         &#34;&#34;&#34;
         Overwrites the operator:role associations of the organization
 
         Args:
-            operators (list): list of dicts with role and user/userGroup keys
+            operator_list (list): list of (userOrGroup, role) tuple pairs
 
             [
-                {&#39;role&#39;:&#39;&lt;name of role&gt;&#39;,&#39;userGroup&#39;:&#39;&lt;usergroupname&gt;&#39;},
-                {&#39;role&#39;:&#39;&lt;name of role&gt;&#39;,&#39;user&#39;:&#39;&lt;username&gt;&#39;}
+                (&#39;&lt;user name&gt;&#39;, &#39;&lt;role name&gt;&#39;),
+                (&#39;&lt;usergroup name&gt;&#39;, &#39;&lt;role name&gt;&#39;),
+                ...
             ]
 
         Returns:
@@ -5341,23 +5456,26 @@ instance of the Organization class</p></div>
 
         &#34;&#34;&#34;
         operators_list = []
-        for operator in operator_list:
-            operator_dict = {&#34;role&#34;:
-                {
-                    &#34;roleName&#34;: operator[&#34;role&#34;],
-                    &#34;roleId&#34;: int(self._commcell_object.roles.get(operator[&#34;role&#34;]).role_id)
+        for user_or_group_name, role_name in operator_list:
+            operator_dict = {
+                &#34;role&#34;: {
+                    &#34;roleName&#34;: role_name,
+                    &#34;roleId&#34;: int(self._commcell_object.roles.get(role_name).role_id)
                 }
             }
-            if &#39;user&#39; in operator:
+
+            if user_id := self._commcell_object.users.all_users.get(user_or_group_name.lower()):
                 operator_dict[&#39;user&#39;] = {
-                    &#39;userName&#39;: operator[&#39;user&#39;],
-                    &#39;userId&#39;: int(self._commcell_object.users.get(operator[&#39;user&#39;]).user_id)
+                    &#39;userName&#39;: user_or_group_name,
+                    &#39;userId&#39;: int(user_id)
                 }
-            if &#39;userGroup&#39; in operator:
+            elif user_group_id := self._commcell_object.user_groups.all_user_groups.get(user_or_group_name.lower()):
                 operator_dict[&#39;userGroup&#39;] = {
-                    &#39;userGroupName&#39;: operator[&#39;userGroup&#39;],
-                    &#39;userGroupId&#39;: int(self._commcell_object.user_groups.get(operator[&#39;userGroup&#39;]).user_group_id)
+                    &#39;userGroupName&#39;: user_or_group_name,
+                    &#39;userGroupId&#39;: int(user_group_id)
                 }
+            else:
+                raise SDKException(&#39;Organization&#39;, &#39;110&#39;, f&#39;Invalid User or User Group name: {user_or_group_name}&#39;)
             operators_list.append(operator_dict)
 
         request_json = {
@@ -6885,7 +7003,52 @@ instance of the Organization class</p></div>
         &#34;&#34;&#34;
         provider GUID for this organization
         &#34;&#34;&#34;
-        return self._organization_info.get(&#39;organization&#39;, {}).get(&#39;providerGUID&#39;)</code></pre>
+        return self._organization_info.get(&#39;organization&#39;, {}).get(&#39;providerGUID&#39;)
+
+    def add_additional_settings(self, key_name, category, data_type, value, comment=&#34;Added using automation&#34;, enabled=1):
+        &#34;&#34;&#34;Adds additional settings on company level
+
+        Args:
+            key_name (str):
+
+        &#34;&#34;&#34;
+        properties_dict = {
+            &#34;additionalSettings&#34;: [
+                {
+                    &#34;entityInfo&#34;: {
+                        &#34;entityId&#34;: int(self.organization_id),
+                        &#34;entityType&#34;: 189,
+                        &#34;_type_&#34;: 189
+                    },
+                    &#34;registryKeys&#34;: [
+                        {
+                            &#34;relativepath&#34;: category,
+                            &#34;keyName&#34;: key_name,
+                            &#34;type&#34;: data_type,
+                            &#34;value&#34;: value,
+                            &#34;enabled&#34;: enabled,
+                            &#34;comment&#34;: comment
+                        }
+                    ]
+                }
+            ]
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;ORGANIZATION_ADDITIONAL_SETTINGS&#39;], properties_dict
+        )
+
+        if flag:
+            if response and response.json():
+                error_message = response.json().get(&#39;errorMessage&#39;)
+                if response.json().get(&#39;error&#39;, {}).get(&#39;errorCode&#39;, -1) != 0:
+                    raise SDKException(&#39;Organization&#39;, &#39;102&#39;, error_message)
+
+                self.refresh()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
@@ -6895,7 +7058,7 @@ instance of the Organization class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1861-L1864" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1896-L1899" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def auth_code(self):
@@ -6909,7 +7072,7 @@ def auth_code(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1390-L1393" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1425-L1428" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def auto_laptop_owners_enabled(self):
@@ -6934,7 +7097,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2977-L3016" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3016-L3055" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_groups(self):
@@ -7001,7 +7164,7 @@ iconColor: '#0B2E44'
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3283-L3320" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3322-L3359" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def company_theme(self)-&gt;dict:
@@ -7049,7 +7212,7 @@ def company_theme(self)-&gt;dict:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1930-L1933" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1965-L1968" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def contacts(self):
@@ -7063,7 +7226,7 @@ def contacts(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2069-L2072" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2108-L2111" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def contacts_fullname(self):
@@ -7077,7 +7240,7 @@ def contacts_fullname(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2074-L2077" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2113-L2116" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def default_plan(self):
@@ -7091,7 +7254,7 @@ def default_plan(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1820-L1823" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1855-L1858" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -7105,7 +7268,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1841-L1844" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1876-L1879" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def domain_name(self):
@@ -7119,7 +7282,7 @@ def domain_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1825-L1828" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1860-L1863" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def email_domain_names(self):
@@ -7133,7 +7296,7 @@ def email_domain_names(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2212-L2215" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2251-L2254" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def file_exceptions(self):
@@ -7156,7 +7319,7 @@ list of region names of workloads</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3539-L3557" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3578-L3596" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def geo_info(self) -&gt; tuple[str, list[str]]:
@@ -7193,7 +7356,7 @@ def geo_info(self) -&gt; tuple[str, list[str]]:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3097-L3108" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3136-L3147" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def get_retire_laptop_properties(self):
@@ -7215,7 +7378,7 @@ def get_retire_laptop_properties(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1371-L1374" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1406-L1409" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def infrastructure_type(self):
@@ -7229,7 +7392,7 @@ def infrastructure_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3278-L3281" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3317-L3320" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def isAllowUsersToEnablePasskeyEnabled(self):
@@ -7243,7 +7406,7 @@ def isAllowUsersToEnablePasskeyEnabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3273-L3276" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3312-L3315" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def isAuthrestoreEnabled(self):
@@ -7257,7 +7420,7 @@ def isAuthrestoreEnabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3268-L3271" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3307-L3310" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def isPasskeyEnabled(self):
@@ -7271,7 +7434,7 @@ def isPasskeyEnabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1866-L1869" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1901-L1904" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_auth_code_enabled(self):
@@ -7285,7 +7448,7 @@ def is_auth_code_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1871-L1874" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1906-L1909" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_auto_discover_enabled(self):
@@ -7299,7 +7462,7 @@ def is_auto_discover_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1876-L1879" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1911-L1914" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_backup_disabled(self):
@@ -7313,7 +7476,7 @@ def is_backup_disabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2328-L2331" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2367-L2370" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_company_privacy_enabled(self):
@@ -7327,7 +7490,7 @@ def is_company_privacy_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1361-L1364" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1396-L1399" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_data_encryption_enabled(self):
@@ -7341,7 +7504,7 @@ def is_data_encryption_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1896-L1899" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1931-L1934" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_download_software_from_internet_enabled(self):
@@ -7355,7 +7518,7 @@ def is_download_software_from_internet_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2276-L2279" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2315-L2318" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_global_file_exceptions_enabled(self):
@@ -7369,7 +7532,7 @@ def is_global_file_exceptions_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1886-L1889" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1921-L1924" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_login_disabled(self):
@@ -7383,7 +7546,7 @@ def is_login_disabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2333-L2336" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2372-L2375" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_owner_data_privacy_enabled(self):
@@ -7397,7 +7560,7 @@ def is_owner_data_privacy_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1881-L1884" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1916-L1919" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_restore_disabled(self):
@@ -7411,7 +7574,7 @@ def is_restore_disabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2946-L2949" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2985-L2988" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_tfa_enabled(self):
@@ -7425,7 +7588,7 @@ def is_tfa_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1339-L1342" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1374-L1377" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_using_upn(self):
@@ -7439,7 +7602,7 @@ def is_using_upn(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1427-L1430" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1462-L1465" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def job_start_time(self):
@@ -7453,7 +7616,7 @@ def job_start_time(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1920-L1923" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1955-L1958" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def machine_count(self):
@@ -7467,7 +7630,7 @@ def machine_count(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1790-L1793" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1825-L1828" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -7481,7 +7644,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2551-L2554" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2590-L2593" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def operator_role(self):
@@ -7489,50 +7652,45 @@ def operator_role(self):
     return self._operator_role</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.organization.Organization.operators"><code class="name">var <span class="ident">operators</span> : list</code></dt>
+<dt id="cvpysdk.organization.Organization.operators"><code class="name">var <span class="ident">operators</span> : list[tuple[str, str]]</code></dt>
 <dd>
 <div class="desc"><p>Returns the list of operators and roles associated to this organization</p>
 <h2 id="returns">Returns</h2>
 <p>list
 -
-list of dicts containing operator details</p>
+list of (operator, role) tuple pairs</p>
 <h2 id="example">Example</h2>
 <p>[
-{
-'role': {name:'<name of role>', id:<role id>},
-'userGroup': {userGroupName:'<usergroupname>', userGroupId:<id>}
-},
-{
-'role':{name:'<name of role>', id:<role id>},
-'user':{userName:'<user name>', userId:<id>}
-}
+('<user name>', '<role name>'),
+('<usergroup name>', '<role name>'),
+&hellip;
 ]</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1974-L1994" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2009-L2029" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def operators(self) -&gt; list:
+def operators(self) -&gt; list[tuple[str, str]]:
     &#34;&#34;&#34;
     Returns the list of operators and roles associated to this organization
 
     Returns:
-        list    -   list of dicts containing operator details
+        list    -   list of (operator, role) tuple pairs
 
     Example:
         [
-            {
-                &#39;role&#39;: {name:&#39;&lt;name of role&gt;&#39;, id:&lt;role id&gt;},
-                &#39;userGroup&#39;: {userGroupName:&#39;&lt;usergroupname&gt;&#39;, userGroupId:&lt;id&gt;}
-            },
-            {
-                &#39;role&#39;:{name:&#39;&lt;name of role&gt;&#39;, id:&lt;role id&gt;},
-                &#39;user&#39;:{userName:&#39;&lt;user name&gt;&#39;, userId:&lt;id&gt;}
-            }
+            (&#39;&lt;user name&gt;&#39;, &#39;&lt;role name&gt;&#39;),
+            (&#39;&lt;usergroup name&gt;&#39;, &#39;&lt;role name&gt;&#39;),
+            ...
         ]
     &#34;&#34;&#34;
-    return self._operators</code></pre>
+    return sorted([
+        (
+            op.get(&#39;user&#39;, {}).get(&#39;userName&#39;) or op.get(&#39;userGroup&#39;, {}).get(&#39;userGroupName&#39;),
+            op.get(&#39;role&#39;, {}).get(&#39;roleName&#39;)
+        ) for op in self._operators
+    ])</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.organization.Organization.organization_created_on"><code class="name">var <span class="ident">organization_created_on</span></code></dt>
@@ -7541,7 +7699,7 @@ def operators(self) -&gt; list:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2207-L2210" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2246-L2249" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def organization_created_on(self):
@@ -7555,7 +7713,7 @@ def organization_created_on(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1795-L1798" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1830-L1833" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def organization_id(self):
@@ -7569,7 +7727,7 @@ def organization_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1800-L1803" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1835-L1838" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def organization_name(self):
@@ -7583,7 +7741,7 @@ def organization_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1891-L1894" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1926-L1929" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def password_age_days(self):
@@ -7597,7 +7755,7 @@ def password_age_days(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2141-L2144" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2180-L2183" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan_details(self):
@@ -7611,7 +7769,7 @@ def plan_details(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2136-L2139" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2175-L2178" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plans(self):
@@ -7625,7 +7783,7 @@ def plans(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3559-L3564" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3598-L3603" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def provider_guid(self) -&gt; str:
@@ -7641,7 +7799,7 @@ def provider_guid(self) -&gt; str:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1350-L1353" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1385-L1388" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def reseller_enabled(self):
@@ -7655,7 +7813,7 @@ def reseller_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2162-L2165" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2201-L2204" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sender_email(self):
@@ -7669,7 +7827,7 @@ def sender_email(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2151-L2154" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2190-L2193" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sender_name(self):
@@ -7683,7 +7841,7 @@ def sender_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2146-L2149" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2185-L2188" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def server_count(self):
@@ -7697,7 +7855,7 @@ def server_count(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1901-L1904" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1936-L1939" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def shared_laptop(self):
@@ -7714,7 +7872,7 @@ def shared_laptop(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3141-L3149" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3180-L3188" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sites(self):
@@ -7734,7 +7892,7 @@ supported solution from API is a integer value and it needs to be changed to a l
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1410-L1415" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1445-L1450" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def supported_solutions(self):
@@ -7757,7 +7915,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3188-L3213" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3227-L3252" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def tags(self):
@@ -7793,7 +7951,7 @@ def tags(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2470-L2483" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2509-L2522" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def tenant_operator(self):
@@ -7817,7 +7975,7 @@ def tenant_operator(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2951-L2954" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2990-L2993" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def tfa_enabled_user_groups(self):
@@ -7831,7 +7989,7 @@ def tfa_enabled_user_groups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1925-L1928" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1960-L1963" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_count(self):
@@ -7845,7 +8003,7 @@ def user_count(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2202-L2205" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2241-L2244" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_groups(self):
@@ -7859,7 +8017,7 @@ def user_groups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2338-L2341" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2377-L2380" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_session_timeout(self):
@@ -7889,7 +8047,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2574-L2611" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2613-L2650" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def activate(self):
     &#34;&#34;&#34;
@@ -7931,6 +8089,64 @@ if response is not success
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.organization.Organization.add_additional_settings"><code class="name flex">
+<span>def <span class="ident">add_additional_settings</span></span>(<span>self, key_name, category, data_type, value, comment='Added using automation', enabled=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Adds additional settings on company level</p>
+<h2 id="args">Args</h2>
+<p>key_name (str):</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3605-L3648" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def add_additional_settings(self, key_name, category, data_type, value, comment=&#34;Added using automation&#34;, enabled=1):
+    &#34;&#34;&#34;Adds additional settings on company level
+
+    Args:
+        key_name (str):
+
+    &#34;&#34;&#34;
+    properties_dict = {
+        &#34;additionalSettings&#34;: [
+            {
+                &#34;entityInfo&#34;: {
+                    &#34;entityId&#34;: int(self.organization_id),
+                    &#34;entityType&#34;: 189,
+                    &#34;_type_&#34;: 189
+                },
+                &#34;registryKeys&#34;: [
+                    {
+                        &#34;relativepath&#34;: category,
+                        &#34;keyName&#34;: key_name,
+                        &#34;type&#34;: data_type,
+                        &#34;value&#34;: value,
+                        &#34;enabled&#34;: enabled,
+                        &#34;comment&#34;: comment
+                    }
+                ]
+            }
+        ]
+    }
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._services[&#39;ORGANIZATION_ADDITIONAL_SETTINGS&#39;], properties_dict
+    )
+
+    if flag:
+        if response and response.json():
+            error_message = response.json().get(&#39;errorMessage&#39;)
+            if response.json().get(&#39;error&#39;, {}).get(&#39;errorCode&#39;, -1) != 0:
+                raise SDKException(&#39;Organization&#39;, &#39;102&#39;, error_message)
+
+            self.refresh()
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.organization.Organization.add_client_association"><code class="name flex">
 <span>def <span class="ident">add_client_association</span></span>(<span>self, client_name)</span>
 </code></dt>
@@ -7950,7 +8166,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2854-L2898" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2893-L2937" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_client_association(self, client_name):
     &#34;&#34;&#34;To associate a client to an organization
@@ -8019,7 +8235,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2740-L2809" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2779-L2848" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_service_commcell_associations(self, name, service_commcell):
     &#34;&#34;&#34;To add organization on service commcell
@@ -8110,7 +8326,7 @@ security association</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2485-L2515" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2524-L2554" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_user_groups_as_operator(self, user_group_list, request_type):
     &#34;&#34;&#34;Update the local user_group as tenant operator of the company
@@ -8161,7 +8377,7 @@ OVERWRITE user security association</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2517-L2549" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2556-L2588" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_users_as_operator(self, user_list, request_type):
     &#34;&#34;&#34;Update the local user as tenant operator of the company
@@ -8210,7 +8426,7 @@ True (Enable Passkey) or False (Disable Passkey)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3470-L3478" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3509-L3517" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def allow_owners_to_enable_passkey(self, flag):
     &#34;&#34;&#34;
@@ -8252,7 +8468,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2613-L2669" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2652-L2708" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def deactivate(self,
                disable_backup=True,
@@ -8333,7 +8549,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2445-L2468" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2484-L2507" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_auth_code(self):
     &#34;&#34;&#34;Executes the request on the server to disable Auth Code Generation for the Organization.
@@ -8372,7 +8588,7 @@ if failed to update enableAutoDiscovery property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2730-L2738" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2769-L2777" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_auto_discover(self):
     &#34;&#34;&#34;Disables autodiscover at company level..
@@ -8393,7 +8609,7 @@ if failed to update enableAutoDiscovery property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3057-L3063" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3096-L3102" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_company_data_privacy(self):
     &#34;&#34;&#34; To disable company privacy to prevent admin access to company data
@@ -8412,7 +8628,7 @@ if failed to update enableAutoDiscovery property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3462-L3468" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3501-L3507" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_owner_data_privacy(self):
     &#34;&#34;&#34; To disable company privacy to allow owner to enable data privacy &#34;&#34;&#34;
@@ -8433,7 +8649,7 @@ if failed to update enableAutoDiscovery property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2968-L2975" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3007-L3014" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_tfa(self):
     &#34;&#34;&#34;
@@ -8460,7 +8676,7 @@ list of plans</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2353-L2387" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2392-L2426" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def dissociate_plans(self, value):
     &#34;&#34;&#34;disassociates plans from the organization
@@ -8521,7 +8737,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2403-L2443" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2442-L2482" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_auth_code(self):
     &#34;&#34;&#34;Executes the request on the server to enable Auth Code Generation for the Organization.
@@ -8577,7 +8793,7 @@ if failed to update enableAutoDiscovery property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2720-L2728" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2759-L2767" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_auto_discover(self):
     &#34;&#34;&#34;Enables autodiscover at company level..
@@ -8598,7 +8814,7 @@ if failed to update enableAutoDiscovery property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3049-L3055" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3088-L3094" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_company_data_privacy(self):
     &#34;&#34;&#34; To enable company privacy to prevent admin access to company data
@@ -8617,7 +8833,7 @@ if failed to update enableAutoDiscovery property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3454-L3460" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3493-L3499" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_owner_data_privacy(self):
     &#34;&#34;&#34; To enable company privacy to allow owner to enable data privacy &#34;&#34;&#34;
@@ -8643,7 +8859,7 @@ list of user group names for which tfa needs to be enabled.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2956-L2966" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2995-L3005" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_tfa(self, user_groups=None):
     &#34;&#34;&#34;
@@ -8673,7 +8889,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3018-L3047" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3057-L3086" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_alerts(self):
     &#34;&#34;&#34;
@@ -8726,7 +8942,7 @@ Returns: (dict)
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1598-L1645" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1633-L1680" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_security_associations(self):
     &#34;&#34;&#34; Get the security associations for a organization
@@ -8803,7 +9019,7 @@ if new password is missing while changing passkey
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3374-L3452" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3413-L3491" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def passkey(self, current_password, action, new_password=None):
     &#34;&#34;&#34;&#34;
@@ -8899,7 +9115,7 @@ dictionary of query parameters</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2389-L2401" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2428-L2440" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self, **params):
     &#34;&#34;&#34;Refresh the properties of the Organization.
@@ -8935,7 +9151,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2900-L2944" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2939-L2983" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def remove_client_association(self, client_name):
     &#34;&#34;&#34;To de-associate a client to an organization
@@ -9003,7 +9219,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2811-L2852" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2850-L2891" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def remove_service_commcell_associations(self, name):
     &#34;&#34;&#34; To delete the organization association for service commcell
@@ -9066,7 +9282,7 @@ If retire days is more than delete days</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3110-L3139" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3149-L3178" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def retire_offline_laptops(self, retire_days, delete_days=None):
     &#34;&#34;&#34;
@@ -9115,7 +9331,7 @@ If retire days is more than delete days</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1395-L1408" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1430-L1443" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_auto_laptop_owners(self, client_assign_type, client_assign_value=None):
     &#34;&#34;&#34; Sets the property in company to assign owners to laptop automatically
@@ -9151,7 +9367,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3065-L3095" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3104-L3134" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_company_data_privacy(self, value):
     &#34;&#34;&#34;Method to set company data privacy
@@ -9194,7 +9410,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1366-L1369" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1401-L1404" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_data_encryption_enabled(self, value):
     &#34;&#34;&#34; Sets property to allow owners to enable data encryption &#34;&#34;&#34;
@@ -9220,7 +9436,7 @@ if sender_name or sender_email is missing in inputs</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2173-L2200" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2212-L2239" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_email_settings(self, email_settings):
     &#34;&#34;&#34;
@@ -9300,7 +9516,7 @@ SDKException:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3480-L3537" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3519-L3576" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_general_settings(self, general_settings_dict):
     &#34;&#34;&#34;Method to update properties of general settings in an organization
@@ -9390,7 +9606,7 @@ if response is empty
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1647-L1716" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1682-L1751" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_security_associations(self, userOrGroupName, roleName, request_type=None, isUserGroup=False):
     &#34;&#34;&#34;
@@ -9483,7 +9699,7 @@ if ownership assignment is not correct
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L2671-L2718" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L2710-L2757" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def verify_owner_assignment_config(self, want_ownership_type):
     &#34;&#34;&#34; Verifies that the ownership assignments settings are configured and set properly for company
@@ -9556,7 +9772,7 @@ instance of the Organizations class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L348-L1256" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L348-L1291" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Organizations:
     &#34;&#34;&#34;Class for doing operations on Organizations like add / delete an organization, etc.&#34;&#34;&#34;
@@ -9581,6 +9797,7 @@ instance of the Organizations class</p></div>
         self._organizations = None
         self._organizations_cache = None
         self._fanout = False
+        self.filter_query_count = 0
 
         self.refresh()
 
@@ -9601,9 +9818,7 @@ instance of the Organizations class</p></div>
 
     def __repr__(self):
         &#34;&#34;&#34;Returns the string representation of an instance of this class.&#34;&#34;&#34;
-        return &#34;Organizations class instance for Commcell: &#39;{0}&#39;&#34;.format(
-            self._commcell_object.commserv_name
-        )
+        return &#34;Organizations class instance for Commcell&#34;
 
     def __len__(self):
         &#34;&#34;&#34;Returns the number of the organizations configured on the Commcell.&#34;&#34;&#34;
@@ -9637,9 +9852,10 @@ instance of the Organizations class</p></div>
         except IndexError:
             raise IndexError(&#39;No organization exists with the given Name / Id&#39;)
 
-    def _get_organizations(self):
+    def _get_organizations(self, full_response: bool = False):
         &#34;&#34;&#34;Gets all the organizations associated with the Commcell environment.
-
+            Args:
+                full_response(bool) --  flag to return complete response
             Returns:
                 dict    -   consists of all organizations added to the commcell
 
@@ -9661,6 +9877,8 @@ instance of the Organizations class</p></div>
             organizations = {}
             self._adv_config = {}
             if response.json() and &#39;providers&#39; in response.json():
+                if full_response:
+                    return response.json()
                 for provider in response.json()[&#39;providers&#39;]:
                     name = provider[&#39;connectName&#39;].lower()
                     if self._fanout and &#34;idpCompanyDetails&#34; in provider:
@@ -9677,10 +9895,13 @@ instance of the Organizations class</p></div>
                         get(&#34;cloudService&#34;, {}).get(&#39;redirectUrl&#39;)
                     organizations[name] = organization_id
                     self._adv_config[name] = self._adv_config.get(name, {}) | {
+                        &#39;id&#39;: organization_id,
                         &#39;GUID&#39;: organization_guid,
                         &#39;redirect_url&#39;: cloud_service_organizations,
                         &#39;home_commcell&#39;: provider.get(&#39;commcell&#39;, {}).get(&#39;commCellName&#39;),
                         &#39;parent_company&#39;: provider.get(&#39;ownerCompanyName&#39;),
+                        &#39;full_name&#39;: [contact.get(&#39;fullName&#39;,&#39;&#39;) for contact in provider.get(&#39;primaryContacts&#39;,[])],
+                        &#39;flags&#39;: provider.get(&#39;flags&#39;)
                     }
                     if &#39;workloads&#39; not in self._adv_config[name]:
                         self._adv_config[name][&#39;workloads&#39;] = []
@@ -9759,13 +9980,16 @@ instance of the Organizations class</p></div>
             fl_parameters(str) -- fl parameter string
         &#34;&#34;&#34;
         self.valid_columns = {
-            &#39;connectName&#39;: &#39;providers.connectName&#39;,
+            &#39;name&#39;: &#39;providers.connectName&#39;,
             &#39;id&#39;: &#39;providers.shortname.id&#39;,
             &#39;fullName&#39;: &#39;providers.primaryContacts.fullName&#39;,
             &#39;associatedEntitiesCount&#39;: &#39;providers.associatedEntitiesCount&#39;,
             &#39;status&#39;: &#39;providers.status&#39;,
             &#39;providerGUID&#39;: &#39;providers.providerGUID&#39;,
-            &#39;tags&#39;: &#39;providers.provider.tags&#39;
+            &#39;tags&#39;: &#39;providers.provider.tags&#39;,
+            &#39;reseller&#39;: &#39;providers.canCreateCompanies&#39;,
+            &#39;parentCompany&#39;: &#39;providers.ownerCompanyName&#39;,
+            &#39;commcell&#39;: &#39;providers.commcell&#39;
         }
         default_columns = &#39;providers.connectName,providers.shortName&#39;
 
@@ -9803,32 +10027,32 @@ instance of the Organizations class</p></div>
         Returns the fq parameters based on the fq list passed
         Args:
              fq     (list) --   contains the columnName, condition and value
-                    e.g. fq = [[&#39;connectName&#39;,&#39;contains&#39;,&#39;test&#39;],[&#39;status&#39;,&#39;equals&#39;,&#39;active&#39;]]
+                    e.g. fq = [[&#39;name&#39;,&#39;contains&#39;,&#39;test&#39;],[&#39;status&#39;,&#39;eq&#39;,&#39;ACTIVE&#39;]]
 
         Returns:
             fq_parameters(str) -- fq parameter string
         &#34;&#34;&#34;
-        conditions = [&#39;contains&#39;, &#39;notContain&#39;, &#39;eq&#39;, &#39;neq&#39;, &#39;gt&#39;, &#39;lt&#39;]
-        params = [&#34;&amp;fq=providers.status:eq:ACTIVE&#34;]
-        if fq:
-            for param in fq:
-                if param[0] in self.valid_columns.keys():
-                    if param[0] == &#39;tags&#39;:
-                        params.append(f&#34;&amp;fq=providers.provider.tags.name:contains:{param[2]}&#34;)
-                    elif param[1] in conditions:
-                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}&#34;)
-                    elif param[1] == &#39;isEmpty&#39; and len(param) == 2:
-                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:in:null,&#34;)
-                    elif param[1] == &#39;between&#39; and &#39;-&#39; in param[2]:
-                        ranges = param[2].split(&#39;-&#39;)
-                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:gteq:{ranges[0]}&#34;)
-                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:lteq:{ranges[1]}&#34;)
-                    else:
-                        raise SDKException(&#39;Organization&#39;, &#39;102&#39;, &#39;Invalid condition passed&#39;)
-                else:
-                    raise SDKException(&#39;Organization&#39;, &#39;102&#39;, &#39;Invalid column Name passed&#39;)
-        if params:
-            return &#34;&#34;.join(params)
+        conditions = {&#34;contains&#34;, &#34;notContain&#34;, &#34;eq&#34;, &#34;neq&#34;, &#34;gt&#34;, &#34;lt&#34;, &#34;nin&#34;}
+        params = []
+
+        for column, condition, *value in fq or []:
+            if column not in self.valid_columns:
+                raise SDKException(&#34;Organization&#34;, &#34;102&#34;, &#34;Invalid column name passed&#34;)
+
+            if column == &#34;tags&#34;:
+                params.append(f&#34;&amp;fq=providers.provider.tags.name:contains:{value[0]}&#34;)
+            elif condition in conditions:
+                params.append(f&#34;&amp;fq={self.valid_columns[column]}:{condition.lower()}:{value[0]}&#34;)
+            elif condition == &#34;isEmpty&#34; and not value:
+                params.append(f&#34;&amp;fq={self.valid_columns[column]}:in:null,&#34;)
+            elif condition == &#34;between&#34; and &#34;-&#34; in value[0]:
+                start, end = value[0].split(&#34;-&#34;)
+                params.append(f&#34;&amp;fq={self.valid_columns[column]}:gteq:{start}&#34;)
+                params.append(f&#34;&amp;fq={self.valid_columns[column]}:lteq:{end}&#34;)
+            else:
+                raise SDKException(&#34;Organization&#34;, &#34;102&#34;, &#34;Invalid condition passed&#34;)
+
+        return &#34;&#34;.join(params)
 
     def get_organizations_cache(self, hard: bool = False, **kwargs) -&gt; dict:
         &#34;&#34;&#34;
@@ -9840,36 +10064,44 @@ instance of the Organizations class</p></div>
                 fl    (list)  --   list of columns to return in response (default: None).
                 sort  (list)  --   contains the name of the column on which sorting will be performed and type of sort
                                         valid sor type: 1 for ascending and -1 for descending
-                                        e.g. sort = [&#39;connectName&#39;,&#39;1&#39;] (default: None).
+                                        e.g. sort = [&#39;name&#39;,&#39;1&#39;] (default: None).
                 limit (list)  --   contains the start and limit parameter value
                                         limit = [&lt;startValue&gt;,&lt;limitValue&gt;]
                                         default [&#39;0&#39;,&#39;25&#39;]
                 search (str)  --   contains the string to search in the commcell entity cache (default: None).
                 fq     (list) --   contains the columnName, condition and value as a sublist of a list (default: None).
-                                        e.g. fq = [[&#39;connectName&#39;,&#39;contains&#39;,&#39;test&#39;],[&#39;status&#39;,&#39;equals&#39;,&#39;active&#39;]]
-                enum   (bool) --    flag to return enums in the response (default: True).
+                                        e.g. fq = [[&#39;name&#39;,&#39;contains&#39;,&#39;test&#39;],[&#39;status&#39;,&#39;equals&#39;,&#39;active&#39;]]
 
         Returns:
             dict: Dictionary of all the properties present in response.
         &#34;&#34;&#34;
-        headers = self._commcell_object._headers.copy()
-        if kwargs.get(&#39;enum&#39;, True):
-            headers[&#39;EnumNames&#39;] = &#39;True&#39;
-
+        # computing params
         fl_parameters = self._get_fl_parameters(kwargs.get(&#39;fl&#39;, None))
         fq_parameters = self._get_fq_parameters(kwargs.get(&#39;fq&#39;, None))
-        limit = kwargs.get(&#39;limit&#39;, [&#39;0&#39;, &#39;100&#39;])
-        limit_parameters = f&#39;start={limit[0]}&amp;limit={limit[1]}&#39;
+        limit = kwargs.get(&#39;limit&#39;, None)
+        limit_parameters = f&#39;start={limit[0]}&amp;limit={limit[1]}&#39; if limit else &#39;&#39;
         hard_refresh = &#39;&amp;hardRefresh=true&#39; if hard else &#39;&#39;
         sort_parameters = self._get_sort_parameters(kwargs.get(&#39;sort&#39;, None)) if kwargs.get(&#39;sort&#39;, None) else &#39;&#39;
-        search_parameter = f&#39;&amp;search={&#34;,&#34;.join(self.valid_columns.values())}:contains:{kwargs.get(&#34;search&#34;, None)}&#39; if kwargs.get(
-            &#39;search&#39;, None) else &#39;&#39;
 
-        request_url = (
-                self._organizations_api + &#34;?&#34; + limit_parameters + sort_parameters + fl_parameters +
-                hard_refresh + search_parameter + fq_parameters
-        )
-        flag, response = self._cvpysdk_object.make_request(&#34;GET&#34;, request_url, headers=headers)
+        # Search operation can only be performed on limited columns, so filtering out the columns on which search works
+        searchable_columns = [&#34;name&#34;, &#34;fullName&#34;, &#34;providerGUID&#34;, &#34;status&#34;]
+        search_parameter = (f&#39;&amp;search={&#34;,&#34;.join(self.valid_columns[col] for col in searchable_columns)}:contains:&#39;
+                            f&#39;{kwargs.get(&#34;search&#34;, None)}&#39;) if kwargs.get(&#39;search&#39;, None) else &#39;&#39;
+        params = [
+            limit_parameters,
+            sort_parameters,
+            fl_parameters,
+            hard_refresh,
+            search_parameter,
+            fq_parameters
+        ]
+
+        # adding required additional param for comet layer
+        if self._commcell_object.is_global_scope():
+            params.append(&#34;&amp;fq=providers.idpCompanyDetails:eq:null&#34;)
+
+        request_url = f&#34;{self._organizations_api}?&#34; + &#34;&#34;.join(params)
+        flag, response = self._cvpysdk_object.make_request(&#34;GET&#34;, request_url)
 
         if not flag:
             response_string = self._update_response_(response.text)
@@ -9877,22 +10109,39 @@ instance of the Organizations class</p></div>
 
         organizations_cache = {}
         if response.json() and &#39;providers&#39; in response.json():
+            self.filter_query_count = response.json().get(&#39;filterQueryCount&#39;,0)
             for provider in response.json()[&#39;providers&#39;]:
                 name = provider[&#39;connectName&#39;].lower()
                 organization_config = {
+                    &#39;name&#39;: provider[&#39;connectName&#39;].lower(),
                     &#39;id&#39;: provider.get(&#39;shortName&#39;, {}).get(&#39;id&#39;),
                     &#39;providerGUID&#39;: provider.get(&#39;providerGUID&#39;),
                     &#39;status&#39;: provider.get(&#39;status&#39;),
-                    &#39;associatedEntitiesCount&#39;: provider.get(&#39;associatedEntitiesCount&#39;)
+                    &#39;associatedEntitiesCount&#39;: provider.get(&#39;associatedEntitiesCount&#39;),
+                    &#39;fullName&#39;:[contact.get(&#39;fullName&#39;,&#39;&#39;) for contact in provider.get(&#39;primaryContacts&#39;,[])],
+                    &#39;reseller&#39;: provider.get(&#39;canCreateCompanies&#39;, False),
+                    &#39;parentCompany&#39;: provider.get(&#39;ownerCompanyName&#39;, &#39;&#39;)
                 }
-                if &#39;primaryContacts&#39; in provider:
-                    organization_config[&#39;fullName&#39;] = [
-                        contact.get(&#39;fullName&#39;) for contact in provider.get(&#39;primaryContacts&#39;)
-                    ]
                 if provider.get(&#39;provider&#39;) is not None and &#39;tags&#39; in provider[&#39;provider&#39;]:
                     organization_config[&#39;tags&#39;] = provider.get(&#39;provider&#39;, {}).get(&#39;tags&#39;)
-                organization_config = {key: value for key, value in organization_config.items() if value is not None}
-                organizations_cache[name] = organization_config
+                if self._commcell_object.is_global_scope():
+                    organization_config.update(
+                        {&#34;commcell&#34;: provider.get(&#39;commcell&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;multiCommcellName&#39;,&#39;&#39;)}
+                    )
+
+                    # Handle duplicate names for different commcells
+                    unique_name = name
+                    i = 1
+                    while unique_name in organizations_cache:
+                        existing_user = organizations_cache[unique_name]
+                        if existing_user.get(&#39;commcell&#39;) != organization_config.get(&#39;commcell&#39;):
+                            unique_name = f&#34;{name}__{i}&#34;
+                            i += 1
+                        else:
+                            break
+                    organizations_cache[unique_name] = organization_config
+                else:
+                    organizations_cache[name] = organization_config
             return organizations_cache
         else:
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -9924,6 +10173,8 @@ instance of the Organizations class</p></div>
                     }
 
                 &#34;&#34;&#34;
+        if not self._organizations_cache:
+            self._organizations_cache = self.get_organizations_cache()
         return self._organizations_cache
 
     @property
@@ -10483,7 +10734,7 @@ instance of the Organizations class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L716-L729" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L751-L764" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_organizations(self):
@@ -10528,7 +10779,7 @@ def all_organizations(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L687-L714" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L720-L749" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_organizations_cache(self):
@@ -10557,6 +10808,8 @@ def all_organizations_cache(self):
                 }
 
             &#34;&#34;&#34;
+    if not self._organizations_cache:
+        self._organizations_cache = self.get_organizations_cache()
     return self._organizations_cache</code></pre>
 </details>
 </dd>
@@ -10589,7 +10842,7 @@ def all_organizations_cache(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L731-L760" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L766-L795" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_organizations_props(self):
@@ -10633,7 +10886,7 @@ True/False</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L762-L768" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L797-L803" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def fanout(self)-&gt;bool:
@@ -10718,7 +10971,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L963-L1127" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L998-L1162" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self,
         name,
@@ -10960,7 +11213,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L800-L961" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L835-L996" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_remote_org(self,
         name,
@@ -11155,7 +11408,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1187-L1239" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1222-L1274" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, name, deactivate=True):
     &#34;&#34;&#34;Deletes the organization with the given name from the Commcell.
@@ -11234,7 +11487,7 @@ if type of the organization name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1129-L1152" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1164-L1187" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, name):
     &#34;&#34;&#34;Returns an instance of the Organization class for the given organization name.
@@ -11282,7 +11535,7 @@ sort
 &ndash;
 contains the name of the column on which sorting will be performed and type of sort
 valid sor type: 1 for ascending and -1 for descending
-e.g. sort = ['connectName','1'] (default: None).
+e.g. sort = ['name','1'] (default: None).
 limit (list)
 &ndash;
 contains the start and limit parameter value
@@ -11294,10 +11547,7 @@ contains the string to search in the commcell entity cache (default: None).
 fq
 (list) &ndash;
 contains the columnName, condition and value as a sublist of a list (default: None).
-e.g. fq = [['connectName','contains','test'],['status','equals','active']]
-enum
-(bool) &ndash;
-flag to return enums in the response (default: True).</p>
+e.g. fq = [['name','contains','test'],['status','equals','active']]</p>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>dict</code></dt>
@@ -11306,7 +11556,7 @@ flag to return enums in the response (default: True).</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L620-L685" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L628-L718" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_organizations_cache(self, hard: bool = False, **kwargs) -&gt; dict:
     &#34;&#34;&#34;
@@ -11318,36 +11568,44 @@ flag to return enums in the response (default: True).</p>
             fl    (list)  --   list of columns to return in response (default: None).
             sort  (list)  --   contains the name of the column on which sorting will be performed and type of sort
                                     valid sor type: 1 for ascending and -1 for descending
-                                    e.g. sort = [&#39;connectName&#39;,&#39;1&#39;] (default: None).
+                                    e.g. sort = [&#39;name&#39;,&#39;1&#39;] (default: None).
             limit (list)  --   contains the start and limit parameter value
                                     limit = [&lt;startValue&gt;,&lt;limitValue&gt;]
                                     default [&#39;0&#39;,&#39;25&#39;]
             search (str)  --   contains the string to search in the commcell entity cache (default: None).
             fq     (list) --   contains the columnName, condition and value as a sublist of a list (default: None).
-                                    e.g. fq = [[&#39;connectName&#39;,&#39;contains&#39;,&#39;test&#39;],[&#39;status&#39;,&#39;equals&#39;,&#39;active&#39;]]
-            enum   (bool) --    flag to return enums in the response (default: True).
+                                    e.g. fq = [[&#39;name&#39;,&#39;contains&#39;,&#39;test&#39;],[&#39;status&#39;,&#39;equals&#39;,&#39;active&#39;]]
 
     Returns:
         dict: Dictionary of all the properties present in response.
     &#34;&#34;&#34;
-    headers = self._commcell_object._headers.copy()
-    if kwargs.get(&#39;enum&#39;, True):
-        headers[&#39;EnumNames&#39;] = &#39;True&#39;
-
+    # computing params
     fl_parameters = self._get_fl_parameters(kwargs.get(&#39;fl&#39;, None))
     fq_parameters = self._get_fq_parameters(kwargs.get(&#39;fq&#39;, None))
-    limit = kwargs.get(&#39;limit&#39;, [&#39;0&#39;, &#39;100&#39;])
-    limit_parameters = f&#39;start={limit[0]}&amp;limit={limit[1]}&#39;
+    limit = kwargs.get(&#39;limit&#39;, None)
+    limit_parameters = f&#39;start={limit[0]}&amp;limit={limit[1]}&#39; if limit else &#39;&#39;
     hard_refresh = &#39;&amp;hardRefresh=true&#39; if hard else &#39;&#39;
     sort_parameters = self._get_sort_parameters(kwargs.get(&#39;sort&#39;, None)) if kwargs.get(&#39;sort&#39;, None) else &#39;&#39;
-    search_parameter = f&#39;&amp;search={&#34;,&#34;.join(self.valid_columns.values())}:contains:{kwargs.get(&#34;search&#34;, None)}&#39; if kwargs.get(
-        &#39;search&#39;, None) else &#39;&#39;
 
-    request_url = (
-            self._organizations_api + &#34;?&#34; + limit_parameters + sort_parameters + fl_parameters +
-            hard_refresh + search_parameter + fq_parameters
-    )
-    flag, response = self._cvpysdk_object.make_request(&#34;GET&#34;, request_url, headers=headers)
+    # Search operation can only be performed on limited columns, so filtering out the columns on which search works
+    searchable_columns = [&#34;name&#34;, &#34;fullName&#34;, &#34;providerGUID&#34;, &#34;status&#34;]
+    search_parameter = (f&#39;&amp;search={&#34;,&#34;.join(self.valid_columns[col] for col in searchable_columns)}:contains:&#39;
+                        f&#39;{kwargs.get(&#34;search&#34;, None)}&#39;) if kwargs.get(&#39;search&#39;, None) else &#39;&#39;
+    params = [
+        limit_parameters,
+        sort_parameters,
+        fl_parameters,
+        hard_refresh,
+        search_parameter,
+        fq_parameters
+    ]
+
+    # adding required additional param for comet layer
+    if self._commcell_object.is_global_scope():
+        params.append(&#34;&amp;fq=providers.idpCompanyDetails:eq:null&#34;)
+
+    request_url = f&#34;{self._organizations_api}?&#34; + &#34;&#34;.join(params)
+    flag, response = self._cvpysdk_object.make_request(&#34;GET&#34;, request_url)
 
     if not flag:
         response_string = self._update_response_(response.text)
@@ -11355,22 +11613,39 @@ flag to return enums in the response (default: True).</p>
 
     organizations_cache = {}
     if response.json() and &#39;providers&#39; in response.json():
+        self.filter_query_count = response.json().get(&#39;filterQueryCount&#39;,0)
         for provider in response.json()[&#39;providers&#39;]:
             name = provider[&#39;connectName&#39;].lower()
             organization_config = {
+                &#39;name&#39;: provider[&#39;connectName&#39;].lower(),
                 &#39;id&#39;: provider.get(&#39;shortName&#39;, {}).get(&#39;id&#39;),
                 &#39;providerGUID&#39;: provider.get(&#39;providerGUID&#39;),
                 &#39;status&#39;: provider.get(&#39;status&#39;),
-                &#39;associatedEntitiesCount&#39;: provider.get(&#39;associatedEntitiesCount&#39;)
+                &#39;associatedEntitiesCount&#39;: provider.get(&#39;associatedEntitiesCount&#39;),
+                &#39;fullName&#39;:[contact.get(&#39;fullName&#39;,&#39;&#39;) for contact in provider.get(&#39;primaryContacts&#39;,[])],
+                &#39;reseller&#39;: provider.get(&#39;canCreateCompanies&#39;, False),
+                &#39;parentCompany&#39;: provider.get(&#39;ownerCompanyName&#39;, &#39;&#39;)
             }
-            if &#39;primaryContacts&#39; in provider:
-                organization_config[&#39;fullName&#39;] = [
-                    contact.get(&#39;fullName&#39;) for contact in provider.get(&#39;primaryContacts&#39;)
-                ]
             if provider.get(&#39;provider&#39;) is not None and &#39;tags&#39; in provider[&#39;provider&#39;]:
                 organization_config[&#39;tags&#39;] = provider.get(&#39;provider&#39;, {}).get(&#39;tags&#39;)
-            organization_config = {key: value for key, value in organization_config.items() if value is not None}
-            organizations_cache[name] = organization_config
+            if self._commcell_object.is_global_scope():
+                organization_config.update(
+                    {&#34;commcell&#34;: provider.get(&#39;commcell&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;multiCommcellName&#39;,&#39;&#39;)}
+                )
+
+                # Handle duplicate names for different commcells
+                unique_name = name
+                i = 1
+                while unique_name in organizations_cache:
+                    existing_user = organizations_cache[unique_name]
+                    if existing_user.get(&#39;commcell&#39;) != organization_config.get(&#39;commcell&#39;):
+                        unique_name = f&#34;{name}__{i}&#34;
+                        i += 1
+                    else:
+                        break
+                organizations_cache[unique_name] = organization_config
+            else:
+                organizations_cache[name] = organization_config
         return organizations_cache
     else:
         raise SDKException(&#39;Response&#39;, &#39;102&#39;)</code></pre>
@@ -11398,7 +11673,7 @@ if type of the organization name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1154-L1185" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1189-L1220" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_remote_org(self, name):
     &#34;&#34;&#34;Returns an instance of the RemoteOrganization class for the given organization name.
@@ -11454,7 +11729,7 @@ if type of the organization name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L781-L798" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L816-L833" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_organization(self, name):
     &#34;&#34;&#34;Checks if an organization exists in the Commcell with the input organization name.
@@ -11489,7 +11764,7 @@ if type of the organization name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L1241-L1256" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L1276-L1291" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self, **kwargs):
     &#34;&#34;&#34;
@@ -11548,7 +11823,7 @@ instance of the RemoteOrganization class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3567-L4214" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3652-L4328" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class RemoteOrganization:
     &#34;&#34;&#34;Class for performing remote operations on an Organization.&#34;&#34;&#34;
@@ -11599,7 +11874,7 @@ instance of the RemoteOrganization class</p></div>
         self._login_disabled = None
         self._restore_disabled = None
         self._domain_name = None
-        self._operators = None
+        self._operators = []
         self._parent_company = None
 
         self.refresh()
@@ -11685,7 +11960,7 @@ instance of the RemoteOrganization class</p></div>
                 self._login_disabled = organization.get(&#39;deactivateOptions&#39;, {}).get(&#39;disableLogin&#39;)
                 self._reseller_enabled = organization_properties.get(&#39;canCreateCompanies&#39;)
 
-                self._operators = organization_properties.get(&#34;operators&#34;)
+                self._operators = organization_properties.get(&#34;operators&#34;, [])
                 self._parent_company = organization_properties.get(&#34;resellerCompany&#34;)
 
                 return self._organization_info
@@ -11840,38 +12115,51 @@ instance of the RemoteOrganization class</p></div>
         self._properties = self._get_properties()
 
     @property
-    def operators(self)-&gt;list:
+    def operators(self) -&gt; list[tuple[str, str]]:
         &#34;&#34;&#34;
         Returns the list of operators and roles associated to this organization
 
         Returns:
-            list    -   list of dicts containing operator details
+            list    -   list of (operator, role) tuple pairs
 
         Example:
             [
-                {
-                    &#39;role&#39;: {name:&#39;&lt;name of role&gt;&#39;, id:&lt;role id&gt;},
-                    &#39;userGroup&#39;: {userGroupName:&#39;&lt;usergroupname&gt;&#39;, userGroupId:&lt;id&gt;}
-                },
-                {
-                    &#39;role&#39;:{name:&#39;&lt;name of role&gt;&#39;, id:&lt;role id&gt;},
-                    &#39;user&#39;:{userName:&#39;&lt;user name&gt;&#39;, userId:&lt;id&gt;}
-                }
+                (&#39;&lt;user name&gt;&#39;, &#39;&lt;role name&gt;&#39;),
+                (&#39;&lt;usergroup name&gt;&#39;, &#39;&lt;role name&gt;&#39;),
+                ...
             ]
         &#34;&#34;&#34;
-        return self._operators
+        return sorted([
+            (
+                op.get(&#39;user&#39;, {}).get(&#39;userName&#39;) or op.get(&#39;userGroup&#39;, {}).get(&#39;userGroupName&#39;),
+                op.get(&#39;role&#39;, {}).get(&#39;roleName&#39;)
+            ) for op in self._operators
+        ])
+
+    def lookup_operator(self, user_or_group: str, role: str) -&gt; dict:
+        &#34;&#34;&#34;
+        Gets the user id role id full dictionary for given user/group and role
+        &#34;&#34;&#34;
+        for operator in self._operators:
+            this_role = operator.get(&#39;role&#39;, {}).get(&#39;roleName&#39;)
+            this_user_or_group = (operator.get(&#39;user&#39;, {}).get(&#39;userName&#39;) or
+                                  operator.get(&#39;userGroup&#39;, {}).get(&#39;userGroupName&#39;))
+            if this_role == role and this_user_or_group == user_or_group:
+                return operator
+        return {}
 
     @operators.setter
-    def operators(self, operator_list:list)-&gt;None:
+    def operators(self, operator_list: list[tuple[str, str]]) -&gt; None:
         &#34;&#34;&#34;
-        Overwrites the operator:role associations of the organization remotely
+        Overwrites the operator:role associations of the remote organization
 
         Args:
-            operators (list): list of dicts with role and user/userGroup keys
+            operator_list (list): list of (userOrGroup, role) tuple pairs
 
             [
-                {&#39;role&#39;:&#39;&lt;name of role&gt;&#39;,&#39;userGroup&#39;:&#39;&lt;usergroupname&gt;&#39;},
-                {&#39;role&#39;:&#39;&lt;name of role&gt;&#39;,&#39;user&#39;:&#39;&lt;username&gt;&#39;}
+                (&#39;&lt;user name&gt;&#39;, &#39;&lt;role name&gt;&#39;),
+                (&#39;&lt;usergroup name&gt;&#39;, &#39;&lt;role name&gt;&#39;),
+                ...
             ]
 
         Returns:
@@ -11885,23 +12173,30 @@ instance of the RemoteOrganization class</p></div>
 
         &#34;&#34;&#34;
         operators_list = []
-        for operator in operator_list:
-            operator_dict = {&#34;role&#34;:
-                {
-                    &#34;roleName&#34;: operator[&#34;role&#34;],
-                    &#34;roleId&#34;: int(self._commcell_object.roles.get(operator[&#34;role&#34;]).role_id)
+        for user_or_group_name, role_name in operator_list:
+            if operator_dict := self.lookup_operator(user_or_group_name, role_name):
+                operators_list.append(operator_dict)
+                continue
+
+            operator_dict = {
+                &#34;role&#34;: {
+                    &#34;roleName&#34;: role_name,
+                    &#34;roleId&#34;: int(self._commcell_object.roles.get(role_name).role_id)
                 }
             }
-            if &#39;user&#39; in operator:
+
+            if user_id := self._commcell_object.users.all_users.get(user_or_group_name.lower()):
                 operator_dict[&#39;user&#39;] = {
-                    &#39;userName&#39;: operator[&#39;user&#39;],
-                    &#39;userId&#39;: int(self._commcell_object.users.get(operator[&#39;user&#39;]).user_id)
+                    &#39;userName&#39;: user_or_group_name,
+                    &#39;userId&#39;: int(user_id)
                 }
-            if &#39;userGroup&#39; in operator:
+            elif user_group_id := self._commcell_object.user_groups.all_user_groups.get(user_or_group_name.lower()):
                 operator_dict[&#39;userGroup&#39;] = {
-                    &#39;userGroupName&#39;: operator[&#39;userGroup&#39;],
-                    &#39;userGroupId&#39;: int(self._commcell_object.user_groups.get(operator[&#39;userGroup&#39;]).user_group_id)
+                    &#39;userGroupName&#39;: user_or_group_name,
+                    &#39;userGroupId&#39;: int(user_group_id)
                 }
+            else:
+                raise SDKException(&#39;RemoteOrganization&#39;, &#39;101&#39;, f&#39;User/Group not found: {user_or_group_name}&#39;)
             operators_list.append(operator_dict)
 
         request_json = {
@@ -11910,21 +12205,30 @@ instance of the RemoteOrganization class</p></div>
                     &#34;shortName&#34;: {&#34;domainName&#34;: self.name, &#34;id&#34;: int(self._organization_id)}
                 },
                 &#34;organizationProperties&#34;: {
-                    &#34;operatorsOperationType&#34;: 1,
+                    &#34;operatorsOperationType&#34;: &#34;OVERWRITE&#34;,
                     &#34;operators&#34;: operators_list
                 },
             }
         }
+        api_endpoint = self._services[&#39;COMPANY_OPERATORS&#39;]
+
+        try:
+            sp_version = self._commcell_object.version.split(&#39;.&#39;)
+            if len(sp_version) &gt; 2 and int(sp_version[1]) &lt;= 38 and int(sp_version[2]) &lt;= 20:
+                api_endpoint = self._services[&#39;UPDATE_ORGANIZATION&#39;] % self.organization_id
+        except:
+            pass
+
         __, response = self._cvpysdk_object.make_request(
-            &#39;PUT&#39;, self._services[&#39;UPDATE_ORGANIZATION&#39;] % self.organization_id, request_json, headers=self._headers.copy()
+            &#39;PUT&#39;, api_endpoint, request_json, headers=self._headers.copy()
         )
         self.refresh()
         if response.json():
             if &#39;error&#39; in response.json():
-                error_code = response.json()[&#39;error&#39;][&#39;errorCode&#39;]
+                error_code = response.json()[&#39;error&#39;].get(&#39;errorCode&#39;)
                 error_message = response.json()[&#39;error&#39;].get(&#39;errorMessage&#39;, &#39;&#39;)
             else:
-                error_code = response.json()[&#39;errorCode&#39;]
+                error_code = response.json().get(&#39;errorCode&#39;)
                 error_message = response.json().get(&#39;errorMessage&#39;, &#39;&#39;)
 
             if error_code != 0:
@@ -12179,7 +12483,7 @@ instance of the RemoteOrganization class</p></div>
                 }
             },
             &#34;tenantCompany&#34;: {
-                &#34;providerGUID&#34;: self.provider_guid
+                &#34;providerGUID&#34;: self.provider_guid.lower()
             }
         }
 
@@ -12211,7 +12515,7 @@ alias name/domain name of this organization</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3791-L3800" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3876-L3885" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def domain_name(self)-&gt;str:
@@ -12240,7 +12544,7 @@ list of region names of workloads</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3753-L3771" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3838-L3856" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def geo_info(self) -&gt; tuple[str, list[str]]:
@@ -12273,7 +12577,7 @@ commserve name where this organization exists</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3733-L3741" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3818-L3826" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def homecell(self)-&gt;str:
@@ -12296,7 +12600,7 @@ True if backup is disabled</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3819-L3828" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3904-L3913" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_backup_disabled(self)-&gt;bool:
@@ -12320,7 +12624,7 @@ True if login is disabled</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3841-L3850" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3926-L3935" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_login_disabled(self)-&gt;bool:
@@ -12344,7 +12648,7 @@ True if restore is disabled</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3830-L3839" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3915-L3924" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_restore_disabled(self)-&gt;bool:
@@ -12368,7 +12672,7 @@ name of this organization</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3712-L3720" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3797-L3805" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self)-&gt;str:
@@ -12381,50 +12685,45 @@ def name(self)-&gt;str:
     return self._organization_info.get(&#39;organization&#39;, {}).get(&#39;connectName&#39;)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.organization.RemoteOrganization.operators"><code class="name">var <span class="ident">operators</span> : list</code></dt>
+<dt id="cvpysdk.organization.RemoteOrganization.operators"><code class="name">var <span class="ident">operators</span> : list[tuple[str, str]]</code></dt>
 <dd>
 <div class="desc"><p>Returns the list of operators and roles associated to this organization</p>
 <h2 id="returns">Returns</h2>
 <p>list
 -
-list of dicts containing operator details</p>
+list of (operator, role) tuple pairs</p>
 <h2 id="example">Example</h2>
 <p>[
-{
-'role': {name:'<name of role>', id:<role id>},
-'userGroup': {userGroupName:'<usergroupname>', userGroupId:<id>}
-},
-{
-'role':{name:'<name of role>', id:<role id>},
-'user':{userName:'<user name>', userId:<id>}
-}
+('<user name>', '<role name>'),
+('<usergroup name>', '<role name>'),
+&hellip;
 ]</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3856-L3876" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3941-L3961" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def operators(self)-&gt;list:
+def operators(self) -&gt; list[tuple[str, str]]:
     &#34;&#34;&#34;
     Returns the list of operators and roles associated to this organization
 
     Returns:
-        list    -   list of dicts containing operator details
+        list    -   list of (operator, role) tuple pairs
 
     Example:
         [
-            {
-                &#39;role&#39;: {name:&#39;&lt;name of role&gt;&#39;, id:&lt;role id&gt;},
-                &#39;userGroup&#39;: {userGroupName:&#39;&lt;usergroupname&gt;&#39;, userGroupId:&lt;id&gt;}
-            },
-            {
-                &#39;role&#39;:{name:&#39;&lt;name of role&gt;&#39;, id:&lt;role id&gt;},
-                &#39;user&#39;:{userName:&#39;&lt;user name&gt;&#39;, userId:&lt;id&gt;}
-            }
+            (&#39;&lt;user name&gt;&#39;, &#39;&lt;role name&gt;&#39;),
+            (&#39;&lt;usergroup name&gt;&#39;, &#39;&lt;role name&gt;&#39;),
+            ...
         ]
     &#34;&#34;&#34;
-    return self._operators</code></pre>
+    return sorted([
+        (
+            op.get(&#39;user&#39;, {}).get(&#39;userName&#39;) or op.get(&#39;userGroup&#39;, {}).get(&#39;userGroupName&#39;),
+            op.get(&#39;role&#39;, {}).get(&#39;roleName&#39;)
+        ) for op in self._operators
+    ])</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.organization.RemoteOrganization.organization_id"><code class="name">var <span class="ident">organization_id</span> : str</code></dt>
@@ -12437,7 +12736,7 @@ id of this organization (in given commcell)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3722-L3731" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3807-L3816" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def organization_id(self)-&gt;str:
@@ -12461,7 +12760,7 @@ organization name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3781-L3789" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3866-L3874" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def organization_name(self)-&gt;str:
@@ -12489,7 +12788,7 @@ Example: {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3802-L3817" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3887-L3902" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def parent_company(self)-&gt;dict:
@@ -12516,7 +12815,7 @@ def parent_company(self)-&gt;dict:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3773-L3779" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3858-L3864" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def provider_guid(self) -&gt; str:
@@ -12535,7 +12834,7 @@ def provider_guid(self) -&gt; str:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3621-L3629" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3706-L3714" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def reseller_enabled(self)-&gt;bool:
@@ -12572,7 +12871,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L4049-L4086" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L4163-L4200" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def tags(self)-&gt;list:
@@ -12625,7 +12924,7 @@ list of commcell names</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3743-L3751" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3828-L3836" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def workloads(self) -&gt; list[str]:
@@ -12660,7 +12959,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3951-L3988" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L4065-L4102" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def activate(self)-&gt;None:
     &#34;&#34;&#34;
@@ -12731,7 +13030,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3990-L4047" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L4104-L4161" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def deactivate(self,
                disable_backup=True,
@@ -12813,7 +13112,7 @@ commcell name associated with region</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L4175-L4214" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L4289-L4328" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def extend(self, region: str, country: str, commcell_name: str) -&gt; None:
     &#34;&#34;&#34;
@@ -12836,7 +13135,7 @@ commcell name associated with region</p></div>
             }
         },
         &#34;tenantCompany&#34;: {
-            &#34;providerGUID&#34;: self.provider_guid
+            &#34;providerGUID&#34;: self.provider_guid.lower()
         }
     }
 
@@ -12876,7 +13175,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L4141-L4173" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L4255-L4287" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_entity_counts(self)-&gt;dict:
     &#34;&#34;&#34;Gets the entity type and counts for company&#39;s associated entities
@@ -12913,6 +13212,29 @@ if response is empty</p>
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.organization.RemoteOrganization.lookup_operator"><code class="name flex">
+<span>def <span class="ident">lookup_operator</span></span>(<span>self, user_or_group: str, role: str) ‑> dict</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gets the user id role id full dictionary for given user/group and role</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3963-L3973" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def lookup_operator(self, user_or_group: str, role: str) -&gt; dict:
+    &#34;&#34;&#34;
+    Gets the user id role id full dictionary for given user/group and role
+    &#34;&#34;&#34;
+    for operator in self._operators:
+        this_role = operator.get(&#39;role&#39;, {}).get(&#39;roleName&#39;)
+        this_user_or_group = (operator.get(&#39;user&#39;, {}).get(&#39;userName&#39;) or
+                              operator.get(&#39;userGroup&#39;, {}).get(&#39;userGroupName&#39;))
+        if this_role == role and this_user_or_group == user_or_group:
+            return operator
+    return {}</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.organization.RemoteOrganization.refresh"><code class="name flex">
 <span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
@@ -12921,7 +13243,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/organization.py#L3852-L3854" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/organization.py#L3937-L3939" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self)-&gt;None:
     &#34;&#34;&#34;Refresh the properties of the Organization.&#34;&#34;&#34;
@@ -13015,6 +13337,7 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="cvpysdk.organization.Organization" href="#cvpysdk.organization.Organization">Organization</a></code></h4>
 <ul class="">
 <li><code><a title="cvpysdk.organization.Organization.activate" href="#cvpysdk.organization.Organization.activate">activate</a></code></li>
+<li><code><a title="cvpysdk.organization.Organization.add_additional_settings" href="#cvpysdk.organization.Organization.add_additional_settings">add_additional_settings</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.add_client_association" href="#cvpysdk.organization.Organization.add_client_association">add_client_association</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.add_service_commcell_associations" href="#cvpysdk.organization.Organization.add_service_commcell_associations">add_service_commcell_associations</a></code></li>
 <li><code><a title="cvpysdk.organization.Organization.add_user_groups_as_operator" href="#cvpysdk.organization.Organization.add_user_groups_as_operator">add_user_groups_as_operator</a></code></li>
@@ -13132,6 +13455,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.organization.RemoteOrganization.is_backup_disabled" href="#cvpysdk.organization.RemoteOrganization.is_backup_disabled">is_backup_disabled</a></code></li>
 <li><code><a title="cvpysdk.organization.RemoteOrganization.is_login_disabled" href="#cvpysdk.organization.RemoteOrganization.is_login_disabled">is_login_disabled</a></code></li>
 <li><code><a title="cvpysdk.organization.RemoteOrganization.is_restore_disabled" href="#cvpysdk.organization.RemoteOrganization.is_restore_disabled">is_restore_disabled</a></code></li>
+<li><code><a title="cvpysdk.organization.RemoteOrganization.lookup_operator" href="#cvpysdk.organization.RemoteOrganization.lookup_operator">lookup_operator</a></code></li>
 <li><code><a title="cvpysdk.organization.RemoteOrganization.name" href="#cvpysdk.organization.RemoteOrganization.name">name</a></code></li>
 <li><code><a title="cvpysdk.organization.RemoteOrganization.operators" href="#cvpysdk.organization.RemoteOrganization.operators">operators</a></code></li>
 <li><code><a title="cvpysdk.organization.RemoteOrganization.organization_id" href="#cvpysdk.organization.RemoteOrganization.organization_id">organization_id</a></code></li>

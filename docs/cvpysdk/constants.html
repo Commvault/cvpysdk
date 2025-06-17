@@ -54,10 +54,13 @@ Enum to maintain Failover status of the VSA Live sync</p>
 <p>ApplicationGroup
 &ndash;
 Enum to maintain Application Group Types.</p>
+<p>VsInstanceType
+&ndash;
+Class to store VsInstance dict</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L1-L879" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L1-L818" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -98,6 +101,8 @@ VSALiveSyncStatus       --  Enum to maintain status of the VSA Live sync
 VSAFailOverStatus       --  Enum to maintain Failover status of the VSA Live sync
 
 ApplicationGroup        --  Enum to maintain Application Group Types.
+
+VsInstanceType         --  Class to store VsInstance dict
 &#34;&#34;&#34;
 
 from enum import Enum, auto
@@ -587,6 +592,7 @@ class HypervisorType(Enum):
     Nutanix = &#34;Nutanix AHV&#34;
     ORACLE_CLOUD_INFRASTRUCTURE = &#34;Oracle Cloud Infrastructure&#34;
     OPENSHIFT = &#34;Red Hat OpenShift&#34;
+    PROXMOX = &#34;Proxmox ve&#34;
 
 
 class AppIDAType(Enum):
@@ -736,94 +742,6 @@ class ApplicationGroup(Enum):
 class StoragePoolConstants:
     &#34;&#34;&#34;Class to maintain storage policy constants&#34;&#34;&#34;
 
-    &#34;&#34;&#34;
-    Defines the JSON structure for Azure Cloud Storage request.
-    &#34;&#34;&#34;
-    AZURE_STORAGE_REQ_JSON = {
-        &#34;type&#34;: &#34;CVA_REGULAR_SP&#34;,
-        &#34;numberOfCopies&#34;: 1,
-        &#34;storagePolicyCopyInfo&#34;: {
-            &#34;copyType&#34;: &#34;SYNCHRONOUS&#34;,
-            &#34;isDefault&#34;: &#34;SET_TRUE&#34;,
-            &#34;active&#34;: &#34;SET_TRUE&#34;,
-            &#34;storagePolicyFlags&#34;: {
-                &#34;blockLevelDedup&#34;: &#34;SET_TRUE&#34;,
-                &#34;enableGlobalDeduplication&#34;: &#34;SET_TRUE&#34;
-            },
-            &#34;library&#34;: {
-                &#34;libraryId&#34;: 0,
-                &#34;libraryName&#34;: &#34;&#34;
-            },
-            &#34;mediaAgent&#34;: {
-                &#34;mediaAgentId&#34;: 0,
-                &#34;mediaAgentName&#34;: &#34;&#34;
-            },
-            &#34;retentionRules&#34;: {
-                &#34;retentionFlags&#34;: {
-                    &#34;enableDataAging&#34;: &#34;SET_TRUE&#34;
-                }
-            },
-            &#34;isFromGui&#34;: True,
-            &#34;numberOfStreamsToCombine&#34;: 1,
-            &#34;dedupeFlags&#34;: {
-                &#34;enableDeduplication&#34;: &#34;SET_TRUE&#34;,
-                &#34;enableDASHFull&#34;: &#34;SET_TRUE&#34;,
-                &#34;hostGlobalDedupStore&#34;: &#34;SET_TRUE&#34;
-            },
-            &#34;DDBPartitionInfo&#34;: {
-                &#34;maInfoList&#34;: [
-
-                ]
-            }
-        },
-        &#34;storage&#34;: [
-            {
-                &#34;mediaAgent&#34;: {
-                    &#34;mediaAgentId&#34;: 0,
-                    &#34;mediaAgentName&#34;: &#34;&#34;
-                },
-                &#34;path&#34;: &#34;&#34;,
-                &#34;deviceType&#34;: 3,
-                &#34;metallicStorageInfo&#34;: {
-                    &#34;region&#34;: [
-                        {
-                            &#34;regionId&#34;: 0
-                        }
-                    ],
-                    &#34;storageClass&#34;: [
-                        &#34;CONTAINER_DEFAULT&#34;
-                    ],
-                    &#34;replication&#34;: [
-                        &#34;NONE&#34;
-                    ]
-                },
-                &#34;credentials&#34;: {
-                    &#34;userName&#34;: &#34;&#34;,
-                    &#34;password&#34;: &#34;&#34;
-                },
-                &#34;savedCredential&#34;: {
-                    &#34;credentialId&#34;: 0,
-                    &#34;credentialName&#34;: &#34;&#34;
-                }
-            }
-        ],
-        &#34;storagePolicyName&#34;: &#34;&#34;
-    }
-
-    MA_INFO_LIST = {
-        &#34;mediaAgent&#34;: {
-            &#34;mediaAgentId&#34;: 0,
-            &#34;mediaAgentName&#34;: &#34;&#34;
-        },
-        &#34;subStoreList&#34;: [
-            {
-                &#34;accessPath&#34;: {
-                    &#34;path&#34;: &#34;&#34;
-                }
-            }
-        ]
-    }
-
     AIR_GAP_PROTECT_STORAGE_TYPES = {
         &#34;MICROSOFT AZURE STORAGE&#34;: {
             &#34;HOT&#34;: {
@@ -936,7 +854,32 @@ class ResourcePoolAppType(Enum):
 class OSType(Enum):
     &#34;&#34;&#34;Class to maintain OS Types&#34;&#34;&#34;
     WINDOWS = 1
-    UNIX = 2</code></pre>
+    UNIX = 2
+
+class VsInstanceType:
+    &#34;&#34;&#34;Class to store vsinstance dict&#34;&#34;&#34;
+
+    VSINSTANCE_TYPE = {
+        101: &#34;vmware&#34;,
+        201: &#34;xen&#34;,
+        102: &#34;hyperv&#34;,
+        301: &#34;amazon_web_services&#34;,
+        401: &#34;azure&#34;,
+        402: &#34;azure_resource_manager&#34;,
+        403: &#34;azure_stack&#34;,
+        501: &#34;red_hat_virtualization&#34;,
+        601: &#34;nutanix_ahv&#34;,
+        701: &#34;oraclevm&#34;,
+        801: &#34;fusioncompute&#34;,
+        901: &#34;openstack&#34;,
+        1101: &#34;oracle_cloud&#34;,
+        1102: &#34;oracle_cloud_infrastructure&#34;,
+        1301: &#34;google_cloud_platform&#34;,
+        1401: &#34;alibaba_cloud&#34;,
+        1503: &#34;vcloud_director&#34;,
+        1501: &#34;kubernetes&#34;,
+        1600: &#34;proxmox_ve&#34;
+    }</code></pre>
 </details>
 </section>
 <section>
@@ -957,7 +900,7 @@ class OSType(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L621-L629" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L624-L632" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AdvancedJobDetailType(Enum):
     &#34;&#34;&#34;Class to maintain advanced job details info type
@@ -1006,7 +949,7 @@ class OSType(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L539-L543" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L542-L546" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AppIDAName(Enum):
     &#34;&#34;&#34;Class to maintain the app IDA names&#34;&#34;&#34;
@@ -1043,7 +986,7 @@ class OSType(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L531-L536" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L534-L539" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AppIDAType(Enum):
     &#34;&#34;&#34;Class to maintain all the app ida constants&#34;&#34;&#34;
@@ -1085,7 +1028,7 @@ class OSType(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L663-L672" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L666-L675" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ApplicationGroup(Enum):
     &#34;&#34;&#34;Class to maintain application group types.&#34;&#34;&#34;
@@ -1143,7 +1086,7 @@ class OSType(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L788-L852" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L703-L767" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CommcellEntity(Enum):
     &#34;&#34;&#34;Class to maintain Commcell Entity types&#34;&#34;&#34;
@@ -1476,7 +1419,7 @@ class OSType(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L855-L863" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L770-L778" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Credential_Type(Enum):
     &#34;&#34;&#34;Class to maintain Credential types&#34;&#34;&#34;
@@ -1529,7 +1472,7 @@ class OSType(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L510-L528" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L512-L531" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class HypervisorType(Enum):
     &#34;&#34;&#34;Class to maintain all the hypervisor related constants.&#34;&#34;&#34;
@@ -1549,7 +1492,8 @@ class OSType(Enum):
     VCLOUD = &#34;vCloud Director&#34;
     Nutanix = &#34;Nutanix AHV&#34;
     ORACLE_CLOUD_INFRASTRUCTURE = &#34;Oracle Cloud Infrastructure&#34;
-    OPENSHIFT = &#34;Red Hat OpenShift&#34;</code></pre>
+    OPENSHIFT = &#34;Red Hat OpenShift&#34;
+    PROXMOX = &#34;Proxmox ve&#34;</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -1613,6 +1557,10 @@ class OSType(Enum):
 <dd>
 <div class="desc"></div>
 </dd>
+<dt id="cvpysdk.constants.HypervisorType.PROXMOX"><code class="name">var <span class="ident">PROXMOX</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
 <dt id="cvpysdk.constants.HypervisorType.Rhev"><code class="name">var <span class="ident">Rhev</span></code></dt>
 <dd>
 <div class="desc"></div>
@@ -1636,7 +1584,7 @@ class OSType(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L592-L596" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L595-L599" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class InstanceBackupType(Enum):
     &#34;&#34;&#34;Class to maintain type of instance backup&#34;&#34;&#34;
@@ -1673,7 +1621,7 @@ class OSType(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L875-L878" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L790-L793" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class OSType(Enum):
     &#34;&#34;&#34;Class to maintain OS Types&#34;&#34;&#34;
@@ -1705,7 +1653,7 @@ class OSType(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L866-L872" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L781-L787" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ResourcePoolAppType(Enum):
     &#34;&#34;&#34;Class to maintain ResourcePool AppType&#34;&#34;&#34;
@@ -1751,7 +1699,7 @@ class OSType(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L599-L610" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L602-L613" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SQLDefines:
     &#34;&#34;&#34;Class to maintain SQL Defines&#34;&#34;&#34;
@@ -1802,7 +1750,7 @@ class OSType(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L613-L618" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L616-L621" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SharepointDefines:
     &#34;&#34;&#34;Class to maintiain Sharepoint Defines&#34;&#34;&#34;
@@ -1831,98 +1779,10 @@ class OSType(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L675-L785" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L678-L700" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class StoragePoolConstants:
     &#34;&#34;&#34;Class to maintain storage policy constants&#34;&#34;&#34;
-
-    &#34;&#34;&#34;
-    Defines the JSON structure for Azure Cloud Storage request.
-    &#34;&#34;&#34;
-    AZURE_STORAGE_REQ_JSON = {
-        &#34;type&#34;: &#34;CVA_REGULAR_SP&#34;,
-        &#34;numberOfCopies&#34;: 1,
-        &#34;storagePolicyCopyInfo&#34;: {
-            &#34;copyType&#34;: &#34;SYNCHRONOUS&#34;,
-            &#34;isDefault&#34;: &#34;SET_TRUE&#34;,
-            &#34;active&#34;: &#34;SET_TRUE&#34;,
-            &#34;storagePolicyFlags&#34;: {
-                &#34;blockLevelDedup&#34;: &#34;SET_TRUE&#34;,
-                &#34;enableGlobalDeduplication&#34;: &#34;SET_TRUE&#34;
-            },
-            &#34;library&#34;: {
-                &#34;libraryId&#34;: 0,
-                &#34;libraryName&#34;: &#34;&#34;
-            },
-            &#34;mediaAgent&#34;: {
-                &#34;mediaAgentId&#34;: 0,
-                &#34;mediaAgentName&#34;: &#34;&#34;
-            },
-            &#34;retentionRules&#34;: {
-                &#34;retentionFlags&#34;: {
-                    &#34;enableDataAging&#34;: &#34;SET_TRUE&#34;
-                }
-            },
-            &#34;isFromGui&#34;: True,
-            &#34;numberOfStreamsToCombine&#34;: 1,
-            &#34;dedupeFlags&#34;: {
-                &#34;enableDeduplication&#34;: &#34;SET_TRUE&#34;,
-                &#34;enableDASHFull&#34;: &#34;SET_TRUE&#34;,
-                &#34;hostGlobalDedupStore&#34;: &#34;SET_TRUE&#34;
-            },
-            &#34;DDBPartitionInfo&#34;: {
-                &#34;maInfoList&#34;: [
-
-                ]
-            }
-        },
-        &#34;storage&#34;: [
-            {
-                &#34;mediaAgent&#34;: {
-                    &#34;mediaAgentId&#34;: 0,
-                    &#34;mediaAgentName&#34;: &#34;&#34;
-                },
-                &#34;path&#34;: &#34;&#34;,
-                &#34;deviceType&#34;: 3,
-                &#34;metallicStorageInfo&#34;: {
-                    &#34;region&#34;: [
-                        {
-                            &#34;regionId&#34;: 0
-                        }
-                    ],
-                    &#34;storageClass&#34;: [
-                        &#34;CONTAINER_DEFAULT&#34;
-                    ],
-                    &#34;replication&#34;: [
-                        &#34;NONE&#34;
-                    ]
-                },
-                &#34;credentials&#34;: {
-                    &#34;userName&#34;: &#34;&#34;,
-                    &#34;password&#34;: &#34;&#34;
-                },
-                &#34;savedCredential&#34;: {
-                    &#34;credentialId&#34;: 0,
-                    &#34;credentialName&#34;: &#34;&#34;
-                }
-            }
-        ],
-        &#34;storagePolicyName&#34;: &#34;&#34;
-    }
-
-    MA_INFO_LIST = {
-        &#34;mediaAgent&#34;: {
-            &#34;mediaAgentId&#34;: 0,
-            &#34;mediaAgentName&#34;: &#34;&#34;
-        },
-        &#34;subStoreList&#34;: [
-            {
-                &#34;accessPath&#34;: {
-                    &#34;path&#34;: &#34;&#34;
-                }
-            }
-        ]
-    }
 
     AIR_GAP_PROTECT_STORAGE_TYPES = {
         &#34;MICROSOFT AZURE STORAGE&#34;: {
@@ -1951,14 +1811,6 @@ class OSType(Enum):
 <dd>
 <div class="desc"></div>
 </dd>
-<dt id="cvpysdk.constants.StoragePoolConstants.AZURE_STORAGE_REQ_JSON"><code class="name">var <span class="ident">AZURE_STORAGE_REQ_JSON</span></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
-<dt id="cvpysdk.constants.StoragePoolConstants.MA_INFO_LIST"><code class="name">var <span class="ident">MA_INFO_LIST</span></code></dt>
-<dd>
-<div class="desc"></div>
-</dd>
 </dl>
 </dd>
 <dt id="cvpysdk.constants.VSAFailOverStatus"><code class="flex name class">
@@ -1970,7 +1822,7 @@ class OSType(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L648-L660" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L651-L663" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VSAFailOverStatus(Enum):
     &#34;&#34;&#34;Class to maintain Failover status of the VSA Live sync&#34;&#34;&#34;
@@ -2047,7 +1899,7 @@ class OSType(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L632-L645" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L635-L648" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VSALiveSyncStatus(Enum):
     &#34;&#34;&#34;Class to maintain status of the VSA Live sync&#34;&#34;&#34;
@@ -2129,7 +1981,7 @@ class OSType(Enum):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/constants.py#L546-L589" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L549-L592" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VSAObjects(Enum):
     &#34;&#34;&#34;Mapping for VSA Objects.&#34;&#34;&#34;
@@ -2352,6 +2204,49 @@ class OSType(Enum):
 </dd>
 </dl>
 </dd>
+<dt id="cvpysdk.constants.VsInstanceType"><code class="flex name class">
+<span>class <span class="ident">VsInstanceType</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class to store vsinstance dict</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L795-L818" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class VsInstanceType:
+    &#34;&#34;&#34;Class to store vsinstance dict&#34;&#34;&#34;
+
+    VSINSTANCE_TYPE = {
+        101: &#34;vmware&#34;,
+        201: &#34;xen&#34;,
+        102: &#34;hyperv&#34;,
+        301: &#34;amazon_web_services&#34;,
+        401: &#34;azure&#34;,
+        402: &#34;azure_resource_manager&#34;,
+        403: &#34;azure_stack&#34;,
+        501: &#34;red_hat_virtualization&#34;,
+        601: &#34;nutanix_ahv&#34;,
+        701: &#34;oraclevm&#34;,
+        801: &#34;fusioncompute&#34;,
+        901: &#34;openstack&#34;,
+        1101: &#34;oracle_cloud&#34;,
+        1102: &#34;oracle_cloud_infrastructure&#34;,
+        1301: &#34;google_cloud_platform&#34;,
+        1401: &#34;alibaba_cloud&#34;,
+        1503: &#34;vcloud_director&#34;,
+        1501: &#34;kubernetes&#34;,
+        1600: &#34;proxmox_ve&#34;
+    }</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="cvpysdk.constants.VsInstanceType.VSINSTANCE_TYPE"><code class="name">var <span class="ident">VSINSTANCE_TYPE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
 </dl>
 </section>
 </article>
@@ -2554,6 +2449,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.constants.HypervisorType.ORACLE_CLOUD" href="#cvpysdk.constants.HypervisorType.ORACLE_CLOUD">ORACLE_CLOUD</a></code></li>
 <li><code><a title="cvpysdk.constants.HypervisorType.ORACLE_CLOUD_INFRASTRUCTURE" href="#cvpysdk.constants.HypervisorType.ORACLE_CLOUD_INFRASTRUCTURE">ORACLE_CLOUD_INFRASTRUCTURE</a></code></li>
 <li><code><a title="cvpysdk.constants.HypervisorType.ORACLE_VM" href="#cvpysdk.constants.HypervisorType.ORACLE_VM">ORACLE_VM</a></code></li>
+<li><code><a title="cvpysdk.constants.HypervisorType.PROXMOX" href="#cvpysdk.constants.HypervisorType.PROXMOX">PROXMOX</a></code></li>
 <li><code><a title="cvpysdk.constants.HypervisorType.Rhev" href="#cvpysdk.constants.HypervisorType.Rhev">Rhev</a></code></li>
 <li><code><a title="cvpysdk.constants.HypervisorType.VCLOUD" href="#cvpysdk.constants.HypervisorType.VCLOUD">VCLOUD</a></code></li>
 <li><code><a title="cvpysdk.constants.HypervisorType.VIRTUAL_CENTER" href="#cvpysdk.constants.HypervisorType.VIRTUAL_CENTER">VIRTUAL_CENTER</a></code></li>
@@ -2606,8 +2502,6 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="cvpysdk.constants.StoragePoolConstants" href="#cvpysdk.constants.StoragePoolConstants">StoragePoolConstants</a></code></h4>
 <ul class="">
 <li><code><a title="cvpysdk.constants.StoragePoolConstants.AIR_GAP_PROTECT_STORAGE_TYPES" href="#cvpysdk.constants.StoragePoolConstants.AIR_GAP_PROTECT_STORAGE_TYPES">AIR_GAP_PROTECT_STORAGE_TYPES</a></code></li>
-<li><code><a title="cvpysdk.constants.StoragePoolConstants.AZURE_STORAGE_REQ_JSON" href="#cvpysdk.constants.StoragePoolConstants.AZURE_STORAGE_REQ_JSON">AZURE_STORAGE_REQ_JSON</a></code></li>
-<li><code><a title="cvpysdk.constants.StoragePoolConstants.MA_INFO_LIST" href="#cvpysdk.constants.StoragePoolConstants.MA_INFO_LIST">MA_INFO_LIST</a></code></li>
 </ul>
 </li>
 <li>
@@ -2688,6 +2582,12 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.constants.VSAObjects.VMNotes" href="#cvpysdk.constants.VSAObjects.VMNotes">VMNotes</a></code></li>
 <li><code><a title="cvpysdk.constants.VSAObjects.VMPowerState" href="#cvpysdk.constants.VSAObjects.VMPowerState">VMPowerState</a></code></li>
 <li><code><a title="cvpysdk.constants.VSAObjects.VMTemplate" href="#cvpysdk.constants.VSAObjects.VMTemplate">VMTemplate</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.constants.VsInstanceType" href="#cvpysdk.constants.VsInstanceType">VsInstanceType</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.constants.VsInstanceType.VSINSTANCE_TYPE" href="#cvpysdk.constants.VsInstanceType.VSINSTANCE_TYPE">VSINSTANCE_TYPE</a></code></li>
 </ul>
 </li>
 </ul>

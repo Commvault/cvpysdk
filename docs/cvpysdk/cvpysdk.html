@@ -68,7 +68,7 @@ and return the flag specifying success/fail, and response</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/cvpysdk.py#L1-L480" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/cvpysdk.py#L1-L493" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -177,6 +177,7 @@ class CVPySDK(object):
         self._commcell_object = commcell_object
         self._certificate_path = certificate_path
         self._verify_ssl = verify_ssl
+        self._response_headers = {}
 
         if not self._verify_ssl:
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -272,14 +273,25 @@ class CVPySDK(object):
                 else:
                     raise SDKException(&#39;Response&#39;, &#39;102&#39;)
             else:
+                if response is not None:
+                    response_json = response.json()
+                    if (&#34;errorMessage&#34; in response_json and &#34;Access denied&#34; in response_json[&#34;errorMessage&#34;] and
+                        &#34;errorCode&#34; in response_json and response_json[&#34;errorCode&#34;] == 5):
+                        raise SDKException(&#39;Response&#39;, &#39;101&#39;, &#34;Commcell was reachable &#34;
+                            &#34;but there may be a problem with the SSL certificate. &#34;
+                            &#34;You can try providing the certificate file using the certificate_path parameter. &#34;
+                            &#34;Alternatively, you can ignore this check by setting verify_ssl=False.&#34;)
                 response_string = self._commcell_object._update_response_(response.text)
                 raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
         except requests.exceptions.ConnectionError as con_err:
             raise con_err
 
-    def _renew_login_token(self):
+    def _renew_login_token(self, attempts):
         &#34;&#34;&#34;Posts a Renew Login-Token request to the server.
 
+            Args:
+                attempts    (int)   --  number of attempts made with the same request
+                
             Returns:
                 str     -   new token received from the WebServer
 
@@ -305,7 +317,7 @@ class CVPySDK(object):
             }
 
             flag, response = self.make_request(
-                &#39;POST&#39;, self._commcell_object._services[&#39;RENEW_LOGIN_TOKEN&#39;], token_renew_request
+                &#39;POST&#39;, self._commcell_object._services[&#39;RENEW_LOGIN_TOKEN&#39;], token_renew_request, attempts
             )
 
             if flag:
@@ -528,6 +540,7 @@ class CVPySDK(object):
 
             # Processinginfo removal from response. It is under try catch to handle different response cases
             # (Eg:DownloadStream API will return file stream in response)
+            self._response_headers = response.headers
             try:
                 if kwargs.get(&#39;remove_processing_info&#39;, True) and &#39;processinginstructioninfo&#39; in response.json():
                     del response.json()[&#39;processinginstructioninfo&#39;]
@@ -538,7 +551,7 @@ class CVPySDK(object):
                 if headers[&#39;Authtoken&#39;].startswith(&#39;Bearer &#39;):
                     raise SDKException(&#39;CVPySDK&#39;, &#39;106&#39;)
                 if attempts &lt; 3:
-                    self._commcell_object._headers[&#39;Authtoken&#39;] = self._renew_login_token()
+                    self._commcell_object._headers[&#39;Authtoken&#39;] = self._renew_login_token(attempts + 1)
                     return self.make_request(method, url, payload, attempts + 1)
                 else:
                     # Raise max attempts exception, if attempts exceeds 3
@@ -593,7 +606,7 @@ instance of the CVPySDK class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/cvpysdk.py#L80-L480" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/cvpysdk.py#L80-L493" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CVPySDK(object):
     &#34;&#34;&#34;Helper class for login, and logout operations.
@@ -623,6 +636,7 @@ instance of the CVPySDK class</p></div>
         self._commcell_object = commcell_object
         self._certificate_path = certificate_path
         self._verify_ssl = verify_ssl
+        self._response_headers = {}
 
         if not self._verify_ssl:
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -718,14 +732,25 @@ instance of the CVPySDK class</p></div>
                 else:
                     raise SDKException(&#39;Response&#39;, &#39;102&#39;)
             else:
+                if response is not None:
+                    response_json = response.json()
+                    if (&#34;errorMessage&#34; in response_json and &#34;Access denied&#34; in response_json[&#34;errorMessage&#34;] and
+                        &#34;errorCode&#34; in response_json and response_json[&#34;errorCode&#34;] == 5):
+                        raise SDKException(&#39;Response&#39;, &#39;101&#39;, &#34;Commcell was reachable &#34;
+                            &#34;but there may be a problem with the SSL certificate. &#34;
+                            &#34;You can try providing the certificate file using the certificate_path parameter. &#34;
+                            &#34;Alternatively, you can ignore this check by setting verify_ssl=False.&#34;)
                 response_string = self._commcell_object._update_response_(response.text)
                 raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
         except requests.exceptions.ConnectionError as con_err:
             raise con_err
 
-    def _renew_login_token(self):
+    def _renew_login_token(self, attempts):
         &#34;&#34;&#34;Posts a Renew Login-Token request to the server.
 
+            Args:
+                attempts    (int)   --  number of attempts made with the same request
+                
             Returns:
                 str     -   new token received from the WebServer
 
@@ -751,7 +776,7 @@ instance of the CVPySDK class</p></div>
             }
 
             flag, response = self.make_request(
-                &#39;POST&#39;, self._commcell_object._services[&#39;RENEW_LOGIN_TOKEN&#39;], token_renew_request
+                &#39;POST&#39;, self._commcell_object._services[&#39;RENEW_LOGIN_TOKEN&#39;], token_renew_request, attempts
             )
 
             if flag:
@@ -974,6 +999,7 @@ instance of the CVPySDK class</p></div>
 
             # Processinginfo removal from response. It is under try catch to handle different response cases
             # (Eg:DownloadStream API will return file stream in response)
+            self._response_headers = response.headers
             try:
                 if kwargs.get(&#39;remove_processing_info&#39;, True) and &#39;processinginstructioninfo&#39; in response.json():
                     del response.json()[&#39;processinginstructioninfo&#39;]
@@ -984,7 +1010,7 @@ instance of the CVPySDK class</p></div>
                 if headers[&#39;Authtoken&#39;].startswith(&#39;Bearer &#39;):
                     raise SDKException(&#39;CVPySDK&#39;, &#39;106&#39;)
                 if attempts &lt; 3:
-                    self._commcell_object._headers[&#39;Authtoken&#39;] = self._renew_login_token()
+                    self._commcell_object._headers[&#39;Authtoken&#39;] = self._renew_login_token(attempts + 1)
                     return self.make_request(method, url, payload, attempts + 1)
                 else:
                     # Raise max attempts exception, if attempts exceeds 3
@@ -1080,7 +1106,7 @@ requests.exceptions.ConnectionError</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/cvpysdk.py#L336-L480" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/cvpysdk.py#L348-L493" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def make_request(
         self,
@@ -1205,6 +1231,7 @@ requests.exceptions.ConnectionError</p></div>
 
         # Processinginfo removal from response. It is under try catch to handle different response cases
         # (Eg:DownloadStream API will return file stream in response)
+        self._response_headers = response.headers
         try:
             if kwargs.get(&#39;remove_processing_info&#39;, True) and &#39;processinginstructioninfo&#39; in response.json():
                 del response.json()[&#39;processinginstructioninfo&#39;]
@@ -1215,7 +1242,7 @@ requests.exceptions.ConnectionError</p></div>
             if headers[&#39;Authtoken&#39;].startswith(&#39;Bearer &#39;):
                 raise SDKException(&#39;CVPySDK&#39;, &#39;106&#39;)
             if attempts &lt; 3:
-                self._commcell_object._headers[&#39;Authtoken&#39;] = self._renew_login_token()
+                self._commcell_object._headers[&#39;Authtoken&#39;] = self._renew_login_token(attempts + 1)
                 return self.make_request(method, url, payload, attempts + 1)
             else:
                 # Raise max attempts exception, if attempts exceeds 3
@@ -1249,7 +1276,7 @@ if no user mapping found</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/cvpysdk.py#L296-L334" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/cvpysdk.py#L308-L346" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def who_am_i(self, authtoken=None):
     &#34;&#34;&#34;Get the username of the user, to whom the Authtoken belongs to.

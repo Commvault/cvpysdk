@@ -38,6 +38,7 @@ _association_json_with_plan()       --  Create the Association JSON for
 _association_mailboxes_json()       --  Association for particular mailboxes
 _task_json_for_backup()             --  JSON for backup task for Exchange User mailbox Subclient
 _backup_generic_items_json()        --  JSON to backup generic items
+_search_user()                      --  Searches for the user in the discovered users list
 </code></pre>
 <h1 id="content-association-methods">Content Association Methods:</h1>
 <pre><code>set_user_assocaition()              --  Set exchange users association
@@ -76,6 +77,7 @@ backup_mailboxes()                  --  Backup selected mailboxes
 restore_in_place()                  --  runs in-place restore for the subclient
 create_recovery_point()             --  Create a recovery point for a mailbox
 restore_in_place_syntex()           --  runs an in-place restore for the Syntex client
+find_mailbox()                      --  Performs search operation of a mailbox in browse
 </code></pre>
 <h1 id="user-mailbox-subclient-instance-attributes">User Mailbox Subclient Instance Attributes:</h1>
 <pre><code>discover_users                          --  Dictionary of users discovered
@@ -86,7 +88,7 @@ o365groups                              --  Dictionary of discovered Office 365 
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1-L1826" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1-L1984" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -125,6 +127,7 @@ UsermailboxSubclient:
     _association_mailboxes_json()       --  Association for particular mailboxes
     _task_json_for_backup()             --  JSON for backup task for Exchange User mailbox Subclient
     _backup_generic_items_json()        --  JSON to backup generic items
+    _search_user()                      --  Searches for the user in the discovered users list
 
 Content Association Methods:
 ==============================
@@ -167,6 +170,7 @@ Browse/ Restore/ Backup Methods:
     restore_in_place()                  --  runs in-place restore for the subclient
     create_recovery_point()             --  Create a recovery point for a mailbox
     restore_in_place_syntex()           --  runs an in-place restore for the Syntex client
+    find_mailbox()                      --  Performs search operation of a mailbox in browse
 
 
 
@@ -180,16 +184,14 @@ User Mailbox Subclient Instance Attributes:
 &#34;&#34;&#34;
 
 from __future__ import unicode_literals
-
 from ...exception import SDKException
-
 from ..exchsubclient import ExchangeSubclient
-
 from ...subclient import Subclients
-
 from ...backupset import Backupsets
+from .constants import ExchangeConstants
 
 import time
+import datetime
 
 
 class UsermailboxSubclient(ExchangeSubclient):
@@ -218,6 +220,8 @@ class UsermailboxSubclient(ExchangeSubclient):
         self._client_object = self._instance_object._agent_object._client_object
         self._SET_EMAIL_POLICY_ASSOCIATIONS = self._commcell_object._services[
             &#39;SET_EMAIL_POLICY_ASSOCIATIONS&#39;]
+        self._SEARCH = (self._commcell_object._services[&#39;EMAIL_DISCOVERY&#39;] %
+                        (int(self._backupset_object.backupset_id), &#39;User&#39;))
 
         self.refresh()
 
@@ -382,33 +386,41 @@ class UsermailboxSubclient(ExchangeSubclient):
                 mailboxes_json.append(mailbox_info)
         return mailboxes_json
 
-    def _task_json_for_backup(self, mailbox_alias_names):
+    def _task_json_for_backup(self, mailbox_alias_names, **kwargs):
         &#34;&#34;&#34;
         Args:
             mailbox_alias_names(list): alias names of the mailboxes to backup
                 Sample Values
                     [&#39;aj&#39;, &#39;tkumar&#39;]
+
+             **kwargs (dict) : Additional parameters
+                items_selection_option (str) : Item Selection Option (Example: &#34;7&#34; for selecting backed up recently entities)
         Returns:
             task_json(dict): Task json required to pass to the API
         &#34;&#34;&#34;
-        task_json = self._backup_json(&#39;Full&#39;, False, &#39;&#39;)
-        associated_mailboxes_json = self._association_mailboxes_json(mailbox_alias_names)
-        backup_options = {
-            &#39;backupLevel&#39;: 2,  # Incremental
-            &#39;incLevel&#39;: 1,
-            &#39;exchOnePassOptions&#39;: {
-                &#39;mailBoxes&#39;: associated_mailboxes_json
+        common_backup_options = None
+        items_selection_option = kwargs.get(&#39;items_selection_option&#39;, &#39;&#39;)
+        if items_selection_option != &#39;&#39;:
+            common_backup_options = {&#39;itemsSelectionOption&#39;: items_selection_option}
+        task_json = self._backup_json(backup_level=&#39;INCREMENTAL&#39;, incremental_backup=False,incremental_level=&#39;BEFORE_SYNTH&#39;,common_backup_options=common_backup_options)
+        if mailbox_alias_names != None:
+            associated_mailboxes_json = self._association_mailboxes_json(mailbox_alias_names)
+            backup_options = {
+                &#39;backupLevel&#39;: 2,  # Incremental
+                &#39;incLevel&#39;: 1,
+                &#39;exchOnePassOptions&#39;: {
+                    &#39;mailBoxes&#39;: associated_mailboxes_json
+                }
             }
-        }
-        data_options = {
-            &#34;useCatalogServer&#34;: False,
-            &#34;followMountPoints&#34;: True,
-            &#34;enforceTransactionLogUsage&#34;: False,
-            &#34;skipConsistencyCheck&#34;: True,
-            &#34;createNewIndex&#34;: False
-        }
-        task_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;backupOpts&#39;] = backup_options
-        task_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;dataOpt&#39;] = data_options
+            data_options = {
+                &#34;useCatalogServer&#34;: False,
+                &#34;followMountPoints&#34;: True,
+                &#34;enforceTransactionLogUsage&#34;: False,
+                &#34;skipConsistencyCheck&#34;: True,
+                &#34;createNewIndex&#34;: False
+            }
+            task_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;backupOpts&#39;] = backup_options
+            task_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;dataOpt&#39;] = data_options
         return task_json
 
     def _set_association_request(self, associations_json):
@@ -510,7 +522,6 @@ class UsermailboxSubclient(ExchangeSubclient):
             self._DISCOVERY = self._commcell_object._services[&#39;EMAIL_DISCOVERY_WITHOUT_REFRESH&#39;] % (
                 int(self._backupset_object.backupset_id), &#39;User&#39;
             )
-
         flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, self._DISCOVERY)
 
         if flag:
@@ -532,6 +543,35 @@ class UsermailboxSubclient(ExchangeSubclient):
                         self._discover_users = discover_content[&#39;discoverInfo&#39;][&#39;mailBoxes&#39;]
 
                         return self._discover_users
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _search_user(self, user, retry_attempts=0):
+        &#34;&#34;&#34;Searches for the user in the discovered users list .
+            Args:
+                user (str)              -   alias name/smtp address of the user to search for
+            Returns:
+                list    -   list of discovered users matching the search
+
+        &#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, f&#34;{self._SEARCH}&amp;search={user}&#34;)
+
+        if flag:
+            if response and response.json():
+                search_content = response.json()
+
+                _error_code = search_content.get(&#39;resp&#39;, {}).get(&#39;errorCode&#39;, 0)
+                if _error_code == 469762468 or _error_code == 469762470:
+                    # if search_content.get(&#39;resp&#39;, {}).get(&#39;errorCode&#39;, 0) == 469762468:
+                    time.sleep(10)  # the results might take some time depending on domains
+                    if retry_attempts &gt; 10:
+                        raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Failed to perform search and discovery.&#39;)
+                    return self._search_user(user, retry_attempts=retry_attempts + 1)
+
+                return search_content.get(&#39;discoverInfo&#39;, {}).get(&#39;mailBoxes&#39;, [])
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
@@ -572,7 +612,6 @@ class UsermailboxSubclient(ExchangeSubclient):
         self._DISCOVERY = self._commcell_object._services[&#39;EMAIL_DISCOVERY&#39;] % (
             int(self._backupset_object.backupset_id), &#39;AD Group&#39;
         )
-
         flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, self._DISCOVERY)
 
         if flag:
@@ -918,6 +957,14 @@ class UsermailboxSubclient(ExchangeSubclient):
         except KeyError as err:
             raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;{} not given in content&#39;.format(err))
 
+        if len(users) != len(subclient_content[&#39;mailboxNames&#39;]):
+            to_search_user = [s_user for s_user in subclient_content[&#39;mailboxNames&#39;]
+                              if not any(s_user == f_user[&#39;smtpAdrress&#39;] for f_user in users)]
+            for mailbox_item in to_search_user:
+                search_users = self._search_user(mailbox_item)
+                if len(search_users) != 0:
+                    users.append(search_users[0])
+
         discover_info = {
             &#34;discoverByType&#34;: 1,
             &#34;mailBoxes&#34;: users
@@ -1069,15 +1116,16 @@ class UsermailboxSubclient(ExchangeSubclient):
                 assoc_list.append(client_dict)
         return assoc_list
 
-    def set_database_assocaition(self, subclient_content):
+    def set_database_assocaition(self, subclient_content, use_policies=True):
         &#34;&#34;&#34;Create Database assocaition for UserMailboxSubclient.
 
             Args:
                 subclient_content   (dict)  --  dict of the databases to add to the subclient
 
+                    For policy -
                     subclient_content = {
 
-                        &#39;databaseNames&#39; : [&#34;SGDB-1&#34;],
+                        &#39;databaseNames&#39; : [&#34;Name of dbs as list&#34;],
 
                         &#39;is_auto_discover_user&#39; : True,
 
@@ -1085,8 +1133,16 @@ class UsermailboxSubclient(ExchangeSubclient):
 
                         &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
 
-                        &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
+                        &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
                     }
+
+                    For Plan -
+                    subclient_content = { &#39;is_auto_discover_user&#39;: True,
+                    &#34;plan_name&#34;: Name of plan, &#34;plan_id&#34;(optional) -- id of plan}
+
+                use_policies(bool)  -- if we need to use policy or plan
+                
+                
         &#34;&#34;&#34;
         databases = []
 
@@ -1119,9 +1175,15 @@ class UsermailboxSubclient(ExchangeSubclient):
             &#34;discoverByType&#34;: 2,
             &#34;databases&#34;: databases
         }
-        _assocaition_json_ = self._association_json(subclient_content)
-        _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
-        self._set_association_request(_assocaition_json_)
+        if use_policies:
+            _association_json_ = self._association_json(subclient_content)
+        else:
+            _association_json_ = self._association_json_with_plan(subclient_content)
+            _association_json_[&#34;emailAssociation&#34;][&#34;advanceOptions&#34;] = {
+                &#34;enableAutoDiscovery&#34;: subclient_content.get(&#34;is_auto_discover_user&#34;, False)
+            }
+        _association_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
+        self._set_association_request(_association_json_)
 
     def set_adgroup_associations(self, subclient_content, use_policies=True):
         &#34;&#34;&#34;Create Ad groups assocaition for UserMailboxSubclient.
@@ -1131,28 +1193,20 @@ class UsermailboxSubclient(ExchangeSubclient):
 
                     subclient_content = {
 
-                        &#39;adGroupNames&#39; : [&#34;_Man5_Man5_&#34;],
+                        &#39;adGroupNames&#39; : [&#34;List of adGroups&#34;],
 
                         &#39;is_auto_discover_user&#39; : True,
 
-                        &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
+                        &#39;archive_policy&#39; : &#34;Archiving policy&#34;,
 
-                        &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
+                        &#39;cleanup_policy&#39; : &#39;Clean-up policy&#39;,
 
-                        &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
+                        &#39;retention_policy&#39;: &#39;Retention policy&#39;,
                     }
-                     -- if use_policies is True --
-
-                        &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
-
-                        &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
-
-                        &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
-
                         -- if use_policies is False --
 
                         &#39;plan_name&#39;: &#39;Exchange Plan Name&#39;,
-
+                        &#39;is_auto_discover_user&#39; : True,
                         &#39;plan_id&#39;: int or None (Optional)
                         --
 
@@ -1191,8 +1245,8 @@ class UsermailboxSubclient(ExchangeSubclient):
         else:
             _assocaition_json_ = self._association_json_with_plan(subclient_content)
         _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
-        _assocaition_json_[&#34;emailAssociation&#34;].update({&#34;emailStatus&#34;:0})
-        _assocaition_json_[&#34;emailAssociation&#34;].update({&#34;advanceOptions&#34;:{
+        _assocaition_json_[&#34;emailAssociation&#34;].update({&#34;emailStatus&#34;: 0})
+        _assocaition_json_[&#34;emailAssociation&#34;].update({&#34;advanceOptions&#34;: {
             &#34;enableAutoDiscovery&#34;: subclient_content[&#34;is_auto_discover_user&#34;]
         }})
         self._set_association_request(_assocaition_json_)
@@ -1229,7 +1283,7 @@ class UsermailboxSubclient(ExchangeSubclient):
             Args:
                 subclient_content   (dict)  --  dict of the Users to delete from subclient
                     subclient_content = {
-                        &#39;mailboxNames&#39; : [&#34;AutoCi2&#34;],
+                        &#39;mailboxNames&#39; : [&#34;list of mailboxes alias name&#34;],
                         -- if use_policies is True --
                         &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
 
@@ -1270,7 +1324,6 @@ class UsermailboxSubclient(ExchangeSubclient):
                             &#34;associated&#34;: False,
                             &#39;databaseName&#39;: mb_item[&#39;databaseName&#39;],
                             &#34;exchangeVersion&#34;: mb_item[&#39;exchangeVersion&#39;],
-                            # &#34;msExchRecipientTypeDetails&#34;: mb_item[&#39;msExchRecipientTypeDetails&#39;],
                             &#34;exchangeServer&#34;: mb_item[&#39;exchangeServer&#39;],
                             &#39;user&#39;: {
                                 &#39;_type_&#39;: 13,
@@ -1344,24 +1397,29 @@ class UsermailboxSubclient(ExchangeSubclient):
         _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
         self._update_association_request(_assocaition_json_)
 
-    def delete_database_assocaition(self, subclient_content):
+    def delete_database_assocaition(self, subclient_content, use_policies=True):
         &#34;&#34;&#34;Deletes Database assocaition for UserMailboxSubclient.
 
             Args:
                 subclient_content   (dict)  --  dict of the databases to delete from subclient
 
+                    For policy -
                     subclient_content = {
 
-                        &#39;databaseNames&#39; : [&#34;SGDB-1&#34;],
+                        &#39;databaseNames&#39; : [&#34;List of names of db&#34;],
 
-                        &#39;is_auto_discover_user&#39; : True,
+                        &#39;archive_policy&#39; : &#34;Archiving policy&#34;,
 
-                        &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
+                        &#39;cleanup_policy&#39; : &#39;Clean-up policy&#39;,
 
-                        &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
-
-                        &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
+                        &#39;retention_policy&#39;: &#39;Retention policy&#39;
                     }
+
+                    For Plan -
+                    subclient_content = { &#39;is_auto_discover_user&#39; : True,
+                    &#34;plan_name&#34;: Name of plan, &#34;plan_id&#34;(optional) -- id of plan}
+
+                use_policies(bool)  -- if we need to use policy or plan
         &#34;&#34;&#34;
         databases = []
 
@@ -1394,10 +1452,15 @@ class UsermailboxSubclient(ExchangeSubclient):
             &#34;discoverByType&#34;: 2,
             &#34;databases&#34;: databases
         }
-        _assocaition_json_ = self._association_json(subclient_content)
-        _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailStatus&#34;] = 1
-        _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
-        self._update_association_request(_assocaition_json_)
+
+        if use_policies:
+            _association_json_ = self._association_json(subclient_content)
+        else:
+            _association_json_ = self._association_json_with_plan(subclient_content)
+
+        _association_json_[&#34;emailAssociation&#34;][&#34;emailStatus&#34;] = 1
+        _association_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
+        self._update_association_request(_association_json_)
 
     def delete_adgroup_assocaition(self, subclient_content, use_policies=True):
         &#34;&#34;&#34;Deletes Ad groups assocaition for UserMailboxSubclient.
@@ -1407,7 +1470,7 @@ class UsermailboxSubclient(ExchangeSubclient):
 
                     subclient_content = {
 
-                        &#39;adGroupNames&#39; : [&#34;_Man5_Man5_&#34;],
+                        &#39;adGroupNames&#39; : [&#34;List of names of adgroups],
 
                         &#39;is_auto_discover_user&#39; : True,
 
@@ -1417,21 +1480,14 @@ class UsermailboxSubclient(ExchangeSubclient):
 
                         &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
                     }
-                     -- if use_policies is True --
-
-                        &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
-
-                        &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
-
-                        &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
-
-                        -- if use_policies is False --
+                    For plan:
+                        &#39;is_auto_discover_user&#39; : True,
 
                         &#39;plan_name&#39;: &#39;Exchange Plan Name&#39;,
 
                         &#39;plan_id&#39;: int or None (Optional)
-                        --
 
+                use_policies(bool)  -- if we need to use policy or plan
         &#34;&#34;&#34;
         adgroups = []
 
@@ -1473,13 +1529,13 @@ class UsermailboxSubclient(ExchangeSubclient):
         _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
         self._set_association_request(_assocaition_json_)
 
-    def enable_allusers_associations(self, subclient_content):
+    def enable_allusers_associations(self, subclient_content, use_policies=True):
         &#34;&#34;&#34;Enable all users assocaition for UserMailboxSubclient.
 
             Args:
                 subclient_content   (dict)  --  dict of the policies which needs to be
                 assigned to all user assocaitions
-
+                    For policy
                     subclient_content = {
 
                         &#39;is_auto_discover_user&#39; : True
@@ -1490,6 +1546,13 @@ class UsermailboxSubclient(ExchangeSubclient):
 
                         &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
                     }
+    
+                    For Plan -
+                    subclient_content = { &#39;is_auto_discover_user&#39; : True,
+                    &#34;plan_name&#34;: Name of plan, &#34;plan_id&#34;(optional) -- id of plan
+                    }
+
+                use_policies(bool)  -- if we need to use policy or plan
 
         &#34;&#34;&#34;
 
@@ -1505,12 +1568,19 @@ class UsermailboxSubclient(ExchangeSubclient):
                 }
             ]
         }
-        _assocaition_json_ = self._association_json(subclient_content)
-        _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
-        self._set_association_request(_assocaition_json_)
+        if use_policies:
+            _association_json_ = self._association_json(subclient_content)
+        else:
+            _association_json_ = self._association_json_with_plan(plan_details=subclient_content)
+        _association_json_[&#39;emailAssociation&#39;][&#39;advanceOptions&#39;] = {&#34;enableAutoDiscovery&#34;: True}
+        _association_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
+        self._set_association_request(_association_json_)
 
-    def disable_allusers_associations(self):
-        &#34;&#34;&#34;Disables alluser assocaition for UserMailboxSubclient.&#34;&#34;&#34;
+    def disable_allusers_associations(self, use_policies=True, plan_details=None):
+        &#34;&#34;&#34;Disables alluser assocaition for UserMailboxSubclient.
+            use_policies (bool) -- If we need to use plan(False) or policy(True)
+            plan_details(dict) -- { &#34;plan_name&#34;: Name of plan, &#34;plan_id&#34;(optional) -- id of plan}
+        &#34;&#34;&#34;
         subclient_content = {
             &#39;is_auto_discover_user&#39;: True
         }
@@ -1523,10 +1593,16 @@ class UsermailboxSubclient(ExchangeSubclient):
                 }
             ]
         }
-        _assocaition_json_ = self._association_json(subclient_content)
-        _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
-        _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailStatus&#34;] = 2
-        self._set_association_request(_assocaition_json_)
+
+        if use_policies:
+            _association_json_ = self._association_json(subclient_content)
+        else:
+            _association_json_ = self._association_json_with_plan(plan_details=plan_details)
+
+        _association_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
+        _association_json_[&#34;emailAssociation&#34;][&#34;emailStatus&#34;] = 2
+        _association_json_[&#39;emailAssociation&#39;][&#39;advanceOptions&#39;] = {&#34;enableAutoDiscovery&#34;: True}
+        self._set_association_request(_association_json_)
 
     def enable_auto_discover_association(self, association_name, plan_name):
         &#34;&#34;&#34;Enable all users assocaition for UserMailboxSubclient.
@@ -1583,10 +1659,11 @@ class UsermailboxSubclient(ExchangeSubclient):
                                 &#34;All O365 Mailboxes&#34;
                                 &#34;All Public Folders&#34;
 
+                        use_policies (bool) -- If we need to use plan(False) or policy(True)
+
                         subclient_content (dict) - containing the information of users/groups
 
                             if use_policies is True
-
                                 subclient_content={
                                     &#34;is_auto_dicover_user&#34; (bool): True
                                     &#34;archive_policy&#34; (obj): Archive Policy object
@@ -1595,13 +1672,11 @@ class UsermailboxSubclient(ExchangeSubclient):
                                 }
 
                             if use_policies is False
-
                                 subclient_content={
                                     &#34;is_auto_discover_user&#34; (bool): True,
-                                    &#34;plan_name&#34; (str): Name of the exchange plan
+                                    &#34;plan_name&#34; (str): Name of the exchange plan,
+                                    &#34;plan_id&#34;: Id of the plan(optional)
                                 }
-
-
         &#34;&#34;&#34;
         if not (isinstance(subclient_content, dict)):
             raise SDKException(&#34;Subclient&#34;, &#34;101&#34;)
@@ -1614,7 +1689,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         if association_name.lower() not in association_dict:
             raise SDKException(&#34;Subclient&#34;, &#34;102&#34;, &#34;Invalid Association Name supplied&#34;)
 
-        if use_policies == True:
+        if use_policies:
             _association_json_ = self._association_json(subclient_content)
         else:
             planobject = self._commcell_object.plans.get(subclient_content[&#34;plan_name&#34;])
@@ -1700,17 +1775,19 @@ class UsermailboxSubclient(ExchangeSubclient):
 
         return self._process_backup_response(flag, response)
 
-    def backup_mailboxes(self, mailbox_alias_names):
+    def backup_mailboxes(self, mailbox_alias_names=None, **kwargs):
         &#34;&#34;&#34;
         Backup specific mailboxes.
         Args:
             mailbox_alias_names(list): alias names of all the mailboxes to backup
                 Sample Values:
                     [&#39;aj&#39;, &#39;tkumar&#39;]
+             **kwargs (dict) : Additional parameters
+                    items_selection_option (str) : Item Selection Option (Example: &#34;7&#34; for selecting backed up recently entities)
         Returns:
             job(Job): instance of job class for the backup job
         &#34;&#34;&#34;
-        task_json = self._task_json_for_backup(mailbox_alias_names)
+        task_json = self._task_json_for_backup(mailbox_alias_names, **kwargs)
         create_task = self._services[&#39;CREATE_TASK&#39;]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;POST&#39;, create_task, task_json
@@ -1913,7 +1990,90 @@ class UsermailboxSubclient(ExchangeSubclient):
             &#34;useFastRestorePoint&#34;: False
         }
 
-        return self._process_restore_response(request_json)</code></pre>
+        return self._process_restore_response(request_json)
+
+    @staticmethod
+    def _find_mailbox_query_params(query_params=None):
+        &#34;&#34;&#34;
+            Generates the query params for find mailbox request
+                Args:
+                    query_params   (dict)   -- Dict of key value pair
+                        Default (None)
+                Returns:
+                    json for find malilbox query
+        &#34;&#34;&#34;
+        final_params = []
+        default_params = ExchangeConstants.FIND_MBX_QUERY_DEFAULT_PARAMS
+        if query_params:
+            for param, value in query_params.items():
+                if param in default_params:
+                    default_params.pop(value)
+                final_params.append({&#34;param&#34;: param, &#34;value&#34;: value})
+        for param, value in default_params.items():
+            final_params.append({&#34;param&#34;: param, &#34;value&#34;: value})
+        return final_params
+
+    @staticmethod
+    def _find_mailbox_facets(facets=None):
+        &#34;&#34;&#34;
+            Generates the facet requests for find mailbox request
+                Args:
+                    facets   (list)   -- List of strings containing facets
+                        Default (None)
+                Returns:
+                    json for find malilbox facets query
+        &#34;&#34;&#34;
+        final_params = []
+        default_facet = ExchangeConstants.FIND_MBX_DEFAULT_FACET
+
+        for facet in facets:
+            if facet in default_facet:
+                default_facet.remove(facet)
+            final_params.append({&#34;name&#34;: facet})
+        for facet in default_facet:
+            final_params.append({&#34;name&#34;: facet})
+        return final_params
+
+    def find_mailbox(self, mailbox_smtp, **kwargs):
+        &#34;&#34;&#34;
+        Performs the find operation for a mailbox in browse
+            Args:
+                mailbox_smtp    (str) -- SMTP address of the mailbox to find
+
+                kwargs                -- Optional key word args
+            Returns:
+                    response json for find mailbox
+        &#34;&#34;&#34;
+
+        data = ExchangeConstants.FIND_MAILBOX_REQUEST_DATA
+
+        data[&#34;advSearchGrp&#34;][&#34;emailFilter&#34;][0][&#34;filter&#34;][&#34;filters&#34;].append(
+            {
+                &#34;field&#34;: &#34;CUSTODIAN&#34;,
+                &#34;intraFieldOp&#34;: 0,
+                &#34;fieldValues&#34;: {
+                    &#34;values&#34;: [
+                        mailbox_smtp
+                    ]
+                }
+            }
+        )
+        data[&#34;advSearchGrp&#34;][&#34;galaxyFilter&#34;][0][&#34;appIdList&#34;] = [int(self.subclient_id)]
+        data[&#34;facetRequests&#34;][&#34;facetRequest&#34;] = UsermailboxSubclient._find_mailbox_facets(
+            kwargs.get(&#34;facets_params&#34;, None))
+        data[&#34;searchProcessingInfo&#34;][&#34;pageSize&#34;] = int(kwargs.get(&#34;page_size&#34;, 100))
+        data[&#34;searchProcessingInfo&#34;][&#34;queryParams&#34;] = UsermailboxSubclient._find_mailbox_query_params(
+            kwargs.get(&#34;query_params&#34;, None))
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;DO_WEB_SEARCH&#39;], data
+        )
+        if flag:
+            if response and response.json():
+                return response.json()
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </section>
 <section>
@@ -1950,7 +2110,7 @@ subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L105-L1826" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L105-L1984" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class UsermailboxSubclient(ExchangeSubclient):
     &#34;&#34;&#34;Derived class from ExchangeSubclient Base class.
@@ -1978,6 +2138,8 @@ subclient id</p></div>
         self._client_object = self._instance_object._agent_object._client_object
         self._SET_EMAIL_POLICY_ASSOCIATIONS = self._commcell_object._services[
             &#39;SET_EMAIL_POLICY_ASSOCIATIONS&#39;]
+        self._SEARCH = (self._commcell_object._services[&#39;EMAIL_DISCOVERY&#39;] %
+                        (int(self._backupset_object.backupset_id), &#39;User&#39;))
 
         self.refresh()
 
@@ -2142,33 +2304,41 @@ subclient id</p></div>
                 mailboxes_json.append(mailbox_info)
         return mailboxes_json
 
-    def _task_json_for_backup(self, mailbox_alias_names):
+    def _task_json_for_backup(self, mailbox_alias_names, **kwargs):
         &#34;&#34;&#34;
         Args:
             mailbox_alias_names(list): alias names of the mailboxes to backup
                 Sample Values
                     [&#39;aj&#39;, &#39;tkumar&#39;]
+
+             **kwargs (dict) : Additional parameters
+                items_selection_option (str) : Item Selection Option (Example: &#34;7&#34; for selecting backed up recently entities)
         Returns:
             task_json(dict): Task json required to pass to the API
         &#34;&#34;&#34;
-        task_json = self._backup_json(&#39;Full&#39;, False, &#39;&#39;)
-        associated_mailboxes_json = self._association_mailboxes_json(mailbox_alias_names)
-        backup_options = {
-            &#39;backupLevel&#39;: 2,  # Incremental
-            &#39;incLevel&#39;: 1,
-            &#39;exchOnePassOptions&#39;: {
-                &#39;mailBoxes&#39;: associated_mailboxes_json
+        common_backup_options = None
+        items_selection_option = kwargs.get(&#39;items_selection_option&#39;, &#39;&#39;)
+        if items_selection_option != &#39;&#39;:
+            common_backup_options = {&#39;itemsSelectionOption&#39;: items_selection_option}
+        task_json = self._backup_json(backup_level=&#39;INCREMENTAL&#39;, incremental_backup=False,incremental_level=&#39;BEFORE_SYNTH&#39;,common_backup_options=common_backup_options)
+        if mailbox_alias_names != None:
+            associated_mailboxes_json = self._association_mailboxes_json(mailbox_alias_names)
+            backup_options = {
+                &#39;backupLevel&#39;: 2,  # Incremental
+                &#39;incLevel&#39;: 1,
+                &#39;exchOnePassOptions&#39;: {
+                    &#39;mailBoxes&#39;: associated_mailboxes_json
+                }
             }
-        }
-        data_options = {
-            &#34;useCatalogServer&#34;: False,
-            &#34;followMountPoints&#34;: True,
-            &#34;enforceTransactionLogUsage&#34;: False,
-            &#34;skipConsistencyCheck&#34;: True,
-            &#34;createNewIndex&#34;: False
-        }
-        task_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;backupOpts&#39;] = backup_options
-        task_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;dataOpt&#39;] = data_options
+            data_options = {
+                &#34;useCatalogServer&#34;: False,
+                &#34;followMountPoints&#34;: True,
+                &#34;enforceTransactionLogUsage&#34;: False,
+                &#34;skipConsistencyCheck&#34;: True,
+                &#34;createNewIndex&#34;: False
+            }
+            task_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;backupOpts&#39;] = backup_options
+            task_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;dataOpt&#39;] = data_options
         return task_json
 
     def _set_association_request(self, associations_json):
@@ -2270,7 +2440,6 @@ subclient id</p></div>
             self._DISCOVERY = self._commcell_object._services[&#39;EMAIL_DISCOVERY_WITHOUT_REFRESH&#39;] % (
                 int(self._backupset_object.backupset_id), &#39;User&#39;
             )
-
         flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, self._DISCOVERY)
 
         if flag:
@@ -2292,6 +2461,35 @@ subclient id</p></div>
                         self._discover_users = discover_content[&#39;discoverInfo&#39;][&#39;mailBoxes&#39;]
 
                         return self._discover_users
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def _search_user(self, user, retry_attempts=0):
+        &#34;&#34;&#34;Searches for the user in the discovered users list .
+            Args:
+                user (str)              -   alias name/smtp address of the user to search for
+            Returns:
+                list    -   list of discovered users matching the search
+
+        &#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, f&#34;{self._SEARCH}&amp;search={user}&#34;)
+
+        if flag:
+            if response and response.json():
+                search_content = response.json()
+
+                _error_code = search_content.get(&#39;resp&#39;, {}).get(&#39;errorCode&#39;, 0)
+                if _error_code == 469762468 or _error_code == 469762470:
+                    # if search_content.get(&#39;resp&#39;, {}).get(&#39;errorCode&#39;, 0) == 469762468:
+                    time.sleep(10)  # the results might take some time depending on domains
+                    if retry_attempts &gt; 10:
+                        raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Failed to perform search and discovery.&#39;)
+                    return self._search_user(user, retry_attempts=retry_attempts + 1)
+
+                return search_content.get(&#39;discoverInfo&#39;, {}).get(&#39;mailBoxes&#39;, [])
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
@@ -2332,7 +2530,6 @@ subclient id</p></div>
         self._DISCOVERY = self._commcell_object._services[&#39;EMAIL_DISCOVERY&#39;] % (
             int(self._backupset_object.backupset_id), &#39;AD Group&#39;
         )
-
         flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, self._DISCOVERY)
 
         if flag:
@@ -2678,6 +2875,14 @@ subclient id</p></div>
         except KeyError as err:
             raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;{} not given in content&#39;.format(err))
 
+        if len(users) != len(subclient_content[&#39;mailboxNames&#39;]):
+            to_search_user = [s_user for s_user in subclient_content[&#39;mailboxNames&#39;]
+                              if not any(s_user == f_user[&#39;smtpAdrress&#39;] for f_user in users)]
+            for mailbox_item in to_search_user:
+                search_users = self._search_user(mailbox_item)
+                if len(search_users) != 0:
+                    users.append(search_users[0])
+
         discover_info = {
             &#34;discoverByType&#34;: 1,
             &#34;mailBoxes&#34;: users
@@ -2829,15 +3034,16 @@ subclient id</p></div>
                 assoc_list.append(client_dict)
         return assoc_list
 
-    def set_database_assocaition(self, subclient_content):
+    def set_database_assocaition(self, subclient_content, use_policies=True):
         &#34;&#34;&#34;Create Database assocaition for UserMailboxSubclient.
 
             Args:
                 subclient_content   (dict)  --  dict of the databases to add to the subclient
 
+                    For policy -
                     subclient_content = {
 
-                        &#39;databaseNames&#39; : [&#34;SGDB-1&#34;],
+                        &#39;databaseNames&#39; : [&#34;Name of dbs as list&#34;],
 
                         &#39;is_auto_discover_user&#39; : True,
 
@@ -2845,8 +3051,16 @@ subclient id</p></div>
 
                         &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
 
-                        &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
+                        &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
                     }
+
+                    For Plan -
+                    subclient_content = { &#39;is_auto_discover_user&#39;: True,
+                    &#34;plan_name&#34;: Name of plan, &#34;plan_id&#34;(optional) -- id of plan}
+
+                use_policies(bool)  -- if we need to use policy or plan
+                
+                
         &#34;&#34;&#34;
         databases = []
 
@@ -2879,9 +3093,15 @@ subclient id</p></div>
             &#34;discoverByType&#34;: 2,
             &#34;databases&#34;: databases
         }
-        _assocaition_json_ = self._association_json(subclient_content)
-        _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
-        self._set_association_request(_assocaition_json_)
+        if use_policies:
+            _association_json_ = self._association_json(subclient_content)
+        else:
+            _association_json_ = self._association_json_with_plan(subclient_content)
+            _association_json_[&#34;emailAssociation&#34;][&#34;advanceOptions&#34;] = {
+                &#34;enableAutoDiscovery&#34;: subclient_content.get(&#34;is_auto_discover_user&#34;, False)
+            }
+        _association_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
+        self._set_association_request(_association_json_)
 
     def set_adgroup_associations(self, subclient_content, use_policies=True):
         &#34;&#34;&#34;Create Ad groups assocaition for UserMailboxSubclient.
@@ -2891,28 +3111,20 @@ subclient id</p></div>
 
                     subclient_content = {
 
-                        &#39;adGroupNames&#39; : [&#34;_Man5_Man5_&#34;],
+                        &#39;adGroupNames&#39; : [&#34;List of adGroups&#34;],
 
                         &#39;is_auto_discover_user&#39; : True,
 
-                        &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
+                        &#39;archive_policy&#39; : &#34;Archiving policy&#34;,
 
-                        &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
+                        &#39;cleanup_policy&#39; : &#39;Clean-up policy&#39;,
 
-                        &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
+                        &#39;retention_policy&#39;: &#39;Retention policy&#39;,
                     }
-                     -- if use_policies is True --
-
-                        &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
-
-                        &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
-
-                        &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
-
                         -- if use_policies is False --
 
                         &#39;plan_name&#39;: &#39;Exchange Plan Name&#39;,
-
+                        &#39;is_auto_discover_user&#39; : True,
                         &#39;plan_id&#39;: int or None (Optional)
                         --
 
@@ -2951,8 +3163,8 @@ subclient id</p></div>
         else:
             _assocaition_json_ = self._association_json_with_plan(subclient_content)
         _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
-        _assocaition_json_[&#34;emailAssociation&#34;].update({&#34;emailStatus&#34;:0})
-        _assocaition_json_[&#34;emailAssociation&#34;].update({&#34;advanceOptions&#34;:{
+        _assocaition_json_[&#34;emailAssociation&#34;].update({&#34;emailStatus&#34;: 0})
+        _assocaition_json_[&#34;emailAssociation&#34;].update({&#34;advanceOptions&#34;: {
             &#34;enableAutoDiscovery&#34;: subclient_content[&#34;is_auto_discover_user&#34;]
         }})
         self._set_association_request(_assocaition_json_)
@@ -2989,7 +3201,7 @@ subclient id</p></div>
             Args:
                 subclient_content   (dict)  --  dict of the Users to delete from subclient
                     subclient_content = {
-                        &#39;mailboxNames&#39; : [&#34;AutoCi2&#34;],
+                        &#39;mailboxNames&#39; : [&#34;list of mailboxes alias name&#34;],
                         -- if use_policies is True --
                         &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
 
@@ -3030,7 +3242,6 @@ subclient id</p></div>
                             &#34;associated&#34;: False,
                             &#39;databaseName&#39;: mb_item[&#39;databaseName&#39;],
                             &#34;exchangeVersion&#34;: mb_item[&#39;exchangeVersion&#39;],
-                            # &#34;msExchRecipientTypeDetails&#34;: mb_item[&#39;msExchRecipientTypeDetails&#39;],
                             &#34;exchangeServer&#34;: mb_item[&#39;exchangeServer&#39;],
                             &#39;user&#39;: {
                                 &#39;_type_&#39;: 13,
@@ -3104,24 +3315,29 @@ subclient id</p></div>
         _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
         self._update_association_request(_assocaition_json_)
 
-    def delete_database_assocaition(self, subclient_content):
+    def delete_database_assocaition(self, subclient_content, use_policies=True):
         &#34;&#34;&#34;Deletes Database assocaition for UserMailboxSubclient.
 
             Args:
                 subclient_content   (dict)  --  dict of the databases to delete from subclient
 
+                    For policy -
                     subclient_content = {
 
-                        &#39;databaseNames&#39; : [&#34;SGDB-1&#34;],
+                        &#39;databaseNames&#39; : [&#34;List of names of db&#34;],
 
-                        &#39;is_auto_discover_user&#39; : True,
+                        &#39;archive_policy&#39; : &#34;Archiving policy&#34;,
 
-                        &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
+                        &#39;cleanup_policy&#39; : &#39;Clean-up policy&#39;,
 
-                        &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
-
-                        &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
+                        &#39;retention_policy&#39;: &#39;Retention policy&#39;
                     }
+
+                    For Plan -
+                    subclient_content = { &#39;is_auto_discover_user&#39; : True,
+                    &#34;plan_name&#34;: Name of plan, &#34;plan_id&#34;(optional) -- id of plan}
+
+                use_policies(bool)  -- if we need to use policy or plan
         &#34;&#34;&#34;
         databases = []
 
@@ -3154,10 +3370,15 @@ subclient id</p></div>
             &#34;discoverByType&#34;: 2,
             &#34;databases&#34;: databases
         }
-        _assocaition_json_ = self._association_json(subclient_content)
-        _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailStatus&#34;] = 1
-        _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
-        self._update_association_request(_assocaition_json_)
+
+        if use_policies:
+            _association_json_ = self._association_json(subclient_content)
+        else:
+            _association_json_ = self._association_json_with_plan(subclient_content)
+
+        _association_json_[&#34;emailAssociation&#34;][&#34;emailStatus&#34;] = 1
+        _association_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
+        self._update_association_request(_association_json_)
 
     def delete_adgroup_assocaition(self, subclient_content, use_policies=True):
         &#34;&#34;&#34;Deletes Ad groups assocaition for UserMailboxSubclient.
@@ -3167,7 +3388,7 @@ subclient id</p></div>
 
                     subclient_content = {
 
-                        &#39;adGroupNames&#39; : [&#34;_Man5_Man5_&#34;],
+                        &#39;adGroupNames&#39; : [&#34;List of names of adgroups],
 
                         &#39;is_auto_discover_user&#39; : True,
 
@@ -3177,21 +3398,14 @@ subclient id</p></div>
 
                         &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
                     }
-                     -- if use_policies is True --
-
-                        &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
-
-                        &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
-
-                        &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
-
-                        -- if use_policies is False --
+                    For plan:
+                        &#39;is_auto_discover_user&#39; : True,
 
                         &#39;plan_name&#39;: &#39;Exchange Plan Name&#39;,
 
                         &#39;plan_id&#39;: int or None (Optional)
-                        --
 
+                use_policies(bool)  -- if we need to use policy or plan
         &#34;&#34;&#34;
         adgroups = []
 
@@ -3233,13 +3447,13 @@ subclient id</p></div>
         _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
         self._set_association_request(_assocaition_json_)
 
-    def enable_allusers_associations(self, subclient_content):
+    def enable_allusers_associations(self, subclient_content, use_policies=True):
         &#34;&#34;&#34;Enable all users assocaition for UserMailboxSubclient.
 
             Args:
                 subclient_content   (dict)  --  dict of the policies which needs to be
                 assigned to all user assocaitions
-
+                    For policy
                     subclient_content = {
 
                         &#39;is_auto_discover_user&#39; : True
@@ -3250,6 +3464,13 @@ subclient id</p></div>
 
                         &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
                     }
+    
+                    For Plan -
+                    subclient_content = { &#39;is_auto_discover_user&#39; : True,
+                    &#34;plan_name&#34;: Name of plan, &#34;plan_id&#34;(optional) -- id of plan
+                    }
+
+                use_policies(bool)  -- if we need to use policy or plan
 
         &#34;&#34;&#34;
 
@@ -3265,12 +3486,19 @@ subclient id</p></div>
                 }
             ]
         }
-        _assocaition_json_ = self._association_json(subclient_content)
-        _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
-        self._set_association_request(_assocaition_json_)
+        if use_policies:
+            _association_json_ = self._association_json(subclient_content)
+        else:
+            _association_json_ = self._association_json_with_plan(plan_details=subclient_content)
+        _association_json_[&#39;emailAssociation&#39;][&#39;advanceOptions&#39;] = {&#34;enableAutoDiscovery&#34;: True}
+        _association_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
+        self._set_association_request(_association_json_)
 
-    def disable_allusers_associations(self):
-        &#34;&#34;&#34;Disables alluser assocaition for UserMailboxSubclient.&#34;&#34;&#34;
+    def disable_allusers_associations(self, use_policies=True, plan_details=None):
+        &#34;&#34;&#34;Disables alluser assocaition for UserMailboxSubclient.
+            use_policies (bool) -- If we need to use plan(False) or policy(True)
+            plan_details(dict) -- { &#34;plan_name&#34;: Name of plan, &#34;plan_id&#34;(optional) -- id of plan}
+        &#34;&#34;&#34;
         subclient_content = {
             &#39;is_auto_discover_user&#39;: True
         }
@@ -3283,10 +3511,16 @@ subclient id</p></div>
                 }
             ]
         }
-        _assocaition_json_ = self._association_json(subclient_content)
-        _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
-        _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailStatus&#34;] = 2
-        self._set_association_request(_assocaition_json_)
+
+        if use_policies:
+            _association_json_ = self._association_json(subclient_content)
+        else:
+            _association_json_ = self._association_json_with_plan(plan_details=plan_details)
+
+        _association_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
+        _association_json_[&#34;emailAssociation&#34;][&#34;emailStatus&#34;] = 2
+        _association_json_[&#39;emailAssociation&#39;][&#39;advanceOptions&#39;] = {&#34;enableAutoDiscovery&#34;: True}
+        self._set_association_request(_association_json_)
 
     def enable_auto_discover_association(self, association_name, plan_name):
         &#34;&#34;&#34;Enable all users assocaition for UserMailboxSubclient.
@@ -3343,10 +3577,11 @@ subclient id</p></div>
                                 &#34;All O365 Mailboxes&#34;
                                 &#34;All Public Folders&#34;
 
+                        use_policies (bool) -- If we need to use plan(False) or policy(True)
+
                         subclient_content (dict) - containing the information of users/groups
 
                             if use_policies is True
-
                                 subclient_content={
                                     &#34;is_auto_dicover_user&#34; (bool): True
                                     &#34;archive_policy&#34; (obj): Archive Policy object
@@ -3355,13 +3590,11 @@ subclient id</p></div>
                                 }
 
                             if use_policies is False
-
                                 subclient_content={
                                     &#34;is_auto_discover_user&#34; (bool): True,
-                                    &#34;plan_name&#34; (str): Name of the exchange plan
+                                    &#34;plan_name&#34; (str): Name of the exchange plan,
+                                    &#34;plan_id&#34;: Id of the plan(optional)
                                 }
-
-
         &#34;&#34;&#34;
         if not (isinstance(subclient_content, dict)):
             raise SDKException(&#34;Subclient&#34;, &#34;101&#34;)
@@ -3374,7 +3607,7 @@ subclient id</p></div>
         if association_name.lower() not in association_dict:
             raise SDKException(&#34;Subclient&#34;, &#34;102&#34;, &#34;Invalid Association Name supplied&#34;)
 
-        if use_policies == True:
+        if use_policies:
             _association_json_ = self._association_json(subclient_content)
         else:
             planobject = self._commcell_object.plans.get(subclient_content[&#34;plan_name&#34;])
@@ -3460,17 +3693,19 @@ subclient id</p></div>
 
         return self._process_backup_response(flag, response)
 
-    def backup_mailboxes(self, mailbox_alias_names):
+    def backup_mailboxes(self, mailbox_alias_names=None, **kwargs):
         &#34;&#34;&#34;
         Backup specific mailboxes.
         Args:
             mailbox_alias_names(list): alias names of all the mailboxes to backup
                 Sample Values:
                     [&#39;aj&#39;, &#39;tkumar&#39;]
+             **kwargs (dict) : Additional parameters
+                    items_selection_option (str) : Item Selection Option (Example: &#34;7&#34; for selecting backed up recently entities)
         Returns:
             job(Job): instance of job class for the backup job
         &#34;&#34;&#34;
-        task_json = self._task_json_for_backup(mailbox_alias_names)
+        task_json = self._task_json_for_backup(mailbox_alias_names, **kwargs)
         create_task = self._services[&#39;CREATE_TASK&#39;]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;POST&#39;, create_task, task_json
@@ -3673,7 +3908,90 @@ subclient id</p></div>
             &#34;useFastRestorePoint&#34;: False
         }
 
-        return self._process_restore_response(request_json)</code></pre>
+        return self._process_restore_response(request_json)
+
+    @staticmethod
+    def _find_mailbox_query_params(query_params=None):
+        &#34;&#34;&#34;
+            Generates the query params for find mailbox request
+                Args:
+                    query_params   (dict)   -- Dict of key value pair
+                        Default (None)
+                Returns:
+                    json for find malilbox query
+        &#34;&#34;&#34;
+        final_params = []
+        default_params = ExchangeConstants.FIND_MBX_QUERY_DEFAULT_PARAMS
+        if query_params:
+            for param, value in query_params.items():
+                if param in default_params:
+                    default_params.pop(value)
+                final_params.append({&#34;param&#34;: param, &#34;value&#34;: value})
+        for param, value in default_params.items():
+            final_params.append({&#34;param&#34;: param, &#34;value&#34;: value})
+        return final_params
+
+    @staticmethod
+    def _find_mailbox_facets(facets=None):
+        &#34;&#34;&#34;
+            Generates the facet requests for find mailbox request
+                Args:
+                    facets   (list)   -- List of strings containing facets
+                        Default (None)
+                Returns:
+                    json for find malilbox facets query
+        &#34;&#34;&#34;
+        final_params = []
+        default_facet = ExchangeConstants.FIND_MBX_DEFAULT_FACET
+
+        for facet in facets:
+            if facet in default_facet:
+                default_facet.remove(facet)
+            final_params.append({&#34;name&#34;: facet})
+        for facet in default_facet:
+            final_params.append({&#34;name&#34;: facet})
+        return final_params
+
+    def find_mailbox(self, mailbox_smtp, **kwargs):
+        &#34;&#34;&#34;
+        Performs the find operation for a mailbox in browse
+            Args:
+                mailbox_smtp    (str) -- SMTP address of the mailbox to find
+
+                kwargs                -- Optional key word args
+            Returns:
+                    response json for find mailbox
+        &#34;&#34;&#34;
+
+        data = ExchangeConstants.FIND_MAILBOX_REQUEST_DATA
+
+        data[&#34;advSearchGrp&#34;][&#34;emailFilter&#34;][0][&#34;filter&#34;][&#34;filters&#34;].append(
+            {
+                &#34;field&#34;: &#34;CUSTODIAN&#34;,
+                &#34;intraFieldOp&#34;: 0,
+                &#34;fieldValues&#34;: {
+                    &#34;values&#34;: [
+                        mailbox_smtp
+                    ]
+                }
+            }
+        )
+        data[&#34;advSearchGrp&#34;][&#34;galaxyFilter&#34;][0][&#34;appIdList&#34;] = [int(self.subclient_id)]
+        data[&#34;facetRequests&#34;][&#34;facetRequest&#34;] = UsermailboxSubclient._find_mailbox_facets(
+            kwargs.get(&#34;facets_params&#34;, None))
+        data[&#34;searchProcessingInfo&#34;][&#34;pageSize&#34;] = int(kwargs.get(&#34;page_size&#34;, 100))
+        data[&#34;searchProcessingInfo&#34;][&#34;queryParams&#34;] = UsermailboxSubclient._find_mailbox_query_params(
+            kwargs.get(&#34;query_params&#34;, None))
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._services[&#39;DO_WEB_SEARCH&#39;], data
+        )
+        if flag:
+            if response and response.json():
+                return response.json()
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -3688,7 +4006,7 @@ subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L755-L758" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L792-L795" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def adgroups(self):
@@ -3702,7 +4020,7 @@ def adgroups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L750-L753" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L787-L790" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def databases(self):
@@ -3716,7 +4034,7 @@ def databases(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L740-L743" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L777-L780" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def discover_adgroups(self):
@@ -3730,7 +4048,7 @@ def discover_adgroups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L735-L738" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L772-L775" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def discover_databases(self):
@@ -3744,7 +4062,7 @@ def discover_databases(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L730-L733" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L767-L770" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def discover_users(self):
@@ -3758,7 +4076,7 @@ def discover_users(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L760-L763" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L797-L800" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def o365groups(self):
@@ -3772,7 +4090,7 @@ def o365groups(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L745-L748" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L782-L785" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def users(self):
@@ -3807,7 +4125,7 @@ List having dictionary of items to be backed up</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1585-L1611" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1658-L1684" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup_generic_items(self, subclient_content):
     &#34;&#34;&#34;
@@ -3839,32 +4157,36 @@ List having dictionary of items to be backed up</p>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.backup_mailboxes"><code class="name flex">
-<span>def <span class="ident">backup_mailboxes</span></span>(<span>self, mailbox_alias_names)</span>
+<span>def <span class="ident">backup_mailboxes</span></span>(<span>self, mailbox_alias_names=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Backup specific mailboxes.</p>
 <h2 id="args">Args</h2>
 <p>mailbox_alias_names(list): alias names of all the mailboxes to backup
 Sample Values:
-['aj', 'tkumar']</p>
+['aj', 'tkumar']
+**kwargs (dict) : Additional parameters
+items_selection_option (str) : Item Selection Option (Example: "7" for selecting backed up recently entities)</p>
 <h2 id="returns">Returns</h2>
 <p>job(Job): instance of job class for the backup job</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1613-L1628" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1686-L1703" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def backup_mailboxes(self, mailbox_alias_names):
+<pre><code class="python">def backup_mailboxes(self, mailbox_alias_names=None, **kwargs):
     &#34;&#34;&#34;
     Backup specific mailboxes.
     Args:
         mailbox_alias_names(list): alias names of all the mailboxes to backup
             Sample Values:
                 [&#39;aj&#39;, &#39;tkumar&#39;]
+         **kwargs (dict) : Additional parameters
+                items_selection_option (str) : Item Selection Option (Example: &#34;7&#34; for selecting backed up recently entities)
     Returns:
         job(Job): instance of job class for the backup job
     &#34;&#34;&#34;
-    task_json = self._task_json_for_backup(mailbox_alias_names)
+    task_json = self._task_json_for_backup(mailbox_alias_names, **kwargs)
     create_task = self._services[&#39;CREATE_TASK&#39;]
     flag, response = self._commcell_object._cvpysdk_object.make_request(
         &#39;POST&#39;, create_task, task_json
@@ -3881,7 +4203,7 @@ return: dictionary containing mailbox info</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1558-L1583" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1631-L1656" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse_mailboxes(self, retry_attempts=0):
     &#34;&#34;&#34;
@@ -3945,7 +4267,7 @@ Format:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1630-L1742" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1705-L1817" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_recovery_point(self, mailbox_prop, job=None, job_id=None):
     &#34;&#34;&#34;
@@ -4074,7 +4396,7 @@ Format:
 dict of the adgroups to delete from subclient</p>
 <pre><code>subclient_content = {
 
-    'adGroupNames' : ["_Man5_Man5_"],
+    'adGroupNames' : ["List of names of adgroups],
 
     'is_auto_discover_user' : True,
 
@@ -4084,25 +4406,19 @@ dict of the adgroups to delete from subclient</p>
 
     'retention_policy': 'CIPLAN Retention policy',
 }
- -- if use_policies is True --
-
-    'archive_policy' : "CIPLAN Archiving policy",
-
-    'cleanup_policy' : 'CIPLAN Clean-up policy',
-
-    'retention_policy': 'CIPLAN Retention policy'
-
-    -- if use_policies is False --
+For plan:
+    'is_auto_discover_user' : True,
 
     'plan_name': 'Exchange Plan Name',
 
     'plan_id': int or None (Optional)
-    --
-</code></pre></div>
+</code></pre>
+<p>use_policies(bool)
+&ndash; if we need to use policy or plan</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1312-L1384" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1373-L1438" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_adgroup_assocaition(self, subclient_content, use_policies=True):
     &#34;&#34;&#34;Deletes Ad groups assocaition for UserMailboxSubclient.
@@ -4112,7 +4428,7 @@ dict of the adgroups to delete from subclient</p>
 
                 subclient_content = {
 
-                    &#39;adGroupNames&#39; : [&#34;_Man5_Man5_&#34;],
+                    &#39;adGroupNames&#39; : [&#34;List of names of adgroups],
 
                     &#39;is_auto_discover_user&#39; : True,
 
@@ -4122,21 +4438,14 @@ dict of the adgroups to delete from subclient</p>
 
                     &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
                 }
-                 -- if use_policies is True --
-
-                    &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
-
-                    &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
-
-                    &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
-
-                    -- if use_policies is False --
+                For plan:
+                    &#39;is_auto_discover_user&#39; : True,
 
                     &#39;plan_name&#39;: &#39;Exchange Plan Name&#39;,
 
                     &#39;plan_id&#39;: int or None (Optional)
-                    --
 
+            use_policies(bool)  -- if we need to use policy or plan
     &#34;&#34;&#34;
     adgroups = []
 
@@ -4191,10 +4500,11 @@ dict of the adgroups to delete from subclient</p>
                 "All O365 Mailboxes"
                 "All Public Folders"
 
+        use_policies (bool) -- If we need to use plan(False) or policy(True)
+
         subclient_content (dict) - containing the information of users/groups
 
             if use_policies is True
-
                 subclient_content={
                     "is_auto_dicover_user" (bool): True
                     "archive_policy" (obj): Archive Policy object
@@ -4203,16 +4513,16 @@ dict of the adgroups to delete from subclient</p>
                 }
 
             if use_policies is False
-
                 subclient_content={
                     "is_auto_discover_user" (bool): True,
-                    "plan_name" (str): Name of the exchange plan
+                    "plan_name" (str): Name of the exchange plan,
+                    "plan_id": Id of the plan(optional)
                 }
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1485-L1545" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1559-L1618" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_auto_discover_association(self, association_name, subclient_content, use_policies=True):
     &#34;&#34;&#34;
@@ -4225,10 +4535,11 @@ dict of the adgroups to delete from subclient</p>
                             &#34;All O365 Mailboxes&#34;
                             &#34;All Public Folders&#34;
 
+                    use_policies (bool) -- If we need to use plan(False) or policy(True)
+
                     subclient_content (dict) - containing the information of users/groups
 
                         if use_policies is True
-
                             subclient_content={
                                 &#34;is_auto_dicover_user&#34; (bool): True
                                 &#34;archive_policy&#34; (obj): Archive Policy object
@@ -4237,13 +4548,11 @@ dict of the adgroups to delete from subclient</p>
                             }
 
                         if use_policies is False
-
                             subclient_content={
                                 &#34;is_auto_discover_user&#34; (bool): True,
-                                &#34;plan_name&#34; (str): Name of the exchange plan
+                                &#34;plan_name&#34; (str): Name of the exchange plan,
+                                &#34;plan_id&#34;: Id of the plan(optional)
                             }
-
-
     &#34;&#34;&#34;
     if not (isinstance(subclient_content, dict)):
         raise SDKException(&#34;Subclient&#34;, &#34;101&#34;)
@@ -4256,7 +4565,7 @@ dict of the adgroups to delete from subclient</p>
     if association_name.lower() not in association_dict:
         raise SDKException(&#34;Subclient&#34;, &#34;102&#34;, &#34;Invalid Association Name supplied&#34;)
 
-    if use_policies == True:
+    if use_policies:
         _association_json_ = self._association_json(subclient_content)
     else:
         planobject = self._commcell_object.plans.get(subclient_content[&#34;plan_name&#34;])
@@ -4278,7 +4587,7 @@ dict of the adgroups to delete from subclient</p>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.delete_database_assocaition"><code class="name flex">
-<span>def <span class="ident">delete_database_assocaition</span></span>(<span>self, subclient_content)</span>
+<span>def <span class="ident">delete_database_assocaition</span></span>(<span>self, subclient_content, use_policies=True)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Deletes Database assocaition for UserMailboxSubclient.</p>
@@ -4287,42 +4596,52 @@ dict of the adgroups to delete from subclient</p>
 (dict)
 &ndash;
 dict of the databases to delete from subclient</p>
-<pre><code>subclient_content = {
+<pre><code>For policy -
+subclient_content = {
 
-    'databaseNames' : ["SGDB-1"],
+    'databaseNames' : ["List of names of db"],
 
-    'is_auto_discover_user' : True,
+    'archive_policy' : "Archiving policy",
 
-    'archive_policy' : "CIPLAN Archiving policy",
+    'cleanup_policy' : 'Clean-up policy',
 
-    'cleanup_policy' : 'CIPLAN Clean-up policy',
-
-    'retention_policy': 'CIPLAN Retention policy',
+    'retention_policy': 'Retention policy'
 }
-</code></pre></div>
+
+For Plan -
+subclient_content = { 'is_auto_discover_user' : True,
+"plan_name": Name of plan, "plan_id"(optional) -- id of plan}
+</code></pre>
+<p>use_policies(bool)
+&ndash; if we need to use policy or plan</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1257-L1310" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1308-L1371" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def delete_database_assocaition(self, subclient_content):
+<pre><code class="python">def delete_database_assocaition(self, subclient_content, use_policies=True):
     &#34;&#34;&#34;Deletes Database assocaition for UserMailboxSubclient.
 
         Args:
             subclient_content   (dict)  --  dict of the databases to delete from subclient
 
+                For policy -
                 subclient_content = {
 
-                    &#39;databaseNames&#39; : [&#34;SGDB-1&#34;],
+                    &#39;databaseNames&#39; : [&#34;List of names of db&#34;],
 
-                    &#39;is_auto_discover_user&#39; : True,
+                    &#39;archive_policy&#39; : &#34;Archiving policy&#34;,
 
-                    &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
+                    &#39;cleanup_policy&#39; : &#39;Clean-up policy&#39;,
 
-                    &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
-
-                    &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
+                    &#39;retention_policy&#39;: &#39;Retention policy&#39;
                 }
+
+                For Plan -
+                subclient_content = { &#39;is_auto_discover_user&#39; : True,
+                &#34;plan_name&#34;: Name of plan, &#34;plan_id&#34;(optional) -- id of plan}
+
+            use_policies(bool)  -- if we need to use policy or plan
     &#34;&#34;&#34;
     databases = []
 
@@ -4355,10 +4674,15 @@ dict of the databases to delete from subclient</p>
         &#34;discoverByType&#34;: 2,
         &#34;databases&#34;: databases
     }
-    _assocaition_json_ = self._association_json(subclient_content)
-    _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailStatus&#34;] = 1
-    _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
-    self._update_association_request(_assocaition_json_)</code></pre>
+
+    if use_policies:
+        _association_json_ = self._association_json(subclient_content)
+    else:
+        _association_json_ = self._association_json_with_plan(subclient_content)
+
+    _association_json_[&#34;emailAssociation&#34;][&#34;emailStatus&#34;] = 1
+    _association_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
+    self._update_association_request(_association_json_)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.delete_o365group_association"><code class="name flex">
@@ -4385,7 +4709,7 @@ dict of the Users to delete from subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1207-L1255" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1258-L1306" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_o365group_association(self, subclient_content):
     &#34;&#34;&#34;delete O365 group association for UserMailboxSubclient.
@@ -4449,7 +4773,7 @@ dict of the Users to delete from subclient</p>
 &ndash;
 dict of the Users to delete from subclient
 subclient_content = {
-'mailboxNames' : ["AutoCi2"],
+'mailboxNames' : ["list of mailboxes alias name"],
 &ndash; if use_policies is True &ndash;
 'archive_policy' : "CIPLAN Archiving policy",</p>
 <pre><code>    'cleanup_policy' : 'CIPLAN Clean-up policy',
@@ -4466,14 +4790,14 @@ subclient_content = {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1137-L1205" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1189-L1256" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_user_assocaition(self, subclient_content, use_policies=True):
     &#34;&#34;&#34;delete User assocaition for UserMailboxSubclient.
         Args:
             subclient_content   (dict)  --  dict of the Users to delete from subclient
                 subclient_content = {
-                    &#39;mailboxNames&#39; : [&#34;AutoCi2&#34;],
+                    &#39;mailboxNames&#39; : [&#34;list of mailboxes alias name&#34;],
                     -- if use_policies is True --
                     &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
 
@@ -4514,7 +4838,6 @@ subclient_content = {
                         &#34;associated&#34;: False,
                         &#39;databaseName&#39;: mb_item[&#39;databaseName&#39;],
                         &#34;exchangeVersion&#34;: mb_item[&#39;exchangeVersion&#39;],
-                        # &#34;msExchRecipientTypeDetails&#34;: mb_item[&#39;msExchRecipientTypeDetails&#39;],
                         &#34;exchangeServer&#34;: mb_item[&#39;exchangeServer&#39;],
                         &#39;user&#39;: {
                             &#39;_type_&#39;: 13,
@@ -4540,17 +4863,22 @@ subclient_content = {
 </details>
 </dd>
 <dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.disable_allusers_associations"><code class="name flex">
-<span>def <span class="ident">disable_allusers_associations</span></span>(<span>self)</span>
+<span>def <span class="ident">disable_allusers_associations</span></span>(<span>self, use_policies=True, plan_details=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Disables alluser assocaition for UserMailboxSubclient.</p></div>
+<div class="desc"><p>Disables alluser assocaition for UserMailboxSubclient.
+use_policies (bool) &ndash; If we need to use plan(False) or policy(True)
+plan_details(dict) &ndash; { "plan_name": Name of plan, "plan_id"(optional) &ndash; id of plan}</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1422-L1439" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1487-L1513" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def disable_allusers_associations(self):
-    &#34;&#34;&#34;Disables alluser assocaition for UserMailboxSubclient.&#34;&#34;&#34;
+<pre><code class="python">def disable_allusers_associations(self, use_policies=True, plan_details=None):
+    &#34;&#34;&#34;Disables alluser assocaition for UserMailboxSubclient.
+        use_policies (bool) -- If we need to use plan(False) or policy(True)
+        plan_details(dict) -- { &#34;plan_name&#34;: Name of plan, &#34;plan_id&#34;(optional) -- id of plan}
+    &#34;&#34;&#34;
     subclient_content = {
         &#39;is_auto_discover_user&#39;: True
     }
@@ -4563,14 +4891,20 @@ subclient_content = {
             }
         ]
     }
-    _assocaition_json_ = self._association_json(subclient_content)
-    _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
-    _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailStatus&#34;] = 2
-    self._set_association_request(_assocaition_json_)</code></pre>
+
+    if use_policies:
+        _association_json_ = self._association_json(subclient_content)
+    else:
+        _association_json_ = self._association_json_with_plan(plan_details=plan_details)
+
+    _association_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
+    _association_json_[&#34;emailAssociation&#34;][&#34;emailStatus&#34;] = 2
+    _association_json_[&#39;emailAssociation&#39;][&#39;advanceOptions&#39;] = {&#34;enableAutoDiscovery&#34;: True}
+    self._set_association_request(_association_json_)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.enable_allusers_associations"><code class="name flex">
-<span>def <span class="ident">enable_allusers_associations</span></span>(<span>self, subclient_content)</span>
+<span>def <span class="ident">enable_allusers_associations</span></span>(<span>self, subclient_content, use_policies=True)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Enable all users assocaition for UserMailboxSubclient.</p>
@@ -4579,10 +4913,10 @@ subclient_content = {
 (dict)
 &ndash;
 dict of the policies which needs to be
-assigned to all user assocaitions</p>
-<pre><code>subclient_content = {
-
-    'is_auto_discover_user' : True
+assigned to all user assocaitions
+For policy
+subclient_content = {</p>
+<pre><code>    'is_auto_discover_user' : True
 
     'archive_policy' : "CIPLAN Archiving policy",
 
@@ -4590,19 +4924,26 @@ assigned to all user assocaitions</p>
 
     'retention_policy': 'CIPLAN Retention policy',
 }
-</code></pre></div>
+
+For Plan -
+subclient_content = { 'is_auto_discover_user' : True,
+"plan_name": Name of plan, "plan_id"(optional) -- id of plan
+}
+</code></pre>
+<p>use_policies(bool)
+&ndash; if we need to use policy or plan</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1386-L1420" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1440-L1485" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def enable_allusers_associations(self, subclient_content):
+<pre><code class="python">def enable_allusers_associations(self, subclient_content, use_policies=True):
     &#34;&#34;&#34;Enable all users assocaition for UserMailboxSubclient.
 
         Args:
             subclient_content   (dict)  --  dict of the policies which needs to be
             assigned to all user assocaitions
-
+                For policy
                 subclient_content = {
 
                     &#39;is_auto_discover_user&#39; : True
@@ -4613,6 +4954,13 @@ assigned to all user assocaitions</p>
 
                     &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
                 }
+
+                For Plan -
+                subclient_content = { &#39;is_auto_discover_user&#39; : True,
+                &#34;plan_name&#34;: Name of plan, &#34;plan_id&#34;(optional) -- id of plan
+                }
+
+            use_policies(bool)  -- if we need to use policy or plan
 
     &#34;&#34;&#34;
 
@@ -4628,9 +4976,13 @@ assigned to all user assocaitions</p>
             }
         ]
     }
-    _assocaition_json_ = self._association_json(subclient_content)
-    _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
-    self._set_association_request(_assocaition_json_)</code></pre>
+    if use_policies:
+        _association_json_ = self._association_json(subclient_content)
+    else:
+        _association_json_ = self._association_json_with_plan(plan_details=subclient_content)
+    _association_json_[&#39;emailAssociation&#39;][&#39;advanceOptions&#39;] = {&#34;enableAutoDiscovery&#34;: True}
+    _association_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
+    self._set_association_request(_association_json_)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.enable_auto_discover_association"><code class="name flex">
@@ -4654,7 +5006,7 @@ Name of the plan to associate with users/groups</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1441-L1483" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1515-L1557" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_auto_discover_association(self, association_name, plan_name):
     &#34;&#34;&#34;Enable all users assocaition for UserMailboxSubclient.
@@ -4712,7 +5064,7 @@ Returns: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1547-L1556" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1620-L1629" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_ews_support(self, service_url):
     &#34;&#34;&#34;This function provides support for EWS protocol to backup on-prem mailboxes
@@ -4726,6 +5078,65 @@ Returns: None</p></div>
     self._agent_object.update_properties(self.agentproperties)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.find_mailbox"><code class="name flex">
+<span>def <span class="ident">find_mailbox</span></span>(<span>self, mailbox_smtp, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Performs the find operation for a mailbox in browse
+Args:
+mailbox_smtp
+(str) &ndash; SMTP address of the mailbox to find</p>
+<pre><code>    kwargs                -- Optional key word args
+Returns:
+        response json for find mailbox
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1945-L1984" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def find_mailbox(self, mailbox_smtp, **kwargs):
+    &#34;&#34;&#34;
+    Performs the find operation for a mailbox in browse
+        Args:
+            mailbox_smtp    (str) -- SMTP address of the mailbox to find
+
+            kwargs                -- Optional key word args
+        Returns:
+                response json for find mailbox
+    &#34;&#34;&#34;
+
+    data = ExchangeConstants.FIND_MAILBOX_REQUEST_DATA
+
+    data[&#34;advSearchGrp&#34;][&#34;emailFilter&#34;][0][&#34;filter&#34;][&#34;filters&#34;].append(
+        {
+            &#34;field&#34;: &#34;CUSTODIAN&#34;,
+            &#34;intraFieldOp&#34;: 0,
+            &#34;fieldValues&#34;: {
+                &#34;values&#34;: [
+                    mailbox_smtp
+                ]
+            }
+        }
+    )
+    data[&#34;advSearchGrp&#34;][&#34;galaxyFilter&#34;][0][&#34;appIdList&#34;] = [int(self.subclient_id)]
+    data[&#34;facetRequests&#34;][&#34;facetRequest&#34;] = UsermailboxSubclient._find_mailbox_facets(
+        kwargs.get(&#34;facets_params&#34;, None))
+    data[&#34;searchProcessingInfo&#34;][&#34;pageSize&#34;] = int(kwargs.get(&#34;page_size&#34;, 100))
+    data[&#34;searchProcessingInfo&#34;][&#34;queryParams&#34;] = UsermailboxSubclient._find_mailbox_query_params(
+        kwargs.get(&#34;query_params&#34;, None))
+
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._services[&#39;DO_WEB_SEARCH&#39;], data
+    )
+    if flag:
+        if response and response.json():
+            return response.json()
+    else:
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.refresh"><code class="name flex">
 <span>def <span class="ident">refresh</span></span>(<span>self)</span>
 </code></dt>
@@ -4734,7 +5145,7 @@ Returns: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1744-L1752" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1819-L1827" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the User Mailbox Subclient.&#34;&#34;&#34;
@@ -4769,7 +5180,7 @@ if response is empty
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1754-L1826" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1829-L1901" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place_syntex(self, **kwargs):
     &#34;&#34;&#34;Runs an in-place restore job on the specified Syntex Exchange pseudo client
@@ -4858,35 +5269,27 @@ if response is empty
 dict of the adgroups to add to the subclient</p>
 <pre><code>subclient_content = {
 
-    'adGroupNames' : ["_Man5_Man5_"],
+    'adGroupNames' : ["List of adGroups"],
 
     'is_auto_discover_user' : True,
 
-    'archive_policy' : "CIPLAN Archiving policy",
+    'archive_policy' : "Archiving policy",
 
-    'cleanup_policy' : 'CIPLAN Clean-up policy',
+    'cleanup_policy' : 'Clean-up policy',
 
-    'retention_policy': 'CIPLAN Retention policy',
+    'retention_policy': 'Retention policy',
 }
- -- if use_policies is True --
-
-    'archive_policy' : "CIPLAN Archiving policy",
-
-    'cleanup_policy' : 'CIPLAN Clean-up policy',
-
-    'retention_policy': 'CIPLAN Retention policy'
-
     -- if use_policies is False --
 
     'plan_name': 'Exchange Plan Name',
-
+    'is_auto_discover_user' : True,
     'plan_id': int or None (Optional)
     --
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1036-L1108" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1096-L1160" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_adgroup_associations(self, subclient_content, use_policies=True):
     &#34;&#34;&#34;Create Ad groups assocaition for UserMailboxSubclient.
@@ -4896,28 +5299,20 @@ dict of the adgroups to add to the subclient</p>
 
                 subclient_content = {
 
-                    &#39;adGroupNames&#39; : [&#34;_Man5_Man5_&#34;],
+                    &#39;adGroupNames&#39; : [&#34;List of adGroups&#34;],
 
                     &#39;is_auto_discover_user&#39; : True,
 
-                    &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
+                    &#39;archive_policy&#39; : &#34;Archiving policy&#34;,
 
-                    &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
+                    &#39;cleanup_policy&#39; : &#39;Clean-up policy&#39;,
 
-                    &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
+                    &#39;retention_policy&#39;: &#39;Retention policy&#39;,
                 }
-                 -- if use_policies is True --
-
-                    &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
-
-                    &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
-
-                    &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
-
                     -- if use_policies is False --
 
                     &#39;plan_name&#39;: &#39;Exchange Plan Name&#39;,
-
+                    &#39;is_auto_discover_user&#39; : True,
                     &#39;plan_id&#39;: int or None (Optional)
                     --
 
@@ -4956,15 +5351,15 @@ dict of the adgroups to add to the subclient</p>
     else:
         _assocaition_json_ = self._association_json_with_plan(subclient_content)
     _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
-    _assocaition_json_[&#34;emailAssociation&#34;].update({&#34;emailStatus&#34;:0})
-    _assocaition_json_[&#34;emailAssociation&#34;].update({&#34;advanceOptions&#34;:{
+    _assocaition_json_[&#34;emailAssociation&#34;].update({&#34;emailStatus&#34;: 0})
+    _assocaition_json_[&#34;emailAssociation&#34;].update({&#34;advanceOptions&#34;: {
         &#34;enableAutoDiscovery&#34;: subclient_content[&#34;is_auto_discover_user&#34;]
     }})
     self._set_association_request(_assocaition_json_)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_database_assocaition"><code class="name flex">
-<span>def <span class="ident">set_database_assocaition</span></span>(<span>self, subclient_content)</span>
+<span>def <span class="ident">set_database_assocaition</span></span>(<span>self, subclient_content, use_policies=True)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Create Database assocaition for UserMailboxSubclient.</p>
@@ -4973,9 +5368,10 @@ dict of the adgroups to add to the subclient</p>
 (dict)
 &ndash;
 dict of the databases to add to the subclient</p>
-<pre><code>subclient_content = {
+<pre><code>For policy -
+subclient_content = {
 
-    'databaseNames' : ["SGDB-1"],
+    'databaseNames' : ["Name of dbs as list"],
 
     'is_auto_discover_user' : True,
 
@@ -4983,23 +5379,30 @@ dict of the databases to add to the subclient</p>
 
     'cleanup_policy' : 'CIPLAN Clean-up policy',
 
-    'retention_policy': 'CIPLAN Retention policy',
+    'retention_policy': 'CIPLAN Retention policy'
 }
-</code></pre></div>
+
+For Plan -
+subclient_content = { 'is_auto_discover_user': True,
+"plan_name": Name of plan, "plan_id"(optional) -- id of plan}
+</code></pre>
+<p>use_policies(bool)
+&ndash; if we need to use policy or plan</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L982-L1034" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1027-L1094" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def set_database_assocaition(self, subclient_content):
+<pre><code class="python">def set_database_assocaition(self, subclient_content, use_policies=True):
     &#34;&#34;&#34;Create Database assocaition for UserMailboxSubclient.
 
         Args:
             subclient_content   (dict)  --  dict of the databases to add to the subclient
 
+                For policy -
                 subclient_content = {
 
-                    &#39;databaseNames&#39; : [&#34;SGDB-1&#34;],
+                    &#39;databaseNames&#39; : [&#34;Name of dbs as list&#34;],
 
                     &#39;is_auto_discover_user&#39; : True,
 
@@ -5007,8 +5410,16 @@ dict of the databases to add to the subclient</p>
 
                     &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
 
-                    &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
+                    &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
                 }
+
+                For Plan -
+                subclient_content = { &#39;is_auto_discover_user&#39;: True,
+                &#34;plan_name&#34;: Name of plan, &#34;plan_id&#34;(optional) -- id of plan}
+
+            use_policies(bool)  -- if we need to use policy or plan
+            
+            
     &#34;&#34;&#34;
     databases = []
 
@@ -5041,9 +5452,15 @@ dict of the databases to add to the subclient</p>
         &#34;discoverByType&#34;: 2,
         &#34;databases&#34;: databases
     }
-    _assocaition_json_ = self._association_json(subclient_content)
-    _assocaition_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
-    self._set_association_request(_assocaition_json_)</code></pre>
+    if use_policies:
+        _association_json_ = self._association_json(subclient_content)
+    else:
+        _association_json_ = self._association_json_with_plan(subclient_content)
+        _association_json_[&#34;emailAssociation&#34;][&#34;advanceOptions&#34;] = {
+            &#34;enableAutoDiscovery&#34;: subclient_content.get(&#34;is_auto_discover_user&#34;, False)
+        }
+    _association_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = discover_info
+    self._set_association_request(_association_json_)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.set_fs_association_for_pst"><code class="name flex">
@@ -5060,7 +5477,7 @@ all backupsets under client2 to the association</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L926-L980" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L971-L1025" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_fs_association_for_pst(self, association):
     &#34;&#34;&#34;Helper method to create pst association for PST Ingestion by FS
@@ -5141,7 +5558,7 @@ dict of the policies to associate</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1110-L1135" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L1162-L1187" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_o365group_asscoiations(self, subclient_content):
     &#34;&#34;&#34;Create O365 Group association for UserMailboxSubclient.
@@ -5205,7 +5622,7 @@ dict of the pst to add to the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L842-L924" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L887-L969" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_pst_association(self, subclient_content):
     &#34;&#34;&#34;Create PST assocaition for UserMailboxSubclient.
@@ -5325,7 +5742,7 @@ dict of the Users to add to the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/usermailbox_subclient.py#L765-L840" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/usermailbox_subclient.py#L802-L885" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_user_assocaition(self, subclient_content, use_policies=True):
     &#34;&#34;&#34;Create User assocaition for UserMailboxSubclient.
@@ -5393,6 +5810,14 @@ dict of the Users to add to the subclient</p>
     except KeyError as err:
         raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;{} not given in content&#39;.format(err))
 
+    if len(users) != len(subclient_content[&#39;mailboxNames&#39;]):
+        to_search_user = [s_user for s_user in subclient_content[&#39;mailboxNames&#39;]
+                          if not any(s_user == f_user[&#39;smtpAdrress&#39;] for f_user in users)]
+        for mailbox_item in to_search_user:
+            search_users = self._search_user(mailbox_item)
+            if len(search_users) != 0:
+                users.append(search_users[0])
+
     discover_info = {
         &#34;discoverByType&#34;: 1,
         &#34;mailBoxes&#34;: users
@@ -5410,6 +5835,7 @@ dict of the Users to add to the subclient</p>
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient">ExchangeSubclient</a></b></code>:
 <ul class="hlist">
+<li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.ad_group_backup" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.ad_group_backup">ad_group_backup</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.allow_multiple_readers" href="../../subclient.html#cvpysdk.subclient.Subclient.allow_multiple_readers">allow_multiple_readers</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.backup" href="../../subclient.html#cvpysdk.subclient.Subclient.backup">backup</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.browse" href="../../subclient.html#cvpysdk.subclient.Subclient.browse">browse</a></code></li>
@@ -5447,12 +5873,14 @@ dict of the Users to add to the subclient</p>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.next_backup_time" href="../../subclient.html#cvpysdk.subclient.Subclient.next_backup_time">next_backup_time</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.out_of_place_restore" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.out_of_place_restore">out_of_place_restore</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.plan" href="../../subclient.html#cvpysdk.subclient.Subclient.plan">plan</a></code></li>
+<li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.preview_backedup_file" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.preview_backedup_file">preview_backedup_file</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.properties" href="../../subclient.html#cvpysdk.subclient.Subclient.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.pst_ingestion" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.pst_ingestion">pst_ingestion</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.pst_restore" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.pst_restore">pst_restore</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.read_buffer_size" href="../../subclient.html#cvpysdk.subclient.Subclient.read_buffer_size">read_buffer_size</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.restore_in_place" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.restore_in_place">restore_in_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.restore_out_of_place" href="../../subclient.html#cvpysdk.subclient.Subclient.restore_out_of_place">restore_out_of_place</a></code></li>
+<li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.run_content_indexing" href="../../subclient.html#cvpysdk.subclient.Subclient.run_content_indexing">run_content_indexing</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.set_backup_nodes" href="../../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.set_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.snapshot_engine_name" href="../../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
@@ -5564,6 +5992,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.enable_allusers_associations" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.enable_allusers_associations">enable_allusers_associations</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.enable_auto_discover_association" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.enable_auto_discover_association">enable_auto_discover_association</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.enable_ews_support" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.enable_ews_support">enable_ews_support</a></code></li>
+<li><code><a title="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.find_mailbox" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.find_mailbox">find_mailbox</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.o365groups" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.o365groups">o365groups</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.refresh" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.restore_in_place_syntex" href="#cvpysdk.subclients.exchange.usermailbox_subclient.UsermailboxSubclient.restore_in_place_syntex">restore_in_place_syntex</a></code></li>

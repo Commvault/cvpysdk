@@ -38,7 +38,7 @@ get_vm_list()
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/drorchestration/drjob.py#L1-L166" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/drjob.py#L1-L187" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -205,7 +205,28 @@ class DRJob(Job):
                     &#39;job_id&#39;: str(phase.get(&#39;phaseInfo&#39;, {}).get(&#39;job&#39;, [{}])[0].get(&#39;jobid&#39;, &#39;&#39;)),
                 })
             job_stats[str(pair_stats.get(&#39;client&#39;, {}).get(&#39;clientName&#39;, &#39;&#39;))] = phases
-        return job_stats</code></pre>
+        return job_stats
+
+    def get_storagepolicy_restore_vm(self, source):
+        &#34;&#34;&#34;
+        Fetches storage policy details for RESTORE_VM phases.
+        &#34;&#34;&#34;
+
+        fetched_value = {}
+        phases = self.get_phases().get(source, [])
+        for phase in phases:
+            if phase.get(&#39;phase_name&#39;).name == &#34;RESTORE_VM&#34;:
+                values = DRJob(self._commcell_object, phase.get(&#39;job_id&#39;)).task_details
+                fetched_value = {
+                    &#39;copyId&#39;: str(
+                        values.get(&#39;subTasks&#39;, [])[0].get(&#39;options&#39;, {}).get(&#39;restoreOptions&#39;, {}).get(
+                            &#39;storagePolicy&#39;, {}).get(&#39;copyId&#39;)),
+                    &#39;copyName&#39;: str(
+                        values.get(&#39;subTasks&#39;, [])[0].get(&#39;options&#39;, {}).get(&#39;restoreOptions&#39;, {}).get(
+                            &#39;storagePolicy&#39;, {}).get(&#39;copyName&#39;))
+                }
+
+        return fetched_value</code></pre>
 </details>
 </section>
 <section>
@@ -227,7 +248,7 @@ class DRJob(Job):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/drorchestration/drjob.py#L36-L166" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/drjob.py#L36-L187" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class DRJob(Job):
     &#34;&#34;&#34;Class for performing DR orchestration operations on ReplicationMonitor.&#34;&#34;&#34;
@@ -359,7 +380,28 @@ class DRJob(Job):
                     &#39;job_id&#39;: str(phase.get(&#39;phaseInfo&#39;, {}).get(&#39;job&#39;, [{}])[0].get(&#39;jobid&#39;, &#39;&#39;)),
                 })
             job_stats[str(pair_stats.get(&#39;client&#39;, {}).get(&#39;clientName&#39;, &#39;&#39;))] = phases
-        return job_stats</code></pre>
+        return job_stats
+
+    def get_storagepolicy_restore_vm(self, source):
+        &#34;&#34;&#34;
+        Fetches storage policy details for RESTORE_VM phases.
+        &#34;&#34;&#34;
+
+        fetched_value = {}
+        phases = self.get_phases().get(source, [])
+        for phase in phases:
+            if phase.get(&#39;phase_name&#39;).name == &#34;RESTORE_VM&#34;:
+                values = DRJob(self._commcell_object, phase.get(&#39;job_id&#39;)).task_details
+                fetched_value = {
+                    &#39;copyId&#39;: str(
+                        values.get(&#39;subTasks&#39;, [])[0].get(&#39;options&#39;, {}).get(&#39;restoreOptions&#39;, {}).get(
+                            &#39;storagePolicy&#39;, {}).get(&#39;copyId&#39;)),
+                    &#39;copyName&#39;: str(
+                        values.get(&#39;subTasks&#39;, [])[0].get(&#39;options&#39;, {}).get(&#39;restoreOptions&#39;, {}).get(
+                            &#39;storagePolicy&#39;, {}).get(&#39;copyName&#39;))
+                }
+
+        return fetched_value</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -375,7 +417,7 @@ class DRJob(Job):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/drorchestration/drjob.py#L127-L132" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/drjob.py#L127-L132" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def blobs_retained(self):
     &#34;&#34;&#34;Returns True if blobs to be retained chosen in failover job for Azure destination&#34;&#34;&#34;
@@ -403,7 +445,7 @@ Returns: dictionaries of phases for each source and destination VM pair
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/drorchestration/drjob.py#L134-L166" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/drjob.py#L134-L166" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_phases(self):
     &#34;&#34;&#34;
@@ -438,6 +480,38 @@ Returns: dictionaries of phases for each source and destination VM pair
             })
         job_stats[str(pair_stats.get(&#39;client&#39;, {}).get(&#39;clientName&#39;, &#39;&#39;))] = phases
     return job_stats</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.drorchestration.drjob.DRJob.get_storagepolicy_restore_vm"><code class="name flex">
+<span>def <span class="ident">get_storagepolicy_restore_vm</span></span>(<span>self, source)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Fetches storage policy details for RESTORE_VM phases.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/drjob.py#L168-L187" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_storagepolicy_restore_vm(self, source):
+    &#34;&#34;&#34;
+    Fetches storage policy details for RESTORE_VM phases.
+    &#34;&#34;&#34;
+
+    fetched_value = {}
+    phases = self.get_phases().get(source, [])
+    for phase in phases:
+        if phase.get(&#39;phase_name&#39;).name == &#34;RESTORE_VM&#34;:
+            values = DRJob(self._commcell_object, phase.get(&#39;job_id&#39;)).task_details
+            fetched_value = {
+                &#39;copyId&#39;: str(
+                    values.get(&#39;subTasks&#39;, [])[0].get(&#39;options&#39;, {}).get(&#39;restoreOptions&#39;, {}).get(
+                        &#39;storagePolicy&#39;, {}).get(&#39;copyId&#39;)),
+                &#39;copyName&#39;: str(
+                    values.get(&#39;subTasks&#39;, [])[0].get(&#39;options&#39;, {}).get(&#39;restoreOptions&#39;, {}).get(
+                        &#39;storagePolicy&#39;, {}).get(&#39;copyName&#39;))
+            }
+
+    return fetched_value</code></pre>
 </details>
 </dd>
 </dl>
@@ -559,6 +633,7 @@ setTimeout(() => input.focus(), 100);
 <ul class="">
 <li><code><a title="cvpysdk.drorchestration.drjob.DRJob.blobs_retained" href="#cvpysdk.drorchestration.drjob.DRJob.blobs_retained">blobs_retained</a></code></li>
 <li><code><a title="cvpysdk.drorchestration.drjob.DRJob.get_phases" href="#cvpysdk.drorchestration.drjob.DRJob.get_phases">get_phases</a></code></li>
+<li><code><a title="cvpysdk.drorchestration.drjob.DRJob.get_storagepolicy_restore_vm" href="#cvpysdk.drorchestration.drjob.DRJob.get_storagepolicy_restore_vm">get_storagepolicy_restore_vm</a></code></li>
 </ul>
 </li>
 </ul>

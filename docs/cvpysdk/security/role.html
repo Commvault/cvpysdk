@@ -49,7 +49,7 @@ all_roles_cache()       --  Returns dict of all the roles and their info present
 has_role()              --  checks if role with specified role exists
                             on this commcell
 
-add()                   --  craetes the role on this commcell
+add()                   --  creates the role on this commcell
 
 get()                   --  returns the role class object for the
                             specified role name
@@ -57,6 +57,10 @@ get()                   --  returns the role class object for the
 delete()                --  deletes the role on this commcell
 
 refresh()               --  refreshes the list of roles on this commcell
+
+all_roles()             --  Returns all the roles present in the commcell
+
+all_roles_prop()        --  Returns complete GET API response
 </code></pre>
 <p>Role
 <strong>init</strong>()
@@ -94,7 +98,7 @@ modify_capability()     --  modifying permissions of the role
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/role.py#L1-L964" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/security/role.py#L1-L991" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -141,7 +145,7 @@ Roles
     has_role()              --  checks if role with specified role exists
                                 on this commcell
 
-    add()                   --  craetes the role on this commcell
+    add()                   --  creates the role on this commcell
 
     get()                   --  returns the role class object for the
                                 specified role name
@@ -149,6 +153,10 @@ Roles
     delete()                --  deletes the role on this commcell
 
     refresh()               --  refreshes the list of roles on this commcell
+
+    all_roles()             --  Returns all the roles present in the commcell
+
+    all_roles_prop()        --  Returns complete GET API response
 
 Role
     __init__()              --  initiaizes the role class object
@@ -201,6 +209,8 @@ class Roles(object):
         self._commcell_object = commcell_object
         self._roles = None
         self._roles_cache = None
+        self._all_roles_prop = None
+        self.filter_query_count = 0
         self.refresh()
 
     def __str__(self):
@@ -219,15 +229,16 @@ class Roles(object):
 
     def __repr__(self):
         &#34;&#34;&#34;Representation string for the instance of the Roles class.&#34;&#34;&#34;
-        return &#34;Roles class instance for Commcell: &#39;{0}&#39;&#34;.format(
-            self._commcell_object.commserv_name
-        )
+        return &#34;Roles class instance for Commcell&#34;
 
-    def _get_roles(self):
+    def _get_roles(self, full_response: bool = False):
         &#34;&#34;&#34;
         Returns the list of roles configured on this commcell
+
+            Args:
+                full_response(bool) --  flag to return complete response
         &#34;&#34;&#34;
-        get_all_roles_service = self._commcell_object._services[&#39;ROLES&#39;]
+        get_all_roles_service = self._commcell_object._services[&#39;GET_SECURITY_ROLES&#39;]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;GET&#39;, get_all_roles_service
@@ -235,10 +246,13 @@ class Roles(object):
 
         if flag:
             if response.json() and &#39;roleProperties&#39; in response.json():
+                if full_response:
+                    return response.json()
                 roles_dict = {}
                 name_count = {}
+                self._all_roles_prop = response.json()[&#39;roleProperties&#39;]
 
-                for role in response.json()[&#39;roleProperties&#39;]:
+                for role in self._all_roles_prop:
                     temp_name = role.get(&#39;role&#39;, {}).get(&#39;roleName&#39;, &#39;&#39;).lower()
                     temp_company = role.get(&#39;role&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;companyName&#39;, &#39;&#39;).lower()
 
@@ -247,7 +261,7 @@ class Roles(object):
                     else:
                         name_count[temp_name] = {temp_company}
 
-                for role in response.json()[&#39;roleProperties&#39;]:
+                for role in self._all_roles_prop:
                     temp_id = role[&#39;role&#39;][&#39;roleId&#39;]
                     temp_name = role[&#39;role&#39;][&#39;roleName&#39;].lower()
                     temp_company = role.get(&#39;role&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;companyName&#39;, &#39;&#39;).lower()
@@ -279,6 +293,7 @@ class Roles(object):
         self.valid_columns = {
             &#39;roleName&#39;: &#39;roleProperties.role.roleName&#39;,
             &#39;roleId&#39;: &#39;roleProperties.role.roleId&#39;,
+            &#39;description&#39;: &#39;roleProperties.description&#39;,
             &#39;status&#39;: &#39;roleProperties.role.flags.disabled&#39;,
             &#39;company&#39;: &#39;companyName&#39;
         }
@@ -290,7 +305,7 @@ class Roles(object):
             else:
                 raise SDKException(&#39;Role&#39;, &#39;102&#39;, &#39;Invalid column name passed&#39;)
         else:
-            fl_parameters = &#34;&amp;fl=roleProperties.role&#34;
+            fl_parameters = &#34;&amp;fl=roleProperties.role%2CroleProperties.description&#34;
 
         return fl_parameters
 
@@ -324,21 +339,21 @@ class Roles(object):
         Returns:
             fq_parameters(str) -- fq parameter string
         &#34;&#34;&#34;
-        conditions = [&#39;contains&#39;, &#39;notContain&#39;, &#39;eq&#39;, &#39;neq&#39;]
-        params = [&#34;&#34;]
-        if fq:
-            for param in fq:
-                if param[0] in self.valid_columns.keys():
-                    if param[1] in conditions:
-                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}&#34;)
-                    elif param[1] == &#39;isEmpty&#39; and len(param) == 2:
-                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:in:null,&#34;)
-                    else:
-                        raise SDKException(&#39;Role&#39;, &#39;102&#39;, &#39;Invalid condition passed&#39;)
-                else:
-                    raise SDKException(&#39;Role&#39;, &#39;102&#39;, &#39;Invalid column Name passed&#39;)
-        if params:
-            return &#34;&#34;.join(params)
+        conditions = {&#34;contains&#34;, &#34;notContain&#34;, &#34;eq&#34;, &#34;neq&#34;}
+        params = []
+
+        for column, condition, *value in fq or []:
+            if column not in self.valid_columns:
+                raise SDKException(&#39;Role&#39;, &#39;102&#39;, &#39;Invalid column name passed&#39;)
+
+            if condition in conditions:
+                params.append(f&#34;&amp;fq={self.valid_columns[column]}:{condition.lower()}:{value[0]}&#34;)
+            elif condition == &#34;isEmpty&#34; and not value:
+                params.append(f&#34;&amp;fq={self.valid_columns[column]}:in:null,&#34;)
+            else:
+                raise SDKException(&#39;Role&#39;, &#39;102&#39;, &#39;Invalid condition passed&#39;)
+
+        return &#34;&#34;.join(params)
 
     def get_roles_cache(self, hard: bool = False, **kwargs) -&gt; dict:
         &#34;&#34;&#34;
@@ -356,30 +371,33 @@ class Roles(object):
                 search (str)-- Contains the string to search in the commcell entity cache.
                 fq (list)   -- Contains the columnName, condition and value.
                                 e.g. fq = [[&#39;roleName&#39;, &#39;contains&#39;, &#39;test&#39;], [&#39;status&#39;, &#39;eq&#39;, &#39;Enabled&#39;]]
-                enum (bool) -- Flag to return enums in the response.
 
         Returns:
             dict: Dictionary of all the properties present in response.
         &#34;&#34;&#34;
-        headers = self._commcell_object._headers.copy()
-        if kwargs.get(&#39;enum&#39;, True):
-            headers[&#39;EnumNames&#39;] = &#39;True&#39;
-
+        # computing params
         fl_parameters = self._get_fl_parameters(kwargs.get(&#39;fl&#39;))
         fq_parameters = self._get_fq_parameters(kwargs.get(&#39;fq&#39;))
-        limit = kwargs.get(&#39;limit&#39;, [&#39;0&#39;, &#39;100&#39;])
-        limit_parameters = f&#39;start={limit[0]}&amp;limit={limit[1]}&#39;
+        limit = kwargs.get(&#39;limit&#39;, None)
+        limit_parameters = f&#39;start={limit[0]}&amp;limit={limit[1]}&#39; if limit else &#39;&#39;
         hard_refresh = &#39;&amp;hardRefresh=true&#39; if hard else &#39;&#39;
         sort_parameters = self._get_sort_parameters(kwargs.get(&#39;sort&#39;)) if kwargs.get(&#39;sort&#39;) else &#39;&#39;
-        search_parameter = f&#39;&amp;search={&#34;,&#34;.join(self.valid_columns.values())}:contains:{kwargs.get(&#34;search&#34;)}&#39; if kwargs.get(
-            &#39;search&#39;) else &#39;&#39;
 
-        request_url = (
-                self._commcell_object._services[&#39;GET_SECURITY_ROLES&#39;] + &#34;?&#34; +
-                limit_parameters + sort_parameters + fl_parameters + hard_refresh +
-                search_parameter + fq_parameters
-        )
-        flag, response = self._commcell_object._cvpysdk_object.make_request(&#34;GET&#34;, request_url, headers=headers)
+        # Search operation can only be performed on limited columns, so filtering out the columns on which search works
+        searchable_columns= [&#34;roleName&#34;,&#34;description&#34;,&#34;company&#34;]
+        search_parameter = (f&#39;&amp;search={&#34;,&#34;.join(self.valid_columns[col] for col in searchable_columns)}:contains:&#39;
+                            f&#39;{kwargs.get(&#34;search&#34;, None)}&#39;) if kwargs.get(&#39;search&#39;, None) else &#39;&#39;
+
+        params = [
+            limit_parameters,
+            sort_parameters,
+            fl_parameters,
+            hard_refresh,
+            search_parameter,
+            fq_parameters
+        ]
+        request_url = f&#34;{self._commcell_object._services[&#39;GET_SECURITY_ROLES&#39;]}?&#34; + &#34;&#34;.join(params)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#34;GET&#34;, request_url)
 
         if not flag:
             response_string = self._commcell_object._update_response_(response.text)
@@ -387,14 +405,16 @@ class Roles(object):
 
         roles_cache = {}
         if response.json() and &#39;roleProperties&#39; in response.json():
+            self.filter_query_count = response.json().get(&#39;filterQueryCount&#39;,0)
             for role in response.json()[&#39;roleProperties&#39;]:
                 name = role.get(&#39;role&#39;, {}).get(&#39;roleName&#39;)
                 roles_config = {
+                    &#39;roleName&#39;: name,
                     &#39;roleId&#39;: role.get(&#39;role&#39;, {}).get(&#39;roleId&#39;),
+                    &#39;description&#39;: role.get(&#39;description&#39;,&#39;&#39;),
                     &#39;status&#39;: role.get(&#39;role&#39;, {}).get(&#39;flags&#39;, {}).get(&#39;disabled&#39;),
                     &#39;company&#39;: role.get(&#39;role&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;companyName&#39;)
                 }
-                roles_config = {key: value for key, value in roles_config.items() if value is not None}
                 roles_cache[name] = roles_config
 
             return roles_cache
@@ -419,6 +439,8 @@ class Roles(object):
                                 }
                     }
         &#34;&#34;&#34;
+        if not self._roles_cache:
+            self._roles_cache = self.get_roles_cache()
         return self._roles_cache
 
     def has_role(self, role_name):
@@ -600,6 +622,15 @@ class Roles(object):
         Returns all the roles present in the commcell
         &#34;&#34;&#34;
         return self._get_roles()
+
+    @property
+    def all_roles_prop(self) -&gt; list[dict]:
+        &#34;&#34;&#34;
+        Returns complete GET API response
+        &#34;&#34;&#34;
+        self._all_roles_prop = self._get_roles(full_response=True).get(&#34;roleProperties&#34;,[])
+        return self._all_roles_prop
+
 
 class Role(object):
     &#34;&#34;&#34;&#34;Class for representing a particular role configured on this commcell&#34;&#34;&#34;
@@ -1094,7 +1125,7 @@ default: None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/role.py#L506-L964" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/security/role.py#L533-L991" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Role(object):
     &#34;&#34;&#34;&#34;Class for representing a particular role configured on this commcell&#34;&#34;&#34;
@@ -1570,7 +1601,7 @@ empty string, if usergroup belongs to Commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/role.py#L925-L932" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/security/role.py#L952-L959" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def company_name(self):
@@ -1588,7 +1619,7 @@ def company_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/role.py#L957-L960" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/security/role.py#L984-L987" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def permissions(self):
@@ -1602,7 +1633,7 @@ def permissions(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/role.py#L920-L923" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/security/role.py#L947-L950" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def role_description(self):
@@ -1616,7 +1647,7 @@ def role_description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/role.py#L915-L918" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/security/role.py#L942-L945" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def role_id(self):
@@ -1630,7 +1661,7 @@ def role_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/role.py#L902-L905" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/security/role.py#L929-L932" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def role_name(self):
@@ -1644,7 +1675,7 @@ def role_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/role.py#L942-L945" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/security/role.py#L969-L972" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def status(self):
@@ -1677,7 +1708,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/role.py#L690-L754" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/security/role.py#L717-L781" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def associate_user(self, rolename, username):
     &#34;&#34;&#34;Updates the user who can manage this role with the permission provided
@@ -1768,7 +1799,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/role.py#L756-L822" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/security/role.py#L783-L849" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def associate_usergroup(self, rolename, usergroupname):
     &#34;&#34;&#34;Updates the usergroup who can manage this role with the permission provided
@@ -1872,7 +1903,7 @@ Raises:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/role.py#L824-L900" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/security/role.py#L851-L927" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def modify_capability(self, request_type, permission_list=&#34;&#34;, categoryname_list=&#34;&#34;):
     &#34;&#34;&#34;Updates role capabilities
@@ -1961,7 +1992,7 @@ Raises:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/role.py#L962-L964" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/security/role.py#L989-L991" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Roles.&#34;&#34;&#34;
@@ -1986,7 +2017,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/role.py#L91-L504" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/security/role.py#L95-L530" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Roles(object):
     &#34;&#34;&#34;Class for maintaining all the configured role on this commcell&#34;&#34;&#34;
@@ -2003,6 +2034,8 @@ instance of the Commcell class</p>
         self._commcell_object = commcell_object
         self._roles = None
         self._roles_cache = None
+        self._all_roles_prop = None
+        self.filter_query_count = 0
         self.refresh()
 
     def __str__(self):
@@ -2021,15 +2054,16 @@ instance of the Commcell class</p>
 
     def __repr__(self):
         &#34;&#34;&#34;Representation string for the instance of the Roles class.&#34;&#34;&#34;
-        return &#34;Roles class instance for Commcell: &#39;{0}&#39;&#34;.format(
-            self._commcell_object.commserv_name
-        )
+        return &#34;Roles class instance for Commcell&#34;
 
-    def _get_roles(self):
+    def _get_roles(self, full_response: bool = False):
         &#34;&#34;&#34;
         Returns the list of roles configured on this commcell
+
+            Args:
+                full_response(bool) --  flag to return complete response
         &#34;&#34;&#34;
-        get_all_roles_service = self._commcell_object._services[&#39;ROLES&#39;]
+        get_all_roles_service = self._commcell_object._services[&#39;GET_SECURITY_ROLES&#39;]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;GET&#39;, get_all_roles_service
@@ -2037,10 +2071,13 @@ instance of the Commcell class</p>
 
         if flag:
             if response.json() and &#39;roleProperties&#39; in response.json():
+                if full_response:
+                    return response.json()
                 roles_dict = {}
                 name_count = {}
+                self._all_roles_prop = response.json()[&#39;roleProperties&#39;]
 
-                for role in response.json()[&#39;roleProperties&#39;]:
+                for role in self._all_roles_prop:
                     temp_name = role.get(&#39;role&#39;, {}).get(&#39;roleName&#39;, &#39;&#39;).lower()
                     temp_company = role.get(&#39;role&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;companyName&#39;, &#39;&#39;).lower()
 
@@ -2049,7 +2086,7 @@ instance of the Commcell class</p>
                     else:
                         name_count[temp_name] = {temp_company}
 
-                for role in response.json()[&#39;roleProperties&#39;]:
+                for role in self._all_roles_prop:
                     temp_id = role[&#39;role&#39;][&#39;roleId&#39;]
                     temp_name = role[&#39;role&#39;][&#39;roleName&#39;].lower()
                     temp_company = role.get(&#39;role&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;companyName&#39;, &#39;&#39;).lower()
@@ -2081,6 +2118,7 @@ instance of the Commcell class</p>
         self.valid_columns = {
             &#39;roleName&#39;: &#39;roleProperties.role.roleName&#39;,
             &#39;roleId&#39;: &#39;roleProperties.role.roleId&#39;,
+            &#39;description&#39;: &#39;roleProperties.description&#39;,
             &#39;status&#39;: &#39;roleProperties.role.flags.disabled&#39;,
             &#39;company&#39;: &#39;companyName&#39;
         }
@@ -2092,7 +2130,7 @@ instance of the Commcell class</p>
             else:
                 raise SDKException(&#39;Role&#39;, &#39;102&#39;, &#39;Invalid column name passed&#39;)
         else:
-            fl_parameters = &#34;&amp;fl=roleProperties.role&#34;
+            fl_parameters = &#34;&amp;fl=roleProperties.role%2CroleProperties.description&#34;
 
         return fl_parameters
 
@@ -2126,21 +2164,21 @@ instance of the Commcell class</p>
         Returns:
             fq_parameters(str) -- fq parameter string
         &#34;&#34;&#34;
-        conditions = [&#39;contains&#39;, &#39;notContain&#39;, &#39;eq&#39;, &#39;neq&#39;]
-        params = [&#34;&#34;]
-        if fq:
-            for param in fq:
-                if param[0] in self.valid_columns.keys():
-                    if param[1] in conditions:
-                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}&#34;)
-                    elif param[1] == &#39;isEmpty&#39; and len(param) == 2:
-                        params.append(f&#34;&amp;fq={self.valid_columns[param[0]]}:in:null,&#34;)
-                    else:
-                        raise SDKException(&#39;Role&#39;, &#39;102&#39;, &#39;Invalid condition passed&#39;)
-                else:
-                    raise SDKException(&#39;Role&#39;, &#39;102&#39;, &#39;Invalid column Name passed&#39;)
-        if params:
-            return &#34;&#34;.join(params)
+        conditions = {&#34;contains&#34;, &#34;notContain&#34;, &#34;eq&#34;, &#34;neq&#34;}
+        params = []
+
+        for column, condition, *value in fq or []:
+            if column not in self.valid_columns:
+                raise SDKException(&#39;Role&#39;, &#39;102&#39;, &#39;Invalid column name passed&#39;)
+
+            if condition in conditions:
+                params.append(f&#34;&amp;fq={self.valid_columns[column]}:{condition.lower()}:{value[0]}&#34;)
+            elif condition == &#34;isEmpty&#34; and not value:
+                params.append(f&#34;&amp;fq={self.valid_columns[column]}:in:null,&#34;)
+            else:
+                raise SDKException(&#39;Role&#39;, &#39;102&#39;, &#39;Invalid condition passed&#39;)
+
+        return &#34;&#34;.join(params)
 
     def get_roles_cache(self, hard: bool = False, **kwargs) -&gt; dict:
         &#34;&#34;&#34;
@@ -2158,30 +2196,33 @@ instance of the Commcell class</p>
                 search (str)-- Contains the string to search in the commcell entity cache.
                 fq (list)   -- Contains the columnName, condition and value.
                                 e.g. fq = [[&#39;roleName&#39;, &#39;contains&#39;, &#39;test&#39;], [&#39;status&#39;, &#39;eq&#39;, &#39;Enabled&#39;]]
-                enum (bool) -- Flag to return enums in the response.
 
         Returns:
             dict: Dictionary of all the properties present in response.
         &#34;&#34;&#34;
-        headers = self._commcell_object._headers.copy()
-        if kwargs.get(&#39;enum&#39;, True):
-            headers[&#39;EnumNames&#39;] = &#39;True&#39;
-
+        # computing params
         fl_parameters = self._get_fl_parameters(kwargs.get(&#39;fl&#39;))
         fq_parameters = self._get_fq_parameters(kwargs.get(&#39;fq&#39;))
-        limit = kwargs.get(&#39;limit&#39;, [&#39;0&#39;, &#39;100&#39;])
-        limit_parameters = f&#39;start={limit[0]}&amp;limit={limit[1]}&#39;
+        limit = kwargs.get(&#39;limit&#39;, None)
+        limit_parameters = f&#39;start={limit[0]}&amp;limit={limit[1]}&#39; if limit else &#39;&#39;
         hard_refresh = &#39;&amp;hardRefresh=true&#39; if hard else &#39;&#39;
         sort_parameters = self._get_sort_parameters(kwargs.get(&#39;sort&#39;)) if kwargs.get(&#39;sort&#39;) else &#39;&#39;
-        search_parameter = f&#39;&amp;search={&#34;,&#34;.join(self.valid_columns.values())}:contains:{kwargs.get(&#34;search&#34;)}&#39; if kwargs.get(
-            &#39;search&#39;) else &#39;&#39;
 
-        request_url = (
-                self._commcell_object._services[&#39;GET_SECURITY_ROLES&#39;] + &#34;?&#34; +
-                limit_parameters + sort_parameters + fl_parameters + hard_refresh +
-                search_parameter + fq_parameters
-        )
-        flag, response = self._commcell_object._cvpysdk_object.make_request(&#34;GET&#34;, request_url, headers=headers)
+        # Search operation can only be performed on limited columns, so filtering out the columns on which search works
+        searchable_columns= [&#34;roleName&#34;,&#34;description&#34;,&#34;company&#34;]
+        search_parameter = (f&#39;&amp;search={&#34;,&#34;.join(self.valid_columns[col] for col in searchable_columns)}:contains:&#39;
+                            f&#39;{kwargs.get(&#34;search&#34;, None)}&#39;) if kwargs.get(&#39;search&#39;, None) else &#39;&#39;
+
+        params = [
+            limit_parameters,
+            sort_parameters,
+            fl_parameters,
+            hard_refresh,
+            search_parameter,
+            fq_parameters
+        ]
+        request_url = f&#34;{self._commcell_object._services[&#39;GET_SECURITY_ROLES&#39;]}?&#34; + &#34;&#34;.join(params)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#34;GET&#34;, request_url)
 
         if not flag:
             response_string = self._commcell_object._update_response_(response.text)
@@ -2189,14 +2230,16 @@ instance of the Commcell class</p>
 
         roles_cache = {}
         if response.json() and &#39;roleProperties&#39; in response.json():
+            self.filter_query_count = response.json().get(&#39;filterQueryCount&#39;,0)
             for role in response.json()[&#39;roleProperties&#39;]:
                 name = role.get(&#39;role&#39;, {}).get(&#39;roleName&#39;)
                 roles_config = {
+                    &#39;roleName&#39;: name,
                     &#39;roleId&#39;: role.get(&#39;role&#39;, {}).get(&#39;roleId&#39;),
+                    &#39;description&#39;: role.get(&#39;description&#39;,&#39;&#39;),
                     &#39;status&#39;: role.get(&#39;role&#39;, {}).get(&#39;flags&#39;, {}).get(&#39;disabled&#39;),
                     &#39;company&#39;: role.get(&#39;role&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;companyName&#39;)
                 }
-                roles_config = {key: value for key, value in roles_config.items() if value is not None}
                 roles_cache[name] = roles_config
 
             return roles_cache
@@ -2221,6 +2264,8 @@ instance of the Commcell class</p>
                                 }
                     }
         &#34;&#34;&#34;
+        if not self._roles_cache:
+            self._roles_cache = self.get_roles_cache()
         return self._roles_cache
 
     def has_role(self, role_name):
@@ -2401,7 +2446,15 @@ instance of the Commcell class</p>
         &#34;&#34;&#34;
         Returns all the roles present in the commcell
         &#34;&#34;&#34;
-        return self._get_roles()</code></pre>
+        return self._get_roles()
+
+    @property
+    def all_roles_prop(self) -&gt; list[dict]:
+        &#34;&#34;&#34;
+        Returns complete GET API response
+        &#34;&#34;&#34;
+        self._all_roles_prop = self._get_roles(full_response=True).get(&#34;roleProperties&#34;,[])
+        return self._all_roles_prop</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
@@ -2411,7 +2464,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/role.py#L499-L504" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/security/role.py#L517-L522" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_roles(self):
@@ -2440,7 +2493,7 @@ def all_roles(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/role.py#L306-L324" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/security/role.py#L322-L342" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_roles_cache(self) -&gt; dict:
@@ -2460,7 +2513,26 @@ def all_roles_cache(self) -&gt; dict:
                             }
                 }
     &#34;&#34;&#34;
+    if not self._roles_cache:
+        self._roles_cache = self.get_roles_cache()
     return self._roles_cache</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.security.role.Roles.all_roles_prop"><code class="name">var <span class="ident">all_roles_prop</span> : list[dict]</code></dt>
+<dd>
+<div class="desc"><p>Returns complete GET API response</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/security/role.py#L524-L530" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def all_roles_prop(self) -&gt; list[dict]:
+    &#34;&#34;&#34;
+    Returns complete GET API response
+    &#34;&#34;&#34;
+    self._all_roles_prop = self._get_roles(full_response=True).get(&#34;roleProperties&#34;,[])
+    return self._all_roles_prop</code></pre>
 </details>
 </dd>
 </dl>
@@ -2497,7 +2569,7 @@ Raises:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/role.py#L345-L419" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/security/role.py#L363-L437" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, rolename, permission_list=&#34;&#34;, categoryname_list=&#34;&#34;):
     &#34;&#34;&#34;creates new role
@@ -2595,7 +2667,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/role.py#L439-L481" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/security/role.py#L457-L499" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, role_name):
     &#34;&#34;&#34;Deletes the role object for specified role name
@@ -2659,7 +2731,7 @@ if role doesn't exist with specified name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/role.py#L421-L437" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/security/role.py#L439-L455" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, role_name):
     &#34;&#34;&#34;Returns the role object for the specified role name
@@ -2701,8 +2773,7 @@ Default ['0', '100']
 search (str)&ndash; Contains the string to search in the commcell entity cache.
 fq (list)
 &ndash; Contains the columnName, condition and value.
-e.g. fq = [['roleName', 'contains', 'test'], ['status', 'eq', 'Enabled']]
-enum (bool) &ndash; Flag to return enums in the response.</p>
+e.g. fq = [['roleName', 'contains', 'test'], ['status', 'eq', 'Enabled']]</p>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>dict</code></dt>
@@ -2711,7 +2782,7 @@ enum (bool) &ndash; Flag to return enums in the response.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/role.py#L245-L304" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/security/role.py#L256-L320" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_roles_cache(self, hard: bool = False, **kwargs) -&gt; dict:
     &#34;&#34;&#34;
@@ -2729,30 +2800,33 @@ enum (bool) &ndash; Flag to return enums in the response.</p>
             search (str)-- Contains the string to search in the commcell entity cache.
             fq (list)   -- Contains the columnName, condition and value.
                             e.g. fq = [[&#39;roleName&#39;, &#39;contains&#39;, &#39;test&#39;], [&#39;status&#39;, &#39;eq&#39;, &#39;Enabled&#39;]]
-            enum (bool) -- Flag to return enums in the response.
 
     Returns:
         dict: Dictionary of all the properties present in response.
     &#34;&#34;&#34;
-    headers = self._commcell_object._headers.copy()
-    if kwargs.get(&#39;enum&#39;, True):
-        headers[&#39;EnumNames&#39;] = &#39;True&#39;
-
+    # computing params
     fl_parameters = self._get_fl_parameters(kwargs.get(&#39;fl&#39;))
     fq_parameters = self._get_fq_parameters(kwargs.get(&#39;fq&#39;))
-    limit = kwargs.get(&#39;limit&#39;, [&#39;0&#39;, &#39;100&#39;])
-    limit_parameters = f&#39;start={limit[0]}&amp;limit={limit[1]}&#39;
+    limit = kwargs.get(&#39;limit&#39;, None)
+    limit_parameters = f&#39;start={limit[0]}&amp;limit={limit[1]}&#39; if limit else &#39;&#39;
     hard_refresh = &#39;&amp;hardRefresh=true&#39; if hard else &#39;&#39;
     sort_parameters = self._get_sort_parameters(kwargs.get(&#39;sort&#39;)) if kwargs.get(&#39;sort&#39;) else &#39;&#39;
-    search_parameter = f&#39;&amp;search={&#34;,&#34;.join(self.valid_columns.values())}:contains:{kwargs.get(&#34;search&#34;)}&#39; if kwargs.get(
-        &#39;search&#39;) else &#39;&#39;
 
-    request_url = (
-            self._commcell_object._services[&#39;GET_SECURITY_ROLES&#39;] + &#34;?&#34; +
-            limit_parameters + sort_parameters + fl_parameters + hard_refresh +
-            search_parameter + fq_parameters
-    )
-    flag, response = self._commcell_object._cvpysdk_object.make_request(&#34;GET&#34;, request_url, headers=headers)
+    # Search operation can only be performed on limited columns, so filtering out the columns on which search works
+    searchable_columns= [&#34;roleName&#34;,&#34;description&#34;,&#34;company&#34;]
+    search_parameter = (f&#39;&amp;search={&#34;,&#34;.join(self.valid_columns[col] for col in searchable_columns)}:contains:&#39;
+                        f&#39;{kwargs.get(&#34;search&#34;, None)}&#39;) if kwargs.get(&#39;search&#39;, None) else &#39;&#39;
+
+    params = [
+        limit_parameters,
+        sort_parameters,
+        fl_parameters,
+        hard_refresh,
+        search_parameter,
+        fq_parameters
+    ]
+    request_url = f&#34;{self._commcell_object._services[&#39;GET_SECURITY_ROLES&#39;]}?&#34; + &#34;&#34;.join(params)
+    flag, response = self._commcell_object._cvpysdk_object.make_request(&#34;GET&#34;, request_url)
 
     if not flag:
         response_string = self._commcell_object._update_response_(response.text)
@@ -2760,14 +2834,16 @@ enum (bool) &ndash; Flag to return enums in the response.</p>
 
     roles_cache = {}
     if response.json() and &#39;roleProperties&#39; in response.json():
+        self.filter_query_count = response.json().get(&#39;filterQueryCount&#39;,0)
         for role in response.json()[&#39;roleProperties&#39;]:
             name = role.get(&#39;role&#39;, {}).get(&#39;roleName&#39;)
             roles_config = {
+                &#39;roleName&#39;: name,
                 &#39;roleId&#39;: role.get(&#39;role&#39;, {}).get(&#39;roleId&#39;),
+                &#39;description&#39;: role.get(&#39;description&#39;,&#39;&#39;),
                 &#39;status&#39;: role.get(&#39;role&#39;, {}).get(&#39;flags&#39;, {}).get(&#39;disabled&#39;),
                 &#39;company&#39;: role.get(&#39;role&#39;, {}).get(&#39;entityInfo&#39;, {}).get(&#39;companyName&#39;)
             }
-            roles_config = {key: value for key, value in roles_config.items() if value is not None}
             roles_cache[name] = roles_config
 
         return roles_cache
@@ -2794,7 +2870,7 @@ if data type of input is invalid</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/role.py#L326-L343" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/security/role.py#L344-L361" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_role(self, role_name):
     &#34;&#34;&#34;Checks if any role with specified name exists on this commcell
@@ -2829,7 +2905,7 @@ if data type of input is invalid</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/security/role.py#L483-L497" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/security/role.py#L501-L515" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self, **kwargs):
     &#34;&#34;&#34;
@@ -2939,6 +3015,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.security.role.Roles.add" href="#cvpysdk.security.role.Roles.add">add</a></code></li>
 <li><code><a title="cvpysdk.security.role.Roles.all_roles" href="#cvpysdk.security.role.Roles.all_roles">all_roles</a></code></li>
 <li><code><a title="cvpysdk.security.role.Roles.all_roles_cache" href="#cvpysdk.security.role.Roles.all_roles_cache">all_roles_cache</a></code></li>
+<li><code><a title="cvpysdk.security.role.Roles.all_roles_prop" href="#cvpysdk.security.role.Roles.all_roles_prop">all_roles_prop</a></code></li>
 <li><code><a title="cvpysdk.security.role.Roles.delete" href="#cvpysdk.security.role.Roles.delete">delete</a></code></li>
 <li><code><a title="cvpysdk.security.role.Roles.get" href="#cvpysdk.security.role.Roles.get">get</a></code></li>
 <li><code><a title="cvpysdk.security.role.Roles.get_roles_cache" href="#cvpysdk.security.role.Roles.get_roles_cache">get_roles_cache</a></code></li>

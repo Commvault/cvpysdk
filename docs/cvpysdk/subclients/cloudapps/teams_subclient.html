@@ -100,11 +100,24 @@ refresh_retention_stats()
 refresh_client_level_stats()
 &ndash; refresh the client level stats for the client
 backup_stats()
-&ndash; Returns the client level stats for the client</p>
+&ndash; Returns the client level stats for the client
+_process_web_search_response()
+&ndash; Helper method to process the web search response
+do_web_search()
+&ndash;
+Method to perform a web search using the /Search endpoint
+find_teams()
+&ndash;
+Method to find the list of files and their metadata
+preview_backed_file()
+&ndash;
+Method to preview the backed up content
+run_restore_for_chat_to_onedrive()
+&ndash; Restore user chats to onedrive.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L1-L1237" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_subclient.py#L1-L1566" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # ————————————————————————–
@@ -166,7 +179,11 @@ TeamsSubclient:
     refresh_retention_stats()                   -- refresh the retention stats for the client
     refresh_client_level_stats()                -- refresh the client level stats for the client
     backup_stats()                    -- Returns the client level stats for the client
-
+    _process_web_search_response()               -- Helper method to process the web search response
+    do_web_search()                             --  Method to perform a web search using the /Search endpoint
+    find_teams()                                --  Method to find the list of files and their metadata
+    preview_backed_file()                       --  Method to preview the backed up content
+    run_restore_for_chat_to_onedrive()  -- Restore user chats to onedrive.
 &#34;&#34;&#34;
 
 from __future__ import unicode_literals
@@ -175,6 +192,7 @@ from ..casubclient import CloudAppsSubclient
 
 import time
 from copy import copy, deepcopy
+import base64
 
 from cvpysdk.job import Job
 from ..cloudapps.teams_constants import TeamsConstants as const
@@ -319,7 +337,7 @@ class TeamsSubclient(CloudAppsSubclient):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def backup(self, teams=None, convert_job_to_full=False, discovery_type=13):
+    def backup(self, teams=None, convert_job_to_full=False, discovery_type=13, **kwargs):
         &#34;&#34;&#34;Run an Incremental  or Full backup.
             Args:
                 teams               (list)  --  List of team Email IDs.
@@ -327,6 +345,8 @@ class TeamsSubclient(CloudAppsSubclient):
                             Default --  False
                 discovery_type   (int)  -- type of the entity we are backing up ex user, team, group etc
 
+            **kwargs (dict) : Additional parameters
+                items_selection_option (str) : Item Selection Option (Example: &#34;7&#34; for selecting backed up recently entities)
             Returns:
                 obj   --  Instance of job.
 
@@ -338,6 +358,8 @@ class TeamsSubclient(CloudAppsSubclient):
                     If response is not success.
 
         &#34;&#34;&#34;
+        items_selection_option = kwargs.get(&#39;items_selection_option&#39;, &#39;&#39;)
+
         url = self._services[&#39;CREATE_TASK&#39;]
         backup_subtask_json = copy(const.BACKUP_SUBTASK_JSON)
         request_json = deepcopy(const.BACKUP_REQUEST_JSON)
@@ -376,6 +398,10 @@ class TeamsSubclient(CloudAppsSubclient):
         if convert_job_to_full:
             backup_subtask_json[&#39;options&#39;][&#39;backupOpts&#39;][&#39;cloudAppOptions&#39;][&#34;forceFullBackup&#34;] = convert_job_to_full
             backup_subtask_json[&#39;options&#39;][&#39;commonOpts&#39;][&#39;jobMetadata&#39;][0][&#39;jobOptionItems&#39;][0][&#39;value&#39;] = &#34;Enabled&#34;
+
+        if items_selection_option!=&#39;&#39;:
+            backup_subtask_json[&#39;options&#39;][&#39;commonOpts&#39;][&#39;itemsSelectionOption&#39;]=items_selection_option
+            
         request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;].append(backup_subtask_json)
         flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, url, request_json)
 
@@ -1302,7 +1328,7 @@ class TeamsSubclient(CloudAppsSubclient):
         &#34;&#34;&#34;
         request_json = {
             &#34;appType&#34;: const.INDEX_APP_TYPE,
-            &#34;oneDriveIdxStatsReq&#34;:
+            &#34;teamsIdxStatsReq&#34;:
                 [{
                     &#34;subclientId&#34;: int(self._subclient_id), &#34;type&#34;: 0}]
         }
@@ -1342,7 +1368,322 @@ class TeamsSubclient(CloudAppsSubclient):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-        return response.json()</code></pre>
+        return response.json()
+
+    def _process_web_search_response(self, flag, response) -&gt; dict:
+        &#34;&#34;&#34;
+            Method to process the response from the web search operation
+
+            Arguments:
+                flag        (bool)  --  boolean, whether the response was success or not
+
+                response    (dict)  --  JSON response received for the request from the Server
+            Returns:
+                dict - Dictionary of all the paths with additional metadata retrieved from browse
+        &#34;&#34;&#34;
+        if flag:
+            response_json = response.json()
+
+            _search_result = response_json.get(&#34;searchResult&#34;)
+            return _search_result.get(&#34;resultItem&#34;)
+
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def do_web_search(self, **kwargs) -&gt; dict:
+        &#34;&#34;&#34;
+            Method to perform a web search using the /Search endpoint.
+            Default browse endpoint for new O365 agents.
+
+            Arguments:
+                kwargs:     Dictionary of arguments to be used for the browse
+        &#34;&#34;&#34;
+        self._TEAMS_BROWSE = self._commcell_object._services[&#39;DO_WEB_SEARCH&#39;]
+        _browse_options = kwargs
+        _parent_guid = kwargs.get(&#34;parent_guid&#34;, &#34;00000000000000000000000000000001&#34;)
+
+        _browse_req = {
+            &#34;mode&#34;: 4,
+            &#34;advSearchGrp&#34;: {
+                &#34;commonFilter&#34;: [
+                    {
+                        &#34;filter&#34;: {
+                            &#34;interFilterOP&#34;: 0,
+                            &#34;filters&#34;: [
+
+                            ]
+                        }
+                    }
+                ],
+                &#34;fileFilter&#34;: [
+                    {
+                        &#34;interGroupOP&#34;: 2,
+                        &#34;filter&#34;: {
+                            &#34;interFilterOP&#34;: 2,
+                            &#34;filters&#34;: [
+                                {
+                                    &#34;field&#34;: &#34;HIDDEN&#34;,
+                                    &#34;intraFieldOp&#34;: 4,
+                                    &#34;fieldValues&#34;: {
+                                        &#34;values&#34;: [
+                                            &#34;true&#34;
+                                        ]
+                                    }
+                                },
+                                {
+                                    &#34;field&#34;: &#34;PARENT_GUID&#34;,
+                                    &#34;intraFieldOp&#34;: 0,
+                                    &#34;fieldValues&#34;: {
+                                        &#34;values&#34;: [
+                                            _parent_guid
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ],
+                &#34;emailFilter&#34;: [],
+                &#34;galaxyFilter&#34;: [
+                    {
+                        &#34;appIdList&#34;: [
+                            int(self.subclient_id)
+                        ]
+                    }
+                ]
+            },
+            &#34;searchProcessingInfo&#34;: {
+                &#34;resultOffset&#34;: 0,
+                &#34;pageSize&#34;: 100,
+                &#34;queryParams&#34;: [
+                    {
+                        &#34;param&#34;: &#34;ENABLE_MIXEDVIEW&#34;,
+                        &#34;value&#34;: &#34;true&#34;
+                    },
+                    {
+                        &#34;param&#34;: &#34;RESPONSE_FIELD_LIST&#34;,
+                        &#34;value&#34;: &#34;DATA_TYPE,CONTENTID,CV_OBJECT_GUID,PARENT_GUID,CV_TURBO_GUID,AFILEID,AFILEOFFSET,COMMCELLNO,MODIFIEDTIME,SIZEINKB,BACKUPTIME,CISTATE,DATE_DELETED,TEAMS_ITEM_ID,TEAMS_ITEM_NAME,TEAMS_NAME,TEAMS_SMTP,TEAMS_ITEM_TYPE,TEAMS_CHANNEL_TYPE,TEAMS_TAB_TYPE,TEAMS_GROUP_VISIBILITY,TEAMS_GUID,TEAMS_CONV_ITEM_TYPE,TEAMS_CONV_MESSAGE_TYPE,TEAMS_CONV_SUBJECT,TEAMS_CONV_IMPORTANCE,TEAMS_CONV_SENDER_TYPE,TEAMS_CONV_SENDER_NAME,TEAMS_CONV_HAS_REPLIES,CI_URL,TEAMS_DRIVE_FOLDER_TYPE,TEAMS_USER_ID&#34;
+                    },
+                    {
+                        &#34;param&#34;: &#34;DO_NOT_AUDIT&#34;,
+                        &#34;value&#34;: &#34;false&#34;
+                    },
+                    {
+                        &#34;param&#34;: &#34;COLLAPSE_FIELD&#34;,
+                        &#34;value&#34;: &#34;CV_OBJECT_GUID&#34;
+                    },
+                    {
+                        &#34;param&#34;: &#34;COLLAPSE_SORT&#34;,
+                        &#34;value&#34;: &#34;BACKUPTIME DESC&#34;
+                    }
+                ],
+                &#34;sortParams&#34;: [
+                    {
+                        &#34;sortDirection&#34;: 0,
+                        &#34;sortField&#34;: &#34;TEAMS_ITEM_NAME&#34;
+                    }
+                ]
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._TEAMS_BROWSE, _browse_req)
+
+        return self._process_web_search_response(flag, response)
+
+    def find_teams(self):
+        &#34;&#34;&#34; find() alternative for teams, Finds all the files and their metadata
+        Returns:
+            result_set (set)    --  set of all the file paths
+            result_dict (dict)  --  dictionary of all the file paths with their metadata
+        &#34;&#34;&#34;
+        parent = [&#34;00000000000000000000000000000001&#34;]
+        result_dict = {}
+        result_set = set()
+        while parent:
+            p = parent.pop()
+            items = self.do_web_search(parent_guid=p)
+            for item in items:
+                result_set.add(item[&#34;filePath&#34;])
+                result_dict[item[&#34;filePath&#34;]] = item
+                parent.append(item[&#34;cvObjectGuid&#34;])
+
+        return result_set, result_dict
+
+    def preview_backedup_file(self, metadata):
+        &#34;&#34;&#34;Gets the preview content for the subclient.
+
+            Returns:
+                html   (str)   --  html content of the preview
+
+            Raises:
+                SDKException:
+                    if file is not found
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        if metadata is None:
+            raise SDKException(&#39;Subclient&#39;, &#39;123&#39;)
+
+        if metadata[&#34;dataType&#34;] != 1:
+            raise SDKException(&#39;Subclient&#39;, &#39;124&#39;)
+
+        if metadata[&#34;sizeKB&#34;] == 0:
+            raise SDKException(&#39;Subclient&#39;, &#39;125&#39;)
+
+
+        self._GET_VARIOUS_PREVIEW = self._services[&#39;GET_VARIOUS_PREVIEW&#39;]
+        item_path_base_64 = base64.b64encode(metadata[&#34;filePath&#34;].encode()).decode()
+        request_json = {
+            &#34;filters&#34;: [
+                {
+                    &#34;field&#34;: &#34;APP_TYPE&#34;,
+                    &#34;fieldValues&#34;: {
+                        &#34;values&#34;: [
+                            &#34;200128&#34;
+                        ]
+                    }
+                },
+                {
+                    &#34;field&#34;: &#34;SUBCLIENT_ID&#34;,
+                    &#34;fieldValues&#34;: {
+                        &#34;values&#34;: [
+                            str(self.subclient_id)
+                        ]
+                    }
+                },
+                {
+                    &#34;field&#34;: &#34;CONTENTID&#34;,
+                    &#34;fieldValues&#34;: {
+                        &#34;values&#34;: [
+                            metadata[&#34;documentId&#34;]
+                        ]
+                    }
+                },
+                {
+                    &#34;field&#34;: &#34;ARCHIVE_FILE_ID&#34;,
+                    &#34;fieldValues&#34;: {
+                        &#34;values&#34;: [
+                            str(metadata[&#34;aFileId&#34;])
+
+                        ]
+                    }
+                },
+                {
+                    &#34;field&#34;: &#34;ARCHIVE_FILE_OFFSET&#34;,
+                    &#34;fieldValues&#34;: {
+                        &#34;values&#34;: [
+                           str(metadata[&#34;aFileOffset&#34;])
+                        ]
+                    }
+                },
+                {
+                    &#34;field&#34;: &#34;COMMCELL_ID&#34;,
+                    &#34;fieldValues&#34;: {
+                        &#34;values&#34;: [
+                            str(metadata[&#34;commcellNo&#34;])
+                        ]
+                    }
+                },
+                {
+                    &#34;field&#34;: &#34;CV_TURBO_GUID&#34;,
+                    &#34;fieldValues&#34;: {
+                        &#34;values&#34;: [
+                            metadata[&#34;turboGuid&#34;]
+                        ]
+                    }
+                },
+                {
+                    &#34;field&#34;: &#34;ITEM_SIZE&#34;,
+                    &#34;fieldValues&#34;: {
+                        &#34;values&#34;: [
+                            str(metadata[&#34;sizeKB&#34;])
+                        ]
+                    }
+                },
+                {
+                    &#34;field&#34;: &#34;ITEM_PATH_BASE64_ENCODED&#34;,
+                    &#34;fieldValues&#34;: {
+                        &#34;values&#34;: [
+                            item_path_base_64
+                        ]
+                    }
+                }
+
+            ]
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._GET_VARIOUS_PREVIEW, request_json)
+
+        if flag:
+            if &#34;Preview not available&#34; not in response.text:
+                return response.text
+            else:
+                raise SDKException(&#39;Subclient&#39;, &#39;127&#39;)
+        else:
+            raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, self._update_response_(response.text))
+
+
+    from copy import copy
+
+    def run_restore_for_chat_to_onedrive(self, user_email):
+        &#34;&#34;&#34;
+        Runs restore for user to onedrive
+        Args:
+            user_email (str) : Email id of a user
+        Returns:
+                       obj   --  Instance of Restore job.
+        &#34;&#34;&#34;
+        discovered_teams = self.discover(discovery_type=const.ClOUD_APP_EDISCOVER_TYPE[&#39;Users&#39;])
+        if user_email not in discovered_teams:
+            raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, f&#34;User {user_email} not found in discovered teams&#34;)
+        source_user = discovered_teams[user_email]
+        request_json = copy(const.USER_ONEDRIVE_RESTORE_JSON)
+        request_json[&#34;taskInfo&#34;][&#34;associations&#34;] = [self._subClientEntity]
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
+            &#39;cloudAppsRestoreOptions&#39;][&#34;msTeamsRestoreOptions&#34;][&#39;selectedItemsToRestore&#39;] = [{
+                    &#34;itemId&#34;: source_user[&#39;user&#39;][&#39;userGUID&#39;].lower(),
+                    &#34;itemType&#34;: 50,
+                    &#34;isDirectory&#34;: True,
+                    &#34;entityGUID&#34;: source_user[&#39;user&#39;][&#39;userGUID&#39;].lower()
+                  }]
+
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
+            &#39;cloudAppsRestoreOptions&#39;][&#34;msTeamsRestoreOptions&#34;][&#39;destLocation&#39;] = f&#34;{source_user[&#39;displayName&#39;]}/&#34;
+        destionation_onedrive_info = copy(const.DESTINATION_ONEDRIVE_INFO)
+        destionation_onedrive_info[&#39;userSMTP&#39;] = source_user[&#39;smtpAddress&#39;]
+        destionation_onedrive_info[&#39;userGUID&#39;] = source_user[&#39;user&#39;][&#39;userGUID&#39;]
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
+            &#39;cloudAppsRestoreOptions&#39;][&#34;msTeamsRestoreOptions&#34;][&#39;destinationOneDriveInfo&#39;] = destionation_onedrive_info
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;destination&#34;][&#34;destPath&#34;]= \
+            [source_user[&#39;displayName&#39;]+&#34;/&#34;]
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;destination&#34;][&#34;destClient&#34;] = {
+                &#34;clientId&#34;: self._subClientEntity[&#39;clientId&#39;],
+                &#34;clientName&#34;: self._subClientEntity[&#39;displayName&#39;]
+        }
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;cloudAppsRestoreOptions&#34;]\
+            [&#34;msTeamsRestoreOptions&#34;][&#34;findQuery&#34;][&#34;advSearchGrp&#34;][&#34;galaxyFilter&#34;]=\
+            [{&#34;appIdList&#34;: [self._subClientEntity[&#34;subclientId&#34;]]}]
+
+
+        url = self._services[&#39;CREATE_TASK&#39;]
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, url, request_json)
+
+        if flag:
+            response_json = response.json()
+            if response_json:
+                if &#39;jobIds&#39; in response_json:
+                    return Job(self._commcell_object, response_json[&#39;jobIds&#39;][0])
+        
+                elif &#34;errorCode&#34; in response_json:
+                    error_message = response_json[&#39;errorMessage&#39;]
+
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </section>
 <section>
@@ -1380,7 +1721,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L76-L1237" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_subclient.py#L81-L1565" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class TeamsSubclient(CloudAppsSubclient):
     &#34;&#34;&#34;Derived class from Subclient Base class, representing a Microsoft Office 365 Teams subclient
@@ -1520,7 +1861,7 @@ default: None</p>
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def backup(self, teams=None, convert_job_to_full=False, discovery_type=13):
+    def backup(self, teams=None, convert_job_to_full=False, discovery_type=13, **kwargs):
         &#34;&#34;&#34;Run an Incremental  or Full backup.
             Args:
                 teams               (list)  --  List of team Email IDs.
@@ -1528,6 +1869,8 @@ default: None</p>
                             Default --  False
                 discovery_type   (int)  -- type of the entity we are backing up ex user, team, group etc
 
+            **kwargs (dict) : Additional parameters
+                items_selection_option (str) : Item Selection Option (Example: &#34;7&#34; for selecting backed up recently entities)
             Returns:
                 obj   --  Instance of job.
 
@@ -1539,6 +1882,8 @@ default: None</p>
                     If response is not success.
 
         &#34;&#34;&#34;
+        items_selection_option = kwargs.get(&#39;items_selection_option&#39;, &#39;&#39;)
+
         url = self._services[&#39;CREATE_TASK&#39;]
         backup_subtask_json = copy(const.BACKUP_SUBTASK_JSON)
         request_json = deepcopy(const.BACKUP_REQUEST_JSON)
@@ -1577,6 +1922,10 @@ default: None</p>
         if convert_job_to_full:
             backup_subtask_json[&#39;options&#39;][&#39;backupOpts&#39;][&#39;cloudAppOptions&#39;][&#34;forceFullBackup&#34;] = convert_job_to_full
             backup_subtask_json[&#39;options&#39;][&#39;commonOpts&#39;][&#39;jobMetadata&#39;][0][&#39;jobOptionItems&#39;][0][&#39;value&#39;] = &#34;Enabled&#34;
+
+        if items_selection_option!=&#39;&#39;:
+            backup_subtask_json[&#39;options&#39;][&#39;commonOpts&#39;][&#39;itemsSelectionOption&#39;]=items_selection_option
+            
         request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;].append(backup_subtask_json)
         flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, url, request_json)
 
@@ -2503,7 +2852,7 @@ default: None</p>
         &#34;&#34;&#34;
         request_json = {
             &#34;appType&#34;: const.INDEX_APP_TYPE,
-            &#34;oneDriveIdxStatsReq&#34;:
+            &#34;teamsIdxStatsReq&#34;:
                 [{
                     &#34;subclientId&#34;: int(self._subclient_id), &#34;type&#34;: 0}]
         }
@@ -2543,7 +2892,322 @@ default: None</p>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-        return response.json()</code></pre>
+        return response.json()
+
+    def _process_web_search_response(self, flag, response) -&gt; dict:
+        &#34;&#34;&#34;
+            Method to process the response from the web search operation
+
+            Arguments:
+                flag        (bool)  --  boolean, whether the response was success or not
+
+                response    (dict)  --  JSON response received for the request from the Server
+            Returns:
+                dict - Dictionary of all the paths with additional metadata retrieved from browse
+        &#34;&#34;&#34;
+        if flag:
+            response_json = response.json()
+
+            _search_result = response_json.get(&#34;searchResult&#34;)
+            return _search_result.get(&#34;resultItem&#34;)
+
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def do_web_search(self, **kwargs) -&gt; dict:
+        &#34;&#34;&#34;
+            Method to perform a web search using the /Search endpoint.
+            Default browse endpoint for new O365 agents.
+
+            Arguments:
+                kwargs:     Dictionary of arguments to be used for the browse
+        &#34;&#34;&#34;
+        self._TEAMS_BROWSE = self._commcell_object._services[&#39;DO_WEB_SEARCH&#39;]
+        _browse_options = kwargs
+        _parent_guid = kwargs.get(&#34;parent_guid&#34;, &#34;00000000000000000000000000000001&#34;)
+
+        _browse_req = {
+            &#34;mode&#34;: 4,
+            &#34;advSearchGrp&#34;: {
+                &#34;commonFilter&#34;: [
+                    {
+                        &#34;filter&#34;: {
+                            &#34;interFilterOP&#34;: 0,
+                            &#34;filters&#34;: [
+
+                            ]
+                        }
+                    }
+                ],
+                &#34;fileFilter&#34;: [
+                    {
+                        &#34;interGroupOP&#34;: 2,
+                        &#34;filter&#34;: {
+                            &#34;interFilterOP&#34;: 2,
+                            &#34;filters&#34;: [
+                                {
+                                    &#34;field&#34;: &#34;HIDDEN&#34;,
+                                    &#34;intraFieldOp&#34;: 4,
+                                    &#34;fieldValues&#34;: {
+                                        &#34;values&#34;: [
+                                            &#34;true&#34;
+                                        ]
+                                    }
+                                },
+                                {
+                                    &#34;field&#34;: &#34;PARENT_GUID&#34;,
+                                    &#34;intraFieldOp&#34;: 0,
+                                    &#34;fieldValues&#34;: {
+                                        &#34;values&#34;: [
+                                            _parent_guid
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ],
+                &#34;emailFilter&#34;: [],
+                &#34;galaxyFilter&#34;: [
+                    {
+                        &#34;appIdList&#34;: [
+                            int(self.subclient_id)
+                        ]
+                    }
+                ]
+            },
+            &#34;searchProcessingInfo&#34;: {
+                &#34;resultOffset&#34;: 0,
+                &#34;pageSize&#34;: 100,
+                &#34;queryParams&#34;: [
+                    {
+                        &#34;param&#34;: &#34;ENABLE_MIXEDVIEW&#34;,
+                        &#34;value&#34;: &#34;true&#34;
+                    },
+                    {
+                        &#34;param&#34;: &#34;RESPONSE_FIELD_LIST&#34;,
+                        &#34;value&#34;: &#34;DATA_TYPE,CONTENTID,CV_OBJECT_GUID,PARENT_GUID,CV_TURBO_GUID,AFILEID,AFILEOFFSET,COMMCELLNO,MODIFIEDTIME,SIZEINKB,BACKUPTIME,CISTATE,DATE_DELETED,TEAMS_ITEM_ID,TEAMS_ITEM_NAME,TEAMS_NAME,TEAMS_SMTP,TEAMS_ITEM_TYPE,TEAMS_CHANNEL_TYPE,TEAMS_TAB_TYPE,TEAMS_GROUP_VISIBILITY,TEAMS_GUID,TEAMS_CONV_ITEM_TYPE,TEAMS_CONV_MESSAGE_TYPE,TEAMS_CONV_SUBJECT,TEAMS_CONV_IMPORTANCE,TEAMS_CONV_SENDER_TYPE,TEAMS_CONV_SENDER_NAME,TEAMS_CONV_HAS_REPLIES,CI_URL,TEAMS_DRIVE_FOLDER_TYPE,TEAMS_USER_ID&#34;
+                    },
+                    {
+                        &#34;param&#34;: &#34;DO_NOT_AUDIT&#34;,
+                        &#34;value&#34;: &#34;false&#34;
+                    },
+                    {
+                        &#34;param&#34;: &#34;COLLAPSE_FIELD&#34;,
+                        &#34;value&#34;: &#34;CV_OBJECT_GUID&#34;
+                    },
+                    {
+                        &#34;param&#34;: &#34;COLLAPSE_SORT&#34;,
+                        &#34;value&#34;: &#34;BACKUPTIME DESC&#34;
+                    }
+                ],
+                &#34;sortParams&#34;: [
+                    {
+                        &#34;sortDirection&#34;: 0,
+                        &#34;sortField&#34;: &#34;TEAMS_ITEM_NAME&#34;
+                    }
+                ]
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._TEAMS_BROWSE, _browse_req)
+
+        return self._process_web_search_response(flag, response)
+
+    def find_teams(self):
+        &#34;&#34;&#34; find() alternative for teams, Finds all the files and their metadata
+        Returns:
+            result_set (set)    --  set of all the file paths
+            result_dict (dict)  --  dictionary of all the file paths with their metadata
+        &#34;&#34;&#34;
+        parent = [&#34;00000000000000000000000000000001&#34;]
+        result_dict = {}
+        result_set = set()
+        while parent:
+            p = parent.pop()
+            items = self.do_web_search(parent_guid=p)
+            for item in items:
+                result_set.add(item[&#34;filePath&#34;])
+                result_dict[item[&#34;filePath&#34;]] = item
+                parent.append(item[&#34;cvObjectGuid&#34;])
+
+        return result_set, result_dict
+
+    def preview_backedup_file(self, metadata):
+        &#34;&#34;&#34;Gets the preview content for the subclient.
+
+            Returns:
+                html   (str)   --  html content of the preview
+
+            Raises:
+                SDKException:
+                    if file is not found
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        if metadata is None:
+            raise SDKException(&#39;Subclient&#39;, &#39;123&#39;)
+
+        if metadata[&#34;dataType&#34;] != 1:
+            raise SDKException(&#39;Subclient&#39;, &#39;124&#39;)
+
+        if metadata[&#34;sizeKB&#34;] == 0:
+            raise SDKException(&#39;Subclient&#39;, &#39;125&#39;)
+
+
+        self._GET_VARIOUS_PREVIEW = self._services[&#39;GET_VARIOUS_PREVIEW&#39;]
+        item_path_base_64 = base64.b64encode(metadata[&#34;filePath&#34;].encode()).decode()
+        request_json = {
+            &#34;filters&#34;: [
+                {
+                    &#34;field&#34;: &#34;APP_TYPE&#34;,
+                    &#34;fieldValues&#34;: {
+                        &#34;values&#34;: [
+                            &#34;200128&#34;
+                        ]
+                    }
+                },
+                {
+                    &#34;field&#34;: &#34;SUBCLIENT_ID&#34;,
+                    &#34;fieldValues&#34;: {
+                        &#34;values&#34;: [
+                            str(self.subclient_id)
+                        ]
+                    }
+                },
+                {
+                    &#34;field&#34;: &#34;CONTENTID&#34;,
+                    &#34;fieldValues&#34;: {
+                        &#34;values&#34;: [
+                            metadata[&#34;documentId&#34;]
+                        ]
+                    }
+                },
+                {
+                    &#34;field&#34;: &#34;ARCHIVE_FILE_ID&#34;,
+                    &#34;fieldValues&#34;: {
+                        &#34;values&#34;: [
+                            str(metadata[&#34;aFileId&#34;])
+
+                        ]
+                    }
+                },
+                {
+                    &#34;field&#34;: &#34;ARCHIVE_FILE_OFFSET&#34;,
+                    &#34;fieldValues&#34;: {
+                        &#34;values&#34;: [
+                           str(metadata[&#34;aFileOffset&#34;])
+                        ]
+                    }
+                },
+                {
+                    &#34;field&#34;: &#34;COMMCELL_ID&#34;,
+                    &#34;fieldValues&#34;: {
+                        &#34;values&#34;: [
+                            str(metadata[&#34;commcellNo&#34;])
+                        ]
+                    }
+                },
+                {
+                    &#34;field&#34;: &#34;CV_TURBO_GUID&#34;,
+                    &#34;fieldValues&#34;: {
+                        &#34;values&#34;: [
+                            metadata[&#34;turboGuid&#34;]
+                        ]
+                    }
+                },
+                {
+                    &#34;field&#34;: &#34;ITEM_SIZE&#34;,
+                    &#34;fieldValues&#34;: {
+                        &#34;values&#34;: [
+                            str(metadata[&#34;sizeKB&#34;])
+                        ]
+                    }
+                },
+                {
+                    &#34;field&#34;: &#34;ITEM_PATH_BASE64_ENCODED&#34;,
+                    &#34;fieldValues&#34;: {
+                        &#34;values&#34;: [
+                            item_path_base_64
+                        ]
+                    }
+                }
+
+            ]
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._GET_VARIOUS_PREVIEW, request_json)
+
+        if flag:
+            if &#34;Preview not available&#34; not in response.text:
+                return response.text
+            else:
+                raise SDKException(&#39;Subclient&#39;, &#39;127&#39;)
+        else:
+            raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, self._update_response_(response.text))
+
+
+    from copy import copy
+
+    def run_restore_for_chat_to_onedrive(self, user_email):
+        &#34;&#34;&#34;
+        Runs restore for user to onedrive
+        Args:
+            user_email (str) : Email id of a user
+        Returns:
+                       obj   --  Instance of Restore job.
+        &#34;&#34;&#34;
+        discovered_teams = self.discover(discovery_type=const.ClOUD_APP_EDISCOVER_TYPE[&#39;Users&#39;])
+        if user_email not in discovered_teams:
+            raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, f&#34;User {user_email} not found in discovered teams&#34;)
+        source_user = discovered_teams[user_email]
+        request_json = copy(const.USER_ONEDRIVE_RESTORE_JSON)
+        request_json[&#34;taskInfo&#34;][&#34;associations&#34;] = [self._subClientEntity]
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
+            &#39;cloudAppsRestoreOptions&#39;][&#34;msTeamsRestoreOptions&#34;][&#39;selectedItemsToRestore&#39;] = [{
+                    &#34;itemId&#34;: source_user[&#39;user&#39;][&#39;userGUID&#39;].lower(),
+                    &#34;itemType&#34;: 50,
+                    &#34;isDirectory&#34;: True,
+                    &#34;entityGUID&#34;: source_user[&#39;user&#39;][&#39;userGUID&#39;].lower()
+                  }]
+
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
+            &#39;cloudAppsRestoreOptions&#39;][&#34;msTeamsRestoreOptions&#34;][&#39;destLocation&#39;] = f&#34;{source_user[&#39;displayName&#39;]}/&#34;
+        destionation_onedrive_info = copy(const.DESTINATION_ONEDRIVE_INFO)
+        destionation_onedrive_info[&#39;userSMTP&#39;] = source_user[&#39;smtpAddress&#39;]
+        destionation_onedrive_info[&#39;userGUID&#39;] = source_user[&#39;user&#39;][&#39;userGUID&#39;]
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
+            &#39;cloudAppsRestoreOptions&#39;][&#34;msTeamsRestoreOptions&#34;][&#39;destinationOneDriveInfo&#39;] = destionation_onedrive_info
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;destination&#34;][&#34;destPath&#34;]= \
+            [source_user[&#39;displayName&#39;]+&#34;/&#34;]
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;destination&#34;][&#34;destClient&#34;] = {
+                &#34;clientId&#34;: self._subClientEntity[&#39;clientId&#39;],
+                &#34;clientName&#34;: self._subClientEntity[&#39;displayName&#39;]
+        }
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;cloudAppsRestoreOptions&#34;]\
+            [&#34;msTeamsRestoreOptions&#34;][&#34;findQuery&#34;][&#34;advSearchGrp&#34;][&#34;galaxyFilter&#34;]=\
+            [{&#34;appIdList&#34;: [self._subClientEntity[&#34;subclientId&#34;]]}]
+
+
+        url = self._services[&#39;CREATE_TASK&#39;]
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, url, request_json)
+
+        if flag:
+            response_json = response.json()
+            if response_json:
+                if &#39;jobIds&#39; in response_json:
+                    return Job(self._commcell_object, response_json[&#39;jobIds&#39;][0])
+        
+                elif &#34;errorCode&#34; in response_json:
+                    error_message = response_json[&#39;errorMessage&#39;]
+
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -2561,7 +3225,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L1214-L1237" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_subclient.py#L1227-L1250" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_stats(self):
@@ -2593,7 +3257,7 @@ def backup_stats(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.backup"><code class="name flex">
-<span>def <span class="ident">backup</span></span>(<span>self, teams=None, convert_job_to_full=False, discovery_type=13)</span>
+<span>def <span class="ident">backup</span></span>(<span>self, teams=None, convert_job_to_full=False, discovery_type=13, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Run an Incremental
@@ -2610,7 +3274,9 @@ Default &ndash;
 False
 discovery_type
 (int)
-&ndash; type of the entity we are backing up ex user, team, group etc</p>
+&ndash; type of the entity we are backing up ex user, team, group etc
+**kwargs (dict) : Additional parameters
+items_selection_option (str) : Item Selection Option (Example: "7" for selecting backed up recently entities)</p>
 <h2 id="returns">Returns</h2>
 <p>obj
 &ndash;
@@ -2624,9 +3290,9 @@ If response is not success.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L214-L285" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_subclient.py#L219-L298" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def backup(self, teams=None, convert_job_to_full=False, discovery_type=13):
+<pre><code class="python">def backup(self, teams=None, convert_job_to_full=False, discovery_type=13, **kwargs):
     &#34;&#34;&#34;Run an Incremental  or Full backup.
         Args:
             teams               (list)  --  List of team Email IDs.
@@ -2634,6 +3300,8 @@ If response is not success.
                         Default --  False
             discovery_type   (int)  -- type of the entity we are backing up ex user, team, group etc
 
+        **kwargs (dict) : Additional parameters
+            items_selection_option (str) : Item Selection Option (Example: &#34;7&#34; for selecting backed up recently entities)
         Returns:
             obj   --  Instance of job.
 
@@ -2645,6 +3313,8 @@ If response is not success.
                 If response is not success.
 
     &#34;&#34;&#34;
+    items_selection_option = kwargs.get(&#39;items_selection_option&#39;, &#39;&#39;)
+
     url = self._services[&#39;CREATE_TASK&#39;]
     backup_subtask_json = copy(const.BACKUP_SUBTASK_JSON)
     request_json = deepcopy(const.BACKUP_REQUEST_JSON)
@@ -2683,6 +3353,10 @@ If response is not success.
     if convert_job_to_full:
         backup_subtask_json[&#39;options&#39;][&#39;backupOpts&#39;][&#39;cloudAppOptions&#39;][&#34;forceFullBackup&#34;] = convert_job_to_full
         backup_subtask_json[&#39;options&#39;][&#39;commonOpts&#39;][&#39;jobMetadata&#39;][0][&#39;jobOptionItems&#39;][0][&#39;value&#39;] = &#34;Enabled&#34;
+
+    if items_selection_option!=&#39;&#39;:
+        backup_subtask_json[&#39;options&#39;][&#39;commonOpts&#39;][&#39;itemsSelectionOption&#39;]=items_selection_option
+        
     request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;].append(backup_subtask_json)
     flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, url, request_json)
 
@@ -2726,7 +3400,7 @@ If response is not success.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L115-L212" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_subclient.py#L120-L217" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def content(self, entities, o365_plan,  discovery_type):
     &#34;&#34;&#34;Add teams, discover() must be called before teams added using this method.
@@ -2828,6 +3502,55 @@ If response is not success.</p></div>
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.copy"><code class="name flex">
+<span>def <span class="ident">copy</span></span>(<span>x)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Shallow copy operation on arbitrary Python objects.</p>
+<p>See the module's <strong>doc</strong> string for more info.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def copy(x):
+    &#34;&#34;&#34;Shallow copy operation on arbitrary Python objects.
+
+    See the module&#39;s __doc__ string for more info.
+    &#34;&#34;&#34;
+
+    cls = type(x)
+
+    copier = _copy_dispatch.get(cls)
+    if copier:
+        return copier(x)
+
+    if issubclass(cls, type):
+        # treat it as a regular class:
+        return _copy_immutable(x)
+
+    copier = getattr(cls, &#34;__copy__&#34;, None)
+    if copier is not None:
+        return copier(x)
+
+    reductor = dispatch_table.get(cls)
+    if reductor is not None:
+        rv = reductor(x)
+    else:
+        reductor = getattr(x, &#34;__reduce_ex__&#34;, None)
+        if reductor is not None:
+            rv = reductor(4)
+        else:
+            reductor = getattr(x, &#34;__reduce__&#34;, None)
+            if reductor:
+                rv = reductor()
+            else:
+                raise Error(&#34;un(shallow)copyable object of type %s&#34; % cls)
+
+    if isinstance(rv, str):
+        return x
+    return _reconstruct(x, None, *rv)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.discover"><code class="name flex">
 <span>def <span class="ident">discover</span></span>(<span>self, discovery_type=8, refresh_cache=True)</span>
 </code></dt>
@@ -2855,7 +3578,7 @@ If response is not success.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L93-L113" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_subclient.py#L98-L118" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def discover(self, discovery_type=8, refresh_cache=True):
     &#34;&#34;&#34;Launches Discovery and returns the discovered teams.
@@ -2880,6 +3603,121 @@ If response is not success.</p></div>
     return self._instance_object.discover(discovery_type, refresh_cache=refresh_cache)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.do_web_search"><code class="name flex">
+<span>def <span class="ident">do_web_search</span></span>(<span>self, **kwargs) ‑> dict</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to perform a web search using the /Search endpoint.
+Default browse endpoint for new O365 agents.</p>
+<h2 id="arguments">Arguments</h2>
+<p>kwargs:
+Dictionary of arguments to be used for the browse</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_subclient.py#L1272-L1370" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def do_web_search(self, **kwargs) -&gt; dict:
+    &#34;&#34;&#34;
+        Method to perform a web search using the /Search endpoint.
+        Default browse endpoint for new O365 agents.
+
+        Arguments:
+            kwargs:     Dictionary of arguments to be used for the browse
+    &#34;&#34;&#34;
+    self._TEAMS_BROWSE = self._commcell_object._services[&#39;DO_WEB_SEARCH&#39;]
+    _browse_options = kwargs
+    _parent_guid = kwargs.get(&#34;parent_guid&#34;, &#34;00000000000000000000000000000001&#34;)
+
+    _browse_req = {
+        &#34;mode&#34;: 4,
+        &#34;advSearchGrp&#34;: {
+            &#34;commonFilter&#34;: [
+                {
+                    &#34;filter&#34;: {
+                        &#34;interFilterOP&#34;: 0,
+                        &#34;filters&#34;: [
+
+                        ]
+                    }
+                }
+            ],
+            &#34;fileFilter&#34;: [
+                {
+                    &#34;interGroupOP&#34;: 2,
+                    &#34;filter&#34;: {
+                        &#34;interFilterOP&#34;: 2,
+                        &#34;filters&#34;: [
+                            {
+                                &#34;field&#34;: &#34;HIDDEN&#34;,
+                                &#34;intraFieldOp&#34;: 4,
+                                &#34;fieldValues&#34;: {
+                                    &#34;values&#34;: [
+                                        &#34;true&#34;
+                                    ]
+                                }
+                            },
+                            {
+                                &#34;field&#34;: &#34;PARENT_GUID&#34;,
+                                &#34;intraFieldOp&#34;: 0,
+                                &#34;fieldValues&#34;: {
+                                    &#34;values&#34;: [
+                                        _parent_guid
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            &#34;emailFilter&#34;: [],
+            &#34;galaxyFilter&#34;: [
+                {
+                    &#34;appIdList&#34;: [
+                        int(self.subclient_id)
+                    ]
+                }
+            ]
+        },
+        &#34;searchProcessingInfo&#34;: {
+            &#34;resultOffset&#34;: 0,
+            &#34;pageSize&#34;: 100,
+            &#34;queryParams&#34;: [
+                {
+                    &#34;param&#34;: &#34;ENABLE_MIXEDVIEW&#34;,
+                    &#34;value&#34;: &#34;true&#34;
+                },
+                {
+                    &#34;param&#34;: &#34;RESPONSE_FIELD_LIST&#34;,
+                    &#34;value&#34;: &#34;DATA_TYPE,CONTENTID,CV_OBJECT_GUID,PARENT_GUID,CV_TURBO_GUID,AFILEID,AFILEOFFSET,COMMCELLNO,MODIFIEDTIME,SIZEINKB,BACKUPTIME,CISTATE,DATE_DELETED,TEAMS_ITEM_ID,TEAMS_ITEM_NAME,TEAMS_NAME,TEAMS_SMTP,TEAMS_ITEM_TYPE,TEAMS_CHANNEL_TYPE,TEAMS_TAB_TYPE,TEAMS_GROUP_VISIBILITY,TEAMS_GUID,TEAMS_CONV_ITEM_TYPE,TEAMS_CONV_MESSAGE_TYPE,TEAMS_CONV_SUBJECT,TEAMS_CONV_IMPORTANCE,TEAMS_CONV_SENDER_TYPE,TEAMS_CONV_SENDER_NAME,TEAMS_CONV_HAS_REPLIES,CI_URL,TEAMS_DRIVE_FOLDER_TYPE,TEAMS_USER_ID&#34;
+                },
+                {
+                    &#34;param&#34;: &#34;DO_NOT_AUDIT&#34;,
+                    &#34;value&#34;: &#34;false&#34;
+                },
+                {
+                    &#34;param&#34;: &#34;COLLAPSE_FIELD&#34;,
+                    &#34;value&#34;: &#34;CV_OBJECT_GUID&#34;
+                },
+                {
+                    &#34;param&#34;: &#34;COLLAPSE_SORT&#34;,
+                    &#34;value&#34;: &#34;BACKUPTIME DESC&#34;
+                }
+            ],
+            &#34;sortParams&#34;: [
+                {
+                    &#34;sortDirection&#34;: 0,
+                    &#34;sortField&#34;: &#34;TEAMS_ITEM_NAME&#34;
+                }
+            ]
+        }
+    }
+
+    flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._TEAMS_BROWSE, _browse_req)
+
+    return self._process_web_search_response(flag, response)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.exclude_teams_from_backup"><code class="name flex">
 <span>def <span class="ident">exclude_teams_from_backup</span></span>(<span>self, user_assoc)</span>
 </code></dt>
@@ -2893,7 +3731,7 @@ Boolean if the association was removed successfully</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L794-L814" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_subclient.py#L807-L827" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def exclude_teams_from_backup(self, user_assoc):
     &#34;&#34;&#34;Excludes user association from a teams client
@@ -2918,6 +3756,43 @@ Boolean if the association was removed successfully</p></div>
     self._process_remove_association(request_json)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.find_teams"><code class="name flex">
+<span>def <span class="ident">find_teams</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>find() alternative for teams, Finds all the files and their metadata</p>
+<h2 id="returns">Returns</h2>
+<p>result_set (set)
+&ndash;
+set of all the file paths
+result_dict (dict)
+&ndash;
+dictionary of all the file paths with their metadata</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_subclient.py#L1372-L1389" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def find_teams(self):
+    &#34;&#34;&#34; find() alternative for teams, Finds all the files and their metadata
+    Returns:
+        result_set (set)    --  set of all the file paths
+        result_dict (dict)  --  dictionary of all the file paths with their metadata
+    &#34;&#34;&#34;
+    parent = [&#34;00000000000000000000000000000001&#34;]
+    result_dict = {}
+    result_set = set()
+    while parent:
+        p = parent.pop()
+        items = self.do_web_search(parent_guid=p)
+        for item in items:
+            result_set.add(item[&#34;filePath&#34;])
+            result_dict[item[&#34;filePath&#34;]] = item
+            parent.append(item[&#34;cvObjectGuid&#34;])
+
+    return result_set, result_dict</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.get_associated_teams"><code class="name flex">
 <span>def <span class="ident">get_associated_teams</span></span>(<span>self, pagingInfo=None, **kwargs)</span>
 </code></dt>
@@ -2931,7 +3806,7 @@ Boolean if the association was removed successfully</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L716-L744" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_subclient.py#L729-L757" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_associated_teams(self, pagingInfo=None, **kwargs):
     &#34;&#34;&#34;Get all associated teams for a client
@@ -2981,7 +3856,7 @@ Instance of Team.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L624-L633" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_subclient.py#L637-L646" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_team(self, team):
     &#34;&#34;&#34;Get team object from team email address.
@@ -3026,7 +3901,7 @@ If response is not success.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L287-L332" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_subclient.py#L300-L345" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def out_of_place_restore(self, team, destination_team, **kwargs):
     &#34;&#34;&#34;Restore a team to another location.
@@ -3076,6 +3951,145 @@ If response is not success.
     return self._process_restore(request_json)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.preview_backedup_file"><code class="name flex">
+<span>def <span class="ident">preview_backedup_file</span></span>(<span>self, metadata)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gets the preview content for the subclient.</p>
+<h2 id="returns">Returns</h2>
+<p>html
+(str)
+&ndash;
+html content of the preview</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if file is not found</p>
+<pre><code>if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_subclient.py#L1391-L1505" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def preview_backedup_file(self, metadata):
+    &#34;&#34;&#34;Gets the preview content for the subclient.
+
+        Returns:
+            html   (str)   --  html content of the preview
+
+        Raises:
+            SDKException:
+                if file is not found
+
+                if response is empty
+
+                if response is not success
+    &#34;&#34;&#34;
+    if metadata is None:
+        raise SDKException(&#39;Subclient&#39;, &#39;123&#39;)
+
+    if metadata[&#34;dataType&#34;] != 1:
+        raise SDKException(&#39;Subclient&#39;, &#39;124&#39;)
+
+    if metadata[&#34;sizeKB&#34;] == 0:
+        raise SDKException(&#39;Subclient&#39;, &#39;125&#39;)
+
+
+    self._GET_VARIOUS_PREVIEW = self._services[&#39;GET_VARIOUS_PREVIEW&#39;]
+    item_path_base_64 = base64.b64encode(metadata[&#34;filePath&#34;].encode()).decode()
+    request_json = {
+        &#34;filters&#34;: [
+            {
+                &#34;field&#34;: &#34;APP_TYPE&#34;,
+                &#34;fieldValues&#34;: {
+                    &#34;values&#34;: [
+                        &#34;200128&#34;
+                    ]
+                }
+            },
+            {
+                &#34;field&#34;: &#34;SUBCLIENT_ID&#34;,
+                &#34;fieldValues&#34;: {
+                    &#34;values&#34;: [
+                        str(self.subclient_id)
+                    ]
+                }
+            },
+            {
+                &#34;field&#34;: &#34;CONTENTID&#34;,
+                &#34;fieldValues&#34;: {
+                    &#34;values&#34;: [
+                        metadata[&#34;documentId&#34;]
+                    ]
+                }
+            },
+            {
+                &#34;field&#34;: &#34;ARCHIVE_FILE_ID&#34;,
+                &#34;fieldValues&#34;: {
+                    &#34;values&#34;: [
+                        str(metadata[&#34;aFileId&#34;])
+
+                    ]
+                }
+            },
+            {
+                &#34;field&#34;: &#34;ARCHIVE_FILE_OFFSET&#34;,
+                &#34;fieldValues&#34;: {
+                    &#34;values&#34;: [
+                       str(metadata[&#34;aFileOffset&#34;])
+                    ]
+                }
+            },
+            {
+                &#34;field&#34;: &#34;COMMCELL_ID&#34;,
+                &#34;fieldValues&#34;: {
+                    &#34;values&#34;: [
+                        str(metadata[&#34;commcellNo&#34;])
+                    ]
+                }
+            },
+            {
+                &#34;field&#34;: &#34;CV_TURBO_GUID&#34;,
+                &#34;fieldValues&#34;: {
+                    &#34;values&#34;: [
+                        metadata[&#34;turboGuid&#34;]
+                    ]
+                }
+            },
+            {
+                &#34;field&#34;: &#34;ITEM_SIZE&#34;,
+                &#34;fieldValues&#34;: {
+                    &#34;values&#34;: [
+                        str(metadata[&#34;sizeKB&#34;])
+                    ]
+                }
+            },
+            {
+                &#34;field&#34;: &#34;ITEM_PATH_BASE64_ENCODED&#34;,
+                &#34;fieldValues&#34;: {
+                    &#34;values&#34;: [
+                        item_path_base_64
+                    ]
+                }
+            }
+
+        ]
+    }
+
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;, self._GET_VARIOUS_PREVIEW, request_json)
+
+    if flag:
+        if &#34;Preview not available&#34; not in response.text:
+            return response.text
+        else:
+            raise SDKException(&#39;Subclient&#39;, &#39;127&#39;)
+    else:
+        raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, self._update_response_(response.text))</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.refresh_client_level_stats"><code class="name flex">
 <span>def <span class="ident">refresh_client_level_stats</span></span>(<span>self)</span>
 </code></dt>
@@ -3084,7 +4098,7 @@ If response is not success.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L1190-L1212" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_subclient.py#L1203-L1225" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh_client_level_stats(self):
     &#34;&#34;&#34;
@@ -3093,7 +4107,7 @@ If response is not success.
     &#34;&#34;&#34;
     request_json = {
         &#34;appType&#34;: const.INDEX_APP_TYPE,
-        &#34;oneDriveIdxStatsReq&#34;:
+        &#34;teamsIdxStatsReq&#34;:
             [{
                 &#34;subclientId&#34;: int(self._subclient_id), &#34;type&#34;: 0}]
     }
@@ -3119,7 +4133,7 @@ If response is not success.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L1168-L1188" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_subclient.py#L1181-L1201" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh_retention_stats(self):
     &#34;&#34;&#34;
@@ -3154,7 +4168,7 @@ Boolean if the association was removed successfully</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L768-L792" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_subclient.py#L781-L805" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def remove_all_users_content(self):
     &#34;&#34;&#34;Removes all user content from a teams client
@@ -3196,7 +4210,7 @@ Boolean if the association was removed successfully</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L746-L766" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_subclient.py#L759-L779" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def remove_team_association(self, user_assoc):
     &#34;&#34;&#34;Removes user association from a teams client
@@ -3265,7 +4279,7 @@ If response is not success.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L1028-L1121" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_subclient.py#L1041-L1134" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_files_to_out_of_place(self, source_team_mail, destination_team_mail, destination_channel,
                                   selected_files_ids, values, selected_files):
@@ -3401,7 +4415,7 @@ If response is not success.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L875-L978" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_subclient.py#L888-L991" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place_to_file_location(self, source_team_mail, dest_client, dest_path, selected_items, values):
     &#34;&#34;&#34;Restore a team to file location.
@@ -3535,7 +4549,7 @@ If response is not success.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L583-L622" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_subclient.py#L596-L635" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_posts_to_html(self, teams, destination_team=None):
     &#34;&#34;&#34;Restore posts of a team as HTML.
@@ -3612,7 +4626,7 @@ If response is not success.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L1123-L1166" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_subclient.py#L1136-L1179" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_to_original_location(self, team_email_id, skip_items=True, restore_posts_as_html=False):
     &#34;&#34;&#34;Restore a team to original location.
@@ -3660,6 +4674,80 @@ If response is not success.
     return self._process_restore(request_json)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.run_restore_for_chat_to_onedrive"><code class="name flex">
+<span>def <span class="ident">run_restore_for_chat_to_onedrive</span></span>(<span>self, user_email)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Runs restore for user to onedrive</p>
+<h2 id="args">Args</h2>
+<p>user_email (str) : Email id of a user</p>
+<h2 id="returns">Returns</h2>
+<p>obj
+&ndash;
+Instance of Restore job.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_subclient.py#L1510-L1565" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def run_restore_for_chat_to_onedrive(self, user_email):
+    &#34;&#34;&#34;
+    Runs restore for user to onedrive
+    Args:
+        user_email (str) : Email id of a user
+    Returns:
+                   obj   --  Instance of Restore job.
+    &#34;&#34;&#34;
+    discovered_teams = self.discover(discovery_type=const.ClOUD_APP_EDISCOVER_TYPE[&#39;Users&#39;])
+    if user_email not in discovered_teams:
+        raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, f&#34;User {user_email} not found in discovered teams&#34;)
+    source_user = discovered_teams[user_email]
+    request_json = copy(const.USER_ONEDRIVE_RESTORE_JSON)
+    request_json[&#34;taskInfo&#34;][&#34;associations&#34;] = [self._subClientEntity]
+    request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
+        &#39;cloudAppsRestoreOptions&#39;][&#34;msTeamsRestoreOptions&#34;][&#39;selectedItemsToRestore&#39;] = [{
+                &#34;itemId&#34;: source_user[&#39;user&#39;][&#39;userGUID&#39;].lower(),
+                &#34;itemType&#34;: 50,
+                &#34;isDirectory&#34;: True,
+                &#34;entityGUID&#34;: source_user[&#39;user&#39;][&#39;userGUID&#39;].lower()
+              }]
+
+    request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
+        &#39;cloudAppsRestoreOptions&#39;][&#34;msTeamsRestoreOptions&#34;][&#39;destLocation&#39;] = f&#34;{source_user[&#39;displayName&#39;]}/&#34;
+    destionation_onedrive_info = copy(const.DESTINATION_ONEDRIVE_INFO)
+    destionation_onedrive_info[&#39;userSMTP&#39;] = source_user[&#39;smtpAddress&#39;]
+    destionation_onedrive_info[&#39;userGUID&#39;] = source_user[&#39;user&#39;][&#39;userGUID&#39;]
+    request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][
+        &#39;cloudAppsRestoreOptions&#39;][&#34;msTeamsRestoreOptions&#34;][&#39;destinationOneDriveInfo&#39;] = destionation_onedrive_info
+    request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;destination&#34;][&#34;destPath&#34;]= \
+        [source_user[&#39;displayName&#39;]+&#34;/&#34;]
+    request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;destination&#34;][&#34;destClient&#34;] = {
+            &#34;clientId&#34;: self._subClientEntity[&#39;clientId&#39;],
+            &#34;clientName&#34;: self._subClientEntity[&#39;displayName&#39;]
+    }
+    request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;cloudAppsRestoreOptions&#34;]\
+        [&#34;msTeamsRestoreOptions&#34;][&#34;findQuery&#34;][&#34;advSearchGrp&#34;][&#34;galaxyFilter&#34;]=\
+        [{&#34;appIdList&#34;: [self._subClientEntity[&#34;subclientId&#34;]]}]
+
+
+    url = self._services[&#39;CREATE_TASK&#39;]
+    flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, url, request_json)
+
+    if flag:
+        response_json = response.json()
+        if response_json:
+            if &#39;jobIds&#39; in response_json:
+                return Job(self._commcell_object, response_json[&#39;jobIds&#39;][0])
+    
+            elif &#34;errorCode&#34; in response_json:
+                error_message = response_json[&#39;errorMessage&#39;]
+
+        raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+
+    response_string = self._commcell_object._update_response_(response.text)
+    raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.set_all_users_content"><code class="name flex">
 <span>def <span class="ident">set_all_users_content</span></span>(<span>self, plan_name)</span>
 </code></dt>
@@ -3670,7 +4758,7 @@ If response is not success.
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_subclient.py#L667-L697" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_subclient.py#L680-L710" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_all_users_content(self, plan_name):
     &#34;&#34;&#34;Add all teams to content
@@ -3745,6 +4833,7 @@ If response is not success.
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.refresh" href="../../subclient.html#cvpysdk.subclient.Subclient.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.restore_in_place" href="../../subclient.html#cvpysdk.subclient.Subclient.restore_in_place">restore_in_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.restore_out_of_place" href="../../subclient.html#cvpysdk.subclient.Subclient.restore_out_of_place">restore_out_of_place</a></code></li>
+<li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.run_content_indexing" href="../../subclient.html#cvpysdk.subclient.Subclient.run_content_indexing">run_content_indexing</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.set_backup_nodes" href="../../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.set_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.snapshot_engine_name" href="../../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
@@ -3835,11 +4924,15 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.backup" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.backup">backup</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.backup_stats" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.backup_stats">backup_stats</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.content" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.content">content</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.copy" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.copy">copy</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.discover" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.discover">discover</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.do_web_search" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.do_web_search">do_web_search</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.exclude_teams_from_backup" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.exclude_teams_from_backup">exclude_teams_from_backup</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.find_teams" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.find_teams">find_teams</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.get_associated_teams" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.get_associated_teams">get_associated_teams</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.get_team" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.get_team">get_team</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.out_of_place_restore" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.out_of_place_restore">out_of_place_restore</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.preview_backedup_file" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.preview_backedup_file">preview_backedup_file</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.refresh_client_level_stats" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.refresh_client_level_stats">refresh_client_level_stats</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.refresh_retention_stats" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.refresh_retention_stats">refresh_retention_stats</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.remove_all_users_content" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.remove_all_users_content">remove_all_users_content</a></code></li>
@@ -3848,6 +4941,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.restore_out_of_place_to_file_location" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.restore_out_of_place_to_file_location">restore_out_of_place_to_file_location</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.restore_posts_to_html" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.restore_posts_to_html">restore_posts_to_html</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.restore_to_original_location" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.restore_to_original_location">restore_to_original_location</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.run_restore_for_chat_to_onedrive" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.run_restore_for_chat_to_onedrive">run_restore_for_chat_to_onedrive</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.set_all_users_content" href="#cvpysdk.subclients.cloudapps.teams_subclient.TeamsSubclient.set_all_users_content">set_all_users_content</a></code></li>
 </ul>
 </li>

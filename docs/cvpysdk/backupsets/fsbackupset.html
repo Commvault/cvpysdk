@@ -94,7 +94,7 @@ It returns browse volume guid</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/fsbackupset.py#L1-L1676" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/fsbackupset.py#L1-L1690" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -1155,10 +1155,6 @@ class FSBackupset(Backupset):
             &#39;skipIfExists&#39; : restore_options.get(&#39;run_FS_restore&#39;, False),
             &#39;SyncRestore&#39; : False
         }
-        one_touch_option = {
-            &#39;fromTime&#39;: restore_options.get(&#39;fromTime&#39;, 0),
-            &#39;toTime&#39;: restore_options.get(&#39;toTime&#39;, 0)
-        }
         response_data = {
                 &#34;clients&#34;: [{
                     &#34;clone&#34;: is_clone,
@@ -1217,7 +1213,25 @@ class FSBackupset(Backupset):
                     &#39;dns&#39;][&#39;nameservers&#39;][0][&#39;address&#39;] = restore_options.get(&#39;dns_ip&#39;, None)
         request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;oneTouchRestoreOption&#39;][&#39;responseData&#39;][
             0] = response_data
-        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;oneTouchOption&#39;] = one_touch_option
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;oneTouchRestoreOption&#39;][
+            &#39;restoreFromBackupBeforeDate&#39;] = True if restore_options.get(&#39;restoreFromBackupBeforeDate&#39;) else False
+        if restore_options.get(&#39;onetouch_backup_jobid&#39;) is not None:
+            _job = self._commcell_object.job_controller.get(restore_options.get(&#39;onetouch_backup_jobid&#39;))
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;browseOption&#34;][
+                &#34;timeRange&#34;][&#34;toTime&#34;] = _job.end_timestamp
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;browseOption&#34;][
+                &#34;timeRange&#34;][&#34;fromTime&#34;] = _job.start_timestamp
+
+            request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;vmProvisioningOption&#39;][
+                &#39;virtualMachineOption&#39;][0][&#39;oneTouchResponse&#39;][&#39;dataBrowseTime&#39;][
+                &#39;TimeZoneName&#39;] = self._commcell_object.commserv_timezone
+            request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;vmProvisioningOption&#39;][
+                &#39;virtualMachineOption&#39;][0][&#39;oneTouchResponse&#39;][&#39;dataBrowseTime&#39;][&#39;time&#39;] = _job.end_timestamp
+
+            one_touch_option = {&#39;fromTime&#39;: 0, &#39;toTime&#39;: _job.end_timestamp}
+            request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;oneTouchOption&#39;] = one_touch_option
+            request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;fileOption&#39;][
+                &#39;sourceItem&#39;] = ([f&#39;2:{_job.job_id}&#39;])
         return self._process_restore_response(request_json)
 
     @property
@@ -1810,7 +1824,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/fsbackupset.py#L82-L1676" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/fsbackupset.py#L82-L1690" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class FSBackupset(Backupset):
     &#34;&#34;&#34;Derived class from Backupset Base class, representing a fs backupset,
@@ -2790,10 +2804,6 @@ default: None</p>
             &#39;skipIfExists&#39; : restore_options.get(&#39;run_FS_restore&#39;, False),
             &#39;SyncRestore&#39; : False
         }
-        one_touch_option = {
-            &#39;fromTime&#39;: restore_options.get(&#39;fromTime&#39;, 0),
-            &#39;toTime&#39;: restore_options.get(&#39;toTime&#39;, 0)
-        }
         response_data = {
                 &#34;clients&#34;: [{
                     &#34;clone&#34;: is_clone,
@@ -2852,7 +2862,25 @@ default: None</p>
                     &#39;dns&#39;][&#39;nameservers&#39;][0][&#39;address&#39;] = restore_options.get(&#39;dns_ip&#39;, None)
         request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;oneTouchRestoreOption&#39;][&#39;responseData&#39;][
             0] = response_data
-        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;oneTouchOption&#39;] = one_touch_option
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;oneTouchRestoreOption&#39;][
+            &#39;restoreFromBackupBeforeDate&#39;] = True if restore_options.get(&#39;restoreFromBackupBeforeDate&#39;) else False
+        if restore_options.get(&#39;onetouch_backup_jobid&#39;) is not None:
+            _job = self._commcell_object.job_controller.get(restore_options.get(&#39;onetouch_backup_jobid&#39;))
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;browseOption&#34;][
+                &#34;timeRange&#34;][&#34;toTime&#34;] = _job.end_timestamp
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;browseOption&#34;][
+                &#34;timeRange&#34;][&#34;fromTime&#34;] = _job.start_timestamp
+
+            request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;vmProvisioningOption&#39;][
+                &#39;virtualMachineOption&#39;][0][&#39;oneTouchResponse&#39;][&#39;dataBrowseTime&#39;][
+                &#39;TimeZoneName&#39;] = self._commcell_object.commserv_timezone
+            request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;vmProvisioningOption&#39;][
+                &#39;virtualMachineOption&#39;][0][&#39;oneTouchResponse&#39;][&#39;dataBrowseTime&#39;][&#39;time&#39;] = _job.end_timestamp
+
+            one_touch_option = {&#39;fromTime&#39;: 0, &#39;toTime&#39;: _job.end_timestamp}
+            request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;oneTouchOption&#39;] = one_touch_option
+            request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;fileOption&#39;][
+                &#39;sourceItem&#39;] = ([f&#39;2:{_job.job_id}&#39;])
         return self._process_restore_response(request_json)
 
     @property
@@ -3424,7 +3452,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/fsbackupset.py#L1202-L1206" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/fsbackupset.py#L1216-L1220" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_pruning_cycles_retention(self):
@@ -3439,7 +3467,7 @@ def index_pruning_cycles_retention(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/fsbackupset.py#L1196-L1200" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/fsbackupset.py#L1210-L1214" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_pruning_days_retention(self):
@@ -3454,7 +3482,7 @@ def index_pruning_days_retention(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/fsbackupset.py#L1191-L1194" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/fsbackupset.py#L1205-L1208" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_pruning_type(self):
@@ -3468,7 +3496,7 @@ def index_pruning_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/fsbackupset.py#L1125-L1138" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/fsbackupset.py#L1139-L1152" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_server(self):
@@ -3531,7 +3559,7 @@ arcp
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/fsbackupset.py#L1446-L1524" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/fsbackupset.py#L1460-L1538" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_fsblr_replication_pair(self, srcclientid, destclientid, srcguid, destguid,
                                   rpstoreid=None, replicationtype=None, **replication_options):
@@ -3644,7 +3672,7 @@ Replication Subclient id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/fsbackupset.py#L1528-L1653" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/fsbackupset.py#L1542-L1667" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_granular_replica_copy(self, srcclientid, destclientid, scid, blrid, srcguid, dstguid, restoreguid,
                                  **replication_options):
@@ -3801,7 +3829,7 @@ Replication Subclient id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/fsbackupset.py#L1290-L1396" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/fsbackupset.py#L1304-L1410" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_replica_copy(self, srcclientid, destclientid, scid, blrid,
                         srcguid, dstguid, **replication_options):
@@ -3925,7 +3953,7 @@ blocklevel replication id.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/fsbackupset.py#L1399-L1407" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/fsbackupset.py#L1413-L1421" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_replication_pair(self, blrid):
     &#34;&#34;&#34;&#34;Delete replication pair
@@ -3973,7 +4001,7 @@ additional metadata retrieved from browse</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/fsbackupset.py#L302-L339" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/fsbackupset.py#L302-L339" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find_all_versions(self, *args, **kwargs):
     &#34;&#34;&#34;Searches the content of a Subclient, and returns all versions available for the content.
@@ -4025,7 +4053,7 @@ additional metadata retrieved from browse</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/fsbackupset.py#L1656-L1676" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/fsbackupset.py#L1670-L1690" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_browse_volume_guid(self):
 
@@ -4063,7 +4091,7 @@ additional metadata retrieved from browse</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/fsbackupset.py#L1409-L1419" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/fsbackupset.py#L1423-L1433" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_mount_path_guid(self, volume):
     &#34;&#34;&#34;
@@ -4098,7 +4126,7 @@ subclient_id
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/fsbackupset.py#L1421-L1443" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/fsbackupset.py#L1435-L1457" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_recovery_points(self, client_id, subclient_id):
     &#34;&#34;&#34; Get all recovery points for the BLR pair from the associated RPStore.
@@ -4207,7 +4235,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/fsbackupset.py#L86-L177" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/fsbackupset.py#L86-L177" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -4408,7 +4436,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/fsbackupset.py#L179-L300" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/fsbackupset.py#L179-L300" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -4567,7 +4595,7 @@ returns the task object</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/fsbackupset.py#L1005-L1123" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/fsbackupset.py#L1005-L1137" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_bmr_aix_restore(self, **restore_options):
     &#34;&#34;&#34;
@@ -4623,10 +4651,6 @@ returns the task object</p></div>
         &#39;restoreToDisk&#39; : False,
         &#39;skipIfExists&#39; : restore_options.get(&#39;run_FS_restore&#39;, False),
         &#39;SyncRestore&#39; : False
-    }
-    one_touch_option = {
-        &#39;fromTime&#39;: restore_options.get(&#39;fromTime&#39;, 0),
-        &#39;toTime&#39;: restore_options.get(&#39;toTime&#39;, 0)
     }
     response_data = {
             &#34;clients&#34;: [{
@@ -4686,7 +4710,25 @@ returns the task object</p></div>
                 &#39;dns&#39;][&#39;nameservers&#39;][0][&#39;address&#39;] = restore_options.get(&#39;dns_ip&#39;, None)
     request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;oneTouchRestoreOption&#39;][&#39;responseData&#39;][
         0] = response_data
-    request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;oneTouchOption&#39;] = one_touch_option
+    request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;oneTouchRestoreOption&#39;][
+        &#39;restoreFromBackupBeforeDate&#39;] = True if restore_options.get(&#39;restoreFromBackupBeforeDate&#39;) else False
+    if restore_options.get(&#39;onetouch_backup_jobid&#39;) is not None:
+        _job = self._commcell_object.job_controller.get(restore_options.get(&#39;onetouch_backup_jobid&#39;))
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;browseOption&#34;][
+            &#34;timeRange&#34;][&#34;toTime&#34;] = _job.end_timestamp
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;browseOption&#34;][
+            &#34;timeRange&#34;][&#34;fromTime&#34;] = _job.start_timestamp
+
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;vmProvisioningOption&#39;][
+            &#39;virtualMachineOption&#39;][0][&#39;oneTouchResponse&#39;][&#39;dataBrowseTime&#39;][
+            &#39;TimeZoneName&#39;] = self._commcell_object.commserv_timezone
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;vmProvisioningOption&#39;][
+            &#39;virtualMachineOption&#39;][0][&#39;oneTouchResponse&#39;][&#39;dataBrowseTime&#39;][&#39;time&#39;] = _job.end_timestamp
+
+        one_touch_option = {&#39;fromTime&#39;: 0, &#39;toTime&#39;: _job.end_timestamp}
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;oneTouchOption&#39;] = one_touch_option
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;restoreOptions&#39;][&#39;fileOption&#39;][
+            &#39;sourceItem&#39;] = ([f&#39;2:{_job.job_id}&#39;])
     return self._process_restore_response(request_json)</code></pre>
 </details>
 </dd>
@@ -4734,7 +4776,7 @@ returns the task object</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/backupsets/fsbackupset.py#L595-L839" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/fsbackupset.py#L595-L839" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_bmr_restore(self, **restore_options):
     &#34;&#34;&#34;

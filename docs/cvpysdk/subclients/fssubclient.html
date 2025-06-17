@@ -66,6 +66,12 @@ specified in the input paths list to the same location.</p>
 &ndash;
 Restores the files/folders specified in the input paths list
 to the input client, at the specified destionation location</p>
+<p>preview_backedup_file()
+&ndash;
+Get the preview content of the file</p>
+<p>add_comparison()
+&ndash;
+Adds a comparison job for the subclient</p>
 <h1 id="filesystemsubclient-instance-attributes">FileSystemSubclient Instance Attributes:</h1>
 <pre><code>**_fs_subclient_prop**                --  Returns the JSON for the fsSubclientProp tag in the Subclient 
                                           Properties JSON
@@ -150,7 +156,7 @@ to the input client, at the specified destionation location</p>
 
 **backup_spool_file_data**            --  Gets the value of spool file data on ibmi option for IBMi subclient
 
-**backup_queue_data**                 --  Gets the value of queue data data on ibmi option for IBMi subclient.
+**backup_queue_data**                 --  Gets the value of queue data on ibmi option for IBMi subclient.
 
 **backup_private_authorities**        --  Gets the value of private authorities on ibmi option for IBMi subclient.
 
@@ -165,20 +171,18 @@ to the input client, at the specified destionation location</p>
 
 **save_while_active_option**          --  Set the save while active options for an IBMi subclient.
 
+**pre_post_commands**                                 --  Sets the pre/post commands for the subclient.
 
+**backup_nodes**                      --  Sets backup nodes for FS Agent under Network Share clients.
 
-    **pre_post_commands**                             --  Sets the pre/post commands for the subclient.
-
-    **backup_nodes**                      --  Sets backup nodes for FS Agent under Network Share clients.
-
-    **impersonate_user**                  --  Impersonation information for the subclient.
+**impersonate_user**                  --  Impersonation information for the subclient.
 
 **plan**                              -- Set plan without/with overriding Plan's default content.
 </code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L1-L2707" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L1-L2801" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -234,6 +238,9 @@ FileSystemSubclient:
     restore_out_of_place()              --  Restores the files/folders specified in the input paths list
                                             to the input client, at the specified destionation location
 
+    preview_backedup_file()             --  Get the preview content of the file
+
+    add_comparison()                    --  Adds a comparison job for the subclient
 
 FileSystemSubclient Instance Attributes:
 =======================================
@@ -314,14 +321,14 @@ FileSystemSubclient Instance Attributes:
 
     **index_pruning_cycles_retention**    --  Sets the number of cycles to be maintained in
                                               subclient index
-        
+
     **ibmi_dr_config**                    --  Sets the subclient into one touch mode and adds ibmi DR parameters
 
     **backup_savf_file_data**             --  Sets the savf file data property for ibmi backup.
 
     **backup_spool_file_data**            --  Gets the value of spool file data on ibmi option for IBMi subclient
 
-    **backup_queue_data**                 --  Gets the value of queue data data on ibmi option for IBMi subclient.
+    **backup_queue_data**                 --  Gets the value of queue data on ibmi option for IBMi subclient.
 
     **backup_private_authorities**        --  Gets the value of private authorities on ibmi option for IBMi subclient.
 
@@ -336,16 +343,13 @@ FileSystemSubclient Instance Attributes:
 
     **save_while_active_option**          --  Set the save while active options for an IBMi subclient.
 
+    **pre_post_commands**                                 --  Sets the pre/post commands for the subclient.
 
+    **backup_nodes**                      --  Sets backup nodes for FS Agent under Network Share clients.
 
-        **pre_post_commands**                             --  Sets the pre/post commands for the subclient.
-
-        **backup_nodes**                      --  Sets backup nodes for FS Agent under Network Share clients.
-
-        **impersonate_user**                  --  Impersonation information for the subclient.
+    **impersonate_user**                  --  Impersonation information for the subclient.
     
     **plan**                              -- Set plan without/with overriding Plan&#39;s default content.
-
 
 &#34;&#34;&#34;
 
@@ -2886,7 +2890,101 @@ class FileSystemSubclient(Subclient):
                 &#39;removePlanAssociation&#39;: True
             })
         else:
-            raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)</code></pre>
+            raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
+
+    def preview_backedup_file(self, file_path):
+        &#34;&#34;&#34;Gets the preview content for the subclient.
+            Params:
+                file_path (str) --  file path to get the preview content
+
+            Returns:
+                html   (str)   --  html content of the preview
+
+            Raises:
+                SDKException:
+                    if file is not found
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        return self._get_preview(file_path)
+
+    def add_comparison(self, name, source_backup_time, compare_with_time):
+        &#34;&#34;&#34;Adds a comparison job for the subclient
+
+            Args:
+                name                (str)       --      The name of the comparison
+
+                source_backup_time  (int)       --      The epoch time of the source job&#39;s backup time. Ex: 1743167209
+
+                compare_with_time   (int)       --      The epoch time of the other job to compare.
+
+            Returns:
+                object - Instance of the Job class for the comparison job.
+
+        &#34;&#34;&#34;
+
+        request_json = {
+            &#34;taskInfo&#34;: {
+                &#34;associations&#34;: [
+                    {
+                        &#34;clientName&#34;: self._client_object._client_name,
+                        &#34;appName&#34;: self._agent_object._agent_name,
+                        &#34;backupsetName&#34;: self._backupset_object._backupset_name,
+                        &#34;subclientName&#34;: self._subclient_name,
+                        &#34;_type_&#34;: 7
+                    }
+                ],
+                &#34;task&#34;: {
+                    &#34;taskType&#34;: 1
+                },
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTaskOperation&#34;: 1,
+                        &#34;subTask&#34;: {
+                            &#34;subTaskType&#34;: 1,
+                            &#34;operationType&#34;: 4025
+                        },
+                        &#34;options&#34;: {
+                            &#34;backupOpts&#34;: {},
+                            &#34;adComparisonOption&#34;: {
+                                &#34;leftSetTime&#34;: int(source_backup_time),
+                                &#34;rightSetTime&#34;: int(compare_with_time),
+                                &#34;adCompareType&#34;: 0,
+                                &#34;nodeClientId&#34;: int(self._client_object.client_id),
+                                &#34;clientId&#34;: int(self._client_object.client_id),
+                                &#34;comparisonName&#34;: name,
+                                &#34;appTypeId&#34;: 33,
+                                &#34;subClientId&#34;: int(self.subclient_id),
+                                &#34;adComparisonJobType&#34;: 0,
+                                &#34;status&#34;: 0
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        comparison_task = self._commcell_object._services[&#39;CREATE_TASK&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;POST&#39;, comparison_task, request_json)
+
+        if flag:
+            if response.json():
+                if &#34;jobIds&#34; in response.json():
+                    return Job(self._commcell_object, response.json()[&#39;jobIds&#39;][0])
+                elif &#34;errorCode&#34; in response.json():
+                    error_message = response.json()[&#39;errorMessage&#39;]
+
+                    o_str = &#39;Failed to start the comparison job.\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Subclient&#39;, &#39;118&#39;, o_str)
+                else:
+                    raise SDKException(&#39;Subclient&#39;, &#39;118&#39;, &#39;Failed to start the comparison job&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 </section>
 <section>
@@ -2924,7 +3022,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L200-L2707" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L200-L2801" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class FileSystemSubclient(Subclient):
     &#34;&#34;&#34;Derived class from Subclient Base class, representing a file system subclient,
@@ -5433,7 +5531,101 @@ default: None</p>
                 &#39;removePlanAssociation&#39;: True
             })
         else:
-            raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)</code></pre>
+            raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
+
+    def preview_backedup_file(self, file_path):
+        &#34;&#34;&#34;Gets the preview content for the subclient.
+            Params:
+                file_path (str) --  file path to get the preview content
+
+            Returns:
+                html   (str)   --  html content of the preview
+
+            Raises:
+                SDKException:
+                    if file is not found
+
+                    if response is empty
+
+                    if response is not success
+        &#34;&#34;&#34;
+        return self._get_preview(file_path)
+
+    def add_comparison(self, name, source_backup_time, compare_with_time):
+        &#34;&#34;&#34;Adds a comparison job for the subclient
+
+            Args:
+                name                (str)       --      The name of the comparison
+
+                source_backup_time  (int)       --      The epoch time of the source job&#39;s backup time. Ex: 1743167209
+
+                compare_with_time   (int)       --      The epoch time of the other job to compare.
+
+            Returns:
+                object - Instance of the Job class for the comparison job.
+
+        &#34;&#34;&#34;
+
+        request_json = {
+            &#34;taskInfo&#34;: {
+                &#34;associations&#34;: [
+                    {
+                        &#34;clientName&#34;: self._client_object._client_name,
+                        &#34;appName&#34;: self._agent_object._agent_name,
+                        &#34;backupsetName&#34;: self._backupset_object._backupset_name,
+                        &#34;subclientName&#34;: self._subclient_name,
+                        &#34;_type_&#34;: 7
+                    }
+                ],
+                &#34;task&#34;: {
+                    &#34;taskType&#34;: 1
+                },
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTaskOperation&#34;: 1,
+                        &#34;subTask&#34;: {
+                            &#34;subTaskType&#34;: 1,
+                            &#34;operationType&#34;: 4025
+                        },
+                        &#34;options&#34;: {
+                            &#34;backupOpts&#34;: {},
+                            &#34;adComparisonOption&#34;: {
+                                &#34;leftSetTime&#34;: int(source_backup_time),
+                                &#34;rightSetTime&#34;: int(compare_with_time),
+                                &#34;adCompareType&#34;: 0,
+                                &#34;nodeClientId&#34;: int(self._client_object.client_id),
+                                &#34;clientId&#34;: int(self._client_object.client_id),
+                                &#34;comparisonName&#34;: name,
+                                &#34;appTypeId&#34;: 33,
+                                &#34;subClientId&#34;: int(self.subclient_id),
+                                &#34;adComparisonJobType&#34;: 0,
+                                &#34;status&#34;: 0
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        comparison_task = self._commcell_object._services[&#39;CREATE_TASK&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;POST&#39;, comparison_task, request_json)
+
+        if flag:
+            if response.json():
+                if &#34;jobIds&#34; in response.json():
+                    return Job(self._commcell_object, response.json()[&#39;jobIds&#39;][0])
+                elif &#34;errorCode&#34; in response.json():
+                    error_message = response.json()[&#39;errorMessage&#39;]
+
+                    o_str = &#39;Failed to start the comparison job.\nError: &#34;{0}&#34;&#39;.format(error_message)
+                    raise SDKException(&#39;Subclient&#39;, &#39;118&#39;, o_str)
+                else:
+                    raise SDKException(&#39;Subclient&#39;, &#39;118&#39;, &#39;Failed to start the comparison job&#39;)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -5459,7 +5651,7 @@ if archiver or modified time retention is not enabled for the subclient</p></div
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L981-L993" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L981-L993" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def archiver_retention(self):
@@ -5485,7 +5677,7 @@ retention</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L1027-L1035" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L1027-L1035" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def archiver_retention_days(self):
@@ -5504,7 +5696,7 @@ def archiver_retention_days(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L2552-L2557" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L2552-L2557" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_nodes(self):
@@ -5527,7 +5719,7 @@ if backup only archiving candidate is not enabled for the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L1178-L1188" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L1178-L1188" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_only_archiving_candidate(self):
@@ -5555,7 +5747,7 @@ if PVTAUT on IBMi is enabled on the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L2339-L2348" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L2339-L2348" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_private_authorities(self):
@@ -5582,7 +5774,7 @@ if queue data on IBMi is enabled on the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L2314-L2323" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L2314-L2323" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_queue_data(self):
@@ -5609,7 +5801,7 @@ if backup_rentention is not enabled for the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L712-L723" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L712-L723" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_retention(self):
@@ -5633,7 +5825,7 @@ def backup_retention(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L819-L834" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L819-L834" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_retention_days(self):
@@ -5663,7 +5855,7 @@ Is savf file data going to be backed up</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L2259-L2267" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L2259-L2267" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_savf_file_data(self):
@@ -5689,7 +5881,7 @@ if spool file data on IBMi is enabled on the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L2289-L2298" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L2289-L2298" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_spool_file_data(self):
@@ -5716,7 +5908,7 @@ if multiple drives is enabled.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L1319-L1328" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L1319-L1328" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_using_multiple_drives(self):
@@ -5739,7 +5931,7 @@ false - if blocklevel is not enabled on the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L750-L759" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L750-L759" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def block_level_backup_option(self):
@@ -5763,7 +5955,7 @@ def block_level_backup_option(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L2073-L2083" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L2073-L2083" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def catalog_acl(self):
@@ -5786,7 +5978,7 @@ def catalog_acl(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L463-L476" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L463-L476" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def content(self):
@@ -5813,7 +6005,7 @@ false - if metadata collection is not enabled on the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L794-L803" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L794-L803" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def create_file_level_index_option(self):
@@ -5839,7 +6031,7 @@ if disk Cleanup is enabled for the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L1073-L1089" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L1073-L1089" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def disk_cleanup(self):
@@ -5870,7 +6062,7 @@ disk clean up rules</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L1118-L1127" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L1118-L1127" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def disk_cleanup_rules(self):
@@ -5893,7 +6085,7 @@ Dictionary of synclib options</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L1442-L1456" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L1442-L1456" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def enable_synclib(self):
@@ -5918,7 +6110,7 @@ def enable_synclib(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L533-L542" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L533-L542" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def exception_content(self):
@@ -5941,7 +6133,7 @@ file version mode</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L1215-L1237" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L1215-L1237" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def file_version(self):
@@ -5974,7 +6166,7 @@ def file_version(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L497-L506" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L497-L506" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def filter_content(self):
@@ -6001,7 +6193,7 @@ if signature generation on IBMi is not enabled on the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L1296-L1305" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L1296-L1305" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def generate_signature_on_ibmi(self):
@@ -6021,7 +6213,7 @@ def generate_signature_on_ibmi(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L1417-L1422" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L1417-L1422" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def global_filter_status(self):
@@ -6041,7 +6233,7 @@ Return the string value of IBMi compression property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L2433-L2440" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L2433-L2440" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def ibmi_compression(self):
@@ -6063,7 +6255,7 @@ Dictionary of DR parameters</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L2211-L2225" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L2211-L2225" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def ibmi_dr_config(self):
@@ -6088,7 +6280,7 @@ def ibmi_dr_config(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L2604-L2609" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L2604-L2609" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def impersonate_user(self):
@@ -6104,7 +6296,7 @@ def impersonate_user(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L2158-L2162" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L2158-L2162" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_pruning_cycles_retention(self):
@@ -6119,7 +6311,7 @@ def index_pruning_cycles_retention(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L2152-L2156" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L2152-L2156" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_pruning_days_retention(self):
@@ -6134,7 +6326,7 @@ def index_pruning_days_retention(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L2143-L2150" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L2143-L2150" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_pruning_type(self):
@@ -6152,7 +6344,7 @@ def index_pruning_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L2100-L2117" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L2100-L2117" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_server(self):
@@ -6181,7 +6373,7 @@ auto-mounted during in-place restores.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L2577-L2583" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L2577-L2583" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def network_share_auto_mount(self):
@@ -6205,7 +6397,7 @@ if object level backup is not enabled on the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L1394-L1403" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L1394-L1403" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def object_level_backup(self):
@@ -6232,7 +6424,7 @@ if system state property is not enabled for the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L898-L907" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L898-L907" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def onetouch_option(self):
@@ -6252,7 +6444,7 @@ def onetouch_option(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L916-L921" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L916-L921" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def onetouch_server(self):
@@ -6268,7 +6460,7 @@ def onetouch_server(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L932-L937" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L932-L937" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def onetouch_server_directory(self):
@@ -6291,7 +6483,7 @@ if multiple drives is enabled.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L1369-L1378" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L1369-L1378" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def other_pending_changes(self):
@@ -6319,7 +6511,7 @@ if multiple drives is enabled.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L1344-L1353" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L1344-L1353" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pending_record_changes(self):
@@ -6343,7 +6535,7 @@ All the pre/post commands</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L2499-L2514" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L2499-L2514" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pre_post_commands(self):
@@ -6373,7 +6565,7 @@ Return the save access path string value</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L2387-L2394" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L2387-L2394" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def save_access_path(self):
@@ -6394,7 +6586,7 @@ Dictionary of save while active options</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L2456-L2467" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L2456-L2467" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def save_while_active_option(self):
@@ -6427,7 +6619,7 @@ Change Journal Scan</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L569-L580" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L569-L580" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def scan_type(self):
@@ -6463,7 +6655,7 @@ Off</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L1494-L1505" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L1494-L1505" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def software_compression(self):
@@ -6492,7 +6684,7 @@ if system state property is not enabled for the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L878-L887" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L878-L887" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def system_state_option(self):
@@ -6516,7 +6708,7 @@ Return the target and release string value</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L2364-L2371" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L2364-L2371" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def target_release(self):
@@ -6535,7 +6727,7 @@ def target_release(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L948-L955" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L948-L955" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def trueup_days(self):
@@ -6560,7 +6752,7 @@ if trueup is not enabled on the subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L606-L617" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L606-L617" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def trueup_option(self):
@@ -6586,7 +6778,7 @@ Return the string value of update history property</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L2410-L2417" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L2410-L2417" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def update_history(self):
@@ -6621,7 +6813,7 @@ useVssForAllFilesOptions:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L1530-L1554" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L1530-L1554" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def use_vss(self):
@@ -6653,6 +6845,108 @@ def use_vss(self):
 </dl>
 <h3>Methods</h3>
 <dl>
+<dt id="cvpysdk.subclients.fssubclient.FileSystemSubclient.add_comparison"><code class="name flex">
+<span>def <span class="ident">add_comparison</span></span>(<span>self, name, source_backup_time, compare_with_time)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Adds a comparison job for the subclient</p>
+<h2 id="args">Args</h2>
+<p>name
+(str)
+&ndash;
+The name of the comparison</p>
+<p>source_backup_time
+(int)
+&ndash;
+The epoch time of the source job's backup time. Ex: 1743167209</p>
+<p>compare_with_time
+(int)
+&ndash;
+The epoch time of the other job to compare.</p>
+<h2 id="returns">Returns</h2>
+<p>object - Instance of the Job class for the comparison job.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L2727-L2801" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def add_comparison(self, name, source_backup_time, compare_with_time):
+    &#34;&#34;&#34;Adds a comparison job for the subclient
+
+        Args:
+            name                (str)       --      The name of the comparison
+
+            source_backup_time  (int)       --      The epoch time of the source job&#39;s backup time. Ex: 1743167209
+
+            compare_with_time   (int)       --      The epoch time of the other job to compare.
+
+        Returns:
+            object - Instance of the Job class for the comparison job.
+
+    &#34;&#34;&#34;
+
+    request_json = {
+        &#34;taskInfo&#34;: {
+            &#34;associations&#34;: [
+                {
+                    &#34;clientName&#34;: self._client_object._client_name,
+                    &#34;appName&#34;: self._agent_object._agent_name,
+                    &#34;backupsetName&#34;: self._backupset_object._backupset_name,
+                    &#34;subclientName&#34;: self._subclient_name,
+                    &#34;_type_&#34;: 7
+                }
+            ],
+            &#34;task&#34;: {
+                &#34;taskType&#34;: 1
+            },
+            &#34;subTasks&#34;: [
+                {
+                    &#34;subTaskOperation&#34;: 1,
+                    &#34;subTask&#34;: {
+                        &#34;subTaskType&#34;: 1,
+                        &#34;operationType&#34;: 4025
+                    },
+                    &#34;options&#34;: {
+                        &#34;backupOpts&#34;: {},
+                        &#34;adComparisonOption&#34;: {
+                            &#34;leftSetTime&#34;: int(source_backup_time),
+                            &#34;rightSetTime&#34;: int(compare_with_time),
+                            &#34;adCompareType&#34;: 0,
+                            &#34;nodeClientId&#34;: int(self._client_object.client_id),
+                            &#34;clientId&#34;: int(self._client_object.client_id),
+                            &#34;comparisonName&#34;: name,
+                            &#34;appTypeId&#34;: 33,
+                            &#34;subClientId&#34;: int(self.subclient_id),
+                            &#34;adComparisonJobType&#34;: 0,
+                            &#34;status&#34;: 0
+                        }
+                    }
+                }
+            ]
+        }
+    }
+
+    comparison_task = self._commcell_object._services[&#39;CREATE_TASK&#39;]
+    flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;POST&#39;, comparison_task, request_json)
+
+    if flag:
+        if response.json():
+            if &#34;jobIds&#34; in response.json():
+                return Job(self._commcell_object, response.json()[&#39;jobIds&#39;][0])
+            elif &#34;errorCode&#34; in response.json():
+                error_message = response.json()[&#39;errorMessage&#39;]
+
+                o_str = &#39;Failed to start the comparison job.\nError: &#34;{0}&#34;&#39;.format(error_message)
+                raise SDKException(&#39;Subclient&#39;, &#39;118&#39;, o_str)
+            else:
+                raise SDKException(&#39;Subclient&#39;, &#39;118&#39;, &#39;Failed to start the comparison job&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        response_string = self._commcell_object._update_response_(response.text)
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.fssubclient.FileSystemSubclient.backup"><code class="name flex">
 <span>def <span class="ident">backup</span></span>(<span>self, backup_level='Incremental', incremental_backup=False, incremental_level='BEFORE_SYNTH', collect_metadata=False, on_demand_input=None, advanced_options=None, schedule_pattern=None, common_backup_options=None)</span>
 </code></dt>
@@ -6758,7 +7052,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L1634-L1773" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L1634-L1773" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(self,
            backup_level=&#34;Incremental&#34;,
@@ -6910,7 +7204,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L2067-L2071" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L2067-L2071" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_content_indexing(self):
     &#34;&#34;&#34;Disables Content indexing and disassociate the CI policy&#34;&#34;&#34;
@@ -6927,7 +7221,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L2060-L2065" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L2060-L2065" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_content_indexing(self, policy_id):
     &#34;&#34;&#34;Enables Content indexing and add the policy associations&#34;&#34;&#34;
@@ -6951,7 +7245,7 @@ DC plan name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L782-L792" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L782-L792" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_dc_content_indexing(self, dcplan_name):
     &#34;&#34;&#34;Creates the JSON with the specified dataclassification plan to pass to API to
@@ -7001,7 +7295,7 @@ additional metadata retrieved from browse</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L1596-L1632" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L1596-L1632" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find_all_versions(self, *args, **kwargs):
     &#34;&#34;&#34;Searches the content of a Subclient.
@@ -7040,6 +7334,50 @@ additional metadata retrieved from browse</p></div>
     options[&#39;operation&#39;] = &#39;all_versions&#39;
 
     return self._backupset_object._do_browse(options)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.fssubclient.FileSystemSubclient.preview_backedup_file"><code class="name flex">
+<span>def <span class="ident">preview_backedup_file</span></span>(<span>self, file_path)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gets the preview content for the subclient.</p>
+<h2 id="params">Params</h2>
+<p>file_path (str) &ndash;
+file path to get the preview content</p>
+<h2 id="returns">Returns</h2>
+<p>html
+(str)
+&ndash;
+html content of the preview</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if file is not found</p>
+<pre><code>if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L2709-L2725" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def preview_backedup_file(self, file_path):
+    &#34;&#34;&#34;Gets the preview content for the subclient.
+        Params:
+            file_path (str) --  file path to get the preview content
+
+        Returns:
+            html   (str)   --  html content of the preview
+
+        Raises:
+            SDKException:
+                if file is not found
+
+                if response is empty
+
+                if response is not success
+    &#34;&#34;&#34;
+    return self._get_preview(file_path)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.fssubclient.FileSystemSubclient.restore_in_place"><code class="name flex">
@@ -7129,7 +7467,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L1775-L1874" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L1775-L1874" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -7360,7 +7698,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L1876-L2058" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L1876-L2058" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -7567,7 +7905,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/fssubclient.py#L633-L710" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/fssubclient.py#L633-L710" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_backup_copy(self):
     &#34;&#34;&#34;
@@ -7687,6 +8025,7 @@ if response is not success
 <li><code><a title="cvpysdk.subclient.Subclient.properties" href="../subclient.html#cvpysdk.subclient.Subclient.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.read_buffer_size" href="../subclient.html#cvpysdk.subclient.Subclient.read_buffer_size">read_buffer_size</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.refresh" href="../subclient.html#cvpysdk.subclient.Subclient.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.run_content_indexing" href="../subclient.html#cvpysdk.subclient.Subclient.run_content_indexing">run_content_indexing</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.set_backup_nodes" href="../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.set_proxy_for_snap" href="../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.snapshot_engine_name" href="../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
@@ -7775,6 +8114,7 @@ setTimeout(() => input.focus(), 100);
 <li>
 <h4><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient" href="#cvpysdk.subclients.fssubclient.FileSystemSubclient">FileSystemSubclient</a></code></h4>
 <ul class="">
+<li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.add_comparison" href="#cvpysdk.subclients.fssubclient.FileSystemSubclient.add_comparison">add_comparison</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.archiver_retention" href="#cvpysdk.subclients.fssubclient.FileSystemSubclient.archiver_retention">archiver_retention</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.archiver_retention_days" href="#cvpysdk.subclients.fssubclient.FileSystemSubclient.archiver_retention_days">archiver_retention_days</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.backup" href="#cvpysdk.subclients.fssubclient.FileSystemSubclient.backup">backup</a></code></li>
@@ -7818,6 +8158,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.other_pending_changes" href="#cvpysdk.subclients.fssubclient.FileSystemSubclient.other_pending_changes">other_pending_changes</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.pending_record_changes" href="#cvpysdk.subclients.fssubclient.FileSystemSubclient.pending_record_changes">pending_record_changes</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.pre_post_commands" href="#cvpysdk.subclients.fssubclient.FileSystemSubclient.pre_post_commands">pre_post_commands</a></code></li>
+<li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.preview_backedup_file" href="#cvpysdk.subclients.fssubclient.FileSystemSubclient.preview_backedup_file">preview_backedup_file</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.restore_in_place" href="#cvpysdk.subclients.fssubclient.FileSystemSubclient.restore_in_place">restore_in_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.restore_out_of_place" href="#cvpysdk.subclients.fssubclient.FileSystemSubclient.restore_out_of_place">restore_out_of_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.run_backup_copy" href="#cvpysdk.subclients.fssubclient.FileSystemSubclient.run_backup_copy">run_backup_copy</a></code></li>

@@ -82,10 +82,13 @@ Enables/Disables single sign on a domain</p>
 <p>set_properties
 &ndash;
 Sets/modifies the properties for domain</p>
+<p>set_domain_status
+&ndash;
+Enables/Disables the domain</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/domains.py#L1-L656" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L1-L690" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -153,6 +156,8 @@ Domain:
     set_sso                     --  Enables/Disables single sign on a domain
 
     set_properties              --  Sets/modifies the properties for domain
+
+    set_domain_status           --  Enables/Disables the domain
 &#34;&#34;&#34;
 
 from __future__ import absolute_import
@@ -204,9 +209,7 @@ class Domains(object):
 
     def __repr__(self):
         &#34;&#34;&#34;Representation string for the instance of the Domains class.&#34;&#34;&#34;
-        return &#34;Domains class instance for Commcell: &#39;{0}&#39;&#34;.format(
-            self._commcell_object.commserv_name
-        )
+        return &#34;Domains class instance for Commcell&#34;
 
     def __len__(self):
         &#34;&#34;&#34;Returns the number of the domains associated to the Commcell.&#34;&#34;&#34;
@@ -615,6 +618,7 @@ class Domain(object):
             self._domain_id = domain_id
 
         self._domain = self._commcell_object._services[&#39;DOMAIN_PROPERTIES&#39;] % (self._domain_id)
+        self._DOMAIN_CONTROLER = self._commcell_object._services[&#39;DOMAIN_CONTROLER&#39;]
         self._properties = None
         self._get_domain_properties()
 
@@ -732,6 +736,39 @@ class Domain(object):
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         raise SDKException(
             &#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+
+    def set_domain_status(self, enable: bool) -&gt; None:
+        &#34;&#34;&#34;Enables/Disables the domain
+            Args:
+                enable(bool)      --  True    - enables domain
+                                      False   - disables domain
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if response is not success
+        &#34;&#34;&#34;
+
+        self._properties[&#39;enabled&#39;] = 1 if enable else 0
+        req_json = {&#34;operation&#34;: 3,
+                    &#34;provider&#34;: self._properties}
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;POST&#39;, self._DOMAIN_CONTROLER, req_json)
+        if flag:
+            if response.json():
+                error_code = response.json().get(&#39;errorCode&#39;, 0)
+                if error_code != 0:
+                    raise SDKException(
+                        &#39;Domain&#39;, &#39;102&#39;,
+                        response.json().get(&#39;errorMessage&#39;, &#39;Unable to update domain status&#39;)
+                    )
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(
+                &#39;Response&#39;, &#39;101&#39;,
+                response.json().get(&#39;errorMessage&#39;, &#39;Unable to update domain status&#39;))
 
     @property
     def domain_name(self):
@@ -775,7 +812,7 @@ id of the domain</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/domains.py#L505-L655" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L505-L689" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Domain(object):
     &#34;&#34;&#34;Class for representing a particular domain configured on a commcell&#34;&#34;&#34;
@@ -801,6 +838,7 @@ id of the domain</p></div>
             self._domain_id = domain_id
 
         self._domain = self._commcell_object._services[&#39;DOMAIN_PROPERTIES&#39;] % (self._domain_id)
+        self._DOMAIN_CONTROLER = self._commcell_object._services[&#39;DOMAIN_CONTROLER&#39;]
         self._properties = None
         self._get_domain_properties()
 
@@ -919,6 +957,39 @@ id of the domain</p></div>
         raise SDKException(
             &#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
 
+    def set_domain_status(self, enable: bool) -&gt; None:
+        &#34;&#34;&#34;Enables/Disables the domain
+            Args:
+                enable(bool)      --  True    - enables domain
+                                      False   - disables domain
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if response is not success
+        &#34;&#34;&#34;
+
+        self._properties[&#39;enabled&#39;] = 1 if enable else 0
+        req_json = {&#34;operation&#34;: 3,
+                    &#34;provider&#34;: self._properties}
+        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;POST&#39;, self._DOMAIN_CONTROLER, req_json)
+        if flag:
+            if response.json():
+                error_code = response.json().get(&#39;errorCode&#39;, 0)
+                if error_code != 0:
+                    raise SDKException(
+                        &#39;Domain&#39;, &#39;102&#39;,
+                        response.json().get(&#39;errorMessage&#39;, &#39;Unable to update domain status&#39;)
+                    )
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(
+                &#39;Response&#39;, &#39;101&#39;,
+                response.json().get(&#39;errorMessage&#39;, &#39;Unable to update domain status&#39;))
+
     @property
     def domain_name(self):
         &#34;&#34;&#34;Returns the User display name&#34;&#34;&#34;
@@ -937,7 +1008,7 @@ id of the domain</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/domains.py#L652-L655" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L686-L689" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def domain_id(self):
@@ -951,7 +1022,7 @@ def domain_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/domains.py#L647-L650" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L681-L684" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def domain_name(self):
@@ -970,11 +1041,67 @@ def domain_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/domains.py#L572-L574" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L573-L575" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the domain.&#34;&#34;&#34;
     self._get_domain_properties()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.domains.Domain.set_domain_status"><code class="name flex">
+<span>def <span class="ident">set_domain_status</span></span>(<span>self, enable: bool) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Enables/Disables the domain</p>
+<h2 id="args">Args</h2>
+<p>enable(bool)
+&ndash;
+True
+- enables domain
+False
+- disables domain</p>
+<h2 id="returns">Returns</h2>
+<p>None</p>
+<h2 id="raises">Raises</h2>
+<p>SDKException:
+if response is not success</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L648-L679" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def set_domain_status(self, enable: bool) -&gt; None:
+    &#34;&#34;&#34;Enables/Disables the domain
+        Args:
+            enable(bool)      --  True    - enables domain
+                                  False   - disables domain
+
+        Returns:
+            None
+
+        Raises:
+            SDKException:
+                if response is not success
+    &#34;&#34;&#34;
+
+    self._properties[&#39;enabled&#39;] = 1 if enable else 0
+    req_json = {&#34;operation&#34;: 3,
+                &#34;provider&#34;: self._properties}
+    flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;POST&#39;, self._DOMAIN_CONTROLER, req_json)
+    if flag:
+        if response.json():
+            error_code = response.json().get(&#39;errorCode&#39;, 0)
+            if error_code != 0:
+                raise SDKException(
+                    &#39;Domain&#39;, &#39;102&#39;,
+                    response.json().get(&#39;errorMessage&#39;, &#39;Unable to update domain status&#39;)
+                )
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        raise SDKException(
+            &#39;Response&#39;, &#39;101&#39;,
+            response.json().get(&#39;errorMessage&#39;, &#39;Unable to update domain status&#39;))</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.domains.Domain.set_properties"><code class="name flex">
@@ -993,7 +1120,7 @@ if request is not successful</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/domains.py#L620-L645" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L621-L646" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_properties(self, req_body):
     &#34;&#34;&#34;Modifies domain properties
@@ -1055,7 +1182,7 @@ if response is not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/domains.py#L576-L618" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L577-L619" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_sso(self, flag=True, **kwargs):
     &#34;&#34;&#34;Enables/Disables single sign on the domain
@@ -1121,7 +1248,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/domains.py#L77-L503" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L79-L503" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Domains(object):
     &#34;&#34;&#34;Class for getting all the domains associated with a commcell.&#34;&#34;&#34;
@@ -1164,9 +1291,7 @@ instance of the Commcell class</p>
 
     def __repr__(self):
         &#34;&#34;&#34;Representation string for the instance of the Domains class.&#34;&#34;&#34;
-        return &#34;Domains class instance for Commcell: &#39;{0}&#39;&#34;.format(
-            self._commcell_object.commserv_name
-        )
+        return &#34;Domains class instance for Commcell&#34;
 
     def __len__(self):
         &#34;&#34;&#34;Returns the number of the domains associated to the Commcell.&#34;&#34;&#34;
@@ -1566,7 +1691,7 @@ instance of the Commcell class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/domains.py#L190-L202" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L190-L202" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_domains(self):
@@ -1666,7 +1791,7 @@ if type of the domain name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/domains.py#L310-L503" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L310-L503" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self,
         domain_name,
@@ -1888,7 +2013,7 @@ if no domain exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/domains.py#L250-L304" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L250-L304" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, domain_name):
     &#34;&#34;&#34;Deletes the domain from the commcell.
@@ -1967,7 +2092,7 @@ name of the domain</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/domains.py#L223-L248" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L223-L248" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, domain_name):
     &#34;&#34;&#34;Returns a domain object of the specified domain name.
@@ -2017,7 +2142,7 @@ if type of the domain name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/domains.py#L204-L221" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L204-L221" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_domain(self, domain_name):
     &#34;&#34;&#34;Checks if a domain exists in the commcell with the input domain name.
@@ -2047,7 +2172,7 @@ if type of the domain name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/domains.py#L306-L308" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L306-L308" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the domains associated with the Commcell.&#34;&#34;&#34;
@@ -2126,10 +2251,11 @@ setTimeout(() => input.focus(), 100);
 <ul>
 <li>
 <h4><code><a title="cvpysdk.domains.Domain" href="#cvpysdk.domains.Domain">Domain</a></code></h4>
-<ul class="">
+<ul class="two-column">
 <li><code><a title="cvpysdk.domains.Domain.domain_id" href="#cvpysdk.domains.Domain.domain_id">domain_id</a></code></li>
 <li><code><a title="cvpysdk.domains.Domain.domain_name" href="#cvpysdk.domains.Domain.domain_name">domain_name</a></code></li>
 <li><code><a title="cvpysdk.domains.Domain.refresh" href="#cvpysdk.domains.Domain.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.domains.Domain.set_domain_status" href="#cvpysdk.domains.Domain.set_domain_status">set_domain_status</a></code></li>
 <li><code><a title="cvpysdk.domains.Domain.set_properties" href="#cvpysdk.domains.Domain.set_properties">set_properties</a></code></li>
 <li><code><a title="cvpysdk.domains.Domain.set_sso" href="#cvpysdk.domains.Domain.set_sso">set_sso</a></code></li>
 </ul>

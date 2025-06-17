@@ -63,15 +63,24 @@ Performs restore for oracle logical dump</p>
 &ndash;
 Getter ans Setter for enaling/disabling
 archive log mode</p>
+<p>archive_delete()
+&ndash;
+Getter and Setter for archive delete</p>
 <p>archive_files_per_bfs()
 &ndash;
 Getter and Setter for archive files per BFS</p>
+<p>oracle_tag()
+&ndash;
+Getter and Setter for oracle tag</p>
 <p>skip_offline()
 &ndash;
 Getter and Setter for skip offline option</p>
 <p>skip_read_only()
 &ndash;
 Getter and Setter for skip read only option</p>
+<p>skip_inaccessible()
+&ndash;
+Getter and Setter for skip inaccessible option</p>
 <p>data_sp()
 &ndash;
 Getters and setters for data storage policy</p>
@@ -87,7 +96,7 @@ Check if intellisnap has been enabled in the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/oraclesubclient.py#L1-L621" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/oraclesubclient.py#L1-L704" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -140,11 +149,17 @@ OracleSubclient:
     backup_archive_log()                --  Getter ans Setter for enaling/disabling
                                             archive log mode
 
+    archive_delete()                    --  Getter and Setter for archive delete
+
     archive_files_per_bfs()             --  Getter and Setter for archive files per BFS
+
+    oracle_tag()                        --  Getter and Setter for oracle tag
 
     skip_offline()                      --  Getter and Setter for skip offline option
 
-    skip_read_only()                      --  Getter and Setter for skip read only option
+    skip_read_only()                    --  Getter and Setter for skip read only option
+
+    skip_inaccessible()                 --  Getter and Setter for skip inaccessible option
 
     data_sp()                           --  Getters and setters for data storage policy
 
@@ -184,7 +199,8 @@ class OracleSubclient(DatabaseSubclient):
     def _oracle_backup_json(
             self,
             backup_level=&#34;full&#34;,
-            schedule_pattern=None):
+            schedule_pattern=None,
+            options=None):
         &#34;&#34;&#34;Runs a backup job for the subclient of the level specified.
 
             Args:
@@ -196,6 +212,8 @@ class OracleSubclient(DatabaseSubclient):
                         Please refer schedules.schedulePattern.createSchedule()
                                                                     doc for the types of Jsons
 
+                options          (dict) --  dictionary containing other oracle options
+
             Returns:
                 dict    -- dict containing request JSON
 
@@ -203,6 +221,8 @@ class OracleSubclient(DatabaseSubclient):
         oracle_options = {
             &#34;oracleOptions&#34;: {}
         }
+        if options is not None:
+            oracle_options.update(options)
         request_json = self._backup_json(
             backup_level,
             False,
@@ -321,6 +341,29 @@ class OracleSubclient(DatabaseSubclient):
             &#34;_oracle_subclient_properties[&#39;backupArchiveLog&#39;]&#34;, backup_archive_log)
 
     @property
+    def archive_delete(self):
+        &#34;&#34;&#34;
+        Getter to fetch if archive delete is enabled or not
+
+            Returns:
+                    bool     --  True if archive delete is enabled on the subclient, Else False
+
+        &#34;&#34;&#34;
+        return self._oracle_subclient_properties.get(&#34;archiveDelete&#34;)
+
+    @archive_delete.setter
+    def archive_delete(self, archive_delete):
+        &#34;&#34;&#34;
+        Setter to enable backup delete in oracle subclient
+
+            Args:
+                archive_delete    (bool)    --  True if archive delete to be enabled
+                                                on the subclient, Else False
+        &#34;&#34;&#34;
+        self._set_subclient_properties(
+            &#34;_oracle_subclient_properties[&#39;archiveDelete&#39;]&#34;, archive_delete)
+
+    @property
     def selective_online_full(self):
         &#34;&#34;&#34;
         Getter to fetch if selective online full enabled or not
@@ -365,6 +408,27 @@ class OracleSubclient(DatabaseSubclient):
         &#34;&#34;&#34;
         self._set_subclient_properties(
             &#34;_oracle_subclient_properties[&#39;archiveFilesPerBFS&#39;]&#34;, archive_files_per_bfs)
+
+    @property
+    def oracle_tag(self):
+        &#34;&#34;&#34;
+        Getter to fetch oracle tag
+
+            Returns:
+                    (int)    --     value for oracle tag
+        &#34;&#34;&#34;
+        return self._oracle_subclient_properties.get(&#34;oracleTag&#34;)
+
+    @oracle_tag.setter
+    def oracle_tag(self, oracle_tag):
+        &#34;&#34;&#34;
+        Setter to set parameter for oracle tag
+
+            Args:
+               oracle_tag    (int)    --     value for oracle tag
+        &#34;&#34;&#34;
+        self._set_subclient_properties(
+            &#34;_oracle_subclient_properties[&#39;oracleTag&#39;]&#34;, oracle_tag)
 
     @property
     def skip_offline(self):
@@ -412,6 +476,30 @@ class OracleSubclient(DatabaseSubclient):
         &#34;&#34;&#34;
         self._set_subclient_properties(
             &#34;_oracle_subclient_properties[&#39;skipReadOnly&#39;]&#34;, skip_read_only)
+
+    @property
+    def skip_inaccessible(self):
+        &#34;&#34;&#34;
+        Getter to fetch if skip inaccessible is enabled or not
+
+            Returns:
+                    (bool)    --     True if the option is enabled, False if it is disabled
+        &#34;&#34;&#34;
+        return self._oracle_subclient_properties.get(&#34;skipInaccessible&#34;)
+
+    @skip_inaccessible.setter
+    def skip_inaccessible(self, skip_inaccessible=False):
+        &#34;&#34;&#34;
+        Setter to set skip inaccessible option
+
+            Args:
+               skip_inaccessible    (bool)    --    True to enable the skip inaccessible option,
+                                                    False to disable it.
+                                                    default=False
+
+        &#34;&#34;&#34;
+        self._set_subclient_properties(
+            &#34;_oracle_subclient_properties[&#39;skipInaccessible&#39;]&#34;, skip_inaccessible)
 
     @property
     def data_stream(self):
@@ -518,7 +606,8 @@ class OracleSubclient(DatabaseSubclient):
             self,
             backup_level=InstanceBackupType.FULL.value,
             cumulative=False,
-            schedule_pattern=None):
+            schedule_pattern=None,
+            options=None):
         &#34;&#34;&#34;
 
         Args:
@@ -534,6 +623,8 @@ class OracleSubclient(DatabaseSubclient):
 
                         Please refer schedules.schedulePattern.createSchedule()
                                                                     doc for the types of Jsons
+
+            options          (dict) --  dictionary containing other oracle options
 
         Returns:
             object - instance of the Job class for this backup job if its an immediate Job
@@ -552,14 +643,15 @@ class OracleSubclient(DatabaseSubclient):
         if backup_level not in [&#39;full&#39;, &#39;incremental&#39;]:
             raise SDKException(r&#39;Subclient&#39;, r&#39;103&#39;)
 
-        if not (cumulative or schedule_pattern):
+        if not (cumulative or schedule_pattern or options):
             return super(OracleSubclient, self).backup(backup_level)
 
         if cumulative:
             backup_level = InstanceBackupType.CUMULATIVE.value
         request_json = self._oracle_backup_json(
             backup_level,
-            schedule_pattern
+            schedule_pattern,
+            options
         )
         backup_service = self._commcell_object._services[&#39;CREATE_TASK&#39;]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -741,7 +833,7 @@ subclient_id
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/oraclesubclient.py#L73-L621" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/oraclesubclient.py#L79-L704" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class OracleSubclient(DatabaseSubclient):
     &#34;&#34;&#34;
@@ -766,7 +858,8 @@ subclient_id
     def _oracle_backup_json(
             self,
             backup_level=&#34;full&#34;,
-            schedule_pattern=None):
+            schedule_pattern=None,
+            options=None):
         &#34;&#34;&#34;Runs a backup job for the subclient of the level specified.
 
             Args:
@@ -778,6 +871,8 @@ subclient_id
                         Please refer schedules.schedulePattern.createSchedule()
                                                                     doc for the types of Jsons
 
+                options          (dict) --  dictionary containing other oracle options
+
             Returns:
                 dict    -- dict containing request JSON
 
@@ -785,6 +880,8 @@ subclient_id
         oracle_options = {
             &#34;oracleOptions&#34;: {}
         }
+        if options is not None:
+            oracle_options.update(options)
         request_json = self._backup_json(
             backup_level,
             False,
@@ -903,6 +1000,29 @@ subclient_id
             &#34;_oracle_subclient_properties[&#39;backupArchiveLog&#39;]&#34;, backup_archive_log)
 
     @property
+    def archive_delete(self):
+        &#34;&#34;&#34;
+        Getter to fetch if archive delete is enabled or not
+
+            Returns:
+                    bool     --  True if archive delete is enabled on the subclient, Else False
+
+        &#34;&#34;&#34;
+        return self._oracle_subclient_properties.get(&#34;archiveDelete&#34;)
+
+    @archive_delete.setter
+    def archive_delete(self, archive_delete):
+        &#34;&#34;&#34;
+        Setter to enable backup delete in oracle subclient
+
+            Args:
+                archive_delete    (bool)    --  True if archive delete to be enabled
+                                                on the subclient, Else False
+        &#34;&#34;&#34;
+        self._set_subclient_properties(
+            &#34;_oracle_subclient_properties[&#39;archiveDelete&#39;]&#34;, archive_delete)
+
+    @property
     def selective_online_full(self):
         &#34;&#34;&#34;
         Getter to fetch if selective online full enabled or not
@@ -947,6 +1067,27 @@ subclient_id
         &#34;&#34;&#34;
         self._set_subclient_properties(
             &#34;_oracle_subclient_properties[&#39;archiveFilesPerBFS&#39;]&#34;, archive_files_per_bfs)
+
+    @property
+    def oracle_tag(self):
+        &#34;&#34;&#34;
+        Getter to fetch oracle tag
+
+            Returns:
+                    (int)    --     value for oracle tag
+        &#34;&#34;&#34;
+        return self._oracle_subclient_properties.get(&#34;oracleTag&#34;)
+
+    @oracle_tag.setter
+    def oracle_tag(self, oracle_tag):
+        &#34;&#34;&#34;
+        Setter to set parameter for oracle tag
+
+            Args:
+               oracle_tag    (int)    --     value for oracle tag
+        &#34;&#34;&#34;
+        self._set_subclient_properties(
+            &#34;_oracle_subclient_properties[&#39;oracleTag&#39;]&#34;, oracle_tag)
 
     @property
     def skip_offline(self):
@@ -994,6 +1135,30 @@ subclient_id
         &#34;&#34;&#34;
         self._set_subclient_properties(
             &#34;_oracle_subclient_properties[&#39;skipReadOnly&#39;]&#34;, skip_read_only)
+
+    @property
+    def skip_inaccessible(self):
+        &#34;&#34;&#34;
+        Getter to fetch if skip inaccessible is enabled or not
+
+            Returns:
+                    (bool)    --     True if the option is enabled, False if it is disabled
+        &#34;&#34;&#34;
+        return self._oracle_subclient_properties.get(&#34;skipInaccessible&#34;)
+
+    @skip_inaccessible.setter
+    def skip_inaccessible(self, skip_inaccessible=False):
+        &#34;&#34;&#34;
+        Setter to set skip inaccessible option
+
+            Args:
+               skip_inaccessible    (bool)    --    True to enable the skip inaccessible option,
+                                                    False to disable it.
+                                                    default=False
+
+        &#34;&#34;&#34;
+        self._set_subclient_properties(
+            &#34;_oracle_subclient_properties[&#39;skipInaccessible&#39;]&#34;, skip_inaccessible)
 
     @property
     def data_stream(self):
@@ -1100,7 +1265,8 @@ subclient_id
             self,
             backup_level=InstanceBackupType.FULL.value,
             cumulative=False,
-            schedule_pattern=None):
+            schedule_pattern=None,
+            options=None):
         &#34;&#34;&#34;
 
         Args:
@@ -1116,6 +1282,8 @@ subclient_id
 
                         Please refer schedules.schedulePattern.createSchedule()
                                                                     doc for the types of Jsons
+
+            options          (dict) --  dictionary containing other oracle options
 
         Returns:
             object - instance of the Job class for this backup job if its an immediate Job
@@ -1134,14 +1302,15 @@ subclient_id
         if backup_level not in [&#39;full&#39;, &#39;incremental&#39;]:
             raise SDKException(r&#39;Subclient&#39;, r&#39;103&#39;)
 
-        if not (cumulative or schedule_pattern):
+        if not (cumulative or schedule_pattern or options):
             return super(OracleSubclient, self).backup(backup_level)
 
         if cumulative:
             backup_level = InstanceBackupType.CUMULATIVE.value
         request_json = self._oracle_backup_json(
             backup_level,
-            schedule_pattern
+            schedule_pattern,
+            options
         )
         backup_service = self._commcell_object._services[&#39;CREATE_TASK&#39;]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -1300,6 +1469,29 @@ subclient_id
 </ul>
 <h3>Instance variables</h3>
 <dl>
+<dt id="cvpysdk.subclients.oraclesubclient.OracleSubclient.archive_delete"><code class="name">var <span class="ident">archive_delete</span></code></dt>
+<dd>
+<div class="desc"><p>Getter to fetch if archive delete is enabled or not</p>
+<pre><code>Returns:
+        bool     --  True if archive delete is enabled on the subclient, Else False
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/oraclesubclient.py#L243-L252" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def archive_delete(self):
+    &#34;&#34;&#34;
+    Getter to fetch if archive delete is enabled or not
+
+        Returns:
+                bool     --  True if archive delete is enabled on the subclient, Else False
+
+    &#34;&#34;&#34;
+    return self._oracle_subclient_properties.get(&#34;archiveDelete&#34;)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.oraclesubclient.OracleSubclient.archive_files_per_bfs"><code class="name">var <span class="ident">archive_files_per_bfs</span></code></dt>
 <dd>
 <div class="desc"><p>Getter to fetch archive files per BFS</p>
@@ -1309,7 +1501,7 @@ subclient_id
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/oraclesubclient.py#L256-L264" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/oraclesubclient.py#L290-L298" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def archive_files_per_bfs(self):
@@ -1331,7 +1523,7 @@ def archive_files_per_bfs(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/oraclesubclient.py#L209-L218" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/oraclesubclient.py#L220-L229" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_archive_log(self):
@@ -1354,7 +1546,7 @@ def backup_archive_log(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/oraclesubclient.py#L187-L196" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/oraclesubclient.py#L198-L207" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def data(self):
@@ -1376,7 +1568,7 @@ def data(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/oraclesubclient.py#L348-L357" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/oraclesubclient.py#L427-L436" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def data_sp(self):
@@ -1399,7 +1591,7 @@ def data_sp(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/oraclesubclient.py#L325-L334" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/oraclesubclient.py#L404-L413" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def data_stream(self):
@@ -1421,7 +1613,7 @@ def data_stream(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/oraclesubclient.py#L370-L379" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/oraclesubclient.py#L449-L458" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_snapenabled(self):
@@ -1443,7 +1635,7 @@ def is_snapenabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/oraclesubclient.py#L359-L368" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/oraclesubclient.py#L438-L447" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_table_browse_enabled(self):
@@ -1457,6 +1649,28 @@ def is_table_browse_enabled(self):
     return self._subclient_properties[&#39;oracleSubclientProp&#39;][&#39;enableTableBrowse&#39;]</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.subclients.oraclesubclient.OracleSubclient.oracle_tag"><code class="name">var <span class="ident">oracle_tag</span></code></dt>
+<dd>
+<div class="desc"><p>Getter to fetch oracle tag</p>
+<pre><code>Returns:
+        (int)    --     value for oracle tag
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/oraclesubclient.py#L312-L320" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def oracle_tag(self):
+    &#34;&#34;&#34;
+    Getter to fetch oracle tag
+
+        Returns:
+                (int)    --     value for oracle tag
+    &#34;&#34;&#34;
+    return self._oracle_subclient_properties.get(&#34;oracleTag&#34;)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.oraclesubclient.OracleSubclient.selective_online_full"><code class="name">var <span class="ident">selective_online_full</span></code></dt>
 <dd>
 <div class="desc"><p>Getter to fetch if selective online full enabled or not</p>
@@ -1466,7 +1680,7 @@ def is_table_browse_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/oraclesubclient.py#L232-L241" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/oraclesubclient.py#L266-L275" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def selective_online_full(self):
@@ -1480,6 +1694,28 @@ def selective_online_full(self):
     return self._oracle_subclient_properties.get(&#34;selectiveOnlineFull&#34;)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.subclients.oraclesubclient.OracleSubclient.skip_inaccessible"><code class="name">var <span class="ident">skip_inaccessible</span></code></dt>
+<dd>
+<div class="desc"><p>Getter to fetch if skip inaccessible is enabled or not</p>
+<pre><code>Returns:
+        (bool)    --     True if the option is enabled, False if it is disabled
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/oraclesubclient.py#L380-L388" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def skip_inaccessible(self):
+    &#34;&#34;&#34;
+    Getter to fetch if skip inaccessible is enabled or not
+
+        Returns:
+                (bool)    --     True if the option is enabled, False if it is disabled
+    &#34;&#34;&#34;
+    return self._oracle_subclient_properties.get(&#34;skipInaccessible&#34;)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.oraclesubclient.OracleSubclient.skip_offline"><code class="name">var <span class="ident">skip_offline</span></code></dt>
 <dd>
 <div class="desc"><p>Getter to fetch if skip offline is enabled or not</p>
@@ -1489,7 +1725,7 @@ def selective_online_full(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/oraclesubclient.py#L278-L286" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/oraclesubclient.py#L333-L341" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def skip_offline(self):
@@ -1511,7 +1747,7 @@ def skip_offline(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/oraclesubclient.py#L301-L309" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/oraclesubclient.py#L356-L364" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def skip_read_only(self):
@@ -1528,7 +1764,7 @@ def skip_read_only(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.subclients.oraclesubclient.OracleSubclient.backup"><code class="name flex">
-<span>def <span class="ident">backup</span></span>(<span>self, backup_level='full', cumulative=False, schedule_pattern=None)</span>
+<span>def <span class="ident">backup</span></span>(<span>self, backup_level='full', cumulative=False, schedule_pattern=None, options=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><h2 id="args">Args</h2>
@@ -1544,6 +1780,9 @@ default: False</p>
 <pre><code>        Please refer schedules.schedulePattern.createSchedule()
                                                     doc for the types of Jsons
 </code></pre>
+<p>options
+(dict) &ndash;
+dictionary containing other oracle options</p>
 <h2 id="returns">Returns</h2>
 <p>object - instance of the Job class for this backup job if its an immediate Job</p>
 <pre><code>     instance of the Schedule class for the backup job if its a scheduled Job
@@ -1558,13 +1797,14 @@ if response does not succeed
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/oraclesubclient.py#L426-L477" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/oraclesubclient.py#L505-L560" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(
         self,
         backup_level=InstanceBackupType.FULL.value,
         cumulative=False,
-        schedule_pattern=None):
+        schedule_pattern=None,
+        options=None):
     &#34;&#34;&#34;
 
     Args:
@@ -1580,6 +1820,8 @@ if response does not succeed
 
                     Please refer schedules.schedulePattern.createSchedule()
                                                                 doc for the types of Jsons
+
+        options          (dict) --  dictionary containing other oracle options
 
     Returns:
         object - instance of the Job class for this backup job if its an immediate Job
@@ -1598,14 +1840,15 @@ if response does not succeed
     if backup_level not in [&#39;full&#39;, &#39;incremental&#39;]:
         raise SDKException(r&#39;Subclient&#39;, r&#39;103&#39;)
 
-    if not (cumulative or schedule_pattern):
+    if not (cumulative or schedule_pattern or options):
         return super(OracleSubclient, self).backup(backup_level)
 
     if cumulative:
         backup_level = InstanceBackupType.CUMULATIVE.value
     request_json = self._oracle_backup_json(
         backup_level,
-        schedule_pattern
+        schedule_pattern,
+        options
     )
     backup_service = self._commcell_object._services[&#39;CREATE_TASK&#39;]
     flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -1625,7 +1868,7 @@ if failed to disable tablebrowse for subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/oraclesubclient.py#L393-L402" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/oraclesubclient.py#L472-L481" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable_table_browse(self):
     &#34;&#34;&#34;Disables Table Browse for the subclient.
@@ -1650,7 +1893,7 @@ if failed to enable tablebrowse for subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/oraclesubclient.py#L381-L391" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/oraclesubclient.py#L460-L470" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable_table_browse(self):
     &#34;&#34;&#34;
@@ -1686,7 +1929,7 @@ if response does not succeed
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/oraclesubclient.py#L479-L530" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/oraclesubclient.py#L562-L613" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def inline_backupcopy(self, backup_level=InstanceBackupType.FULL.value):
     &#34;&#34;&#34;Performs inline backupcopy on an oracle subclient
@@ -1786,7 +2029,7 @@ None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/oraclesubclient.py#L532-L577" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/oraclesubclient.py#L615-L660" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore(
         self,
@@ -1861,7 +2104,7 @@ Returns:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/oraclesubclient.py#L579-L621" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/oraclesubclient.py#L662-L704" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -1921,7 +2164,7 @@ if failed to disable intelli snap for subclient</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/oraclesubclient.py#L404-L419" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/oraclesubclient.py#L483-L498" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_backupcopy_interface(self, interface):
     &#34;&#34;&#34;Sets the backup copy interafce for the subclient.
@@ -1970,7 +2213,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/oraclesubclient.py#L153-L185" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/oraclesubclient.py#L164-L196" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_prop_for_orcle_subclient(self, storage_policy, snap_engine=None, archivefilebfs=32):
     &#34;&#34;&#34;Updates the subclient properties.
@@ -2047,6 +2290,7 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.read_buffer_size" href="../subclient.html#cvpysdk.subclient.Subclient.read_buffer_size">read_buffer_size</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.refresh" href="../subclient.html#cvpysdk.subclient.Subclient.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.restore_out_of_place" href="../subclient.html#cvpysdk.subclient.Subclient.restore_out_of_place">restore_out_of_place</a></code></li>
+<li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.run_content_indexing" href="../subclient.html#cvpysdk.subclient.Subclient.run_content_indexing">run_content_indexing</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.set_backup_nodes" href="../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.set_proxy_for_snap" href="../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.snapshot_engine_name" href="../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
@@ -2134,6 +2378,7 @@ setTimeout(() => input.focus(), 100);
 <li>
 <h4><code><a title="cvpysdk.subclients.oraclesubclient.OracleSubclient" href="#cvpysdk.subclients.oraclesubclient.OracleSubclient">OracleSubclient</a></code></h4>
 <ul class="">
+<li><code><a title="cvpysdk.subclients.oraclesubclient.OracleSubclient.archive_delete" href="#cvpysdk.subclients.oraclesubclient.OracleSubclient.archive_delete">archive_delete</a></code></li>
 <li><code><a title="cvpysdk.subclients.oraclesubclient.OracleSubclient.archive_files_per_bfs" href="#cvpysdk.subclients.oraclesubclient.OracleSubclient.archive_files_per_bfs">archive_files_per_bfs</a></code></li>
 <li><code><a title="cvpysdk.subclients.oraclesubclient.OracleSubclient.backup" href="#cvpysdk.subclients.oraclesubclient.OracleSubclient.backup">backup</a></code></li>
 <li><code><a title="cvpysdk.subclients.oraclesubclient.OracleSubclient.backup_archive_log" href="#cvpysdk.subclients.oraclesubclient.OracleSubclient.backup_archive_log">backup_archive_log</a></code></li>
@@ -2145,11 +2390,13 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.subclients.oraclesubclient.OracleSubclient.inline_backupcopy" href="#cvpysdk.subclients.oraclesubclient.OracleSubclient.inline_backupcopy">inline_backupcopy</a></code></li>
 <li><code><a title="cvpysdk.subclients.oraclesubclient.OracleSubclient.is_snapenabled" href="#cvpysdk.subclients.oraclesubclient.OracleSubclient.is_snapenabled">is_snapenabled</a></code></li>
 <li><code><a title="cvpysdk.subclients.oraclesubclient.OracleSubclient.is_table_browse_enabled" href="#cvpysdk.subclients.oraclesubclient.OracleSubclient.is_table_browse_enabled">is_table_browse_enabled</a></code></li>
+<li><code><a title="cvpysdk.subclients.oraclesubclient.OracleSubclient.oracle_tag" href="#cvpysdk.subclients.oraclesubclient.OracleSubclient.oracle_tag">oracle_tag</a></code></li>
 <li><code><a title="cvpysdk.subclients.oraclesubclient.OracleSubclient.restore" href="#cvpysdk.subclients.oraclesubclient.OracleSubclient.restore">restore</a></code></li>
 <li><code><a title="cvpysdk.subclients.oraclesubclient.OracleSubclient.restore_in_place" href="#cvpysdk.subclients.oraclesubclient.OracleSubclient.restore_in_place">restore_in_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.oraclesubclient.OracleSubclient.selective_online_full" href="#cvpysdk.subclients.oraclesubclient.OracleSubclient.selective_online_full">selective_online_full</a></code></li>
 <li><code><a title="cvpysdk.subclients.oraclesubclient.OracleSubclient.set_backupcopy_interface" href="#cvpysdk.subclients.oraclesubclient.OracleSubclient.set_backupcopy_interface">set_backupcopy_interface</a></code></li>
 <li><code><a title="cvpysdk.subclients.oraclesubclient.OracleSubclient.set_prop_for_orcle_subclient" href="#cvpysdk.subclients.oraclesubclient.OracleSubclient.set_prop_for_orcle_subclient">set_prop_for_orcle_subclient</a></code></li>
+<li><code><a title="cvpysdk.subclients.oraclesubclient.OracleSubclient.skip_inaccessible" href="#cvpysdk.subclients.oraclesubclient.OracleSubclient.skip_inaccessible">skip_inaccessible</a></code></li>
 <li><code><a title="cvpysdk.subclients.oraclesubclient.OracleSubclient.skip_offline" href="#cvpysdk.subclients.oraclesubclient.OracleSubclient.skip_offline">skip_offline</a></code></li>
 <li><code><a title="cvpysdk.subclients.oraclesubclient.OracleSubclient.skip_read_only" href="#cvpysdk.subclients.oraclesubclient.OracleSubclient.skip_read_only">skip_read_only</a></code></li>
 </ul>

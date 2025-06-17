@@ -54,10 +54,13 @@ Maintains constants for request manager in Activate</p>
 <p>ComplianceConstants
 -
 Maintains constants for Compliance Search in Activate</p>
+<p>ClientType
+-
+Enum class for datasource client type</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/constants.py#L1-L1235" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/constants.py#L1-L1302" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -98,6 +101,8 @@ EdiscoveryConstants             -       Maintains constants for Ediscovery clien
 RequestConstants                -       Maintains constants for request manager in Activate
 
 ComplianceConstants             -       Maintains constants for Compliance Search in Activate
+
+ClientType                      -       Enum class for datasource client type
 
 &#34;&#34;&#34;
 import copy
@@ -210,6 +215,22 @@ class EdiscoveryConstants:
         NO_RETENTION = 5
         IS_PROTECTED = 6
 
+    class ClientType(Enum):
+        &#34;&#34;&#34;Different Type of SDG Datasource&#34;&#34;&#34;
+        FILE_SYSTEM = 5
+        EXCHANGE = 17
+        ONEDRIVE = 35
+
+    EXCHANGE_AGENT = &#34;exchange mailbox&#34;
+    EXCHANGE_INSTANCE = &#34;defaultinstancename&#34;
+    EXCHANGE_BACKUPSET = &#34;user mailbox&#34;
+    EXCHANGE_SUBCLIENT = &#34;usermailbox&#34;
+
+    ONEDRIVE_AGENT = &#39;Cloud Apps&#39;
+    ONEDRIVE_INSTANCE = &#39;OneDrive&#39;
+    ONEDRIVE_BACKUPSET = &#39;defaultbackupset&#39;
+    ONEDRIVE_SUBCLIENT = &#39;default&#39;
+
     FSO_SERVERS = &#34;FsoServers&#34;
     FSO_SERVER_GROUPS = &#34;FsoServerGroups&#34;
 
@@ -273,7 +294,7 @@ class EdiscoveryConstants:
         &#34;clientInfo&#34;: {
             &#34;clientType&#34;: 19,
             &#34;edgeDrivePseudoClientProperties&#34;: {
-                &#34;systemDriveType&#34;: 6,
+                &#34;systemDriveType&#34;: 7,
                 &#34;edgeDriveAssociations&#34;: {},
                 &#34;eDiscoveryInfo&#34;: {
                     &#34;eDiscoverySubType&#34;: 2,
@@ -439,6 +460,18 @@ class EdiscoveryConstants:
         ]
     }
 
+    ADD_O365_SDG_BACKED_UP_DS_REQ = {
+        &#34;clientId&#34;: 0,
+        &#34;followScheduleCrawl&#34;: False,
+        &#34;datasources&#34;: [
+            {
+                &#34;datasourceName&#34;: &#34;&#34;,
+                &#34;datasourceType&#34;: 0,
+                &#34;properties&#34;: []
+            }
+        ]
+    }
+
     FS_DEFAULT_EXPORT_FIELDS = {&#39;FileName&#39;, &#39;Url&#39;, &#39;Size&#39;, &#39;OwnerName&#39;, &#39;CreatedTime&#39;, &#39;AccessTime&#39;, &#39;ModifiedTime&#39;}
     EXPORT_DOWNLOAD_REQ = {
         &#34;appTypeId&#34;: 200,
@@ -480,6 +513,7 @@ class EdiscoveryConstants:
         31: &#39;googledrive&#39;,
         32: &#39;gmail&#39;,
         34: &#39;onedriveindex&#39;,
+        35: &#39;multinodefederated&#39;,
         37: &#39;dynamic365&#39;
     }
 
@@ -711,8 +745,8 @@ class PlanConstants:
     INDEXING_ONLY_METADATA = 1
     INDEXING_METADATA_AND_CONTENT = 2
 
-    DEFAULT_INCLUDE_DOC_TYPES = &#34;*.doc,*.docx,*.xls,*.xlsx,*.ppt,*.pptx,*.msg,*.txt,*.rtf,*.eml,*.pdf,*.htm,*.html,&#34; \
-                                &#34;*.csv,*.log,*.ods,*.odt,*.odg,*.odp,*.dot,*.pages,*.xmind&#34;
+    DEFAULT_INCLUDE_DOC_TYPES = &#34;*.doc,*.docx,*.xls,*.xlsx,*.ppt,*.pptx,*.msg,*.txt,*.rtf,*.eml,*.pdf,&#34; \
+                                &#34;*.htm,*.html,*.csv,*.log,*.ods,*.odt,*.odg,*.odp,*.dot,*.pages,*.xmind&#34;
     DEFAULT_EXCLUDE_LIST = [
         &#34;C:\\Program Files&#34;,
         &#34;C:\\Program Files (x86)&#34;,
@@ -911,6 +945,41 @@ class PlanConstants:
         }
     }
 
+    CREATE_V4_DC_PLAN_REQ = {
+        &#34;application&#34;: 2,
+        &#34;contentAnalyzer&#34;: [],
+        &#34;contentIndexing&#34;: {
+            &#34;extractTextFromImage&#34;: False,
+            &#34;fileFilters&#34;: {
+                &#34;excludePaths&#34;: [
+                ],
+                &#34;includeDocTypes&#34;: &#34;&#34;,
+                &#34;maxDocSize&#34;: 50,
+                &#34;minDocSize&#34;: 0
+            },
+            &#34;searchType&#34;: &#34;METADATA&#34;
+        },
+        &#34;entityDetection&#34;: {
+            &#34;classifiers&#34;: [
+            ],
+            &#34;entities&#34;: [
+            ]
+        },
+        &#34;indexServer&#34;: {},
+        &#34;name&#34;: &#34;&#34;,
+        &#34;threatAnalysis&#34;: False
+    }
+
+    class RAPlanSearchType(Enum):
+        &#34;&#34;&#34;Class to maintain search types in Risk Analysis Plan&#34;&#34;&#34;
+        SEARCH_TYPE_ONLY_METADATA = &#34;METADATA&#34;
+        SEARCH_TYPE_METADATA_AND_CONTENT = &#34;METADATA_CONTENT&#34;
+
+    class RAPlanAppType(Enum):
+        &#34;&#34;&#34;Class to maintain plan application type&#34;&#34;&#34;
+        CLASSIFIED = 2
+        UNIFIED = 6
+
 
 class TargetApps(Enum):
     &#34;&#34;&#34;Class to maintain supported apps types in Activate&#34;&#34;&#34;
@@ -918,6 +987,7 @@ class TargetApps(Enum):
     FSO = 1
     CASE_MGR = 4
     FS = 8
+    RA = 128
 
 
 class TrainingStatus(Enum):
@@ -1313,7 +1383,7 @@ class ComplianceConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/constants.py#L898-L910" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/constants.py#L965-L977" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ActivateEntityConstants:
     &#34;&#34;&#34;Class to maintain all the Activate entity related constants&#34;&#34;&#34;
@@ -1345,7 +1415,7 @@ class ComplianceConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/constants.py#L873-L895" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/constants.py#L940-L962" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ClassifierConstants:
     &#34;&#34;&#34;Class to maintain all the Classsifier related constants&#34;&#34;&#34;
@@ -1387,7 +1457,7 @@ class ComplianceConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/constants.py#L995-L1235" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/constants.py#L1062-L1302" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ComplianceConstants:
     &#34;&#34;&#34;Class to maintain all the Compliance search related constants&#34;&#34;&#34;
@@ -1771,7 +1841,7 @@ class ComplianceConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/constants.py#L118-L546" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/constants.py#L120-L577" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class EdiscoveryConstants:
     &#34;&#34;&#34;class to maintain constants for ediscovery clients&#34;&#34;&#34;
@@ -1806,6 +1876,22 @@ class ComplianceConstants:
         MULTI_USER_ACCESS = 4
         NO_RETENTION = 5
         IS_PROTECTED = 6
+
+    class ClientType(Enum):
+        &#34;&#34;&#34;Different Type of SDG Datasource&#34;&#34;&#34;
+        FILE_SYSTEM = 5
+        EXCHANGE = 17
+        ONEDRIVE = 35
+
+    EXCHANGE_AGENT = &#34;exchange mailbox&#34;
+    EXCHANGE_INSTANCE = &#34;defaultinstancename&#34;
+    EXCHANGE_BACKUPSET = &#34;user mailbox&#34;
+    EXCHANGE_SUBCLIENT = &#34;usermailbox&#34;
+
+    ONEDRIVE_AGENT = &#39;Cloud Apps&#39;
+    ONEDRIVE_INSTANCE = &#39;OneDrive&#39;
+    ONEDRIVE_BACKUPSET = &#39;defaultbackupset&#39;
+    ONEDRIVE_SUBCLIENT = &#39;default&#39;
 
     FSO_SERVERS = &#34;FsoServers&#34;
     FSO_SERVER_GROUPS = &#34;FsoServerGroups&#34;
@@ -1870,7 +1956,7 @@ class ComplianceConstants:
         &#34;clientInfo&#34;: {
             &#34;clientType&#34;: 19,
             &#34;edgeDrivePseudoClientProperties&#34;: {
-                &#34;systemDriveType&#34;: 6,
+                &#34;systemDriveType&#34;: 7,
                 &#34;edgeDriveAssociations&#34;: {},
                 &#34;eDiscoveryInfo&#34;: {
                     &#34;eDiscoverySubType&#34;: 2,
@@ -2036,6 +2122,18 @@ class ComplianceConstants:
         ]
     }
 
+    ADD_O365_SDG_BACKED_UP_DS_REQ = {
+        &#34;clientId&#34;: 0,
+        &#34;followScheduleCrawl&#34;: False,
+        &#34;datasources&#34;: [
+            {
+                &#34;datasourceName&#34;: &#34;&#34;,
+                &#34;datasourceType&#34;: 0,
+                &#34;properties&#34;: []
+            }
+        ]
+    }
+
     FS_DEFAULT_EXPORT_FIELDS = {&#39;FileName&#39;, &#39;Url&#39;, &#39;Size&#39;, &#39;OwnerName&#39;, &#39;CreatedTime&#39;, &#39;AccessTime&#39;, &#39;ModifiedTime&#39;}
     EXPORT_DOWNLOAD_REQ = {
         &#34;appTypeId&#34;: 200,
@@ -2077,6 +2175,7 @@ class ComplianceConstants:
         31: &#39;googledrive&#39;,
         32: &#39;gmail&#39;,
         34: &#39;onedriveindex&#39;,
+        35: &#39;multinodefederated&#39;,
         37: &#39;dynamic365&#39;
     }
 
@@ -2209,6 +2308,10 @@ class ComplianceConstants:
 <dd>
 <div class="desc"></div>
 </dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.ADD_O365_SDG_BACKED_UP_DS_REQ"><code class="name">var <span class="ident">ADD_O365_SDG_BACKED_UP_DS_REQ</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
 <dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.CREATE_CLIENT_REQ_JSON"><code class="name">var <span class="ident">CREATE_CLIENT_REQ_JSON</span></code></dt>
 <dd>
 <div class="desc"></div>
@@ -2216,6 +2319,10 @@ class ComplianceConstants:
 <dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.CRITERIA_EXTRACTED_DOCS"><code class="name">var <span class="ident">CRITERIA_EXTRACTED_DOCS</span></code></dt>
 <dd>
 <div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.ClientType"><code class="name">var <span class="ident">ClientType</span></code></dt>
+<dd>
+<div class="desc"><p>Different Type of SDG Datasource</p></div>
 </dd>
 <dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.CrawlType"><code class="name">var <span class="ident">CrawlType</span></code></dt>
 <dd>
@@ -2238,6 +2345,22 @@ class ComplianceConstants:
 <div class="desc"></div>
 </dd>
 <dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.EDIT_CATEGORY_PERMISSION"><code class="name">var <span class="ident">EDIT_CATEGORY_PERMISSION</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.EXCHANGE_AGENT"><code class="name">var <span class="ident">EXCHANGE_AGENT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.EXCHANGE_BACKUPSET"><code class="name">var <span class="ident">EXCHANGE_BACKUPSET</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.EXCHANGE_INSTANCE"><code class="name">var <span class="ident">EXCHANGE_INSTANCE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.EXCHANGE_SUBCLIENT"><code class="name">var <span class="ident">EXCHANGE_SUBCLIENT</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -2318,6 +2441,22 @@ class ComplianceConstants:
 <div class="desc"></div>
 </dd>
 <dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.FS_SERVER_HANDLER_NAME"><code class="name">var <span class="ident">FS_SERVER_HANDLER_NAME</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.ONEDRIVE_AGENT"><code class="name">var <span class="ident">ONEDRIVE_AGENT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.ONEDRIVE_BACKUPSET"><code class="name">var <span class="ident">ONEDRIVE_BACKUPSET</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.ONEDRIVE_INSTANCE"><code class="name">var <span class="ident">ONEDRIVE_INSTANCE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.EdiscoveryConstants.ONEDRIVE_SUBCLIENT"><code class="name">var <span class="ident">ONEDRIVE_SUBCLIENT</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -2407,7 +2546,7 @@ class ComplianceConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/constants.py#L549-L644" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/constants.py#L580-L675" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class InventoryConstants:
     &#34;&#34;&#34;Class to maintain constants for inventory manager&#34;&#34;&#34;
@@ -2602,7 +2741,7 @@ class ComplianceConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/constants.py#L647-L851" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/constants.py#L678-L917" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class PlanConstants:
     &#34;&#34;&#34;Class to maintain constants related to DC plan activate operations&#34;&#34;&#34;
@@ -2610,8 +2749,8 @@ class ComplianceConstants:
     INDEXING_ONLY_METADATA = 1
     INDEXING_METADATA_AND_CONTENT = 2
 
-    DEFAULT_INCLUDE_DOC_TYPES = &#34;*.doc,*.docx,*.xls,*.xlsx,*.ppt,*.pptx,*.msg,*.txt,*.rtf,*.eml,*.pdf,*.htm,*.html,&#34; \
-                                &#34;*.csv,*.log,*.ods,*.odt,*.odg,*.odp,*.dot,*.pages,*.xmind&#34;
+    DEFAULT_INCLUDE_DOC_TYPES = &#34;*.doc,*.docx,*.xls,*.xlsx,*.ppt,*.pptx,*.msg,*.txt,*.rtf,*.eml,*.pdf,&#34; \
+                                &#34;*.htm,*.html,*.csv,*.log,*.ods,*.odt,*.odg,*.odp,*.dot,*.pages,*.xmind&#34;
     DEFAULT_EXCLUDE_LIST = [
         &#34;C:\\Program Files&#34;,
         &#34;C:\\Program Files (x86)&#34;,
@@ -2808,10 +2947,49 @@ class ComplianceConstants:
                 }
             ]
         }
-    }</code></pre>
+    }
+
+    CREATE_V4_DC_PLAN_REQ = {
+        &#34;application&#34;: 2,
+        &#34;contentAnalyzer&#34;: [],
+        &#34;contentIndexing&#34;: {
+            &#34;extractTextFromImage&#34;: False,
+            &#34;fileFilters&#34;: {
+                &#34;excludePaths&#34;: [
+                ],
+                &#34;includeDocTypes&#34;: &#34;&#34;,
+                &#34;maxDocSize&#34;: 50,
+                &#34;minDocSize&#34;: 0
+            },
+            &#34;searchType&#34;: &#34;METADATA&#34;
+        },
+        &#34;entityDetection&#34;: {
+            &#34;classifiers&#34;: [
+            ],
+            &#34;entities&#34;: [
+            ]
+        },
+        &#34;indexServer&#34;: {},
+        &#34;name&#34;: &#34;&#34;,
+        &#34;threatAnalysis&#34;: False
+    }
+
+    class RAPlanSearchType(Enum):
+        &#34;&#34;&#34;Class to maintain search types in Risk Analysis Plan&#34;&#34;&#34;
+        SEARCH_TYPE_ONLY_METADATA = &#34;METADATA&#34;
+        SEARCH_TYPE_METADATA_AND_CONTENT = &#34;METADATA_CONTENT&#34;
+
+    class RAPlanAppType(Enum):
+        &#34;&#34;&#34;Class to maintain plan application type&#34;&#34;&#34;
+        CLASSIFIED = 2
+        UNIFIED = 6</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
+<dt id="cvpysdk.activateapps.constants.PlanConstants.CREATE_V4_DC_PLAN_REQ"><code class="name">var <span class="ident">CREATE_V4_DC_PLAN_REQ</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
 <dt id="cvpysdk.activateapps.constants.PlanConstants.DEFAULT_EXCLUDE_LIST"><code class="name">var <span class="ident">DEFAULT_EXCLUDE_LIST</span></code></dt>
 <dd>
 <div class="desc"></div>
@@ -2848,6 +3026,14 @@ class ComplianceConstants:
 <dd>
 <div class="desc"></div>
 </dd>
+<dt id="cvpysdk.activateapps.constants.PlanConstants.RAPlanAppType"><code class="name">var <span class="ident">RAPlanAppType</span></code></dt>
+<dd>
+<div class="desc"><p>Class to maintain plan application type</p></div>
+</dd>
+<dt id="cvpysdk.activateapps.constants.PlanConstants.RAPlanSearchType"><code class="name">var <span class="ident">RAPlanSearchType</span></code></dt>
+<dd>
+<div class="desc"><p>Class to maintain search types in Risk Analysis Plan</p></div>
+</dd>
 </dl>
 </dd>
 <dt id="cvpysdk.activateapps.constants.RequestConstants"><code class="flex name class">
@@ -2858,7 +3044,7 @@ class ComplianceConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/constants.py#L46-L115" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/constants.py#L48-L117" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class RequestConstants:
     &#34;&#34;&#34;class to maintain constants for request manager&#34;&#34;&#34;
@@ -3035,7 +3221,7 @@ class ComplianceConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/constants.py#L913-L992" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/constants.py#L980-L1059" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class TagConstants:
     &#34;&#34;&#34;class to maintain all the Tags related constants&#34;&#34;&#34;
@@ -3163,14 +3349,15 @@ class ComplianceConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/constants.py#L854-L859" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/constants.py#L920-L926" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class TargetApps(Enum):
     &#34;&#34;&#34;Class to maintain supported apps types in Activate&#34;&#34;&#34;
     SDG = 2
     FSO = 1
     CASE_MGR = 4
-    FS = 8</code></pre>
+    FS = 8
+    RA = 128</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -3190,6 +3377,10 @@ class ComplianceConstants:
 <dd>
 <div class="desc"></div>
 </dd>
+<dt id="cvpysdk.activateapps.constants.TargetApps.RA"><code class="name">var <span class="ident">RA</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
 <dt id="cvpysdk.activateapps.constants.TargetApps.SDG"><code class="name">var <span class="ident">SDG</span></code></dt>
 <dd>
 <div class="desc"></div>
@@ -3205,7 +3396,7 @@ class ComplianceConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/activateapps/constants.py#L862-L870" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/constants.py#L929-L937" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class TrainingStatus(Enum):
     &#34;&#34;&#34;Class to maintain training status for classifier&#34;&#34;&#34;
@@ -3374,14 +3565,20 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants" href="#cvpysdk.activateapps.constants.EdiscoveryConstants">EdiscoveryConstants</a></code></h4>
 <ul class="">
 <li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.ADD_FS_REQ_JSON" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.ADD_FS_REQ_JSON">ADD_FS_REQ_JSON</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.ADD_O365_SDG_BACKED_UP_DS_REQ" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.ADD_O365_SDG_BACKED_UP_DS_REQ">ADD_O365_SDG_BACKED_UP_DS_REQ</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.CREATE_CLIENT_REQ_JSON" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.CREATE_CLIENT_REQ_JSON">CREATE_CLIENT_REQ_JSON</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.CRITERIA_EXTRACTED_DOCS" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.CRITERIA_EXTRACTED_DOCS">CRITERIA_EXTRACTED_DOCS</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.ClientType" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.ClientType">ClientType</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.CrawlType" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.CrawlType">CrawlType</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.DATA_SOURCE_TYPES" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.DATA_SOURCE_TYPES">DATA_SOURCE_TYPES</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.DS_CLOUD_STORAGE" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.DS_CLOUD_STORAGE">DS_CLOUD_STORAGE</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.DS_FILE" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.DS_FILE">DS_FILE</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.DYNAMIC_FEDERATED_SEARCH_PARAMS" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.DYNAMIC_FEDERATED_SEARCH_PARAMS">DYNAMIC_FEDERATED_SEARCH_PARAMS</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.EDIT_CATEGORY_PERMISSION" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.EDIT_CATEGORY_PERMISSION">EDIT_CATEGORY_PERMISSION</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.EXCHANGE_AGENT" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.EXCHANGE_AGENT">EXCHANGE_AGENT</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.EXCHANGE_BACKUPSET" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.EXCHANGE_BACKUPSET">EXCHANGE_BACKUPSET</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.EXCHANGE_INSTANCE" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.EXCHANGE_INSTANCE">EXCHANGE_INSTANCE</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.EXCHANGE_SUBCLIENT" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.EXCHANGE_SUBCLIENT">EXCHANGE_SUBCLIENT</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.EXPORT_DOWNLOAD_REQ" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.EXPORT_DOWNLOAD_REQ">EXPORT_DOWNLOAD_REQ</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_CONTENT_ID" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_CONTENT_ID">FIELD_CONTENT_ID</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_CRAWL_TYPE" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.FIELD_CRAWL_TYPE">FIELD_CRAWL_TYPE</a></code></li>
@@ -3402,6 +3599,10 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.FSO_SERVER_GROUPS" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.FSO_SERVER_GROUPS">FSO_SERVER_GROUPS</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.FS_DEFAULT_EXPORT_FIELDS" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.FS_DEFAULT_EXPORT_FIELDS">FS_DEFAULT_EXPORT_FIELDS</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.FS_SERVER_HANDLER_NAME" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.FS_SERVER_HANDLER_NAME">FS_SERVER_HANDLER_NAME</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.ONEDRIVE_AGENT" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.ONEDRIVE_AGENT">ONEDRIVE_AGENT</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.ONEDRIVE_BACKUPSET" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.ONEDRIVE_BACKUPSET">ONEDRIVE_BACKUPSET</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.ONEDRIVE_INSTANCE" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.ONEDRIVE_INSTANCE">ONEDRIVE_INSTANCE</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.ONEDRIVE_SUBCLIENT" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.ONEDRIVE_SUBCLIENT">ONEDRIVE_SUBCLIENT</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_BULK_SEARCH_REQ" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_BULK_SEARCH_REQ">REVIEW_ACTION_BULK_SEARCH_REQ</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_DELETE_REQ_JSON" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_DELETE_REQ_JSON">REVIEW_ACTION_DELETE_REQ_JSON</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_FSO_SUPPORTED" href="#cvpysdk.activateapps.constants.EdiscoveryConstants.REVIEW_ACTION_FSO_SUPPORTED">REVIEW_ACTION_FSO_SUPPORTED</a></code></li>
@@ -3452,6 +3653,7 @@ setTimeout(() => input.focus(), 100);
 <li>
 <h4><code><a title="cvpysdk.activateapps.constants.PlanConstants" href="#cvpysdk.activateapps.constants.PlanConstants">PlanConstants</a></code></h4>
 <ul class="">
+<li><code><a title="cvpysdk.activateapps.constants.PlanConstants.CREATE_V4_DC_PLAN_REQ" href="#cvpysdk.activateapps.constants.PlanConstants.CREATE_V4_DC_PLAN_REQ">CREATE_V4_DC_PLAN_REQ</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.PlanConstants.DEFAULT_EXCLUDE_LIST" href="#cvpysdk.activateapps.constants.PlanConstants.DEFAULT_EXCLUDE_LIST">DEFAULT_EXCLUDE_LIST</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.PlanConstants.DEFAULT_INCLUDE_DOC_TYPES" href="#cvpysdk.activateapps.constants.PlanConstants.DEFAULT_INCLUDE_DOC_TYPES">DEFAULT_INCLUDE_DOC_TYPES</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.PlanConstants.DEFAULT_MAX_DOC_SIZE" href="#cvpysdk.activateapps.constants.PlanConstants.DEFAULT_MAX_DOC_SIZE">DEFAULT_MAX_DOC_SIZE</a></code></li>
@@ -3461,6 +3663,8 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.activateapps.constants.PlanConstants.PLAN_SCHEDULE_REQUEST_JSON" href="#cvpysdk.activateapps.constants.PlanConstants.PLAN_SCHEDULE_REQUEST_JSON">PLAN_SCHEDULE_REQUEST_JSON</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.PlanConstants.PLAN_SHARE_REQUEST_JSON" href="#cvpysdk.activateapps.constants.PlanConstants.PLAN_SHARE_REQUEST_JSON">PLAN_SHARE_REQUEST_JSON</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.PlanConstants.PLAN_UPDATE_REQUEST_JSON" href="#cvpysdk.activateapps.constants.PlanConstants.PLAN_UPDATE_REQUEST_JSON">PLAN_UPDATE_REQUEST_JSON</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.PlanConstants.RAPlanAppType" href="#cvpysdk.activateapps.constants.PlanConstants.RAPlanAppType">RAPlanAppType</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.PlanConstants.RAPlanSearchType" href="#cvpysdk.activateapps.constants.PlanConstants.RAPlanSearchType">RAPlanSearchType</a></code></li>
 </ul>
 </li>
 <li>
@@ -3510,6 +3714,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.activateapps.constants.TargetApps.CASE_MGR" href="#cvpysdk.activateapps.constants.TargetApps.CASE_MGR">CASE_MGR</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.TargetApps.FS" href="#cvpysdk.activateapps.constants.TargetApps.FS">FS</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.TargetApps.FSO" href="#cvpysdk.activateapps.constants.TargetApps.FSO">FSO</a></code></li>
+<li><code><a title="cvpysdk.activateapps.constants.TargetApps.RA" href="#cvpysdk.activateapps.constants.TargetApps.RA">RA</a></code></li>
 <li><code><a title="cvpysdk.activateapps.constants.TargetApps.SDG" href="#cvpysdk.activateapps.constants.TargetApps.SDG">SDG</a></code></li>
 </ul>
 </li>

@@ -68,7 +68,7 @@ gets the eligible metallic commcells for the logged in user</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/metallic.py#L1-L528" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metallic.py#L1-L532" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -375,7 +375,7 @@ class Metallic(object):
                         return True
                 return False
             else:
-                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                return False
         else:
             response_string = self._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
@@ -426,6 +426,8 @@ class Metallic(object):
         saml_token_for_user = self._commcell_object.get_saml_token()
         user_obj = User(self._commcell_object, self._commcell_object.commcell_username)
         company_name = user_obj.user_company_name
+        if company_name == &#39;commcell&#39;:
+            company_name = None
         request = {
             &#34;cloudServiceDetails&#34;: {
                 &#34;cloudService&#34;: {
@@ -491,6 +493,8 @@ class Metallic(object):
         if not isinstance(user, User):
             user = self._commcell_object.users.get(self._commcell_object.commcell_username)
         company_name = user.user_company_name
+        if company_name == &#39;commcell&#39;:
+            company_name = None
         request = {
             &#34;opType&#34;: 4,
             &#34;cloudServiceDetails&#34;: {
@@ -623,7 +627,7 @@ class Metallic(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/metallic.py#L63-L528" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metallic.py#L63-L532" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Metallic(object):
     &#34;&#34;&#34;Class for representing Metallic related operations.&#34;&#34;&#34;
@@ -868,7 +872,7 @@ class Metallic(object):
                         return True
                 return False
             else:
-                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                return False
         else:
             response_string = self._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
@@ -919,6 +923,8 @@ class Metallic(object):
         saml_token_for_user = self._commcell_object.get_saml_token()
         user_obj = User(self._commcell_object, self._commcell_object.commcell_username)
         company_name = user_obj.user_company_name
+        if company_name == &#39;commcell&#39;:
+            company_name = None
         request = {
             &#34;cloudServiceDetails&#34;: {
                 &#34;cloudService&#34;: {
@@ -984,6 +990,8 @@ class Metallic(object):
         if not isinstance(user, User):
             user = self._commcell_object.users.get(self._commcell_object.commcell_username)
         company_name = user.user_company_name
+        if company_name == &#39;commcell&#39;:
+            company_name = None
         request = {
             &#34;opType&#34;: 4,
             &#34;cloudServiceDetails&#34;: {
@@ -1100,7 +1108,7 @@ class Metallic(object):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/metallic.py#L489-L492" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metallic.py#L493-L496" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def cloud_hostname(self):
@@ -1133,7 +1141,7 @@ def cloud_hostname(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/metallic.py#L499-L528" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metallic.py#L503-L532" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def cloudservices_details(self):
@@ -1190,7 +1198,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/metallic.py#L273-L309" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metallic.py#L273-L309" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def is_metallic_registered(self):
     &#34;&#34;&#34;This function says whether metallic is registered for a user or not.
@@ -1225,7 +1233,7 @@ if response is not success
                     return True
             return False
         else:
-            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            return False
     else:
         response_string = self._update_response_(response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)</code></pre>
@@ -1247,7 +1255,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/metallic.py#L311-L338" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metallic.py#L311-L338" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def metallic_completed_solutions(self):
     &#34;&#34;&#34;This function returns the completed solutions for metallic.
@@ -1304,7 +1312,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/metallic.py#L113-L220" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metallic.py#L113-L220" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def metallic_subscribe(self, cloud_webconsole_hostname, cloud_username, cloud_password, msp_company_name=None):
     &#34;&#34;&#34;Adds a new Monitoring Policy to the Commcell.
@@ -1432,7 +1440,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/metallic.py#L340-L395" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metallic.py#L340-L397" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def metallic_unsubscribe(self):
     &#34;&#34;&#34;This function is for unsubscribing metallic
@@ -1451,6 +1459,8 @@ if response is not success
     saml_token_for_user = self._commcell_object.get_saml_token()
     user_obj = User(self._commcell_object, self._commcell_object.commcell_username)
     company_name = user_obj.user_company_name
+    if company_name == &#39;commcell&#39;:
+        company_name = None
     request = {
         &#34;cloudServiceDetails&#34;: {
             &#34;cloudService&#34;: {

@@ -88,6 +88,9 @@ Method to run backup for the specified tables of a Dynamics 365 subclient
 backup_environments()
 &ndash;
 Method to run backup for the specified environments of a Dynamics 365 subclient
+launch_client_level_full_backup()
+&ndash;
+Method to run client level full backup for the content of a Dynamics 365 subclient
 _restore_content_json()
 &ndash;
 Restore JSON for restoring content for a Dynamics 365 subclient
@@ -137,7 +140,7 @@ Dynamics 365 item type</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L1-L1196" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L1-L1222" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -191,6 +194,7 @@ MSDynamics365Subclient:
     _run_backup()                           --  Method to run backup for the content of a Dynamics 365 subclient
     backup_tables()                         --  Method to run backup for the specified tables of a Dynamics 365 subclient
     backup_environments()                   --  Method to run backup for the specified environments of a Dynamics 365 subclient
+    launch_client_level_full_backup()     --  Method to run client level full backup for the content of a Dynamics 365 subclient
     _restore_content_json()                 --  Restore JSON for restoring content for a Dynamics 365 subclient
     _get_restore_item_path()                --  Get the complete path of the content for running a restore job
     _prepare_restore_json()                 --  Method to prepare JSON/ Python dict for  in- place restore for the content specified.
@@ -490,16 +494,19 @@ class MSDynamics365Subclient(O365AppsSubclient):
             Returns:
                 set_content_association_json    (dict)--    Content Association JSON
         &#34;&#34;&#34;
-        set_content_association_json = {&#34;LaunchAutoDiscovery&#34;: is_environment,
-                                        &#34;cloudAppAssociation&#34;: {
+        set_content_association_json = {
+                                            &#34;LaunchAutoDiscovery&#34;: is_environment,
+                                            &#34;cloudAppAssociation&#34;: {
                                             &#34;accountStatus&#34;: 0,
                                             &#34;cloudAppDiscoverinfo&#34;: {
                                                 &#34;userAccounts&#34;: [
                                                 ],
                                                 &#34;groups&#34;: [],
                                                 &#34;discoverByType&#34;: 14 if is_environment is False else 15
+                                            },
+                                            &#34;subclientEntity&#34;: self._subClientEntity
                                             }
-                                            , &#34;subclientEntity&#34;: self._subClientEntity}}
+                                        }
 
         return set_content_association_json
 
@@ -549,22 +556,29 @@ class MSDynamics365Subclient(O365AppsSubclient):
         &#34;&#34;&#34;
         tables_info: list = list()
         _discovered_tables = self.discovered_tables
+        tables_dict = {}
 
         if not bool(_discovered_tables):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;,
                                &#34;Discovered Tables is Empty.&#34;)
 
-        for _table in _discovered_tables:
-            _table_name, _parent_env_name = _table[&#34;displayName&#34;], _table[&#34;ParentWebGuid&#34;]
+        for table in _discovered_tables:
+            if table[&#34;ParentWebGuid&#34;] in tables_dict:
+                tables_dict[table[&#34;ParentWebGuid&#34;]].update({table[&#34;displayName&#34;]: table})
+            else:
+                tables_dict.update({table[&#34;ParentWebGuid&#34;]: {}})
 
-            try:
-                if (_table_name, _parent_env_name) in tables_list:
-                    _table_assoc_info = _table
-                    _table_assoc_info[&#34;user.userGUID&#34;] = _table.get(&#34;user&#34;).get(&#34;userGUID&#34;)
-                    tables_info.append(_table_assoc_info)
-            except TypeError:
-                raise SDKException(&#39;Subclient&#39;, &#39;101&#39;,
-                                   &#34;For Associating tables, content list should be a list of tuples&#34;)
+        for table in tables_list:
+            table_name, env_name = table
+            if env_name in tables_dict:
+                if table_name in tables_dict[env_name]:
+                    tables_info.append(tables_dict[env_name][table_name])
+                else:
+                    raise SDKException(&#34;Subclient&#34;, &#34;101&#34;,
+                                       &#34;Table {} not found in the environment {}&#34;.format(table_name, env_name))
+            else:
+                raise SDKException(&#34;Subclient&#34;, &#34;101&#34;,
+                                   &#34;Environment {} not found in the list of discovered environments&#34;.format(env_name))
 
         if len(tables_info) != len(tables_list):
             raise SDKException(&#34;Subclient&#34;, &#34;101&#34;, &#34;All of the input tables were in the list of discovered tables&#34;)
@@ -665,7 +679,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
         _env_association_json[&#34;cloudAppAssociation&#34;][&#34;cloudAppDiscoverinfo&#34;][&#34;userAccounts&#34;] = environments_info
         self._set_content_association(content_json=_env_association_json)
 
-    def _json_for_backup_task(self, content_list: list, is_environment: bool = False):
+    def _json_for_backup_task(self, content_list: list, is_environment: bool = False, force_full_backup: bool = False):
         &#34;&#34;&#34;
             Method to create the association JSON for backing up content for a Dynamics 365 subclient
 
@@ -680,19 +694,25 @@ class MSDynamics365Subclient(O365AppsSubclient):
                         Each list element should be a string of the name of the environment
 
                 is_environment  (bool)--    Content passed to be backed up is environment type content or table type
+                force_full_backup (bool) -- If True, will force a full backup of the content
 
             Returns:
                 _backup_task_json     (list)--    JSON for backing up the content
         &#34;&#34;&#34;
         _backup_task_json = self._backup_json(&#39;Full&#39;, False, &#39;&#39;)
-        _sub_client_content_json = self._backup_content_json(content_list=content_list, is_environment=is_environment)
-
         backup_options = {
             &#39;backupLevel&#39;: 2,  # Incremental
             &#39;cloudAppOptions&#39;: {
-                &#39;userAccounts&#39;: _sub_client_content_json
             }
         }
+
+        if len(content_list) &gt; 0:
+            _sub_client_content_json = self._backup_content_json(content_list=content_list, is_environment=is_environment)
+            backup_options[&#39;cloudAppOptions&#39;][&#39;userAccounts&#39;] = _sub_client_content_json
+
+        if force_full_backup is True:
+            backup_options[&#39;cloudAppOptions&#39;][&#39;forceFullBackup&#39;] = True
+
         _backup_task_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;backupOpts&#39;] = backup_options
         return _backup_task_json
 
@@ -736,7 +756,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
 
         return _bkp_content_json
 
-    def _run_backup(self, backup_content: list, is_environment: bool = False):
+    def _run_backup(self, backup_content: list, is_environment: bool = False, force_full_backup: bool = False):
         &#34;&#34;&#34;
             Method to run backup for the content of a Dynamics 365 subclient
 
@@ -755,13 +775,13 @@ class MSDynamics365Subclient(O365AppsSubclient):
             Returns:
                 backup_job          (Job)--     CVPySDK.Job class instance for that particular backup job
         &#34;&#34;&#34;
-        _backup_json = self._json_for_backup_task(content_list=backup_content, is_environment=is_environment)
+        _backup_json = self._json_for_backup_task(content_list=backup_content, is_environment=is_environment, force_full_backup=force_full_backup)
         backup_endpoint = self._services[&#39;CREATE_TASK&#39;]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(&#34;POST&#34;, backup_endpoint, _backup_json)
         return self._process_backup_response(flag, response)
 
-    def backup_tables(self, tables_list: list):
+    def backup_tables(self, tables_list: list, force_full_backup: bool = False):
         &#34;&#34;&#34;
             Method to run backup for the specified tables of a Dynamics 365 subclient
 
@@ -778,7 +798,7 @@ class MSDynamics365Subclient(O365AppsSubclient):
             Returns:
                 backup_job          (Job)--     CVPySDK.Job class instance for that particular backup job
         &#34;&#34;&#34;
-        return self._run_backup(backup_content=tables_list, is_environment=False)
+        return self._run_backup(backup_content=tables_list, is_environment=False, force_full_backup=force_full_backup)
 
     def backup_environments(self, environments_list: list):
         &#34;&#34;&#34;
@@ -795,6 +815,15 @@ class MSDynamics365Subclient(O365AppsSubclient):
                 backup_job          (Job)--     CVPySDK.Job class instance for that particular backup job
         &#34;&#34;&#34;
         return self._run_backup(backup_content=environments_list, is_environment=True)
+
+    def launch_client_level_full_backup(self):
+        &#34;&#34;&#34;
+            Method to run full backup for the Dynamics 365 subclient
+
+            Returns:
+                backup_job          (Job)--     CVPySDK.Job class instance for that particular backup job
+        &#34;&#34;&#34;
+        return self._run_backup(backup_content=[], is_environment=False, force_full_backup=True)
 
     def _restore_content_json(self):
         &#34;&#34;&#34;
@@ -1370,7 +1399,7 @@ subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L82-L1196" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L83-L1222" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class MSDynamics365Subclient(O365AppsSubclient):
     &#34;&#34;&#34;
@@ -1642,16 +1671,19 @@ subclient id</p></div>
             Returns:
                 set_content_association_json    (dict)--    Content Association JSON
         &#34;&#34;&#34;
-        set_content_association_json = {&#34;LaunchAutoDiscovery&#34;: is_environment,
-                                        &#34;cloudAppAssociation&#34;: {
+        set_content_association_json = {
+                                            &#34;LaunchAutoDiscovery&#34;: is_environment,
+                                            &#34;cloudAppAssociation&#34;: {
                                             &#34;accountStatus&#34;: 0,
                                             &#34;cloudAppDiscoverinfo&#34;: {
                                                 &#34;userAccounts&#34;: [
                                                 ],
                                                 &#34;groups&#34;: [],
                                                 &#34;discoverByType&#34;: 14 if is_environment is False else 15
+                                            },
+                                            &#34;subclientEntity&#34;: self._subClientEntity
                                             }
-                                            , &#34;subclientEntity&#34;: self._subClientEntity}}
+                                        }
 
         return set_content_association_json
 
@@ -1701,22 +1733,29 @@ subclient id</p></div>
         &#34;&#34;&#34;
         tables_info: list = list()
         _discovered_tables = self.discovered_tables
+        tables_dict = {}
 
         if not bool(_discovered_tables):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;,
                                &#34;Discovered Tables is Empty.&#34;)
 
-        for _table in _discovered_tables:
-            _table_name, _parent_env_name = _table[&#34;displayName&#34;], _table[&#34;ParentWebGuid&#34;]
+        for table in _discovered_tables:
+            if table[&#34;ParentWebGuid&#34;] in tables_dict:
+                tables_dict[table[&#34;ParentWebGuid&#34;]].update({table[&#34;displayName&#34;]: table})
+            else:
+                tables_dict.update({table[&#34;ParentWebGuid&#34;]: {}})
 
-            try:
-                if (_table_name, _parent_env_name) in tables_list:
-                    _table_assoc_info = _table
-                    _table_assoc_info[&#34;user.userGUID&#34;] = _table.get(&#34;user&#34;).get(&#34;userGUID&#34;)
-                    tables_info.append(_table_assoc_info)
-            except TypeError:
-                raise SDKException(&#39;Subclient&#39;, &#39;101&#39;,
-                                   &#34;For Associating tables, content list should be a list of tuples&#34;)
+        for table in tables_list:
+            table_name, env_name = table
+            if env_name in tables_dict:
+                if table_name in tables_dict[env_name]:
+                    tables_info.append(tables_dict[env_name][table_name])
+                else:
+                    raise SDKException(&#34;Subclient&#34;, &#34;101&#34;,
+                                       &#34;Table {} not found in the environment {}&#34;.format(table_name, env_name))
+            else:
+                raise SDKException(&#34;Subclient&#34;, &#34;101&#34;,
+                                   &#34;Environment {} not found in the list of discovered environments&#34;.format(env_name))
 
         if len(tables_info) != len(tables_list):
             raise SDKException(&#34;Subclient&#34;, &#34;101&#34;, &#34;All of the input tables were in the list of discovered tables&#34;)
@@ -1817,7 +1856,7 @@ subclient id</p></div>
         _env_association_json[&#34;cloudAppAssociation&#34;][&#34;cloudAppDiscoverinfo&#34;][&#34;userAccounts&#34;] = environments_info
         self._set_content_association(content_json=_env_association_json)
 
-    def _json_for_backup_task(self, content_list: list, is_environment: bool = False):
+    def _json_for_backup_task(self, content_list: list, is_environment: bool = False, force_full_backup: bool = False):
         &#34;&#34;&#34;
             Method to create the association JSON for backing up content for a Dynamics 365 subclient
 
@@ -1832,19 +1871,25 @@ subclient id</p></div>
                         Each list element should be a string of the name of the environment
 
                 is_environment  (bool)--    Content passed to be backed up is environment type content or table type
+                force_full_backup (bool) -- If True, will force a full backup of the content
 
             Returns:
                 _backup_task_json     (list)--    JSON for backing up the content
         &#34;&#34;&#34;
         _backup_task_json = self._backup_json(&#39;Full&#39;, False, &#39;&#39;)
-        _sub_client_content_json = self._backup_content_json(content_list=content_list, is_environment=is_environment)
-
         backup_options = {
             &#39;backupLevel&#39;: 2,  # Incremental
             &#39;cloudAppOptions&#39;: {
-                &#39;userAccounts&#39;: _sub_client_content_json
             }
         }
+
+        if len(content_list) &gt; 0:
+            _sub_client_content_json = self._backup_content_json(content_list=content_list, is_environment=is_environment)
+            backup_options[&#39;cloudAppOptions&#39;][&#39;userAccounts&#39;] = _sub_client_content_json
+
+        if force_full_backup is True:
+            backup_options[&#39;cloudAppOptions&#39;][&#39;forceFullBackup&#39;] = True
+
         _backup_task_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;backupOpts&#39;] = backup_options
         return _backup_task_json
 
@@ -1888,7 +1933,7 @@ subclient id</p></div>
 
         return _bkp_content_json
 
-    def _run_backup(self, backup_content: list, is_environment: bool = False):
+    def _run_backup(self, backup_content: list, is_environment: bool = False, force_full_backup: bool = False):
         &#34;&#34;&#34;
             Method to run backup for the content of a Dynamics 365 subclient
 
@@ -1907,13 +1952,13 @@ subclient id</p></div>
             Returns:
                 backup_job          (Job)--     CVPySDK.Job class instance for that particular backup job
         &#34;&#34;&#34;
-        _backup_json = self._json_for_backup_task(content_list=backup_content, is_environment=is_environment)
+        _backup_json = self._json_for_backup_task(content_list=backup_content, is_environment=is_environment, force_full_backup=force_full_backup)
         backup_endpoint = self._services[&#39;CREATE_TASK&#39;]
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(&#34;POST&#34;, backup_endpoint, _backup_json)
         return self._process_backup_response(flag, response)
 
-    def backup_tables(self, tables_list: list):
+    def backup_tables(self, tables_list: list, force_full_backup: bool = False):
         &#34;&#34;&#34;
             Method to run backup for the specified tables of a Dynamics 365 subclient
 
@@ -1930,7 +1975,7 @@ subclient id</p></div>
             Returns:
                 backup_job          (Job)--     CVPySDK.Job class instance for that particular backup job
         &#34;&#34;&#34;
-        return self._run_backup(backup_content=tables_list, is_environment=False)
+        return self._run_backup(backup_content=tables_list, is_environment=False, force_full_backup=force_full_backup)
 
     def backup_environments(self, environments_list: list):
         &#34;&#34;&#34;
@@ -1947,6 +1992,15 @@ subclient id</p></div>
                 backup_job          (Job)--     CVPySDK.Job class instance for that particular backup job
         &#34;&#34;&#34;
         return self._run_backup(backup_content=environments_list, is_environment=True)
+
+    def launch_client_level_full_backup(self):
+        &#34;&#34;&#34;
+            Method to run full backup for the Dynamics 365 subclient
+
+            Returns:
+                backup_job          (Job)--     CVPySDK.Job class instance for that particular backup job
+        &#34;&#34;&#34;
+        return self._run_backup(backup_content=[], is_environment=False, force_full_backup=True)
 
     def _restore_content_json(self):
         &#34;&#34;&#34;
@@ -2502,7 +2556,7 @@ subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L1190-L1196" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L1216-L1222" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def browse_item_type(self):
@@ -2524,7 +2578,7 @@ Dictionary of discovered environments</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L149-L161" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L150-L162" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def discovered_environments(self):
@@ -2552,7 +2606,7 @@ Dictionary of discovered tables</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L163-L175" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L164-L176" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def discovered_tables(self):
@@ -2592,7 +2646,7 @@ CVPySDK.Job class instance for that particular backup job</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L642-L656" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L659-L673" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup_environments(self, environments_list: list):
     &#34;&#34;&#34;
@@ -2612,7 +2666,7 @@ CVPySDK.Job class instance for that particular backup job</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.backup_tables"><code class="name flex">
-<span>def <span class="ident">backup_tables</span></span>(<span>self, tables_list: list)</span>
+<span>def <span class="ident">backup_tables</span></span>(<span>self, tables_list: list, force_full_backup: bool = False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Method to run backup for the specified tables of a Dynamics 365 subclient</p>
@@ -2635,9 +2689,9 @@ CVPySDK.Job class instance for that particular backup job</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L623-L640" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L640-L657" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def backup_tables(self, tables_list: list):
+<pre><code class="python">def backup_tables(self, tables_list: list, force_full_backup: bool = False):
     &#34;&#34;&#34;
         Method to run backup for the specified tables of a Dynamics 365 subclient
 
@@ -2654,7 +2708,7 @@ CVPySDK.Job class instance for that particular backup job</p></div>
         Returns:
             backup_job          (Job)--     CVPySDK.Job class instance for that particular backup job
     &#34;&#34;&#34;
-    return self._run_backup(backup_content=tables_list, is_environment=False)</code></pre>
+    return self._run_backup(backup_content=tables_list, is_environment=False, force_full_backup=force_full_backup)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.browse"><code class="name flex">
@@ -2680,7 +2734,7 @@ Time-stamp for point in time browse</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L1002-L1035" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L1028-L1061" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self,
            browse_path: list[str] = None,
@@ -2730,7 +2784,7 @@ Dictionary of discovered environments</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L138-L147" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L139-L148" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def discover_environments(self):
     &#34;&#34;&#34;
@@ -2756,7 +2810,7 @@ Dictionary of returned tables</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L127-L136" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L128-L137" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def discover_tables(self):
     &#34;&#34;&#34;
@@ -2823,7 +2877,7 @@ user': {
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L295-L339" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L296-L340" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_associated_environments(self, refresh: bool = False):
     &#34;&#34;&#34;
@@ -2927,7 +2981,7 @@ Environment name/ URL in the sample response is for description purpose only</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L248-L293" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L249-L294" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_associated_tables(self, refresh: bool = False):
     &#34;&#34;&#34;
@@ -2977,6 +3031,30 @@ Environment name/ URL in the sample response is for description purpose only</p>
     return self._associated_tables</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.launch_client_level_full_backup"><code class="name flex">
+<span>def <span class="ident">launch_client_level_full_backup</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to run full backup for the Dynamics 365 subclient</p>
+<h2 id="returns">Returns</h2>
+<p>backup_job
+(Job)&ndash;
+CVPySDK.Job class instance for that particular backup job</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L675-L682" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def launch_client_level_full_backup(self):
+    &#34;&#34;&#34;
+        Method to run full backup for the Dynamics 365 subclient
+
+        Returns:
+            backup_job          (Job)--     CVPySDK.Job class instance for that particular backup job
+    &#34;&#34;&#34;
+    return self._run_backup(backup_content=[], is_environment=False, force_full_backup=True)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.launch_d365_licensing"><code class="name flex">
 <span>def <span class="ident">launch_d365_licensing</span></span>(<span>self, run_for_all_clients=False)</span>
 </code></dt>
@@ -2990,7 +3068,7 @@ default: False</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L894-L930" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L920-L956" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def launch_d365_licensing(self, run_for_all_clients=False):
     &#34;&#34;&#34;
@@ -3074,7 +3152,7 @@ Instance of CVPySDK.Job for the restore job</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L844-L892" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L870-L918" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -3172,7 +3250,7 @@ Instance of CVPySDK.Job for the restore job</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L949-L1000" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L975-L1026" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -3248,7 +3326,7 @@ Name of the Dynamics 365 Plan to be used for content association</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L497-L525" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L508-L536" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_environment_associations(self, environments_name: list, plan_name: str = str()):
     &#34;&#34;&#34;
@@ -3304,7 +3382,7 @@ Name of the Dynamics 365 Plan to be used for content association</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L433-L460" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/dynamics365_subclient.py#L444-L471" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_table_associations(self, tables_list: list, plan_name: str = str()):
     &#34;&#34;&#34;
@@ -3376,6 +3454,7 @@ Name of the Dynamics 365 Plan to be used for content association</p></div>
 <li><code><a title="cvpysdk.subclients.o365apps_subclient.O365AppsSubclient.properties" href="../../subclient.html#cvpysdk.subclient.Subclient.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.subclients.o365apps_subclient.O365AppsSubclient.read_buffer_size" href="../../subclient.html#cvpysdk.subclient.Subclient.read_buffer_size">read_buffer_size</a></code></li>
 <li><code><a title="cvpysdk.subclients.o365apps_subclient.O365AppsSubclient.refresh" href="../../subclient.html#cvpysdk.subclient.Subclient.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.subclients.o365apps_subclient.O365AppsSubclient.run_content_indexing" href="../../subclient.html#cvpysdk.subclient.Subclient.run_content_indexing">run_content_indexing</a></code></li>
 <li><code><a title="cvpysdk.subclients.o365apps_subclient.O365AppsSubclient.set_backup_nodes" href="../../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
 <li><code><a title="cvpysdk.subclients.o365apps_subclient.O365AppsSubclient.set_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.o365apps_subclient.O365AppsSubclient.snapshot_engine_name" href="../../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
@@ -3473,6 +3552,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.discovered_tables" href="#cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.discovered_tables">discovered_tables</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.get_associated_environments" href="#cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.get_associated_environments">get_associated_environments</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.get_associated_tables" href="#cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.get_associated_tables">get_associated_tables</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.launch_client_level_full_backup" href="#cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.launch_client_level_full_backup">launch_client_level_full_backup</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.launch_d365_licensing" href="#cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.launch_d365_licensing">launch_d365_licensing</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.restore_in_place" href="#cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.restore_in_place">restore_in_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.restore_out_of_place" href="#cvpysdk.subclients.cloudapps.dynamics365_subclient.MSDynamics365Subclient.restore_out_of_place">restore_out_of_place</a></code></li>

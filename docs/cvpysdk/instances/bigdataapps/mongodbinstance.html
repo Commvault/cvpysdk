@@ -36,11 +36,13 @@ MongoDBInstance instance and to perform operations on that instance</p>
 Initializes MongoDB instance object with associated
 agent_object, instance name and instance id
 restore()
-&ndash; Submits a restore request based on restore options</p>
+&ndash; Submits a restore request based on restore options
+restore_collection()
+&ndash; collection based restore.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/bigdataapps/mongodbinstance.py#L1-L147" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/bigdataapps/mongodbinstance.py#L1-L223" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # --------------------------------------------------------------------------
@@ -65,6 +67,8 @@ MongoDBInstance:
     __init__()                      --  Initializes MongoDB instance object with associated
     agent_object, instance name and instance id
     restore()                       -- Submits a restore request based on restore options
+    restore_collection()            -- collection based restore.
+
 &#34;&#34;&#34;
 from __future__ import unicode_literals
 from ..bigdataappsinstance import BigDataAppsInstance
@@ -188,6 +192,80 @@ class MongoDBInstance(BigDataAppsInstance):
 
         request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
                 &#34;distributedAppsRestoreOptions&#34;] = distributed_restore_json
+        return self._process_restore_response(request_json)
+
+    def restore_collection(self, restore_options):
+        &#34;&#34;&#34;
+            Restores the content of this instance content for collection restore inplace.
+            Args:
+                restore_options : dict of keyword arguments needed to submit a MongoDB restore:
+                    Example:
+                       restore_options = {
+                        restore_dict = {}
+                            restore_dict[&#34;no_of_streams&#34;] = 2
+                            restore_dict[&#34;multinode_restore&#34;] = True
+                            restore_dict[&#34;destination_instance&#34;] = self.client_name
+                            restore_dict[&#34;destination_instance_id&#34;] = self._instance_object.instance_id
+                            restore_dict[&#34;paths&#34;] = [&#34;/&#34;]
+                            restore_dict[&#34;mongodb_restore&#34;] = True
+                            restore_dict[&#34;destination_client_id&#34;] = self._client_obj.client_id
+                            restore_dict[&#34;destination_client_name&#34;] = self._client_obj.client_name
+                            restore_dict[&#34;overwrite&#34;] = True
+                            restore_dict[&#34;client_type&#34;] = 29
+                            restore_dict[&#34;destination_appTypeId&#34;] = 64
+                            restore_dict[&#34;backupset_name&#34;] = self.backupsetname
+                            restore_dict[&#34;_type_&#34;] = 5
+                            restore_dict[&#34;subclient_id&#34;] = subclientid
+                            restore_dict[&#34;source_shard_name&#34;] = self.replicaset
+                            restore_dict[&#34;destination_shard_name&#34;] = self.replicaset
+                            restore_dict[&#34;hostname&#34;] = self.primary_host
+                            restore_dict[&#34;clientName&#34;] = self.master_node
+                            restore_dict[&#34;desthostName&#34;] = self.primary_host
+                            restore_dict[&#34;destclientName&#34;] = self.master_node
+                            restore_dict[&#34;destPortNumber&#34;] = self.port
+                            restore_dict[&#34;destDataDir&#34;] = self.bin_path
+                            restore_dict[&#34;bkpDataDir&#34;] = self.bkp_dir_path
+                            restore_dict[&#34;backupPortNumber&#34;] = self.port
+                            restore_dict[&#34;restoreDataDir&#34;] = self.bkp_dir_path
+                            restore_dict[&#34;primaryPort&#34;] = self.port
+                        }
+            Returns:
+                object - instance of the Job class for this restore job
+        &#34;&#34;&#34;
+        if not (isinstance(restore_options, dict)):
+            raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+        request_json = self._restore_json(restore_option=restore_options)
+
+        request_json[&#34;taskInfo&#34;][&#34;associations&#34;][0][&#34;subclientId&#34;] = restore_options.get(
+            &#34;subclient_id&#34;, )
+        request_json[&#34;taskInfo&#34;][&#34;associations&#34;][0][&#34;backupsetName&#34;] = restore_options.get(
+            &#34;backupset_name&#34;)
+        request_json[&#34;taskInfo&#34;][&#34;associations&#34;][0][&#34;_type_&#34;] = restore_options.get(
+            &#34;_type_&#34;)
+        distributed_restore_json = {
+            &#34;distributedRestore&#34;: True,
+        }
+        client_object_source = self._commcell_object.clients.get(restore_options[&#39;clientName&#39;])
+        client_object_destination = self._commcell_object.clients.get(restore_options[&#39;destclientName&#39;])
+        distributed_restore_json[&#34;mongoDBRestoreOptions&#34;] = {
+                &#34;destShardList&#34;: [],
+                &#34;destGranularEntityList&#34;: [
+                    {
+                        &#34;srcDbName&#34;: restore_options.get(&#34;source_db_name&#34;, False),
+                        &#34;destDbName&#34;: restore_options.get(&#34;restore_db_name&#34;, False),
+                        &#34;isDbEntity&#34;: True,
+                        &#34;destCollectionName&#34;: &#34;&#34;
+                    }
+                ],
+                &#34;restoreFilesOnly&#34;: False,
+                &#34;recover&#34;: True,
+                &#34;pointInTimeToEndOfBackup&#34;: True,
+                &#34;latestOpLogSync&#34;: True,
+                &#34;latestEndOfBackup&#34;: True,
+                &#34;isGranularRecovery&#34;: True
+            }
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
+                &#34;distributedAppsRestoreOptions&#34;] = distributed_restore_json
         return self._process_restore_response(request_json)</code></pre>
 </details>
 </section>
@@ -227,7 +305,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/bigdataapps/mongodbinstance.py#L30-L147" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/bigdataapps/mongodbinstance.py#L32-L223" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class MongoDBInstance(BigDataAppsInstance):
     &#34;&#34;&#34;
@@ -346,6 +424,80 @@ default: None</p>
 
         request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
                 &#34;distributedAppsRestoreOptions&#34;] = distributed_restore_json
+        return self._process_restore_response(request_json)
+
+    def restore_collection(self, restore_options):
+        &#34;&#34;&#34;
+            Restores the content of this instance content for collection restore inplace.
+            Args:
+                restore_options : dict of keyword arguments needed to submit a MongoDB restore:
+                    Example:
+                       restore_options = {
+                        restore_dict = {}
+                            restore_dict[&#34;no_of_streams&#34;] = 2
+                            restore_dict[&#34;multinode_restore&#34;] = True
+                            restore_dict[&#34;destination_instance&#34;] = self.client_name
+                            restore_dict[&#34;destination_instance_id&#34;] = self._instance_object.instance_id
+                            restore_dict[&#34;paths&#34;] = [&#34;/&#34;]
+                            restore_dict[&#34;mongodb_restore&#34;] = True
+                            restore_dict[&#34;destination_client_id&#34;] = self._client_obj.client_id
+                            restore_dict[&#34;destination_client_name&#34;] = self._client_obj.client_name
+                            restore_dict[&#34;overwrite&#34;] = True
+                            restore_dict[&#34;client_type&#34;] = 29
+                            restore_dict[&#34;destination_appTypeId&#34;] = 64
+                            restore_dict[&#34;backupset_name&#34;] = self.backupsetname
+                            restore_dict[&#34;_type_&#34;] = 5
+                            restore_dict[&#34;subclient_id&#34;] = subclientid
+                            restore_dict[&#34;source_shard_name&#34;] = self.replicaset
+                            restore_dict[&#34;destination_shard_name&#34;] = self.replicaset
+                            restore_dict[&#34;hostname&#34;] = self.primary_host
+                            restore_dict[&#34;clientName&#34;] = self.master_node
+                            restore_dict[&#34;desthostName&#34;] = self.primary_host
+                            restore_dict[&#34;destclientName&#34;] = self.master_node
+                            restore_dict[&#34;destPortNumber&#34;] = self.port
+                            restore_dict[&#34;destDataDir&#34;] = self.bin_path
+                            restore_dict[&#34;bkpDataDir&#34;] = self.bkp_dir_path
+                            restore_dict[&#34;backupPortNumber&#34;] = self.port
+                            restore_dict[&#34;restoreDataDir&#34;] = self.bkp_dir_path
+                            restore_dict[&#34;primaryPort&#34;] = self.port
+                        }
+            Returns:
+                object - instance of the Job class for this restore job
+        &#34;&#34;&#34;
+        if not (isinstance(restore_options, dict)):
+            raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+        request_json = self._restore_json(restore_option=restore_options)
+
+        request_json[&#34;taskInfo&#34;][&#34;associations&#34;][0][&#34;subclientId&#34;] = restore_options.get(
+            &#34;subclient_id&#34;, )
+        request_json[&#34;taskInfo&#34;][&#34;associations&#34;][0][&#34;backupsetName&#34;] = restore_options.get(
+            &#34;backupset_name&#34;)
+        request_json[&#34;taskInfo&#34;][&#34;associations&#34;][0][&#34;_type_&#34;] = restore_options.get(
+            &#34;_type_&#34;)
+        distributed_restore_json = {
+            &#34;distributedRestore&#34;: True,
+        }
+        client_object_source = self._commcell_object.clients.get(restore_options[&#39;clientName&#39;])
+        client_object_destination = self._commcell_object.clients.get(restore_options[&#39;destclientName&#39;])
+        distributed_restore_json[&#34;mongoDBRestoreOptions&#34;] = {
+                &#34;destShardList&#34;: [],
+                &#34;destGranularEntityList&#34;: [
+                    {
+                        &#34;srcDbName&#34;: restore_options.get(&#34;source_db_name&#34;, False),
+                        &#34;destDbName&#34;: restore_options.get(&#34;restore_db_name&#34;, False),
+                        &#34;isDbEntity&#34;: True,
+                        &#34;destCollectionName&#34;: &#34;&#34;
+                    }
+                ],
+                &#34;restoreFilesOnly&#34;: False,
+                &#34;recover&#34;: True,
+                &#34;pointInTimeToEndOfBackup&#34;: True,
+                &#34;latestOpLogSync&#34;: True,
+                &#34;latestEndOfBackup&#34;: True,
+                &#34;isGranularRecovery&#34;: True
+            }
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
+                &#34;distributedAppsRestoreOptions&#34;] = distributed_restore_json
         return self._process_restore_response(request_json)</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -397,7 +549,7 @@ restore_dict["primaryPort"] = self.port
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instances/bigdataapps/mongodbinstance.py#L54-L147" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/bigdataapps/mongodbinstance.py#L56-L149" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore(self, restore_options):
     &#34;&#34;&#34;
@@ -495,6 +647,125 @@ restore_dict["primaryPort"] = self.port
     return self._process_restore_response(request_json)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.restore_collection"><code class="name flex">
+<span>def <span class="ident">restore_collection</span></span>(<span>self, restore_options)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Restores the content of this instance content for collection restore inplace.</p>
+<h2 id="args">Args</h2>
+<p>restore_options : dict of keyword arguments needed to submit a MongoDB restore:
+Example:
+restore_options = {
+restore_dict = {}
+restore_dict["no_of_streams"] = 2
+restore_dict["multinode_restore"] = True
+restore_dict["destination_instance"] = self.client_name
+restore_dict["destination_instance_id"] = self.<em>instance_object.instance_id
+restore_dict["paths"] = ["/"]
+restore_dict["mongodb_restore"] = True
+restore_dict["destination_client_id"] = self._client_obj.client_id
+restore_dict["destination_client_name"] = self._client_obj.client_name
+restore_dict["overwrite"] = True
+restore_dict["client_type"] = 29
+restore_dict["destination_appTypeId"] = 64
+restore_dict["backupset_name"] = self.backupsetname
+restore_dict["_type</em>"] = 5
+restore_dict["subclient_id"] = subclientid
+restore_dict["source_shard_name"] = self.replicaset
+restore_dict["destination_shard_name"] = self.replicaset
+restore_dict["hostname"] = self.primary_host
+restore_dict["clientName"] = self.master_node
+restore_dict["desthostName"] = self.primary_host
+restore_dict["destclientName"] = self.master_node
+restore_dict["destPortNumber"] = self.port
+restore_dict["destDataDir"] = self.bin_path
+restore_dict["bkpDataDir"] = self.bkp_dir_path
+restore_dict["backupPortNumber"] = self.port
+restore_dict["restoreDataDir"] = self.bkp_dir_path
+restore_dict["primaryPort"] = self.port
+}</p>
+<h2 id="returns">Returns</h2>
+<p>object - instance of the Job class for this restore job</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/bigdataapps/mongodbinstance.py#L151-L223" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def restore_collection(self, restore_options):
+    &#34;&#34;&#34;
+        Restores the content of this instance content for collection restore inplace.
+        Args:
+            restore_options : dict of keyword arguments needed to submit a MongoDB restore:
+                Example:
+                   restore_options = {
+                    restore_dict = {}
+                        restore_dict[&#34;no_of_streams&#34;] = 2
+                        restore_dict[&#34;multinode_restore&#34;] = True
+                        restore_dict[&#34;destination_instance&#34;] = self.client_name
+                        restore_dict[&#34;destination_instance_id&#34;] = self._instance_object.instance_id
+                        restore_dict[&#34;paths&#34;] = [&#34;/&#34;]
+                        restore_dict[&#34;mongodb_restore&#34;] = True
+                        restore_dict[&#34;destination_client_id&#34;] = self._client_obj.client_id
+                        restore_dict[&#34;destination_client_name&#34;] = self._client_obj.client_name
+                        restore_dict[&#34;overwrite&#34;] = True
+                        restore_dict[&#34;client_type&#34;] = 29
+                        restore_dict[&#34;destination_appTypeId&#34;] = 64
+                        restore_dict[&#34;backupset_name&#34;] = self.backupsetname
+                        restore_dict[&#34;_type_&#34;] = 5
+                        restore_dict[&#34;subclient_id&#34;] = subclientid
+                        restore_dict[&#34;source_shard_name&#34;] = self.replicaset
+                        restore_dict[&#34;destination_shard_name&#34;] = self.replicaset
+                        restore_dict[&#34;hostname&#34;] = self.primary_host
+                        restore_dict[&#34;clientName&#34;] = self.master_node
+                        restore_dict[&#34;desthostName&#34;] = self.primary_host
+                        restore_dict[&#34;destclientName&#34;] = self.master_node
+                        restore_dict[&#34;destPortNumber&#34;] = self.port
+                        restore_dict[&#34;destDataDir&#34;] = self.bin_path
+                        restore_dict[&#34;bkpDataDir&#34;] = self.bkp_dir_path
+                        restore_dict[&#34;backupPortNumber&#34;] = self.port
+                        restore_dict[&#34;restoreDataDir&#34;] = self.bkp_dir_path
+                        restore_dict[&#34;primaryPort&#34;] = self.port
+                    }
+        Returns:
+            object - instance of the Job class for this restore job
+    &#34;&#34;&#34;
+    if not (isinstance(restore_options, dict)):
+        raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+    request_json = self._restore_json(restore_option=restore_options)
+
+    request_json[&#34;taskInfo&#34;][&#34;associations&#34;][0][&#34;subclientId&#34;] = restore_options.get(
+        &#34;subclient_id&#34;, )
+    request_json[&#34;taskInfo&#34;][&#34;associations&#34;][0][&#34;backupsetName&#34;] = restore_options.get(
+        &#34;backupset_name&#34;)
+    request_json[&#34;taskInfo&#34;][&#34;associations&#34;][0][&#34;_type_&#34;] = restore_options.get(
+        &#34;_type_&#34;)
+    distributed_restore_json = {
+        &#34;distributedRestore&#34;: True,
+    }
+    client_object_source = self._commcell_object.clients.get(restore_options[&#39;clientName&#39;])
+    client_object_destination = self._commcell_object.clients.get(restore_options[&#39;destclientName&#39;])
+    distributed_restore_json[&#34;mongoDBRestoreOptions&#34;] = {
+            &#34;destShardList&#34;: [],
+            &#34;destGranularEntityList&#34;: [
+                {
+                    &#34;srcDbName&#34;: restore_options.get(&#34;source_db_name&#34;, False),
+                    &#34;destDbName&#34;: restore_options.get(&#34;restore_db_name&#34;, False),
+                    &#34;isDbEntity&#34;: True,
+                    &#34;destCollectionName&#34;: &#34;&#34;
+                }
+            ],
+            &#34;restoreFilesOnly&#34;: False,
+            &#34;recover&#34;: True,
+            &#34;pointInTimeToEndOfBackup&#34;: True,
+            &#34;latestOpLogSync&#34;: True,
+            &#34;latestEndOfBackup&#34;: True,
+            &#34;isGranularRecovery&#34;: True
+        }
+    request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
+            &#34;distributedAppsRestoreOptions&#34;] = distributed_restore_json
+    return self._process_restore_response(request_json)</code></pre>
+</details>
+</dd>
 </dl>
 <h3>Inherited members</h3>
 <ul class="hlist">
@@ -587,6 +858,7 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance" href="#cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance">MongoDBInstance</a></code></h4>
 <ul class="">
 <li><code><a title="cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.restore" href="#cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.restore">restore</a></code></li>
+<li><code><a title="cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.restore_collection" href="#cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.restore_collection">restore_collection</a></code></li>
 </ul>
 </li>
 </ul>

@@ -52,7 +52,7 @@ runs in-place restore for the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L1-L333" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L1-L362" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -250,7 +250,7 @@ class ContentStoreMailboxSubclient(ExchangeSubclient):
         &#34;&#34;&#34;&#34;Returns the list of discovered users for the UserMailbox subclient.&#34;&#34;&#34;
         return self._content_store_mailboxes
 
-    def set_contentstore_assocaition(self, subclient_content):
+    def set_contentstore_assocaition(self, subclient_content, use_policies=True):
         &#34;&#34;&#34;Create User assocaition for UserMailboxSubclient.
 
             Args:
@@ -258,50 +258,34 @@ class ContentStoreMailboxSubclient(ExchangeSubclient):
 
                     subclient_content = {
 
-                        &#39;mailboxNames&#39; : [&#34;AutoCi2&#34;],,
+                        &#39;mailboxNames&#39; : [&#34;List of mailbox alias&#34;],,
 
-                        &#39;contentStoreClients&#39; : [shindex],
+                        &#39;contentStoreClients&#39; : [List of Content Store clients],
 
+                        -- if use_policies is True --
                         &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
 
                         &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
 
                         &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
+
+                        -- if use_policies is False --
+                        &#39;plan_name&#39;: Plan Name,
+                        &#39;plan_id&#39;: int or None (Optional)
                     }
+
+                use_policies (bool) -- If True uses policies else uses Plan
 
         &#34;&#34;&#34;
         users = []
 
         if not isinstance(subclient_content, dict):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
-
-        from ...policies.configuration_policies import ConfigurationPolicy
-
-        if not (isinstance(subclient_content[
-                &#39;journal_policy&#39;], (ConfigurationPolicy, str)) and
-                isinstance(subclient_content[
-                    &#39;retention_policy&#39;], (ConfigurationPolicy, str)) and
-                isinstance(subclient_content[&#39;mailboxNames&#39;], list)):
-            raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
-
-        if isinstance(subclient_content[&#39;journal_policy&#39;], ConfigurationPolicy):
-            journal_policy = subclient_content[&#39;journal_policy&#39;]
-        elif isinstance(subclient_content[&#39;journal_policy&#39;], str):
-            journal_policy = ConfigurationPolicy(
-                self._commcell_object, subclient_content[&#39;journal_policy&#39;])
-
-        if isinstance(subclient_content[&#39;retention_policy&#39;], ConfigurationPolicy):
-            retention_policy = subclient_content[&#39;retention_policy&#39;]
-        elif isinstance(subclient_content[&#39;retention_policy&#39;], str):
-            retention_policy = ConfigurationPolicy(
-                self._commcell_object, subclient_content[&#39;retention_policy&#39;])
-        content_store_server = self._content_store_servers(
-            subclient_content[&#39;contentStoreClients&#39;])
-
         try:
+            content_store_server = self._content_store_servers(
+                subclient_content[&#39;contentStoreClients&#39;])
 
             for mailbox_item in subclient_content[&#39;mailboxNames&#39;]:
-
                 mailbox_dict = {
                     &#39;smtpAdrress&#39;: mailbox_item[&#39;smtpAdrress&#39;],
                     &#39;mailBoxType&#39;: 3,
@@ -310,57 +294,102 @@ class ContentStoreMailboxSubclient(ExchangeSubclient):
 
                 }
                 users.append(mailbox_dict)
-
         except KeyError as err:
             raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;{} not given in content&#39;.format(err))
 
-        associations_json = {
-            &#34;emailAssociation&#34;: {
-                &#34;advanceOptions&#34;: {},
-                &#34;subclientEntity&#34;: self._subClientEntity,
-                &#34;emailDiscoverinfo&#34;: {
-                    &#34;discoverByType&#34;: 6,
-                    &#34;contentStoreMailboxes&#34;: users
-                },
-                &#34;policies&#34;: {
-                    &#34;emailPolicies&#34;: [
-                        {
-                            &#34;policyType&#34;: 1,
-                            &#34;flags&#34;: 0,
-                            &#34;agentType&#34;: {
-                                &#34;appTypeId&#34;: 137
-                            },
-                            &#34;detail&#34;: {
-                                &#34;emailPolicy&#34;: {
-                                    &#34;emailPolicyType&#34;: 4
-                                }
-                            },
-                            &#34;policyEntity&#34;: {
-                                &#34;policyId&#34;: int(journal_policy.configuration_policy_id),
-                                &#34;policyName&#34;: journal_policy.configuration_policy_name
-                            }
+        if use_policies:
+            from ...policies.configuration_policies import ConfigurationPolicy
 
-                        },
-                        {
-                            &#34;policyType&#34;: 1,
-                            &#34;flags&#34;: 0,
-                            &#34;agentType&#34;: {
-                                &#34;appTypeId&#34;: 137
-                            },
-                            &#34;detail&#34;: {
-                                &#34;emailPolicy&#34;: {
-                                    &#34;emailPolicyType&#34;: 3
+            if not (isinstance(subclient_content[
+                    &#39;journal_policy&#39;], (ConfigurationPolicy, str)) and
+                    isinstance(subclient_content[
+                        &#39;retention_policy&#39;], (ConfigurationPolicy, str)) and
+                    isinstance(subclient_content[&#39;mailboxNames&#39;], list)):
+                raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
+
+            if isinstance(subclient_content[&#39;journal_policy&#39;], ConfigurationPolicy):
+                journal_policy = subclient_content[&#39;journal_policy&#39;]
+            elif isinstance(subclient_content[&#39;journal_policy&#39;], str):
+                journal_policy = ConfigurationPolicy(
+                    self._commcell_object, subclient_content[&#39;journal_policy&#39;])
+
+            if isinstance(subclient_content[&#39;retention_policy&#39;], ConfigurationPolicy):
+                retention_policy = subclient_content[&#39;retention_policy&#39;]
+            elif isinstance(subclient_content[&#39;retention_policy&#39;], str):
+                retention_policy = ConfigurationPolicy(
+                    self._commcell_object, subclient_content[&#39;retention_policy&#39;])
+            associations_json = {
+                &#34;emailAssociation&#34;: {
+                    &#34;advanceOptions&#34;: {},
+                    &#34;subclientEntity&#34;: self._subClientEntity,
+                    &#34;emailDiscoverinfo&#34;: {
+                        &#34;discoverByType&#34;: 6,
+                        &#34;contentStoreMailboxes&#34;: users
+                    },
+                    &#34;policies&#34;: {
+                        &#34;emailPolicies&#34;: [
+                            {
+                                &#34;policyType&#34;: 1,
+                                &#34;flags&#34;: 0,
+                                &#34;agentType&#34;: {
+                                    &#34;appTypeId&#34;: 137
+                                },
+                                &#34;detail&#34;: {
+                                    &#34;emailPolicy&#34;: {
+                                        &#34;emailPolicyType&#34;: 4
+                                    }
+                                },
+                                &#34;policyEntity&#34;: {
+                                    &#34;policyId&#34;: int(journal_policy.configuration_policy_id),
+                                    &#34;policyName&#34;: journal_policy.configuration_policy_name
                                 }
+
                             },
-                            &#34;policyEntity&#34;: {
-                                &#34;policyId&#34;: int(retention_policy._configuration_policy_id),
-                                &#34;policyName&#34;: retention_policy._configuration_policy_name
+                            {
+                                &#34;policyType&#34;: 1,
+                                &#34;flags&#34;: 0,
+                                &#34;agentType&#34;: {
+                                    &#34;appTypeId&#34;: 137
+                                },
+                                &#34;detail&#34;: {
+                                    &#34;emailPolicy&#34;: {
+                                        &#34;emailPolicyType&#34;: 3
+                                    }
+                                },
+                                &#34;policyEntity&#34;: {
+                                    &#34;policyId&#34;: int(retention_policy._configuration_policy_id),
+                                    &#34;policyName&#34;: retention_policy._configuration_policy_name
+                                }
                             }
-                        }
-                    ]
+                        ]
+                    }
                 }
             }
-        }
+
+        else:
+            if &#39;plan_name&#39; not in subclient_content:
+                raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#34;&#39;plan_name&#39; not given in content&#34;)
+
+            if not self._commcell_object.plans.has_plan(subclient_content[&#39;plan_name&#39;]):
+                raise SDKException(&#39;Subclient&#39;, &#39;102&#39;,
+                                   &#39;Plan Name {} not found&#39;.format(subclient_content[&#39;plan_name&#39;]))
+            if &#39;plan_id&#39; not in subclient_content or subclient_content[&#39;plan_id&#39;] is None:
+                plan_id = self._commcell_object.plans[subclient_content[&#39;plan_name&#39;].lower()]
+            else:
+                plan_id = subclient_content[&#39;plan_id&#39;]
+
+            associations_json = {
+                &#34;emailAssociation&#34;: {
+                    &#34;advanceOptions&#34;: {&#34;enableAutoDiscovery&#34;: False},
+                    &#34;subclientEntity&#34;: self._subClientEntity,
+                    &#34;emailDiscoverinfo&#34;: {
+                        &#34;discoverByType&#34;: 6,
+                        &#34;contentStoreMailboxes&#34;: users
+                    },
+                    &#34;emailStatus&#34;: 0,
+                    &#34;plan&#34;: {&#34;planId&#34;: int(plan_id)}
+                }
+            }
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;PUT&#39;, self._SET_EMAIL_POLICY_ASSOCIATIONS, associations_json
@@ -423,7 +452,7 @@ subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L51-L333" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L51-L362" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ContentStoreMailboxSubclient(ExchangeSubclient):
     &#34;&#34;&#34;Derived class from ExchangeSubclient Base class.
@@ -571,7 +600,7 @@ subclient id</p></div>
         &#34;&#34;&#34;&#34;Returns the list of discovered users for the UserMailbox subclient.&#34;&#34;&#34;
         return self._content_store_mailboxes
 
-    def set_contentstore_assocaition(self, subclient_content):
+    def set_contentstore_assocaition(self, subclient_content, use_policies=True):
         &#34;&#34;&#34;Create User assocaition for UserMailboxSubclient.
 
             Args:
@@ -579,23 +608,287 @@ subclient id</p></div>
 
                     subclient_content = {
 
-                        &#39;mailboxNames&#39; : [&#34;AutoCi2&#34;],,
+                        &#39;mailboxNames&#39; : [&#34;List of mailbox alias&#34;],,
 
-                        &#39;contentStoreClients&#39; : [shindex],
+                        &#39;contentStoreClients&#39; : [List of Content Store clients],
 
+                        -- if use_policies is True --
                         &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
 
                         &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
 
                         &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
+
+                        -- if use_policies is False --
+                        &#39;plan_name&#39;: Plan Name,
+                        &#39;plan_id&#39;: int or None (Optional)
                     }
+
+                use_policies (bool) -- If True uses policies else uses Plan
 
         &#34;&#34;&#34;
         users = []
 
         if not isinstance(subclient_content, dict):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
+        try:
+            content_store_server = self._content_store_servers(
+                subclient_content[&#39;contentStoreClients&#39;])
 
+            for mailbox_item in subclient_content[&#39;mailboxNames&#39;]:
+                mailbox_dict = {
+                    &#39;smtpAdrress&#39;: mailbox_item[&#39;smtpAdrress&#39;],
+                    &#39;mailBoxType&#39;: 3,
+                    &#39;displayName&#39;: mailbox_item[&#39;displayName&#39;],
+                    &#39;contentStoreClients&#39;: content_store_server
+
+                }
+                users.append(mailbox_dict)
+        except KeyError as err:
+            raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;{} not given in content&#39;.format(err))
+
+        if use_policies:
+            from ...policies.configuration_policies import ConfigurationPolicy
+
+            if not (isinstance(subclient_content[
+                    &#39;journal_policy&#39;], (ConfigurationPolicy, str)) and
+                    isinstance(subclient_content[
+                        &#39;retention_policy&#39;], (ConfigurationPolicy, str)) and
+                    isinstance(subclient_content[&#39;mailboxNames&#39;], list)):
+                raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
+
+            if isinstance(subclient_content[&#39;journal_policy&#39;], ConfigurationPolicy):
+                journal_policy = subclient_content[&#39;journal_policy&#39;]
+            elif isinstance(subclient_content[&#39;journal_policy&#39;], str):
+                journal_policy = ConfigurationPolicy(
+                    self._commcell_object, subclient_content[&#39;journal_policy&#39;])
+
+            if isinstance(subclient_content[&#39;retention_policy&#39;], ConfigurationPolicy):
+                retention_policy = subclient_content[&#39;retention_policy&#39;]
+            elif isinstance(subclient_content[&#39;retention_policy&#39;], str):
+                retention_policy = ConfigurationPolicy(
+                    self._commcell_object, subclient_content[&#39;retention_policy&#39;])
+            associations_json = {
+                &#34;emailAssociation&#34;: {
+                    &#34;advanceOptions&#34;: {},
+                    &#34;subclientEntity&#34;: self._subClientEntity,
+                    &#34;emailDiscoverinfo&#34;: {
+                        &#34;discoverByType&#34;: 6,
+                        &#34;contentStoreMailboxes&#34;: users
+                    },
+                    &#34;policies&#34;: {
+                        &#34;emailPolicies&#34;: [
+                            {
+                                &#34;policyType&#34;: 1,
+                                &#34;flags&#34;: 0,
+                                &#34;agentType&#34;: {
+                                    &#34;appTypeId&#34;: 137
+                                },
+                                &#34;detail&#34;: {
+                                    &#34;emailPolicy&#34;: {
+                                        &#34;emailPolicyType&#34;: 4
+                                    }
+                                },
+                                &#34;policyEntity&#34;: {
+                                    &#34;policyId&#34;: int(journal_policy.configuration_policy_id),
+                                    &#34;policyName&#34;: journal_policy.configuration_policy_name
+                                }
+
+                            },
+                            {
+                                &#34;policyType&#34;: 1,
+                                &#34;flags&#34;: 0,
+                                &#34;agentType&#34;: {
+                                    &#34;appTypeId&#34;: 137
+                                },
+                                &#34;detail&#34;: {
+                                    &#34;emailPolicy&#34;: {
+                                        &#34;emailPolicyType&#34;: 3
+                                    }
+                                },
+                                &#34;policyEntity&#34;: {
+                                    &#34;policyId&#34;: int(retention_policy._configuration_policy_id),
+                                    &#34;policyName&#34;: retention_policy._configuration_policy_name
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+
+        else:
+            if &#39;plan_name&#39; not in subclient_content:
+                raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#34;&#39;plan_name&#39; not given in content&#34;)
+
+            if not self._commcell_object.plans.has_plan(subclient_content[&#39;plan_name&#39;]):
+                raise SDKException(&#39;Subclient&#39;, &#39;102&#39;,
+                                   &#39;Plan Name {} not found&#39;.format(subclient_content[&#39;plan_name&#39;]))
+            if &#39;plan_id&#39; not in subclient_content or subclient_content[&#39;plan_id&#39;] is None:
+                plan_id = self._commcell_object.plans[subclient_content[&#39;plan_name&#39;].lower()]
+            else:
+                plan_id = subclient_content[&#39;plan_id&#39;]
+
+            associations_json = {
+                &#34;emailAssociation&#34;: {
+                    &#34;advanceOptions&#34;: {&#34;enableAutoDiscovery&#34;: False},
+                    &#34;subclientEntity&#34;: self._subClientEntity,
+                    &#34;emailDiscoverinfo&#34;: {
+                        &#34;discoverByType&#34;: 6,
+                        &#34;contentStoreMailboxes&#34;: users
+                    },
+                    &#34;emailStatus&#34;: 0,
+                    &#34;plan&#34;: {&#34;planId&#34;: int(plan_id)}
+                }
+            }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;PUT&#39;, self._SET_EMAIL_POLICY_ASSOCIATIONS, associations_json
+        )
+
+        if flag:
+            try:
+                if response.json():
+                    if response.json()[&#39;resp&#39;][&#39;errorCode&#39;] != 0:
+                        error_message = response.json()[&#39;errorMessage&#39;]
+                        output_string = &#39;Failed to create user assocaition\nError: &#34;{0}&#34;&#39;
+                        raise SDKException(
+                            &#39;Exchange Mailbox&#39;, &#39;102&#39;, output_string.format(error_message)
+                        )
+                    else:
+                        self.refresh()
+            except ValueError:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+    def refresh(self):
+        &#34;&#34;&#34;Refresh the User Mailbox Subclient.&#34;&#34;&#34;
+        self._get_subclient_properties()
+        self._content_store_mailboxes = self._get_content_store_assocaitions()</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient">ExchangeSubclient</a></li>
+<li><a title="cvpysdk.subclient.Subclient" href="../../subclient.html#cvpysdk.subclient.Subclient">Subclient</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient.content_store_mailboxes"><code class="name">var <span class="ident">content_store_mailboxes</span></code></dt>
+<dd>
+<div class="desc"><p>"Returns the list of discovered users for the UserMailbox subclient.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L192-L195" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def content_store_mailboxes(self):
+    &#34;&#34;&#34;&#34;Returns the list of discovered users for the UserMailbox subclient.&#34;&#34;&#34;
+    return self._content_store_mailboxes</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient.refresh"><code class="name flex">
+<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refresh the User Mailbox Subclient.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L359-L362" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh(self):
+    &#34;&#34;&#34;Refresh the User Mailbox Subclient.&#34;&#34;&#34;
+    self._get_subclient_properties()
+    self._content_store_mailboxes = self._get_content_store_assocaitions()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient.set_contentstore_assocaition"><code class="name flex">
+<span>def <span class="ident">set_contentstore_assocaition</span></span>(<span>self, subclient_content, use_policies=True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Create User assocaition for UserMailboxSubclient.</p>
+<h2 id="args">Args</h2>
+<p>subclient_content
+(dict)
+&ndash;
+dict of the Users to add to the subclient</p>
+<pre><code>subclient_content = {
+
+    'mailboxNames' : ["List of mailbox alias"],,
+
+    'contentStoreClients' : [List of Content Store clients],
+
+    -- if use_policies is True --
+    'archive_policy' : "CIPLAN Archiving policy",
+
+    'cleanup_policy' : 'CIPLAN Clean-up policy',
+
+    'retention_policy': 'CIPLAN Retention policy'
+
+    -- if use_policies is False --
+    'plan_name': Plan Name,
+    'plan_id': int or None (Optional)
+}
+</code></pre>
+<p>use_policies (bool) &ndash; If True uses policies else uses Plan</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L197-L357" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def set_contentstore_assocaition(self, subclient_content, use_policies=True):
+    &#34;&#34;&#34;Create User assocaition for UserMailboxSubclient.
+
+        Args:
+            subclient_content   (dict)  --  dict of the Users to add to the subclient
+
+                subclient_content = {
+
+                    &#39;mailboxNames&#39; : [&#34;List of mailbox alias&#34;],,
+
+                    &#39;contentStoreClients&#39; : [List of Content Store clients],
+
+                    -- if use_policies is True --
+                    &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
+
+                    &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
+
+                    &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
+
+                    -- if use_policies is False --
+                    &#39;plan_name&#39;: Plan Name,
+                    &#39;plan_id&#39;: int or None (Optional)
+                }
+
+            use_policies (bool) -- If True uses policies else uses Plan
+
+    &#34;&#34;&#34;
+    users = []
+
+    if not isinstance(subclient_content, dict):
+        raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
+    try:
+        content_store_server = self._content_store_servers(
+            subclient_content[&#39;contentStoreClients&#39;])
+
+        for mailbox_item in subclient_content[&#39;mailboxNames&#39;]:
+            mailbox_dict = {
+                &#39;smtpAdrress&#39;: mailbox_item[&#39;smtpAdrress&#39;],
+                &#39;mailBoxType&#39;: 3,
+                &#39;displayName&#39;: mailbox_item[&#39;displayName&#39;],
+                &#39;contentStoreClients&#39;: content_store_server
+
+            }
+            users.append(mailbox_dict)
+    except KeyError as err:
+        raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;{} not given in content&#39;.format(err))
+
+    if use_policies:
         from ...policies.configuration_policies import ConfigurationPolicy
 
         if not (isinstance(subclient_content[
@@ -616,25 +909,6 @@ subclient id</p></div>
         elif isinstance(subclient_content[&#39;retention_policy&#39;], str):
             retention_policy = ConfigurationPolicy(
                 self._commcell_object, subclient_content[&#39;retention_policy&#39;])
-        content_store_server = self._content_store_servers(
-            subclient_content[&#39;contentStoreClients&#39;])
-
-        try:
-
-            for mailbox_item in subclient_content[&#39;mailboxNames&#39;]:
-
-                mailbox_dict = {
-                    &#39;smtpAdrress&#39;: mailbox_item[&#39;smtpAdrress&#39;],
-                    &#39;mailBoxType&#39;: 3,
-                    &#39;displayName&#39;: mailbox_item[&#39;displayName&#39;],
-                    &#39;contentStoreClients&#39;: content_store_server
-
-                }
-                users.append(mailbox_dict)
-
-        except KeyError as err:
-            raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;{} not given in content&#39;.format(err))
-
         associations_json = {
             &#34;emailAssociation&#34;: {
                 &#34;advanceOptions&#34;: {},
@@ -683,211 +957,30 @@ subclient id</p></div>
             }
         }
 
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            &#39;PUT&#39;, self._SET_EMAIL_POLICY_ASSOCIATIONS, associations_json
-        )
+    else:
+        if &#39;plan_name&#39; not in subclient_content:
+            raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#34;&#39;plan_name&#39; not given in content&#34;)
 
-        if flag:
-            try:
-                if response.json():
-                    if response.json()[&#39;resp&#39;][&#39;errorCode&#39;] != 0:
-                        error_message = response.json()[&#39;errorMessage&#39;]
-                        output_string = &#39;Failed to create user assocaition\nError: &#34;{0}&#34;&#39;
-                        raise SDKException(
-                            &#39;Exchange Mailbox&#39;, &#39;102&#39;, output_string.format(error_message)
-                        )
-                    else:
-                        self.refresh()
-            except ValueError:
-                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        if not self._commcell_object.plans.has_plan(subclient_content[&#39;plan_name&#39;]):
+            raise SDKException(&#39;Subclient&#39;, &#39;102&#39;,
+                               &#39;Plan Name {} not found&#39;.format(subclient_content[&#39;plan_name&#39;]))
+        if &#39;plan_id&#39; not in subclient_content or subclient_content[&#39;plan_id&#39;] is None:
+            plan_id = self._commcell_object.plans[subclient_content[&#39;plan_name&#39;].lower()]
         else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+            plan_id = subclient_content[&#39;plan_id&#39;]
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the User Mailbox Subclient.&#34;&#34;&#34;
-        self._get_subclient_properties()
-        self._content_store_mailboxes = self._get_content_store_assocaitions()</code></pre>
-</details>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient">ExchangeSubclient</a></li>
-<li><a title="cvpysdk.subclient.Subclient" href="../../subclient.html#cvpysdk.subclient.Subclient">Subclient</a></li>
-</ul>
-<h3>Instance variables</h3>
-<dl>
-<dt id="cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient.content_store_mailboxes"><code class="name">var <span class="ident">content_store_mailboxes</span></code></dt>
-<dd>
-<div class="desc"><p>"Returns the list of discovered users for the UserMailbox subclient.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L192-L195" class="git-link">Browse git</a>
-</summary>
-<pre><code class="python">@property
-def content_store_mailboxes(self):
-    &#34;&#34;&#34;&#34;Returns the list of discovered users for the UserMailbox subclient.&#34;&#34;&#34;
-    return self._content_store_mailboxes</code></pre>
-</details>
-</dd>
-</dl>
-<h3>Methods</h3>
-<dl>
-<dt id="cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Refresh the User Mailbox Subclient.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L330-L333" class="git-link">Browse git</a>
-</summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refresh the User Mailbox Subclient.&#34;&#34;&#34;
-    self._get_subclient_properties()
-    self._content_store_mailboxes = self._get_content_store_assocaitions()</code></pre>
-</details>
-</dd>
-<dt id="cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient.set_contentstore_assocaition"><code class="name flex">
-<span>def <span class="ident">set_contentstore_assocaition</span></span>(<span>self, subclient_content)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Create User assocaition for UserMailboxSubclient.</p>
-<h2 id="args">Args</h2>
-<p>subclient_content
-(dict)
-&ndash;
-dict of the Users to add to the subclient</p>
-<pre><code>subclient_content = {
-
-    'mailboxNames' : ["AutoCi2"],,
-
-    'contentStoreClients' : [shindex],
-
-    'archive_policy' : "CIPLAN Archiving policy",
-
-    'cleanup_policy' : 'CIPLAN Clean-up policy',
-
-    'retention_policy': 'CIPLAN Retention policy'
-}
-</code></pre></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L197-L328" class="git-link">Browse git</a>
-</summary>
-<pre><code class="python">def set_contentstore_assocaition(self, subclient_content):
-    &#34;&#34;&#34;Create User assocaition for UserMailboxSubclient.
-
-        Args:
-            subclient_content   (dict)  --  dict of the Users to add to the subclient
-
-                subclient_content = {
-
-                    &#39;mailboxNames&#39; : [&#34;AutoCi2&#34;],,
-
-                    &#39;contentStoreClients&#39; : [shindex],
-
-                    &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
-
-                    &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
-
-                    &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
-                }
-
-    &#34;&#34;&#34;
-    users = []
-
-    if not isinstance(subclient_content, dict):
-        raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
-
-    from ...policies.configuration_policies import ConfigurationPolicy
-
-    if not (isinstance(subclient_content[
-            &#39;journal_policy&#39;], (ConfigurationPolicy, str)) and
-            isinstance(subclient_content[
-                &#39;retention_policy&#39;], (ConfigurationPolicy, str)) and
-            isinstance(subclient_content[&#39;mailboxNames&#39;], list)):
-        raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
-
-    if isinstance(subclient_content[&#39;journal_policy&#39;], ConfigurationPolicy):
-        journal_policy = subclient_content[&#39;journal_policy&#39;]
-    elif isinstance(subclient_content[&#39;journal_policy&#39;], str):
-        journal_policy = ConfigurationPolicy(
-            self._commcell_object, subclient_content[&#39;journal_policy&#39;])
-
-    if isinstance(subclient_content[&#39;retention_policy&#39;], ConfigurationPolicy):
-        retention_policy = subclient_content[&#39;retention_policy&#39;]
-    elif isinstance(subclient_content[&#39;retention_policy&#39;], str):
-        retention_policy = ConfigurationPolicy(
-            self._commcell_object, subclient_content[&#39;retention_policy&#39;])
-    content_store_server = self._content_store_servers(
-        subclient_content[&#39;contentStoreClients&#39;])
-
-    try:
-
-        for mailbox_item in subclient_content[&#39;mailboxNames&#39;]:
-
-            mailbox_dict = {
-                &#39;smtpAdrress&#39;: mailbox_item[&#39;smtpAdrress&#39;],
-                &#39;mailBoxType&#39;: 3,
-                &#39;displayName&#39;: mailbox_item[&#39;displayName&#39;],
-                &#39;contentStoreClients&#39;: content_store_server
-
-            }
-            users.append(mailbox_dict)
-
-    except KeyError as err:
-        raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;{} not given in content&#39;.format(err))
-
-    associations_json = {
-        &#34;emailAssociation&#34;: {
-            &#34;advanceOptions&#34;: {},
-            &#34;subclientEntity&#34;: self._subClientEntity,
-            &#34;emailDiscoverinfo&#34;: {
-                &#34;discoverByType&#34;: 6,
-                &#34;contentStoreMailboxes&#34;: users
-            },
-            &#34;policies&#34;: {
-                &#34;emailPolicies&#34;: [
-                    {
-                        &#34;policyType&#34;: 1,
-                        &#34;flags&#34;: 0,
-                        &#34;agentType&#34;: {
-                            &#34;appTypeId&#34;: 137
-                        },
-                        &#34;detail&#34;: {
-                            &#34;emailPolicy&#34;: {
-                                &#34;emailPolicyType&#34;: 4
-                            }
-                        },
-                        &#34;policyEntity&#34;: {
-                            &#34;policyId&#34;: int(journal_policy.configuration_policy_id),
-                            &#34;policyName&#34;: journal_policy.configuration_policy_name
-                        }
-
-                    },
-                    {
-                        &#34;policyType&#34;: 1,
-                        &#34;flags&#34;: 0,
-                        &#34;agentType&#34;: {
-                            &#34;appTypeId&#34;: 137
-                        },
-                        &#34;detail&#34;: {
-                            &#34;emailPolicy&#34;: {
-                                &#34;emailPolicyType&#34;: 3
-                            }
-                        },
-                        &#34;policyEntity&#34;: {
-                            &#34;policyId&#34;: int(retention_policy._configuration_policy_id),
-                            &#34;policyName&#34;: retention_policy._configuration_policy_name
-                        }
-                    }
-                ]
+        associations_json = {
+            &#34;emailAssociation&#34;: {
+                &#34;advanceOptions&#34;: {&#34;enableAutoDiscovery&#34;: False},
+                &#34;subclientEntity&#34;: self._subClientEntity,
+                &#34;emailDiscoverinfo&#34;: {
+                    &#34;discoverByType&#34;: 6,
+                    &#34;contentStoreMailboxes&#34;: users
+                },
+                &#34;emailStatus&#34;: 0,
+                &#34;plan&#34;: {&#34;planId&#34;: int(plan_id)}
             }
         }
-    }
 
     flag, response = self._commcell_object._cvpysdk_object.make_request(
         &#39;PUT&#39;, self._SET_EMAIL_POLICY_ASSOCIATIONS, associations_json
@@ -916,6 +1009,7 @@ dict of the Users to add to the subclient</p>
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient">ExchangeSubclient</a></b></code>:
 <ul class="hlist">
+<li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.ad_group_backup" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.ad_group_backup">ad_group_backup</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.allow_multiple_readers" href="../../subclient.html#cvpysdk.subclient.Subclient.allow_multiple_readers">allow_multiple_readers</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.backup" href="../../subclient.html#cvpysdk.subclient.Subclient.backup">backup</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.browse" href="../../subclient.html#cvpysdk.subclient.Subclient.browse">browse</a></code></li>
@@ -953,12 +1047,14 @@ dict of the Users to add to the subclient</p>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.next_backup_time" href="../../subclient.html#cvpysdk.subclient.Subclient.next_backup_time">next_backup_time</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.out_of_place_restore" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.out_of_place_restore">out_of_place_restore</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.plan" href="../../subclient.html#cvpysdk.subclient.Subclient.plan">plan</a></code></li>
+<li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.preview_backedup_file" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.preview_backedup_file">preview_backedup_file</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.properties" href="../../subclient.html#cvpysdk.subclient.Subclient.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.pst_ingestion" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.pst_ingestion">pst_ingestion</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.pst_restore" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.pst_restore">pst_restore</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.read_buffer_size" href="../../subclient.html#cvpysdk.subclient.Subclient.read_buffer_size">read_buffer_size</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.restore_in_place" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.restore_in_place">restore_in_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.restore_out_of_place" href="../../subclient.html#cvpysdk.subclient.Subclient.restore_out_of_place">restore_out_of_place</a></code></li>
+<li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.run_content_indexing" href="../../subclient.html#cvpysdk.subclient.Subclient.run_content_indexing">run_content_indexing</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.set_backup_nodes" href="../../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.set_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.snapshot_engine_name" href="../../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>

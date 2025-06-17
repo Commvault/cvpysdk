@@ -30,7 +30,7 @@ Maintains constants for MS Teams subclient.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_constants.py#L1-L188" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_constants.py#L1-L340" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -124,6 +124,10 @@ class TeamsConstants:
         &#34;user&#34;: None
     }
 
+    BACKUP_USER_JSON = {
+        &#34;user&#34;: None
+    }
+
     ASSOCIATIONS = {
         &#34;subclientId&#34;: None,
         &#34;applicationId&#34;: None,
@@ -219,6 +223,154 @@ class TeamsConstants:
         &#34;Teams&#34;: 8,
         &#34;Users&#34;: 7,
         &#34;Groups&#34;: 22
+    }
+
+    DESTINATION_ONEDRIVE_INFO = {
+        &#34;userSMTP&#34;: None,
+        &#34;userGUID&#34;: None,
+         &#34;folder&#34;: &#34;/&#34;
+    }
+
+    USER_ONEDRIVE_RESTORE_JSON = {
+      &#34;taskInfo&#34;: {
+        &#34;associations&#34;: None,
+        &#34;task&#34;: {
+            &#34;taskType&#34;: 1,
+            &#34;initiatedFrom&#34;: 1
+        },
+        &#34;subTasks&#34;: [
+          {
+            &#34;subTask&#34;: {
+              &#34;subTaskType&#34;: 3,
+              &#34;operationType&#34;: 1001
+            },
+            &#34;options&#34;: {
+              &#34;commonOpts&#34;: {
+                &#34;notifyUserOnJobCompletion&#34;: False,
+                &#34;jobMetadata&#34;: [
+                  {
+                    &#34;selectedItems&#34;: [],
+                    &#34;jobOptionItems&#34;: []
+                  }
+                ]
+              },
+              &#34;restoreOptions&#34;: {
+                &#34;browseOption&#34;: {
+                  &#34;commCellId&#34;: 2
+                },
+                &#34;destination&#34;: {
+                  &#34;inPlace&#34;: False,
+                  &#34;destClient&#34;: {},
+                  &#34;destPath&#34;: None,
+                  &#34;destAppId&#34;: 134
+                },
+                &#34;commonOptions&#34;: {
+                  &#34;unconditionalOverwrite&#34;: False,
+                  &#34;overwriteFiles&#34;: False,
+                  &#34;skip&#34;: True
+                },
+                &#34;cloudAppsRestoreOptions&#34;: {
+                  &#34;instanceType&#34;: 36,
+                  &#34;msTeamsRestoreOptions&#34;: {
+                    &#34;restoreToTeams&#34;: False,
+                    &#34;restoreToOneDrive&#34;: True,
+                    &#34;destLocation&#34;: None,
+                    &#34;overWriteItems&#34;: False,
+                    &#34;restoreUsingFindQuery&#34;: False,
+                    &#34;findQuery&#34;: {
+                      &#34;mode&#34;: 4,
+                      &#34;advSearchGrp&#34;: {
+                        &#34;commonFilter&#34;: [
+                          {
+                            &#34;filter&#34;: {
+                              &#34;interFilterOP&#34;: 2,
+                              &#34;filters&#34;: [
+                                {
+                                  &#34;field&#34;: &#34;CISTATE&#34;,
+                                  &#34;intraFieldOp&#34;: 0,
+                                  &#34;fieldValues&#34;: {
+                                    &#34;values&#34;: [
+                                      &#34;1&#34;
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ],
+                        &#34;fileFilter&#34;: [
+                          {
+                            &#34;interGroupOP&#34;: 2,
+                            &#34;filter&#34;: {
+                              &#34;interFilterOP&#34;: 2,
+                              &#34;filters&#34;: [
+                                {
+                                  &#34;field&#34;: &#34;TEAMS_ITEM_TYPE&#34;,
+                                  &#34;intraFieldOp&#34;: 0,
+                                  &#34;fieldValues&#34;: {
+                                    &#34;values&#34;: [
+                                      &#34;55&#34;
+                                    ]
+                                  }
+                                },
+                                {
+                                  &#34;field&#34;: &#34;TEAMS_USER_ID&#34;,
+                                  &#34;intraFieldOp&#34;: 0,
+                                  &#34;fieldValues&#34;: {
+                                    &#34;values&#34;: []
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ],
+                        &#34;emailFilter&#34;: [],
+                        &#34;galaxyFilter&#34;: [
+                          {
+                            &#34;appIdList&#34;: None
+                          }
+                        ]
+                      },
+                      &#34;searchProcessingInfo&#34;: {
+                        &#34;resultOffset&#34;: 0,
+                        &#34;pageSize&#34;: 15,
+                        &#34;queryParams&#34;: [
+                          {
+                            &#34;param&#34;: &#34;ENABLE_MIXEDVIEW&#34;,
+                            &#34;value&#34;: &#34;true&#34;
+                          },
+                          {
+                            &#34;param&#34;: &#34;RESPONSE_FIELD_LIST&#34;,
+                            &#34;value&#34;: &#34;DATA_TYPE,CONTENTID,CV_OBJECT_GUID&#34;
+                                     &#34;,PARENT_GUID,CV_TURBO_GUID,AFILEID&#34;
+                                     &#34;,AFILEOFFSET,COMMCELLNO,MODIFIEDTIME&#34;
+                                     &#34;,SIZEINKB,BACKUPTIME,CISTATE,DATE_DELETED&#34;
+                                     &#34;,TEAMS_ITEM_ID,TEAMS_ITEM_NAME,TEAMS_NAME&#34;
+                                     &#34;,TEAMS_SMTP,TEAMS_ITEM_TYPE,TEAMS_CHANNEL_TYPE&#34;
+                                     &#34;,TEAMS_TAB_TYPE,TEAMS_GROUP_VISIBILITY&#34;
+                                     &#34;,TEAMS_GUID,TEAMS_CONV_ITEM_TYPE,TEAMS_CONV_MESSAGE_TYPE&#34;
+                                     &#34;,TEAMS_CONV_SUBJECT,TEAMS_CONV_IMPORTANCE,TEAMS_CONV_SENDER_TYPE&#34;
+                                     &#34;,TEAMS_CONV_SENDER_NAME,TEAMS_CONV_HAS_REPLIES,CI_URL,TEAMS_DRIVE_FOLDER_TYPE&#34;
+                          }
+                        ],
+                        &#34;sortParams&#34;: [
+                          {
+                            &#34;sortDirection&#34;: 0,
+                            &#34;sortField&#34;: &#34;TEAMS_NAME&#34;
+                          }
+                        ]
+                      }
+                    },
+                    &#34;selectedItemsToRestore&#34;: None,
+                    &#34;destinationOneDriveInfo&#34;: None,
+                    &#34;restorePostsAsHtml&#34;: True
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
     }</code></pre>
 </details>
 </section>
@@ -239,7 +391,7 @@ class TeamsConstants:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/subclients/cloudapps/teams_constants.py#L26-L188" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/teams_constants.py#L26-L340" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class TeamsConstants:
     &#34;&#34;&#34;Class to maintain all the Teams subclient related constants.&#34;&#34;&#34;
@@ -308,6 +460,10 @@ class TeamsConstants:
         &#34;user&#34;: None
     }
 
+    BACKUP_USER_JSON = {
+        &#34;user&#34;: None
+    }
+
     ASSOCIATIONS = {
         &#34;subclientId&#34;: None,
         &#34;applicationId&#34;: None,
@@ -403,6 +559,154 @@ class TeamsConstants:
         &#34;Teams&#34;: 8,
         &#34;Users&#34;: 7,
         &#34;Groups&#34;: 22
+    }
+
+    DESTINATION_ONEDRIVE_INFO = {
+        &#34;userSMTP&#34;: None,
+        &#34;userGUID&#34;: None,
+         &#34;folder&#34;: &#34;/&#34;
+    }
+
+    USER_ONEDRIVE_RESTORE_JSON = {
+      &#34;taskInfo&#34;: {
+        &#34;associations&#34;: None,
+        &#34;task&#34;: {
+            &#34;taskType&#34;: 1,
+            &#34;initiatedFrom&#34;: 1
+        },
+        &#34;subTasks&#34;: [
+          {
+            &#34;subTask&#34;: {
+              &#34;subTaskType&#34;: 3,
+              &#34;operationType&#34;: 1001
+            },
+            &#34;options&#34;: {
+              &#34;commonOpts&#34;: {
+                &#34;notifyUserOnJobCompletion&#34;: False,
+                &#34;jobMetadata&#34;: [
+                  {
+                    &#34;selectedItems&#34;: [],
+                    &#34;jobOptionItems&#34;: []
+                  }
+                ]
+              },
+              &#34;restoreOptions&#34;: {
+                &#34;browseOption&#34;: {
+                  &#34;commCellId&#34;: 2
+                },
+                &#34;destination&#34;: {
+                  &#34;inPlace&#34;: False,
+                  &#34;destClient&#34;: {},
+                  &#34;destPath&#34;: None,
+                  &#34;destAppId&#34;: 134
+                },
+                &#34;commonOptions&#34;: {
+                  &#34;unconditionalOverwrite&#34;: False,
+                  &#34;overwriteFiles&#34;: False,
+                  &#34;skip&#34;: True
+                },
+                &#34;cloudAppsRestoreOptions&#34;: {
+                  &#34;instanceType&#34;: 36,
+                  &#34;msTeamsRestoreOptions&#34;: {
+                    &#34;restoreToTeams&#34;: False,
+                    &#34;restoreToOneDrive&#34;: True,
+                    &#34;destLocation&#34;: None,
+                    &#34;overWriteItems&#34;: False,
+                    &#34;restoreUsingFindQuery&#34;: False,
+                    &#34;findQuery&#34;: {
+                      &#34;mode&#34;: 4,
+                      &#34;advSearchGrp&#34;: {
+                        &#34;commonFilter&#34;: [
+                          {
+                            &#34;filter&#34;: {
+                              &#34;interFilterOP&#34;: 2,
+                              &#34;filters&#34;: [
+                                {
+                                  &#34;field&#34;: &#34;CISTATE&#34;,
+                                  &#34;intraFieldOp&#34;: 0,
+                                  &#34;fieldValues&#34;: {
+                                    &#34;values&#34;: [
+                                      &#34;1&#34;
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ],
+                        &#34;fileFilter&#34;: [
+                          {
+                            &#34;interGroupOP&#34;: 2,
+                            &#34;filter&#34;: {
+                              &#34;interFilterOP&#34;: 2,
+                              &#34;filters&#34;: [
+                                {
+                                  &#34;field&#34;: &#34;TEAMS_ITEM_TYPE&#34;,
+                                  &#34;intraFieldOp&#34;: 0,
+                                  &#34;fieldValues&#34;: {
+                                    &#34;values&#34;: [
+                                      &#34;55&#34;
+                                    ]
+                                  }
+                                },
+                                {
+                                  &#34;field&#34;: &#34;TEAMS_USER_ID&#34;,
+                                  &#34;intraFieldOp&#34;: 0,
+                                  &#34;fieldValues&#34;: {
+                                    &#34;values&#34;: []
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ],
+                        &#34;emailFilter&#34;: [],
+                        &#34;galaxyFilter&#34;: [
+                          {
+                            &#34;appIdList&#34;: None
+                          }
+                        ]
+                      },
+                      &#34;searchProcessingInfo&#34;: {
+                        &#34;resultOffset&#34;: 0,
+                        &#34;pageSize&#34;: 15,
+                        &#34;queryParams&#34;: [
+                          {
+                            &#34;param&#34;: &#34;ENABLE_MIXEDVIEW&#34;,
+                            &#34;value&#34;: &#34;true&#34;
+                          },
+                          {
+                            &#34;param&#34;: &#34;RESPONSE_FIELD_LIST&#34;,
+                            &#34;value&#34;: &#34;DATA_TYPE,CONTENTID,CV_OBJECT_GUID&#34;
+                                     &#34;,PARENT_GUID,CV_TURBO_GUID,AFILEID&#34;
+                                     &#34;,AFILEOFFSET,COMMCELLNO,MODIFIEDTIME&#34;
+                                     &#34;,SIZEINKB,BACKUPTIME,CISTATE,DATE_DELETED&#34;
+                                     &#34;,TEAMS_ITEM_ID,TEAMS_ITEM_NAME,TEAMS_NAME&#34;
+                                     &#34;,TEAMS_SMTP,TEAMS_ITEM_TYPE,TEAMS_CHANNEL_TYPE&#34;
+                                     &#34;,TEAMS_TAB_TYPE,TEAMS_GROUP_VISIBILITY&#34;
+                                     &#34;,TEAMS_GUID,TEAMS_CONV_ITEM_TYPE,TEAMS_CONV_MESSAGE_TYPE&#34;
+                                     &#34;,TEAMS_CONV_SUBJECT,TEAMS_CONV_IMPORTANCE,TEAMS_CONV_SENDER_TYPE&#34;
+                                     &#34;,TEAMS_CONV_SENDER_NAME,TEAMS_CONV_HAS_REPLIES,CI_URL,TEAMS_DRIVE_FOLDER_TYPE&#34;
+                          }
+                        ],
+                        &#34;sortParams&#34;: [
+                          {
+                            &#34;sortDirection&#34;: 0,
+                            &#34;sortField&#34;: &#34;TEAMS_NAME&#34;
+                          }
+                        ]
+                      }
+                    },
+                    &#34;selectedItemsToRestore&#34;: None,
+                    &#34;destinationOneDriveInfo&#34;: None,
+                    &#34;restorePostsAsHtml&#34;: True
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
     }</code></pre>
 </details>
 <h3>Class variables</h3>
@@ -447,11 +751,19 @@ class TeamsConstants:
 <dd>
 <div class="desc"></div>
 </dd>
+<dt id="cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.BACKUP_USER_JSON"><code class="name">var <span class="ident">BACKUP_USER_JSON</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
 <dt id="cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.CUSTOM_CATEGORY_JSON"><code class="name">var <span class="ident">CUSTOM_CATEGORY_JSON</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
 <dt id="cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.ClOUD_APP_EDISCOVER_TYPE"><code class="name">var <span class="ident">ClOUD_APP_EDISCOVER_TYPE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.DESTINATION_ONEDRIVE_INFO"><code class="name">var <span class="ident">DESTINATION_ONEDRIVE_INFO</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -464,6 +776,10 @@ class TeamsConstants:
 <div class="desc"></div>
 </dd>
 <dt id="cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.RESTORE_TASK_JSON"><code class="name">var <span class="ident">RESTORE_TASK_JSON</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.USER_ONEDRIVE_RESTORE_JSON"><code class="name">var <span class="ident">USER_ONEDRIVE_RESTORE_JSON</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -550,11 +866,14 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.BACKUP_REQUEST_JSON" href="#cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.BACKUP_REQUEST_JSON">BACKUP_REQUEST_JSON</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.BACKUP_SUBTASK_JSON" href="#cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.BACKUP_SUBTASK_JSON">BACKUP_SUBTASK_JSON</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.BACKUP_TEAM_JSON" href="#cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.BACKUP_TEAM_JSON">BACKUP_TEAM_JSON</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.BACKUP_USER_JSON" href="#cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.BACKUP_USER_JSON">BACKUP_USER_JSON</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.CUSTOM_CATEGORY_JSON" href="#cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.CUSTOM_CATEGORY_JSON">CUSTOM_CATEGORY_JSON</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.ClOUD_APP_EDISCOVER_TYPE" href="#cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.ClOUD_APP_EDISCOVER_TYPE">ClOUD_APP_EDISCOVER_TYPE</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.DESTINATION_ONEDRIVE_INFO" href="#cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.DESTINATION_ONEDRIVE_INFO">DESTINATION_ONEDRIVE_INFO</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.INDEX_APP_TYPE" href="#cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.INDEX_APP_TYPE">INDEX_APP_TYPE</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.RESTORE_SUBTASK_JSON" href="#cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.RESTORE_SUBTASK_JSON">RESTORE_SUBTASK_JSON</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.RESTORE_TASK_JSON" href="#cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.RESTORE_TASK_JSON">RESTORE_TASK_JSON</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.USER_ONEDRIVE_RESTORE_JSON" href="#cvpysdk.subclients.cloudapps.teams_constants.TeamsConstants.USER_ONEDRIVE_RESTORE_JSON">USER_ONEDRIVE_RESTORE_JSON</a></code></li>
 </ul>
 </li>
 </ul>

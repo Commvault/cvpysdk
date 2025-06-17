@@ -99,7 +99,7 @@ use_impersonate_user                --  gets the setting use_impersonate_user
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L1-L1161" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L1-L1256" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # pylint: disable=W0212,W0201
@@ -758,8 +758,9 @@ class DisasterRecoveryManagement(object):
 
         &#34;&#34;&#34;
         self._commcell = commcell
-        self._service = commcell._services.get(&#39;DISASTER_RECOVERY_PROPERTIES&#39;)
-        self._cvpysdk_object = commcell._cvpysdk_object
+        self.services = self._commcell._services
+        self._service = self.services[&#39;DISASTER_RECOVERY_PROPERTIES&#39;]
+        self._cvpysdk_object = self._commcell._cvpysdk_object
         self.refresh()
 
     def _get_dr_properties(self):
@@ -819,6 +820,88 @@ class DisasterRecoveryManagement(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;)
 
+    def _get_drbackup_options(self):
+        &#34;&#34;&#34;
+        Returns : dict of dr backup options
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            method=&#39;GET&#39;,
+            url=self.services[&#39;DISASTER_RECOVERY_OPTIONS&#39;]
+        )
+        if flag:
+            if response and response.json():
+                return response.json()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;)
+
+    def get_cloud_regions(self):
+        &#34;&#34;&#34;
+        Returns : dict of available dr backup regions.
+                    Ex:
+                    {
+                        &#34;defaultRegion&#34;: &#34;southindia&#34;,
+                        &#34;regions&#34;: [
+                            {
+                                &#34;regionCode&#34;: &#34;eastus2&#34;,
+                                &#34;displayName&#34;: &#34;East US 2&#34;
+                            }
+                            {
+                                &#34;regionCode&#34;: &#34;southindia&#34;,
+                                &#34;displayName&#34;: &#34;(Asia Pacific) South India&#34;
+                            }
+                        ]
+                    }
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            method=&#39;GET&#39;,
+            url=self.services[&#39;DRBACKUP_REGIONS&#39;]
+        )
+        if flag:
+            if response and response.json():
+                return response.json()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;)
+
+    def _set_commvault_cloud_upload(self, flag, region=None):
+        &#34;&#34;&#34;
+        Executes a request on the server, to set the dr settings for commvault cloud upload.
+         Args:
+             flag   (bool)   : True to enable commvault cloud upload, False to disable
+             region (str)    : To select the region for the DR backup to be uploaded to.
+                                None will leave the region to be in default region.
+         Returns:
+               None
+         Raises:
+              SDKException:
+                    if given inputs are invalid.
+
+        &#34;&#34;&#34;
+        current_options = self._get_drbackup_options()
+        current_options[&#39;properties&#39;][&#39;uploadBackupMetadataToCloud&#39;] = flag
+        if flag:
+            current_options[&#39;properties&#39;][&#39;region&#39;] = region if region else self.get_cloud_regions()[&#39;defaultRegion&#39;]
+
+        flag, response = self._cvpysdk_object.make_request(
+                                    method=&#39;POST&#39;,
+                                    url=self.services[&#39;DISASTER_RECOVERY_OPTIONS&#39;],
+                                    payload=current_options
+                                )
+        if flag:
+            if response and response.json():
+                if response.json().get(&#39;errorCode&#39;) != 0:
+                    raise SDKException(&#39;DisasterRecovery&#39;, &#39;102&#39;, &#39;Failed to set dr properties. Error: {0}&#39;.format(
+                        response.json().get(&#39;errorMessage&#39;)
+                    ))
+                self.refresh()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;)
+
 
     def refresh(self):
         &#34;&#34;&#34;
@@ -869,7 +952,7 @@ class DisasterRecoveryManagement(object):
         else:
             raise SDKException(&#39;DisasterRecovery&#39;, &#39;101&#39;)
 
-    def upload_metdata_to_commvault_cloud(self, flag, username=None, password=None):
+    def upload_metdata_to_commvault_cloud(self, flag, username=None, password=None, region=None):
         &#34;&#34;&#34;
         Enable/Disable upload metadata to commvault cloud setting.
 
@@ -879,6 +962,8 @@ class DisasterRecoveryManagement(object):
                  username   (str)       --      username of the commvault cloud.
 
                  password   (str)       --      password of the commvault cloud.
+
+                 region     (str)       --      region to upload the DRBackup, None will set to default region
 
             Returns:
                  None
@@ -891,7 +976,7 @@ class DisasterRecoveryManagement(object):
                     self._export_settings[&#39;cloudCredentials&#39;][&#39;password&#39;] = b64encode(password.encode()).decode()
                 else:
                     raise SDKException(&#39;DisasterRecovery&#39;, &#39;101&#39;)
-            self._set_dr_properties()
+            self._set_commvault_cloud_upload(flag)
         else:
             raise SDKException(&#39;DisasterRecovery&#39;, &#39;101&#39;)
 
@@ -957,6 +1042,16 @@ class DisasterRecoveryManagement(object):
                   True/False
         &#34;&#34;&#34;
         return self._prepost_settings.get(&#39;useImpersonateUser&#39;)
+
+    @property
+    def region(self):
+        &#34;&#34;&#34;
+        gets the current region set to upload DRBackups
+
+            Returns:
+                region (str)
+        &#34;&#34;&#34;
+        return self._get_drbackup_options()[&#39;properties&#39;][&#39;region&#39;]
 
     @property
     def number_of_metadata(self):
@@ -1288,7 +1383,7 @@ instance of commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L110-L644" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L110-L644" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class DisasterRecovery(object):
     &#34;&#34;&#34;Class to perform all the disaster recovery operations on commcell&#34;&#34;&#34;
@@ -1834,7 +1929,7 @@ instance of commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L535-L538" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L535-L538" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_type(self):
@@ -1848,7 +1943,7 @@ def backup_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L509-L512" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L509-L512" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_list(self):
@@ -1862,7 +1957,7 @@ def client_list(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L637-L644" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L637-L644" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def disaster_recovery_management(self):
@@ -1880,7 +1975,7 @@ def disaster_recovery_management(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L583-L586" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L583-L586" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_appstudio_db_enabled(self):
@@ -1894,7 +1989,7 @@ def is_appstudio_db_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L522-L525" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L522-L525" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_compression_enabled(self):
@@ -1908,7 +2003,7 @@ def is_compression_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L601-L604" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L601-L604" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_cvcloud_db_enabled(self):
@@ -1922,7 +2017,7 @@ def is_cvcloud_db_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L619-L622" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L619-L622" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_dm2_db_enabled(self):
@@ -1936,7 +2031,7 @@ def is_dm2_db_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L548-L551" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L548-L551" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_history_db_enabled(self):
@@ -1950,7 +2045,7 @@ def is_history_db_enabled(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L565-L568" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L565-L568" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_workflow_db_enabled(self):
@@ -1978,7 +2073,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L146-L173" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L146-L173" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disaster_recovery_backup(self):
     &#34;&#34;&#34;Runs a DR job for Commserv
@@ -2021,7 +2116,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L129-L144" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L129-L144" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def reset_to_defaults(self):
     &#34;&#34;&#34;
@@ -2129,7 +2224,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L205-L320" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L205-L320" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -2266,7 +2361,7 @@ instance of commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L647-L1161" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L647-L1256" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class DisasterRecoveryManagement(object):
     &#34;&#34;&#34;Class to perform all the disaster recovery management operations on commcell&#34;&#34;&#34;
@@ -2279,8 +2374,9 @@ instance of commcell</p></div>
 
         &#34;&#34;&#34;
         self._commcell = commcell
-        self._service = commcell._services.get(&#39;DISASTER_RECOVERY_PROPERTIES&#39;)
-        self._cvpysdk_object = commcell._cvpysdk_object
+        self.services = self._commcell._services
+        self._service = self.services[&#39;DISASTER_RECOVERY_PROPERTIES&#39;]
+        self._cvpysdk_object = self._commcell._cvpysdk_object
         self.refresh()
 
     def _get_dr_properties(self):
@@ -2340,6 +2436,88 @@ instance of commcell</p></div>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;)
 
+    def _get_drbackup_options(self):
+        &#34;&#34;&#34;
+        Returns : dict of dr backup options
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            method=&#39;GET&#39;,
+            url=self.services[&#39;DISASTER_RECOVERY_OPTIONS&#39;]
+        )
+        if flag:
+            if response and response.json():
+                return response.json()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;)
+
+    def get_cloud_regions(self):
+        &#34;&#34;&#34;
+        Returns : dict of available dr backup regions.
+                    Ex:
+                    {
+                        &#34;defaultRegion&#34;: &#34;southindia&#34;,
+                        &#34;regions&#34;: [
+                            {
+                                &#34;regionCode&#34;: &#34;eastus2&#34;,
+                                &#34;displayName&#34;: &#34;East US 2&#34;
+                            }
+                            {
+                                &#34;regionCode&#34;: &#34;southindia&#34;,
+                                &#34;displayName&#34;: &#34;(Asia Pacific) South India&#34;
+                            }
+                        ]
+                    }
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(
+            method=&#39;GET&#39;,
+            url=self.services[&#39;DRBACKUP_REGIONS&#39;]
+        )
+        if flag:
+            if response and response.json():
+                return response.json()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;)
+
+    def _set_commvault_cloud_upload(self, flag, region=None):
+        &#34;&#34;&#34;
+        Executes a request on the server, to set the dr settings for commvault cloud upload.
+         Args:
+             flag   (bool)   : True to enable commvault cloud upload, False to disable
+             region (str)    : To select the region for the DR backup to be uploaded to.
+                                None will leave the region to be in default region.
+         Returns:
+               None
+         Raises:
+              SDKException:
+                    if given inputs are invalid.
+
+        &#34;&#34;&#34;
+        current_options = self._get_drbackup_options()
+        current_options[&#39;properties&#39;][&#39;uploadBackupMetadataToCloud&#39;] = flag
+        if flag:
+            current_options[&#39;properties&#39;][&#39;region&#39;] = region if region else self.get_cloud_regions()[&#39;defaultRegion&#39;]
+
+        flag, response = self._cvpysdk_object.make_request(
+                                    method=&#39;POST&#39;,
+                                    url=self.services[&#39;DISASTER_RECOVERY_OPTIONS&#39;],
+                                    payload=current_options
+                                )
+        if flag:
+            if response and response.json():
+                if response.json().get(&#39;errorCode&#39;) != 0:
+                    raise SDKException(&#39;DisasterRecovery&#39;, &#39;102&#39;, &#39;Failed to set dr properties. Error: {0}&#39;.format(
+                        response.json().get(&#39;errorMessage&#39;)
+                    ))
+                self.refresh()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;)
+
 
     def refresh(self):
         &#34;&#34;&#34;
@@ -2390,7 +2568,7 @@ instance of commcell</p></div>
         else:
             raise SDKException(&#39;DisasterRecovery&#39;, &#39;101&#39;)
 
-    def upload_metdata_to_commvault_cloud(self, flag, username=None, password=None):
+    def upload_metdata_to_commvault_cloud(self, flag, username=None, password=None, region=None):
         &#34;&#34;&#34;
         Enable/Disable upload metadata to commvault cloud setting.
 
@@ -2400,6 +2578,8 @@ instance of commcell</p></div>
                  username   (str)       --      username of the commvault cloud.
 
                  password   (str)       --      password of the commvault cloud.
+
+                 region     (str)       --      region to upload the DRBackup, None will set to default region
 
             Returns:
                  None
@@ -2412,7 +2592,7 @@ instance of commcell</p></div>
                     self._export_settings[&#39;cloudCredentials&#39;][&#39;password&#39;] = b64encode(password.encode()).decode()
                 else:
                     raise SDKException(&#39;DisasterRecovery&#39;, &#39;101&#39;)
-            self._set_dr_properties()
+            self._set_commvault_cloud_upload(flag)
         else:
             raise SDKException(&#39;DisasterRecovery&#39;, &#39;101&#39;)
 
@@ -2478,6 +2658,16 @@ instance of commcell</p></div>
                   True/False
         &#34;&#34;&#34;
         return self._prepost_settings.get(&#39;useImpersonateUser&#39;)
+
+    @property
+    def region(self):
+        &#34;&#34;&#34;
+        gets the current region set to upload DRBackups
+
+            Returns:
+                region (str)
+        &#34;&#34;&#34;
+        return self._get_drbackup_options()[&#39;properties&#39;][&#39;region&#39;]
 
     @property
     def number_of_metadata(self):
@@ -2795,7 +2985,7 @@ instance of commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L943-L951" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L1038-L1046" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backup_metadata_folder(self):
@@ -2817,7 +3007,7 @@ def backup_metadata_folder(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L973-L981" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L1068-L1076" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def dr_storage_policy(self):
@@ -2839,7 +3029,7 @@ number of metadata
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L858-L866" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L953-L961" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def number_of_metadata(self):
@@ -2861,7 +3051,7 @@ def number_of_metadata(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L1082-L1090" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L1177-L1185" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def post_backup_process(self):
@@ -2883,7 +3073,7 @@ def post_backup_process(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L1028-L1036" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L1123-L1131" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def post_scan_process(self):
@@ -2905,7 +3095,7 @@ def post_scan_process(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L1055-L1063" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L1150-L1158" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pre_backup_process(self):
@@ -2927,7 +3117,7 @@ def pre_backup_process(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L1001-L1009" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L1096-L1104" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def pre_scan_process(self):
@@ -2940,6 +3130,28 @@ def pre_scan_process(self):
     return self._prepost_settings.get(&#39;preScanProcess&#39;)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.disasterrecovery.DisasterRecoveryManagement.region"><code class="name">var <span class="ident">region</span></code></dt>
+<dd>
+<div class="desc"><p>gets the current region set to upload DRBackups</p>
+<pre><code>Returns:
+    region (str)
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L943-L951" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def region(self):
+    &#34;&#34;&#34;
+    gets the current region set to upload DRBackups
+
+        Returns:
+            region (str)
+    &#34;&#34;&#34;
+    return self._get_drbackup_options()[&#39;properties&#39;][&#39;region&#39;]</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.disasterrecovery.DisasterRecoveryManagement.run_post_backup_process"><code class="name">var <span class="ident">run_post_backup_process</span></code></dt>
 <dd>
 <div class="desc"><p>gets the value, run post backup process</p>
@@ -2948,7 +3160,7 @@ True/False</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L1136-L1144" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L1231-L1239" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def run_post_backup_process(self):
@@ -2970,7 +3182,7 @@ def run_post_backup_process(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L1109-L1117" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L1204-L1212" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def run_post_scan_process(self):
@@ -2992,7 +3204,7 @@ def run_post_scan_process(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L953-L961" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L1048-L1056" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def upload_backup_metadata_to_cloud(self):
@@ -3014,7 +3226,7 @@ def upload_backup_metadata_to_cloud(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L963-L971" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L1058-L1066" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def upload_backup_metadata_to_cloud_lib(self):
@@ -3036,7 +3248,7 @@ def upload_backup_metadata_to_cloud_lib(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L848-L856" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L933-L941" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def use_impersonate_user(self):
@@ -3058,7 +3270,7 @@ def use_impersonate_user(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L885-L893" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L980-L988" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def use_vss(self):
@@ -3080,7 +3292,7 @@ def use_vss(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L912-L920" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L1007-L1015" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def wild_card_settings(self):
@@ -3096,6 +3308,61 @@ def wild_card_settings(self):
 </dl>
 <h3>Methods</h3>
 <dl>
+<dt id="cvpysdk.disasterrecovery.DisasterRecoveryManagement.get_cloud_regions"><code class="name flex">
+<span>def <span class="ident">get_cloud_regions</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns : dict of available dr backup regions.
+Ex:
+{
+"defaultRegion": "southindia",
+"regions": [
+{
+"regionCode": "eastus2",
+"displayName": "East US 2"
+}
+{
+"regionCode": "southindia",
+"displayName": "(Asia Pacific) South India"
+}
+]
+}</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L736-L764" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_cloud_regions(self):
+    &#34;&#34;&#34;
+    Returns : dict of available dr backup regions.
+                Ex:
+                {
+                    &#34;defaultRegion&#34;: &#34;southindia&#34;,
+                    &#34;regions&#34;: [
+                        {
+                            &#34;regionCode&#34;: &#34;eastus2&#34;,
+                            &#34;displayName&#34;: &#34;East US 2&#34;
+                        }
+                        {
+                            &#34;regionCode&#34;: &#34;southindia&#34;,
+                            &#34;displayName&#34;: &#34;(Asia Pacific) South India&#34;
+                        }
+                    ]
+                }
+    &#34;&#34;&#34;
+    flag, response = self._cvpysdk_object.make_request(
+        method=&#39;GET&#39;,
+        url=self.services[&#39;DRBACKUP_REGIONS&#39;]
+    )
+    if flag:
+        if response and response.json():
+            return response.json()
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.disasterrecovery.DisasterRecoveryManagement.impersonate_user"><code class="name flex">
 <span>def <span class="ident">impersonate_user</span></span>(<span>self, flag, username, password)</span>
 </code></dt>
@@ -3114,7 +3381,7 @@ Returns:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L822-L846" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L907-L931" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def impersonate_user(self, flag, username, password):
     &#34;&#34;&#34;
@@ -3153,7 +3420,7 @@ Returns:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L720-L729" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L803-L812" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;
@@ -3181,7 +3448,7 @@ Returns:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L731-L745" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L814-L828" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_local_dr_path(self, path):
     &#34;&#34;&#34;
@@ -3218,7 +3485,7 @@ Returns:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L747-L767" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L830-L850" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_network_dr_path(self, path, username, password):
     &#34;&#34;&#34;
@@ -3259,7 +3526,7 @@ Returns:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L795-L820" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L880-L905" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def upload_metdata_to_cloud_library(self, flag, libraryname=None):
     &#34;&#34;&#34;
@@ -3290,7 +3557,7 @@ Returns:
 </details>
 </dd>
 <dt id="cvpysdk.disasterrecovery.DisasterRecoveryManagement.upload_metdata_to_commvault_cloud"><code class="name flex">
-<span>def <span class="ident">upload_metdata_to_commvault_cloud</span></span>(<span>self, flag, username=None, password=None)</span>
+<span>def <span class="ident">upload_metdata_to_commvault_cloud</span></span>(<span>self, flag, username=None, password=None, region=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Enable/Disable upload metadata to commvault cloud setting.</p>
@@ -3301,15 +3568,17 @@ Returns:
 
      password   (str)       --      password of the commvault cloud.
 
+     region     (str)       --      region to upload the DRBackup, None will set to default region
+
 Returns:
      None
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/disasterrecovery.py#L769-L793" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/disasterrecovery.py#L852-L878" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def upload_metdata_to_commvault_cloud(self, flag, username=None, password=None):
+<pre><code class="python">def upload_metdata_to_commvault_cloud(self, flag, username=None, password=None, region=None):
     &#34;&#34;&#34;
     Enable/Disable upload metadata to commvault cloud setting.
 
@@ -3319,6 +3588,8 @@ Returns:
              username   (str)       --      username of the commvault cloud.
 
              password   (str)       --      password of the commvault cloud.
+
+             region     (str)       --      region to upload the DRBackup, None will set to default region
 
         Returns:
              None
@@ -3331,7 +3602,7 @@ Returns:
                 self._export_settings[&#39;cloudCredentials&#39;][&#39;password&#39;] = b64encode(password.encode()).decode()
             else:
                 raise SDKException(&#39;DisasterRecovery&#39;, &#39;101&#39;)
-        self._set_dr_properties()
+        self._set_commvault_cloud_upload(flag)
     else:
         raise SDKException(&#39;DisasterRecovery&#39;, &#39;101&#39;)</code></pre>
 </details>
@@ -3433,6 +3704,7 @@ setTimeout(() => input.focus(), 100);
 <ul class="">
 <li><code><a title="cvpysdk.disasterrecovery.DisasterRecoveryManagement.backup_metadata_folder" href="#cvpysdk.disasterrecovery.DisasterRecoveryManagement.backup_metadata_folder">backup_metadata_folder</a></code></li>
 <li><code><a title="cvpysdk.disasterrecovery.DisasterRecoveryManagement.dr_storage_policy" href="#cvpysdk.disasterrecovery.DisasterRecoveryManagement.dr_storage_policy">dr_storage_policy</a></code></li>
+<li><code><a title="cvpysdk.disasterrecovery.DisasterRecoveryManagement.get_cloud_regions" href="#cvpysdk.disasterrecovery.DisasterRecoveryManagement.get_cloud_regions">get_cloud_regions</a></code></li>
 <li><code><a title="cvpysdk.disasterrecovery.DisasterRecoveryManagement.impersonate_user" href="#cvpysdk.disasterrecovery.DisasterRecoveryManagement.impersonate_user">impersonate_user</a></code></li>
 <li><code><a title="cvpysdk.disasterrecovery.DisasterRecoveryManagement.number_of_metadata" href="#cvpysdk.disasterrecovery.DisasterRecoveryManagement.number_of_metadata">number_of_metadata</a></code></li>
 <li><code><a title="cvpysdk.disasterrecovery.DisasterRecoveryManagement.post_backup_process" href="#cvpysdk.disasterrecovery.DisasterRecoveryManagement.post_backup_process">post_backup_process</a></code></li>
@@ -3440,6 +3712,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.disasterrecovery.DisasterRecoveryManagement.pre_backup_process" href="#cvpysdk.disasterrecovery.DisasterRecoveryManagement.pre_backup_process">pre_backup_process</a></code></li>
 <li><code><a title="cvpysdk.disasterrecovery.DisasterRecoveryManagement.pre_scan_process" href="#cvpysdk.disasterrecovery.DisasterRecoveryManagement.pre_scan_process">pre_scan_process</a></code></li>
 <li><code><a title="cvpysdk.disasterrecovery.DisasterRecoveryManagement.refresh" href="#cvpysdk.disasterrecovery.DisasterRecoveryManagement.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.disasterrecovery.DisasterRecoveryManagement.region" href="#cvpysdk.disasterrecovery.DisasterRecoveryManagement.region">region</a></code></li>
 <li><code><a title="cvpysdk.disasterrecovery.DisasterRecoveryManagement.run_post_backup_process" href="#cvpysdk.disasterrecovery.DisasterRecoveryManagement.run_post_backup_process">run_post_backup_process</a></code></li>
 <li><code><a title="cvpysdk.disasterrecovery.DisasterRecoveryManagement.run_post_scan_process" href="#cvpysdk.disasterrecovery.DisasterRecoveryManagement.run_post_scan_process">run_post_scan_process</a></code></li>
 <li><code><a title="cvpysdk.disasterrecovery.DisasterRecoveryManagement.set_local_dr_path" href="#cvpysdk.disasterrecovery.DisasterRecoveryManagement.set_local_dr_path">set_local_dr_path</a></code></li>

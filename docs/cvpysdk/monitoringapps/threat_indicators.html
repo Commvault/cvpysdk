@@ -33,6 +33,12 @@
 <p><strong>init</strong>()
 &ndash;
 initialise object of the TAServers class</p>
+<p>_get_clients_count()
+&ndash;
+returns total client on threat indicators for this CS</p>
+<p>_get_monitored_vm_count()
+&ndash;
+returns monitored vm count on threat indicators for this CS</p>
 <p>_get_threat_indicators()
 &ndash;
 returns the list of threat indicators client for this CS</p>
@@ -51,6 +57,11 @@ returns the server class object for given server name</p>
 <p>run_scan()
 &ndash;
 runs anomaly scan on given server</p>
+<p>TAServers Attributes:</p>
+<pre><code>**clients_count**       --  returns the total clients stats from threat indicators from CS
+
+**monitored_vms**       --  returns the monitored vms stats from threat indicators from CS
+</code></pre>
 <h2 id="taserver">Taserver</h2>
 <p><strong>init</strong>()
 &ndash;
@@ -84,7 +95,7 @@ clears the anomalies present for this client</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/monitoringapps/threat_indicators.py#L1-L508" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L1-L602" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># Copyright Commvault Systems, Inc.
 #
@@ -115,6 +126,10 @@ TAServers:
 
     __init__()                          --  initialise object of the TAServers class
 
+    _get_clients_count()                --  returns total client on threat indicators for this CS
+
+    _get_monitored_vm_count()           --  returns monitored vm count on threat indicators for this CS
+
     _get_threat_indicators()            --  returns the list of threat indicators client for this CS
 
     _response_not_success()             --  parses through the exception response, and raises SDKException
@@ -126,6 +141,12 @@ TAServers:
     get()                               --  returns the server class object for given server name
 
     run_scan()                          --  runs anomaly scan on given server
+
+TAServers Attributes:
+
+    **clients_count**       --  returns the total clients stats from threat indicators from CS
+
+    **monitored_vms**       --  returns the monitored vms stats from threat indicators from CS
 
 TAServer:
 
@@ -170,6 +191,8 @@ class AnomalyType(enum.Enum):
     FILE_TYPE = 32
     THREAT_ANALYSIS = 64
     FILE_DATA = 128
+    EXTENSION_BASED = 512
+    DATA_WRITTEN = 4096
 
 
 class TAServers():
@@ -192,8 +215,12 @@ class TAServers():
         self._services = commcell_object._services
         self._threat_indicators = []
         self._servers = []
+        self._total_clients = None
+        self._monitored_vms = None
         self._API_GET_ALL_INDICATORS = self._services[&#39;GET_THREAT_INDICATORS&#39;]
         self._API_RUN_SCAN = self._services[&#39;RUN_ANOMALY_SCAN&#39;]
+        self._API_CLIENTS_COUNT = self._services[&#39;ANOMALY_CLIENTS_COUNT&#39;]
+        self._API_MONITORED_VMS = self._services[&#39;MONITORED_VM_COUNT&#39;]
         self.refresh()
 
     def _response_not_success(self, response):
@@ -206,6 +233,57 @@ class TAServers():
 
         &#34;&#34;&#34;
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+
+    def _get_clients_count(self):
+        &#34;&#34;&#34;returns the client count details for Threat inidcators on this CS
+
+            Args:
+
+                None
+
+            Returns:
+
+                dict  - Containing total client stats [stats for client type = fileserver,vm,laptop]
+
+            Raises:
+
+                SDKException:
+
+                    if failed to fetch details
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_CLIENTS_COUNT)
+        if flag:
+            if response.json():
+                return response.json()
+            elif bool(response.json()):
+                raise SDKException(&#39;ThreatIndicators&#39;, &#39;110&#39;)
+        self._response_not_success(response)
+
+    def _get_monitored_vm_count(self):
+        &#34;&#34;&#34;returns the monitored vm count stats for Threat inidcators on this CS
+
+            Args:
+
+                None
+
+            Returns:
+
+                dict  - Containing total monitored vm stats
+
+            Raises:
+
+                SDKException:
+
+                    if failed to fetch details
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_MONITORED_VMS)
+        if flag:
+            if response.json():
+                return response.json()
+            elif bool(response.json()):
+                raise SDKException(&#39;ThreatIndicators&#39;, &#39;111&#39;)
+        self._response_not_success(response)
+
 
     def _get_threat_indicators(self):
         &#34;&#34;&#34;returns the list of threat indicators for this CS
@@ -391,7 +469,34 @@ class TAServers():
     def refresh(self):
         &#34;&#34;&#34;Refresh the threat indicator servers associated with CS&#34;&#34;&#34;
         self._servers = []
+        self._total_clients = None
+        self._monitored_vms = None
         self._threat_indicators = self._get_threat_indicators()
+        self._total_clients = self._get_clients_count()
+        self._monitored_vms = self._get_monitored_vm_count()
+
+    @property
+    def monitored_vms(self):
+        &#34;&#34;&#34;returns the monitored vms stats from threat indicators on this CS
+
+            Returns:
+
+                dict --  client stats
+
+        &#34;&#34;&#34;
+        return self._monitored_vms
+
+    @property
+    def clients_count(self):
+        &#34;&#34;&#34;returns the client stats from threat indicators on this CS
+
+            Returns:
+
+                dict --  client stats
+
+        &#34;&#34;&#34;
+        return self._total_clients
+
 
 
 class TAServer:
@@ -614,14 +719,16 @@ class TAServer:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/monitoringapps/threat_indicators.py#L79-L84" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L89-L96" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AnomalyType(enum.Enum):
     &#34;&#34;&#34;Enum class for Anomaly type&#34;&#34;&#34;
     FILE_ACTIVITY = 16
     FILE_TYPE = 32
     THREAT_ANALYSIS = 64
-    FILE_DATA = 128</code></pre>
+    FILE_DATA = 128
+    EXTENSION_BASED = 512
+    DATA_WRITTEN = 4096</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -629,6 +736,14 @@ class TAServer:
 </ul>
 <h3>Class variables</h3>
 <dl>
+<dt id="cvpysdk.monitoringapps.threat_indicators.AnomalyType.DATA_WRITTEN"><code class="name">var <span class="ident">DATA_WRITTEN</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="cvpysdk.monitoringapps.threat_indicators.AnomalyType.EXTENSION_BASED"><code class="name">var <span class="ident">EXTENSION_BASED</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
 <dt id="cvpysdk.monitoringapps.threat_indicators.AnomalyType.FILE_ACTIVITY"><code class="name">var <span class="ident">FILE_ACTIVITY</span></code></dt>
 <dd>
 <div class="desc"></div>
@@ -669,7 +784,7 @@ instance of the Server class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/monitoringapps/threat_indicators.py#L309-L508" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L403-L602" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class TAServer:
 
@@ -883,7 +998,7 @@ anomaly file count</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/monitoringapps/threat_indicators.py#L496-L508" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L590-L602" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def anomaly_file_count(self):
@@ -909,7 +1024,7 @@ anomaly records for this client</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/monitoringapps/threat_indicators.py#L452-L461" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L546-L555" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def anomaly_records(self):
@@ -932,7 +1047,7 @@ file/data anomaly stats for this client</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/monitoringapps/threat_indicators.py#L474-L483" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L568-L577" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def anomaly_stats(self):
@@ -955,7 +1070,7 @@ datasource id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/monitoringapps/threat_indicators.py#L485-L494" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L579-L588" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def datasource_id(self):
@@ -978,7 +1093,7 @@ threat anomaly stats for this client</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/monitoringapps/threat_indicators.py#L463-L472" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L557-L566" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def threat_anomaly_stats(self):
@@ -1016,7 +1131,7 @@ if input is not valid
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/monitoringapps/threat_indicators.py#L402-L450" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L496-L544" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def clear_anomaly(self, anomaly_types):
     &#34;&#34;&#34;clears the anomalies for this server
@@ -1077,7 +1192,7 @@ if input is not valid
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/monitoringapps/threat_indicators.py#L396-L400" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L490-L494" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the anomalies details associated with this server&#34;&#34;&#34;
@@ -1107,7 +1222,7 @@ instance of the Servers class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/monitoringapps/threat_indicators.py#L87-L306" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L99-L399" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class TAServers():
     &#34;&#34;&#34;class to represent all servers in threat indicators&#34;&#34;&#34;
@@ -1129,8 +1244,12 @@ instance of the Servers class</p></div>
         self._services = commcell_object._services
         self._threat_indicators = []
         self._servers = []
+        self._total_clients = None
+        self._monitored_vms = None
         self._API_GET_ALL_INDICATORS = self._services[&#39;GET_THREAT_INDICATORS&#39;]
         self._API_RUN_SCAN = self._services[&#39;RUN_ANOMALY_SCAN&#39;]
+        self._API_CLIENTS_COUNT = self._services[&#39;ANOMALY_CLIENTS_COUNT&#39;]
+        self._API_MONITORED_VMS = self._services[&#39;MONITORED_VM_COUNT&#39;]
         self.refresh()
 
     def _response_not_success(self, response):
@@ -1143,6 +1262,57 @@ instance of the Servers class</p></div>
 
         &#34;&#34;&#34;
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+
+    def _get_clients_count(self):
+        &#34;&#34;&#34;returns the client count details for Threat inidcators on this CS
+
+            Args:
+
+                None
+
+            Returns:
+
+                dict  - Containing total client stats [stats for client type = fileserver,vm,laptop]
+
+            Raises:
+
+                SDKException:
+
+                    if failed to fetch details
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_CLIENTS_COUNT)
+        if flag:
+            if response.json():
+                return response.json()
+            elif bool(response.json()):
+                raise SDKException(&#39;ThreatIndicators&#39;, &#39;110&#39;)
+        self._response_not_success(response)
+
+    def _get_monitored_vm_count(self):
+        &#34;&#34;&#34;returns the monitored vm count stats for Threat inidcators on this CS
+
+            Args:
+
+                None
+
+            Returns:
+
+                dict  - Containing total monitored vm stats
+
+            Raises:
+
+                SDKException:
+
+                    if failed to fetch details
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_MONITORED_VMS)
+        if flag:
+            if response.json():
+                return response.json()
+            elif bool(response.json()):
+                raise SDKException(&#39;ThreatIndicators&#39;, &#39;111&#39;)
+        self._response_not_success(response)
+
 
     def _get_threat_indicators(self):
         &#34;&#34;&#34;returns the list of threat indicators for this CS
@@ -1328,8 +1498,83 @@ instance of the Servers class</p></div>
     def refresh(self):
         &#34;&#34;&#34;Refresh the threat indicator servers associated with CS&#34;&#34;&#34;
         self._servers = []
-        self._threat_indicators = self._get_threat_indicators()</code></pre>
+        self._total_clients = None
+        self._monitored_vms = None
+        self._threat_indicators = self._get_threat_indicators()
+        self._total_clients = self._get_clients_count()
+        self._monitored_vms = self._get_monitored_vm_count()
+
+    @property
+    def monitored_vms(self):
+        &#34;&#34;&#34;returns the monitored vms stats from threat indicators on this CS
+
+            Returns:
+
+                dict --  client stats
+
+        &#34;&#34;&#34;
+        return self._monitored_vms
+
+    @property
+    def clients_count(self):
+        &#34;&#34;&#34;returns the client stats from threat indicators on this CS
+
+            Returns:
+
+                dict --  client stats
+
+        &#34;&#34;&#34;
+        return self._total_clients</code></pre>
 </details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.monitoringapps.threat_indicators.TAServers.clients_count"><code class="name">var <span class="ident">clients_count</span></code></dt>
+<dd>
+<div class="desc"><p>returns the client stats from threat indicators on this CS</p>
+<h2 id="returns">Returns</h2>
+<p>dict &ndash;
+client stats</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L390-L399" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def clients_count(self):
+    &#34;&#34;&#34;returns the client stats from threat indicators on this CS
+
+        Returns:
+
+            dict --  client stats
+
+    &#34;&#34;&#34;
+    return self._total_clients</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.monitoringapps.threat_indicators.TAServers.monitored_vms"><code class="name">var <span class="ident">monitored_vms</span></code></dt>
+<dd>
+<div class="desc"><p>returns the monitored vms stats from threat indicators on this CS</p>
+<h2 id="returns">Returns</h2>
+<p>dict &ndash;
+client stats</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L379-L388" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def monitored_vms(self):
+    &#34;&#34;&#34;returns the monitored vms stats from threat indicators on this CS
+
+        Returns:
+
+            dict --  client stats
+
+    &#34;&#34;&#34;
+    return self._monitored_vms</code></pre>
+</details>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.monitoringapps.threat_indicators.TAServers.get"><code class="name flex">
@@ -1354,7 +1599,7 @@ Instance of Server class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/monitoringapps/threat_indicators.py#L277-L301" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L344-L368" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, server_name):
     &#34;&#34;&#34;returns Server class object for given server name
@@ -1400,7 +1645,7 @@ True if server name exists in threat indicators</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/monitoringapps/threat_indicators.py#L176-L190" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L243-L257" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has(self, name):
     &#34;&#34;&#34;Checks whether given server name exists in threat indicators or not
@@ -1427,12 +1672,16 @@ True if server name exists in threat indicators</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/monitoringapps/threat_indicators.py#L303-L306" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L370-L377" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the threat indicator servers associated with CS&#34;&#34;&#34;
     self._servers = []
-    self._threat_indicators = self._get_threat_indicators()</code></pre>
+    self._total_clients = None
+    self._monitored_vms = None
+    self._threat_indicators = self._get_threat_indicators()
+    self._total_clients = self._get_clients_count()
+    self._monitored_vms = self._get_monitored_vm_count()</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.monitoringapps.threat_indicators.TAServers.run_scan"><code class="name flex">
@@ -1477,7 +1726,7 @@ if input data type is not valid
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/monitoringapps/threat_indicators.py#L192-L275" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L259-L342" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_scan(
         self,
@@ -1637,7 +1886,9 @@ setTimeout(() => input.focus(), 100);
 <ul>
 <li>
 <h4><code><a title="cvpysdk.monitoringapps.threat_indicators.AnomalyType" href="#cvpysdk.monitoringapps.threat_indicators.AnomalyType">AnomalyType</a></code></h4>
-<ul class="">
+<ul class="two-column">
+<li><code><a title="cvpysdk.monitoringapps.threat_indicators.AnomalyType.DATA_WRITTEN" href="#cvpysdk.monitoringapps.threat_indicators.AnomalyType.DATA_WRITTEN">DATA_WRITTEN</a></code></li>
+<li><code><a title="cvpysdk.monitoringapps.threat_indicators.AnomalyType.EXTENSION_BASED" href="#cvpysdk.monitoringapps.threat_indicators.AnomalyType.EXTENSION_BASED">EXTENSION_BASED</a></code></li>
 <li><code><a title="cvpysdk.monitoringapps.threat_indicators.AnomalyType.FILE_ACTIVITY" href="#cvpysdk.monitoringapps.threat_indicators.AnomalyType.FILE_ACTIVITY">FILE_ACTIVITY</a></code></li>
 <li><code><a title="cvpysdk.monitoringapps.threat_indicators.AnomalyType.FILE_DATA" href="#cvpysdk.monitoringapps.threat_indicators.AnomalyType.FILE_DATA">FILE_DATA</a></code></li>
 <li><code><a title="cvpysdk.monitoringapps.threat_indicators.AnomalyType.FILE_TYPE" href="#cvpysdk.monitoringapps.threat_indicators.AnomalyType.FILE_TYPE">FILE_TYPE</a></code></li>
@@ -1658,9 +1909,11 @@ setTimeout(() => input.focus(), 100);
 </li>
 <li>
 <h4><code><a title="cvpysdk.monitoringapps.threat_indicators.TAServers" href="#cvpysdk.monitoringapps.threat_indicators.TAServers">TAServers</a></code></h4>
-<ul class="">
+<ul class="two-column">
+<li><code><a title="cvpysdk.monitoringapps.threat_indicators.TAServers.clients_count" href="#cvpysdk.monitoringapps.threat_indicators.TAServers.clients_count">clients_count</a></code></li>
 <li><code><a title="cvpysdk.monitoringapps.threat_indicators.TAServers.get" href="#cvpysdk.monitoringapps.threat_indicators.TAServers.get">get</a></code></li>
 <li><code><a title="cvpysdk.monitoringapps.threat_indicators.TAServers.has" href="#cvpysdk.monitoringapps.threat_indicators.TAServers.has">has</a></code></li>
+<li><code><a title="cvpysdk.monitoringapps.threat_indicators.TAServers.monitored_vms" href="#cvpysdk.monitoringapps.threat_indicators.TAServers.monitored_vms">monitored_vms</a></code></li>
 <li><code><a title="cvpysdk.monitoringapps.threat_indicators.TAServers.refresh" href="#cvpysdk.monitoringapps.threat_indicators.TAServers.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.monitoringapps.threat_indicators.TAServers.run_scan" href="#cvpysdk.monitoringapps.threat_indicators.TAServers.run_scan">run_scan</a></code></li>
 </ul>

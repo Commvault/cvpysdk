@@ -223,7 +223,7 @@ refresh the properties of the instance</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L1-L3352" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L1-L3401" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -1047,7 +1047,7 @@ class Instances(object):
                                     &#39;log_storage_policy&#39;: &#39;log_sp&#39;,
                                     &#39;command_storage_policy&#39;: &#39;cmd_sp&#39;,
                                     &#39;home_directory&#39;:&#39;/home/db2inst1&#39;,
-                                    &#39;password&#39;:&#39;db2inst1&#39;,
+                                    &#39;password&#39;:&#39;#####&#39;,
                                     &#39;user_name&#39;:&#39;db2inst1&#39;,
                                     &#39;credential_name&#39;: &#39;cred_name&#39;
                                 }
@@ -1587,9 +1587,9 @@ class Instances(object):
 
             Raises:
                 SDKException:
-                    if None value in mysql options
+                    if None value in postgres options
 
-                    if mysql instance with same name already exists
+                    if postgres instance with same name already exists
 
                     if given storage policy does not exist in commcell
         &#34;&#34;&#34;
@@ -1809,7 +1809,7 @@ class Instances(object):
                             &#39;storage_policy&#39;: &#39;sai-sp&#39;,
                             &#39;port&#39;: &#39;hotsname:port&#39;,
                             &#39;mysql_user_name&#39;: &#39;mysqlusername&#39;
-                            &#39;mysql_password&#39;: &#39;password&#39;,
+                            &#39;mysql_password&#39;: &#39;######&#39;,
                             &#39;version&#39;: &#39;5.7&#39;,
                             &#39;binary_directory&#39;: &#34;&#34;,
                             &#39;config_file&#39;: &#34;&#34;,
@@ -1849,7 +1849,11 @@ class Instances(object):
                 &#39;Storage Policy: &#34;{0}&#34; does not exist in the Commcell&#39;.format(
                     database_options[&#34;storage_policy&#34;])
             )
-        password = b64encode(database_options[&#34;mysql_password&#34;].encode()).decode()
+        if not self._commcell_object.credentials.has_credential(database_options.get(&#34;credential_name&#34;)):
+            self._commcell_object.credentials.add_mysql_database_creds(
+                database_options.get(&#34;credential_name&#34;),
+                database_options.get(&#34;mysql_user_name&#34;),
+                database_options.get(&#34;mysql_password&#34;))
 
         request_json = {
             &#34;instanceProperties&#34;: {
@@ -1861,6 +1865,9 @@ class Instances(object):
                     &#34;applicationId&#34;: 104,
                     &#34;_type_&#34;: 0
                 },
+                &#34;credentialEntity&#34;: {
+                    &#34;credentialName&#34;: database_options.get(&#34;credential_name&#34;, &#34;&#34;)
+                },
                 &#34;mySqlInstance&#34;: {
                     &#34;BinaryDirectory&#34;: database_options.get(&#34;binary_directory&#34;, &#34;&#34;),
                     &#34;ConfigFile&#34;: database_options.get(&#34;config_file&#34;, &#34;&#34;),
@@ -1871,17 +1878,18 @@ class Instances(object):
                     &#34;version&#34;: database_options.get(&#34;version&#34;, &#34;5.7&#34;),
                     &#34;sslCAFile&#34;: database_options.get(&#34;sslca_file_path&#34;, &#34;&#34;),
                     &#34;SAUser&#34;: {
-                        &#34;password&#34;: password,
-                        &#34;userName&#34;: database_options.get(&#34;mysql_user_name&#34;, &#34;mysql&#34;)
+                    },
+                    &#34;proxySettings&#34;: {
+                        &#34;isProxyEnabled&#34;: False,
+                        &#34;isUseSSL&#34;: False,
+                        &#34;runBackupOnProxy&#34;: False
                     },
                     &#34;mysqlStorageDevice&#34;: {
                         &#34;commandLineStoragePolicy&#34;: {
                             &#34;storagePolicyName&#34;: database_options.get(&#34;storage_policy&#34;, &#34;&#34;)
                         },
-                        &#34;proxySettings&#34;: {
-                            &#34;isProxyEnabled&#34;: True,
-                            &#34;isUseSSL&#34;: True,
-                            &#34;runBackupOnProxy&#34;: True
+                        &#34;logBackupStoragePolicy&#34;: {
+                            &#34;storagePolicyName&#34;: database_options.get(&#34;storage_policy&#34;, &#34;&#34;)
                         }
                     }
                 }
@@ -2136,7 +2144,7 @@ class Instance(object):
             self._agent_object._client_object.client_id
         )
         self._RESTORE = self._services[&#39;RESTORE&#39;]
-
+        self._SEARCH_DURING_RESTORE = self._services[&#39;DO_WEB_SEARCH&#39;]
         self._properties = None
         self._restore_association = None
 
@@ -2331,6 +2339,36 @@ class Instance(object):
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def _process_search_response(self, request_json):
+        &#34;&#34;&#34;Runs the Search API with the request JSON provided for Find and Restore,
+                    and returns the contents after parsing the response.
+            Args:
+                request_json    (dict)  --  JSON request to run for the API
+            Returns:
+                result          (list)  -- list of messages eligible for restore for as per request json
+                    Raises:
+                        SDKException:
+                            if response is empty
+                            if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._SEARCH_DURING_RESTORE, request_json)
+        self._restore_association = None
+        result = []
+        if flag:
+            if response.json():
+                res = response.json()
+                result_item_result = res.get(&#34;searchResult&#34;, {}).get(&#34;resultItem&#34;, [])
+                for item in result_item_result:
+                    app_specific = item.get(&#34;appSpecific&#34;, {})
+                    e_mail = app_specific.get(&#34;eMail&#34;, {})
+                    link = e_mail.get(&#34;links&#34;)
+                    result.append(link)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+        return result
 
     def _process_restore_response(self, request_json):
         &#34;&#34;&#34;Runs the CreateTask API with the request JSON provided for Restore,
@@ -2568,7 +2606,7 @@ class Instance(object):
 
         if restore_option.get(&#39;index_free_restore&#39;, False):
             request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;subTask&#34;] = self._json_restore_by_job_subtask
-            jobs_list = restore_option.get(&#39;restore_jobs&#39;)
+            jobs_list = restore_option.get(&#39;backup_job_ids&#39;)
             request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;jobIds&#34;] = jobs_list
             source_item = []
             for i in jobs_list:
@@ -3392,7 +3430,17 @@ class Instance(object):
                 self._fileoption_restore_json[&#34;fsCloneOptions&#34;][&#34;cloneCleanupOptions&#34;] = {
                     &#34;cleanupScriptPath&#34;: value.get(&#34;instant_clone_options&#34;).get(&#34;clone_cleanup_script&#34;)
                 }
-
+        
+        if value.get(&#39;advanced_options&#39;):
+            if value[&#39;advanced_options&#39;].get(&#34;mapFiles&#34;):
+                map_file = value[&#39;advanced_options&#39;][&#34;mapFiles&#34;]
+                self._fileoption_restore_json[&#34;mapFiles&#34;] = {
+                    &#34;useMapFile&#34;: True,
+                    &#34;mapFilePath&#34;: map_file.get(&#39;mapFilePath&#39;, &#34;&#34;),
+                    &#34;restoreUnmappedFiles&#34;: map_file.get(&#34;restoreUnmappedFiles&#34;, &#34;&#34;),
+                    &#34;renameFilesSuffix&#34;: map_file.get(&#34;renameFilesSuffix&#34;, &#34;&#34;),
+                    &#34;mapFileClient&#34;: {&#34;clientName&#34;: map_file.get(&#34;clientName&#34;, &#34;&#34;)}
+                }
 
     def _restore_bigdataapps_option_json(self, value):
         &#34;&#34;&#34;setter for Big Data Apps restore option in restore JSON&#34;&#34;&#34;
@@ -3614,7 +3662,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L1817-L3352" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L1825-L3400" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Instance(object):
     &#34;&#34;&#34;Class for performing instance operations for a specific instance.&#34;&#34;&#34;
@@ -3711,7 +3759,7 @@ default: None</p>
             self._agent_object._client_object.client_id
         )
         self._RESTORE = self._services[&#39;RESTORE&#39;]
-
+        self._SEARCH_DURING_RESTORE = self._services[&#39;DO_WEB_SEARCH&#39;]
         self._properties = None
         self._restore_association = None
 
@@ -3906,6 +3954,36 @@ default: None</p>
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def _process_search_response(self, request_json):
+        &#34;&#34;&#34;Runs the Search API with the request JSON provided for Find and Restore,
+                    and returns the contents after parsing the response.
+            Args:
+                request_json    (dict)  --  JSON request to run for the API
+            Returns:
+                result          (list)  -- list of messages eligible for restore for as per request json
+                    Raises:
+                        SDKException:
+                            if response is empty
+                            if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._SEARCH_DURING_RESTORE, request_json)
+        self._restore_association = None
+        result = []
+        if flag:
+            if response.json():
+                res = response.json()
+                result_item_result = res.get(&#34;searchResult&#34;, {}).get(&#34;resultItem&#34;, [])
+                for item in result_item_result:
+                    app_specific = item.get(&#34;appSpecific&#34;, {})
+                    e_mail = app_specific.get(&#34;eMail&#34;, {})
+                    link = e_mail.get(&#34;links&#34;)
+                    result.append(link)
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+        return result
 
     def _process_restore_response(self, request_json):
         &#34;&#34;&#34;Runs the CreateTask API with the request JSON provided for Restore,
@@ -4143,7 +4221,7 @@ default: None</p>
 
         if restore_option.get(&#39;index_free_restore&#39;, False):
             request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;subTask&#34;] = self._json_restore_by_job_subtask
-            jobs_list = restore_option.get(&#39;restore_jobs&#39;)
+            jobs_list = restore_option.get(&#39;backup_job_ids&#39;)
             request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][&#34;jobIds&#34;] = jobs_list
             source_item = []
             for i in jobs_list:
@@ -4967,7 +5045,17 @@ default: None</p>
                 self._fileoption_restore_json[&#34;fsCloneOptions&#34;][&#34;cloneCleanupOptions&#34;] = {
                     &#34;cleanupScriptPath&#34;: value.get(&#34;instant_clone_options&#34;).get(&#34;clone_cleanup_script&#34;)
                 }
-
+        
+        if value.get(&#39;advanced_options&#39;):
+            if value[&#39;advanced_options&#39;].get(&#34;mapFiles&#34;):
+                map_file = value[&#39;advanced_options&#39;][&#34;mapFiles&#34;]
+                self._fileoption_restore_json[&#34;mapFiles&#34;] = {
+                    &#34;useMapFile&#34;: True,
+                    &#34;mapFilePath&#34;: map_file.get(&#39;mapFilePath&#39;, &#34;&#34;),
+                    &#34;restoreUnmappedFiles&#34;: map_file.get(&#34;restoreUnmappedFiles&#34;, &#34;&#34;),
+                    &#34;renameFilesSuffix&#34;: map_file.get(&#34;renameFilesSuffix&#34;, &#34;&#34;),
+                    &#34;mapFileClient&#34;: {&#34;clientName&#34;: map_file.get(&#34;clientName&#34;, &#34;&#34;)}
+                }
 
     def _restore_bigdataapps_option_json(self, value):
         &#34;&#34;&#34;setter for Big Data Apps restore option in restore JSON&#34;&#34;&#34;
@@ -5181,7 +5269,7 @@ installed / configured on the Client for the selected Instance.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L2728-L2737" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L2766-L2775" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def backupsets(self):
@@ -5203,7 +5291,7 @@ def backupsets(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L3321-L3329" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L3369-L3377" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def credentials(self):
@@ -5222,7 +5310,7 @@ def credentials(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L2783-L2786" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L2821-L2824" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_id(self):
@@ -5236,7 +5324,7 @@ def instance_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L2788-L2791" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L2826-L2829" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def instance_name(self):
@@ -5250,7 +5338,7 @@ def instance_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L2754-L2757" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L2792-L2795" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -5264,7 +5352,7 @@ def name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L2749-L2752" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L2787-L2790" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -5279,7 +5367,7 @@ installed / configured on the Client for the selected Instance.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L2739-L2747" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L2777-L2785" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def subclients(self):
@@ -5342,7 +5430,7 @@ Refer <code>default_browse_options</code>_ for all the supported options.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L2793-L2849" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L2831-L2887" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse(self, *args, **kwargs):
     &#34;&#34;&#34;Browses the content of the Instance.
@@ -5462,7 +5550,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L2851-L2917" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L2889-L2955" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def find(self, *args, **kwargs):
     &#34;&#34;&#34;Searches a file/folder in the backed up content of the instance,
@@ -5541,7 +5629,7 @@ file_size_et    (int)   --  Find files with size equal to size
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L3348-L3352" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L3396-L3400" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the properties of the Instance.&#34;&#34;&#34;
@@ -5574,7 +5662,7 @@ need to change and use the update_properties method to set the properties</p></d
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L2698-L2726" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L2736-L2764" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_properties(self, properties_dict):
     &#34;&#34;&#34;Updates the instance properties
@@ -5625,7 +5713,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L186-L1814" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L186-L1822" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Instances(object):
     &#34;&#34;&#34;Class for getting all the instances associated with a client.&#34;&#34;&#34;
@@ -6264,7 +6352,7 @@ instance of the Agent class</p>
                                     &#39;log_storage_policy&#39;: &#39;log_sp&#39;,
                                     &#39;command_storage_policy&#39;: &#39;cmd_sp&#39;,
                                     &#39;home_directory&#39;:&#39;/home/db2inst1&#39;,
-                                    &#39;password&#39;:&#39;db2inst1&#39;,
+                                    &#39;password&#39;:&#39;#####&#39;,
                                     &#39;user_name&#39;:&#39;db2inst1&#39;,
                                     &#39;credential_name&#39;: &#39;cred_name&#39;
                                 }
@@ -6804,9 +6892,9 @@ instance of the Agent class</p>
 
             Raises:
                 SDKException:
-                    if None value in mysql options
+                    if None value in postgres options
 
-                    if mysql instance with same name already exists
+                    if postgres instance with same name already exists
 
                     if given storage policy does not exist in commcell
         &#34;&#34;&#34;
@@ -7026,7 +7114,7 @@ instance of the Agent class</p>
                             &#39;storage_policy&#39;: &#39;sai-sp&#39;,
                             &#39;port&#39;: &#39;hotsname:port&#39;,
                             &#39;mysql_user_name&#39;: &#39;mysqlusername&#39;
-                            &#39;mysql_password&#39;: &#39;password&#39;,
+                            &#39;mysql_password&#39;: &#39;######&#39;,
                             &#39;version&#39;: &#39;5.7&#39;,
                             &#39;binary_directory&#39;: &#34;&#34;,
                             &#39;config_file&#39;: &#34;&#34;,
@@ -7066,7 +7154,11 @@ instance of the Agent class</p>
                 &#39;Storage Policy: &#34;{0}&#34; does not exist in the Commcell&#39;.format(
                     database_options[&#34;storage_policy&#34;])
             )
-        password = b64encode(database_options[&#34;mysql_password&#34;].encode()).decode()
+        if not self._commcell_object.credentials.has_credential(database_options.get(&#34;credential_name&#34;)):
+            self._commcell_object.credentials.add_mysql_database_creds(
+                database_options.get(&#34;credential_name&#34;),
+                database_options.get(&#34;mysql_user_name&#34;),
+                database_options.get(&#34;mysql_password&#34;))
 
         request_json = {
             &#34;instanceProperties&#34;: {
@@ -7078,6 +7170,9 @@ instance of the Agent class</p>
                     &#34;applicationId&#34;: 104,
                     &#34;_type_&#34;: 0
                 },
+                &#34;credentialEntity&#34;: {
+                    &#34;credentialName&#34;: database_options.get(&#34;credential_name&#34;, &#34;&#34;)
+                },
                 &#34;mySqlInstance&#34;: {
                     &#34;BinaryDirectory&#34;: database_options.get(&#34;binary_directory&#34;, &#34;&#34;),
                     &#34;ConfigFile&#34;: database_options.get(&#34;config_file&#34;, &#34;&#34;),
@@ -7088,17 +7183,18 @@ instance of the Agent class</p>
                     &#34;version&#34;: database_options.get(&#34;version&#34;, &#34;5.7&#34;),
                     &#34;sslCAFile&#34;: database_options.get(&#34;sslca_file_path&#34;, &#34;&#34;),
                     &#34;SAUser&#34;: {
-                        &#34;password&#34;: password,
-                        &#34;userName&#34;: database_options.get(&#34;mysql_user_name&#34;, &#34;mysql&#34;)
+                    },
+                    &#34;proxySettings&#34;: {
+                        &#34;isProxyEnabled&#34;: False,
+                        &#34;isUseSSL&#34;: False,
+                        &#34;runBackupOnProxy&#34;: False
                     },
                     &#34;mysqlStorageDevice&#34;: {
                         &#34;commandLineStoragePolicy&#34;: {
                             &#34;storagePolicyName&#34;: database_options.get(&#34;storage_policy&#34;, &#34;&#34;)
                         },
-                        &#34;proxySettings&#34;: {
-                            &#34;isProxyEnabled&#34;: True,
-                            &#34;isUseSSL&#34;: True,
-                            &#34;runBackupOnProxy&#34;: True
+                        &#34;logBackupStoragePolicy&#34;: {
+                            &#34;storagePolicyName&#34;: database_options.get(&#34;storage_policy&#34;, &#34;&#34;)
                         }
                     }
                 }
@@ -7270,7 +7366,7 @@ instance of the Agent class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L332-L343" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L332-L343" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_instances(self):
@@ -7311,7 +7407,7 @@ if cannot retrieve cluster type from default Instance</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L935-L1042" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L935-L1042" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_big_data_apps_instance(self, distributed_options):
     &#34;&#34;&#34;
@@ -7530,7 +7626,7 @@ SDKException :</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L1044-L1221" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L1044-L1221" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_cloud_storage_instance(self, cloud_options):
     &#34;&#34;&#34;Returns the JSON request to pass to the API for adding a cloud storage instance
@@ -7739,7 +7835,7 @@ if given plan name does not exists in commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L1755-L1810" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L1763-L1818" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_cosmosdb_instance(self, instance_name, **instance_options):
     &#34;&#34;&#34;Adds new cosmosdb cassandra api Instance to given Client
@@ -7813,7 +7909,7 @@ db2_options = {
 'log_storage_policy': 'log_sp',
 'command_storage_policy': 'cmd_sp',
 'home_directory':'/home/db2inst1',
-'password':'db2inst1',
+'password':'#####',
 'user_name':'db2inst1',
 'credential_name': 'cred_name'
 }
@@ -7827,7 +7923,7 @@ if None value in db2 options</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L811-L933" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L811-L933" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_db2_instance(self, db2_options):
     &#34;&#34;&#34;
@@ -7841,7 +7937,7 @@ if None value in db2 options</p>
                                 &#39;log_storage_policy&#39;: &#39;log_sp&#39;,
                                 &#39;command_storage_policy&#39;: &#39;cmd_sp&#39;,
                                 &#39;home_directory&#39;:&#39;/home/db2inst1&#39;,
-                                &#39;password&#39;:&#39;db2inst1&#39;,
+                                &#39;password&#39;:&#39;#####&#39;,
                                 &#39;user_name&#39;:&#39;db2inst1&#39;,
                                 &#39;credential_name&#39;: &#39;cred_name&#39;
                             }
@@ -7985,7 +8081,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L446-L560" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L446-L560" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_informix_instance(self, informix_options):
     &#34;&#34;&#34;Adds new Informix Instance to given Client
@@ -8122,7 +8218,7 @@ database_options = {
 'storage_policy': 'sai-sp',
 'port': 'hotsname:port',
 'mysql_user_name': 'mysqlusername'
-'mysql_password': 'password',
+'mysql_password': '######',
 'version': '5.7',
 'binary_directory': "",
 'config_file': "",
@@ -8142,7 +8238,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L1574-L1663" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L1574-L1671" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_mysql_instance(self, instance_name, database_options):
     &#34;&#34;&#34;Adds new mysql Instance to given Client
@@ -8155,7 +8251,7 @@ if given storage policy does not exists in commcell
                         &#39;storage_policy&#39;: &#39;sai-sp&#39;,
                         &#39;port&#39;: &#39;hotsname:port&#39;,
                         &#39;mysql_user_name&#39;: &#39;mysqlusername&#39;
-                        &#39;mysql_password&#39;: &#39;password&#39;,
+                        &#39;mysql_password&#39;: &#39;######&#39;,
                         &#39;version&#39;: &#39;5.7&#39;,
                         &#39;binary_directory&#39;: &#34;&#34;,
                         &#39;config_file&#39;: &#34;&#34;,
@@ -8195,7 +8291,11 @@ if given storage policy does not exists in commcell
             &#39;Storage Policy: &#34;{0}&#34; does not exist in the Commcell&#39;.format(
                 database_options[&#34;storage_policy&#34;])
         )
-    password = b64encode(database_options[&#34;mysql_password&#34;].encode()).decode()
+    if not self._commcell_object.credentials.has_credential(database_options.get(&#34;credential_name&#34;)):
+        self._commcell_object.credentials.add_mysql_database_creds(
+            database_options.get(&#34;credential_name&#34;),
+            database_options.get(&#34;mysql_user_name&#34;),
+            database_options.get(&#34;mysql_password&#34;))
 
     request_json = {
         &#34;instanceProperties&#34;: {
@@ -8207,6 +8307,9 @@ if given storage policy does not exists in commcell
                 &#34;applicationId&#34;: 104,
                 &#34;_type_&#34;: 0
             },
+            &#34;credentialEntity&#34;: {
+                &#34;credentialName&#34;: database_options.get(&#34;credential_name&#34;, &#34;&#34;)
+            },
             &#34;mySqlInstance&#34;: {
                 &#34;BinaryDirectory&#34;: database_options.get(&#34;binary_directory&#34;, &#34;&#34;),
                 &#34;ConfigFile&#34;: database_options.get(&#34;config_file&#34;, &#34;&#34;),
@@ -8217,17 +8320,18 @@ if given storage policy does not exists in commcell
                 &#34;version&#34;: database_options.get(&#34;version&#34;, &#34;5.7&#34;),
                 &#34;sslCAFile&#34;: database_options.get(&#34;sslca_file_path&#34;, &#34;&#34;),
                 &#34;SAUser&#34;: {
-                    &#34;password&#34;: password,
-                    &#34;userName&#34;: database_options.get(&#34;mysql_user_name&#34;, &#34;mysql&#34;)
+                },
+                &#34;proxySettings&#34;: {
+                    &#34;isProxyEnabled&#34;: False,
+                    &#34;isUseSSL&#34;: False,
+                    &#34;runBackupOnProxy&#34;: False
                 },
                 &#34;mysqlStorageDevice&#34;: {
                     &#34;commandLineStoragePolicy&#34;: {
                         &#34;storagePolicyName&#34;: database_options.get(&#34;storage_policy&#34;, &#34;&#34;)
                     },
-                    &#34;proxySettings&#34;: {
-                        &#34;isProxyEnabled&#34;: True,
-                        &#34;isUseSSL&#34;: True,
-                        &#34;runBackupOnProxy&#34;: True
+                    &#34;logBackupStoragePolicy&#34;: {
+                        &#34;storagePolicyName&#34;: database_options.get(&#34;storage_policy&#34;, &#34;&#34;)
                     }
                 }
             }
@@ -8304,7 +8408,7 @@ Given storage policies do not exist in Commcell</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L1665-L1753" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L1673-L1761" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_oracle_instance(self, instance_name, **oracle_options):
     &#34;&#34;&#34;Adds new oracle instance for the given client
@@ -8444,15 +8548,15 @@ credential_name
 <p>object - instance of the Instance class</p>
 <h2 id="raises">Raises</h2>
 <p>SDKException:
-if None value in mysql options</p>
-<pre><code>if mysql instance with same name already exists
+if None value in postgres options</p>
+<pre><code>if postgres instance with same name already exists
 
 if given storage policy does not exist in commcell
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L1343-L1403" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L1343-L1403" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_postgresql_instance(self, instance_name, **kwargs):
     &#34;&#34;&#34;Adds new postgresql instance to given client
@@ -8474,9 +8578,9 @@ if given storage policy does not exist in commcell
 
         Raises:
             SDKException:
-                if None value in mysql options
+                if None value in postgres options
 
-                if mysql instance with same name already exists
+                if postgres instance with same name already exists
 
                 if given storage policy does not exist in commcell
     &#34;&#34;&#34;
@@ -8577,7 +8681,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L1223-L1341" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L1223-L1341" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_salesforce_instance(
         self, instance_name, access_node,
@@ -8734,7 +8838,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L562-L622" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L562-L622" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_sap_hana_instance(self, **kwargs):
     &#34;&#34;&#34;Adds new sap hana instance to given client
@@ -8833,7 +8937,7 @@ if given storage policy does not exists in commcell
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L689-L809" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L689-L809" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_sybase_instance(self, sybase_options):
     &#34;&#34;&#34;
@@ -8981,7 +9085,7 @@ if no instance exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L624-L687" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L624-L687" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, instance_name):
     &#34;&#34;&#34;Deletes the instance specified by the instance_name from the agent.
@@ -9068,7 +9172,7 @@ if type of the instance name argument is not string or Int</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L363-L395" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L363-L395" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, instance_name):
     &#34;&#34;&#34;Returns a instance object of the specified instance name.
@@ -9122,7 +9226,7 @@ if type of the instance name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L345-L361" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L345-L361" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_instance(self, instance_name):
     &#34;&#34;&#34;Checks if a instance exists for the agent with the input instance name.
@@ -9151,7 +9255,7 @@ if type of the instance name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/instance.py#L1812-L1814" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instance.py#L1820-L1822" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the instances associated with the Agent of the selected Client.&#34;&#34;&#34;

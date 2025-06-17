@@ -162,7 +162,7 @@ workflow_name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L1-L1604" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L1-L1609" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -413,9 +413,7 @@ class WorkFlows(object):
 
     def __repr__(self):
         &#34;&#34;&#34;Representation string for the instance of the WorkFlow class.&#34;&#34;&#34;
-        return &#34;WorkFlow class instance for Commcell: &#39;{0}&#39;&#34;.format(
-            self._commcell_object.commserv_name
-        )
+        return &#34;WorkFlow class instance for Commcell&#34;
 
     def __len__(self):
         &#34;&#34;&#34;Returns the number of the workflows associated to the Commcell.&#34;&#34;&#34;
@@ -614,7 +612,14 @@ class WorkFlows(object):
                     if HTTP Status Code is not SUCCESS / importing workflow failed
 
         &#34;&#34;&#34;
-        if not isinstance(workflow_xml, str):
+        # Added a check for bytes input and decoding it using UTF-8, previously failing the str check
+        # making it compatible if the user passes bytes object using ET.tostring() method
+        if isinstance(workflow_xml, bytes):
+            try:
+                workflow_xml = workflow_xml.decode(&#39;utf-8&#39;)
+            except UnicodeDecodeError:
+                raise SDKException(&#39;Workflow&#39;, &#39;101&#39;, &#39;workflow_xml must be UTF-8 encoded bytes&#39;)
+        elif not isinstance(workflow_xml, str):
             raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
         if os.path.isfile(workflow_xml):
@@ -1814,7 +1819,7 @@ instance of the WorkFlow class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L845-L1604" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L850-L1609" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class WorkFlow(object):
     &#34;&#34;&#34;Class for representing a workflow on a commcell.&#34;&#34;&#34;
@@ -2585,7 +2590,7 @@ instance of the WorkFlow class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L1584-L1587" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L1589-L1592" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def description(self):
@@ -2599,7 +2604,7 @@ def description(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L1579-L1582" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L1584-L1587" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def flags(self):
@@ -2613,7 +2618,7 @@ def flags(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L1574-L1577" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L1579-L1582" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def revision(self):
@@ -2627,7 +2632,7 @@ def revision(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L1569-L1572" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L1574-L1577" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def version(self):
@@ -2641,7 +2646,7 @@ def version(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L1564-L1567" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L1569-L1572" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def workflow_id(self):
@@ -2655,7 +2660,7 @@ def workflow_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L1559-L1562" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L1564-L1567" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def workflow_name(self):
@@ -2678,7 +2683,7 @@ Authorization ID to approve, will pick latest authId if not given</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L1067-L1094" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L1072-L1099" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def approve_workflow(self, auth_id=None):
     &#34;&#34;&#34;
@@ -2726,7 +2731,7 @@ if response is not status</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L1400-L1426" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L1405-L1431" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def clone_workflow(self, clone_workflow_name):
     &#34;&#34;&#34;Clones the workflow
@@ -2799,7 +2804,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L1126-L1213" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L1131-L1218" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def deploy_workflow(self, workflow_engine=None, workflow_xml=None):
     &#34;&#34;&#34;Deploys a workflow on the Commcell.
@@ -2903,7 +2908,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L1116-L1124" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L1121-L1129" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disable(self):
     &#34;&#34;&#34; Disable Worklfow
@@ -2928,7 +2933,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L1106-L1114" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L1111-L1119" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def enable(self):
     &#34;&#34;&#34; Enable Worklfow
@@ -3008,7 +3013,7 @@ if no workflow exists with the given name
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L1215-L1325" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L1220-L1330" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def execute_workflow(self, workflow_inputs=None, hidden=False):
     &#34;&#34;&#34;Executes the workflow with the workflow name given as input, and returns its job id.
@@ -3153,7 +3158,7 @@ if failed to write to export file
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L1327-L1398" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L1332-L1403" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def export_workflow(self, export_location=None):
     &#34;&#34;&#34;Exports the workflow to the directory location specified by the user.
@@ -3241,7 +3246,7 @@ list of dicts with authorization details</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L1096-L1104" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L1101-L1109" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_authorizations(self):
     &#34;&#34;&#34;
@@ -3262,7 +3267,7 @@ list of dicts with authorization details</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L1555-L1557" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L1560-L1562" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refreshes the properties of the workflow.&#34;&#34;&#34;
@@ -3308,7 +3313,7 @@ dictionary consisting of inputs for the workflow</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L1428-L1513" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L1433-L1518" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def schedule_workflow(self, schedule_pattern, workflow_inputs=None):
     &#34;&#34;&#34; Creates a schedule for a workflow
@@ -3414,7 +3419,7 @@ dictionary consisting of inputs for the workflow</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L1039-L1065" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L1044-L1070" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_workflow_configuration(self, config_xml):
     &#34;&#34;&#34;Set Workflow configuration
@@ -3467,7 +3472,7 @@ instance of the WorkFlow class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L139-L842" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L139-L847" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class WorkFlows(object):
     &#34;&#34;&#34;Class for representing all workflows associated with the commcell.&#34;&#34;&#34;
@@ -3580,9 +3585,7 @@ instance of the WorkFlow class</p></div>
 
     def __repr__(self):
         &#34;&#34;&#34;Representation string for the instance of the WorkFlow class.&#34;&#34;&#34;
-        return &#34;WorkFlow class instance for Commcell: &#39;{0}&#39;&#34;.format(
-            self._commcell_object.commserv_name
-        )
+        return &#34;WorkFlow class instance for Commcell&#34;
 
     def __len__(self):
         &#34;&#34;&#34;Returns the number of the workflows associated to the Commcell.&#34;&#34;&#34;
@@ -3781,7 +3784,14 @@ instance of the WorkFlow class</p></div>
                     if HTTP Status Code is not SUCCESS / importing workflow failed
 
         &#34;&#34;&#34;
-        if not isinstance(workflow_xml, str):
+        # Added a check for bytes input and decoding it using UTF-8, previously failing the str check
+        # making it compatible if the user passes bytes object using ET.tostring() method
+        if isinstance(workflow_xml, bytes):
+            try:
+                workflow_xml = workflow_xml.decode(&#39;utf-8&#39;)
+            except UnicodeDecodeError:
+                raise SDKException(&#39;Workflow&#39;, &#39;101&#39;, &#39;workflow_xml must be UTF-8 encoded bytes&#39;)
+        elif not isinstance(workflow_xml, str):
             raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
         if os.path.isfile(workflow_xml):
@@ -4182,7 +4192,7 @@ instance of the WorkFlow class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L839-L842" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L844-L847" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_activities(self):
@@ -4196,7 +4206,7 @@ def all_activities(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L834-L837" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L839-L842" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_workflows(self):
@@ -4223,7 +4233,7 @@ if there are no interactions
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L811-L832" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L816-L837" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def all_interactions(self):
     &#34;&#34;&#34; Returns all interactive interactions for workflows on commcell
@@ -4267,7 +4277,7 @@ if type of the workflow name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L663-L695" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L668-L700" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_workflow(self, workflow_name):
     &#34;&#34;&#34;Deletes a workflow from the Commcell.
@@ -4338,7 +4348,7 @@ if type of the workflow name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L528-L623" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L533-L628" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def download_workflow_from_store(
         self,
@@ -4465,7 +4475,7 @@ if type of the workflow name argument is not string</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L625-L661" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L630-L666" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, workflow_name, **kwargs):
     &#34;&#34;&#34;Returns a workflow object if workflow name matches specified name
@@ -4525,7 +4535,7 @@ Workflow job id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L705-L739" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L710-L744" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_interaction_properties(self, interaction_id, workflow_job_id=None):
     &#34;&#34;&#34;Returns a workflow interaction properties to the user
@@ -4586,7 +4596,7 @@ if type of the workflow activity name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L408-L427" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L406-L425" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_activity(self, activity_name):
     &#34;&#34;&#34;Checks if a workflow activity exists in the commcell with the input
@@ -4631,7 +4641,7 @@ if type of the workflow name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L388-L406" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L386-L404" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_workflow(self, workflow_name):
     &#34;&#34;&#34;Checks if a workflow exists in the commcell with the input workflow name.
@@ -4683,7 +4693,7 @@ if HTTP Status Code is not SUCCESS / importing workflow failed
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L477-L526" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L482-L531" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def import_activity(self, activity_xml):
     &#34;&#34;&#34;Imports a workflow activity to the Commcell.
@@ -4763,7 +4773,7 @@ if HTTP Status Code is not SUCCESS / importing workflow failed
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L429-L475" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L427-L480" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def import_workflow(self, workflow_xml):
     &#34;&#34;&#34;Imports a workflow to the Commcell.
@@ -4787,7 +4797,14 @@ if HTTP Status Code is not SUCCESS / importing workflow failed
                 if HTTP Status Code is not SUCCESS / importing workflow failed
 
     &#34;&#34;&#34;
-    if not isinstance(workflow_xml, str):
+    # Added a check for bytes input and decoding it using UTF-8, previously failing the str check
+    # making it compatible if the user passes bytes object using ET.tostring() method
+    if isinstance(workflow_xml, bytes):
+        try:
+            workflow_xml = workflow_xml.decode(&#39;utf-8&#39;)
+        except UnicodeDecodeError:
+            raise SDKException(&#39;Workflow&#39;, &#39;101&#39;, &#39;workflow_xml must be UTF-8 encoded bytes&#39;)
+    elif not isinstance(workflow_xml, str):
         raise SDKException(&#39;Workflow&#39;, &#39;101&#39;)
 
     if os.path.isfile(workflow_xml):
@@ -4822,7 +4839,7 @@ if HTTP Status Code is not SUCCESS / importing workflow failed
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L697-L699" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L702-L704" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the list of workflows deployed on the Commcell.&#34;&#34;&#34;
@@ -4837,7 +4854,7 @@ if HTTP Status Code is not SUCCESS / importing workflow failed
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L701-L703" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L706-L708" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh_activities(self):
     &#34;&#34;&#34;Refresh the list of workflow activities deployed on the Commcell.&#34;&#34;&#34;
@@ -4903,7 +4920,7 @@ Failed to submit workflow interaction request</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/ea427ccfbe1b4a06c8c59fca8d0a81b0eca27e2d/cvpysdk/workflow.py#L741-L809" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/workflow.py#L746-L814" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def submit_interaction(self, interaction, input_xml, action):
     &#34;&#34;&#34; Submits a given interaction with specified action
