@@ -49,11 +49,17 @@ OracleSubclient:
     backup_archive_log()                --  Getter ans Setter for enaling/disabling
                                             archive log mode
 
+    archive_delete()                    --  Getter and Setter for archive delete
+
     archive_files_per_bfs()             --  Getter and Setter for archive files per BFS
+
+    oracle_tag()                        --  Getter and Setter for oracle tag
 
     skip_offline()                      --  Getter and Setter for skip offline option
 
-    skip_read_only()                      --  Getter and Setter for skip read only option
+    skip_read_only()                    --  Getter and Setter for skip read only option
+
+    skip_inaccessible()                 --  Getter and Setter for skip inaccessible option
 
     data_sp()                           --  Getters and setters for data storage policy
 
@@ -93,7 +99,8 @@ class OracleSubclient(DatabaseSubclient):
     def _oracle_backup_json(
             self,
             backup_level="full",
-            schedule_pattern=None):
+            schedule_pattern=None,
+            options=None):
         """Runs a backup job for the subclient of the level specified.
 
             Args:
@@ -105,6 +112,8 @@ class OracleSubclient(DatabaseSubclient):
                         Please refer schedules.schedulePattern.createSchedule()
                                                                     doc for the types of Jsons
 
+                options          (dict) --  dictionary containing other oracle options
+
             Returns:
                 dict    -- dict containing request JSON
 
@@ -112,6 +121,8 @@ class OracleSubclient(DatabaseSubclient):
         oracle_options = {
             "oracleOptions": {}
         }
+        if options is not None:
+            oracle_options.update(options)
         request_json = self._backup_json(
             backup_level,
             False,
@@ -230,6 +241,29 @@ class OracleSubclient(DatabaseSubclient):
             "_oracle_subclient_properties['backupArchiveLog']", backup_archive_log)
 
     @property
+    def archive_delete(self):
+        """
+        Getter to fetch if archive delete is enabled or not
+
+            Returns:
+                    bool     --  True if archive delete is enabled on the subclient, Else False
+
+        """
+        return self._oracle_subclient_properties.get("archiveDelete")
+
+    @archive_delete.setter
+    def archive_delete(self, archive_delete):
+        """
+        Setter to enable backup delete in oracle subclient
+
+            Args:
+                archive_delete    (bool)    --  True if archive delete to be enabled
+                                                on the subclient, Else False
+        """
+        self._set_subclient_properties(
+            "_oracle_subclient_properties['archiveDelete']", archive_delete)
+
+    @property
     def selective_online_full(self):
         """
         Getter to fetch if selective online full enabled or not
@@ -274,6 +308,27 @@ class OracleSubclient(DatabaseSubclient):
         """
         self._set_subclient_properties(
             "_oracle_subclient_properties['archiveFilesPerBFS']", archive_files_per_bfs)
+
+    @property
+    def oracle_tag(self):
+        """
+        Getter to fetch oracle tag
+
+            Returns:
+                    (int)    --     value for oracle tag
+        """
+        return self._oracle_subclient_properties.get("oracleTag")
+
+    @oracle_tag.setter
+    def oracle_tag(self, oracle_tag):
+        """
+        Setter to set parameter for oracle tag
+
+            Args:
+               oracle_tag    (int)    --     value for oracle tag
+        """
+        self._set_subclient_properties(
+            "_oracle_subclient_properties['oracleTag']", oracle_tag)
 
     @property
     def skip_offline(self):
@@ -321,6 +376,30 @@ class OracleSubclient(DatabaseSubclient):
         """
         self._set_subclient_properties(
             "_oracle_subclient_properties['skipReadOnly']", skip_read_only)
+
+    @property
+    def skip_inaccessible(self):
+        """
+        Getter to fetch if skip inaccessible is enabled or not
+
+            Returns:
+                    (bool)    --     True if the option is enabled, False if it is disabled
+        """
+        return self._oracle_subclient_properties.get("skipInaccessible")
+
+    @skip_inaccessible.setter
+    def skip_inaccessible(self, skip_inaccessible=False):
+        """
+        Setter to set skip inaccessible option
+
+            Args:
+               skip_inaccessible    (bool)    --    True to enable the skip inaccessible option,
+                                                    False to disable it.
+                                                    default=False
+
+        """
+        self._set_subclient_properties(
+            "_oracle_subclient_properties['skipInaccessible']", skip_inaccessible)
 
     @property
     def data_stream(self):
@@ -427,7 +506,8 @@ class OracleSubclient(DatabaseSubclient):
             self,
             backup_level=InstanceBackupType.FULL.value,
             cumulative=False,
-            schedule_pattern=None):
+            schedule_pattern=None,
+            options=None):
         """
 
         Args:
@@ -443,6 +523,8 @@ class OracleSubclient(DatabaseSubclient):
 
                         Please refer schedules.schedulePattern.createSchedule()
                                                                     doc for the types of Jsons
+
+            options          (dict) --  dictionary containing other oracle options
 
         Returns:
             object - instance of the Job class for this backup job if its an immediate Job
@@ -461,14 +543,15 @@ class OracleSubclient(DatabaseSubclient):
         if backup_level not in ['full', 'incremental']:
             raise SDKException(r'Subclient', r'103')
 
-        if not (cumulative or schedule_pattern):
+        if not (cumulative or schedule_pattern or options):
             return super(OracleSubclient, self).backup(backup_level)
 
         if cumulative:
             backup_level = InstanceBackupType.CUMULATIVE.value
         request_json = self._oracle_backup_json(
             backup_level,
-            schedule_pattern
+            schedule_pattern,
+            options
         )
         backup_service = self._commcell_object._services['CREATE_TASK']
         flag, response = self._commcell_object._cvpysdk_object.make_request(

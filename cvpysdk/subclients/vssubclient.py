@@ -129,6 +129,10 @@ VirtualServerSubclient:
 
     index_server                            --  Property to get/set the indexserver client for the subclient
 
+    quiesce_file_system                     -- Property to get/set quiesce value for the vsa subclient
+
+    snapshot_storage_type                   -- Property to get snapshot storage type for the vsa subclient
+
 To add a new Virtual Subclient,  create a class in a new module under virtualserver sub package
 
 
@@ -158,7 +162,7 @@ from cvpysdk.plan import Plans
 from ..exception import SDKException
 from ..client import Client
 from ..subclient import Subclient
-from ..constants import VSAObjects, HypervisorType
+from ..constants import VSAObjects, HypervisorType, VsInstanceType
 
 
 class VirtualServerSubclient(Subclient):
@@ -167,8 +171,8 @@ class VirtualServerSubclient(Subclient):
 
     def __new__(cls, backupset_object, subclient_name, subclient_id=None):
         """Decides which instance object needs to be created"""
-        instance_name = backupset_object._instance_object.instance_name
-        instance_name = re.sub('[^A-Za-z0-9_]+', '', instance_name.replace(" ", "_"))
+
+        instance_name = VsInstanceType.VSINSTANCE_TYPE[backupset_object._instance_object._vsinstancetype]
 
         try:
             subclient_module = import_module("cvpysdk.subclients.virtualserver.{}".format(instance_name))
@@ -661,6 +665,39 @@ class VirtualServerSubclient(Subclient):
             "_commonProperties['indexSettings']['currentIndexServer']['clientName']",
             index_server_name)
 
+    @property
+    def quiesce_file_system(self):
+        """
+            Gets the quiesce value set for the vsa subclient
+
+        Returns:
+            (Boolean)    True/False
+        """
+        return self._vsaSubclientProp.get('quiesceGuestFileSystemAndApplications')
+
+    @quiesce_file_system.setter
+    def quiesce_file_system(self, value):
+        """
+        Sets the quiesce value for the vsa subclient
+
+        Args:
+            value   (Boolean)   True/False
+
+        """
+        update_properties = self.properties
+        update_properties['vsaSubclientProp']['quiesceGuestFileSystemAndApplications'] = value
+        self.update_properties(update_properties)
+
+    @property
+    def snapshot_storage_type(self):
+        """
+            Gets the snapshot storage type set for the vsa subclient
+
+        Returns:
+            (Boolean)    True/False
+        """
+        return self._vsaSubclientProp.get('snapshotStorageType')
+
     def _get_disk_provisioning_value(self, provisioningType):
         """
          Returns the provisioning code for the selected type
@@ -786,7 +823,6 @@ class VirtualServerSubclient(Subclient):
                 content_list.append(temp_dict)
         return content_list
 
-
     def _get_subclient_properties(self):
         """Gets the subclient  related properties of Virtual server subclient.
 
@@ -904,6 +940,11 @@ class VirtualServerSubclient(Subclient):
             "viewType": "DEFAULT",
             "isBlockLevelReplication": value.get("block_level", False)
         }
+
+        if value.get('run_security_scan'):
+            self._virtualserver_option_restore_json['securityScanOptions'] = {
+                "runSecurityScan": value.get("run_security_scan", False)
+            }
 
         if value.get('replication_guid'):
             self._virtualserver_option_restore_json['replicationGuid'] = value['replication_guid']
@@ -1038,8 +1079,8 @@ class VirtualServerSubclient(Subclient):
             "powerOnVmAfterRestore": value.get("power_on", False),
             "registerWithFailoverCluster": value.get("add_to_failover", False),
             "userPassword": {"userName": vcenter_userpwd or "admin"},
-            "redirectWritesToDatastore": value.get("redirectWritesToDatastore", ""),
-            "delayMigrationMinutes": value.get("delayMigrationMinutes", 0)
+            "redirectWritesToDatastore": value.get("redirectWritesToDatastore") or "",
+            "delayMigrationMinutes": value.get("delayMigrationMinutes") or 0
         }
         if value['in_place']:
             json_disklevel_option_restore["dataStore"] = {}
@@ -1080,9 +1121,11 @@ class VirtualServerSubclient(Subclient):
             "cluster": value.get("cluster", ""),
             "name": value.get("name", ""),
             "nics": value.get("nics", []),
+            "vmTags":  value.get('vmTags') or [],
             "vmIPAddressOptions": value.get("vm_ip_address_options", []),
             "FolderPath": value.get("FolderPath", ""),
             "resourcePoolPath": value.get("ResourcePool", ""),
+            "restoreVMTags": False if value.get('vmTags') else True,
             "volumeType": value.get("volumeType", "Auto"),
             "vmCustomMetadata": value.get("vmCustomMetadata",[])
         }
@@ -2321,6 +2364,13 @@ class VirtualServerSubclient(Subclient):
                     restore_option["cluster"] = vs_metadata['clusterName']
                     vs_metadata["esxHost"] = vs_metadata['clusterName']
 
+        #adding tag to restored vm
+        if restore_option.get('vmTags'):
+            vm_tags = restore_option.get('vmTags')
+            if isinstance(vm_tags, str) or isinstance(vm_tags, dict):
+                vm_tags = [vm_tags]
+            restore_option["vmTags"] = vm_tags
+
         # populate VM Specific values
         self._set_restore_inputs(
             restore_option,
@@ -3078,27 +3128,3 @@ class VirtualServerSubclient(Subclient):
                 '102',
                 self._update_response_(
                     response.text))
-
-    @property
-    def quiesce_file_system(self):
-        """
-            Gets the quiesce value set for the vsa subclient
-
-        Returns:
-            (Boolean)    True/False
-        """
-        quiesce_file_system = r'quiesceGuestFileSystemAndApplications'
-        return self._vsaSubclientProp.get(quiesce_file_system)
-
-    @quiesce_file_system.setter
-    def quiesce_file_system(self, value):
-        """
-        Sets the quiesce value for the vsa subclient
-
-        Args:
-            value   (Boolean)   True/False
-
-        """
-        update_properties = self.properties
-        update_properties['vsaSubclientProp']['quiesceGuestFileSystemAndApplications'] = value
-        self.update_properties(update_properties)

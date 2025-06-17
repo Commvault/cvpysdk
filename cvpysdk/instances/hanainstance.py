@@ -194,7 +194,7 @@ class SAPHANAInstance(Instance):
 
                     default: 2
 
-                catalog_time                (int)   --  catalog time to which should be used to restore
+                catalog_time                (str)   --  catalog time to which should be used to restore
 
                     default: None
 
@@ -237,18 +237,6 @@ class SAPHANAInstance(Instance):
             }
             recover_time = 1
 
-        if catalog_time is None:
-            catalog_recover_time = 0
-            catalog_time = {}
-        else:
-            if not isinstance(catalog_time, str):
-                raise SDKException('Instance', 103)
-
-            catalog_time = {
-                'time': int(catalog_time)
-            }
-            catalog_recover_time = 1
-              
         request_json = {
             "taskInfo": {
                 "associations": [{
@@ -281,9 +269,7 @@ class SAPHANAInstance(Instance):
                                 "destClientName": destination_hana_client,
                                 "databases": databases,
                                 "recoverTime": recover_time,
-                                "pointInTime": point_in_time,
-                                "catalogPointInTime": catalog_time,
-                                "catalogRecoverTime": catalog_recover_time
+                                "pointInTime": point_in_time
                             },
                             "destination": {
                                 "destinationInstance": {
@@ -306,6 +292,16 @@ class SAPHANAInstance(Instance):
                 }]
             }
         }
+        if catalog_time:
+            if not isinstance(catalog_time, str):
+                raise SDKException('Instance', 103)
+            catalog_time = {
+                'time': int(catalog_time)
+            }
+            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+                'hanaOpt']['catalogPointInTime'] = catalog_time
+            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
+                'hanaOpt']['catalogRecoverTime'] = 1
 
         if destination_instance_dir is not None:
             instance_dir = {
@@ -462,7 +458,7 @@ class SAPHANAInstance(Instance):
 
                     default: 2
 
-                catalog_time                (int)   --  catalog time to which should be used to restore
+                catalog_time                (str)   --  catalog time to which should be used to restore
 
                     default: None
 

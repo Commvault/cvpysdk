@@ -105,6 +105,7 @@ class CVPySDK(object):
         self._commcell_object = commcell_object
         self._certificate_path = certificate_path
         self._verify_ssl = verify_ssl
+        self._response_headers = {}
 
         if not self._verify_ssl:
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -200,14 +201,25 @@ class CVPySDK(object):
                 else:
                     raise SDKException('Response', '102')
             else:
+                if response is not None:
+                    response_json = response.json()
+                    if ("errorMessage" in response_json and "Access denied" in response_json["errorMessage"] and
+                        "errorCode" in response_json and response_json["errorCode"] == 5):
+                        raise SDKException('Response', '101', "Commcell was reachable "
+                            "but there may be a problem with the SSL certificate. "
+                            "You can try providing the certificate file using the certificate_path parameter. "
+                            "Alternatively, you can ignore this check by setting verify_ssl=False.")
                 response_string = self._commcell_object._update_response_(response.text)
                 raise SDKException('Response', '101', response_string)
         except requests.exceptions.ConnectionError as con_err:
             raise con_err
 
-    def _renew_login_token(self):
+    def _renew_login_token(self, attempts):
         """Posts a Renew Login-Token request to the server.
 
+            Args:
+                attempts    (int)   --  number of attempts made with the same request
+                
             Returns:
                 str     -   new token received from the WebServer
 
@@ -233,7 +245,7 @@ class CVPySDK(object):
             }
 
             flag, response = self.make_request(
-                'POST', self._commcell_object._services['RENEW_LOGIN_TOKEN'], token_renew_request
+                'POST', self._commcell_object._services['RENEW_LOGIN_TOKEN'], token_renew_request, attempts
             )
 
             if flag:
@@ -456,6 +468,7 @@ class CVPySDK(object):
 
             # Processinginfo removal from response. It is under try catch to handle different response cases
             # (Eg:DownloadStream API will return file stream in response)
+            self._response_headers = response.headers
             try:
                 if kwargs.get('remove_processing_info', True) and 'processinginstructioninfo' in response.json():
                     del response.json()['processinginstructioninfo']
@@ -466,7 +479,7 @@ class CVPySDK(object):
                 if headers['Authtoken'].startswith('Bearer '):
                     raise SDKException('CVPySDK', '106')
                 if attempts < 3:
-                    self._commcell_object._headers['Authtoken'] = self._renew_login_token()
+                    self._commcell_object._headers['Authtoken'] = self._renew_login_token(attempts + 1)
                     return self.make_request(method, url, payload, attempts + 1)
                 else:
                     # Raise max attempts exception, if attempts exceeds 3

@@ -91,7 +91,7 @@ class CommCellMigration(object):
 
                         "userName":"UserName",
 
-                        "password":"User#####",
+                        "password":"...",
 
                         "otherSqlInstance": False,
 
@@ -99,7 +99,7 @@ class CommCellMigration(object):
 
                         "sqlUserName":"SQLUserName",
 
-                        "sqlPassword":"SQLPassword",
+                        "sqlPassword":"...",
 
                         "Database":"commserv",
 
@@ -344,7 +344,7 @@ class CommCellMigration(object):
                     {
                         "pathType": "Network",
                         "userName" : "username",
-                        "password": "password",
+                        "password": "...",
                         "forceOverwrite": False,
                         "failIfEntityAlreadyExists": False,
                         "deleteEntitiesNotPresent": False,

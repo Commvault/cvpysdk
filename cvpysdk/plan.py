@@ -56,6 +56,8 @@ Plans
 
     add_data_classification_plan()-  Adds data classification plan to the commcell
 
+    add_risk_analysis_dc_plan() --  Adds Risk Analysis data classification plan to the commcell
+
     get_supported_solutions()   --  returns the supported solutions for plans
 
     add_exchange_plan()         --  Adds a new exchange plan to the commcell
@@ -69,7 +71,7 @@ Plans
     _get_fq_parameters()        --  Returns the fq parameters based on the fq list passed
 
     get_plans_cache()           --  Returns plan cache in response
-    
+
 Attributes
 ----------
 
@@ -77,6 +79,7 @@ Attributes
 
     **all_plans_cache** --  Returns the dictionary consisting of all the plans cache present in mongoDB
 
+    **all_plans_prop**  --  Return complete GET API response
 
 Plan
 ====
@@ -116,6 +119,8 @@ Plan
     schedule()                  --  create/delete schedule on DC Plan
 
     edit_plan()                 --  edit plan options
+
+    edit_risk_analysis_dc_plan()--  Edit Risk Analysis Data Classification Plan options
     
     update_security_associations() -- to update security associations of a plan
 
@@ -194,6 +199,8 @@ Plan Attributes
     **snap_schedule_policy**    --  returns the snap schedule policy of the plan
 
     **content_indexing**        --  returns the status of content indexing of O365 plan
+
+    **all_copies**              --  returns all the copies for a plan
 
 """
 from __future__ import unicode_literals
@@ -482,6 +489,7 @@ class Plans(object):
                 object - instance of Plans class
         """
 
+        self._all_plans_props = None
         self._commcell_object = commcell_object
 
         self._cvpysdk_object = commcell_object._cvpysdk_object
@@ -489,10 +497,12 @@ class Plans(object):
         self._update_response_ = commcell_object._update_response_
 
         self._PLANS = self._services['PLANS']
+        self._V4_DC_PLANS = self._services['V4_DC_PLANS']
         self._V4_PLANS = self._services['V4_SERVER_PLANS']
         self._V4_GLOBAL_PLANS = self._services['V4_GLOBAL_SERVER_PLANS']
         self._plans = None
         self._plans_cache = None
+        self.filter_query_count = 0
         self.refresh()
 
     def __str__(self):
@@ -511,9 +521,7 @@ class Plans(object):
 
     def __repr__(self):
         """Representation string for the instance of the Plans class."""
-        return "Plans class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "Plans class instance for Commcell"
 
     def __len__(self):
         """Returns the number of the plans added to the Commcell."""
@@ -546,9 +554,10 @@ class Plans(object):
             except IndexError:
                 raise IndexError('No plan exists with the given Name / Id')
 
-    def _get_plans(self):
+    def _get_plans(self, full_response: bool = False):
         """Gets all the plans associated with the commcell
-
+            Args:
+                full_response(bool) --  flag to return complete response
             Returns:
                 dict - consists of all plans in the commcell
                     {
@@ -568,11 +577,12 @@ class Plans(object):
             plans = {}
 
             if response.json() and 'plans' in response.json():
-                response_value = response.json()['plans']
+                if full_response:
+                    return response.json()
 
                 name_count = {}
 
-                for temp in response_value:
+                for temp in response.json()['plans']:
                     temp_name = temp.get('plan', {}).get('planName', '').lower()
                     temp_company = temp.get('plan', {}).get('entityInfo', {}).get('companyName', '').lower()
 
@@ -581,7 +591,7 @@ class Plans(object):
                     else:
                         name_count[temp_name] = {temp_company}
 
-                for temp in response_value:
+                for temp in response.json()['plans']:
                     temp_name = temp.get('plan', {}).get('planName', '').lower()
                     temp_id = str(temp['plan']['planId']).lower()
                     temp_company = temp.get('plan', {}).get('entityInfo', {}).get('companyName', '').lower()
@@ -656,12 +666,13 @@ class Plans(object):
             'planName': 'plans.plan.planName',
             'planId': 'plans.plan.planId',
             'planType': 'plans.subtype',
+            'description': 'plans.description',
             'numAssocEntities': 'plans.numAssocEntities',
             'rpoInMinutes': 'plans.rpoInMinutes',
             'numCopies': 'plans.numCopies',
             'planStatusFlag': 'plans.planStatusFlag',
             'storage': 'plans.storageResourcePoolMaps.resources.resourcePool',
-            'company': 'plans.plan.entityInfo.companyName',
+            'companyName': 'plans.plan.entityInfo.companyName',
             'tags': 'tags'
         }
         default_columns = 'plans.plan.planName,plans.plan.planId'
@@ -706,28 +717,28 @@ class Plans(object):
         Returns:
             fq_parameters(str) -- fq parameter string
         """
-        conditions = ['contains', 'notContain', 'eq', 'neq', 'gt', 'lt']
-        params = [""]
-        if fq:
+        conditions = {"contains", "notContain", "eq", "neq", "gt", "lt"}
+        params = []
 
-            for param in fq:
-                if param[0] in self.valid_columns.keys():
-                    if param[0] == 'tags' and param[1] =='contains':
-                        params.append(f"&tags={param[2]}")
-                    elif param[1] in conditions:
-                        params.append(f"&fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}")
-                    elif param[1] == 'isEmpty' and len(param) == 2:
-                        params.append(f"&fq={self.valid_columns[param[0]]}:in:null,")
-                    elif param[1] == 'between' and '-' in param[2]:
-                        ranges = param[2].split('-')
-                        params.append(f"&fq={self.valid_columns[param[0]]}:gteq:{ranges[0]}")
-                        params.append(f"&fq={self.valid_columns[param[0]]}:lteq:{ranges[1]}")
-                    else:
-                        raise SDKException('Plan', '102', 'Invalid condition passed')
-                else:
-                    raise SDKException('Plan', '102', 'Invalid column Name passed')
-        if params:
-            return "".join(params)
+        for column, condition, *value in fq or []:
+            if column not in self.valid_columns:
+                raise SDKException('Plan', '102', 'Invalid column name passed')
+
+            # Handle 'tags' column separately
+            if column == "tags" and condition == "contains":
+                params.append(f"&tags={value[0]}")
+            elif condition in conditions:
+                params.append(f"&fq={self.valid_columns[column]}:{condition.lower()}:{value[0]}")
+            elif condition == "isEmpty" and not value:
+                params.append(f"&fq={self.valid_columns[column]}:in:null,")
+            elif condition == "between" and value and "-" in value[0]:
+                start, end = value[0].split("-", 1)
+                params.append(f"&fq={self.valid_columns[column]}:gteq:{start}")
+                params.append(f"&fq={self.valid_columns[column]}:lteq:{end}")
+            else:
+                raise SDKException('Plan', '102', 'Invalid condition passed')
+
+        return "".join(params)
 
     def get_plans_cache(self, hard: bool = False, **kwargs) -> dict:
         """
@@ -746,29 +757,33 @@ class Plans(object):
                 fq (list)   --   Contains the columnName, condition, and value.
                                         e.g. fq = [['planName', 'contains', 'test'],
                                         ['numAssocEntities', 'between', '0-1']] (default: None).
-                enum (bool) --   Flag to return enums in the response (default: True).
 
         Returns:
             dict: Dictionary of all the properties present in response.
         """
-        headers = self._commcell_object._headers.copy()
-        if kwargs.get('enum', True):
-            headers['EnumNames'] = "True"
-
+        # computing parameters
         fl_parameters = self._get_fl_parameters(kwargs.get('fl', None))
         fq_parameters = self._get_fq_parameters(kwargs.get('fq', None))
-        limit = kwargs.get('limit', ['0', '100'])
-        limit_parameters = f'start={limit[0]}&limit={limit[1]}'
+        limit = kwargs.get('limit', None)
+        limit_parameters = f'start={limit[0]}&limit={limit[1]}' if limit else ''
         hard_refresh = '&hardRefresh=true' if hard else ''
         sort_parameters = self._get_sort_parameters(kwargs.get('sort', None)) if kwargs.get('sort', None) else ''
-        search_parameter = f'&search={",".join(self.valid_columns.values())}:contains:{kwargs.get("search", None)}' if kwargs.get(
-            'search', None) else ''
 
-        request_url = (
-                self._PLANS + "?" + limit_parameters + sort_parameters + fl_parameters + fq_parameters +
-                hard_refresh + search_parameter
-        )
-        flag, response = self._cvpysdk_object.make_request("GET", request_url, headers=headers)
+        # Search operation can only be performed on limited columns, so filtering out the columns on which search works
+        searchable_columns = ["planName","planType","planStatusFlag","companyName","description"]
+        search_parameter = (f'&search=tagName,tagValue,{",".join(self.valid_columns[col] for col in searchable_columns)}'
+                            f':contains:{kwargs.get("search", None)}') if kwargs.get('search', None) else ''
+
+        params = [
+            limit_parameters,
+            sort_parameters,
+            fl_parameters,
+            hard_refresh,
+            search_parameter,
+            fq_parameters
+        ]
+        request_url = f"{self._PLANS}?" + "".join(params)
+        flag, response = self._cvpysdk_object.make_request("GET", request_url)
 
         if not flag:
             response_string = self._update_response_(response.text)
@@ -776,26 +791,33 @@ class Plans(object):
 
         plans_summary = {}
         if response.json() and 'plans' in response.json():
+            self.filter_query_count = response.json().get('filterQueryCount',0)
             for plan in response.json()['plans']:
                 name = plan.get("plan", {}).get("planName", None)
+                company = plan.get('plan', {}).get('entityInfo', {}).get('companyName', None)
+
                 plan_config = {
+                    'planName':name,
                     'planId': plan.get('plan', {}).get('planId', None),
                     'planType': plan.get('subtype'),
+                    'description': plan.get('description'),
                     'numCopies': plan.get('numCopies'),
                     'numAssocEntities': plan.get('numAssocEntities'),
-                    'rpoInMinutes': plan.get('rpoInMinutes'),
+                    'rpoInMinutes': plan.get('rpoInMinutes',0),
                     'planStatusFlag': plan.get('planStatusFlag'),
-                    'company': plan.get('plan', {}).get('entityInfo', {}).get('companyName', None)
+                    'companyName': company,
+                    'tags': (plan.get('plan') or {}).get('tags') or []
                 }
                 if 'storageResourcePoolMaps' in plan and 'resources' in plan.get('storageResourcePoolMaps', {})[0]:
-                    plan_config['storage'] = [
+                    plan_config['resourcePool'] = [
                         resource.get('resourcePool', {}).get('resourcePoolName')
                         for resource in plan.get('storageResourcePoolMaps', {})[0].get('resources')
                     ]
-                if 'tags' in plan.get('plan'):
-                    plan_config['tags'] = plan.get('plan', None).get('tags')
-                plan_config = {key: value for key, value in plan_config.items() if value is not None}
-                plans_summary[name] = plan_config
+                # Check if plan name already exists for a different company
+                unique_name = name
+                if name in plans_summary and plans_summary[name].get('companyName') != company:
+                    unique_name = f"{name}_({company})"
+                plans_summary[unique_name] = plan_config
 
             return plans_summary
         else:
@@ -851,8 +873,10 @@ class Plans(object):
                     }
 
                 """
+        if not self._plans_cache:
+            self._plans_cache = self.get_plans_cache()
         return self._plans_cache
-    
+
     def filter_plans(self, plan_type, company_name=None):
         """
         Returns the dictionary consisting of specified type and company plans.
@@ -1010,6 +1034,7 @@ class Plans(object):
                         # initialize the plan again
                         # so the plan object has all the plan
                         self.refresh()
+                        self._commcell_object.storage_policies.refresh()
                 else:
                     response_string = self._update_response_(response.text)
                     raise SDKException('Response', '101', response_string)
@@ -1044,6 +1069,11 @@ class Plans(object):
                         number_of_days_src_pruning          (int)   -- Number of days for source pruning
                         include_msgs_older_than             (int)   -- Include messages older than for archiving
                         include_msgs_larger_than            (int)   -- Inlcude messages larger than for archiving
+                        exclude_folder_filter               (list)  -- Exclude folder filter
+                        include_folder_filter               (list)  -- Include folder filter
+                        enable_message_rules                (bool)  -- Enable message rules
+                        truncate_body                       (bool)  -- Truncate body
+                        truncate_body_to_size               (int)   -- Size to which body should be truncated (default: 1024)
 
             Returns:
                 Plan object of the created plan
@@ -1070,6 +1100,22 @@ class Plans(object):
             exch_cleanup = request_json['plan']['exchange']['mbCleanup']['detail']['emailPolicy']['cleanupPolicy']
             exch_cleanup['excludeFolderFilter']['folderPatternsSelected'].remove('Drafts')
             exch_cleanup['excludeFolderFilter']['folderPatternsAvailable'].append('Drafts')
+            if kwargs.get('enable_message_rules'):
+                exch_cleanup['enableMessageRules'] = True
+            exclude_folders = kwargs.get('exclude_folder_filter', [])
+            for folder in exclude_folders:
+                if folder in exch_cleanup['excludeFolderFilter']['folderPatternsAvailable']:
+                    exch_cleanup['excludeFolderFilter']['folderPatternsAvailable'].remove(folder)
+                exch_cleanup['excludeFolderFilter']['folderPatternsSelected'].append(folder)
+            include_folders = kwargs.get('include_folder_filter', [])
+            exch_cleanup['includeFolderFilter']['folderPatternsSelected'] = []
+            for folder in include_folders:
+                if folder in exch_cleanup['includeFolderFilter']['folderPatternsAvailable']:
+                    exch_cleanup['includeFolderFilter']['folderPatternsAvailable'].remove(folder)
+                exch_cleanup['includeFolderFilter']['folderPatternsSelected'].append(folder)
+            if kwargs.get('truncate_body'):
+                exch_cleanup['truncateBody'] = True
+                exch_cleanup['truncateBodyToSize'] = kwargs.get('truncate_body_to_size', 1024)
             exch_cleanup['archiveMailbox'] = kwargs.get('enable_cleanup_archive_mailbox', False)
             exch_cleanup['collectMsgsDaysAfter'] = kwargs.get('cleanup_msg_older_than', 0)
             exch_cleanup['collectMsgsLargerThan'] = kwargs.get('cleanup_msg_larger_than', 0)
@@ -1690,8 +1736,7 @@ class Plans(object):
 
         """
         extraction_policy_list = []
-        if not (isinstance(plan_name, str) and
-                isinstance(index_server, str)):
+        if not (isinstance(plan_name, str)):
             raise SDKException('Plan', '101')
         request_json = self._get_plan_template("DataClassification", "MSP")
         request_json['plan']['summary']['description'] = "DC Plan Created from CvPySDK."
@@ -1702,23 +1747,25 @@ class Plans(object):
                 target_app.value
             ]
         }
-        index_server_client_id = self._commcell_object.index_servers.get(index_server).index_server_client_id
-        request_json['plan']['eDiscoveryInfo']['analyticsIndexServer'] = {
-            'clientId': index_server_client_id
-        }
+        if index_server is not None:
+            # change to support SaaS and unification project
+            index_server_client_id = self._commcell_object.index_servers.get(index_server).index_server_client_id
+            request_json['plan']['eDiscoveryInfo']['analyticsIndexServer'] = {
+                'clientId': index_server_client_id
+            }
         if target_app.value == TargetApps.FSO.value:
             del request_json['plan']['ciPolicy']['detail']['ciPolicy']['filters']
             request_json['plan']['ciPolicy']['detail']['ciPolicy']['opType'] = PlanConstants.INDEXING_ONLY_METADATA
         elif target_app.value == TargetApps.SDG.value:
-            if 'content_analyzer' not in kwargs:
-                raise SDKException('Plan', '103')
-            ca_list = []
-            for ca in kwargs.get('content_analyzer', []):
-                ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
-                ca_list.append({
-                    'clientId': ca_client_id
-                })
-            request_json['plan']['eDiscoveryInfo']['contentAnalyzerClient'] = ca_list
+            if 'content_analyzer' in kwargs:
+                # change to support SaaS and unification project
+                ca_list = []
+                for ca in kwargs.get('content_analyzer', []):
+                    ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
+                    ca_list.append({
+                        'clientId': ca_client_id
+                    })
+                request_json['plan']['eDiscoveryInfo']['contentAnalyzerClient'] = ca_list
             if 'entity_list' not in kwargs and 'classifier_list' not in kwargs:
                 raise SDKException('Plan', '104')
             activate_obj = self._commcell_object.activate
@@ -1746,9 +1793,8 @@ class Plans(object):
 
                 }
             }
-            if 'index_content' in kwargs:
-                request_json['plan']['ciPolicy']['detail']['ciPolicy']['opType'] = kwargs.get(
-                    'index_content', PlanConstants.INDEXING_METADATA_AND_CONTENT)
+            request_json['plan']['ciPolicy']['detail']['ciPolicy']['opType'] = kwargs.get(
+                'index_content', PlanConstants.INDEXING_ONLY_METADATA)
             if 'enable_ocr' in kwargs:
                 request_json['plan']['ciPolicy']['detail']['ciPolicy']['enableImageExtraction'] = kwargs.get(
                     'enable_ocr', False)
@@ -1791,6 +1837,132 @@ class Plans(object):
 
                 if 'plan' in response_value:
                     plan_name = response_value['plan']['summary']['plan']['planName']
+                    # initialize the plans again
+                    self.refresh()
+
+                    return self.get(plan_name)
+                else:
+                    o_str = ('Failed to create new plan due to error code: "{0}"\n'
+                             'Please check the documentation for '
+                             'more details on the error').format(error_code)
+
+                    raise SDKException('Plan', '102', o_str)
+            else:
+                raise SDKException('Response', 102)
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def add_risk_analysis_dc_plan(self, plan_name, app_type=PlanConstants.RAPlanAppType.CLASSIFIED,
+                                  content_analyzer=None, index_server=None, **kwargs):
+        """Adds Risk Analysis data classification plan to the commcell
+            Args:
+                plan_name         (str)             --  Name of plan
+                app_type          (RAPlanAppType)   --  Application Type of the plan
+                content_analyzer  (list)            --  list of Content analyzer client name
+                index_server      (str)             --  Index server name
+                **kwargs
+                    entity_list     (list)          --  list of entities which needs to be extracted
+                    classifier_list (list)          --  list of classifier which needs to be classified
+                    index_content   (RAPlanType)    --  Specifies whether to index content or not to index server
+                    enable_ocr      (bool)          --  specifies whether OCR is enabled or not
+                    ocr_language    (int)           --  Language to be used when doing OCR
+                                                                Default : English (Value-1)
+                        Supported Languages:
+                                    ENGLISH = 1,
+                                    HEBREW = 2,
+                                    SPANISH = 3,
+                                    FRENCH = 4,
+                                    ITALIAN = 5,
+                                    DANISH = 6
+                    include_docs        (str)       --  Include documents type separated by comma
+                    exclude_path        (list)      --  List of paths which needs to be excluded
+                    min_doc_size        (int)       --  Minimum document size in MB
+                    max_doc_size        (int)       --  Maximum document size in MB
+            Returns:
+                object  - Plan object
+            Raises:
+                SDKException:
+                        if input is not valid
+                        if failed to create plan
+                        if failed to find entities/classifier details
+        """
+        if not (isinstance(plan_name, str)):
+            raise SDKException('Plan', '101')
+        request_json = copy.deepcopy(PlanConstants.CREATE_V4_DC_PLAN_REQ)
+
+        request_json['name'] = plan_name
+        request_json['application'] = app_type.value
+        request_json['threatAnalysis'] = False
+
+        if index_server is not None:
+            # change to support SaaS and unification project
+            index_server_client_id = self._commcell_object.index_servers.get(index_server).index_server_client_id
+            request_json['indexServer'] = {
+                'id': index_server_client_id
+            }
+        if content_analyzer is not None:
+            # change to support SaaS and unification project
+            ca_list = []
+            for ca in content_analyzer:
+                ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
+                ca_list.append({
+                    'id': ca_client_id
+                })
+            request_json['contentAnalyzer'] = ca_list
+        if 'entity_list' not in kwargs and 'classifier_list' not in kwargs:
+            raise SDKException('Plan', '104')
+        activate_obj = self._commcell_object.activate
+        if 'entity_list' in kwargs or 'classifier_list' in kwargs:
+            entity_mgr_obj = activate_obj.entity_manager()
+            entity_list = []
+            classifier_list = []
+            entity_ids = entity_mgr_obj.get_entity_ids(kwargs.get('entity_list', []))
+            for entity_id in entity_ids:
+                entity_list.append({"id": entity_id})
+            request_json['entityDetection']["entities"] = entity_list
+
+            classifier_ids = entity_mgr_obj.get_entity_ids(kwargs.get('classifier_list', []))
+            for classifier_id in classifier_ids:
+                classifier_list.append({"id": classifier_id})
+            request_json['entityDetection']["classifiers"] = classifier_list
+        request_json['contentIndexing']["searchType"] = kwargs.get(
+            'index_content', PlanConstants.RAPlanSearchType.SEARCH_TYPE_ONLY_METADATA).value
+        request_json['contentIndexing']["extractTextFromImage"] = kwargs.get('enable_ocr', False)
+        if 'enable_ocr' in kwargs:
+            request_json['contentIndexing']["contentLanguage"] = kwargs.get('ocr_language', 1)
+        request_json['contentIndexing']['fileFilters']['includeDocTypes'] = kwargs.get(
+            'include_docs', PlanConstants.DEFAULT_INCLUDE_DOC_TYPES)
+        request_json['contentIndexing']['fileFilters']['minDocSize'] = kwargs.get(
+            'min_doc_size', PlanConstants.DEFAULT_MIN_DOC_SIZE)
+        request_json['contentIndexing']['fileFilters']['maxDocSize'] = kwargs.get(
+            'max_doc_size', PlanConstants.DEFAULT_MAX_DOC_SIZE)
+        request_json['contentIndexing']['fileFilters']['excludePaths'] = kwargs.get('exclude_path', [])
+
+        headers = self._commcell_object._headers.copy()
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._V4_DC_PLANS, request_json, headers=headers
+        )
+
+        if flag:
+            if response.json():
+                response_value = response.json()
+                error_message = None
+                error_code = 0
+
+                if 'errors' in response_value:
+                    error_code = response_value.get('errors', [{}])[0].get('errorCode', 0)
+                    error_message = response_value.get('errors', [{}])[0].get('errorMessage')
+
+                if error_code > 1:
+                    o_str = 'Failed to create new Plan\nError: "{0}"'.format(
+                        error_message
+                    )
+                    raise SDKException('Plan', '102', o_str)
+
+                if 'plan' in response_value:
+                    plan_name = response_value['plan']['name']
                     # initialize the plans again
                     self.refresh()
 
@@ -1862,6 +2034,14 @@ class Plans(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    @property
+    def all_plans_prop(self)->list[dict]:
+        """
+        Returns complete GET API response
+        """
+        self._all_plans_props = self._get_plans(full_response=True).get("plans",[])
+        return self._all_plans_props
+
 
 class Plan(object):
     """Class for performing operations for a specific Plan."""
@@ -1897,6 +2077,7 @@ class Plan(object):
 
         self._PLAN = self._services['PLAN'] % (self.plan_id)
         self._V4_PLAN = self._services['V4_SERVER_PLAN'] % (self.plan_id)
+        self._V4_DC_PLAN = self._services['V4_DC_PLAN'] % (self.plan_id)
         self._PLAN_RPO = self._services['SERVER_PLAN_RPO'] % (self.plan_id)
         self._ADD_USERS_TO_PLAN = self._services['ADD_USERS_TO_PLAN'] % (self.plan_id)
         self._API_SECURITY = self._services['SECURITY_ASSOCIATION']
@@ -1919,6 +2100,7 @@ class Plan(object):
             'subclientPolicyIds': []
         }
         self._storage_copies = {}
+        self._all_copies = None
         self._user_group = None
         self._client_group = None
         self._override_entities = None
@@ -2010,6 +2192,7 @@ class Plan(object):
 
                 if 'storage' in self._plan_properties:
                     if 'copy' in self._plan_properties['storage']:
+                        self._all_copies = self._plan_properties.get('storage',{}).get('copy',[])
                         for copy in self._plan_properties['storage']['copy']:
                             if 'useGlobalPolicy' in copy:
                                 storage_pool_name = copy['useGlobalPolicy']['storagePolicyName'].lower()
@@ -3285,6 +3468,16 @@ class Plan(object):
         return self._child_policies.get('storagePolicy')
 
     @property
+    def all_copies(self) -> list:
+        """
+        Treats the plan's all storage copies as a read-only attribute
+
+        Returns:
+            list -- list of all the copies
+        """
+        return self._all_copies
+
+    @property
     def storage_copies(self):
         """Treats the plan storage policy as a read-only attribute"""
         return self._storage_copies
@@ -3835,11 +4028,90 @@ class Plan(object):
                         'excludePaths'] = kwargs.get('exclude_path', PlanConstants.DEFAULT_EXCLUDE_LIST)
                 if 'index_content' in kwargs:
                     request_json['ciPolicyInfo']['ciPolicy']['detail']['ciPolicy']['opType'] = kwargs.get(
-                        'index_content', PlanConstants.INDEXING_METADATA_AND_CONTENT)
+                        'index_content', PlanConstants.INDEXING_ONLY_METADATA)
             elif TargetApps.FSO.value in self.content_indexing_props['targetApps']:
                 # currently we dont have any thing to update in DC plan for FSO app so throw exception
                 raise SDKException('Plan', '102', 'No attributes to Edit for DC Plan with TargetApps as : FSO')
         self._update_plan_props(request_json)
+
+    def edit_risk_analysis_dc_plan(self, **kwargs):
+        """
+        Edit Risk Analysis Data Classification Plan options
+            Args:
+            **kwargs for risk analysis Data Classification Plan
+            index_content       (bool)      --  Specifies whether to index content or not to index server
+            content_analyzer    (list)      --  list of Content analyzer client name
+            entity_list         (list)      --  list of entities which needs to be extracted
+            classifier_list     (list)      --  list of classifier which needs to be classified
+            enable_ocr          (bool)      --  specifies whether OCR is enabled or not
+            ocr_language        (int)       --  Language to be used when doing OCR
+                                                Default : English (Value-1)
+                Supported Languages:
+                            ENGLISH = 1,
+                            HEBREW = 2,
+                            SPANISH = 3,
+                            FRENCH = 4,
+                            ITALIAN = 5,
+                            DANISH = 6
+            include_docs        (str)       --  Include documents type separated by comma
+            exclude_path        (list)      --  List of paths which needs to be excluded
+            min_doc_size        (int)       --  Minimum document size in MB
+            max_doc_size        (int)       --  Maximum document size in MB
+        """
+        if self.plan_type != PlanTypes.DC.value:
+            raise SDKException('Plan', '102', "Function Not supported for this plan type")
+        request_json = {}
+        if self.plan_type == PlanTypes.DC.value:
+            if 'content_analyzer' in kwargs:
+                # change to support SaaS and unification project
+                ca_list = []
+                for ca in kwargs.get('content_analyzer', []):
+                    ca_client_id = self._commcell_object.content_analyzers.get(ca).client_id
+                    ca_list.append({
+                        'id': ca_client_id
+                    })
+                request_json['contentAnalyzer'] = ca_list
+
+            request_json['entityDetection'] = {}
+            activate_obj = self._commcell_object.activate
+            entity_mgr_obj = activate_obj.entity_manager()
+            if 'entity_list' in kwargs:
+                entity_list = []
+                entity_ids = entity_mgr_obj.get_entity_ids(kwargs.get('entity_list', []))
+                for entity_id in entity_ids:
+                    entity_list.append({"id": entity_id})
+                request_json['entityDetection']["entities"] = entity_list
+            if 'classifier_list' in kwargs:
+                classifier_list = []
+                classifier_ids = entity_mgr_obj.get_entity_ids(kwargs.get('classifier_list', []))
+                for classifier_id in classifier_ids:
+                    classifier_list.append({"id": classifier_id})
+                request_json['entityDetection']["classifiers"] = classifier_list
+
+            request_json['contentIndexing'] = {}
+            if 'index_content' in kwargs:
+                request_json['contentIndexing']["searchType"] = kwargs.get(
+                    'index_content', PlanConstants.RAPlanSearchType.SEARCH_TYPE_ONLY_METADATA).value
+            if 'enable_ocr' in kwargs:
+                request_json['contentIndexing']["extractTextFromImage"] = kwargs.get('enable_ocr', False)
+                request_json['contentIndexing']["contentLanguage"] = kwargs.get('ocr_language', 1)
+
+            request_json['contentIndexing']['fileFilters'] = {}
+            if 'include_docs' in kwargs:
+                request_json['contentIndexing']['fileFilters']['includeDocTypes'] = kwargs.get(
+                    'include_docs', PlanConstants.DEFAULT_INCLUDE_DOC_TYPES)
+            if 'min_doc_size' in kwargs:
+                request_json['contentIndexing']['fileFilters']['minDocSize'] = kwargs.get(
+                    'min_doc_size', PlanConstants.DEFAULT_MIN_DOC_SIZE)
+            if 'max_doc_size' in kwargs:
+                request_json['contentIndexing']['fileFilters']['maxDocSize'] = kwargs.get(
+                    'max_doc_size', PlanConstants.DEFAULT_MAX_DOC_SIZE)
+            if 'exclude_path' in kwargs:
+                request_json['contentIndexing']['fileFilters']['excludePaths'] = kwargs.get('exclude_path', [])
+
+        flag, response = self._cvpysdk_object.make_request('PUT', self._V4_DC_PLAN, request_json)
+        self.__handle_response(flag, response, custom_error_message='Failed to edit risk analysis DC plan : '
+                                                                    f'[{self.plan_name}]')
 
     def _enable_content_indexing_o365_plan(self, value):
         """Enable CI for O365 plan

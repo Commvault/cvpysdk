@@ -56,6 +56,7 @@ class DRJobPhases(Enum):
     POST_VM_FAILOVER_SNAP = 41
     CLONE_VM = 42
     REFRESH_VM = 43
+    CHECK_VM_BOOT_STATUS = 44
     LIVE_MOUNT = 48
     INIT_UNDO_FAILOVER = 49
     POST_UNDO_FAILOVER = 50
@@ -110,6 +111,7 @@ class DRJobPhaseToText(Enum):
     POST_VM_FAILOVER_SNAP = "Post VM Failover"
     CLONE_VM = "Clone VM"
     REFRESH_VM = "Refresh VM"
+    CHECK_VM_BOOT_STATUS = "Check VM Boot Status"
     LIVE_MOUNT = "Live Mount"
     INIT_UNDO_FAILOVER = "Initialize Undo Failover"
     POST_UNDO_FAILOVER = "Post Undo Failover"

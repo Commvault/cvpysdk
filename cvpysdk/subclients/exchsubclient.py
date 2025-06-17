@@ -27,14 +27,34 @@ ExchangeSubclient:
 
     __new__()   --  Method to create object based on the backupset name
 
+    _prepare_attachment_json() -- Method to prepare the requestJSON for attachment restore
+
+    _get_attachment() -- Method to get the content of the attachment
+
+    _get_attachment_preview() -- Method to get the preview content of all the attachments in the attachment list
+
+    preview_backedup_file -- Method to get the preview content of the mail
+
+    _get_ad_group_backup_task_json -- Get AD Group back task json
+
+    ad_group_backup -- Run AD Group backup
+
+    _get_ad_group_backup_subtask_json -- Gets the subtask json for ad group backup
+
+    _get_ad_group_backup_options_json -- Gets the option json for ad group backup
+
+    _get_ad_group_backup_backupoptions_json -- Gets the backup option json for ad group backup
+
 
 """
 
 from __future__ import unicode_literals
-
+import re
 from ..client import Client
 from ..subclient import Subclient
 from ..exception import SDKException
+from .exchange.constants import JobOptionKeys, JobOptionValues, JobOptionIntegers, ExchangeConstants
+
 
 
 class ExchangeSubclient(Subclient):
@@ -246,6 +266,152 @@ class ExchangeSubclient(Subclient):
                 "clientName": self._client_object.client_name
             },
         }
+
+    def _json_job_option_items(self, value):
+        """
+        Generates JSON for job options.
+        Args:
+            value (dict): Dictionary containing job options.
+        Returns:
+            dict: JSON representation of job options.
+        """
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        additional_options = []
+        message_exist = value.get("if_message_exists", JobOptionValues.SKIP.value)
+        stub_rehydration = value.get('stub_rehydration', JobOptionValues.DISABLED.value)
+        include_deleted_items = value.get('include_deleted_items', JobOptionValues.DISABLED.value)
+        match_destination_user = value.get('match_destination_user', JobOptionValues.DISABLED.value)
+        stub_rehydration_option = value.get('stub_rehydration_option',
+                                            JobOptionValues.RECOVER_STUBS.value)
+        email_level_reporting = value.get('email_level_reporting', JobOptionValues.DISABLED.value)
+        old_link = value.get('old_recall_link', None)
+        new_link = value.get('new_recall_link', None)
+
+        self._job_option_items_json = [
+            {"option": JobOptionKeys.RESTORE_DESTINATION.value, "value": JobOptionValues.EXCHANGE.value},
+            {"option": JobOptionKeys.DESTINATION.value, "value": JobOptionValues.ORIGINAL_LOCATION.value},
+            {"option": JobOptionKeys.IF_MESSAGE_EXISTS.value, "value": message_exist},
+            {"option": JobOptionKeys.INCLUDE_DELETED_ITEMS.value, "value": include_deleted_items},
+            {"option": JobOptionKeys.MATCH_DESTINATION_USER.value, "value": match_destination_user},
+            {"option": JobOptionKeys.STUB_REHYDRATION.value, "value": stub_rehydration},
+        ]
+
+        if stub_rehydration != JobOptionValues.DISABLED.value:
+            if stub_rehydration_option == JobOptionValues.RECOVER_STUBS.value:
+                additional_options = []
+            elif stub_rehydration_option == JobOptionValues.STUB_REPORTING.value:
+                additional_options = [
+                    {"option": JobOptionKeys.MAILBOX_LEVEL_REPORTING.value, "value": JobOptionValues.ENABLED.value},
+                    {"option": JobOptionKeys.EMAIL_LEVEL_REPORTING.value, "value": email_level_reporting},
+                ]
+            elif stub_rehydration_option == JobOptionValues.UPDATE_RECALL_LINK.value:
+                additional_options = [
+                    {"option": JobOptionKeys.OLD_RECALL_LINK.value, "value": old_link},
+                    {"option": JobOptionKeys.NEW_RECALL_LINK.value, "value": new_link},
+                ]
+
+        if additional_options:
+            self._job_option_items_json.extend(additional_options)
+
+        self._job_option_items_json.append({
+            "option": JobOptionKeys.STUB_REHYDRATION_OPTION.value,
+            "value": stub_rehydration_option
+        })
+
+        return self._job_option_items_json
+
+    def _exchange_option_restore_json_rehydration(self, value):
+        """
+        Generates JSON for Exchange restore rehydration options.
+        Args:
+            value (dict): Dictionary containing rehydration options.
+        Returns:
+            dict: JSON representation of rehydration options.
+        """
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        mapping = {
+            JobOptionValues.RECOVER_STUBS.value: JobOptionIntegers.RECOVER_STUBS.value,
+            JobOptionValues.STUB_REPORTING.value: JobOptionIntegers.STUB_REPORTING.value,
+            JobOptionValues.UPDATE_RECALL_LINK.value: JobOptionIntegers.UPDATE_RECALL_LINK.value
+        }
+
+        stub_rehydration_option = mapping.get(
+            value.get('stub_rehydration_option', JobOptionValues.RECOVER_STUBS.value)
+        )
+
+        email_level_reporting = value.get('email_level_reporting', JobOptionValues.DISABLED.value)
+        old_link = value.get('old_recall_link', None)
+        new_link = value.get('new_recall_link', None)
+
+        base = {
+            JobOptionKeys.STUB_REHYDRATION.value: True,
+            JobOptionKeys.STUB_REHYDRATION_OPTION.value: stub_rehydration_option
+        }
+
+        additional_options = {}
+        if stub_rehydration_option == JobOptionIntegers.RECOVER_STUBS.value:
+            additional_options = {}
+        elif stub_rehydration_option == JobOptionIntegers.STUB_REPORTING.value:
+            additional_options = {
+                "stubReportOption": {
+                    "messageLevelReport": email_level_reporting == JobOptionValues.ENABLED.value,
+                    "mailboxLevelReport": True
+                }
+            }
+        elif stub_rehydration_option == JobOptionIntegers.UPDATE_RECALL_LINK.value:
+            additional_options = {
+                "stubOldRecallLink": old_link,
+                "stubRecallLink": new_link
+            }
+
+        base.update(additional_options)
+
+        self._json_exchange_options = {
+            JobOptionKeys.EXCHANGE_RESTORE_CHOICE.value: JobOptionIntegers.EXCHANGE_RESTORE_CHOICE.value,
+            JobOptionKeys.EXCHANGE_RESTORE_DRIVE.value: JobOptionIntegers.EXCHANGE_RESTORE_DRIVE.value,
+            JobOptionKeys.IS_JOURNAL_REPORT.value: value.get("journal_report", False),
+            JobOptionKeys.PST_FILE_PATH.value: "",
+            JobOptionKeys.TARGET_MAILBOX.value: value.get("target_mailbox", None),
+            JobOptionKeys.STUB_REHYDRATION.value: base
+        }
+
+        return self._json_exchange_options
+
+    def _browse_filter_xml(self, value):
+        """
+        Generates an XML query for browsing with a filter.
+        Args:
+            value (dict): Dictionary containing the filter value with the key 'keyword'.
+        Returns:
+            str: XML query string for the filter.
+        """
+        xml_query = f"""<?xml version='1.0' encoding='UTF-8'?>
+        <databrowse_Query type="0" queryId="0" isFacet="1">
+            <whereClause connector="0">
+                <criteria field="29">
+                    <values val="{value["keyword"]}"/>
+                </criteria>
+            </whereClause>
+        </databrowse_Query>"""
+        return xml_query
+
+    def _request_json_search_in_restore(self, filters):
+        """
+        Generates a JSON request for searching within a restore operation.
+        Args:
+            filters (dict): Dictionary containing the search filter parameters.
+                               Expected keys are 'keyword' and 'appID'.
+        Returns:
+            dict: JSON request for the search operation.
+        """
+        req_json = ExchangeConstants.SEARCH_IN_RESTORE_PAYLOAD
+        req_json["advSearchGrp"]["cvSearchKeyword"]["keyword"] = filters.get("keyword", "")
+        req_json["advSearchGrp"]["galaxyFilter"][0]["appIdList"] = filters.get("appID", [])
+        return req_json
 
     def _json_disk_restore_exchange_restore_option(self, value):
         """Setter for  the Exchange Mailbox Disk restore option
@@ -486,7 +652,8 @@ class ExchangeSubclient(Subclient):
             overwrite=True,
             journal_report=False,
             restore_as_stub=None,
-            recovery_point_id=None):
+            recovery_point_id=None,
+            **kwargs):
         """Restores the mailboxes/folders specified in the input paths list to the same location.
 
             Args:
@@ -501,6 +668,14 @@ class ExchangeSubclient(Subclient):
                 restore_as_stub         (dict)  --  setters for common options
 
                 recovery_point_id       (int)   --  ID of the recovery point to which the mailbox is to be restored to
+                    Default: None
+
+                **kwargs:
+                Expected:
+                stub_rehydration        (dict)  --  stub rules to rehydrate items during restore
+                    Default: None
+
+                filters                  (dict)  --  filter values for find and restore
                     Default: None
 
             Returns:
@@ -537,12 +712,33 @@ class ExchangeSubclient(Subclient):
             request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
                 'commonOptions'] = self._json_restore_exchange_common_option(restore_as_stub)
 
+        stub_rehydration = kwargs.get("stub_rehydration")
+        if stub_rehydration:
+            request_json['taskInfo']['subTasks'][0]['options']['commonOpts'][
+                'jobOptionItems'] = self._json_job_option_items(stub_rehydration)
+            request_json['taskInfo']['subTasks'][0][
+                'options']['restoreOptions']['exchangeOption'] = self._exchange_option_restore_json_rehydration(stub_rehydration)
+
         request_json["taskInfo"]["subTasks"][0]["options"][
             "restoreOptions"]["browseOption"]['backupset'] = self._exchange_backupset_json
 
         if recovery_point_id is not None:
             request_json["taskInfo"]["subTasks"][0]["options"][
                 "restoreOptions"]['exchangeOption']["recoveryPointId"] = recovery_point_id
+
+        filters = kwargs.get("filters")
+        if filters:
+            if (filters.get("restore_all_matching")):
+                request_json["taskInfo"]["subTasks"][0]["options"][
+                    "restoreOptions"]["exchangeOption"]["restoreAllMatching"] = filters.get("restore_all_matching",
+                                                                                           False)
+                request_json["taskInfo"]["subTasks"][0]["options"][
+                    "restoreOptions"]["fileOption"]["browseFilters"] = [self._browse_filter_xml(filters)]
+            if (filters.get("restore_selected_items")):
+                req = self._request_json_search_in_restore(filters)
+                result = self._process_search_response(req)
+                request_json["taskInfo"]["subTasks"][0]["options"][
+                    "restoreOptions"]["fileOption"]["sourceItem"] = result
 
         return self._process_restore_response(request_json)
 
@@ -861,3 +1057,380 @@ class ExchangeSubclient(Subclient):
             "createNewIndex": False
         }
         return data_json
+
+    def _prepare_attachment_json(self, metadata, attachment_id):
+        """Prepare the JSON for the attachment files with the options provided.
+            Args:
+                metadata    (dict)  --  metadata of the mail
+                attachment_id(str)  --  attachment id of the file
+            Returns:
+                dict - JSON request to pass to the API
+
+        """
+
+        request_json = {
+            "filters": [
+                {
+                    "field": "CLIENT_ID",
+                    "fieldValues": {
+                        "values": [
+                            str(self._get_client_dict(self._client_object)["client"]["clientId"])
+                        ]
+                    }
+                },
+                {
+                    "field": "SUBCLIENT_ID",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["subclient"]["applicationId"])
+                        ]
+                    }
+                },
+                {
+                    "field": "APP_TYPE",
+                    "fieldValues": {
+                        "values": [
+                            "137"
+                        ]
+                    }
+                },
+                {
+                    "field": "CONTENTID",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["browseMetaData"]["indexing"]["objectGUID"])
+                        ]
+                    }
+                },
+                {
+                    "field": "ATTACHMENTID",
+                    "fieldValues": {
+                        "values": [
+                            attachment_id
+                        ]
+                    }
+                },
+                {
+                    "field": "CV_TURBO_GUID",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["browseMetaData"]["indexing"]["objectGUID"])
+                        ]
+                    }
+                },
+                {
+                    "field": "ARCHIVE_FILE_ID",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["archiveFileId"])
+                        ]
+                    }
+                },
+                {
+                    "field": "ARCHIVE_FILE_OFFSET",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["offset"])
+                        ]
+                    }
+                },
+                {
+                    "field": "COMMCELL_ID",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["advConfig"]["browseAdvancedConfigResp"][
+                                    "commcellNumber"])
+                        ]
+                    }
+                },
+                {
+                    "field": "ITEM_SIZE",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["size"])
+                        ]
+                    }
+                }
+            ]
+        }
+        return request_json
+
+    def _get_attachment(self,metadata,attachmentId):
+        """Get the content of the attachment file with the options provided.
+            Args:
+                metadata    (dict)  --  metadata of the mail
+                attachmentId(str)  --  attachment id of the file
+            Returns:
+                str - content of the attachment file (html content)
+        """
+
+        request_json = self._prepare_attachment_json(metadata,attachmentId)
+        self._GET_VARIOUS_PREVIEW = self._services['GET_VARIOUS_PREVIEW']
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._GET_VARIOUS_PREVIEW, request_json)
+
+        if flag:
+            return response.text
+        else:
+            raise SDKException('Subclient', '102', self._update_response_(response.text))
+
+
+    def _get_attachment_preview(self, attachments, metadata):
+        """
+        Get the preview content of all the attachments in the attachment list
+        Args:
+            attachments (list)  --  list of attachments
+            metadata    (dict)  --  metadata of the mail
+
+        Returns:
+            dict - dictionary with attachment name as key and content as value
+
+        """
+        attachments_preview = {}
+        pattern = re.compile(r'attId=([^&]+)')
+        for attachment in attachments:
+            match = pattern.search(attachment['ciPreviewLink']).group(1)
+            attachments_preview[attachment['name']] = self._get_attachment(metadata, match)
+        return attachments_preview
+
+    def preview_backedup_file(self, file_path):
+        """Gets the preview content for the subclient.
+
+            Params:
+                file_path (str)  --  path of the file for which preview is needed
+
+            Returns:
+                html   (str)   --  html content of the preview
+
+            Raises:
+                SDKException:
+                    if file is not found
+
+                    if response is empty
+
+                    if response is not success
+        """
+        self._GET_PREVIEW_CONTENT = self._services['GET_PREVIEW']
+        metadata = self._get_preview_metadata(file_path)
+        if metadata is None:
+            raise SDKException('Subclient', '123')
+
+        if metadata["type"] != "File":
+            raise SDKException('Subclient', '124')
+
+        if metadata["size"] == 0:
+            raise SDKException('Subclient', '125')
+
+        if metadata["size"] > 20 * 1024 * 1024:
+            raise SDKException('Subclient', '126')
+        request_json = {
+            "filters": [
+                {
+                    "field": "CLIENT_ID",
+                    "fieldValues": {
+                        "values": [
+                            str(self._get_client_dict(self._client_object)["client"]["clientId"])
+                        ]
+                    }
+                },
+                {
+                    "field": "SUBCLIENT_ID",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["subclient"]["applicationId"])
+                        ]
+                    }
+                },
+                {
+                    "field": "CONTENTID",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["browseMetaData"]["indexing"]["objectGUID"])
+                        ]
+                    }
+                },
+                {
+                    "field": "ARCHIVE_FILE_ID",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["archiveFileId"])
+                        ]
+                    }
+                },
+                {
+                    "field": "ARCHIVE_FILE_OFFSET",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["offset"])
+                        ]
+                    }
+                },
+                {
+                    "field": "COMMCELL_NUMBER",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["advConfig"]["browseAdvancedConfigResp"][
+                                            "commcellNumber"])
+                        ]
+                    }
+                },
+                {
+                    "field": "ITEM_SIZE",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["size"])
+                        ]
+                    }
+                },
+                {
+                    "field": "ITEM_PATH",
+                    "fieldValues": {
+                        "values": [
+                            file_path
+                        ]
+                    }
+                }
+            ]
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._GET_PREVIEW_CONTENT, request_json)
+
+        if flag:
+            if "Preview not available" not in response.text:
+                response =  response.json()
+            else:
+                raise SDKException('Subclient', '127')
+        else:
+            raise SDKException('Subclient', '102', self._update_response_(response.text))
+
+        result = ""
+        attachments = response["attachments"]
+        del response["attachments"]
+        for key in response:
+            result += key + " : " + str(response[key]) + "\n"
+        # If mail has attachments we add the content of the attachments
+        if len (attachments) != 0:
+            attachments_preview = self._get_attachment_preview(attachments, metadata)
+            result += "Attachments:\n"
+            for file in attachments_preview:
+                result += file + " : " + attachments_preview[file] + "\n"
+        return result
+
+    @staticmethod
+    def _get_ad_group_backup_common_opt_json(ad_group_name):
+        """
+            Gets the common options json for ad group backup
+            Args:
+                ad_group_name(str):     Name of ad group
+            Return:
+                Common options for da group backup
+        """
+        return {
+            "notifyUserOnJobCompletion": False,
+            "jobMetadata": [
+                {
+                    "selectedItems": [
+                        {
+                            "itemName": ad_group_name,
+                            "itemType": "AD group"
+                        }
+                    ],
+                    "jobOptionItems": [
+                        {
+                            "option": "Total running time",
+                            "value": "Disabled"
+                        }
+                    ]
+                }
+            ]
+        }
+
+    @staticmethod
+    def _get_ad_group_backup_backupoptions_json(ad_group_name):
+        """
+            Gets the backup options json for ad group backup
+            Args:
+                ad_group_name(str):     Name of ad group
+            Returns:
+                Backup options json for ad group backup
+        """
+        return {
+            "backupLevel": 2,
+            "incLevel": 1,
+            "exchOnePassOptions": {
+                "adGroups": [
+                    {
+                        "adGroupName": ad_group_name
+                    }
+                ]
+            },
+            "dataOpt": {
+                "useCatalogServer": False,
+                "followMountPoints": True,
+                "enforceTransactionLogUsage": False,
+                "skipConsistencyCheck": True,
+                "createNewIndex": False
+            }
+        }
+
+    @staticmethod
+    def _get_ad_group_backup_options_json(ad_group_name):
+        """
+            Get options json for ad group backup
+            Args:
+                ad_group_name(str):     Name of ad group
+            Returns:
+                options json for ad group backup
+        """
+        return {
+            "backupOpts": ExchangeSubclient._get_ad_group_backup_backupoptions_json(ad_group_name),
+            "commonOpts": ExchangeSubclient._get_ad_group_backup_common_opt_json(ad_group_name)
+        }
+
+    @staticmethod
+    def _get_ad_group_backup_subtask_json(ad_group_name):
+        """
+            Gets the subtask json for ad group backup
+            Args:
+                ad_group_name(str):     Name of ad group
+            Returns:
+                Sub task json for ad group backup
+        """
+        sub_task_json = [{
+            "subTask": {
+              "subTaskType": 2,
+              "operationType": 2
+            },
+            "options": ExchangeSubclient._get_ad_group_backup_options_json(ad_group_name)
+        }]
+        return sub_task_json
+
+    def _get_ad_group_backup_task_json(self, ad_group_name):
+        """
+            Gets the task json for ad group backup
+            Args:
+                ad_group_name(str):     Name of ad group
+            Returns:
+                Task json for ad group backup
+        """
+        task_json = {
+            "associations": [self._subClientEntity],
+            "task": {"taskType": 1},
+            "subTasks": ExchangeSubclient._get_ad_group_backup_subtask_json(ad_group_name)
+        }
+        return task_json
+    
+    def ad_group_backup(self, ad_group_name):
+        """
+            Run backup of AD Group
+            Args:
+                ad_group_name(str):     Name of ad group
+            Returns:
+                Processed job
+        """
+        task_json = self._get_ad_group_backup_task_json(ad_group_name)
+        create_task = self._services['CREATE_TASK']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', create_task, task_json
+        )
+        return self._process_backup_response(flag, response)

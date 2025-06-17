@@ -390,6 +390,11 @@ class SQLServerInstance(Instance):
                                 "destClient": {
                                     "clientId": destination_client_id
                                 }
+                            },
+                            "browseOption": {
+                                "timeZone": {
+                                    "TimeZoneName": self._agent_object._client_object.timezone
+                                }
                             }
                         }
                     }
@@ -442,13 +447,11 @@ class SQLServerInstance(Instance):
             if isinstance(to_time, int):
                 to_time_type = "toTime"
             to_time_dict = {
-                "browseOption": {
-                    "timeRange": {
-                        to_time_type: to_time
-                    }
+                "timeRange": {
+                    "toTimeValue": to_time
                 }
             }
-            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions'].update(to_time_dict)
+            request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['browseOption'].update(to_time_dict)
 
         if schedule_pattern is not None:
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)

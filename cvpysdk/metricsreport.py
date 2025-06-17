@@ -137,9 +137,8 @@ class _Metrics(object):
             metrics_type = 'Private'
         else:
             metrics_type = 'Public'
-        return "{0} Metrics class instance for Commcell: '{1}' with config '{2}'".format(
+        return "{0} Metrics class instance with config '{1}'".format(
             metrics_type,
-            self._commcell_object.commserv_name,
             self._metrics_config
         )
 

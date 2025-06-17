@@ -127,9 +127,7 @@ class IndexPools(object):
 
     def __repr__(self):
         """Representation string for the instance of the IndexPools class."""
-        return "IndexPools class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "IndexPools class instance for Commcell"
 
     def __getitem__(self, value):
         """Returns the details of index pool for given index pool name
@@ -399,9 +397,7 @@ class IndexPool(object):
 
     def __repr__(self):
         """Representation string for the instance of the IndexPool class."""
-        return "IndexPool class instance for Commcell: '{0}'".format(
-            self.commcell.commserv_name
-        )
+        return "IndexPool class instance for Commcell"
 
     def _response_not_success(self, response):
         """Helper method to raise exception when response is not 200 (ok)

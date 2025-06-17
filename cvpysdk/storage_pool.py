@@ -57,8 +57,6 @@ StoragePools
     add()                       --  Adds a storage pool, according to given input and returns
                                     StoragePool object
 
-    add_azure_storage_pool()    --  Adds new storage pool with provided name to the commcell
-
     delete()                    --  deletes the specified storage pool
 
     refresh()                   --  refresh the list of storage pools associated with the commcell
@@ -135,6 +133,12 @@ from .security.security_association import SecurityAssociation
 from .constants import StoragePoolConstants
 from .policies.storage_policies import StoragePolicyCopy
 
+class StorageType(IntEnum):
+    """Class IntEnum to represent different storage types"""
+    DISK = 1,
+    CLOUD = 2,
+    HYPERSCALE = 3,
+    TAPE = 4
 
 class StoragePools:
     """Class for doing operations on Storage Pools, like get storage poo ID."""
@@ -159,6 +163,7 @@ class StoragePools:
         self._storage_pools_api = self._services['STORAGE_POOL']
 
         self._metallic_storage_api = self._services['GET_METALLIC_STORAGE_DETAILS']
+        self.__get_agp_storage_api = self._services['GET_AGP_STORAGE']
         self._storage_pools = None
 
         self.refresh()
@@ -180,9 +185,7 @@ class StoragePools:
 
     def __repr__(self):
         """Returns the string representation of an instance of this class."""
-        return "StoragePools class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "StoragePools class instance for Commcell"
 
     def __len__(self):
         """Returns the number of the storage pools added to the Commcell."""
@@ -265,6 +268,63 @@ class StoragePools:
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+    
+    def get_storage_pools_for_a_company(self, company_id, storage_type: StorageType = None):
+        """Gets all the storage pools associated with the Commcell environment.
+
+            Args:
+                company_id - id of the company for which the associated storge pools are to be fetched
+
+            Returns:
+                dict    -   consists of all storage pools added to the commcell
+
+                    {
+                        "storage_pool1_name": storage_pool1_id,
+
+                        "storage_pool2_name": storage_pool2_id
+                    }
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        headers = self._commcell_object._headers.copy()
+        headers['Accept'] = 'application/json'
+        headers['onlygetcompanyownedentities'] = '1'
+        headers['operatorcompanyid'] = f'{company_id}'
+
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._storage_pools_api, headers=headers
+        )
+
+        if flag:
+            storage_pools = {}
+            response = response.json()
+            if response is None or response.get('storagePoolList') is None:
+                storage_pool_list = []
+            else:
+                storage_pool_list = response['storagePoolList']
+            if not isinstance(storage_pool_list, list):
+                storage_pool_list = [storage_pool_list]
+            if response:
+                for pool in storage_pool_list:
+                    if storage_type and pool['storageType'] != storage_type:
+                        continue
+                    # skip agp pools for cloud storage type
+                    if storage_type == StorageType.CLOUD and 401 <= pool['libraryVendorType'] <= 499:
+                        continue
+                    name = pool['storagePoolEntity']['storagePoolName']
+                    storage_pool_id = pool['storagePoolEntity']['storagePoolId']
+
+                    storage_pools[name] = storage_pool_id
+
+            return storage_pools
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     @property
     def all_storage_pools(self):
@@ -308,6 +368,7 @@ class StoragePools:
                     if no storage pool exists with the given name
 
         """
+        self.refresh()
         name = name.lower()
 
         if self.has_storage_pool(name):
@@ -471,6 +532,59 @@ class StoragePools:
         return self.add(storage_pool_name=storage_pool_name, mountpath=None, media_agent=media_agent, ddb_ma=ddb_ma,
                         dedup_path=dedup_path, cloud_server_type=cloud_server_type, region=region, vendor_id=vendor_id,
                         display_vendor_id=display_vendor_id)
+        
+    def get_air_gap_protect(self, company_id = None):
+        """
+        Returns the list of air gap protect storage pools in the commcell.
+        
+        Args:
+            company_id (int) -- id of the company to get the air gap protect storage pools for
+                                (optional, default is None which returns all air gap protect storage pools)
+        
+        Returns:
+            dict - dictionary of air gap protect storage pools with name as key and id as value
+                
+                    {
+                        "storage_pool1_name": storage_pool1_id,
+                        "storage_pool2_name": storage_pool2_id
+                    }  
+        
+        Raises:
+            SDKException:
+                if response is empty
+
+                if response is not success
+        """
+        headers = self._commcell_object._headers.copy()
+        headers['Accept'] = 'application/json'
+        if company_id:
+            headers['onlygetcompanyownedentities'] = '1'
+            headers['operatorcompanyid'] = f'{company_id}'
+
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self.__get_agp_storage_api, headers=headers
+        )
+
+        if flag:
+            storage_pools = {}
+            response = response.json()
+            if response is None or response.get('cloudStorage') is None:
+                storage_pool_list = []
+            else:
+                storage_pool_list = response['cloudStorage']
+            if not isinstance(storage_pool_list, list):
+                storage_pool_list = [storage_pool_list]
+            if response:
+                for pool in storage_pool_list:
+                    name = pool['name']
+                    storage_pool_id = pool['id']
+
+                    storage_pools[name] = storage_pool_id
+
+            return storage_pools
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def add(self, storage_pool_name, mountpath, media_agent, ddb_ma=None, dedup_path=None, **kwargs):
         """
@@ -505,6 +619,8 @@ class StoragePools:
 
                 region_id        (int)      --  Cloud Hypervisor specific region ID
 
+                tape_storage (boolean)      -- if library passed is tape library. 
+
         Returns:
             StoragePool object if creation is successful
 
@@ -516,11 +632,18 @@ class StoragePools:
         credential_name = kwargs.get('credential_name', None)
         cloud_server_type = kwargs.get('cloud_server_type', None)
         library_name = kwargs.get('library_name', None)
+        tape_storage = False
 
         region = kwargs.get('region', None)
         vendor_id = kwargs.get('vendor_id', None)
         display_vendor_id = kwargs.get('display_vendor_id', None)
         region_id = kwargs.get('region_id', None)
+
+        if library_name:
+            library_object = self._commcell_object.disk_libraries.get(library_name)
+            library_type = library_object.library_properties.get('libraryType', None)
+            tape_storage = True if library_type == 1 else tape_storage
+
 
         if ((ddb_ma is not None and not (isinstance(dedup_path, str) or isinstance(dedup_path, list))) or
                 not (isinstance(storage_pool_name, str) or not isinstance(mountpath, str))):
@@ -658,6 +781,18 @@ class StoragePools:
                     "maInfoList": maInfoList
                 }
             })
+        elif tape_storage:
+            request_json["storagePolicyCopyInfo"].update({
+                "storagePolicyFlags": {
+                    "globalAuxCopyPolicy": "SET_TRUE"
+                },
+                "copyFlags": {
+                    "preserveEncryptionModeAsInSource": "SET_TRUE"
+                },
+                "extendedFlags": {
+                    "globalAuxCopyPolicy": "SET_TRUE"
+                }
+            })
         else:
             request_json["storagePolicyCopyInfo"].update({
                 "storagePolicyFlags": {
@@ -709,91 +844,6 @@ class StoragePools:
         self.refresh()
         self._commcell_object.disk_libraries.refresh()
         return self.get(storage_pool_name)
-
-    def add_azure_storage_pool(self, storage_pool_name, container_name, media_agents, dedup_paths, **kwargs):
-        """ Adds new storage pool with provided name to the commcell
-                 Args:
-                     storage_pool_name (str)     --  name of the storage pool to be created
-
-                     container_name (str)        --  container name to be used with storage pool
-
-                     media_agents (list)         --  list of media agent names to be used for storage pool
-
-                     dedup_paths (list)          --  list of paths for storing deduplication data
-
-                     **kwargs (dict)             --  dict of keyword arguments as follows
-                         username        (str)   --  azure storage credential username
-                         password        (str)   --  azure storage credential password
-                         credential_name (str)   --  Credential name to be used
-
-                 Returns:
-                     Azure storage policy object
-
-                 Raises:
-                     SDKException:
-                         If invalid type arguments are passed
-                         If Storage Pool with given name already exist
-                         Response was not success.
-                         Response was empty.
-
-        """
-        username = kwargs.get("username", "")
-        password = kwargs.get("password", "")
-        credential_name = kwargs.get("credential_name", "")
-        if not (isinstance(storage_pool_name, str) and isinstance(container_name, str)
-                and isinstance(media_agents, list) and isinstance(dedup_paths, list)
-                and isinstance(username, str) and isinstance(password, str)
-                and isinstance(credential_name, str)):
-            raise SDKException('StoragePool', '101')
-        storage_pools = self._commcell_object.storage_pools
-        if storage_pools.has_storage_pool(storage_pool_name):
-            raise SDKException('StoragePool', '103')
-        request_json = copy.deepcopy(StoragePoolConstants.AZURE_STORAGE_REQ_JSON)
-        request_json["storagePolicyName"] = storage_pool_name
-        storage_policy_info = request_json["storagePolicyCopyInfo"]
-        storage_ma = self._commcell_object.media_agents.get(media_agents[0])
-        storage_policy_info["library"]["libraryName"] = container_name
-        storage_policy_info["mediaAgent"]["mediaAgentId"] = int(storage_ma.media_agent_id)
-        storage_policy_info["mediaAgent"]["mediaAgentName"] = storage_ma.media_agent_name
-        ddb_info = []
-        for (ma, ddb_path) in zip(media_agents, dedup_paths):
-            ma_ddb = copy.deepcopy(StoragePoolConstants.MA_INFO_LIST)
-            ma_info = self._commcell_object.media_agents.get(ma)
-            ma_ddb["mediaAgent"]["mediaAgentId"] = int(ma_info.media_agent_id)
-            ma_ddb["mediaAgent"]["mediaAgentName"] = ma_info.media_agent_name
-            ma_ddb["subStoreList"][0]["accessPath"]["path"] = ddb_path
-            ddb_info.append(ma_ddb)
-        storage_policy_info["DDBPartitionInfo"]["maInfoList"] = ddb_info
-        storage_info = request_json["storage"][0]
-        storage_info["path"] = container_name
-        storage_info["mediaAgent"]["mediaAgentId"] = int(storage_ma.media_agent_id)
-        storage_info["mediaAgent"]["mediaAgentName"] = storage_ma.media_agent_name
-        storage_info["credentials"]["userName"] = username
-        storage_info["credentials"]["password"] = password
-        credential = self._commcell_object.credentials.get(credential_name)
-        storage_info["savedCredential"]["credentialId"] = credential.credential_id
-        storage_info["savedCredential"]["credentialName"] = credential.credential_name
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', self._add_storage_pool_api, request_json
-        )
-
-        if flag:
-            if response.json():
-                error_code = response.json().get('error', {}).get('errorCode', 0)
-                if int(error_code) != 0:
-                    error_message = response.json()['error']['errorMessage']
-                    o_str = 'Failed to create storage policy\nError: "{0}"'
-
-                    raise SDKException('StoragePool', '102', o_str.format(error_message))
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-
-        self.refresh()
-        return self.get(request_json["storagePolicyName"])
-
 
     def delete(self, storage_pool_name):
         """deletes the specified storage pool.
@@ -859,14 +909,6 @@ class StoragePoolType(IntEnum):
     SECONDARY_COPY = 2,
     NON_DEDUPLICATION = 3,
     SCALE_OUT = 4
-
-
-class StorageType(IntEnum):
-    """Class IntEnum to represent different storage types"""
-    DISK = 1,
-    CLOUD = 2,
-    HYPERSCALE = 3,
-    TAPE = 4
 
 
 class WORMLockType(IntFlag):

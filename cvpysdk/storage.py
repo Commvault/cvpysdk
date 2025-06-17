@@ -259,9 +259,7 @@ class MediaAgents(object):
 
     def __repr__(self):
         """Representation string for the instance of the MediaAgents class."""
-        return "MediaAgents class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "MediaAgents class instance for Commcell"
 
     def _get_media_agents(self):
         """Gets all the media agents associated to the commcell specified by commcell object.
@@ -298,8 +296,8 @@ class MediaAgents(object):
         )
 
         if flag:
-            if response.json() and 'mediaAgentList' in response.json():
-                media_agents = response.json()['mediaAgentList']
+            if isinstance(response.json(), dict):
+                media_agents = response.json().get('mediaAgentList', [])
                 media_agents_dict = {}
 
                 for media_agent in media_agents:
@@ -1180,9 +1178,7 @@ class DiskLibraries(Libraries):
 
     def __repr__(self):
         """Representation string for the instance of the DiskLibraries class."""
-        return "DiskLibraries class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "DiskLibraries class instance for Commcell"
 
     @property
     def all_disk_libraries(self):
@@ -1623,7 +1619,7 @@ class DiskLibrary(object):
         else:
             raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
 
-    def add_cloud_mount_path(self, mount_path, media_agent, username, password, server_type):
+    def add_cloud_mount_path(self, mount_path, media_agent, username, password, server_type, saved_credential_name=""):
         """ Adds a mount path to the cloud library
 
         Args:
@@ -1638,6 +1634,10 @@ class DiskLibrary(object):
 
             server_type  (int)   -- provide cloud library server type
                                     Eg: 3-Microsoft Azure Storage . For more information refer http://documentation.commvault.com/commvault/v11/article?p=97863.htm.
+
+            saved_credential_name   (str)   --  name of the saved credential
+                default: ""
+
         Returns:
             None
 
@@ -1669,7 +1669,10 @@ class DiskLibrary(object):
                 "mountPath": mount_path,
                 "loginName": username,
                 "password": b64encode(password.encode()).decode(),
-                "serverType": server_type
+                "serverType": server_type,
+                "savedCredential": {
+                    "credentialName": saved_credential_name
+                }
             }
         }
 
@@ -2622,9 +2625,7 @@ class TapeLibraries(Libraries):
 
     def __repr__(self):
         """Representation string for the instance of the TapeLibraries class."""
-        return "TapeLibraries class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "TapeLibraries class instance for Commcell"
 
 
 

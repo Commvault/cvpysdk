@@ -145,9 +145,7 @@ class DownloadCenter(object):
 
     def __repr__(self):
         """Returns the string representation of an instance of this class."""
-        return "DownloadCenter class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "DownloadCenter class instance for Commcell"
 
     def _get_properties(self):
         """Get the properties of the download center."""

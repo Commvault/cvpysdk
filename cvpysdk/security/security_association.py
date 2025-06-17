@@ -126,9 +126,7 @@ class SecurityAssociation(object):
 
     def __repr__(self):
         """Representation string for the instance of the Security class."""
-        return "Security class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "Security class instance for Commcell"
 
     @staticmethod
     def _security_association_json(entity_dictionary):

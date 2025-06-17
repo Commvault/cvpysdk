@@ -16,12 +16,13 @@
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-"""Helper file to maintain all the constants for OneDrive subclient.
-
-OneDriveConstants  -   Maintains constants for OneDrive subclient.
-
+"""Helper file to maintain all the constants for Google subclient.
 """
-class OneDriveConstants:
-    """Class to maintain all the OneDrive subclient related constants."""
-    INDEX_APP_TYPE = 200118
-    INSTANCE = 'OneDrive'
+
+GMAIL_INDEX_APP_TYPE=200136
+
+GDRIVE_INDEX_APP_TYPE=200137
+
+GMAIL_DISCOVERY_TYPE=22
+
+GDRIVE_DISCOVERY_TYPE=24

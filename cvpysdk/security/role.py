@@ -43,7 +43,7 @@ Roles
     has_role()              --  checks if role with specified role exists
                                 on this commcell
 
-    add()                   --  craetes the role on this commcell
+    add()                   --  creates the role on this commcell
 
     get()                   --  returns the role class object for the
                                 specified role name
@@ -51,6 +51,10 @@ Roles
     delete()                --  deletes the role on this commcell
 
     refresh()               --  refreshes the list of roles on this commcell
+
+    all_roles()             --  Returns all the roles present in the commcell
+
+    all_roles_prop()        --  Returns complete GET API response
 
 Role
     __init__()              --  initiaizes the role class object
@@ -103,6 +107,8 @@ class Roles(object):
         self._commcell_object = commcell_object
         self._roles = None
         self._roles_cache = None
+        self._all_roles_prop = None
+        self.filter_query_count = 0
         self.refresh()
 
     def __str__(self):
@@ -121,15 +127,16 @@ class Roles(object):
 
     def __repr__(self):
         """Representation string for the instance of the Roles class."""
-        return "Roles class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "Roles class instance for Commcell"
 
-    def _get_roles(self):
+    def _get_roles(self, full_response: bool = False):
         """
         Returns the list of roles configured on this commcell
+
+            Args:
+                full_response(bool) --  flag to return complete response
         """
-        get_all_roles_service = self._commcell_object._services['ROLES']
+        get_all_roles_service = self._commcell_object._services['GET_SECURITY_ROLES']
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', get_all_roles_service
@@ -137,10 +144,13 @@ class Roles(object):
 
         if flag:
             if response.json() and 'roleProperties' in response.json():
+                if full_response:
+                    return response.json()
                 roles_dict = {}
                 name_count = {}
+                self._all_roles_prop = response.json()['roleProperties']
 
-                for role in response.json()['roleProperties']:
+                for role in self._all_roles_prop:
                     temp_name = role.get('role', {}).get('roleName', '').lower()
                     temp_company = role.get('role', {}).get('entityInfo', {}).get('companyName', '').lower()
 
@@ -149,7 +159,7 @@ class Roles(object):
                     else:
                         name_count[temp_name] = {temp_company}
 
-                for role in response.json()['roleProperties']:
+                for role in self._all_roles_prop:
                     temp_id = role['role']['roleId']
                     temp_name = role['role']['roleName'].lower()
                     temp_company = role.get('role', {}).get('entityInfo', {}).get('companyName', '').lower()
@@ -181,6 +191,7 @@ class Roles(object):
         self.valid_columns = {
             'roleName': 'roleProperties.role.roleName',
             'roleId': 'roleProperties.role.roleId',
+            'description': 'roleProperties.description',
             'status': 'roleProperties.role.flags.disabled',
             'company': 'companyName'
         }
@@ -192,7 +203,7 @@ class Roles(object):
             else:
                 raise SDKException('Role', '102', 'Invalid column name passed')
         else:
-            fl_parameters = "&fl=roleProperties.role"
+            fl_parameters = "&fl=roleProperties.role%2CroleProperties.description"
 
         return fl_parameters
 
@@ -226,21 +237,21 @@ class Roles(object):
         Returns:
             fq_parameters(str) -- fq parameter string
         """
-        conditions = ['contains', 'notContain', 'eq', 'neq']
-        params = [""]
-        if fq:
-            for param in fq:
-                if param[0] in self.valid_columns.keys():
-                    if param[1] in conditions:
-                        params.append(f"&fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}")
-                    elif param[1] == 'isEmpty' and len(param) == 2:
-                        params.append(f"&fq={self.valid_columns[param[0]]}:in:null,")
-                    else:
-                        raise SDKException('Role', '102', 'Invalid condition passed')
-                else:
-                    raise SDKException('Role', '102', 'Invalid column Name passed')
-        if params:
-            return "".join(params)
+        conditions = {"contains", "notContain", "eq", "neq"}
+        params = []
+
+        for column, condition, *value in fq or []:
+            if column not in self.valid_columns:
+                raise SDKException('Role', '102', 'Invalid column name passed')
+
+            if condition in conditions:
+                params.append(f"&fq={self.valid_columns[column]}:{condition.lower()}:{value[0]}")
+            elif condition == "isEmpty" and not value:
+                params.append(f"&fq={self.valid_columns[column]}:in:null,")
+            else:
+                raise SDKException('Role', '102', 'Invalid condition passed')
+
+        return "".join(params)
 
     def get_roles_cache(self, hard: bool = False, **kwargs) -> dict:
         """
@@ -258,30 +269,33 @@ class Roles(object):
                 search (str)-- Contains the string to search in the commcell entity cache.
                 fq (list)   -- Contains the columnName, condition and value.
                                 e.g. fq = [['roleName', 'contains', 'test'], ['status', 'eq', 'Enabled']]
-                enum (bool) -- Flag to return enums in the response.
 
         Returns:
             dict: Dictionary of all the properties present in response.
         """
-        headers = self._commcell_object._headers.copy()
-        if kwargs.get('enum', True):
-            headers['EnumNames'] = 'True'
-
+        # computing params
         fl_parameters = self._get_fl_parameters(kwargs.get('fl'))
         fq_parameters = self._get_fq_parameters(kwargs.get('fq'))
-        limit = kwargs.get('limit', ['0', '100'])
-        limit_parameters = f'start={limit[0]}&limit={limit[1]}'
+        limit = kwargs.get('limit', None)
+        limit_parameters = f'start={limit[0]}&limit={limit[1]}' if limit else ''
         hard_refresh = '&hardRefresh=true' if hard else ''
         sort_parameters = self._get_sort_parameters(kwargs.get('sort')) if kwargs.get('sort') else ''
-        search_parameter = f'&search={",".join(self.valid_columns.values())}:contains:{kwargs.get("search")}' if kwargs.get(
-            'search') else ''
 
-        request_url = (
-                self._commcell_object._services['GET_SECURITY_ROLES'] + "?" +
-                limit_parameters + sort_parameters + fl_parameters + hard_refresh +
-                search_parameter + fq_parameters
-        )
-        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", request_url, headers=headers)
+        # Search operation can only be performed on limited columns, so filtering out the columns on which search works
+        searchable_columns= ["roleName","description","company"]
+        search_parameter = (f'&search={",".join(self.valid_columns[col] for col in searchable_columns)}:contains:'
+                            f'{kwargs.get("search", None)}') if kwargs.get('search', None) else ''
+
+        params = [
+            limit_parameters,
+            sort_parameters,
+            fl_parameters,
+            hard_refresh,
+            search_parameter,
+            fq_parameters
+        ]
+        request_url = f"{self._commcell_object._services['GET_SECURITY_ROLES']}?" + "".join(params)
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", request_url)
 
         if not flag:
             response_string = self._commcell_object._update_response_(response.text)
@@ -289,14 +303,16 @@ class Roles(object):
 
         roles_cache = {}
         if response.json() and 'roleProperties' in response.json():
+            self.filter_query_count = response.json().get('filterQueryCount',0)
             for role in response.json()['roleProperties']:
                 name = role.get('role', {}).get('roleName')
                 roles_config = {
+                    'roleName': name,
                     'roleId': role.get('role', {}).get('roleId'),
+                    'description': role.get('description',''),
                     'status': role.get('role', {}).get('flags', {}).get('disabled'),
                     'company': role.get('role', {}).get('entityInfo', {}).get('companyName')
                 }
-                roles_config = {key: value for key, value in roles_config.items() if value is not None}
                 roles_cache[name] = roles_config
 
             return roles_cache
@@ -321,6 +337,8 @@ class Roles(object):
                                 }
                     }
         """
+        if not self._roles_cache:
+            self._roles_cache = self.get_roles_cache()
         return self._roles_cache
 
     def has_role(self, role_name):
@@ -502,6 +520,15 @@ class Roles(object):
         Returns all the roles present in the commcell
         """
         return self._get_roles()
+
+    @property
+    def all_roles_prop(self) -> list[dict]:
+        """
+        Returns complete GET API response
+        """
+        self._all_roles_prop = self._get_roles(full_response=True).get("roleProperties",[])
+        return self._all_roles_prop
+
 
 class Role(object):
     """"Class for representing a particular role configured on this commcell"""

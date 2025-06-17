@@ -192,9 +192,7 @@ class DeduplicationEngines(object):
 
     def __repr__(self):
         """Representation string for the instance of the DeduplicationEngines class."""
-        return "DeduplicationEngines class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "DeduplicationEngines class instance for Commcell"
 
     def _get_engines(self):
         """

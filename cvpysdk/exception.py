@@ -169,7 +169,12 @@ EXCEPTION_DICT = {
         '119': 'Invalid pruning type. Valid inputs "days_based" or "cycles_based".',
         '120': 'Invalid days/cycles value. Please provide an integer value greater than 0.',
         '121': 'IndexServer value should be a client object',
-        '122': 'In-Place restore is not supported with multiple source paths'
+        '122': 'In-Place restore is not supported with multiple source paths',
+        '123': 'Metadata not found for the given file/folder',
+        '124': 'Preview is not supported for directories',
+        '125': 'Preview is not supported for empty files',
+        '126': 'Preview is not supported for files with size greater than 20MB',
+        '127': 'Preview not available',
     },
     'Job': {
         '101': 'Incorrect JobId',
@@ -254,7 +259,9 @@ EXCEPTION_DICT = {
         '106': 'Failed to clear anomalies for this client',
         '107': 'Storage pool name is missing in inputs',
         '108': 'Index server name is missing in inputs',
-        '109': 'Failed to start threat anomaly scan on client'
+        '109': 'Failed to start threat anomaly scan on client',
+        '110': 'Failed to fetch client count details for threat indicators',
+        '111': 'Failed to fetch monitored vm details for threat indicators'
     },
     'ContentAnalyzer': {
         '101': 'Data type of the input(s) is not valid',
@@ -348,6 +355,7 @@ EXCEPTION_DICT = {
         '118': 'Failed to get Ediscovery project properties',
         '119': 'Failed to add Ediscovery client',
         '120': 'Failed to delete Ediscovery client',
+        '121': 'Failed to get datasource client properties'
     },
     'FileStorageOptimization': {
         '101': 'Data type of the input(s) is not valid',
@@ -404,7 +412,13 @@ EXCEPTION_DICT = {
     'User': {
         '101': 'Data type of input(s) is not valid',
         '102': '',
-        '103': 'User with same name already exists'
+        '103': 'User with same name already exists',
+        '104': 'Unable to create Access token for user',
+        '105': 'invalid inputs for update access token operations',
+        '106': 'Unable to update Access token details',
+        '107': 'Unable to delete Access token',
+        '108': 'Unable to get Access tokens for user',
+        '109': 'Unable to renew Access tokens'
     },
     'Role': {
         '101': 'Data type of input(s) is not valid',

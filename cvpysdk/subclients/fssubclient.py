@@ -52,6 +52,9 @@ FileSystemSubclient:
     restore_out_of_place()              --  Restores the files/folders specified in the input paths list
                                             to the input client, at the specified destionation location
 
+    preview_backedup_file()             --  Get the preview content of the file
+
+    add_comparison()                    --  Adds a comparison job for the subclient
 
 FileSystemSubclient Instance Attributes:
 =======================================
@@ -132,14 +135,14 @@ FileSystemSubclient Instance Attributes:
 
     **index_pruning_cycles_retention**    --  Sets the number of cycles to be maintained in
                                               subclient index
-	
+
     **ibmi_dr_config**                    --  Sets the subclient into one touch mode and adds ibmi DR parameters
 
     **backup_savf_file_data**             --  Sets the savf file data property for ibmi backup.
 
     **backup_spool_file_data**            --  Gets the value of spool file data on ibmi option for IBMi subclient
 
-    **backup_queue_data**                 --  Gets the value of queue data data on ibmi option for IBMi subclient.
+    **backup_queue_data**                 --  Gets the value of queue data on ibmi option for IBMi subclient.
 
     **backup_private_authorities**        --  Gets the value of private authorities on ibmi option for IBMi subclient.
 
@@ -154,16 +157,13 @@ FileSystemSubclient Instance Attributes:
 
     **save_while_active_option**          --  Set the save while active options for an IBMi subclient.
 
+    **pre_post_commands**				  --  Sets the pre/post commands for the subclient.
 
+    **backup_nodes**                      --  Sets backup nodes for FS Agent under Network Share clients.
 
-	**pre_post_commands**				  --  Sets the pre/post commands for the subclient.
-
-	**backup_nodes**                      --  Sets backup nodes for FS Agent under Network Share clients.
-
-	**impersonate_user**                  --  Impersonation information for the subclient.
+    **impersonate_user**                  --  Impersonation information for the subclient.
     
     **plan**                              -- Set plan without/with overriding Plan's default content.
-
 
 """
 
@@ -2705,3 +2705,97 @@ class FileSystemSubclient(Subclient):
             })
         else:
             raise SDKException('Subclient', '101')
+
+    def preview_backedup_file(self, file_path):
+        """Gets the preview content for the subclient.
+            Params:
+                file_path (str) --  file path to get the preview content
+
+            Returns:
+                html   (str)   --  html content of the preview
+
+            Raises:
+                SDKException:
+                    if file is not found
+
+                    if response is empty
+
+                    if response is not success
+        """
+        return self._get_preview(file_path)
+
+    def add_comparison(self, name, source_backup_time, compare_with_time):
+        """Adds a comparison job for the subclient
+
+            Args:
+                name                (str)       --      The name of the comparison
+
+                source_backup_time  (int)       --      The epoch time of the source job's backup time. Ex: 1743167209
+
+                compare_with_time   (int)       --      The epoch time of the other job to compare.
+
+            Returns:
+                object - Instance of the Job class for the comparison job.
+
+        """
+
+        request_json = {
+            "taskInfo": {
+                "associations": [
+                    {
+                        "clientName": self._client_object._client_name,
+                        "appName": self._agent_object._agent_name,
+                        "backupsetName": self._backupset_object._backupset_name,
+                        "subclientName": self._subclient_name,
+                        "_type_": 7
+                    }
+                ],
+                "task": {
+                    "taskType": 1
+                },
+                "subTasks": [
+                    {
+                        "subTaskOperation": 1,
+                        "subTask": {
+                            "subTaskType": 1,
+                            "operationType": 4025
+                        },
+                        "options": {
+                            "backupOpts": {},
+                            "adComparisonOption": {
+                                "leftSetTime": int(source_backup_time),
+                                "rightSetTime": int(compare_with_time),
+                                "adCompareType": 0,
+                                "nodeClientId": int(self._client_object.client_id),
+                                "clientId": int(self._client_object.client_id),
+                                "comparisonName": name,
+                                "appTypeId": 33,
+                                "subClientId": int(self.subclient_id),
+                                "adComparisonJobType": 0,
+                                "status": 0
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        comparison_task = self._commcell_object._services['CREATE_TASK']
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', comparison_task, request_json)
+
+        if flag:
+            if response.json():
+                if "jobIds" in response.json():
+                    return Job(self._commcell_object, response.json()['jobIds'][0])
+                elif "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+
+                    o_str = 'Failed to start the comparison job.\nError: "{0}"'.format(error_message)
+                    raise SDKException('Subclient', '118', o_str)
+                else:
+                    raise SDKException('Subclient', '118', 'Failed to start the comparison job')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)

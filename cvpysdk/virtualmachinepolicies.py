@@ -248,8 +248,7 @@ class VirtualMachinePolicies(object):
 
     def __repr__(self):
         """Representation string for the instance of the Clients class."""
-        return "VirtualMachinePolicies class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name)
+        return "VirtualMachinePolicies class instance for Commcell"
 
     def _get_vm_policies(self):
         """Gets all the virtual machine policies associated to the commcell specified by the

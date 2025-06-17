@@ -52,6 +52,7 @@ ClientGroups:
 
     get_client_groups_cache()  -- Gets all the client groups present in CommcellEntityCache DB.
 
+
     has_clientgroup()          -- checks if a client group exists with the given name or not
 
     create_smart_rule()        -- Create rules required for smart client group creation
@@ -77,6 +78,8 @@ ClientGroups Attributes
 
     **all_clientgroups_cache**   -- Returns dict of all the client groups and their info present in
     CommcellEntityCache in mongoDB
+
+    **all_client_groups_prop**   -- Returns complete GET API response
 
 ClientGroup:
 ============
@@ -207,6 +210,8 @@ class ClientGroups(object):
 
         self._clientgroups = None
         self._clientgroups_cache = None
+        self._all_client_groups_prop = None
+        self.filter_query_count = 0
         self.refresh()
 
     def __str__(self):
@@ -229,9 +234,7 @@ class ClientGroups(object):
             Returns:
                 str - string of all the client groups associated with the commcell
         """
-        return "ClientGroups class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "ClientGroups class instance for Commcell"
 
     def __len__(self):
         """Returns the number of the client groups associated to the Commcell."""
@@ -266,8 +269,11 @@ class ClientGroups(object):
             except IndexError:
                 raise IndexError('No client group exists with the given Name / Id')
 
-    def _get_clientgroups(self):
+    def _get_clientgroups(self, full_response: bool = False):
         """Gets all the clientgroups associated with the commcell
+
+            Args:
+                full_response(bool) --  flag to return complete response
 
             Returns:
                 dict - consists of all clientgroups of the commcell
@@ -288,12 +294,13 @@ class ClientGroups(object):
 
         if flag:
             if response.json() and 'groups' in response.json():
-                client_groups = response.json()['groups']
+                if full_response:
+                    return response.json()
                 clientgroups_dict = {}
 
                 name_count = {}
 
-                for client_group in client_groups:
+                for client_group in response.json()['groups']:
                     temp_name = client_group['name'].lower()
                     temp_company = \
                         client_group.get('clientGroup', {}).get('entityInfo', {}).get('companyName', '').lower()
@@ -303,7 +310,7 @@ class ClientGroups(object):
                     else:
                         name_count[temp_name] = {temp_company}
 
-                for client_group in client_groups:
+                for client_group in response.json()['groups']:
                     temp_name = client_group['name'].lower()
                     temp_id = str(client_group['Id']).lower()
                     temp_company = \
@@ -364,7 +371,7 @@ class ClientGroups(object):
             'name': 'name',
             'id': 'groups.Id',
             'association': 'groups.groupAssocType',
-            'company': 'groups.clientGroup.entityInfo.companyName',
+            'companyName': 'groups.clientGroup.entityInfo.companyName',
             'tags': 'tags'
         }
         default_columns = 'name'
@@ -410,24 +417,27 @@ class ClientGroups(object):
         Returns:
             fq_parameters(str) -- fq parameter string
         """
-        conditions = ['contains', 'notContain', 'eq', 'neq']
-        params = ["&fq=groups.isCompanySmartClientGroup:eq:false"
-                  "&fq=groups.clientGroup.clientGroupName:neq:Index Servers"]
-        if fq:
-            for param in fq:
-                if param[0] in self.valid_columns.keys():
-                    if param[0] == 'tags' and param[1] == 'contains':
-                        params.append(f"&tags={param[2]}")
-                    elif param[1] in conditions:
-                        params.append(f"&fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}")
-                    elif param[1] == 'isEmpty' and len(param) == 2:
-                        params.append(f"&fq={self.valid_columns[param[0]]}:in:null,")
-                    else:
-                        raise SDKException('ClientGroup', '102', 'Invalid condition passed')
-                else:
-                    raise SDKException('ClientGroup', '102', 'Invalid column Name passed')
-        if params:
-            return "".join(params)
+        conditions = {"contains", "notContain", "eq", "neq"}
+        params = [
+            "&fq=groups.isCompanySmartClientGroup:eq:false",
+            "&fq=groups.clientGroup.clientGroupName:neq:Index Servers"
+        ]
+
+        for column, condition, *value in fq or []:
+            if column not in self.valid_columns:
+                raise SDKException('ClientGroup', '102', 'Invalid column name passed')
+
+            # Handle 'tags' column separately
+            if column == "tags" and condition == "contains":
+                params.append(f"&tags={value[0]}")
+            elif condition in conditions:
+                params.append(f"&fq={self.valid_columns[column]}:{condition.lower()}:{value[0]}")
+            elif condition == "isEmpty" and not value:
+                params.append(f"&fq={self.valid_columns[column]}:in:null,")
+            else:
+                raise SDKException('ClientGroup', '102', 'Invalid condition passed')
+
+        return "".join(params)
 
     def get_client_groups_cache(self, hard: bool = False, **kwargs) -> dict:
         """
@@ -446,48 +456,53 @@ class ClientGroups(object):
                 - fq (list)     --   Contains the columnName, condition and value.
                                             e.g. fq = [['name', 'contains', 'test'],
                                              ['association', 'eq', 'Manual']] (default: None).
-                - enum (bool)   --   Flag to return enums in the response (default: True).
 
         Returns:
             dict: Dictionary of all the properties present in response.
         """
-        headers = self._commcell_object._headers.copy()
-        if kwargs.get('enum', True):
-            headers['EnumNames'] = 'True'
-
+        # computing params
         fl_parameters = self._get_fl_parameters(kwargs.get('fl', None))
         fq_parameters = self._get_fq_parameters(kwargs.get('fq', None))
-        limit = kwargs.get('limit', ['0', '100'])
-        limit_parameters = f'start={limit[0]}&limit={limit[1]}'
+        limit = kwargs.get('limit', None)
+        limit_parameters = f'start={limit[0]}&limit={limit[1]}' if limit else ''
         hard_refresh = '&hardRefresh=true' if hard else ''
         sort_parameters = self._get_sort_parameters(kwargs.get('sort', None)) if kwargs.get('sort', None) else ''
-        search_parameter = f'&search={",".join(self.valid_columns.values())}:contains:{kwargs.get("search", None)}' if kwargs.get(
-            'search', None) else ''
 
-        request_url = (
-                self._CLIENTGROUPS + "?" + limit_parameters + sort_parameters + fl_parameters + hard_refresh +
-                search_parameter + fq_parameters
-        )
-        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", request_url, headers=headers)
+        # Search operation can only be performed on limited columns, so filtering out the columns on which search works
+        searchable_columns = ["name","association",'companyName']
+        search_parameter = (f'&search={",".join(self.valid_columns[col] for col in searchable_columns)}:contains:'
+                            f'{kwargs.get("search", None)}') if kwargs.get('search', None) else ''
+
+        params = [
+            limit_parameters,
+            sort_parameters,
+            fl_parameters,
+            hard_refresh,
+            search_parameter,
+            fq_parameters
+        ]
+        request_url = f"{self._CLIENTGROUPS}?" + "".join(params)
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", request_url)
         if not flag:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
         client_group_cache = {}
         if response.json() and 'groups' in response.json():
+            self.filter_query_count = response.json().get('filterQueryCount',0)
             for group in response.json()['groups']:
                 name = group.get('name')
                 client_group_config = {
+                    'name': name,
                     'id': group.get('Id'),
                     'association': group.get('groupAssocType'),
                 }
                 if 'clientGroup' in group:
                     if 'companyName' in group.get('clientGroup', {}).get('entityInfo', {}):
-                        client_group_config['company'] = group.get('clientGroup', {}).get('entityInfo', {}).get(
+                        client_group_config['companyName'] = group.get('clientGroup', {}).get('entityInfo', {}).get(
                             'companyName')
                     if 'tags' in group.get('clientGroup', {}):
                         client_group_config['tags'] = group.get('clientGroup', {}).get('tags')
-                client_group_config = {key: value for key, value in client_group_config.items() if value is not None}
                 client_group_cache[name] = client_group_config
 
             return client_group_cache
@@ -526,6 +541,8 @@ class ClientGroups(object):
                                 }
                     }
         """
+        if not self._clientgroups_cache:
+            self._clientgroups_cache = self.get_client_groups_cache()
         return self._clientgroups_cache
 
     def has_clientgroup(self, clientgroup_name):
@@ -1092,6 +1109,14 @@ class ClientGroups(object):
         self._clientgroups = self._get_clientgroups()
         if mongodb:
             self._clientgroups_cache = self.get_client_groups_cache(hard=hard)
+
+    @property
+    def all_client_groups_prop(self)->list[dict]:
+        """
+        Returns complete GET API response
+        """
+        self._all_client_groups_prop = self._get_clientgroups(full_response=True).get("groups",[])
+        return self._all_client_groups_prop
 
 
 class ClientGroup(object):

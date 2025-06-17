@@ -70,5 +70,8 @@ SEDS_TYPE_DICT = {
     37: 'dynamic365',
     38: 'idxlogs',
     39: 'teams',
-    40: 'cloudstorage'
+    40: 'cloudstorage',
+    41: 'gmailV2',
+    42: 'googledriveV2',
+    43: 'asset'
 }

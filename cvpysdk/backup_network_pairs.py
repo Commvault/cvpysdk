@@ -67,8 +67,7 @@ class BackupNetworkPairs(object):
     def __repr__(self):
         """Representation string for the instance of BackupNetworkPairs class"""
 
-        return "BackupNetworkPairs class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name)
+        return "BackupNetworkPairs class instance for Commcell"
 
     def get_backup_interface_for_client(self, client_name):
         """Returns interfaces set on a particular client

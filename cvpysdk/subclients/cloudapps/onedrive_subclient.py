@@ -86,6 +86,16 @@ OneDriveSubclient:
 
     get_client_level_stats()                                            --  Returns the client level stats for the client
 
+    run_trueup_for_single_user()                                        --  Runs the true up for a single user
+
+    read_trueup_results_for_single_user()                               --  Reads the true up results for a single user
+
+    read_trueup_results_for_all_users()                                 --  Method to read the api call from the TrueUp and find the deleted files
+
+    preview_backedup_file() -- Get preview content for onedrive subclient
+
+    run_backup_onedrive_for_business_client()                           -- Runs client level backup
+
 """
 
 from __future__ import unicode_literals
@@ -96,8 +106,9 @@ from ...exception import SDKException
 import time
 from ..casubclient import CloudAppsSubclient
 from ...constants import AppIDAType
-from .onedrive_constants import OneDriveConstants as constants
+from .onedrive_constants import OneDriveConstants
 import re
+
 
 class OneDriveSubclient(CloudAppsSubclient):
     """Derived class from CloudAppsSubclient Base class, representing a OneDrive subclient,
@@ -146,11 +157,11 @@ class OneDriveSubclient(CloudAppsSubclient):
         """
         users_json = []
         for user_smtp in users_list:
-            user_details=self._get_user_details(user_smtp)
-            user_info={
-                      "user": {
-                        "userGUID": user_details[0].get('user', {}).get('userGUID')
-                      }
+            user_details = self._get_user_details(user_smtp)
+            user_info = {
+                "user": {
+                    "userGUID": user_details[0].get('user', {}).get('userGUID')
+                }
             }
             users_json.append(user_info)
         return users_json
@@ -182,23 +193,23 @@ class OneDriveSubclient(CloudAppsSubclient):
             }
         }
 
-        selected_items=[]
+        selected_items = []
         for user_smtp in users_list:
-            details=self._get_user_details(user_smtp)
-            item={
+            details = self._get_user_details(user_smtp)
+            item = {
                 "itemName": details[0].get('displayName'),
                 "itemType": "User"
             }
             selected_items.append(item)
 
         for group in custom_groups_list:
-            item={
+            item = {
                 "itemName": group,
                 "itemtype": "Custom category"
             }
             selected_items.append(item)
 
-        common_options_dict={
+        common_options_dict = {
             "jobMetadata": [
                 {
                     "selectedItems": selected_items,
@@ -212,7 +223,39 @@ class OneDriveSubclient(CloudAppsSubclient):
             ]
         }
 
-        task_json = self._backup_json(backup_level='INCREMENTAL',incremental_backup=False,incremental_level='BEFORE_SYNTH',advanced_options=advanced_options_dict,common_backup_options=common_options_dict)
+        task_json = self._backup_json(backup_level='INCREMENTAL', incremental_backup=False, incremental_level='BEFORE_SYNTH',
+                                      advanced_options=advanced_options_dict, common_backup_options=common_options_dict)
+        return task_json
+
+    def _task_json_for_backup(self,**kwargs):
+        """
+        Json for onedrive backup
+        """
+
+        items_selection_option = kwargs.get('items_selection_option', '')
+
+        common_options_dict={
+            "jobMetadata": [
+                {
+                    "selectedItems": [
+                  {
+                    "itemName": "All%20users",
+                    "itemType": "All users"
+                  }
+                ],
+                    "jobOptionItems": [
+                        {
+                            "option": "Total running time",
+                            "value": "Disabled"
+                        }
+                    ]
+                }
+            ]
+        }
+        if items_selection_option!='':
+            common_options_dict["itemsSelectionOption"]=items_selection_option
+
+        task_json = self._backup_json(backup_level='INCREMENTAL',incremental_backup=False,incremental_level='BEFORE_SYNTH',common_backup_options=common_options_dict)
         return task_json
 
     @property
@@ -270,7 +313,8 @@ class OneDriveSubclient(CloudAppsSubclient):
 
                 content.append(temp_content_dict)
         except KeyError as err:
-            raise SDKException('Subclient', '102', '{} not given in content'.format(err))
+            raise SDKException('Subclient', '102',
+                               '{} not given in content'.format(err))
 
         self._set_subclient_properties("_content", content)
 
@@ -397,7 +441,8 @@ class OneDriveSubclient(CloudAppsSubclient):
             else:
                 raise SDKException('Response', '102')
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException('Response', '101',
+                               self._update_response_(response.text))
 
     def set_auto_discovery(self, value):
         """Sets the auto discovery value for subclient.
@@ -416,12 +461,14 @@ class OneDriveSubclient(CloudAppsSubclient):
         if not self._instance_object.auto_discovery_status:
             raise SDKException('Subclient', '117')
 
-        subclient_prop = self._subclient_properties['cloudAppsSubClientProp'].copy()
+        subclient_prop = self._subclient_properties['cloudAppsSubClientProp'].copy(
+        )
         if self._instance_object.auto_discovery_mode == 0:
             # RegEx based auto discovery is enabled on instance
 
             subclient_prop['oneDriveSubclient']['regularExp'] = value
-            self._set_subclient_properties("_subclient_properties['cloudAppsSubClientProp']", subclient_prop)
+            self._set_subclient_properties(
+                "_subclient_properties['cloudAppsSubClientProp']", subclient_prop)
         else:
             # User group based auto discovery is enabled on instance
             grp_list = []
@@ -435,7 +482,8 @@ class OneDriveSubclient(CloudAppsSubclient):
                             }
                         })
             self._content.extend(grp_list)
-            self._set_subclient_properties("_subclient_properties['content']", self._content)
+            self._set_subclient_properties(
+                "_subclient_properties['content']", self._content)
         self.refresh()
 
     def run_subclient_discovery(self):
@@ -448,7 +496,8 @@ class OneDriveSubclient(CloudAppsSubclient):
                                                                            self._client_object.client_id,
                                                                            discover_type,
                                                                            self.subclient_id)
-        flag, response = self._cvpysdk_object.make_request('GET', discover_users)
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', discover_users)
         if response.status_code != 200 and response.status_code != 500:
             raise SDKException('Response', '101')
 
@@ -488,7 +537,8 @@ class OneDriveSubclient(CloudAppsSubclient):
             }
         }
         add_ADgroup = self._services['EXECUTE_QCOMMAND']
-        flag, response = self._cvpysdk_object.make_request('POST', add_ADgroup, request_json)
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', add_ADgroup, request_json)
 
         if flag:
             if response.json() and 'errorCode' in response.json():
@@ -498,7 +548,8 @@ class OneDriveSubclient(CloudAppsSubclient):
             else:
                 raise SDKException('Response', '102')
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException('Response', '101',
+                               self._update_response_(response.text))
 
     def add_user(self, user_name):
         """This method adds one drive user to the subclient
@@ -532,7 +583,8 @@ class OneDriveSubclient(CloudAppsSubclient):
         }
 
         add_user = self._services['EXECUTE_QCOMMAND']
-        flag, response = self._cvpysdk_object.make_request('POST', add_user, request_json)
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', add_user, request_json)
 
         if flag:
             if response.json() and 'errorCode' in response.json():
@@ -540,11 +592,13 @@ class OneDriveSubclient(CloudAppsSubclient):
                 if error_code != 0:
                     error_message = response.json().get('errorMessage')
                     output_string = 'Failed to user to the subclient\nError: "{0}"'
-                    raise SDKException('Subclient', '102', output_string.format(error_message))
+                    raise SDKException('Subclient', '102',
+                                       output_string.format(error_message))
             else:
                 raise SDKException('Response', '102')
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException('Response', '101',
+                               self._update_response_(response.text))
 
     def _get_subclient_users(self):
         """Method to get the users in the subclient
@@ -563,7 +617,7 @@ class OneDriveSubclient(CloudAppsSubclient):
         """Returns the users in subclient"""
         return self._get_subclient_users()
 
-    def add_ad_group_onedrive_for_business_client(self,value,plan_name):
+    def add_ad_group_onedrive_for_business_client(self, value, plan_name):
         """ Adds given OneDrive group to v2 client
 
             Args:
@@ -618,7 +672,8 @@ class OneDriveSubclient(CloudAppsSubclient):
         }
 
         user_associations = self._services['UPDATE_USER_POLICY_ASSOCIATION']
-        flag, response = self._cvpysdk_object.make_request('POST', user_associations, request_json)
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', user_associations, request_json)
 
         if flag:
             if response.json() and 'errorCode' in response.json():
@@ -628,7 +683,8 @@ class OneDriveSubclient(CloudAppsSubclient):
                     output_string = f'Failed to add group\nError: {error_message}'
                     raise SDKException('Subclient', '102', output_string)
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException('Response', '101',
+                               self._update_response_(response.text))
 
     def add_users_onedrive_for_business_client(self, users, plan_name):
         """ Adds given OneDrive users to v2 client
@@ -666,7 +722,8 @@ class OneDriveSubclient(CloudAppsSubclient):
             user_response = self.search_for_user(user_id)
             display_name = user_response[0].get('displayName')
             user_guid = user_response[0].get('user').get('userGUID')
-            is_auto_discovered_user = user_response[0].get('isAutoDiscoveredUser')
+            is_auto_discovered_user = user_response[0].get(
+                'isAutoDiscoveredUser')
             is_super_admin = user_response[0].get('isSuperAdmin')
 
             user_accounts.append({
@@ -701,7 +758,8 @@ class OneDriveSubclient(CloudAppsSubclient):
         }
 
         user_associations = self._services['UPDATE_USER_POLICY_ASSOCIATION']
-        flag, response = self._cvpysdk_object.make_request('POST', user_associations, request_json)
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', user_associations, request_json)
 
         if flag:
             if response.json() and 'errorCode' in response.json():
@@ -711,7 +769,8 @@ class OneDriveSubclient(CloudAppsSubclient):
                     output_string = f'Failed to add user\nError: {error_message}'
                     raise SDKException('Subclient', '102', output_string)
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException('Response', '101',
+                               self._update_response_(response.text))
 
     def verify_discovery_onedrive_for_business_client(self):
         """ Verifies that discovery is complete
@@ -741,7 +800,8 @@ class OneDriveSubclient(CloudAppsSubclient):
         page_size = 1
         discover_query = f'{browse_content}&pageSize={page_size}'
 
-        flag, response = self._cvpysdk_object.make_request('GET', discover_query)
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', discover_query)
 
         if flag:
             no_of_records = -1
@@ -752,7 +812,8 @@ class OneDriveSubclient(CloudAppsSubclient):
                         return True, no_of_records
             return False, no_of_records
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException('Response', '101',
+                               self._update_response_(response.text))
 
     def search_for_user(self, user_id):
         """ Searches for a specific user's details from discovered list
@@ -793,7 +854,6 @@ class OneDriveSubclient(CloudAppsSubclient):
                                                                self._client_object.client_id,
                                                                AppIDAType.CLOUD_APP.value))
 
-
         search_query = f'{browse_content}&search={user_id}'
 
         flag, response = self._cvpysdk_object.make_request('GET', search_query)
@@ -807,11 +867,13 @@ class OneDriveSubclient(CloudAppsSubclient):
                         raise SDKException('Subclient', '102', error_string)
                     return user_accounts
                 else:
-                    raise SDKException('Response', '102', 'Check if the user provided is valid')
+                    raise SDKException('Response', '102',
+                                       'Check if the user provided is valid')
             else:
                 raise SDKException('Response', '102')
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException('Response', '101',
+                               self._update_response_(response.text))
 
     def search_for_group(self, group_id):
         """ Searches for a specific group details from discovered list
@@ -824,8 +886,8 @@ class OneDriveSubclient(CloudAppsSubclient):
                 groups (list): group details' list fetched from discovered content
                               eg: [
                                       {
-                                         "name": "g1",
-                                         "id": "df1f794a-ceee-4e91-b644-6f34a0416917"
+                                         "name": "",
+                                         "id": ""
                                        }
                                   ]
 
@@ -842,8 +904,8 @@ class OneDriveSubclient(CloudAppsSubclient):
                     if response is not success
         """
         browse_content = (self._services['GET_CLOUDAPPS_USERS'] % (self._instance_object.instance_id,
-                                                              self._client_object.client_id,
-                                                              5))
+                                                                   self._client_object.client_id,
+                                                                   5))
 
         search_query = f'{browse_content}&search={group_id}'
 
@@ -858,11 +920,13 @@ class OneDriveSubclient(CloudAppsSubclient):
                         raise SDKException('Subclient', '102', error_string)
                     return groups
                 else:
-                    raise SDKException('Response', '102', 'Check if the group provided is valid')
+                    raise SDKException('Response', '102',
+                                       'Check if the group provided is valid')
             else:
                 raise SDKException('Response', '102')
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException('Response', '101',
+                               self._update_response_(response.text))
 
     def disk_restore_onedrive_for_business_client(self, users, destination_client, destination_path, skip_file_permissions=False):
         """ Runs an out-of-place restore job for specified users on OneDrive for business client
@@ -885,7 +949,8 @@ class OneDriveSubclient(CloudAppsSubclient):
             'destination_client': destination_client,
             'skip_file_permissions': skip_file_permissions
         }
-        restore_json = self._instance_object._prepare_restore_json_onedrive_for_business_client(source_user_list, **kwargs)
+        restore_json = self._instance_object._prepare_restore_json_onedrive_for_business_client(
+            source_user_list, **kwargs)
         return self._process_restore_response(restore_json)
 
     def out_of_place_restore_onedrive_for_business_client(self, users, destination_path, **kwargs):
@@ -911,10 +976,11 @@ class OneDriveSubclient(CloudAppsSubclient):
         overwrite = kwargs.get('overwrite', False)
         restore_as_copy = kwargs.get('restore_as_copy', False)
         skip_file_permissions = kwargs.get('skip_file_permissions', True)
-        include_deleted_items = kwargs.get('include_deleted_items',False)
+        include_deleted_items = kwargs.get('include_deleted_items', False)
 
         if overwrite and restore_as_copy:
-            raise SDKException('Subclient', '102', 'Either select overwrite or restore as copy for file options')
+            raise SDKException(
+                'Subclient', '102', 'Either select overwrite or restore as copy for file options')
 
         self._instance_object._restore_association = self._subClientEntity
         source_user_list = self._get_user_guids(users)
@@ -926,15 +992,19 @@ class OneDriveSubclient(CloudAppsSubclient):
             'skip_file_permissions': skip_file_permissions,
             'include_deleted_items': include_deleted_items
         }
-        restore_json = self._instance_object._prepare_restore_json_onedrive_for_business_client(source_user_list, **kwargs)
+        restore_json = self._instance_object._prepare_restore_json_onedrive_for_business_client(
+            source_user_list, **kwargs)
 
         return self._process_restore_response(restore_json)
 
-    def in_place_restore_onedrive_syntex(self, users):
+    def in_place_restore_onedrive_syntex(self, users, fast_restore_point=False):
         """ Runs an in-place restore job for specified users on Syntex OneDrive for business client
 
             Args:
-                users (list) :  List of SMTP addresses of users
+                users (list)                    :  List of SMTP addresses of users
+                fast_restore_point   (booL)     : Whether to use fast restore point or not
+                                                  default: False
+
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -966,12 +1036,14 @@ class OneDriveSubclient(CloudAppsSubclient):
             })
 
         source_user_list = self._get_user_guids(users)
-        restore_json = self._instance_object._prepare_restore_json_onedrive_for_business_client(source_user_list)
+        restore_json = self._instance_object._prepare_restore_json_onedrive_for_business_client(
+            source_user_list)
 
         # Get the current time in UTC
         current_time = datetime.datetime.now(datetime.timezone.utc)
         current_timestamp = int(current_time.timestamp())
-        current_iso_format = current_time.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+        current_iso_format = current_time.strftime(
+            '%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
 
         restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"][
             "msSyntexRestoreOptions"] = {
@@ -984,7 +1056,7 @@ class OneDriveSubclient(CloudAppsSubclient):
             },
             "restorePointId": "",
             "restoreType": 1,
-            "useFastRestorePoint": True
+            "useFastRestorePoint": fast_restore_point
         }
 
         return self._process_restore_response(restore_json)
@@ -1011,9 +1083,10 @@ class OneDriveSubclient(CloudAppsSubclient):
         overwrite = kwargs.get('overwrite', False)
         restore_as_copy = kwargs.get('restore_as_copy', False)
         skip_file_permissions = kwargs.get('skip_file_permissions', True)
-        include_deleted_items = kwargs.get('include_deleted_items',False)
+        include_deleted_items = kwargs.get('include_deleted_items', False)
         if overwrite and restore_as_copy:
-            raise SDKException('Subclient', '102', 'Either select overwrite or restore as copy for file options')
+            raise SDKException(
+                'Subclient', '102', 'Either select overwrite or restore as copy for file options')
 
         self._instance_object._restore_association = self._subClientEntity
         source_user_list = self._get_user_guids(users)
@@ -1024,10 +1097,9 @@ class OneDriveSubclient(CloudAppsSubclient):
             'include_deleted_items': include_deleted_items
         }
 
-        restore_json = self._instance_object._prepare_restore_json_onedrive_for_business_client(source_user_list, **kwargs)
+        restore_json = self._instance_object._prepare_restore_json_onedrive_for_business_client(
+            source_user_list, **kwargs)
         return self._process_restore_response(restore_json)
-
-
 
     def _get_user_guids(self, users):
         """ Retrieve GUIDs for users specified
@@ -1048,7 +1120,8 @@ class OneDriveSubclient(CloudAppsSubclient):
             if len(user) != 0 and user[0].get('user', {}).get('userGUID') is not None:
                 user_guid_list.append(user[0].get('user').get('userGUID'))
             else:
-                raise SDKException('Subclient', '102', 'User details not found in discovered data')
+                raise SDKException('Subclient', '102',
+                                   'User details not found in discovered data')
         return user_guid_list
 
     def process_index_retention_rules(self, index_app_type_id, index_server_client_name):
@@ -1072,7 +1145,8 @@ class OneDriveSubclient(CloudAppsSubclient):
                     if response is not success
         """
         if self._commcell_object.clients.has_client(index_server_client_name):
-            index_server_client_id = int(self._commcell_object.clients[index_server_client_name.lower()]['id'])
+            index_server_client_id = int(
+                self._commcell_object.clients[index_server_client_name.lower()]['id'])
             request_json = {
                 "appType": index_app_type_id,
                 "indexServerClientId": index_server_client_id
@@ -1085,15 +1159,19 @@ class OneDriveSubclient(CloudAppsSubclient):
                     if "resp" in response.json():
                         error_code = response.json()['resp']['errorCode']
                         if error_code != 0:
-                            error_string = response.json()['response']['errorString']
-                            o_str = 'Failed to process index retention rules\nError: "{0}"'.format(error_string)
+                            error_string = response.json(
+                            )['response']['errorString']
+                            o_str = 'Failed to process index retention rules\nError: "{0}"'.format(
+                                error_string)
                             raise SDKException('Subclient', '102', o_str)
                     elif 'errorMessage' in response.json():
                         error_string = response.json()['errorMessage']
-                        o_str = 'Failed to process index retention rules\nError: "{0}"'.format(error_string)
+                        o_str = 'Failed to process index retention rules\nError: "{0}"'.format(
+                            error_string)
                         raise SDKException('Subclient', '102', o_str)
             else:
-                raise SDKException('Response', '101', self._update_response_(response.text))
+                raise SDKException('Response', '101',
+                                   self._update_response_(response.text))
         else:
             raise SDKException('IndexServers', '102')
 
@@ -1122,7 +1200,8 @@ class OneDriveSubclient(CloudAppsSubclient):
         skip_file_permissions = kwargs.get('skip_file_permissions', False)
 
         if overwrite and restore_as_copy:
-            raise SDKException('Subclient', '102', 'Either select overwrite or restore as copy for file options')
+            raise SDKException(
+                'Subclient', '102', 'Either select overwrite or restore as copy for file options')
 
         self._instance_object._restore_association = self._subClientEntity
         source_user_list = self._get_user_guids(users)
@@ -1132,23 +1211,24 @@ class OneDriveSubclient(CloudAppsSubclient):
             'skip_file_permissions': skip_file_permissions
         }
 
-        restore_json = self._instance_object._prepare_restore_json_onedrive_for_business_client(source_user_list, **kwargs)
+        restore_json = self._instance_object._prepare_restore_json_onedrive_for_business_client(
+            source_user_list, **kwargs)
 
-        adv_search_bkp_time_dict={
-                "field": "BACKUPTIME",
-                "fieldValues": {
-                    "values": [
-                        "0",
-                        str(end_time)
-                    ]
-                },
-                "intraFieldOp": "FTOr"
-            }
+        adv_search_bkp_time_dict = {
+            "field": "BACKUPTIME",
+            "fieldValues": {
+                "values": [
+                    "0",
+                    str(end_time)
+                ]
+            },
+            "intraFieldOp": "FTOr"
+        }
 
-
-        add_to_time=restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"]
-        add_to_time["timeRange"]={"toTime":end_time}
-        add_backup_time=restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"]["googleRestoreOptions"]["findQuery"]["advSearchGrp"]["fileFilter"][0]["filter"]["filters"]
+        add_to_time = restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"]
+        add_to_time["timeRange"] = {"toTime": end_time}
+        add_backup_time = restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"][
+            "googleRestoreOptions"]["findQuery"]["advSearchGrp"]["fileFilter"][0]["filter"]["filters"]
         add_backup_time.append(adv_search_bkp_time_dict)
 
         return self._instance_object._process_restore_response(restore_json)
@@ -1179,7 +1259,8 @@ class OneDriveSubclient(CloudAppsSubclient):
         skip_file_permissions = kwargs.get('skip_file_permissions', False)
 
         if overwrite and restore_as_copy:
-            raise SDKException('Subclient', '102', 'Either select overwrite or restore as copy for file options')
+            raise SDKException(
+                'Subclient', '102', 'Either select overwrite or restore as copy for file options')
 
         self._instance_object._restore_association = self._subClientEntity
         source_user_list = self._get_user_guids(users)
@@ -1190,7 +1271,8 @@ class OneDriveSubclient(CloudAppsSubclient):
             'restore_as_copy': restore_as_copy,
             'skip_file_permissions': skip_file_permissions
         }
-        restore_json = self._instance_object._prepare_restore_json_onedrive_for_business_client(source_user_list, **kwargs)
+        restore_json = self._instance_object._prepare_restore_json_onedrive_for_business_client(
+            source_user_list, **kwargs)
 
         adv_search_bkp_time_dict = {
             "field": "BACKUPTIME",
@@ -1203,14 +1285,15 @@ class OneDriveSubclient(CloudAppsSubclient):
             "intraFieldOp": "FTOr"
         }
 
-        add_to_time=restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"]
-        add_to_time["timeRange"]={"toTime":end_time}
-        add_backup_time=restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"]["googleRestoreOptions"]["findQuery"]["advSearchGrp"]["fileFilter"][0]["filter"]["filters"]
+        add_to_time = restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["browseOption"]
+        add_to_time["timeRange"] = {"toTime": end_time}
+        add_backup_time = restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"][
+            "googleRestoreOptions"]["findQuery"]["advSearchGrp"]["fileFilter"][0]["filter"]["filters"]
         add_backup_time.append(adv_search_bkp_time_dict)
 
         return self._process_restore_response(restore_json)
 
-    def run_user_level_backup_onedrive_for_business_client(self,users_list, custom_groups_list=[]):
+    def run_user_level_backup_onedrive_for_business_client(self, users_list, custom_groups_list=[]):
         """
         Runs the backup for the users in users list/ custom categories list
         Args:
@@ -1219,22 +1302,55 @@ class OneDriveSubclient(CloudAppsSubclient):
 
         Returns:
                 object - instance of the Job class for this backup job
- 
+
         Raises:
             SDKException:
                 if response is empty
- 
+
                 if response is not success
 
         """
-        task_json = self._task_json_for_onedrive_backup(users_list, custom_groups_list)
+        task_json = self._task_json_for_onedrive_backup(
+            users_list, custom_groups_list)
         create_task = self._services['CREATE_TASK']
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', create_task, task_json
         )
         return self._process_backup_response(flag, response)
 
-    def _get_user_details(self,user):
+    def run_backup_onedrive_for_business_client(self,**kwargs):
+        """
+                Runs the backup
+
+
+                 **kwargs (dict) : Additional parameters
+                    items_selection_option (str) : Item Selection Option
+
+
+                Returns:
+                        object - instance of the Job class for this backup job
+
+                Raises:
+                    SDKException:
+                        if response is empty
+
+                        if response is not success
+
+                """
+        items_selection_option=kwargs.get('items_selection_option', '')
+
+        kwargs = {
+            'items_selection_option': items_selection_option
+        }
+
+        task_json = self._task_json_for_backup(**kwargs)
+        create_task = self._services['CREATE_TASK']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', create_task, task_json
+        )
+        return self._process_backup_response(flag, response)
+
+    def _get_user_details(self, user):
         """
         gets user details from discovery
         Args:
@@ -1242,28 +1358,30 @@ class OneDriveSubclient(CloudAppsSubclient):
 
         Returns:
                 user_details  (dict) : User's details fetched from discovery
- 
+
         Raises:
             SDKException:
                 if response is empty
         """
-        user_details=self.search_for_user(user)
-        if len(user_details)!=0:
+        user_details = self.search_for_user(user)
+        if len(user_details) != 0:
             return user_details
         else:
-            raise SDKException('Subclient', '102', 'User details not found in discovered data')
+            raise SDKException('Subclient', '102',
+                               'User details not found in discovered data')
 
-    def _get_group_details(self,group):
+    def _get_group_details(self, group):
         """
         gets group details from discovery
         Args:
                 group (str) : SMTP address of group
         """
-        group_details=self.search_for_group(group)
-        if len(group_details)!=0:
+        group_details = self.search_for_group(group)
+        if len(group_details) != 0:
             return group_details
         else:
-            raise SDKException('Subclient', '102', 'Group details not found in discovered data')
+            raise SDKException('Subclient', '102',
+                               'Group details not found in discovered data')
 
     def browse_for_content(self, discovery_type, include_deleted=False):
         """Returns the Onedrive client content i.e. users/ group information that is discovered in auto discovery phase
@@ -1294,8 +1412,9 @@ class OneDriveSubclient(CloudAppsSubclient):
                         if the method is called by Onedrive On-Premise Instance
 
         """
-        if not self._backupset_object._instance_object.ca_instance_type.lower() == constants.ONEDRIVE_INSTANCE.lower():
-            raise SDKException('Subclient', '102', 'Method not supported for Onedrive On-Premise Instance')
+        if not self._backupset_object._instance_object.ca_instance_type.lower() == OneDriveConstants.INSTANCE.lower():
+            raise SDKException(
+                'Subclient', '102', 'Method not supported for Onedrive On-Premise Instance')
 
         self._USER_POLICY_ASSOCIATION = self._services['USER_POLICY_ASSOCIATION']
         request_json = {
@@ -1329,7 +1448,8 @@ class OneDriveSubclient(CloudAppsSubclient):
                 if discovery_type == 2 or discovery_type == 31:
                     if associations:
                         for group in associations:
-                            group_name = group.get("groups", {}).get("name", "")
+                            group_name = group.get(
+                                "groups", {}).get("name", "")
                             user_dict[group_name] = {
                                 'accountStatus': group.get("accountStatus"),
                                 'discoverByType': group.get("discoverByType"),
@@ -1340,7 +1460,8 @@ class OneDriveSubclient(CloudAppsSubclient):
                 else:
                     if associations:
                         for user in associations:
-                            user_url = user.get("userAccountInfo", {}).get("smtpAddress", "")
+                            user_url = user.get("userAccountInfo", {}).get(
+                                "smtpAddress", "")
                             user_account_info = user.get("userAccountInfo", {})
                             user_dict[user_url] = {
                                 'userAccountInfo': user_account_info,
@@ -1352,7 +1473,8 @@ class OneDriveSubclient(CloudAppsSubclient):
                             }
                 return user_dict, no_of_records
             return {}, 0
-        raise SDKException('Response', '101', self._update_response_(response.text))
+        raise SDKException('Response', '101',
+                           self._update_response_(response.text))
 
     def _set_properties_to_update_site_association(self, operation):
         """Updates the association properties of user
@@ -1372,8 +1494,9 @@ class OneDriveSubclient(CloudAppsSubclient):
                 if the method is called by Onedrive On-Premise Instance
 
         """
-        if not self._backupset_object._instance_object.ca_instance_type.lower() == constants.ONEDRIVE_INSTANCE.lower():
-            raise SDKException('Subclient', '102', 'Method not supported for Onedrive On-Premise Instance')
+        if not self._backupset_object._instance_object.ca_instance_type.lower() == OneDriveConstants.INSTANCE.lower():
+            raise SDKException(
+                'Subclient', '102', 'Method not supported for Onedrive On-Premise Instance')
 
         properties_dict = {}
         if operation == 1:
@@ -1385,7 +1508,6 @@ class OneDriveSubclient(CloudAppsSubclient):
         elif operation == 4:
             properties_dict["accountStatus"] = 1
         return properties_dict
-
 
     def update_users_association_properties(self, operation, **kwargs):
         """Updates the association properties of user
@@ -1421,10 +1543,12 @@ class OneDriveSubclient(CloudAppsSubclient):
         user_accounts_list = kwargs.get('user_accounts_list', None)
         groups_list = kwargs.get('groups_list', None)
 
-        if not self._backupset_object._instance_object.ca_instance_type.lower() == constants.ONEDRIVE_INSTANCE.lower():
-            raise SDKException('Subclient', '102', 'Method not supported for Onedrive On-Premise Instance')
+        if not self._backupset_object._instance_object.ca_instance_type.lower() == OneDriveConstants.INSTANCE.lower():
+            raise SDKException(
+                'Subclient', '102', 'Method not supported for Onedrive On-Premise Instance')
 
-        properties_dict = self._set_properties_to_update_site_association(operation)
+        properties_dict = self._set_properties_to_update_site_association(
+            operation)
         self._ASSOCIATE_CONTENT = self._services['UPDATE_USER_POLICY_ASSOCIATION']
         if user_accounts_list:
             request_json = {
@@ -1466,14 +1590,17 @@ class OneDriveSubclient(CloudAppsSubclient):
                     error_code = response.json()['resp']['errorCode']
                     if error_code != 0:
                         error_string = response.json().get('response', {}).get('errorString', str())
-                        o_str = 'Failed to associate content\nError: "{0}"'.format(error_string)
+                        o_str = 'Failed to associate content\nError: "{0}"'.format(
+                            error_string)
                         raise SDKException('Subclient', '102', o_str)
                 elif 'errorMessage' in response.json():
                     error_string = response.json()['errorMessage']
-                    o_str = 'Failed to associate content\nError: "{0}"'.format(error_string)
+                    o_str = 'Failed to associate content\nError: "{0}"'.format(
+                        error_string)
                     raise SDKException('Subclient', '102', o_str)
         else:
-            raise SDKException('Response', '102', self._update_response_(response.text))
+            raise SDKException('Response', '102',
+                               self._update_response_(response.text))
 
     def manage_custom_category(self, custom_dict, action, plan=None):
         """
@@ -1502,6 +1629,8 @@ class OneDriveSubclient(CloudAppsSubclient):
                 if response is not success
                 if response is returned with errors
         """
+
+        self.custom_counter = 0
 
         def get_field_number(field_name):
             """ Gets the indexed number for each type of field"""
@@ -1570,7 +1699,8 @@ class OneDriveSubclient(CloudAppsSubclient):
             plan_name = groups[custom_dict['name']].get('planName', "")
             o365_plan_object = self._commcell_object.plans.get(plan_name)
             o365_plan_id = int(o365_plan_object.plan_id)
-            categoryNumber = groups[custom_dict['name']].get('categoryNumber', None)
+            categoryNumber = groups[custom_dict['name']].get(
+                'categoryNumber', None)
 
         # Get Instance, client, Subclient Ids
         instance_id = int(self._instance_object.instance_id)
@@ -1619,12 +1749,16 @@ class OneDriveSubclient(CloudAppsSubclient):
 
         if action == 'add':
             url = self._services['CUSTOM_CATEGORY'] % subclient_id
-            flag, response = self._cvpysdk_object.make_request('POST', url, req_json)
+            flag, response = self._cvpysdk_object.make_request(
+                'POST', url, req_json)
         elif action == 'edit':
-            url = self._services['CUSTOM_CATEGORY'] % subclient_id + "/" + str(categoryNumber)
-            flag, response = self._cvpysdk_object.make_request('PUT', url, req_json)
+            url = self._services['CUSTOM_CATEGORY'] % subclient_id + \
+                "/" + str(categoryNumber)
+            flag, response = self._cvpysdk_object.make_request(
+                'PUT', url, req_json)
         else:
-            raise SDKException('Subclient', '102', "Invalid action. Must be either 'add' or 'edit'.")
+            raise SDKException(
+                'Subclient', '102', "Invalid action. Must be either 'add' or 'edit'.")
 
         if flag:
             if response.json() and 'errorCode' in response.json():
@@ -1636,8 +1770,8 @@ class OneDriveSubclient(CloudAppsSubclient):
             else:
                 raise SDKException('Response', '102')
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
-
+            raise SDKException('Response', '101',
+                               self._update_response_(response.text))
 
     def update_custom_categories_association_properties(self, category_name, operation):
         """
@@ -1663,8 +1797,9 @@ class OneDriveSubclient(CloudAppsSubclient):
 
         """
 
-        if not self._backupset_object._instance_object.ca_instance_type.lower() == constants.ONEDRIVE_INSTANCE.lower():
-            raise SDKException('Subclient', '102', 'Method not supported for Onedrive On-Premise Instance')
+        if not self._backupset_object._instance_object.ca_instance_type.lower() == OneDriveConstants.INSTANCE.lower():
+            raise SDKException(
+                'Subclient', '102', 'Method not supported for Onedrive On-Premise Instance')
 
         # Get Instance, client, Subclient Ids
         instance_id = int(self._instance_object.instance_id)
@@ -1678,7 +1813,8 @@ class OneDriveSubclient(CloudAppsSubclient):
         category_number = groups[category_name].get('categoryNumber', None)
 
         if not category_number:
-            raise SDKException('Subclient', '102', 'Please ensure the category name given is valid')
+            raise SDKException(
+                'Subclient', '102', 'Please ensure the category name given is valid')
 
         request_json = {
             "updateCategoryNumbers": [category_number],
@@ -1709,7 +1845,8 @@ class OneDriveSubclient(CloudAppsSubclient):
             else:
                 raise SDKException('Response', '102')
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException('Response', '101',
+                               self._update_response_(response.text))
 
     def refresh_retention_stats(self, subclient_id):
         """
@@ -1719,11 +1856,12 @@ class OneDriveSubclient(CloudAppsSubclient):
             subclient_id(int)             : subclient id of the client
         """
         request_json = {
-            "appType": constants.ONEDRIVE_INDEX_APPTYPE_ID,
+            "appType": OneDriveConstants.INDEX_APP_TYPE,
             "subclientId": int(subclient_id)
         }
         refresh_retention = self._services['OFFICE365_PROCESS_INDEX_RETENTION_RULES']
-        flag, response = self._cvpysdk_object.make_request('POST', refresh_retention, request_json)
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', refresh_retention, request_json)
 
         if flag:
             if response.json() and 'errorCode' in response.json():
@@ -1735,9 +1873,10 @@ class OneDriveSubclient(CloudAppsSubclient):
                 else:
                     self.log.info("refresh retention stats successful")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException('Response', '101',
+                               self._update_response_(response.text))
 
-    def refresh_client_level_stats(self,subclient_id):
+    def refresh_client_level_stats(self, subclient_id):
         """
         refresh the client level stats for the client
 
@@ -1746,13 +1885,14 @@ class OneDriveSubclient(CloudAppsSubclient):
 
         """
         request_json = {
-            "appType": constants.ONEDRIVE_INDEX_APPTYPE_ID,
+            "appType": OneDriveConstants.INDEX_APP_TYPE,
             "oneDriveIdxStatsReq":
                 [{
                     "subclientId": int(subclient_id), "type": 0}]
         }
         refresh_backup_stats = self._services['OFFICE365_POPULATE_INDEX_STATS']
-        flag, response = self._cvpysdk_object.make_request('POST', refresh_backup_stats, request_json)
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', refresh_backup_stats, request_json)
 
         if flag:
             if response.json() and 'errorCode' in response.json():
@@ -1764,9 +1904,10 @@ class OneDriveSubclient(CloudAppsSubclient):
                 else:
                     self.log.info("refresh client level stats successful")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException('Response', '101',
+                               self._update_response_(response.text))
 
-    def get_client_level_stats(self,backupset_id):
+    def get_client_level_stats(self, backupset_id):
         """
         Returns the client level stats for the client
 
@@ -1778,7 +1919,8 @@ class OneDriveSubclient(CloudAppsSubclient):
             response(json)                : returns the client level stats as a json response
         """
         get_backup_stats = self._services['OFFICE365_OVERVIEW_STATS'] % backupset_id
-        flag, response = self._cvpysdk_object.make_request('GET', get_backup_stats)
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', get_backup_stats)
 
         if flag:
             if response.json() and 'errorCode' in response.json():
@@ -1790,10 +1932,158 @@ class OneDriveSubclient(CloudAppsSubclient):
                 else:
                     self.log.info("get client level stats successful")
         else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
+            raise SDKException('Response', '101',
+                               self._update_response_(response.text))
 
         return response.json()
 
+    def run_trueup_for_single_user(self, user, associated_plan, current_timestamp=int(time.time())):
+        """Runs the true up for a single user
 
+        Args:
+            user (str) -- SMTP address of user
+            current_timestamp (int) -- Current timestamp, The time at which you want to run trueup, default current time
+            associated_plan (str) -- Name of the plan associated with the subclient
 
+        Raises:
+            SDKException:
+                if there is an error in TrueUp API call
+        """
+        subclient_id = int(self.subclient_id)
+        client_id = int(self._client_object.client_id)
+        plan_name = self._subclient_properties.get('planName')
+        plan_name = associated_plan.strip()
+        o365_plan_object = self._commcell_object.plans.get(plan_name)
+        o365_plan_id = int(o365_plan_object.plan_id)
+        user_response = self.search_for_user(user)
+        user_guid = user_response[0].get('user').get('userGUID')
+        base_url = self._commcell_object.webconsole_hostname
+        url = self._services['RUN_TRUEUP'].format(base_url)
+        trueup_json = {
+            "processinginstructioninfo": {
+                "formatFlags": {
+                    "skipIdToNameConversion": True
+                }
+            },
+            "isEnterprise": True,
+            "discoveryContent": [
+                {
+                    "userAccounts": [
+                        {
+                            "lastBackup": str(current_timestamp),
+                            "planId": o365_plan_id,
+                            "userGuid": user_guid,
+                            "email": user
+                        }
+                    ]
+                }
+            ],
+            "discoverySentTypes": [
+                20
+            ],
+            "subclientDetails": {
+                "instanceId": 7,
+                "subclientId": subclient_id,
+                "clientId": client_id,
+                "applicationId": 134
+            }
+        }
 
+        flag, response = self._cvpysdk_object.make_request(method='POST',
+                                                           url=url, payload=trueup_json)
+        if flag:
+            if response.json() and 'errorCode' in response.json():
+                error_code = response.json().get('errorCode')
+                if error_code != 0:
+                    error_message = response.json().get('errorMessage')
+                    output_string = f'Failed to run trueup with \nError: {error_message}'
+                    raise SDKException('Response', '101', output_string)
+        else:
+            raise SDKException('Response', '101',
+                               self._update_response_(response.text))
+
+    def read_trueup_results_for_single_user(self, userSMTPaddress):
+        """Reads the true up results for a single user
+
+        Args:
+        userSMTPaddres  (str) -- the email address of the user for trueup
+
+        Returns:
+            File_names (list) -- of file names that were captured in the trueup
+
+            ['file1', 'file2', 'file3']
+
+        Raises:
+            SDKException:
+                if there is an error in TrueUp API call
+        """
+
+        def extract_file_name_from_json(json_data):
+            """Method to extract file name from json
+
+            Args:
+                json_data (dict) -- json data from the TrueUp API
+
+            Returns:
+                file_names (list) -- list of file names that were captured in the trueup
+            """
+            file_names = []
+            rows = json_data.get('rows', [])
+
+            for row in rows:
+                row_data = row.get('row', [])
+                if len(row_data) >= 1:  # Ensure there is at least one element
+                    file_names.append(row_data[0])
+            return file_names
+
+        subclient_id = self.subclient_id
+        client_id = self._client_object.client_id
+        user_response = self.search_for_user(userSMTPaddress)
+        user_guid = user_response[0].get('user').get('userGUID')
+        base_url = self._commcell_object.webconsole_hostname
+        url = self._services['READ_TRUEUP_RESULTS_USER'].format(base_url)
+        url = url % (subclient_id, client_id, user_guid)
+        flag, response = self._cvpysdk_object.make_request(
+            method='GET', url=url)
+        if flag:
+            File_names = extract_file_name_from_json(
+                response.json())
+            return File_names
+        else:
+            raise SDKException('Response', '101',
+                               self._update_response_(response.text))
+
+    def read_trueup_results_for_all_users(self, usersSMTPaddress):
+        """Method to read the api call from the TrueUp and find the deleted files
+
+        Args:
+            usersSMTPaddress (list) -- of all the email addresses of the users for trueup
+
+        Returns:
+            all_deleted_files (list) -- list of all the files that were captured by trueUp
+
+        """
+        all_deleted_files = []
+        for user in usersSMTPaddress:
+            deleted_files_for_user = self.read_trueup_results_for_single_user(
+                user)
+            all_deleted_files += deleted_files_for_user
+        return all_deleted_files
+
+    def preview_backedup_file(self, file_path):
+        """Gets the preview content for onedrive subclient.
+            Params:
+                file_path (str) -- file path of the file for which preview content is needed
+
+            Returns:
+                html   (str)   --  html content of the preview
+
+            Raises:
+                SDKException:
+                    if file is not found
+
+                    if response is empty
+
+                    if response is not success
+        """
+        return self._get_preview(file_path)

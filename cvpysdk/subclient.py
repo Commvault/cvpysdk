@@ -99,6 +99,10 @@ Subclient:
 
     _association_json()         --  setter for association property
 
+    _get_preview_metadata()     --  gets the preview metadata for the file
+
+    _get_preview()              --  gets the preview for the file
+
     update_properties()         --  To update the subclient properties
 
     description()               --  update the description of the subclient
@@ -141,6 +145,8 @@ Subclient:
 
     find_latest_job()           --  Finds the latest job for the subclient
     which includes current running job also.
+
+    run_content_indexing()      -- Runs CI for subclient
 
     refresh()                   --  refresh the properties of the subclient
 
@@ -1563,6 +1569,7 @@ class Subclient(object):
         self._restore_methods = [
             '_process_restore_response',
             '_filter_paths',
+            '_process_search_response',
             '_restore_json',
             '_impersonation_json',
             '_restore_browse_option_json',
@@ -1597,6 +1604,8 @@ class Subclient(object):
         self._BROWSE = self._services['BROWSE']
 
         self._RESTORE = self._services['RESTORE']
+
+        self._PREVIEW_CONTENT = self._services['GET_DOC_PREVIEW']
 
         self._subclient_properties = {}
         self._content = []
@@ -3093,6 +3102,91 @@ c
 
         return Job(self._commcell_object, latest_jobid)
 
+    def run_content_indexing(self,
+                                   pick_failed_items=False,
+                                   pick_only_failed_items=False,
+                                   streams=4,
+                                   proxies=None):
+        """Run content Indexing on job.
+
+            Args:
+               pick_failed_items
+                        default:False   (bool)  --  Pick fail items during Content Indexing
+
+                pick_only_failed_items  (bool)  --  Pick only fail items during Content
+                                                    Indeixng
+                    default: False
+
+                streams                 (int)   --  Streams for Content Indexing job
+
+                    default: 4
+
+                proxies                 (list) --  provide the proxies to run CI
+                    default: None
+
+            Returns:
+                object - instance of the Job class for the ContentIndexing job
+
+        """
+        if not (isinstance(pick_failed_items, bool) and
+                isinstance(pick_only_failed_items, bool)):
+            raise SDKException('Subclient', '101')
+
+        if proxies is None:
+            proxies = {}
+
+        self._media_option_json = {
+            "pickFailedItems": pick_failed_items,
+            "pickFailedItemsOnly": pick_only_failed_items,
+            "auxcopyJobOption": {
+                "maxNumberOfStreams": streams,
+                "allCopies": True,
+                "useMaximumStreams": False,
+                "proxies": proxies
+            }
+        }
+
+        self._content_indexing_option_json= {
+            "reanalyze": False,
+            "fileAnalytics": False,
+            "subClientBasedAnalytics": False
+        }
+        self._subtask_restore_json = {
+            "subTaskType": 1,
+            "operationType": 5020
+        }
+
+        request_json = {
+            "taskInfo": {
+                "associations": [self._subClientEntity],
+                "task": self._json_task,
+                "subTasks": [
+                    {
+                        "subTaskOperation": 1,
+                        "subTask": self._subtask_restore_json,
+                        "options": {
+                            "backupOpts": {
+                                "mediaOpt": self._media_option_json
+                            },
+                            "adminOpts": {
+                                "contentIndexingOption": self._content_indexing_option_json
+                            },
+                            "restoreOptions": {
+                                "virtualServerRstOption": {
+                                    "isBlockLevelReplication": False
+                                },
+                                "browseOption": {
+                                    "backupset": {}
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        return self._process_restore_response(request_json)
+
     def refresh(self):
         """Refresh the properties of the Subclient."""
         self._get_subclient_properties()
@@ -3348,3 +3442,144 @@ c
             })
         else:
             raise SDKException('Subclient', '101')
+
+    def _get_preview_metadata(self, file_path):
+        """Gets the preview metadata for the subclient.
+            params:
+                file_path (str) : file path for which preview metadata is required
+
+            Returns:
+                metadata   (dict)   --  metadata content of the preview
+
+                None - if file not found
+
+        """
+
+        paths, data = self.find()
+
+        for path in paths:
+            if path.lower() == file_path.lower():
+                return data[path]
+        else:
+            return None
+
+    def _get_preview(self, file_path):
+        """Gets the preview content for the subclient.
+            Params:
+                file_path (str) --  file path to get the preview content
+
+            Returns:
+                html   (str)   --  html content of the preview
+
+            Raises:
+                SDKException:
+                    if file is not found
+
+                    if response is empty
+
+                    if response is not success
+        """
+        metadata = self._get_preview_metadata(file_path)
+        if metadata is None:
+            raise SDKException('Subclient', '123')
+
+        if metadata["type"] != "File":
+            raise SDKException('Subclient', '124')
+
+        if metadata["size"] == 0:
+            raise SDKException('Subclient', '125')
+
+        if metadata["size"] > 20 * 1024 * 1024:
+            raise SDKException('Subclient', '126')
+
+        request_json = {
+            "filters": [
+                {
+                    "field": "CONTENTID",
+                    "fieldValues": {
+                        "values": [
+
+                        ]
+                    }
+                },
+                {
+                    "field": "COMMCELL_NUMBER",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["advConfig"]["browseAdvancedConfigResp"][
+                                    "commcellNumber"])
+                        ]
+                    }
+                },
+                {
+                    "field": "CLIENT_ID",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["sourceCommServer"]["commCellId"])
+                        ]
+                    }
+                },
+                {
+                    "field": "SUBCLIENT_ID",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["subclient"]["applicationId"])
+                        ]
+                    }
+                },
+                {
+                    "field": "MODIFIED_TIME",
+                    "fieldValues": {
+                        "values": [
+                            metadata["modified_time"]
+                        ]
+                    }
+                },
+                {
+                    "field": "ITEM_PATH",
+                    "fieldValues": {
+                        "values": [
+                            file_path
+                        ]
+                    }
+                },
+                {
+                    "field": "ITEM_SIZE",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["size"])
+                        ]
+                    }
+                },
+                {
+                    "field": "ARCHIVE_FILE_ID",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["archiveFileId"])
+                        ]
+                    }
+                },
+                {
+                    "field": "ARCHIVE_FILE_OFFSET",
+                    "fieldValues": {
+                        "values": [
+                            str(metadata["advanced_data"]["offset"])
+                        ]
+                    }
+                }
+            ]
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._PREVIEW_CONTENT, request_json)
+
+        if flag:
+            if "Preview not available" not in response.text:
+                return response.text
+            else:
+                raise SDKException('Subclient', '127')
+        else:
+            raise SDKException('Subclient', '102', self._update_response_(response.text))
+
+
+

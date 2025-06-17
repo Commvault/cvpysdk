@@ -223,6 +223,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             transport_mode='Auto',
             proxy_client=None,
             to_time=0,
+            run_security_scan=False,
             **kwargs
     ):
         """Restores the FULL Virtual machine specified in the input list
@@ -270,6 +271,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                 to_time             (Int)         --  End time to select the job for restore
                                                     default: None
 
+                run_security_scan   (bool)  --  run security scan or not                                  
+
                 **kwargs                         : Arbitrary keyword arguments Properties as of
                                                      full_vm_restore_out_of_place
                     eg:
@@ -303,6 +306,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
 
                     delayMigrationMinutes   (Int)  -- Migrations delay in minutes: Default '0'
 
+                    vmTags              (list)  --  List of tags to be added to the restored VM
+
             Returns:
                 object - instance of the Job class for this restore job
 
@@ -320,7 +325,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         extra_options = ['source_ip', 'destination_ip', 'network', 'destComputerName',
                          'source_subnet', 'source_gateway', 'destination_subnet',
                          'destination_gateway', 'folder_path', 'media_agent', 'v2_details', 'revert',
-                         'volume_level_restore','redirectWritesToDatastore','delayMigrationMinutes']
+                         'volume_level_restore', 'redirectWritesToDatastore', 'delayMigrationMinutes', 'vmTags']
 
         for key in extra_options:
             if key in kwargs:
@@ -359,6 +364,7 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             esx_server=None,
             unconditional_overwrite=overwrite,
             power_on=power_on,
+            run_security_scan=run_security_scan,
             vm_to_restore=self._set_vm_to_restore(vm_to_restore),
             disk_option=self._disk_option[disk_option],
             transport_mode=self._transport_mode[transport_mode],

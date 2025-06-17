@@ -61,6 +61,8 @@ Users:
 
     _get_users_on_service_commcell()    -- gets the users from service commcell
 
+    all_users_prop()                    --  Returns complete GET API response
+
 User
     __init__()                          --  initiaizes the user class object
 
@@ -149,6 +151,8 @@ class Users(object):
         self._users = None
         self._users_cache = None
         self._users_on_service = None
+        self._all_users_prop = None
+        self.filter_query_count = 0
         self.refresh()
 
     def __str__(self):
@@ -167,12 +171,13 @@ class Users(object):
 
     def __repr__(self):
         """Representation string for the instance of the Users class."""
-        return "Users class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "Users class instance for Commcell"
 
-    def _get_users(self):
+    def _get_users(self, full_response: bool = False):
         """Returns the list of users configured on this commcell
+
+            Args:
+                full_response(bool) --  flag to return complete response
 
             Returns:
                 dict of all the users on this commcell
@@ -189,6 +194,8 @@ class Users(object):
 
         if flag:
             if response.json() and 'users' in response.json():
+                if full_response:
+                    return response.json()
                 users_dict = {}
 
                 for user in response.json()['users']:
@@ -214,18 +221,20 @@ class Users(object):
             fl_parameters(str) -- fl parameter string
         """
         self.valid_columns = {
-            'UserName': 'users.userEntity.userName',
-            'UserId': 'users.userEntity.userId',
+            'userName': 'users.userEntity.userName',
+            'userId': 'users.userEntity.userId',
             'email': 'users.email',
-            'FullName': 'users.fullName',
+            'fullName': 'users.fullName',
             'description': 'users.description',
-            'upn': 'users.UPN',
-            'enabled': 'users.enableUser',
-            'locked': 'users.isAccountLocked',
-            'numberOfLaptops': 'users.numDevices',
-            'company': 'users.userEntity.companyId'
+            'UPN': 'users.UPN',
+            'enableUser': 'users.enableUser',
+            'isAccountLocked': 'users.isAccountLocked',
+            'numDevices': 'users.numDevices',
+            'company': 'users.userEntity.entityInfo.companyName',
+            'lastLogIntime': 'users.lastLogIntime',
+            'commcell': 'users.userEntity.entityInfo.multiCommcellName'
         }
-        default_columns = 'users.userEntity.userName'
+        default_columns = 'users.userEntity'
 
         if fl:
             if all(col in self.valid_columns for col in fl):
@@ -233,7 +242,7 @@ class Users(object):
             else:
                 raise SDKException('User', '102', 'Invalid column name passed')
         else:
-            fl_parameters = f"&fl={','.join(column for column in self.valid_columns.values())}"
+            fl_parameters = f"&fl={default_columns},{','.join(column for column in self.valid_columns.values())}"
 
         return fl_parameters
 
@@ -267,25 +276,25 @@ class Users(object):
         Returns:
             fq_parameters(str) -- fq parameter string
         """
-        conditions = ['contains', 'notContain', 'eq', 'neq', 'gt', 'lt']
-        params = [""]
-        if fq:
-            for param in fq:
-                if param[0] in self.valid_columns.keys():
-                    if param[1] in conditions:
-                        params.append(f"&fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}")
-                    elif param[1] == 'isEmpty' and len(param) == 2:
-                        params.append(f"&fq={self.valid_columns[param[0]]}:in:null,")
-                    elif param[1].lower() == 'between' and '-' in param[2]:
-                        ranges = param[2].split('-')
-                        params.append(f"&fq={self.valid_columns[param[0]]}:gteq:{ranges[0]}")
-                        params.append(f"&fq={self.valid_columns[param[0]]}:lteq:{ranges[1]}")
-                    else:
-                        raise SDKException('User', '102', 'Invalid condition passed')
-                else:
-                    raise SDKException('User', '102', 'Invalid column Name passed')
-        if params:
-            return "".join(params)
+        conditions = {"contains", "notContain", "eq", "neq", "gt", "lt"}
+        params = []
+
+        for column, condition, *value in fq or []:
+            if column not in self.valid_columns:
+                raise SDKException('User', '102', 'Invalid column name passed')
+
+            if condition in conditions:
+                params.append(f"&fq={self.valid_columns[column]}:{condition.lower()}:{value[0]}")
+            elif condition == "isEmpty" and not value:
+                params.append(f"&fq={self.valid_columns[column]}:in:null,")
+            elif condition.lower() == "between" and value and "-" in value[0]:
+                start, end = value[0].split("-", 1)
+                params.append(f"&fq={self.valid_columns[column]}:gteq:{start}")
+                params.append(f"&fq={self.valid_columns[column]}:lteq:{end}")
+            else:
+                raise SDKException('User', '102', 'Invalid condition passed')
+
+        return "".join(params)
 
     def get_users_cache(self, hard: bool = False, **kwargs) -> dict:
         """
@@ -304,31 +313,34 @@ class Users(object):
                 fq (list)       --   Contains the columnName, condition and value.
                                         e.g. fq = [['UserName', 'contains', 'test'],
                                          ['email', 'contains', 'test']] (default: None).
-                enum (bool)     --   Flag to return enums in the response (default: True).
 
         Returns:
             dict: Dictionary of all the properties present in response.
         """
-        self._commcell_object._headers['mode'] = 'EdgeMode'
-        headers = self._commcell_object._headers.copy()
-        if kwargs.get('enum', True):
-            headers['EnumNames'] = 'True'
-
+        # computing params
         fl_parameters = self._get_fl_parameters(kwargs.get('fl', None))
         fq_parameters = self._get_fq_parameters(kwargs.get('fq', None))
-        limit = kwargs.get('limit', ['0', '100'])
-        limit_parameters = f'start={limit[0]}&limit={limit[1]}'
+        limit = kwargs.get('limit', None)
+        limit_parameters = f'start={limit[0]}&limit={limit[1]}' if limit else ''
         hard_refresh = '&hardRefresh=true' if hard else ''
         sort_parameters = self._get_sort_parameters(kwargs.get('sort', None)) if kwargs.get('sort', None) else ''
-        search_parameter = f'&search={",".join(self.valid_columns.values())}:contains:{kwargs.get("search", None)}' if kwargs.get(
-            'search', None) else ''
 
-        request_url = (
-                self._commcell_object._services['USERS'] + "?" +
-                limit_parameters + sort_parameters + fl_parameters + hard_refresh +
-                search_parameter + fq_parameters
-        )
-        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", request_url, headers=headers)
+        # Search operation can only be performed on limited columns, so filtering out the columns on which search works
+        searchable_columns = ["userName","email","fullName","company","description"]
+        search_parameter = (f'&search={",".join(self.valid_columns[col] for col in searchable_columns)}:contains:'
+                            f'{kwargs.get("search", None)}') if kwargs.get('search', None) else ''
+
+        params = [
+            limit_parameters,
+            sort_parameters,
+            fl_parameters,
+            hard_refresh,
+            search_parameter,
+            fq_parameters
+        ]
+
+        request_url = f"{self._commcell_object._services['USERS']}?" + "".join(params)
+        flag, response = self._commcell_object._cvpysdk_object.make_request("GET", request_url)
 
         if not flag:
             response_string = self._commcell_object._update_response_(response.text)
@@ -336,21 +348,38 @@ class Users(object):
 
         users_cache = {}
         if response.json() and 'users' in response.json():
+            self.filter_query_count = response.json().get('filterQueryCount',0)
             for user in response.json()['users']:
                 name = user.get('userEntity', {}).get('userName')
                 users_config = {
+                    'userName': name,
                     'userId': user.get('userEntity', {}).get('userId'),
                     'email': user.get('email'),
                     'fullName': user.get('fullName'),
-                    'description': user.get('description'),
+                    'description': user.get('description',''),
                     'UPN': user.get('UPN'),
-                    'enabled': user.get('enableUser'),
-                    'locked': user.get('isAccountLocked'),
-                    'numberOfLaptops': user.get('numDevices'),
-                    'company': user.get('userEntity', {}).get('entityInfo', {}).get('companyName')
+                    'enableUser': user.get('enableUser'),
+                    'isAccountLocked': user.get('isAccountLocked'),
+                    'numDevices': user.get('numDevices'),
+                    'company': user.get('userEntity', {}).get('entityInfo', {}).get('companyName'),
+                    'lastLogIntime': user.get('lastLogIntime')
                 }
-                users_config = {key: value for key, value in users_config.items() if value is not None}
-                users_cache[name] = users_config
+                if self._commcell_object.is_global_scope():
+                    users_config['commcell'] = user.get('userEntity', {}).get('entityInfo', {}).get('multiCommcellName')
+
+                    # Handle duplicate names for different commcells
+                    unique_name = name
+                    i = 1
+                    while unique_name in users_cache:
+                        existing_user = users_cache[unique_name]
+                        if existing_user.get('commcell') != users_config.get('commcell'):
+                            unique_name = f"{name}__{i}"
+                            i += 1
+                        else:
+                            break
+                    users_cache[unique_name] = users_config
+                else:
+                    users_cache[name] = users_config
 
             return users_cache
         else:
@@ -386,6 +415,8 @@ class Users(object):
                                 }
                     }
         """
+        if not self._users_cache:
+            self._users_cache = self.get_users_cache()
         return self._users_cache
 
     def _process_add_or_delete_response(self, flag, response):
@@ -766,6 +797,14 @@ class Users(object):
         """
         return self._users
 
+    @property
+    def all_users_prop(self)->list[dict]:
+        """
+        Returns complete GET API response
+        """
+        self._all_users_prop = self._get_users(full_response=True).get('users', [])
+        return self._all_users_prop
+
 
 class User(object):
     """Class for representing a particular user configured on this commcell"""
@@ -801,7 +840,6 @@ class User(object):
         self._upn = None
         self._num_devices = None
         self._get_user_properties()
-        self._get_tfa_status()
 
     def __repr__(self):
         """String representation of the instance of this class."""
@@ -1172,7 +1210,6 @@ class User(object):
     def refresh(self):
         """Refresh the properties of the User."""
         self._get_user_properties()
-        self._get_tfa_status()
 
     def update_security_associations(self, entity_dictionary, request_type):
         """handles three way associations (role-user-entities)
@@ -1298,6 +1335,7 @@ class User(object):
 
         bool    --  tfa status
         """
+        self._get_tfa_status()
         return self._tfa_status
 
     @property
@@ -1393,3 +1431,213 @@ class User(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def create_access_token(self,
+                            token_name,
+                            token_type=None,
+                            renewable_until_time=None,
+                            token_expiry_time=None,
+                            api_endpoints=None):
+        """
+        Creates v4 Access token for the given User
+        Args:
+            token_name   (str)   -- User friendly name for the Access token
+
+            token_type   (int)   -- Scope for the Access token
+                Expected values: 0: All Scope(Default)
+                                 1: Microsoft SCIM
+                                 2: All Scope
+                                 3: Custom
+                                 4: 1-Touch
+
+            renewable_until_time (int) -- Unix time stamp for renewable until time applicable
+            for Scopes ["All Scope", "custom"]. It will be ignored for other scopes.
+
+            token_expiry_time (int) -- Unix time stamp for Token expiry time
+            applicable for Scopes ["Microsoft SCIM", "1-Touch"]. It will be ignored for other scopes.
+
+            api_endpoints (list) -- List of Commvault REST API to be considered in the custom scope
+                Example-> ["/client", "/v4/servergroup"]
+
+        Returns:
+            dict - Containing Access token details
+            Example response:
+            For Microsoft SCIM and 1-Touch:
+                {'accessTokenId': <token_ID>, 'tokenName': 'sample_token_name', 'accessToken': '<Access token>',
+                 'userId': <logged-in-user-ID>, 'tokenExpiryTimestamp': Expiry time stamp}
+            For All scope and custom scope:
+                {'accessTokenId': <token_ID>, 'renewableUntilTimestamp': <renewable until time stamp>,
+                'tokenName': 'sample_token_name', 'accessToken': '<Access token>', 'userId': 1,
+                'refreshTokenExpiryTimestamp': <refresh token expiry time>,
+                'tokenExpiryTimestamp': <token expiry time>, 'refreshToken': '<refresh token>'}
+        """
+        payload = {
+                "tokenName": token_name
+        }
+        if token_type:
+            payload["tokenType"] = token_type
+
+        if renewable_until_time:
+            payload["renewableUntilTimestamp"] = renewable_until_time
+
+        if token_expiry_time:
+            payload["tokenExpiryTimestamp"] = token_expiry_time
+
+        if api_endpoints:
+            payload["apiEndpoints"] = api_endpoints
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._commcell_object._services['CREATE_ACCESS_TOKEN'], payload
+        )
+        if flag:
+            if response.json():
+                error_code = response.json()['error']['errorCode']
+                if error_code != 0:
+                    error_string = response.json()['error'].get('errorMessage')
+                    raise SDKException('User', '104', error_string)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        return response.json()["tokenInfo"]
+
+    def edit_access_token(self,
+                          access_token_id,
+                          token_name=None,
+                          token_type=None,
+                          renewable_until_time=None,
+                          token_expiry_time=None,
+                          api_endpoints=None):
+        """
+        update v4 Access token for the given token ID
+        Args:
+            access_token_id (int) -- Access token ID received in the create request
+
+            token_name   (str)   -- User friendly name for the Access token
+
+            token_type   (int)   -- Scope for the Access token
+                Expected values: 0: All Scope(Default)
+                                 1: Microsoft SCIM
+                                 2: All Scope
+                                 3: Custom
+                                 4: 1-Touch
+
+            renewable_until_time (int) -- Unix time stamp for renewable until time applicable
+            for Scopes ["All Scope", "custom"]. It will be ignored for other scopes.
+
+            token_expiry_time (int) -- Unix time stamp for Token expiry time
+            applicable for Scopes ["Microsoft SCIM", "1-Touch"]. It will be ignored for other scopes.
+
+            api_endpoints (list) -- List of Commvault REST API to be considered in the custom scope
+                Example-> ["/client", "/v4/servergroup"]
+
+        Returns:
+            dict - Containing updated Access token details
+        """
+
+        if not any([token_name, renewable_until_time, token_expiry_time, api_endpoints]):
+            if token_type is None:
+                raise SDKException('User', '105', "At least one input is required for update token operation")
+
+        payload = {}
+        if token_name:
+            payload["tokenName"] = token_name
+
+        if token_type:
+            payload["tokenType"] = token_type
+
+        if renewable_until_time:
+            payload["renewableUntilTimestamp"] = renewable_until_time
+
+        if token_expiry_time:
+            payload["tokenExpiryTimestamp"] = token_expiry_time
+
+        if api_endpoints:
+            payload["apiEndpoints"] = api_endpoints
+
+        update_token_api_url = self._commcell_object._services['UPDATE_ACCESS_TOKEN'] % access_token_id
+        flag, response = self._commcell_object._cvpysdk_object.make_request('PUT', update_token_api_url, payload)
+        if flag:
+            if response.json():
+                error_code = response.json()['error']['errorCode']
+                if error_code != 0:
+                    error_string = response.json()['error'].get('errorMessage')
+                    raise SDKException('User', '106', error_string)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        return response.json()["tokenInfo"]
+
+    def delete_access_token(self, access_token_id):
+        """
+        delete v4 Access token for the given token ID
+        Args:
+            access_token_id (int) -- Access token ID received in the create request
+
+        Returns:
+            dict - Containing error message and error code.
+        """
+        revoke_token_api_url = self._commcell_object._services['REVOKE_ACCESS_TOKEN'] % access_token_id
+        flag, response = self._commcell_object._cvpysdk_object.make_request('DELETE', revoke_token_api_url)
+        if flag:
+            if response.json():
+                error_code = response.json()['errorCode']
+                if error_code != 0:
+                    error_string = response.json().get('errorMessage')
+                    raise SDKException('User', '107', error_string)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        return response.json()
+
+    def get_access_tokens(self):
+        """
+        get v4 Access token for the current user
+        Args:
+        Returns:
+            dict - Containing List of all Access tokens available for the current user.
+        """
+        get_tokens_api_url = self._commcell_object._services['GET_ACCESS_TOKENS'] % self.user_id
+        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', get_tokens_api_url)
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode')
+                if error_code and error_code != 0:
+                    error_string = response.json().get('errorMessage')
+                    raise SDKException('User', '108', error_string)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        return response.json()
+
+    def renew_access_token(self, access_token, refresh_token):
+        """
+        Renew Access token
+        Args:
+            access_token    (str)  -- Access token received in create request
+            refresh_token   (str)  -- refresh token received in create request
+        Returns:
+            dict - Containing details of renewed Access token.
+        """
+        renew_token_api_url = self._commcell_object._services['RENEW_TOKEN']
+        payload = {
+            "accessToken" : access_token,
+            "refreshToken" : refresh_token
+        }
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', renew_token_api_url, payload)
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode')
+                if error_code and error_code != 0:
+                    error_string = response.json().get('errorMessage')
+                    raise SDKException('User', '109', error_string)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        return response.json()
+
+

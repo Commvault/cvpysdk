@@ -368,6 +368,7 @@ class Organizations:
         self._organizations = None
         self._organizations_cache = None
         self._fanout = False
+        self.filter_query_count = 0
 
         self.refresh()
 
@@ -388,9 +389,7 @@ class Organizations:
 
     def __repr__(self):
         """Returns the string representation of an instance of this class."""
-        return "Organizations class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "Organizations class instance for Commcell"
 
     def __len__(self):
         """Returns the number of the organizations configured on the Commcell."""
@@ -424,9 +423,10 @@ class Organizations:
         except IndexError:
             raise IndexError('No organization exists with the given Name / Id')
 
-    def _get_organizations(self):
+    def _get_organizations(self, full_response: bool = False):
         """Gets all the organizations associated with the Commcell environment.
-
+            Args:
+                full_response(bool) --  flag to return complete response
             Returns:
                 dict    -   consists of all organizations added to the commcell
 
@@ -448,6 +448,8 @@ class Organizations:
             organizations = {}
             self._adv_config = {}
             if response.json() and 'providers' in response.json():
+                if full_response:
+                    return response.json()
                 for provider in response.json()['providers']:
                     name = provider['connectName'].lower()
                     if self._fanout and "idpCompanyDetails" in provider:
@@ -464,10 +466,13 @@ class Organizations:
                         get("cloudService", {}).get('redirectUrl')
                     organizations[name] = organization_id
                     self._adv_config[name] = self._adv_config.get(name, {}) | {
+                        'id': organization_id,
                         'GUID': organization_guid,
                         'redirect_url': cloud_service_organizations,
                         'home_commcell': provider.get('commcell', {}).get('commCellName'),
                         'parent_company': provider.get('ownerCompanyName'),
+                        'full_name': [contact.get('fullName','') for contact in provider.get('primaryContacts',[])],
+                        'flags': provider.get('flags')
                     }
                     if 'workloads' not in self._adv_config[name]:
                         self._adv_config[name]['workloads'] = []
@@ -546,13 +551,16 @@ class Organizations:
             fl_parameters(str) -- fl parameter string
         """
         self.valid_columns = {
-            'connectName': 'providers.connectName',
+            'name': 'providers.connectName',
             'id': 'providers.shortname.id',
             'fullName': 'providers.primaryContacts.fullName',
             'associatedEntitiesCount': 'providers.associatedEntitiesCount',
             'status': 'providers.status',
             'providerGUID': 'providers.providerGUID',
-            'tags': 'providers.provider.tags'
+            'tags': 'providers.provider.tags',
+            'reseller': 'providers.canCreateCompanies',
+            'parentCompany': 'providers.ownerCompanyName',
+            'commcell': 'providers.commcell'
         }
         default_columns = 'providers.connectName,providers.shortName'
 
@@ -590,32 +598,32 @@ class Organizations:
         Returns the fq parameters based on the fq list passed
         Args:
              fq     (list) --   contains the columnName, condition and value
-                    e.g. fq = [['connectName','contains','test'],['status','equals','active']]
+                    e.g. fq = [['name','contains','test'],['status','eq','ACTIVE']]
 
         Returns:
             fq_parameters(str) -- fq parameter string
         """
-        conditions = ['contains', 'notContain', 'eq', 'neq', 'gt', 'lt']
-        params = ["&fq=providers.status:eq:ACTIVE"]
-        if fq:
-            for param in fq:
-                if param[0] in self.valid_columns.keys():
-                    if param[0] == 'tags':
-                        params.append(f"&fq=providers.provider.tags.name:contains:{param[2]}")
-                    elif param[1] in conditions:
-                        params.append(f"&fq={self.valid_columns[param[0]]}:{param[1].lower()}:{param[2]}")
-                    elif param[1] == 'isEmpty' and len(param) == 2:
-                        params.append(f"&fq={self.valid_columns[param[0]]}:in:null,")
-                    elif param[1] == 'between' and '-' in param[2]:
-                        ranges = param[2].split('-')
-                        params.append(f"&fq={self.valid_columns[param[0]]}:gteq:{ranges[0]}")
-                        params.append(f"&fq={self.valid_columns[param[0]]}:lteq:{ranges[1]}")
-                    else:
-                        raise SDKException('Organization', '102', 'Invalid condition passed')
-                else:
-                    raise SDKException('Organization', '102', 'Invalid column Name passed')
-        if params:
-            return "".join(params)
+        conditions = {"contains", "notContain", "eq", "neq", "gt", "lt", "nin"}
+        params = []
+
+        for column, condition, *value in fq or []:
+            if column not in self.valid_columns:
+                raise SDKException("Organization", "102", "Invalid column name passed")
+
+            if column == "tags":
+                params.append(f"&fq=providers.provider.tags.name:contains:{value[0]}")
+            elif condition in conditions:
+                params.append(f"&fq={self.valid_columns[column]}:{condition.lower()}:{value[0]}")
+            elif condition == "isEmpty" and not value:
+                params.append(f"&fq={self.valid_columns[column]}:in:null,")
+            elif condition == "between" and "-" in value[0]:
+                start, end = value[0].split("-")
+                params.append(f"&fq={self.valid_columns[column]}:gteq:{start}")
+                params.append(f"&fq={self.valid_columns[column]}:lteq:{end}")
+            else:
+                raise SDKException("Organization", "102", "Invalid condition passed")
+
+        return "".join(params)
 
     def get_organizations_cache(self, hard: bool = False, **kwargs) -> dict:
         """
@@ -627,36 +635,44 @@ class Organizations:
                 fl    (list)  --   list of columns to return in response (default: None).
                 sort  (list)  --   contains the name of the column on which sorting will be performed and type of sort
                                         valid sor type: 1 for ascending and -1 for descending
-                                        e.g. sort = ['connectName','1'] (default: None).
+                                        e.g. sort = ['name','1'] (default: None).
                 limit (list)  --   contains the start and limit parameter value
                                         limit = [<startValue>,<limitValue>]
                                         default ['0','25']
                 search (str)  --   contains the string to search in the commcell entity cache (default: None).
                 fq     (list) --   contains the columnName, condition and value as a sublist of a list (default: None).
-                                        e.g. fq = [['connectName','contains','test'],['status','equals','active']]
-                enum   (bool) --    flag to return enums in the response (default: True).
+                                        e.g. fq = [['name','contains','test'],['status','equals','active']]
 
         Returns:
             dict: Dictionary of all the properties present in response.
         """
-        headers = self._commcell_object._headers.copy()
-        if kwargs.get('enum', True):
-            headers['EnumNames'] = 'True'
-
+        # computing params
         fl_parameters = self._get_fl_parameters(kwargs.get('fl', None))
         fq_parameters = self._get_fq_parameters(kwargs.get('fq', None))
-        limit = kwargs.get('limit', ['0', '100'])
-        limit_parameters = f'start={limit[0]}&limit={limit[1]}'
+        limit = kwargs.get('limit', None)
+        limit_parameters = f'start={limit[0]}&limit={limit[1]}' if limit else ''
         hard_refresh = '&hardRefresh=true' if hard else ''
         sort_parameters = self._get_sort_parameters(kwargs.get('sort', None)) if kwargs.get('sort', None) else ''
-        search_parameter = f'&search={",".join(self.valid_columns.values())}:contains:{kwargs.get("search", None)}' if kwargs.get(
-            'search', None) else ''
 
-        request_url = (
-                self._organizations_api + "?" + limit_parameters + sort_parameters + fl_parameters +
-                hard_refresh + search_parameter + fq_parameters
-        )
-        flag, response = self._cvpysdk_object.make_request("GET", request_url, headers=headers)
+        # Search operation can only be performed on limited columns, so filtering out the columns on which search works
+        searchable_columns = ["name", "fullName", "providerGUID", "status"]
+        search_parameter = (f'&search={",".join(self.valid_columns[col] for col in searchable_columns)}:contains:'
+                            f'{kwargs.get("search", None)}') if kwargs.get('search', None) else ''
+        params = [
+            limit_parameters,
+            sort_parameters,
+            fl_parameters,
+            hard_refresh,
+            search_parameter,
+            fq_parameters
+        ]
+
+        # adding required additional param for comet layer
+        if self._commcell_object.is_global_scope():
+            params.append("&fq=providers.idpCompanyDetails:eq:null")
+
+        request_url = f"{self._organizations_api}?" + "".join(params)
+        flag, response = self._cvpysdk_object.make_request("GET", request_url)
 
         if not flag:
             response_string = self._update_response_(response.text)
@@ -664,22 +680,39 @@ class Organizations:
 
         organizations_cache = {}
         if response.json() and 'providers' in response.json():
+            self.filter_query_count = response.json().get('filterQueryCount',0)
             for provider in response.json()['providers']:
                 name = provider['connectName'].lower()
                 organization_config = {
+                    'name': provider['connectName'].lower(),
                     'id': provider.get('shortName', {}).get('id'),
                     'providerGUID': provider.get('providerGUID'),
                     'status': provider.get('status'),
-                    'associatedEntitiesCount': provider.get('associatedEntitiesCount')
+                    'associatedEntitiesCount': provider.get('associatedEntitiesCount'),
+                    'fullName':[contact.get('fullName','') for contact in provider.get('primaryContacts',[])],
+                    'reseller': provider.get('canCreateCompanies', False),
+                    'parentCompany': provider.get('ownerCompanyName', '')
                 }
-                if 'primaryContacts' in provider:
-                    organization_config['fullName'] = [
-                        contact.get('fullName') for contact in provider.get('primaryContacts')
-                    ]
                 if provider.get('provider') is not None and 'tags' in provider['provider']:
                     organization_config['tags'] = provider.get('provider', {}).get('tags')
-                organization_config = {key: value for key, value in organization_config.items() if value is not None}
-                organizations_cache[name] = organization_config
+                if self._commcell_object.is_global_scope():
+                    organization_config.update(
+                        {"commcell": provider.get('commcell', {}).get('entityInfo', {}).get('multiCommcellName','')}
+                    )
+
+                    # Handle duplicate names for different commcells
+                    unique_name = name
+                    i = 1
+                    while unique_name in organizations_cache:
+                        existing_user = organizations_cache[unique_name]
+                        if existing_user.get('commcell') != organization_config.get('commcell'):
+                            unique_name = f"{name}__{i}"
+                            i += 1
+                        else:
+                            break
+                    organizations_cache[unique_name] = organization_config
+                else:
+                    organizations_cache[name] = organization_config
             return organizations_cache
         else:
             raise SDKException('Response', '102')
@@ -711,6 +744,8 @@ class Organizations:
                     }
 
                 """
+        if not self._organizations_cache:
+            self._organizations_cache = self.get_organizations_cache()
         return self._organizations_cache
 
     @property
@@ -1972,38 +2007,39 @@ class Organization:
         self._update_properties()
 
     @property
-    def operators(self) -> list:
+    def operators(self) -> list[tuple[str, str]]:
         """
         Returns the list of operators and roles associated to this organization
 
         Returns:
-            list    -   list of dicts containing operator details
+            list    -   list of (operator, role) tuple pairs
 
         Example:
             [
-                {
-                    'role': {name:'<name of role>', id:<role id>},
-                    'userGroup': {userGroupName:'<usergroupname>', userGroupId:<id>}
-                },
-                {
-                    'role':{name:'<name of role>', id:<role id>},
-                    'user':{userName:'<user name>', userId:<id>}
-                }
+                ('<user name>', '<role name>'),
+                ('<usergroup name>', '<role name>'),
+                ...
             ]
         """
-        return self._operators
+        return sorted([
+            (
+                op.get('user', {}).get('userName') or op.get('userGroup', {}).get('userGroupName'),
+                op.get('role', {}).get('roleName')
+            ) for op in self._operators
+        ])
 
     @operators.setter
-    def operators(self, operator_list: list) -> None:
+    def operators(self, operator_list: list[tuple[str, str]]) -> None:
         """
         Overwrites the operator:role associations of the organization
 
         Args:
-            operators (list): list of dicts with role and user/userGroup keys
+            operator_list (list): list of (userOrGroup, role) tuple pairs
 
             [
-                {'role':'<name of role>','userGroup':'<usergroupname>'},
-                {'role':'<name of role>','user':'<username>'}
+                ('<user name>', '<role name>'),
+                ('<usergroup name>', '<role name>'),
+                ...
             ]
 
         Returns:
@@ -2017,23 +2053,26 @@ class Organization:
 
         """
         operators_list = []
-        for operator in operator_list:
-            operator_dict = {"role":
-                {
-                    "roleName": operator["role"],
-                    "roleId": int(self._commcell_object.roles.get(operator["role"]).role_id)
+        for user_or_group_name, role_name in operator_list:
+            operator_dict = {
+                "role": {
+                    "roleName": role_name,
+                    "roleId": int(self._commcell_object.roles.get(role_name).role_id)
                 }
             }
-            if 'user' in operator:
+
+            if user_id := self._commcell_object.users.all_users.get(user_or_group_name.lower()):
                 operator_dict['user'] = {
-                    'userName': operator['user'],
-                    'userId': int(self._commcell_object.users.get(operator['user']).user_id)
+                    'userName': user_or_group_name,
+                    'userId': int(user_id)
                 }
-            if 'userGroup' in operator:
+            elif user_group_id := self._commcell_object.user_groups.all_user_groups.get(user_or_group_name.lower()):
                 operator_dict['userGroup'] = {
-                    'userGroupName': operator['userGroup'],
-                    'userGroupId': int(self._commcell_object.user_groups.get(operator['userGroup']).user_group_id)
+                    'userGroupName': user_or_group_name,
+                    'userGroupId': int(user_group_id)
                 }
+            else:
+                raise SDKException('Organization', '110', f'Invalid User or User Group name: {user_or_group_name}')
             operators_list.append(operator_dict)
 
         request_json = {
@@ -3563,6 +3602,52 @@ class Organization:
         """
         return self._organization_info.get('organization', {}).get('providerGUID')
 
+    def add_additional_settings(self, key_name, category, data_type, value, comment="Added using automation", enabled=1):
+        """Adds additional settings on company level
+
+        Args:
+            key_name (str):
+
+        """
+        properties_dict = {
+            "additionalSettings": [
+                {
+                    "entityInfo": {
+                        "entityId": int(self.organization_id),
+                        "entityType": 189,
+                        "_type_": 189
+                    },
+                    "registryKeys": [
+                        {
+                            "relativepath": category,
+                            "keyName": key_name,
+                            "type": data_type,
+                            "value": value,
+                            "enabled": enabled,
+                            "comment": comment
+                        }
+                    ]
+                }
+            ]
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['ORGANIZATION_ADDITIONAL_SETTINGS'], properties_dict
+        )
+
+        if flag:
+            if response and response.json():
+                error_message = response.json().get('errorMessage')
+                if response.json().get('error', {}).get('errorCode', -1) != 0:
+                    raise SDKException('Organization', '102', error_message)
+
+                self.refresh()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+
 
 class RemoteOrganization:
     """Class for performing remote operations on an Organization."""
@@ -3613,7 +3698,7 @@ class RemoteOrganization:
         self._login_disabled = None
         self._restore_disabled = None
         self._domain_name = None
-        self._operators = None
+        self._operators = []
         self._parent_company = None
 
         self.refresh()
@@ -3699,7 +3784,7 @@ class RemoteOrganization:
                 self._login_disabled = organization.get('deactivateOptions', {}).get('disableLogin')
                 self._reseller_enabled = organization_properties.get('canCreateCompanies')
 
-                self._operators = organization_properties.get("operators")
+                self._operators = organization_properties.get("operators", [])
                 self._parent_company = organization_properties.get("resellerCompany")
 
                 return self._organization_info
@@ -3854,38 +3939,51 @@ class RemoteOrganization:
         self._properties = self._get_properties()
 
     @property
-    def operators(self)->list:
+    def operators(self) -> list[tuple[str, str]]:
         """
         Returns the list of operators and roles associated to this organization
 
         Returns:
-            list    -   list of dicts containing operator details
+            list    -   list of (operator, role) tuple pairs
 
         Example:
             [
-                {
-                    'role': {name:'<name of role>', id:<role id>},
-                    'userGroup': {userGroupName:'<usergroupname>', userGroupId:<id>}
-                },
-                {
-                    'role':{name:'<name of role>', id:<role id>},
-                    'user':{userName:'<user name>', userId:<id>}
-                }
+                ('<user name>', '<role name>'),
+                ('<usergroup name>', '<role name>'),
+                ...
             ]
         """
-        return self._operators
+        return sorted([
+            (
+                op.get('user', {}).get('userName') or op.get('userGroup', {}).get('userGroupName'),
+                op.get('role', {}).get('roleName')
+            ) for op in self._operators
+        ])
+
+    def lookup_operator(self, user_or_group: str, role: str) -> dict:
+        """
+        Gets the user id role id full dictionary for given user/group and role
+        """
+        for operator in self._operators:
+            this_role = operator.get('role', {}).get('roleName')
+            this_user_or_group = (operator.get('user', {}).get('userName') or
+                                  operator.get('userGroup', {}).get('userGroupName'))
+            if this_role == role and this_user_or_group == user_or_group:
+                return operator
+        return {}
 
     @operators.setter
-    def operators(self, operator_list:list)->None:
+    def operators(self, operator_list: list[tuple[str, str]]) -> None:
         """
-        Overwrites the operator:role associations of the organization remotely
+        Overwrites the operator:role associations of the remote organization
 
         Args:
-            operators (list): list of dicts with role and user/userGroup keys
+            operator_list (list): list of (userOrGroup, role) tuple pairs
 
             [
-                {'role':'<name of role>','userGroup':'<usergroupname>'},
-                {'role':'<name of role>','user':'<username>'}
+                ('<user name>', '<role name>'),
+                ('<usergroup name>', '<role name>'),
+                ...
             ]
 
         Returns:
@@ -3899,23 +3997,30 @@ class RemoteOrganization:
 
         """
         operators_list = []
-        for operator in operator_list:
-            operator_dict = {"role":
-                {
-                    "roleName": operator["role"],
-                    "roleId": int(self._commcell_object.roles.get(operator["role"]).role_id)
+        for user_or_group_name, role_name in operator_list:
+            if operator_dict := self.lookup_operator(user_or_group_name, role_name):
+                operators_list.append(operator_dict)
+                continue
+
+            operator_dict = {
+                "role": {
+                    "roleName": role_name,
+                    "roleId": int(self._commcell_object.roles.get(role_name).role_id)
                 }
             }
-            if 'user' in operator:
+
+            if user_id := self._commcell_object.users.all_users.get(user_or_group_name.lower()):
                 operator_dict['user'] = {
-                    'userName': operator['user'],
-                    'userId': int(self._commcell_object.users.get(operator['user']).user_id)
+                    'userName': user_or_group_name,
+                    'userId': int(user_id)
                 }
-            if 'userGroup' in operator:
+            elif user_group_id := self._commcell_object.user_groups.all_user_groups.get(user_or_group_name.lower()):
                 operator_dict['userGroup'] = {
-                    'userGroupName': operator['userGroup'],
-                    'userGroupId': int(self._commcell_object.user_groups.get(operator['userGroup']).user_group_id)
+                    'userGroupName': user_or_group_name,
+                    'userGroupId': int(user_group_id)
                 }
+            else:
+                raise SDKException('RemoteOrganization', '101', f'User/Group not found: {user_or_group_name}')
             operators_list.append(operator_dict)
 
         request_json = {
@@ -3924,21 +4029,30 @@ class RemoteOrganization:
                     "shortName": {"domainName": self.name, "id": int(self._organization_id)}
                 },
                 "organizationProperties": {
-                    "operatorsOperationType": 1,
+                    "operatorsOperationType": "OVERWRITE",
                     "operators": operators_list
                 },
             }
         }
+        api_endpoint = self._services['COMPANY_OPERATORS']
+
+        try:
+            sp_version = self._commcell_object.version.split('.')
+            if len(sp_version) > 2 and int(sp_version[1]) <= 38 and int(sp_version[2]) <= 20:
+                api_endpoint = self._services['UPDATE_ORGANIZATION'] % self.organization_id
+        except:
+            pass
+
         __, response = self._cvpysdk_object.make_request(
-            'PUT', self._services['UPDATE_ORGANIZATION'] % self.organization_id, request_json, headers=self._headers.copy()
+            'PUT', api_endpoint, request_json, headers=self._headers.copy()
         )
         self.refresh()
         if response.json():
             if 'error' in response.json():
-                error_code = response.json()['error']['errorCode']
+                error_code = response.json()['error'].get('errorCode')
                 error_message = response.json()['error'].get('errorMessage', '')
             else:
-                error_code = response.json()['errorCode']
+                error_code = response.json().get('errorCode')
                 error_message = response.json().get('errorMessage', '')
 
             if error_code != 0:
@@ -4193,7 +4307,7 @@ class RemoteOrganization:
                 }
             },
             "tenantCompany": {
-                "providerGUID": self.provider_guid
+                "providerGUID": self.provider_guid.lower()
             }
         }
 

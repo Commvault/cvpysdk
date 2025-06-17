@@ -113,9 +113,7 @@ class NetworkTopologies(object):
     def __repr__(self):
         """Representation string for the instance of NetworkTopologies class."""
 
-        return "NetworkTopologies class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "NetworkTopologies class instance for Commcell"
 
     def _get_network_topologies(self):
         """Gets all the network topologies associated with the commcell
@@ -334,6 +332,8 @@ class NetworkTopologies(object):
                 3 --- for two-way topology
                 4 --- Cascading Gateway's topology
                 5 --- One-way forwarding topology
+                6 --- Tri Cascading topology. 
+                7 --- Quad Cascading topology. 
 
                 display_type:
                 0 --- servers

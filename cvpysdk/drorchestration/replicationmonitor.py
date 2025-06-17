@@ -116,9 +116,7 @@ class ReplicationMonitor(object):
 
     def __repr__(self):
         """String representation of the instance of this class."""
-        representation_string = '"ReplicationMonitor: instance for commcell: "{1}"'
-        return representation_string.format(
-            self._commcell_object.commserv_name)
+        return 'ReplicationMonitor instance for Commcell'
 
     @property
     def _replication_Ids(self):

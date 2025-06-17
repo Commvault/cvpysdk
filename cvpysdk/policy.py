@@ -49,9 +49,7 @@ class Policies:
 
     def __repr__(self):
         """Representation string for the instance of the Policies class."""
-        return "Policies class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "Policies class instance for Commcell"
 
     def refresh(self):
         """Refresh all the Policies associated with the Commcell."""

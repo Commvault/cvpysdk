@@ -37,6 +37,8 @@ VSALiveSyncStatus       --  Enum to maintain status of the VSA Live sync
 VSAFailOverStatus       --  Enum to maintain Failover status of the VSA Live sync
 
 ApplicationGroup        --  Enum to maintain Application Group Types.
+
+VsInstanceType         --  Class to store VsInstance dict
 """
 
 from enum import Enum, auto
@@ -526,6 +528,7 @@ class HypervisorType(Enum):
     Nutanix = "Nutanix AHV"
     ORACLE_CLOUD_INFRASTRUCTURE = "Oracle Cloud Infrastructure"
     OPENSHIFT = "Red Hat OpenShift"
+    PROXMOX = "Proxmox ve"
 
 
 class AppIDAType(Enum):
@@ -675,94 +678,6 @@ class ApplicationGroup(Enum):
 class StoragePoolConstants:
     """Class to maintain storage policy constants"""
 
-    """
-    Defines the JSON structure for Azure Cloud Storage request.
-    """
-    AZURE_STORAGE_REQ_JSON = {
-        "type": "CVA_REGULAR_SP",
-        "numberOfCopies": 1,
-        "storagePolicyCopyInfo": {
-            "copyType": "SYNCHRONOUS",
-            "isDefault": "SET_TRUE",
-            "active": "SET_TRUE",
-            "storagePolicyFlags": {
-                "blockLevelDedup": "SET_TRUE",
-                "enableGlobalDeduplication": "SET_TRUE"
-            },
-            "library": {
-                "libraryId": 0,
-                "libraryName": ""
-            },
-            "mediaAgent": {
-                "mediaAgentId": 0,
-                "mediaAgentName": ""
-            },
-            "retentionRules": {
-                "retentionFlags": {
-                    "enableDataAging": "SET_TRUE"
-                }
-            },
-            "isFromGui": True,
-            "numberOfStreamsToCombine": 1,
-            "dedupeFlags": {
-                "enableDeduplication": "SET_TRUE",
-                "enableDASHFull": "SET_TRUE",
-                "hostGlobalDedupStore": "SET_TRUE"
-            },
-            "DDBPartitionInfo": {
-                "maInfoList": [
-
-                ]
-            }
-        },
-        "storage": [
-            {
-                "mediaAgent": {
-                    "mediaAgentId": 0,
-                    "mediaAgentName": ""
-                },
-                "path": "",
-                "deviceType": 3,
-                "metallicStorageInfo": {
-                    "region": [
-                        {
-                            "regionId": 0
-                        }
-                    ],
-                    "storageClass": [
-                        "CONTAINER_DEFAULT"
-                    ],
-                    "replication": [
-                        "NONE"
-                    ]
-                },
-                "credentials": {
-                    "userName": "",
-                    "password": ""
-                },
-                "savedCredential": {
-                    "credentialId": 0,
-                    "credentialName": ""
-                }
-            }
-        ],
-        "storagePolicyName": ""
-    }
-
-    MA_INFO_LIST = {
-        "mediaAgent": {
-            "mediaAgentId": 0,
-            "mediaAgentName": ""
-        },
-        "subStoreList": [
-            {
-                "accessPath": {
-                    "path": ""
-                }
-            }
-        ]
-    }
-
     AIR_GAP_PROTECT_STORAGE_TYPES = {
         "MICROSOFT AZURE STORAGE": {
             "HOT": {
@@ -877,3 +792,27 @@ class OSType(Enum):
     WINDOWS = 1
     UNIX = 2
 
+class VsInstanceType:
+    """Class to store vsinstance dict"""
+
+    VSINSTANCE_TYPE = {
+        101: "vmware",
+        201: "xen",
+        102: "hyperv",
+        301: "amazon_web_services",
+        401: "azure",
+        402: "azure_resource_manager",
+        403: "azure_stack",
+        501: "red_hat_virtualization",
+        601: "nutanix_ahv",
+        701: "oraclevm",
+        801: "fusioncompute",
+        901: "openstack",
+        1101: "oracle_cloud",
+        1102: "oracle_cloud_infrastructure",
+        1301: "google_cloud_platform",
+        1401: "alibaba_cloud",
+        1503: "vcloud_director",
+        1501: "kubernetes",
+        1600: "proxmox_ve"
+    }

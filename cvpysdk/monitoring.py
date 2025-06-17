@@ -161,9 +161,7 @@ class MonitoringPolicies(object):
 
     def __repr__(self):
         """Representation string for the instance of the MonitoringPolicies class."""
-        return "MonitoringPolicies class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "MonitoringPolicies class instance for Commcell"
 
     def _get_monitoring_policies(self):
         """Gets all the Monitoring Policies associated to the commcell

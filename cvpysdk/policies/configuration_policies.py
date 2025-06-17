@@ -129,9 +129,7 @@ class ConfigurationPolicies(object):
 
     def __repr__(self):
         """Representation string for the instance of the ConfigurationPolicies class."""
-        return "ConfigurationPolicies class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "ConfigurationPolicies class instance for Commcell"
 
     def _get_policies(self):
         """Gets all the Configuration policies associated to the

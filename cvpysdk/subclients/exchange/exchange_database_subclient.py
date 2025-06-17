@@ -278,10 +278,6 @@ class ExchangeDatabaseSubclient(Subclient):
                 media_agent     (str)   --  media agent name to create recovery point on
 
                 edb_paths       (dict)   --  edb paths with job Ids
-                ex: {97297: '\\\\SPVM\\sc_4701_job_97296_1563312295\\1563312295\\Microsoft Information
-                Store\\AUTODBx_spvm.VAYU.COMMVAULT.COM\\EDBFILES\\AUTODBx_spvm.VAYU.COMMVAULT.COM.edb
-                ', 97298: '\\\\MSE-2013\\sc_4701_job_97296_1563312333\\1563312333\\Microsoft Information St
-                ore\\AUTODBx_MSE-2013.VAYU.COMMVAULT.COM\\EDBFILES\\AUTODBx_MSE-2013.VAYU.COMMVAULT.COM.edb'}
 
                 recovery_point_ids (dict)   --  ids of recovery point jobs
                 ex: {97297: 834, 97298: 835}

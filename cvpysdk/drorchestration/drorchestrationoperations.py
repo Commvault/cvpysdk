@@ -119,9 +119,7 @@ class DROrchestrationOperations(object):
 
     def __repr__(self):
         """String representation of the instance of this class."""
-        representation_string = '"DROrchestrationOperations: instance for commcell: "{1}"'
-        return representation_string.format(
-            self._commcell_object.commserv_name)
+        return 'DROrchestrationOperations instance for Commcell'
 
     @property
     def dr_orchestration_job_phase(self):

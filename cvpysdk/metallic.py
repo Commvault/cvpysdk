@@ -303,7 +303,7 @@ class Metallic(object):
                         return True
                 return False
             else:
-                raise SDKException('Response', '102')
+                return False
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
@@ -354,6 +354,8 @@ class Metallic(object):
         saml_token_for_user = self._commcell_object.get_saml_token()
         user_obj = User(self._commcell_object, self._commcell_object.commcell_username)
         company_name = user_obj.user_company_name
+        if company_name == 'commcell':
+            company_name = None
         request = {
             "cloudServiceDetails": {
                 "cloudService": {
@@ -419,6 +421,8 @@ class Metallic(object):
         if not isinstance(user, User):
             user = self._commcell_object.users.get(self._commcell_object.commcell_username)
         company_name = user.user_company_name
+        if company_name == 'commcell':
+            company_name = None
         request = {
             "opType": 4,
             "cloudServiceDetails": {

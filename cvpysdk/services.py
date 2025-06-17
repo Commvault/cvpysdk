@@ -66,17 +66,21 @@ SERVICES_DICT_TEMPLATE = {
     'GET_VIRTUAL_CLIENTS': '{0}Client?PseudoClientType=VSPseudo',
     'GET_VIRTUALIZATION_ACCESS_NODES': '{0}VSAClientAndClientGroupList',
     'GET_FILE_SERVER_CLIENTS': '{0}/v4/FileServers',
-    'CLIENTFORCEDELETE':'{0}Client/%s?forceDelete=1',
+    'CLIENTFORCEDELETE': '{0}Client/%s?forceDelete=1',
     'CLIENT': '{0}Client/%s',
+    'CLIENT_LOGS': '{0}Client/%s/Logs/Read',
     'GET_ADDITIIONAL_SETTINGS': '{0}Client/%s/AdditionalSettings',
-    'FILTER_CLIENTS':'{0}Client?%s',
+    'FILTER_CLIENTS': '{0}Client?%s',
     'GET_ALL_CLIENTS_PLUS_HIDDEN': '{0}Client?hiddenclients=true',
     'GET_ALL_PSEUDO_CLIENTS': '{0}Client?PseudoClientType',
     'CHECK_READINESS': '{0}Client/%s/CheckReadiness?network=%s&resourceCapacity=%s'
                        '&NeedXmlResp=true&includeDisabledClients=%s&CSCCNetworkCheck=%s'
                        '&applicationCheck=%s&additionalResources=%s',
-    'MONGODB_CHECK_READINESS' : '{0}/clients/mongodb/status',
-    'CLIENT_BROWSE_FS' : '{0}/client/%s/browsefs',
+    'RUN_TRUEUP': '{0}Office365/TrueUp',
+    'READ_TRUEUP_RESULTS_CLIENT': '{0}Job/Office365/Results?subclientId=%s&clientId=%s&appTypeId=134&options=4',
+    'READ_TRUEUP_RESULTS_USER': '{0}Job/Office365/Results?subclientId=%s&clientId=%s&options=3&appTypeId=134&userGUID=%s',
+    'MONGODB_CHECK_READINESS': '{0}/clients/mongodb/status',
+    'CLIENT_BROWSE_FS': '{0}/client/%s/browsefs',
     'GET_ALL_AGENTS': '{0}Agent?clientId=%s',
     'AGENT': '{0}Agent',
     'GET_AGENT': '{0}Agent?clientId=%s&applicationId=%s&propertyLevel=30',
@@ -118,7 +122,8 @@ SERVICES_DICT_TEMPLATE = {
     'GET_LIBRARY_PROPERTIES': '{0}Library/%s',
     'DETECT_TAPE_LIBRARY': '{0}Library?Action=detect',
     'CONFIGURE_TAPE_LIBRARY': '{0}Library?Action=configureTape',
-    'EDIT_CLOUD_CONTROLLER':'{0}V4/Storage/Cloud/0/Bucket/%s/AccessPath/%s',
+    'EDIT_CLOUD_CONTROLLER': '{0}V4/Storage/Cloud/0/Bucket/%s/AccessPath/%s',
+    'GET_AGP_STORAGE': '{0}V4/Storage/Cloud?additionalProperties=true&storageSubType=4',
 
     'GET_MOVE_MOUNTPATH_DETAILS': '{0}MountPath/%s/Move',
     'MOVE_MOUNTPATH': '{0}MountPath/Move',
@@ -128,6 +133,7 @@ SERVICES_DICT_TEMPLATE = {
     'STORAGE_POLICY': '{0}StoragePolicy',
     'GET_STORAGE_POLICY': '{0}StoragePolicy/%s',
     'DELETE_STORAGE_POLICY': '{0}V2/StoragePolicy',
+    'UPDATE_STORAGE_POLCY': '{0}V2/StoragePolicy/%s',
     'GET_STORAGE_POLICY_ADVANCED': '{0}v2/StoragePolicy/%s?propertyLevel=10',
     'CREATE_STORAGE_POLICY_COPY': '{0}StoragePolicy?Action=createCopy',
     'DELETE_STORAGE_POLICY_COPY': '{0}StoragePolicy?Action=deleteCopy',
@@ -199,6 +205,9 @@ SERVICES_DICT_TEMPLATE = {
     'BROWSE': '{0}DoBrowse',
     'RESTORE': '{0}CreateTask',
     'DELETE': '{0}DeleteDocuments',
+    'DATABASES': '{0}databases',
+    'DB_INSTANCES': '{0}databases/instances',
+    'DB_CLONES': '{0}databases/clones',
     'SQL_CLONES': '{0}sql/clones',
     'SQL_DATABASE': '{0}sql/databases?instance=%s&databaseName=%s',
     'SQL_DATABASES': '{0}sql/databases?databaseName=%s',
@@ -344,6 +353,8 @@ SERVICES_DICT_TEMPLATE = {
     'V4_GLOBAL_SERVER_PLANS': '{0}/V4/Global/ServerPlan',
     'V4_SERVER_PLAN_BACKUP_DESTINATION': '{0}V4/ServerPlan/%s/BackupDestination',
     'V4_SERVER_PLAN_COPY': '{0}V4/ServerPlan/%s/BackupDestination/%s',
+    'V4_DC_PLANS': '{0}V4/DCPlan',
+    'V4_DC_PLAN': '{0}V4/DCPlan/%s',
     'V5_SERVER_PLAN_COPY': '{0}V5/ServerPlan/%s/BackupDestination/%s',
     'SERVER_PLAN_REGIONS': '{0}V4/ServerPlan/%s/storageRegion/%s?isRegionIdList=true',
     'SERVER_PLAN_RPO': '{0}V4/ServerPlan/%s/RPO',
@@ -353,7 +364,9 @@ SERVICES_DICT_TEMPLATE = {
     'DOMAIN_PROPERTIES': '{0}CommCell/DomainController?domainId=%s',
 
     'DRBACKUP': '{0}/CommServ/DRBackup',
+    'DRBACKUP_REGIONS': '{0}/V4/DRBackup/Regions',
     'DISASTER_RECOVERY_PROPERTIES': '{0}/Commcell/DRBackup/Properties',
+    'DISASTER_RECOVERY_OPTIONS': '{0}/Commcell/DRBackup/Options',
     'CVDRBACKUP_STATUS': '{0}/cvdrbackup/status?commcellid=%s',
     'CVDRBACKUP_INFO': '{0}/cvdrbackup/info',
     'CVDRBACKUP_DOWNLOAD': '{0}/cvdrbackup/download',
@@ -419,14 +432,16 @@ SERVICES_DICT_TEMPLATE = {
     'ORGANIZATION_THEME': '{0}V2/Organization/%s/Customization',
     'GET_ORGANIZATION_THEME': '{0}Organization/%s/Customization',
     'EXTEND_ORGANIZATION': '{0}ThirdParty/App/Company/Extend',
-    'ORGANIZATION_TAGS' : '{0}Tags',
-    'GET_ORGANIZATION_TAGS' : '{0}Tags/PROVIDER_ENTITY/%s',
-    'COMPANY_PASSKEY' : '{0}Company/%s/Passkey',
-    'COMPANY_AUTH_RESTORE' : '{0}Company/%s/AuthRestore',
+    'ORGANIZATION_TAGS': '{0}Tags',
+    'GET_ORGANIZATION_TAGS': '{0}Tags/PROVIDER_ENTITY/%s',
+    'COMPANY_PASSKEY': '{0}Company/%s/Passkey',
+    'COMPANY_AUTH_RESTORE': '{0}Company/%s/AuthRestore',
     'EDIT_COMPANY_DETAILS': '{0}v4/company/%s',
-    'CHECK_ELIGIBILITY_MIGRATION' : '{0}Company/%s/migration-entities',
+    'CHECK_ELIGIBILITY_MIGRATION': '{0}Company/%s/migration-entities',
     'COMPANY_ENTITIES': '{0}Company/%s/AssociatedEntities',
-    'MIGRATE_CLIENTS' : '{0}Company/%s/company-association',
+    'MIGRATE_CLIENTS': '{0}Company/%s/company-association',
+    'COMPANY_OPERATORS': '{0}V4/Company/Operator',
+    "ORGANIZATION_ADDITIONAL_SETTINGS": '{0}v4/workload/AdditionalSettings',
 
     'STORAGE_POOL': '{0}StoragePool',
     'GET_STORAGE_POOL': '{0}StoragePool/%s',
@@ -475,7 +490,10 @@ SERVICES_DICT_TEMPLATE = {
     'GET_OFFICE_365_ENTITIES': '{0}Office365/entities',
     'GET_DYNAMICS_365_CLIENTS': '{0}Office365/entities?agentType=5',
     'GET_SALESFORCE_CLIENTS': '{0}Salesforce/Organization',
+    'OFFICE365_OVERVIEW_STATS': '{0}Office365/overview/%s?mode=0',
+    'OFFICE365_POPULATE_INDEX_STATS': '{0}Office365/PopulateIdxStats',
     'CLOUD_DISCOVERY': '{0}Instance/%s/CloudDiscovery?clientId=%s&appType=%s',
+    'GOOGLE_DISCOVERY_OVERVIEW': '{0}Office365/overview/%s?mode=2',
     'SET_USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/SetUserPolicyAssociation',
     'CUSTOM_CATEGORY': '{0}Office365/SubClient/%s/CustomCategory',
     'CUSTOM_CATEGORIES': '{0}Office365/SubClient/%s/CustomCategories',
@@ -484,16 +502,20 @@ SERVICES_DICT_TEMPLATE = {
     'UPDATE_USER_POLICY_ASSOCIATION': '{0}Office365/CloudApps/UpdateUserPolicyAssociation',
     'GDRIVE_UPDATE_USERS': '{0}GoogleWorkspace/GDrive/UpdateUsers',
     'GMAIL_UPDATE_USERS': '{0}GoogleWorkspace/GMail/UpdateUsers',
+    'GDRIVE_GET_USERS': '{0}GoogleWorkspace/GDrive/GetUsers',
+    'GMAIL_GET_USERS': '{0}GoogleWorkspace/GMail/GetUsers',
     'OFFICE365_MOVE_JOB_RESULT_DIRECTORY': '{0}Office365/MoveJobResultsDirectory',
     'OFFICE365_PROCESS_INDEX_RETENTION_RULES': '{0}Office365/ProcessIdxRetentionRules',
+    'OFFICE365_POPULATE_INDEX_STATS': '{0}Office365/PopulateIdxStats',
+    'OFFICE365_OVERVIEW_STATS': '{0}Office365/overview/%s?mode=0',
     'ADD_EXCHANGE': '{0}pseudoClient',
     'CREATE_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies',
     'GET_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies?policyType=email',
     'GET_CONFIGURATION_POLICIES_FS': '{0}ConfigurationPolicies?policyType=filesytem',
     'GET_CONFIGURATION_POLICY': '{0}ConfigurationPolicies/%s',
     'DELETE_CONFIGURATION_POLICY': '{0}ConfigurationPolicies/%s',
-    'EMAIL_DISCOVERY': '{0}Backupset/%s/mailboxDiscover?discoveryType=%s',
-    'EMAIL_DISCOVERY_WITHOUT_REFRESH': '{0}Backupset/%s/mailboxDiscover?discoveryType=%s&refreshMailboxDb=false',
+    'EMAIL_DISCOVERY': '{0}Backupset/%s/mailboxDiscover?discoveryType=%s&pageSize=-1',
+    'EMAIL_DISCOVERY_WITHOUT_REFRESH': '{0}Backupset/%s/mailboxDiscover?discoveryType=%s&refreshMailboxDb=false&pageSize=-1',
     'GET_EMAIL_POLICY_ASSOCIATIONS': '{0}Subclient/%s/EmailPolicyAssociation?discoveryType=%s',
     'SET_EMAIL_POLICY_ASSOCIATIONS': '{0}/Subclient/EmailPolicyAssociation',
     'DELETE_DOCUMENTS': '{0}/DeleteDocuments',
@@ -514,13 +536,13 @@ SERVICES_DICT_TEMPLATE = {
     'RECONFIGURE_LICENSE': '{0}Client/License/Reconfigure',
     'LIST_LICENSES': '{0}Client/%s/License',
     'APPLY_LICENSE': '{0}License',
-    'CAPACITY_LICENSE':'{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:feabb5ca-b6b7-4572-b0cb-39352c7e1b67/data',
-    'OI_LICENSE':'{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:cd38c52a-e099-4252-d36f-3e2c54540f6f/data',
-    'VIRTUALIZATION_LICENSE':'{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:0aac5b36-10a4-4970-838a-c41fa2365583/data',
-    'USER_LICENSE':'{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:44cd7de8-ecb2-4ec8-8b2b-162491172eef/data',
-    'ACTIVATE_LICENSE':'{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:f7c6b473-f99d-44b4-ff5e-466b55656500/data',
-    'METALLIC_LICENSE':'{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:cc2e77ec-9315-4446-cd7e-44ef80a8860e/data',
-    'OTHER_LICENSE':'{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:2654b01f-9bb0-481e-b273-4b4fddc585b1/data',
+    'CAPACITY_LICENSE': '{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:feabb5ca-b6b7-4572-b0cb-39352c7e1b67/data',
+    'OI_LICENSE': '{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:cd38c52a-e099-4252-d36f-3e2c54540f6f/data',
+    'VIRTUALIZATION_LICENSE': '{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:0aac5b36-10a4-4970-838a-c41fa2365583/data',
+    'USER_LICENSE': '{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:44cd7de8-ecb2-4ec8-8b2b-162491172eef/data',
+    'ACTIVATE_LICENSE': '{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:f7c6b473-f99d-44b4-ff5e-466b55656500/data',
+    'METALLIC_LICENSE': '{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:cc2e77ec-9315-4446-cd7e-44ef80a8860e/data',
+    'OTHER_LICENSE': '{0}cr/reportsplusengine/datasets/d7faef75-cf66-40a2-98ce-a2d0cc2a144b:2654b01f-9bb0-481e-b273-4b4fddc585b1/data',
     'GET_CLOUDAPPS_USERS': '{0}Instance/%s/CloudDiscovery?clientId=%s&eDiscoverType=%s',
     'GET_CLOUDAPPS_ONEDRIVE_USERS': '{0}Instance/%s/CloudDiscovery?clientId=%s&eDiscoverType=%s&subclientId=%s',
     'ENABLE_CLIENT_PRIVACY': '{0}/V3/Client/%s/Lock',
@@ -534,7 +556,7 @@ SERVICES_DICT_TEMPLATE = {
     'SNAP_OPERATIONS': '{0}/Snaps/Operations',
     'STORAGE_ARRAYS': '{0}/StorageArrays',
 
-    'GET_NETWORK_SUMMARY':'{0}/FirewallSummary/%s',
+    'GET_NETWORK_SUMMARY': '{0}/FirewallSummary/%s',
     'NETWORK_TOPOLOGIES': '{0}FirewallTopology',
     'NETWORK_TOPOLOGY': '{0}FirewallTopology/%s',
     'PUSH_TOPOLOGY': '{0}FirewallTopology/%s/Push',
@@ -543,7 +565,8 @@ SERVICES_DICT_TEMPLATE = {
 
     'CERTIFICATES': '{0}CommServ/Certificates',
 
-    'GET_DAG_MEMBER_SERVERS': '{0}Exchange/DAG/%s/PseudoClientInfo',  # only for Exchange DAG
+    # only for Exchange DAG
+    'GET_DAG_MEMBER_SERVERS': '{0}Exchange/DAG/%s/PseudoClientInfo',
     'GET_RECOVERY_POINTS': '{0}Exchange/DAG/%s/RecoveryPoints?instanceId=%s&backupSetId=%s&subClientId=%s&appId=%s',
 
     'CASEDEFINITION': '{0}EDiscoveryClients/CaseDefinitions',
@@ -593,6 +616,8 @@ SERVICES_DICT_TEMPLATE = {
     'GET_ALL_CLIENT_ANOMALIES': '{0}/Client/AnomalyRecord?filter=%s&clients=%s',
     'CLEAR_ANOMALIES': '{0}/Client/PruneAnomalyRecord',
     'RUN_ANOMALY_SCAN': '{0}/EDiscoveryClients/OnDemandAnalytics',
+    'ANOMALY_CLIENTS_COUNT':'{0}/clients/count?type=fileserver,vm,laptop',
+    'MONITORED_VM_COUNT':'{0}/Client/Anomaly/MonitoredVMCount',
     'GET_SWAGGER': '{0}swagger/V3/swagger.json',
 
     'COMMCELL_METADATA': '{0}Commcell/MetaData',
@@ -602,27 +627,26 @@ SERVICES_DICT_TEMPLATE = {
     'USER_MAPPINGS': '{0}GetUserMappings',
     'METALLIC_REGISTERED': '{0}CloudServices/Registered',
     'METALLIC_UNLINK': '{0}CloudService/Unsubscribe',
+
     'ADD_OR_GET_SAML': '{0}/v4/SAML',
     'EDIT_SAML': '{0}/v4/SAML/%s',
+    'GET_SAML_PROP': '{0}/ThirdParty/SAML/App?isOpenAPISpec=true',
 
     'REGIONS': '{0}/v4/Regions',
     'REGION': '{0}/v4/Regions/%s',
     'EDIT_REGION': '{0}/entity/%s/%s/region',
     'GET_REGION': '{0}/entity/%s/%s/region?entityRegionType=%s',
     'CALCULATE_REGION': '{0}/entity/%s/%s/region?calculate=True&entityRegionType=%s',
-    
+
     'GET_OEM_ID': '{0}/GetOemId',
 
     'DO_WEB_SEARCH': '{0}/Search',
 
-    
+
     'GET_SLA': '{0}GetSLAConfiguration',
     'WORKLOAD_REGION': '{0}entity/COMMCELL/%s/region?entityRegionType=WORKLOAD',
 
-    'GET_USER_SUGGESTIONS': '{0}getADUserSuggestions?namePattern=%s&getDomainUsers=true&getCommcellUsers=true&'
-                            'getDomainGroups=true&returnDomain=true&getCommCellGroups=true&searchOnDisplayName=true'
-                            '&searchOnAliasName=true&searchOnSmtp=1&ignoreSmtpRule=1&getOrganizationUsers=false&'
-                            'getOrganizationGroups=false',
+    'GET_USER_SUGGESTIONS': '{0}getADUserSuggestions',
     'DOMAIN_SSO': '{0}V4/LDAP/%s',
 
     'LAUNCH_O365_LICENSING': '{0}Office365/License',
@@ -634,12 +658,13 @@ SERVICES_DICT_TEMPLATE = {
     'ALL_RECOVERY_GROUPS': '{0}RecoveryGroups',
     'RECOVERY_GROUP': '{0}RecoveryGroup/%s?getEntityDetails=true',
     'RECOVERY_GROUP_RECOVER': '{0}RecoveryGroup/%s/Recover',
+    'CLEANUP_RECOVERY_GROUP': '{0}RecoveryGroup/CleanupRecovery',
 
 
-     'ADCOMPAREID': '{0}/ActiveDirectory/Subclient/%s/Comparison',
+    'ADCOMPAREID': '{0}/ActiveDirectory/Subclient/%s/Comparison',
 
-      'ADCOMPARESTATUSCHECK':'{0}/ActiveDirectory/Comparison/%s',
-    'ADCOMPAREVIEWRESULTS':'{0}/ActiveDirectory/Compare',
+    'ADCOMPARESTATUSCHECK': '{0}/ActiveDirectory/Comparison/%s',
+    'ADCOMPAREVIEWRESULTS': '{0}/ActiveDirectory/Compare',
 
     'LIST_BACKUP_JOBS': '{0}Jobs/Calendar?dateListResponse=false&agedJobs=false&subclientId=&instanceId=&backupsetId=%s'
                         '&clientId=%s&jobTypeList=Backup,SYNTHFULL&fromStartTime=%s&toStartTime=%s&applicationIdList'
@@ -654,10 +679,10 @@ SERVICES_DICT_TEMPLATE = {
     'GET_BACKUPSET_INFO': '{0}cvdrbackup/info?csGuid=%s',
     'GET_COMMSERVE_RECOVERY_LICENSE_DETAILS': '{0}cvdrbackup/csrecovery/quota?csGuid=%s',
     'GET_COMMSERVE_RECOVERY_RETENTION_DETAILS': '{0}cvdrbackup/cleanup/lock?csGuid=%s',
-    'ADDASHBOARD':'{0}/ActiveDirectory/Overview',
-    'ADDAZURECLIENT':'{0}/v4/ActiveDirectory/AzureAD',
-    'ADCLIENTS':'{0}/ActiveDirectory/Clients?apptypeId=0',
-    'ADAPPS':'{0}/v4/ActiveDirectory/Apps',
+    'ADDASHBOARD': '{0}/ActiveDirectory/Overview',
+    'ADDAZURECLIENT': '{0}/v4/ActiveDirectory/AzureAD',
+    'ADCLIENTS': '{0}/ActiveDirectory/Clients?apptypeId=0',
+    'ADAPPS': '{0}/v4/ActiveDirectory/Apps',
 
     'ENABLE_DATA_AGING': '{0}/V5/ServerPlan/%s/BackupDestination/%s',
 
@@ -671,6 +696,22 @@ SERVICES_DICT_TEMPLATE = {
     'ALL_RPStores': '{0}Library?libraryType=RPSTORE',
 
     'RESET_TENANT_PASSWORD': '{0}/user/Password/Forgot',
+
+    'GET_DOC_PREVIEW': '{0}/GetDocPreviewWithFields',
+
+    'GET_VARIOUS_PREVIEW':  '{0}/GetVariousPreview',
+
+    'GET_PREVIEW': '{0}/GetPreview',
+
+    'CREATE_ACCESS_TOKEN': '{0}/V4/AccessToken',
+
+    'UPDATE_ACCESS_TOKEN': '{0}/V4/AccessToken/%s',
+
+    'REVOKE_ACCESS_TOKEN': '{0}/V4/AccessToken/%s',
+
+    'GET_ACCESS_TOKENS': '{0}/V4/AccessToken/?userId=%s',
+
+    'RENEW_TOKEN': '{0}/V4/AccessToken/Renew'
 }
 
 

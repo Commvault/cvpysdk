@@ -154,6 +154,13 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
+        ovf_disk = {
+            "name": restore_option["vm_to_restore"][0]+".ovf",
+            "Datastore": ""
+        }
+        # Add the new disk object to the existing disks list
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['virtualServerRstOption'][
+            'diskLevelVMRestoreOption']['advancedRestoreOptions'][0]['disks'].append(ovf_disk)
         return self._process_restore_response(request_json)
 
     def full_vm_restore_out_of_place(
@@ -269,6 +276,12 @@ class RhevVirtualServerSubclient(VirtualServerSubclient):
             volume_level_restore=1,
             source_item=[]
         )
-
         request_json = self._prepare_fullvm_restore_json(restore_option)
+        ovf_disk = {
+            "name": restore_option["vm_to_restore"][0]+".ovf",
+            "Datastore": restore_option["datastore"]
+        }
+        # Add the new disk object to the existing disks list
+        request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['virtualServerRstOption'][
+            'diskLevelVMRestoreOption']['advancedRestoreOptions'][0]['disks'].append(ovf_disk)
         return self._process_restore_response(request_json)

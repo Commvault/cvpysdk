@@ -1017,7 +1017,7 @@ class OracleInstance(DatabaseInstance):
             destination_client=None,
             common_options=None,
             browse_option=None,
-            oracle_options={},
+            oracle_options=None,
             tag=None,
             destination_instance=None,
             streams=2):
@@ -1077,6 +1077,8 @@ class OracleInstance(DatabaseInstance):
             "restoreData": True,
             "restoreFrom": 3
         }
+        if oracle_options is None:
+            oracle_options = {}
         options.update(oracle_options)
         oracle_options = options.copy()
 

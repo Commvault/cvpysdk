@@ -61,8 +61,7 @@ class InternetOptions(object):
 
     def __repr__(self):
         """Representation string for the instance of the UserGroups class."""
-        return "InternetOption class instance for Commcell: '{0}' with config '{1}'".format(
-            self._commcell_object.commserv_name,
+        return "InternetOption class instance for Commcell with config '{0}'".format(
             self._internet_config
         )
 

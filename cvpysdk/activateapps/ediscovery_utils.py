@@ -110,6 +110,8 @@ EdiscoveryDataSources:
 
     _get_data_source_properties()           --  parses client response and returns deta sources properties
 
+    _get_o365_backupset_subclient_id()      --  Get the backupset and subclient ID for a given client object
+
     has_data_source()                       --  checks whether given data source exists in this client or not
 
     get()                                   --  returns the EdiscoveryDataSource class object for given data source name
@@ -117,6 +119,8 @@ EdiscoveryDataSources:
     delete()                                --  deletes the given data source associated with client
 
     add_fs_data_source()                    --  adds file system data source
+
+    add_o365_sdg_data_source()              --  Adds Office365 SDG data source to a project
 
     refresh()                               --  refresh the data sources details associated with client
 
@@ -345,19 +349,20 @@ class EdiscoveryClients():
 
                             if response is empty or not success
         """
-        if not isinstance(client_name, str) or not isinstance(inventory_name, str) or not isinstance(plan_name, str):
+        if not isinstance(client_name, str) or not isinstance(plan_name, str):
             raise SDKException('EdiscoveryClients', '101')
-        if not self._commcell_object.activate.inventory_manager().has_inventory(inventory_name):
-            raise SDKException('EdiscoveryClients', '102', 'Invalid inventory name')
         if not self._commcell_object.plans.has_plan(plan_name):
             raise SDKException('EdiscoveryClients', '102', 'Invalid plan name')
         plan_obj = self._commcell_object.plans.get(plan_name)
-        inv_obj = self._commcell_object.activate.inventory_manager().get(inventory_name)
         req_json = copy.deepcopy(EdiscoveryConstants.CREATE_CLIENT_REQ_JSON)
         req_json['entity']['clientName'] = client_name
         req_json['clientInfo']['plan']['planId'] = int(plan_obj.plan_id)
-        req_json['clientInfo']['edgeDrivePseudoClientProperties']['eDiscoveryInfo']['inventoryDataSource']['seaDataSourceId'] = int(
-            inv_obj.inventory_id)
+        if inventory_name is not None:
+            if not self._commcell_object.activate.inventory_manager().has_inventory(inventory_name):
+                raise SDKException('EdiscoveryClients', '102', 'Invalid inventory name')
+            inv_obj = self._commcell_object.activate.inventory_manager().get(inventory_name)
+            req_json['clientInfo']['edgeDrivePseudoClientProperties']['eDiscoveryInfo']['inventoryDataSource']['seaDataSourceId'] \
+                = int(inv_obj.inventory_id)
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._API_CREATE_CLIENT, req_json)
         if flag:
@@ -952,7 +957,7 @@ class EdiscoveryClientOperations():
 
             Returns:
 
-                int,list(dict),dict    --  Containing document count, document  details & facet details(if any)
+                int,list(dict),dict    --  Containing document count, document  details & facet/stats details(if any)
 
 
             Raises:
@@ -977,10 +982,14 @@ class EdiscoveryClientOperations():
                         '102',
                         f"Failed to perform search - {response.json().get('errLogMessage','')}")
                 if 'response' in response.json() and 'docs' in response.json()['response']:
-                    if 'facets' not in response.json():
+                    if 'facets' in response.json():
+                        return response.json()['response']['numFound'], response.json()[
+                            'response']['docs'], response.json()['facets']
+                    elif 'stats' in response.json():
+                        return response.json()['response']['numFound'], response.json()[
+                            'response']['docs'], response.json()['stats']
+                    else:
                         return response.json()['response']['numFound'], response.json()['response']['docs'], {}
-                    return response.json()['response']['numFound'], response.json()[
-                        'response']['docs'], response.json()['facets']
                 raise SDKException('EdiscoveryClients', '102', f"Failed to search with response - {response.json()}")
             raise SDKException('EdiscoveryClients', '112')
         self._response_not_success(response)
@@ -1741,18 +1750,19 @@ class EdiscoveryDataSources():
             if response.json() and 'statusResp' in response.json():
                 status = response.json()['statusResp']
                 if 'collections' in status:
-                    collection = status['collections'][0]
-                    if 'datasources' in collection:
-                        data_sources = collection['datasources']
-                        for data_source in data_sources:
-                            ds_props = {
-                                EdiscoveryConstants.FIELD_DATA_SOURCE_DISPLAY_NAME: data_source[EdiscoveryConstants.FIELD_DISPLAY_NAME],
-                                EdiscoveryConstants.FIELD_DATA_SOURCE_TYPE: data_source[EdiscoveryConstants.FIELD_DATA_SOURCE_TYPE],
-                                EdiscoveryConstants.FIELD_DATA_SOURCE_ID: data_source[EdiscoveryConstants.FIELD_DATA_SOURCE_ID_NON_SEA],
-                                EdiscoveryConstants.FIELD_DOCUMENT_COUNT: data_source.get('status', {}).get('totalcount', 0)
-                            }
-                            output[data_source[EdiscoveryConstants.FIELD_DISPLAY_NAME].lower()] = ds_props
-                        return output
+                    # Change to return all datasources in a project
+                    for collection in status['collections']:
+                        if 'datasources' in collection:
+                            data_sources = collection['datasources']
+                            for data_source in data_sources:
+                                ds_props = {
+                                    EdiscoveryConstants.FIELD_DATA_SOURCE_DISPLAY_NAME: data_source[EdiscoveryConstants.FIELD_DISPLAY_NAME],
+                                    EdiscoveryConstants.FIELD_DATA_SOURCE_TYPE: data_source[EdiscoveryConstants.FIELD_DATA_SOURCE_TYPE],
+                                    EdiscoveryConstants.FIELD_DATA_SOURCE_ID: data_source[EdiscoveryConstants.FIELD_DATA_SOURCE_ID_NON_SEA],
+                                    EdiscoveryConstants.FIELD_DOCUMENT_COUNT: data_source.get('status', {}).get('totalcount', 0)
+                                }
+                                output[data_source[EdiscoveryConstants.FIELD_DISPLAY_NAME].lower()] = ds_props
+                    return output
                 return {}  # no data sources exists
             if response.json() and 'response' in response.json():
                 response = response.json()['response']
@@ -2016,6 +2026,150 @@ class EdiscoveryDataSources():
                         f"Creation of data source failed with error - {error['errorCode']}")
             raise SDKException('EdiscoveryClients', '115')
         self._response_not_success(response)
+
+    def add_o365_sdg_data_source(self, server_name, data_source_name, plan_name,
+                                 datasource_type=EdiscoveryConstants.ClientType.ONEDRIVE, **kwargs):
+        """Adds Office365 SDG data source to a project
+
+                Args:
+                    server_name         (str)       --  Server name which needs to be added
+
+                    data_source_name    (str)       --  Name for data source
+
+                    plan_name           (str)       --  Plan name which needs to be associated with this data source
+
+                    datasource_type     (str)       --  Type of O365 SDG datasource (Exchange/OneDrive)
+
+                Kwargs Arguments:
+
+                    country_name        (str)       --  country name where server is located (default: USA)
+
+                    country_code        (str)       --  Country code (ISO 3166 2-letter code)
+
+                    users               (list)      --  List of users/mailboxes to be added. If empty, all users would be added
+
+                Returns:
+
+                    obj     --  Instance of EdiscoveryDataSource class
+
+                Raises:
+
+                      SDKException:
+
+                            if plan doesn't exists
+        """
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException('EdiscoveryClients', '102', 'Invalid plan name')
+        plan_obj = self._commcell_object.plans.get(plan_name)
+        if self._app_source.value not in plan_obj.content_indexing_props['targetApps']:
+            raise SDKException('EdiscoveryClients', '102', 'Plan is not marked with targetapp as SDG')
+        o365_client = self._commcell_object.clients.get(server_name)
+        backupset_id, subclient_id = self._get_o365_backupset_subclient_id(o365_client, datasource_type)
+        request_json = copy.deepcopy(EdiscoveryConstants.ADD_O365_SDG_BACKED_UP_DS_REQ)
+        request_json['clientId'] = self._client_id  # project source client id
+        if plan_obj.content_indexing_props.get('analyticsIndexServer', {}).get('clientId', None) is not None:
+            # Only for software datasource creation, we will need this index server client ID to be set
+            request_json['indexServerClientId'] = plan_obj.content_indexing_props['analyticsIndexServer'].get('clientId', 0)
+        request_json['datasources'][0]['datasourceType'] = datasource_type.value
+        request_json['datasources'][0]['datasourceName'] = data_source_name
+        request_json['datasources'][0]['properties'].append({
+            "propertyName": "caconfig",
+            "propertyValue": "[{\"task\":\"EntityExtractionFields\",\"arguments\":[\"content\"]}]"
+        })
+
+        # set common properties
+        request_json['datasources'][0]['properties'].append({
+            "propertyName": "countryCode",
+            "propertyValue": kwargs.get('country_code', 'US')
+        })
+        request_json['datasources'][0]['properties'].append({
+            "propertyName": "co",
+            "propertyValue": kwargs.get('country_name', 'United States')
+        })
+        request_json['datasources'][0]['properties'].append({
+            "propertyName": "clientdisplayname",
+            "propertyValue": data_source_name
+        })
+        request_json['datasources'][0]['properties'].append({
+            "propertyName": "name",
+            "propertyValue": data_source_name
+        })
+        request_json['datasources'][0]['properties'].append({
+            "propertyName": "dcplanid",
+            "propertyValue": str(plan_obj.plan_id)
+        })
+
+        # set crawl type and source type related params
+        request_json['datasources'][0]['properties'].append({
+            "propertyName": "crawltype",
+            "propertyValue": str(EdiscoveryConstants.CrawlType.BACKUP_V2.value)
+        })
+        request_json['datasources'][0]['properties'].append({
+            "propertyName": "dNSHostName",
+            "propertyValue": server_name
+        })
+        request_json['datasources'][0]['properties'].append({
+            "propertyName": "ClientId",
+            "propertyValue": str(o365_client.client_id)
+        })
+        request_json['datasources'][0]['properties'].append({
+            "propertyName": "CAppBackupSetId",
+            "propertyValue": str(backupset_id)
+        })
+        request_json['datasources'][0]['properties'].append({
+            "propertyName": "backedupsubclientids",
+            "propertyValue": str(subclient_id)
+        })
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._API_CREATE_DATA_SOURCE, request_json)
+        if flag:
+            if response.json() and 'collections' in response.json():
+                collection = response.json()['collections'][0]
+                if 'datasources' in collection:
+                    data_source = collection['datasources'][0]
+                    # when add data source is called for new server then handle client id accordingly
+                    return EdiscoveryDatasource(
+                        self._commcell_object,
+                        data_source['datasourceId'],
+                        EdiscoveryConstants.DATA_SOURCE_TYPES[datasource_type.value], client_id=self._client_id, app_type=self._app_source)
+            if response.json() and 'error' in response.json():
+                error = response.json()['error']
+                if 'errorCode' in error and error['errorCode'] != 0:
+                    raise SDKException(
+                        'EdiscoveryClients',
+                        '102',
+                        f"Creation of data source failed with error - {error['errorCode']}")
+            raise SDKException('EdiscoveryClients', '115')
+        self._response_not_success(response)
+
+    def _get_o365_backupset_subclient_id(self, client, client_type=EdiscoveryConstants.ClientType.ONEDRIVE):
+        """
+        Get the backupset and subclient ID for a given client object
+        Args:
+            client(object)      --  Instance of O365 client object
+            client_type(enum)   --  Type of client (OneDrive/Exchange)
+        Returns:
+            backupset_id(int)   --  Backupset ID of the client
+            subclient_id(int)   --  Subclient ID of the client
+        Raises:
+            SDKException:
+                if backupset or subclient doesn't exist
+
+        """
+        if client_type == EdiscoveryConstants.ClientType.ONEDRIVE:
+            _agent = client.agents.get(EdiscoveryConstants.ONEDRIVE_AGENT)
+            _instance = _agent.instances.get(EdiscoveryConstants.ONEDRIVE_INSTANCE)
+            _backupset = _instance.backupsets.get(EdiscoveryConstants.ONEDRIVE_BACKUPSET)
+            _subclient = _backupset.subclients.get(EdiscoveryConstants.ONEDRIVE_SUBCLIENT)
+        else:
+            _agent = client.agents.get(EdiscoveryConstants.EXCHANGE_AGENT)
+            _instance = _agent.instances.get(EdiscoveryConstants.EXCHANGE_INSTANCE)
+            _backupset = _instance.backupsets.get(EdiscoveryConstants.EXCHANGE_BACKUPSET)
+            _subclient = _backupset.subclients.get(EdiscoveryConstants.EXCHANGE_SUBCLIENT)
+        if _backupset is None or _subclient is None:
+            raise SDKException('EdiscoveryClients', '121')
+        return _backupset.backupset_id, _subclient.subclient_id
 
     def delete(self, data_source_name):
         """Deletes the given data source from client

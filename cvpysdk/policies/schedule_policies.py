@@ -161,9 +161,7 @@ class SchedulePolicies:
 
     def __repr__(self):
         """Representation string for the instance of the SchedulePolicies class."""
-        return "SchedulePolicies class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "SchedulePolicies class instance for Commcell"
 
     def _get_policies(self):
         """Gets all the schedule policies associated to the commcell specified by commcell object.

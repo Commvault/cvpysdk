@@ -125,9 +125,7 @@ class HACClusters(object):
 
     def __repr__(self):
         """Representation string for the instance of the HACClusters class."""
-        return "HACClusters class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "HACClusters class instance for Commcell"
 
     def __getitem__(self, value):
         """Returns the details of HAC cluster for given HAC name
@@ -370,9 +368,7 @@ class HACCluster(object):
 
     def __repr__(self):
         """Representation string for the instance of the HACCluster class."""
-        return "HACCluster class instance for Commcell: '{0}'".format(
-            self.commcell.commserv_name
-        )
+        return "HACCluster class instance for Commcell"
 
     def _response_not_success(self, response):
         """Helper method to raise exception when response is not 200 (ok)

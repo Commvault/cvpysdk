@@ -70,6 +70,7 @@ class AzureRMSubclient(VirtualServerSubclient):
                                      restore_new_name=None,
                                      overwrite=True,
                                      power_on=True,
+                                     run_security_scan=False,
                                      instance_size=None,
                                      public_ip=False,
                                      restore_as_managed=False,
@@ -108,6 +109,9 @@ class AzureRMSubclient(VirtualServerSubclient):
 
                 poweron
                         default:False   (bool)      --  power on the  restored VM
+
+                run_security_scan
+                        default:False  (bool)       -- run threat analysis on VM
 
                 restore_option      (dict)     --  complete dictionary with all advanced optio
                     default: {}
@@ -155,6 +159,7 @@ class AzureRMSubclient(VirtualServerSubclient):
             vcenter_client=destination_client,
             unconditional_overwrite=overwrite,
             power_on=power_on,
+            run_security_scan=run_security_scan,
             copy_precedence=copy_precedence,
             volume_level_restore=1,
             esx_host=resource_group,

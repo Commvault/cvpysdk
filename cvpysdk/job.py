@@ -340,9 +340,7 @@ class JobController(object):
 
     def __repr__(self):
         """Representation string for the instance of the JobController class."""
-        return "JobController class instance for Commcell: '{0}'".format(
-            self._commcell_object.commserv_name
-        )
+        return "JobController class instance for Commcell"
 
     def _get_jobs_request_json(self, **options):
         """Returns the request json for the jobs request
@@ -492,7 +490,7 @@ class JobController(object):
                                     jobs_dict[job_id] = job_summary
                                 else:
                                     status = job_summary['status']
-                                    operation = job_summary['localizedOperationName']
+                                    operation = job_summary.get('localizedOperationName', '')
                                     percent_complete = job_summary['percentComplete']
                                     backup_level = job_summary.get('backupLevelName')
 

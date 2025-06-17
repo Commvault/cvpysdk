@@ -109,7 +109,8 @@ class KeyManagementServerConstants(ABC):
             "AWS_CREDENTIALS_FILE": 0,
             "AZURE_KEY_VAULT_CERTIFICATE": 1,
             "AZURE_KEY_VAULT_IAM": 3,
-            "KMIP_CERTIFICATE": 99,
+            "AZURE_KEY_VAULT_KEY": 2,
+            "KMIP_CERTIFICATE": 99
         }
 
 class KeyManagementServers(KeyManagementServerConstants):
@@ -382,7 +383,99 @@ class KeyManagementServers(KeyManagementServerConstants):
 
             self._kms_api_call(payload)
 
+    def _add_azure_key_vault_key_auth(self, kms_details):
+        """Configure Azure Key Management Server with AD-app key based authentication
 
+            :arg
+                kms_details ( dictionary ) - Dictionary with AWS KMS details
+            :return:
+                Object of KeyManagementServer class for the newly created KMS.
+        """
+        payload = None
+        is_bring_your_own_key = 0
+        keys = []
+        
+        if "AZURE_KEY_VAULT_KEY_LENGTH" not in kms_details:
+            kms_details['AZURE_KEY_VAULT_KEY_LENGTH'] = 3072
+        
+        if "BringYourOwnKey" in kms_details:
+            if kms_details["BringYourOwnKey"]:
+                if "KEYS" not in kms_details:
+                    raise SDKException('KeyManagementServer', 107)
+                if type(kms_details['KEYS']) != list :
+                    raise SDKException('Storage', 101)
+                is_bring_your_own_key = 1
+                for k in kms_details['KEYS']:
+                    keys.append({"keyId": k})
+                    
+        if "ACCESS_NODE_NAME" in kms_details:
+            payload= {
+                        "keyProvider": {
+                        "encryptionKeyLength": kms_details['AZURE_KEY_VAULT_KEY_LENGTH'],
+                        "encryptionType": 1001,
+                        "keyProviderType": 4,
+                        "provider": {
+                            "keyProviderName": kms_details['KMS_NAME']
+                        },
+                        "properties": {
+                            "accessNodes": [
+                            {
+                                "accessNode": {
+                                "clientName": kms_details['ACCESS_NODE_NAME']
+                                },
+                            "keyVaultCredential": {
+                            "authType": self._KMS_AUTHENTICATION_TYPE[kms_details["KEY_PROVIDER_AUTH_TYPE"]],
+                            "applicationId": kms_details['AZURE_APP_ID'],
+                            "tenantId": kms_details['AZURE_TENANT_ID'],
+                            "environment": "AzureCloud",
+                            "endpoints": {
+                                "activeDirectoryEndpoint": "https://login.microsoftonline.com/",
+                                "keyVaultEndpoint": "vault.azure.net"
+                            },
+                        "certPassword": kms_details['AZURE_APP_SECRET'],
+                        "overrideCredentials": True,
+                        "resourceName": kms_details['AZURE_KEY_VAULT_NAME']
+                        }
+                        }
+                        ],
+                        "bringYourOwnKey": is_bring_your_own_key,
+                         "keys": keys
+                    }
+                }
+            }
+
+            
+        else:
+            payload = {
+                "keyProvider": {
+                    "encryptionKeyLength": kms_details['AZURE_KEY_VAULT_KEY_LENGTH'],
+                    "encryptionType": 1001,
+                    "keyProviderType": 4,
+                    "provider": {
+                        "keyProviderName": kms_details['KMS_NAME']
+                    },
+                "properties": {
+                    "keyVaultCredential": {
+                    "authType": self._KMS_AUTHENTICATION_TYPE[kms_details["KEY_PROVIDER_AUTH_TYPE"]],
+                    "applicationId": kms_details['AZURE_APP_ID'],
+                    "tenantId": kms_details['AZURE_TENANT_ID'],
+                    "resourceName": kms_details['AZURE_KEY_VAULT_NAME'],
+                    "environment": "AzureCloud",
+                    "endpoints": {
+                    "activeDirectoryEndpoint": "https://login.microsoftonline.com/",
+                    "keyVaultEndpoint": "vault.azure.net"
+                    }
+                    },
+                "sslPassPhrase": kms_details['AZURE_APP_SECRET'],
+                "bringYourOwnKey": is_bring_your_own_key,
+                 "keys": keys
+                }
+                }
+            }     
+
+        self._kms_api_call(payload)
+        
+    
     def _add_azure_key_vault_certificate_auth(self, kms_details):
         """Configure Azure Key Management Server with AD-app certificate based authentication
 
@@ -610,8 +703,34 @@ class KeyManagementServers(KeyManagementServerConstants):
                 "KEYS": ["KeyID1/KeyVersion1", "KeyID2/KeyVersion2", "KeyID3/KeyVersion3"]
             }
             
+        input dictionary for Azure KMS with access Node ( AD APp based authentication ) with Bring Your Own Key enabled
+            self.kms_details = {
+                "KEY_PROVIDER_TYPE": "KEY_PROVIDER_AZURE_KEY_VAULT",
+                "ACCESS_NODE_NAME": "",
+                "KMS_NAME": "MyKMS",
+                "KEY_PROVIDER_AUTH_TYPE": "AZURE_KEY_VAULT_KEY",
+                "AZURE_KEY_VAULT_KEY_LENGTH": 2072,
+                "AZURE_KEY_VAULT_NAME": "",
+                "AZURE_TENANT_ID": "",
+                "AZURE_APP_ID": "",
+                "AZURE_APP_SECRET": "", -- Base64 encoded
+                "BringYourOwnKey": True,
+                "KEYS": ["KeyID1/KeyVersion1", "KeyID2/KeyVersion2", "KeyID3/KeyVersion3"]
+            }
         
-            
+        input dictionary for Azure KMS without access Node ( AD APp based authentication ) with Bring Your Own Key enabled
+            self.kms_details = {
+                "KEY_PROVIDER_TYPE": "KEY_PROVIDER_AZURE_KEY_VAULT",
+                "KMS_NAME": "MyKMS",
+                "KEY_PROVIDER_AUTH_TYPE": "AZURE_KEY_VAULT_KEY",
+                "AZURE_KEY_VAULT_KEY_LENGTH": 2072,
+                "AZURE_KEY_VAULT_NAME": "",
+                "AZURE_TENANT_ID": "",
+                "AZURE_APP_ID": "",
+                "AZURE_APP_SECRET": "", -- Base64 encoded
+                "BringYourOwnKey": True,
+                "KEYS": ["KeyID1/KeyVersion1", "KeyID2/KeyVersion2", "KeyID3/KeyVersion3"]
+            }
         """
         
         KeyManagementServers._validate_input(kms_details, dict)
@@ -646,6 +765,9 @@ class KeyManagementServers(KeyManagementServerConstants):
 
             elif kms_details['KEY_PROVIDER_AUTH_TYPE'] == "AZURE_KEY_VAULT_IAM":
                 self._add_azure_key_vault_iam_auth(kms_details)
+            
+            elif kms_details['KEY_PROVIDER_AUTH_TYPE'] == "AZURE_KEY_VAULT_KEY":
+                self._add_azure_key_vault_key_auth(kms_details)
 
         if kms_details['KEY_PROVIDER_TYPE'] == "KEY_PROVIDER_KMIP":
             self._add_kmip_certificate(kms_details)
@@ -933,9 +1055,7 @@ class KeyManagementServers(KeyManagementServerConstants):
         Returns:
                 str - string representation of this class
         """
-        return "KeyManagementServers class instance for Commcell: '{0}'".format(
-            self._commcell.commserv_name
-        )
+        return "KeyManagementServers class instance for Commcell"
 
 class KeyManagementServer(object):
     """Class for representing a single KMS in the commcell."""

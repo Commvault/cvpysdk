@@ -158,9 +158,7 @@ class Datasources(object):
 
     def __repr__(self):
         """Representation string for the instance of the Datasources class."""
-        return "Datasources class instance for Commcell: '{0}'".format(
-            self._datacube_object._commcell_object.commserv_name
-        )
+        return "Datasources class instance for Commcell"
 
     def get_datasource_properties(self, data_source_name):
         """Returns the properties of datasources.
@@ -540,11 +538,7 @@ class Datasource(object):
 
     def __repr__(self):
         """String representation of the instance of this class."""
-        representation_string = 'Datasource class instance for Commcell: "{0}"'
-
-        return representation_string.format(
-            self._datacube_object._commcell_object.commserv_name
-        )
+        return 'Datasource class instance for Commcell'
 
     def _get_datasource_id(self):
         """Gets the datasource id associated with this datasource.
