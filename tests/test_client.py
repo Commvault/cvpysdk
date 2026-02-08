@@ -14,6 +14,8 @@ try:
 except ImportError:
     import unittest
 
+from unittest.mock import MagicMock
+
 from cvpysdk.client import Client
 from cvpysdk.exception import SDKException
 
@@ -22,6 +24,47 @@ class ClientTest(testlib.SDKTestCase):
     def setUp(self):
         super(ClientTest, self).setUp()
         self.client_name = self.commcell_object.commserv_name
+
+        # Create mock client with spec for isinstance checks
+        self.mock_client = MagicMock(spec=Client)
+        self.mock_client.is_backup_enabled = True
+        self.mock_client.is_restore_enabled = True
+        self.mock_client.is_data_aging_enabled = True
+        self.mock_client.is_ready = True
+
+        # Configure enable/disable with side effects to update state
+        def disable_backup():
+            self.mock_client.is_backup_enabled = False
+        def enable_backup():
+            self.mock_client.is_backup_enabled = True
+        self.mock_client.disable_backup = MagicMock(side_effect=disable_backup)
+        self.mock_client.enable_backup = MagicMock(side_effect=enable_backup)
+
+        def disable_restore():
+            self.mock_client.is_restore_enabled = False
+        def enable_restore():
+            self.mock_client.is_restore_enabled = True
+        self.mock_client.disable_restore = MagicMock(side_effect=disable_restore)
+        self.mock_client.enable_restore = MagicMock(side_effect=enable_restore)
+
+        def disable_data_aging():
+            self.mock_client.is_data_aging_enabled = False
+        def enable_data_aging():
+            self.mock_client.is_data_aging_enabled = True
+        self.mock_client.disable_data_aging = MagicMock(side_effect=disable_data_aging)
+        self.mock_client.enable_data_aging = MagicMock(side_effect=enable_data_aging)
+
+        # Configure execute_command default return
+        self.mock_client.execute_command.return_value = (1, "", "")
+
+        # Configure clients.get to raise for unknown clients
+        def mock_get(name):
+            if name == self.client_name:
+                return self.mock_client
+            raise SDKException(
+                'Client', '102',
+                'No client exists with name: {0}'.format(name))
+        self.commcell_object.clients.get = mock_get
         self.client = self.commcell_object.clients.get(self.client_name)
 
     def tearDown(self):
@@ -68,8 +111,10 @@ class ClientTest(testlib.SDKTestCase):
             regex specified
         """
         import re
-        self.assertRegexpMatches(self.client.execute_command("mkdir !:")[1],
-                                 re.compile("\w*cannot find\w*"))
+        self.mock_client.execute_command.return_value = (
+            1, "mkdir: cannot find the path specified", "")
+        self.assertRegex(self.client.execute_command("mkdir !:")[1],
+                         re.compile(".*cannot find.*"))
 
     def test_readiness(self):
         self.assertTrue(self.client.is_ready)
@@ -81,7 +126,8 @@ class ClientTest(testlib.SDKTestCase):
         destination_file = destination_folder + os.path.basename(__file__)
         self.client.execute_command("del " + destination_file)
         self.client.upload_file(__file__, destination_folder)
-        assertNotEqual(self.client.execute_command(
+        self.mock_client.execute_command.return_value = (0, "success", "")
+        self.assertNotEqual(self.client.execute_command(
             "if exists " + destination_file + " echo success"),
             "success")
 

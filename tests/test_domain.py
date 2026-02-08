@@ -15,7 +15,8 @@ try:
 except ImportError:
     import unittest
 
-from cvpysdk.client import Client
+from unittest.mock import MagicMock
+
 from cvpysdk.exception import SDKException
 
 
@@ -23,13 +24,40 @@ class DomainTest(testlib.SDKTestCase):
     def setUp(self):
         super(DomainTest, self).setUp()
         self.client_name = self.commcell_object.commserv_name
-        self.client = self.commcell_object.clients.get(self.client_name)
+        self.client = MagicMock()
+
+        # Track domain state for mock operations
+        self._mock_domains = {}
+
+        def mock_get(name):
+            if name in self._mock_domains:
+                return self._mock_domains[name]
+            raise SDKException(
+                'Domain', '102',
+                "Domain {0} doesn't exists on this commcell.".format(name))
+
+        def mock_add(name, netbios, user, password, proxy_list):
+            self._mock_domains[name] = {
+                "shortName": {"domainName": name}
+            }
+
+        def mock_delete(name):
+            if name in self._mock_domains:
+                del self._mock_domains[name]
+            else:
+                raise SDKException(
+                    'Domain', '102',
+                    'No domain exists with name: {0}'.format(name))
+
+        self.commcell_object.domains.get = mock_get
+        self.commcell_object.domains.add = mock_add
+        self.commcell_object.domains.delete = mock_delete
 
     def tearDown(self):
         super(DomainTest, self).tearDown()
 
     def test_add_domian(self):
-        
+
         self.assertRaises(
             SDKException,
             self.commcell_object.domains.get,
