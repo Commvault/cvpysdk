@@ -628,7 +628,7 @@ class Users(object):
 
         create_user_request = {
             "users": [{
-                "password": password,
+                **({"password": password} if domain is None else {}),
                 "email": email,
                 "userPrincipalName": upn,
                 "fullName": full_name,

@@ -1183,12 +1183,17 @@ class Clients(object):
             for device in response.json()['clientsFileSystem']:
                 client_info = device.get('client', {})
                 client_name = client_info.get('clientName')
+                plan = device.get('plan', {})
+                plan_name = plan.get('planName', None)
+                is_cloud_laptop = device.get('isCloudLaptop', False)
                 if not client_name:
                     continue  # Skip clients without a name
 
                 devices[client_name] = {
                     'id': client_info.get('clientId'),
-                    'displayName': client_name
+                    'displayName': client_name,
+                    'planName': plan_name,
+                    'isCloudLaptop': is_cloud_laptop
                 }
         return devices
 
@@ -4621,13 +4626,6 @@ class Clients(object):
                 'Client',
                 '102',
                 "Either client_group_name or access_node should be provided.")
-        account_dict = service_account_details["accounts"]
-        for account in account_dict:
-            if account['serviceType'] == "SYSTEM_ACCOUNT":
-                account["userAccount"]["password"] = b64encode(
-                    account["userAccount"]["password"].encode()).decode()
-                account["userAccount"]["confirmPassword"] = b64encode(
-                    account["userAccount"]["confirmPassword"].encode()).decode()
 
         request_payload = {
             "clientInfo": {
@@ -7179,7 +7177,7 @@ class Client(object):
         """
         if 'windows' in self.os_info.lower():
             command = 'powershell.exe Get-Content "{0}"'.format(
-                os.path.join(self.install_directory, 'Base', 'QinetixVM').replace(" ", "' '")
+                os.path.join(self.install_directory.replace(' ', '` '), 'Base', 'QinetixVM')
             )
 
             exit_code, output, __ = self.execute_command(command)

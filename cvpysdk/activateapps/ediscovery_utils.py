@@ -486,11 +486,15 @@ class EdiscoveryClients():
         flag, response = self._cvpysdk_object.make_request('GET', api)
         output = {}
         if flag:
-            if response.json() and 'eDiscoveryClientProp' in response.json():
-                projects = response.json()['eDiscoveryClientProp']
+            response_json = response.json()
+            if response_json and 'eDiscoveryClientProp' in response_json:
+                projects = response_json['eDiscoveryClientProp']
                 for project in projects:
                     project['clientId'] = project['eDiscoveryClient']['clientId']
                     output[project['eDiscoveryClient']['clientName'].lower()] = project
+                return output
+            # Don't raise exception when there are no projects created
+            if response_json == {}:
                 return output
             raise SDKException('EdiscoveryClients', '117')
         self._response_not_success(response)

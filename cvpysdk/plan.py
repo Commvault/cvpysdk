@@ -125,11 +125,11 @@ Plan
     edit_plan()                 --  edit plan options
 
     edit_risk_analysis_dc_plan()--  Edit Risk Analysis Data Classification Plan options
-    
+
     update_security_associations() -- to update security associations of a plan
 
     get_plan_properties()       --  method to get the properties of the plan fetched via v4 API
-    
+
     get_storage_copy_details()  --  method to get storage copy details
 
     get_storage_copy_id()       --  method to get storage copy id
@@ -202,7 +202,7 @@ Plan Attributes
     **company**                 --  Returns the company of the plan
 
     **resources**               --  Returns the resources stored in storage resource pool
-    
+
     **applicable_solutions**    --  returns applicable solutions configured on server plan
 
     **data_schedule_policy**    --  returns the data schedule policy of the plan
@@ -272,7 +272,7 @@ class PlanTypes(Enum):
 
 class PlanSubTypes(Enum):
     """Class Enum to represent different plan subtypes
-    
+
     Attributes:
         SERVER: Represents the Server plan subtype
         SERVER_FS: Represents the Server plan File System subtype
@@ -285,7 +285,7 @@ class PlanSubTypes(Enum):
         DYNAMICS_365: Represents the Dynamics 365 Plan subtype
         DATA_CLASSIFICATION: Represents the Data Classification Plan subtype
         ARCHIVER: Represents the Archiver Plan subtype
-    
+
     Usage:
         >>> plan_subtype = PlanSubTypes.SERVER_FS
         >>> print(plan_subtype.value)
@@ -1289,7 +1289,7 @@ class Plans(object):
                     '102',
                     'No plan exists with name: {0}'.format(plan_name)
                 )
-    
+
     def add_archiver_plan(self, plan_name: str, copy_dict: list[dict], archiving_rules: dict, plan_sub_type: str = 'Archiver',
                           override_restrictions: dict = None, schedule_policy: dict = None):
         """
@@ -1318,7 +1318,7 @@ class Plans(object):
                     "FileSizeUnit": "KB" / "MB" / "GB",
                     "afterArchiving": "REPLACE_FILE_WITH_STUB" / "DELETE_THE_FILE"
                 }
-            override_restrictions (dict) <OPTIONAL> -- Dictionary containing override restrictions 
+            override_restrictions (dict) <OPTIONAL> -- Dictionary containing override restrictions
             Example:
             {
                 "storagePool": "OPTIONAL" / "MUST" / "NOT_ALLOWED",
@@ -1368,7 +1368,7 @@ class Plans(object):
                 copy['retention'] = int(copy['retention'])*365
             if copy['retention']!= -1 and (copy['retention'] < ARCHIVER_PLAN_MIN_RETENTION):
                 raise SDKException('Plan', '101', f'Retention period should be greater than 5 years.')
-            
+
             storage_pool_obj = self._commcell_object.storage_pools.get(copy['storagePool'])
             storage_pool_id = int(storage_pool_obj.storage_pool_id)
             # Build new dictionary
@@ -1397,7 +1397,7 @@ class Plans(object):
             raise SDKException('Plan', '101', 'Duration should be a positive integer.')
         if not isinstance(archiving_rules['FileSize'], int) or archiving_rules['FileSize'] < 0:
             raise SDKException('Plan', '101', 'FileSize should be a positive integer.')
-        
+
         if archiving_rules['DurationUnit'].upper() == 'YEARS':
             duration = int(archiving_rules['Duration']) * 365
         elif archiving_rules['DurationUnit'].upper() == 'MONTHS':
@@ -1417,7 +1417,7 @@ class Plans(object):
             "fileSize": file_size,
             "afterArchiving": archiving_rules['afterArchiving'].upper()
         }
-        
+
         if override_restrictions:
             if not isinstance(override_restrictions, dict):
                 raise SDKException('Plan', '101', 'override_restrictions should be a dictionary.')
@@ -1426,7 +1426,7 @@ class Plans(object):
             if not all(value in ['OPTIONAL', 'MUST', 'NOT_ALLOWED'] for value in override_restrictions.values()):
                 raise SDKException('Plan', '101', 'Invalid values in override_restrictions.')
             override_restrictions['backupContent'] = override_restrictions.get('backupContent', 'OPTIONAL')
-        
+
         schedules = {
                 "backupType": "INCREMENTAL",
                 "forDatabasesOnly": False,
@@ -1446,7 +1446,7 @@ class Plans(object):
                 raise SDKException('Plan', '101', 'interval should be a positive integer.')
             if schedule_policy['frequency'].upper() == 'MINUTES' and schedule_policy['interval'] < 5:
                 raise SDKException('Plan', '101', 'Interval should be greater than 5 minutes for frequency MINUTES.')
-            
+
             start_time = 75600  # 21:00:00 in seconds
             if schedule_policy['frequency'].upper() == 'MINUTES':
                 schedule_frequency_type = 'MINUTES'
@@ -1460,7 +1460,7 @@ class Plans(object):
                     h, m, s = map(int, schedule_policy['starttime'].split(':'))
                     start_time = h * 3600 + m * 60 + s
                 interval = schedule_policy['interval']
-             
+
             rpo = {
                 "archiveFrequency": {
                     "scheduleFrequencyType": schedule_frequency_type,
@@ -1489,8 +1489,8 @@ class Plans(object):
                 "startTime": 75600,  # 21:00:00 in seconds
                 "frequency": 1
             }
-        
-        request_json = {   
+
+        request_json = {
                 "planName": plan_name,
                 "backupDestinations": request_copy_dict,
                 "rpo":  rpo,
@@ -1502,7 +1502,7 @@ class Plans(object):
             }
         if override_restrictions:
             request_json['overrideRestrictions'] = override_restrictions
-        
+
         flag, response = self._cvpysdk_object.make_request('POST', self._V4_ARCHIVER_PLAN, request_json)
         if flag:
             if response.json():
@@ -2745,9 +2745,9 @@ class Plan(object):
         self._PLAN = self._services['PLAN'] % (self.plan_id)
         self._V4_PLAN = self._services['V4_SERVER_PLAN'] % (self.plan_id)
         self._V4_DC_PLAN = self._services['V4_DC_PLAN'] % (self.plan_id)
-        self._V5_SERVER_PLAN_COPY_CLONE = self._services['V5_SERVER_PLAN_COPY_CLONE'] 
-        self._V5_LAPTOP_PLAN_COPY_CLONE = self._services['V5_LAPTOP_PLAN_COPY_CLONE'] 
-        self._V5_ARCHIVER_PLAN_COPY_CLONE = self._services['V5_ARCHIVER_PLAN_COPY_CLONE'] 
+        self._V5_SERVER_PLAN_COPY_CLONE = self._services['V5_SERVER_PLAN_COPY_CLONE']
+        self._V5_LAPTOP_PLAN_COPY_CLONE = self._services['V5_LAPTOP_PLAN_COPY_CLONE']
+        self._V5_ARCHIVER_PLAN_COPY_CLONE = self._services['V5_ARCHIVER_PLAN_COPY_CLONE']
         self._PLAN_RPO = self._services['SERVER_PLAN_RPO'] % (self.plan_id)
         self._PLAN_RPO_RUN = self._services['SERVER_PLAN_RPO_RUN'] % (self.plan_id)
         self._ADD_USERS_TO_PLAN = self._services['ADD_USERS_TO_PLAN'] % (self.plan_id)
@@ -3417,7 +3417,7 @@ class Plan(object):
     def get_plan_properties(self) -> Dict:
         """
         Method to get the properties of this plan fetched from v4 API.
-        
+
         Returns:
             Dict: A dictionary containing the properties of the plan fetched from the v4 API.
 
@@ -3529,7 +3529,7 @@ class Plan(object):
             "backupDestinationName": copy_name,
             "storage_name": storage_pool,
         }
-        #Make changes for defaults if its Tape pool 
+        #Make changes for defaults if its Tape pool
         storage_pool_obj = self._commcell_object.storage_pools.get(storage_pool)
         gacp = False; worm = False
         if storage_pool_obj.storage_type == StorageType.TAPE.value:
@@ -3639,7 +3639,7 @@ class Plan(object):
             source_copy_name (str)   -   name of the copy that is being cloned
             new_copy_name (str)      -   name of the new copy that is being created
             storage_pool_name (str)  -   name of the storage pool that is to be used for the new copy
-            source_region (str)      -   name of the region from which the copy needs to be cloned  
+            source_region (str)      -   name of the region from which the copy needs to be cloned
         """
         source_copy_id = self.get_storage_copy_id(source_copy_name, source_region)
         storage_pool_id = self._commcell_object.storage_pools.get(storage_pool_name).storage_pool_id
@@ -3666,7 +3666,7 @@ class Plan(object):
                 raise SDKException('Plan', '102', f'Clone copy not supported for the plan subtype: [{PlanSubTypes(self.subtype).name}]')
         else:
             raise SDKException('Plan', '102', f'Clone copy not supported for the plan type: [{PlanTypes(self.plan_type).name}]')
-        
+
         self.__handle_response(flag, response, custom_error_message=f'Failed to clone copy for the plan : [{self.plan_name}] Source Copy: [{source_copy_name}]')
         self.refresh()
         return self.storage_policy.get_copy(new_copy_name)
@@ -4640,7 +4640,7 @@ class Plan(object):
                             'role_name': role2
                         }
                     ]
- 
+
             is_user (bool): True or False. set is_user = False, If associations_list made up of user groups
             request_type (str): eg : 'OVERWRITE' or 'UPDATE' or 'DELETE', Default will be OVERWRITE operation
             external_group (bool): True or False, set external_group = True. If Security associations is being done on External User Groups
@@ -4694,7 +4694,7 @@ class Plan(object):
 
 
     @content_indexing.setter
-    def content_indexing(self, value: bool) -> None:
+    def content_indexing(self, value: bool, **kwargs: Optional[dict]) -> None:
         """Sets content indexing value for O365 plan
 
         Args:
@@ -4704,7 +4704,7 @@ class Plan(object):
             plan.content_indexing = True
             plan.content_indexing = False
         """
-        self._enable_content_indexing_o365_plan(value)
+        self._enable_content_indexing_o365_plan(value, kwargs)
 
 
     @property
@@ -5120,7 +5120,7 @@ class Plan(object):
                                                                     f'[{self.plan_name}]')
 
 
-    def _enable_content_indexing_o365_plan(self, value: bool) -> None:
+    def _enable_content_indexing_o365_plan(self, value: bool, **kwargs: dict) -> None:
         """Enable CI for O365 plan
 
         Args:
@@ -5147,7 +5147,7 @@ class Plan(object):
         o365_cloud['teamsbackupPolicy']['enableContentIndex'] = value
 
         request_json['ciPolicyInfo']['ciPolicy']['detail']['ciPolicy']['filters']['fileFilters'][
-            'includeDocTypes'] = PlanConstants.DEFAULT_INCLUDE_DOC_TYPES
+            'includeDocTypes'] = kwargs.get('IncludeDocs') if kwargs.get('IncludeDocs') else PlanConstants.DEFAULT_INCLUDE_DOC_TYPES
         request_json['ciPolicyInfo']['ciPolicy']['detail']['ciPolicy']['filters']['fileFilters'][
             'minDocSize'] = PlanConstants.DEFAULT_MIN_DOC_SIZE
 

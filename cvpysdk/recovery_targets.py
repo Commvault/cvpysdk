@@ -310,6 +310,8 @@ class RecoveryTarget:
             self._policy_type = 7
         elif policy_type in ["VMW_BACKUP_LABTEMPLATE", "VMW_LIVEMOUNT"]:
             self._policy_type = 13
+        elif policy_type == "ORACLE_CLOUD_INFRASTRUCTURE":
+            self._policy_type = 15
         else:
             self._policy_type = -1
 

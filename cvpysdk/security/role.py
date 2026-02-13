@@ -1167,12 +1167,10 @@ class Role(object):
         )
         if flag:
             if response.json():
-                error_code = -1
-                error_message = ''
                 if 'response' in response.json():
                     response_json = response.json()['response'][0]
-                    error_code = response_json['errorCode']
-                    error_message = response_json['errorString']
+                    error_code = response_json.get('errorCode', 0)
+                    error_message = response_json.get('errorMessage', '')
                     if not error_code == 0:
                         raise SDKException('Response', '101', error_message)
             else:
@@ -1244,12 +1242,10 @@ class Role(object):
 
         if flag:
             if response.json():
-                error_code = -1
-                error_message = ''
                 if 'response' in response.json():
                     response_json = response.json()['response'][0]
-                    error_code = response_json['errorCode']
-                    error_message = response_json['errorString']
+                    error_code = response_json.get('errorCode', 0)
+                    error_message = response_json.get('errorMessage', '')
                     if not error_code == 0:
                         raise SDKException('Response', '101', error_message)
             else:

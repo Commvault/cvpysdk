@@ -1200,12 +1200,16 @@ class UserGroup(object):
                                              self._user_group_id)
                 flag, response = self._commcell_object._cvpysdk_object.make_request(
                     'GET', security_associations_url)
-                if flag and response.json() is not None:
-                    security_properties = response.json().get('associations', {})
-                    self._security_associations = SecurityAssociation.fetch_security_association(
-                        security_dict=security_properties)
+                if flag:
+                    if response.json():
+                        security_properties = response.json().get('associations', {})
+                        self._security_associations = SecurityAssociation.fetch_security_association(
+                            security_dict=security_properties)
+                    else:
+                        self._security_associations = {}
                 else:
-                    raise SDKException('Response', '102')
+                    response_string = self._commcell_object._update_response_(response.text)
+                    raise SDKException('Response', '101', response_string)
 
             else:
                 raise SDKException('Response', '102')

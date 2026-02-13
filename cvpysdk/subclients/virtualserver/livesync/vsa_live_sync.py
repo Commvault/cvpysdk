@@ -173,7 +173,6 @@ class VsaLiveSync:
             from .oracle_live_sync import OCILiveSync
             return  object.__new__(OCILiveSync)
 
-
         raise SDKException(
             'LiveSync',
             '102',

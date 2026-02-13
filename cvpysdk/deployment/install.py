@@ -429,6 +429,9 @@ class Install(object):
             commserv_name (str) - Name of the CommServe (if user doesn't have view permission on CommServe)
             install_flags (dict) - dictionary of install flag values
             Ex : install_flags = {"preferredIPFamily":2, "install32Base":True}
+            ssh (dict) - dictionary for ssh key details for linux clients
+            Ex : ssh ={"location": "C:\\path", "content": "base64 encoded",
+                "passphrase": "base64 encoded passphrase if any"} # Optional, include only if a passphrase is required}
 
             db2_logs_location (dict) - dictionary of db2 logs location
             Ex: db2_logs_location = {
@@ -593,6 +596,7 @@ class Install(object):
         firewall_inputs = kwargs.get('firewall_inputs', {})
         web_console_input = kwargs.get('webconsole_inputs', {})
         dataDirectory = kwargs.get("dataDirectory", None)
+        ssh = kwargs.get("ssh", None)
 
         request_json = {
             "taskInfo": {
@@ -638,7 +642,7 @@ class Install(object):
                                             "ignoreJobsRunning": False,
                                             "forceReboot": False,
                                             "overrideClientInfo": True,
-                                            "dataDirectory": dataDirectory,
+                                            "dataDirectory": dataDirectory if dataDirectory is not None else "",
                                             "preferredIPFamily": install_flags.get('preferredIPFamily',
                                                                                    1) if install_flags else 1,
                                             "firewallInstall": {
@@ -688,7 +692,7 @@ class Install(object):
                                     },
                                     "clientDetails": client_details,
                                     "clientAuthForJob": {
-                                        "password": password,
+                                        "password": password if password else "",
                                         "userName": username
                                     }
                                 },
@@ -701,6 +705,19 @@ class Install(object):
                 ]
             }
         }
+
+        if unix_features and (ssh is not None):
+            request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"][
+                "useSSHKey"] = True
+            request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"][
+                "sshKeyFileLocation"] = ssh["location"]
+            request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"][
+                "sshKeyFileContent"] = ssh["content"]
+            if ssh.get("passphrase"):
+                request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"][
+                    "useSSHKeyPassphrase"] = True
+                request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"][
+                    "sshKeyFilePassphrase"] = {"password": ssh["passphrase"]}
 
         if db2_install and db2_logs:
             request_json["taskInfo"]["subTasks"][0]["options"]["adminOpts"]["clientInstallOption"]["installerOption"][

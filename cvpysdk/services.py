@@ -323,6 +323,7 @@ SERVICES_DICT_TEMPLATE = {
     'EDISCOVERY_EXPORT': '{0}dcube/export/%s',
     'EDISCOVERY_EXPORT_STATUS': '{0}dcube/export/%s/status?token=%s',
     'EDISCOVERY_CREATE_DATA_SOURCE': '{0}EDiscoveryClients/Datasources',
+    'EDISCOVERY_CREATE_DATA_SOURCE_BULK': '{0}EDiscoveryClients/Datasources/Bulk',
     'EDISCOVERY_REVIEW_ACTIONS_WITH_REQUEST': '{0}EDiscoveryClients/Datasources/Actions/Requests',
     'EDISCOVERY_REVIEW_ACTIONS': '{0}V2/EDiscoveryClients/Datasources/Actions',
     'EDISCOVERY_CLIENTS': '{0}EDiscoveryClients?eDiscoverySubtype=%s',
