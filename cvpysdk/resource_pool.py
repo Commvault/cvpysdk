@@ -33,6 +33,12 @@ ResourcePools:
 
         create()                            --  creates resource pool in CS
 
+        get_resource_pools_by_solution()    --  returns resource pools filtered by solution name
+
+        get_resource_pools_by_region()      --  returns resource pools filtered by region name
+
+        get_cleanroom_resource_pools()      --  returns all Cleanroom resource pools
+
         refresh()                           --  Refreshes resource pools associated with cs
 
 ResourcePool:
@@ -51,6 +57,10 @@ ResourcePool Attributes:
     **resource_pool_id**        --  returns Resource pool id
 
     **resource_pool_type**      --  returns ResourcePoolTypes enum
+
+    **resource_pool_solution**  --  returns list of solutions associated with the resource pool
+
+    **resource_pool_region**    --  returns region name for the resource pool
 
 """
 
@@ -107,6 +117,23 @@ class ResourcePoolTypes(enum.Enum):
     GOOGLE_CLOUD_PLATFORM = 50001
 
 
+class ResourcePoolSolutions(enum.Enum):
+    """
+    Enumeration class representing different solutions associated with resource pools.
+
+    This enum is used to define and categorize various solutions that resource pools may be associated with,
+    providing a clear and type-safe way to reference specific solution categories throughout the codebase.
+
+    Key Features:
+        - Defines distinct solution categories as enumeration members
+        - Ensures type safety and clarity when working with resource pool solutions
+        - Facilitates consistent usage of solution identifiers in relation to resource pools
+
+    #ai-gen-doc
+    """
+    CLEANROOM = 25
+
+
 class ResourcePools:
     """
     Class to manage and represent all resource pools within a system.
@@ -154,8 +181,8 @@ class ResourcePools:
     def _response_not_success(self, response: 'requests.Response') -> None:
         """Raise an exception if the API response status is not 200 (OK).
 
-        This helper function checks the status of the provided response object, typically 
-        obtained from the `requests` Python package, and raises an exception if the status 
+        This helper function checks the status of the provided response object, typically
+        obtained from the `requests` Python package, and raises an exception if the status
         code indicates a failure.
 
         Args:
@@ -315,10 +342,90 @@ class ResourcePools:
             return True
         return False
 
+    def get_resource_pools_by_solution(self, solution_id: int) -> dict:
+        """Return resource pools filtered by solution ID.
+
+        This method checks each pool's ``solutions`` list and matches against the
+        integer ``solutionId`` field. Pools that do not include the ``solutions`` key
+        (or have an empty solutions list) are skipped.
+
+        Args:
+            solution_id (int): The solution ID to filter by, e.g. ``25`` for Cleanroom.
+
+        Returns:
+            dict: Mapping of resource pool name to its details dictionary for all pools
+            whose ``solutions`` list contains the given ``solution_id``. Returns an
+            empty dict if no pools match.
+
+        Example:
+            >>> cleanroom_pools = resource_pools.get_resource_pools_by_solution(25)
+            >>> for name, details in cleanroom_pools.items():
+            ...     region = details.get("regionInfo", {}).get("regionEntity", {}).get("regionName", "")
+            ...     print(f"{name}: {region}")
+
+        #ai-gen-doc
+        """
+        resource_pools = {}
+        for pool_name, pool_details in self._pools.items():
+            for sol in pool_details.get('solutions', []):
+                if sol.get('id') == solution_id:
+                    resource_pools[pool_name] = pool_details
+                    break
+        return resource_pools
+
+    def get_resource_pools_by_region(self, region_name: str) -> dict:
+        """Return resource pools filtered by region name.
+
+        This method matches pools based on the region name present at
+        ``regionInfo.regionEntity.regionName`` in each pool's details. Matching is
+        case-insensitive.
+
+        Args:
+            region_name (str): Region name to filter by (case-insensitive), e.g. ``"eastus2"``.
+
+        Returns:
+            dict: Mapping of resource pool name to its details dictionary for all matching pools.
+                  Returns an empty dict if no pools match the given region or if a pool does not
+                  contain region information.
+
+        Example:
+            >>> eastus2_pools = resource_pools.get_resource_pools_by_region("eastus2")
+            >>> for name, details in eastus2_pools.items():
+            ...     pool_id = details.get("resourcePool", {}).get("resourcePoolId")
+            ...     print(f"{name}: {pool_id}")
+
+        #ai-gen-doc
+        """
+        resource_pools = {}
+        for pool_name, pool_details in self._pools.items():
+            if pool_details.get('region', {}).get('name', '').lower() == region_name.lower():
+                resource_pools[pool_name] = pool_details
+        return resource_pools
+
+    def get_cleanroom_resource_pools(self) -> dict:
+        """Return all resource pools configured for the Cleanroom solution.
+
+        This is a convenience wrapper over :meth:`get_resource_pools_by_solution`
+        that filters pools where the ``solutions`` list contains the Cleanroom
+        solution ID (``ResourcePoolSolutions.CLEANROOM.value``).
+
+        Returns:
+            dict: Mapping of resource pool name to its details dictionary for all Cleanroom pools.
+                  Returns an empty dict if no Cleanroom resource pools are found.
+
+        Example:
+            >>> cleanroom_pools = resource_pools.get_cleanroom_resource_pools()
+            >>> for name, details in cleanroom_pools.items():
+            ...     print(name)
+
+        #ai-gen-doc
+        """
+        return self.get_resource_pools_by_solution(ResourcePoolSolutions.CLEANROOM.value)
+
     def refresh(self) -> None:
         """Reload the resource pools associated with the CommServe (CS).
 
-        This method refreshes the internal state of the ResourcePools object, ensuring that 
+        This method refreshes the internal state of the ResourcePools object, ensuring that
         any changes to resource pools on the CommServe are reflected in the current instance.
 
         #ai-gen-doc
@@ -405,7 +512,7 @@ class ResourcePool:
     def refresh(self) -> None:
         """Reload the details of the resource pool.
 
-        This method updates the internal state of the ResourcePool instance to reflect 
+        This method updates the internal state of the ResourcePool instance to reflect
         the latest information from the underlying data source or system.
 
         #ai-gen-doc
@@ -434,3 +541,60 @@ class ResourcePool:
         #ai-gen-doc
         """
         return ResourcePoolTypes(int(self._resource_details['appType']))
+
+    @property
+    def resource_pool_solution(self) -> list:
+        """Return the solutions configured for this resource pool.
+
+        The API returns solutions as a list of dictionaries under the ``solutions`` key,
+        with keys like ``solutionId`` and ``solutionName``.
+
+        Returns:
+            list: List of solution dictionaries (e.g., ``{'solutionId': int, 'solutionName': str}``).
+                  Returns an empty list if the resource pool has no solutions configured.
+
+        Example:
+            >>> pool = commcell.resource_pools.get('Cleanroom Access Nodes - eastus2')
+            >>> for sol in pool.resource_pool_solution:
+            ...     print(f"{sol.get('solutionName')} ({sol.get('solutionId')})")
+
+        #ai-gen-doc
+        """
+        return self._resource_details.get('solutions', [])
+
+    @property
+    def resource_pool_region(self) -> str:
+        """Return the region name for this resource pool.
+
+        The API provides region information under ``regionInfo.regionEntity.regionName``.
+
+        Returns:
+            str: Region name (for example, ``'eastus2'``). Returns an empty string if not present.
+
+        Example:
+            >>> pool = commcell.resource_pools.get('Cleanroom Access Nodes - eastus2')
+            >>> print(pool.resource_pool_region)
+
+        #ai-gen-doc
+        """
+        return self._resource_details.get('regionInfo', {}).get('regionEntity', {}).get('regionName', '')
+
+    @property
+    def resource_pool_client_groups(self) -> list:
+        """Return the access-node client groups associated with this resource pool.
+
+        The API returns client groups under ``accessNodes.clientGroups`` as a list of dictionaries,
+        typically containing ``clientGroupId`` and ``clientGroupName``.
+
+        Returns:
+            list: List of client-group dictionaries (e.g., ``{'clientGroupId': int, 'clientGroupName': str}``).
+                  Returns an empty list if none are configured.
+
+        Example:
+            >>> pool = commcell.resource_pools.get('Cleanroom Access Nodes - eastus2')
+            >>> for cg in pool.resource_pool_client_groups:
+            ...     print(f"{cg.get('clientGroupName')} ({cg.get('clientGroupId')})")
+
+        #ai-gen-doc
+        """
+        return self._resource_details.get('accessNodes', {}).get('clientGroups', [])

@@ -781,7 +781,7 @@ class RecoveryGroup:
 
         #ai-gen-doc
         """
-        return f'{self.recovery_group_name}-Target'
+        return f'{self.recovery_group_name}-Site'
 
     @property
     def get_new_hypervisor_name(self) -> str:

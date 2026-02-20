@@ -240,7 +240,7 @@ class Install(object):
         **NOTE:** push_serivcepack_and_hotfixes cannot be used for revision upgrades
 
         """
-        version = kwargs["cs_version"] if kwargs.get("cs_version") else self.commcell_object.commserv_version
+        version = int(kwargs.get("cs_version", self.commcell_object.commserv_version))
         selected_clients = []
         selected_client_groups = []
         schedule_pattern = kwargs.get('schedule_pattern', None)

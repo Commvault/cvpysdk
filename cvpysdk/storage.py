@@ -151,6 +151,8 @@ DiskLibrary:
 
     add_mount_path()            --  adds the mount path on the local/ remote machine
 
+    delete_mount_path()         -- Deletes the mount path on the local / remote machine
+
     set_mountpath_reserve_space()      --  to set reserve space on the mountpath
 
     set_max_data_to_write_on_mount_path()  -- to set max data to write on the mountpath
@@ -2371,7 +2373,59 @@ class DiskLibrary(object):
             raise SDKException('Response', '101', _stdout.format(mount_path,
                                                                  self._library_name,
                                                                  _stderr))
+    
+    def delete_mount_path(self, mount_path: str, media_agent: str, username: str = '', password: str = '') -> None:
+        """Delete a mount path from the disk library.
 
+        This method removes an existing mount path from the disk library, which can be located 
+        either locally or remotely on the specified MediaAgent. Optionally, credentials can be 
+        provided if required for authentication.
+
+        Args:
+            mount_path: The path to be deleted from the disk library. This can be a local or remote path on the MediaAgent.
+            media_agent: The name of the MediaAgent where the mount path exists.
+            username: (Optional) Username required to access the mount path, if applicable.
+            password: (Optional) Password required to access the mount path, if applicable.
+        Raises:
+            SDKException: If the mount_path or media_agent parameters are of invalid type.
+            SDKException: If the API response error code is not 0.
+            SDKException: If the response is empty.
+            SDKException: If the response code is not as expected.
+        Example:
+            >>> disk_lib = DiskLibrary()
+            >>> disk_lib.delete_mount_path('/mnt/storage1', 'MediaAgent01')
+            >>> # With credentials for a remote mount path
+            >>> disk_lib.delete_mount_path('\\\\remote-server\\share', 'MediaAgent01', username='user', password='pass')
+        """
+        if not isinstance(mount_path, str) or not isinstance(media_agent, str):
+            raise SDKException('Storage', '101')
+
+        request_json = {
+                    "isConfigRequired": 1,
+                    "library": {
+                        "opType": 16,
+                        "mediaAgentName": media_agent,
+                        "libraryName": self._library_name,
+                        "mountPath": mount_path,
+                        "loginName": username,
+                        "password": b64encode(password.encode()).decode(),
+                    }
+        }
+
+        exec_command = self._commcell_object._services['LIBRARY']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', exec_command, request_json
+        )
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json():
+                    if response.json()['errorCode'] != 0:
+                        raise SDKException('Storage', '102', response.json()['errorMessage'])
+        else:
+            _stderr = self._commcell_object._update_response_(response.text)
+            _stdout = f'Failed to delete mountpath {mount_path} for library {self._library_name} with error: \n {_stderr}'
+            raise SDKException('Response', '101', _stdout)
+    
     def set_mountpath_reserve_space(self, mount_path: str, size: int) -> None:
         """Set the reserve space on a specified mount path.
 

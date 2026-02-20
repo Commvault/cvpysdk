@@ -158,16 +158,18 @@ class TeamsInstance(CloudAppsInstance):
                         self.discovered_users = {team['name']: team for team in resp['groups']}
                         return self.discovered_users
                     elif not resp:
-                        return {}
+                        if retry == max_retries - 1:
+                            raise SDKException('Response', '102', 'Please check Azure app details associated with client. Discovery has returned invalid response')
+                        time.sleep(30)
+                        continue
 
-                    # IF OUR RESPONSE IS EMPTY OR WE HAVE REACHED MAXIMUM NUMBER OF ATTEMPTS WITHOUT DESIRED RESPONSE
-                    elif not resp or retry == max_retries-1:
-                        raise SDKException('Response', '102')
+                    if retry == max_retries-1:
+                        raise SDKException('Response', '102', 'Please check Azure app details associated with client. Discovery has returned invalid response')
 
                     time.sleep(30)
                     continue  # TO AVOID RAISING EXCEPTION
 
-                raise SDKException('Response', '102')
+                raise SDKException('Response', '102', 'Please check Azure app details associated with client. Discovery has returned invalid response')
 
             if response.json():
                 response_string = self._commcell_object._update_response_(response.text)

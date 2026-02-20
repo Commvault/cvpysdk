@@ -217,7 +217,7 @@ class AzureAdBackupset(Backupset):
             "ca_auth_strength" : { "displayname" : "Authentication strengths","browsetype": 14, "browsestring" : "AUTHENTICATION_STRENGTH"},
             "role" : { "displayname" : "Roles","browsetype": 15, "browsestring" : "DIRECTORY_ROLE_DEFINITIONS"},
             "admin_unit" : { "displayname" : "Admin units","browsetype": 16, "browsestring" : "ADMINISTRATIVE_UNIT"},
-            "Device compliance policies" : { "displayname" : "Device compliance policies","browsetype": 17, "browsestring" : "DEVICE_COMPLIANCE_POLICY"}}
+            "device_compliance_policy" : { "displayname" : "Device compliance policies","browsetype": 17, "browsestring" : "DEVICE_COMPLIANCE_POLICY"}}
         azure_meta = options['meta']
         newid = azure_meta[azure_meta_mapper[options['folder']]['displayname']]['id']
         options['filters'] = [("76", newid, "9"),

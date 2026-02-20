@@ -646,6 +646,7 @@ class OneDriveSubclient(CloudAppsSubclient):
 
         groups = []
         group_response = self.search_for_group(group_id=value)
+        group_response = list(filter(lambda i : i['name']==value, group_response))
         display_name = group_response[0].get('name')
         group_id = group_response[0].get('id')
 
@@ -1397,6 +1398,7 @@ class OneDriveSubclient(CloudAppsSubclient):
                 group (str) : SMTP address of group
         """
         group_details = self.search_for_group(group)
+        group_details = list(filter(lambda i : i['name']==group, group_details))
         if len(group_details) != 0:
             return group_details
         else:

@@ -131,6 +131,8 @@ StoragePool instance attributes
 
     **library_id**                 --  returns the library ID associated with the storage pool
 
+    **library_name**               --  returns the library name associated with the storage pool    
+
     **is_worm_storage_lock_enabled**--  returns whether WORM storage lock is enabled
 
     **is_object_level_worm_lock_enabled** --  returns whether object level WORM lock is enabled
@@ -879,7 +881,7 @@ class StoragePools:
                 - username (str): Username to access the mount path.
                 - password (str): Password to access the mount path.
                 - credential_name (str): Credential manager name.
-                - cloud_server_type (int): Cloud vendor server type.
+                - cloud_server_type (int): Cloud vendor server type. Please refer to mediaagentconstants.CLOUD_SERVER_TYPES to fetch the required ID.
                 - region (str): Geographical region for storage.
                 - vendor_id (int): Cloud vendor ID (e.g., 3 for Azure).
                 - display_vendor_id (int): Storage class ID for the vendor (e.g., 401 for Azure Hot).
@@ -1666,6 +1668,24 @@ class StoragePool(object):
         library_list = self._storage_pool_properties.get("storagePoolDetails", {}).get("libraryList")
         if library_list:
             return library_list[0].get("library", {}).get("libraryId")
+
+    @property
+    def library_name(self) -> str:
+        """Get the library name associated with this storage pool.
+
+        This property provides a read-only string value representing the library name configured for the storage pool.
+
+        Returns:
+            str: The library name associated with the storage pool.
+
+        Example:
+            >>> storage_pool = StoragePool()
+            >>> library_name = storage_pool.library_name  # Access the library name property
+            >>> print(f"Library name: {library_name}")
+        """
+        library_list = self._storage_pool_properties.get("storagePoolDetails", {}).get("libraryList")
+        if library_list:
+            return library_list[0].get("library", {}).get("libraryName")
 
     @property
     def is_worm_storage_lock_enabled(self) -> bool:

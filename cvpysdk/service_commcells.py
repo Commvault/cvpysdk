@@ -117,6 +117,7 @@ class ServiceCommcells:
     def __getitem__(self, item: str) -> 'ServiceCommcell':
         """
         Gets the service commcell object for the given service commcell.
+        Performs advanced lookup allowing match from any identifying commcell property.
 
         Args:
             item (str): commserv name of the service commcell
@@ -127,7 +128,7 @@ class ServiceCommcells:
         Usage:
             >>> service_commcell = service_commcells['commcell_name']
         """
-        return self.get(item)
+        return self.get(item, True)
 
     def refresh(self) -> None:
         """
@@ -340,12 +341,13 @@ class ServiceCommcells:
         )
         self.refresh()
 
-    def get(self, commcell_name: str) -> 'ServiceCommcell':
+    def get(self, commcell_name: str, adv_lookup: bool = False) -> 'ServiceCommcell':
         """
         Gets the service commcell object for the given service commcell
 
         Args:
             commcell_name (str): commserv name of the service commcell
+            adv_lookup    (bool): if True, performs an advanced lookup allowing match from any partial property
 
         Raises:
             SDKException:
@@ -360,7 +362,47 @@ class ServiceCommcells:
         if commcell_name in self.all_service_commcells:
             return ServiceCommcell(self._commcell, commcell_name)
         else:
-            raise SDKException('ServiceCommcells', '102', f'No service commcell found with name: {commcell_name}')
+            if adv_lookup:
+                if found_name := self.lookup_name(commcell_name):
+                    return ServiceCommcell(self._commcell, found_name)
+            raise SDKException(
+                'ServiceCommcells',
+                '102',
+                f'No service commcell found with name: {commcell_name}. '
+                f'Choose from {list(self.all_service_commcells.keys())}'
+            )
+
+    def lookup_name(self, lookup_prop: Any) -> str | None:
+        """
+        Looks up the commcell name from any identifying property of the service commcell
+
+        Args:
+            lookup_prop (Any): any identifying property of the service commcell
+
+        Returns:
+            str: commcell name of the service commcell
+        """
+        # risky fuzzy matching from any commcell property
+        # responsibility on caller to provide unique enough input
+        for cs_name, cs_props in self.all_service_commcells.items():
+            # prioritize perfect matches
+            if str(lookup_prop).lower() == cs_name.lower():
+                return cs_name
+            for prop_value in cs_props.values():
+                if prop_value == lookup_prop:
+                    return cs_name
+                if isinstance(prop_value, dict):
+                    ...  # todo: recurse
+
+            # substr case-insensitive matches
+            if str(lookup_prop).lower() in cs_name.lower():
+                return cs_name
+            for prop_value in cs_props.values():
+                if str(lookup_prop).lower() in str(prop_value).lower():
+                    return cs_name
+                if isinstance(prop_value, dict):
+                    ...  # todo: recurse
+        return None
 
     @property
     def all_service_commcells(self) -> dict[str, Any]:
@@ -539,7 +581,7 @@ class ServiceCommcell:
         response = self._commcell.wrap_request(
             'POST', 'SERVICE_PROPS',
             req_kwargs={'payload': payload},
-            sdk_exception=('ServiceCommcell', '106'),
+            sdk_exception=('ServiceCommcells', '106'),
             return_resp=True
         )
         self.refresh()
@@ -565,7 +607,7 @@ class ServiceCommcell:
         self._commcell.wrap_request(
             'POST', 'SERVICE_REREGISTER', (self.commcell_id,),
             req_kwargs={'payload': payload},
-            sdk_exception=('ServiceCommcell', '107'),
+            sdk_exception=('ServiceCommcells', '107'),
         )
         self.refresh()
 
@@ -583,7 +625,7 @@ class ServiceCommcell:
         self._commcell.wrap_request(
             'GET', 'SYNC_SERVICE_COMMCELL', (self.commcell_id,),
             req_kwargs={'params': payload},
-            sdk_exception=('ServiceCommcell', '108'),
+            sdk_exception=('ServiceCommcells', '108'),
             error_check=True
         )
         self.refresh()
@@ -807,14 +849,6 @@ class Associations:
                 '_type_': 15
             }
         },
-        'Domain': lambda entity: {
-            'providerType': 2,
-            'userOrGroup': {
-                'providerId': int(entity.domain_id),
-                'providerDomainName': entity.domain_name,
-                '_type_': 61
-            }
-        },
         'Organization': lambda entity: {
             'providerType': 5,  # todo: this may be 15 or 5 depending on something
             'userOrGroup': {
@@ -823,11 +857,66 @@ class Associations:
                 '_type_': 61,
                 'GUID': entity.provider_guid,
                 'entityInfo': {
-                    "multiCommcellName": entity._commcell_object.commserv_name
+                    "multiCommcellName": entity._commcell_object.commserv_client.client_name
                 }
             }
         }
     }
+
+    @staticmethod
+    def lookup_entity_type(entity: Any) -> str:
+        """
+        Returns the entity type string for the given entity object.
+
+        Args:
+            entity (Any): object of User, UserGroup, Domain or Organization class
+                              or Any Derived class of the Above
+
+        Returns:
+            str: entity type string
+
+        Raises:
+            SDKException: if the entity type is invalid.
+
+        Usage:
+            entity_type = Associations.lookup_entity_type(entity)
+        """
+        for cls in type(entity).__mro__:
+            name = cls.__name__
+            if name in Associations.entity_payload_map:
+                return name
+        raise SDKException('ServiceCommcells', '101', f'Invalid entity type: {type(entity)} : {entity}')
+
+    @staticmethod
+    def lookup_entities_type(entities: list[Any]) -> str:
+        """
+        Returns the entity type string for the given list of entity objects.
+
+        Args:
+            entities (list[Any]): list of objects of User, UserGroup, Domain or Organization class
+                                      or Any Derived class of the Above
+
+        Returns:
+            str: entity type string
+
+        Raises:
+            SDKException: if the entity types are not all the same or invalid.
+
+        Usage:
+            entity_type = Associations.lookup_entities_type([entity1, entity2, ...])
+        """
+        if all(
+            Associations.lookup_entity_type(entity) == 'Organization' for entity in entities
+        ):
+            return 'Organization'
+        elif all(
+            Associations.lookup_entity_type(entity) in ('User', 'UserGroup') for entity in entities
+        ):
+            return 'Security'
+        else:
+            raise SDKException(
+                'ServiceCommcells', '101', 'Invalid/Mixed entity types in the provided list of entities.'
+            )
 
     @staticmethod
     def lookup_entity_payload(entity: Any) -> dict:
@@ -847,11 +936,57 @@ class Associations:
         Usage:
             payload = Associations.lookup_entity_payload(entity)
         """
-        for cls in type(entity).__mro__:
-            name = cls.__name__
-            if name in Associations.entity_payload_map:
-                return Associations.entity_payload_map[name](entity)
-        raise SDKException('ServiceCommcells', '101', f'Invalid entity type: {type(entity)} : {entity}')
+        return Associations.entity_payload_map[
+            Associations.lookup_entity_type(entity)
+        ](entity)
+
+    @staticmethod
+    def reverse_lookup_assoc(assoc: dict) -> str:
+        """
+        Returns the entity type string for the given association dict.
+
+        Args:
+            assoc (dict): association dict
+
+        Returns:
+            str: entity type string
+        """
+        entity_type = assoc.get('userOrGroup', {}).get('_type_')
+        if entity_type == 61:
+            return 'Organization'
+        elif entity_type in (13, 15):
+            return 'Security'
+        else:
+            raise SDKException(
+                'ServiceCommcells', '101', f'Invalid/Unknown association type: {entity_type} in : {assoc}'
+            )
+
+    @staticmethod
+    def reverse_lookup_type(assocs: list[dict]) -> str:
+        """
+        Returns the entity type string for the given list of association dicts.
+
+        Args:
+            assocs (list[dict]): list of association dicts
+
+        Returns:
+            str: entity type string
+
+        Raises:
+            SDKException: if the association types are not all the same or invalid.
+        """
+        if all(
+            Associations.reverse_lookup_assoc(assoc) == 'Organization' for assoc in assocs
+        ):
+            return 'Organization'
+        elif all(
+            Associations.reverse_lookup_assoc(assoc) == 'Security' for assoc in assocs
+        ):
+            return 'Security'
+        else:
+            raise SDKException(
+                'ServiceCommcells', '101', 'Got Mixed association entity types'
+            )
 
     def __init__(self, commcell_object: Any, filter_commcell: str = None) -> None:
         """
@@ -867,6 +1002,15 @@ class Associations:
         self._commcell = commcell_object
         self._filter_commcell = filter_commcell
         self._associations = None
+        self._company_associations = None
+        self._security_associations = None
+
+    @property
+    def _sc_id(self) -> int | None:
+        """ Internal property to get the service commcell ID if any. """
+        if self._filter_commcell:
+            return self._commcell.service_commcells[self._filter_commcell].commcell_id
+        return None
 
     def __repr__(self) -> str:
         """String representation of the instance of this class."""
@@ -876,7 +1020,7 @@ class Associations:
             return (f'associations of service commcell: {self._filter_commcell} '
                     f'from router: {self._commcell.webconsole_hostname}')
 
-    def refresh(self) -> None:
+    def refresh(self, ent_type: str = None) -> None:
         """
         Refreshes the cached associations information.
 
@@ -884,14 +1028,49 @@ class Associations:
             associations.refresh()
         """
         self._associations = None
+        if ent_type == 'Organization':
+            self._company_associations = None
+        elif ent_type == 'Security':
+            self._security_associations = None
+        else:
+            self._company_associations = None
+            self._security_associations = None
 
-    def _associations_api_call(self, method: str, exc_code: int, payload: dict = None, **kwargs) -> dict:
+    def _assoc_endpoint(self, method: str, ent_type: str) -> str:
+        """
+        Returns the endpoint for service commcell associations based on the method and entity type.
+
+        Args:
+            method (str): HTTP method to use for the API call (e.g., 'GET', 'POST').
+            ent_type (str): Entity type string.
+        Returns:
+            str: The endpoint for the API call.
+        """
+        url = self._commcell._services['SERVICE_COMMCELL_ASSOC']
+        if method == 'POST':
+            if ent_type == 'Organization':
+                url = self._commcell._services['SERVICE_COMMCELL_COMP']
+            elif ent_type == 'Security':
+                url = self._commcell._services['SERVICE_COMMCELL_SEC']
+        elif method == 'GET':
+            url += '?'
+            if ent_type == 'Organization':
+                url += 'includeSecurities=false'
+            elif ent_type == 'Security':
+                url += 'includeCompanies=false'
+            if self._sc_id:
+                url += f'&commcellId={self._sc_id}'
+        return url
+
+    def _associations_api_call(
+            self, method: str, exc_code: int, ent_type: str, payload: dict = None, **kwargs) -> dict:
         """
         Makes an API call to the Commcell for service commcell associations.
 
         Args:
             method (str): HTTP method to use for the API call (e.g., 'GET', 'POST').
             exc_code (int): Error code to raise in case of an exception.
+            ent_type (str): Entity type string. "Organization" or "Security" or None
             payload (dict): Payload to send with the API call.
             **kwargs: Additional keyword arguments.
 
@@ -905,8 +1084,12 @@ class Associations:
             response = self._associations_api_call('GET', 109)
             response = self._associations_api_call('POST', 110, payload={'key': 'value'}, include_warning=True)
         """
+        if method == 'POST':
+            if payload and self._sc_id:
+                payload['serviceCommcellId'] = self._sc_id
+
         response_json = self._commcell.wrap_request(
-            method, 'SERVICE_COMMCELL_ASSOC',
+            method, self._assoc_endpoint(method, ent_type),
             req_kwargs={'payload': payload} if payload else {},
             sdk_exception=('ServiceCommcells', exc_code)
         )
@@ -939,14 +1122,15 @@ class Associations:
         return {
             "entity": {
                 "entityType": 194,
-                "entityName": commcell,
+                "entityName": self._commcell.service_commcells[commcell].client_name,
                 "_type_": 150,
-                "entityId": self._commcell.service_commcells[commcell].commcell_id
+                "entityId": self._commcell.service_commcells[commcell].commcell_id,
+                # todo: "workloadRegionDisplayName": "..."
             },
             **self.lookup_entity_payload(entity)
         }
 
-    def _form_assoc_list(self, entities: Any, commcells: Any) -> list[dict]:
+    def _form_assoc_list(self, entities: Any, commcells: Any) -> tuple[list[dict], str]:
         """
         prepares the entity json for adding commcell associations.
 
@@ -956,6 +1140,7 @@ class Associations:
 
         Returns:
             list[dict]: entity json for adding commcell associations
+            str: entity type string
 
         Usage:
             assoc_list = self._form_assoc_list(entity, 'commserve1')
@@ -967,9 +1152,9 @@ class Associations:
             commcells = [commcells]
         return [
             self._form_assoc_dict(entity, commcell) for entity in entities for commcell in commcells
-        ]
+        ], Associations.lookup_entities_type(entities)
 
-    def get(self, entity: Any, commcell: str = None) -> list[dict]:
+    def get(self, entity: Any, commcell: str = None, ent_type: str = None) -> list[dict]:
         """
         Gets an entity's association details for every commcell it is associated to.
 
@@ -979,6 +1164,8 @@ class Associations:
                                          or a list of the above
 
             commcell (str, optional): commserv name(s) of the service commcell(s) to filter associations. Defaults to None.
+
+            ent_type (str, optional): entity type string 'Organization' or 'Security'. Defaults to None.
 
         Returns:
             list[dict]: list of dicts, each dict containing details of the entity's association with a service commcell
@@ -1014,14 +1201,18 @@ class Associations:
                 ]
 
         """
+        # commcell filter logic
         commcell = commcell or self._filter_commcell
         if isinstance(commcell, str):
             commcell = [commcell]
+
+        # recurse logic
         if isinstance(entity, list):
             return [
                 assoc for each_entity in entity for assoc in self.get(each_entity)
             ]
 
+        # match logic
         if isinstance(entity, str):
             assoc_match = lambda assoc_dict: entity.lower() in [
                 assoc_dict['userOrGroup'].get('userName', '').lower(),
@@ -1029,14 +1220,21 @@ class Associations:
                 assoc_dict['userOrGroup'].get('providerDomainName', '').lower()
             ]
         else:
+            ent_type = ent_type or Associations.lookup_entity_type(entity)
             catch_assoc_dict = self.lookup_entity_payload(entity)
-            assoc_match = lambda assoc_dict: (
-                set(assoc_dict['userOrGroup'].items()).issuperset(
-                    set(catch_assoc_dict['userOrGroup'].items())
-                )
+            assoc_match = lambda assoc_dict: all(
+                assoc_dict.get('userOrGroup', {}).get(k) == v
+                for k, v in catch_assoc_dict.get('userOrGroup', {}).items()
             )
+
+        # fetch logic
+        assocs_set = (
+            self.all_company_associations if ent_type == 'Organization' else
+            self.all_security_associations if ent_type == 'Security' else
+            self.all_associations
+        )
         entity_assocs = [
-            assoc for assoc in self.all_associations if assoc_match(assoc)
+            assoc for assoc in assocs_set if assoc_match(assoc)
         ]
         if commcell:
             entity_assocs = [
@@ -1065,23 +1263,26 @@ class Associations:
             associations.add([user_object1, user_object2], commcell=['commserve1', 'commserve2'], include_warning=True)
         """
         commcell = commcell or self._filter_commcell
+        assoc_list, ent_type = self._form_assoc_list(entity, commcell)
         self._associations_api_call(
             'POST', 110,
+            ent_type,
             {
-                "associations": self._form_assoc_list(entity, commcell),
+                "associations": assoc_list,
                 "associationsOperationType": 2
             },
             **kwargs
         )
-        self.refresh()
+        self.refresh(ent_type)
 
-    def delete(self, entity: Any, commcell: str = None, **kwargs) -> None:
+    def delete(self, entity: Any, commcell: str = None, ent_type: str = None, **kwargs) -> None:
         """
         Deletes an association for the given entity from the specified service commcell(s).
 
         Args:
             entity (Any): object(s) of User, UserGroup, Domain or Organization class
             commcell (str, optional): commserv name of the service commcell(s). Defaults to None.
+            ent_type (str, optional): entity type string 'Organization' or 'Security'. Defaults to None.
             **kwargs:
                 include_warning (bool): if True, will raise exception for warning messages as well
 
@@ -1090,16 +1291,49 @@ class Associations:
             associations.delete([user_object1, user_object2], commcell=['commserve1', 'commserve2'], include_warning=True)
         """
         commcell = commcell or self._filter_commcell
-        if assocs_to_delete := self.get(entity, commcell):
+        if assocs_to_delete := self.get(entity, commcell, ent_type):
+            if not ent_type:
+                ent_type = Associations.reverse_lookup_type(assocs_to_delete)
             self._associations_api_call(
                 'POST', 111,
+                ent_type,
                 {
                     "associations": assocs_to_delete,
                     "associationsOperationType": 3
                 },
                 **kwargs
             )
-            self.refresh()
+            self.refresh(ent_type)
+
+    @property
+    def all_company_associations(self) -> list[dict]:
+        """
+        Returns all company associations of service commcells.
+
+        Returns:
+            list[dict]: consisting of all companies associated with service commcells
+
+        Usage:
+            all_company_assocs = associations.all_company_associations
+        """
+        if self._company_associations is None:
+            self._company_associations = self._associations_api_call('GET', 109, 'Organization').get('associations', [])
+        return self._company_associations
+
+    @property
+    def all_security_associations(self) -> list[dict]:
+        """
+        Returns all security associations of service commcells.
+
+        Returns:
+            list[dict]: consisting of all security entities associated with service commcells
+
+        Usage:
+            all_security_assocs = associations.all_security_associations
+        """
+        if self._security_associations is None:
+            self._security_associations = self._associations_api_call('GET', 109, 'Security').get('associations', [])
+        return self._security_associations
 
     @property
     def all_associations(self) -> list[dict]:
@@ -1112,11 +1346,4 @@ class Associations:
         Usage:
             all_assocs = associations.all_associations
         """
-        if self._associations is None:
-            all_assocs = self._associations_api_call('GET', 109).get('associations', [])
-            if self._filter_commcell:
-                all_assocs = [
-                    assoc for assoc in all_assocs if assoc['entity']['entityName'] == self._filter_commcell
-                ]
-            self._associations = all_assocs
-        return self._associations
+        return self.all_company_associations + self.all_security_associations

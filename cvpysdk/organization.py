@@ -1446,8 +1446,8 @@ class Organization:
         Usage:
             start_time = org.job_start_time
         """
-        if jtprop := self.organization_properties.get('isJobStartTimeEnabled'):
-            return jtprop.get('jobStartTime')
+        if self.organization_properties.get('isJobStartTimeEnabled'):
+            return self.organization_properties.get('jobStartTime')
         else:
             return 'System default'
 
@@ -3074,6 +3074,107 @@ class Organization:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
         self.refresh()
+
+    def lock(self) -> None:
+        """
+        Lock the organization to disable user logins and terminate existing sessions.
+
+        This operation will:
+        - Disable all user logins for the organization
+        - Terminate all existing user sessions
+        - Kill any running restore jobs
+        - Prevent new restore operations (backups continue unaffected)
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        Raises:
+            SDKException:
+                - if failed to lock the organization
+                - if response is empty
+                - if response is not success
+
+        Usage:
+            org.lock()
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', self._services['LOCK_ORGANIZATION'] % self.organization_id
+        )
+
+        if flag:
+            if response.json():
+                error_code = response.json().get('response', {}).get('errorCode', 0)
+                if error_code != 0:
+                    error_message = response.json().get('error', {}).get('errorMessage', 'Unknown error')
+                    raise SDKException(
+                        'Organization', '102', f'Failed to lock organization. Error: "{error_message}"'
+                    )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
+
+    def unlock(self) -> None:
+        """
+        Unlock the organization to restore normal operations.
+
+        This operation will:
+        - Re-enable user logins for the organization
+        - Allow new user sessions
+        - Re-enable restore operations
+
+        Args:
+            None
+
+        Returns:
+            None
+
+        Raises:
+            SDKException:
+                - if failed to unlock the organization
+                - if response is empty
+                - if response is not success
+
+        Usage:
+            org.unlock()
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', self._services['UNLOCK_ORGANIZATION'] % self.organization_id
+        )
+
+        if flag:
+            if response.json():
+                error_code = response.json().get('response', {}).get('errorCode', 0)
+                if error_code != 0:
+                    error_message = response.json().get('error', {}).get('errorMessage', 'Unknown error')
+                    raise SDKException(
+                        'Organization', '102', f'Failed to unlock organization. Error: "{error_message}"'
+                    )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
+
+    @property
+    def is_locked(self) -> bool:
+        """
+        Returns whether the organization is currently locked.
+
+        Returns:
+            bool: True if the organization is locked, False otherwise.
+
+        Usage:
+            if org.is_locked:
+                print("Organization is locked")
+        """
+        return 7 == self._organization_info.get('organization', {}).get('status', 0)
 
     def set_country(self, country_name: str) -> None:
         """Sets the country association for this organization.

@@ -619,4 +619,62 @@ class Download(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def refresh_updates(self) -> Optional[str]:
+        """
+        Perform check for any latest updates.
+    
+        Returns:
+            Optional[str]: Error string if available, None otherwise.
+    
+        Raises:
+            SDKException:
+                if response is empty
+                if response is not success
+    
+        Example:
+            >>> download_obj = Download(commcell_object)
+            >>> result = download_obj.refresh_updates()
+        """
+        flag, response = self._cvpysdkcommcell_object.make_request(
+            'POST', self._services['REFRESH_UPDATES']
+        )
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json() and response.json()['errorCode'] != 0:
+                    raise SDKException('Download', response.json()['errorString'])
+                if response.json()['errorCode'] == 0:
+                    return response.json()['errorString']
+                else:
+                    raise SDKException('Response', '102', self._update_response_(response.text))
+            else:
+                raise SDKException('Response', '102', self._update_response_(response.text))
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def cu_packs_available(self, release: str = '11.0.0') -> Dict[str, Any]:
+        """
+        Get available CU packs info from FTP server.
+    
+        Args:
+            release: Release version string. Defaults to '11.0.0'.
+    
+        Returns:
+            Dict containing CU pack information.
+    
+        Raises:
+            SDKException:
+                if response is empty
+                    if response is not success
+        """
+        flag, response = self._cvpysdkcommcell_object.make_request(
+            'GET', self._services['FTPServicePack'] % release
+        )
+        if flag:
+            if response.status_code == 200 and response.json():
+                return response.json()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
 

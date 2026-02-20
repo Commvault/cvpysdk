@@ -116,6 +116,8 @@ from typing import List, Optional
 from urllib.parse import urlparse
 
 from cvpysdk.license import LicenseDetails
+
+from Web.Common.exceptions import CVTestStepFailure
 from .exception import SDKException
 
 class _Metrics(object):
@@ -714,8 +716,7 @@ class _Metrics(object):
                 sleep(30)
                 time_limit -= 30
                 self.refresh()
-        raise TimeoutError(
-            "Download process didn't complete after {0} seconds".format(timeout))
+        raise CVTestStepFailure("Download process didn't complete after {0} seconds".format(timeout))
 
     def wait_for_collection_completion(self, timeout: int = 400) -> None:
         """Wait for the metrics collection process to complete within a specified timeout period.
