@@ -109,6 +109,7 @@ class CloudAppsInstance(Instance):
         from .cloudapps.onedrive_instance import OneDriveInstance
         from .cloudapps.azure_cosmosdb_instance import AzureCosmosDBInstance
         from .cloudapps.powerbi_instance import PowerBIInstance
+        from .cloudapps.cloud_database_instance import CloudDatabaseInstance
 
         instance_type = {
             1: GoogleInstance,
@@ -130,6 +131,7 @@ class CloudAppsInstance(Instance):
             35: MSDynamics365Instance,  # MS Dynamics 365 Instance
             36: TeamsInstance,  # Office 365 Teams
             37: GoogleSpannerInstance,  # Google Cloud Spanner Instance
+            40: CloudDatabaseInstance,  # MongoDB Atlas
             44: AzureCosmosDBInstance,  # Azure Cosmos DB Cloud Apps Instance
             51: AzureCosmosDBInstance,   # Azure Cosmos DB MongoDBAPI Instance
             60: PowerBIInstance     # Power Platform PowerBi Instance

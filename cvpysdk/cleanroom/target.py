@@ -515,7 +515,7 @@ class CleanroomTarget:
             self._cleanroom_target_id = self._get_cleanroom_target_id()
         self._RECOVERY_TARGET_API = self._services['GET_RECOVERY_TARGET'] % self._cleanroom_target_id
         self._RUNBOOK_TARGET_API = self._services['GET_RUNBOOK_TARGET'] % self._cleanroom_target_id
-
+        self._EDIT_RUNBOOK_TARGET_API = self._services['EDIT_RUNBOOK_TARGET_API'] % self._cleanroom_target_id
         self._cleanroom_target_properties = None
 
         self._policy_type = None
@@ -621,6 +621,88 @@ class CleanroomTarget:
             self._policy_type = 13
         else:
             self._policy_type = -1
+
+    def edit_cleanroom_target_custom_image(self, image_info, infra_vm_size):
+        """Edits the cleanroom target to add or update custom images.
+
+        Args:
+            image_info: Dictionary or list of dictionaries containing custom image details.
+                Single image format:
+                    {
+                        'imageGUID': '/subscriptions/.../resourceGroups/.../images/imageName',
+                        'imageName': 'DisplayName',
+                        'operatingSystem': 'UNIX' or 'WINDOWS'
+                    }
+            infra_vm_size: VM size identifier to set for infrastructure; when None,
+                the existing VM size setting is left unchanged.
+
+        Raises:
+            SDKException: If the API request fails or returns invalid data.
+
+        Example:
+            >>> target = CleanroomTarget(commcell, 'target_name')
+            >>> image = {
+            ...     'imageGUID': '/subscriptions/abc/resourceGroups/rg/images/myImage',
+            ...     'imageName': 'myImage - [x64] [Gen2] [Linux] [Generalized]',
+            ...     'operatingSystem': 'UNIX'
+            ... }
+            >>> target.edit_cleanroom_target_custom_image(image, infra_vm_size)
+        """
+        # Get current target configuration
+        flag, response = self._cvpysdk_object.make_request('GET', self._RUNBOOK_TARGET_API)
+        if not flag:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+        if not response.json():
+            raise SDKException('Response', '102', 'Empty response received from server')
+
+        target_payload = response.json()
+
+        # Ensure infrastructure and advancedSettings exist in payload
+        if 'infrastructure' not in target_payload:
+            target_payload['infrastructure'] = {}
+        if 'advancedSettings' not in target_payload['infrastructure']:
+            target_payload['infrastructure']['advancedSettings'] = {}
+
+        # Process image_info - convert single image to list
+        if isinstance(image_info, dict):
+            custom_images = [image_info]
+        elif isinstance(image_info, list):
+            custom_images = image_info
+        else:
+            raise SDKException('RecoveryTarget', '101', 'image_info must be a dictionary or list')
+
+        # Validate custom image format
+        for image in custom_images:
+            if not all(key in image for key in ['imageGUID', 'imageName', 'operatingSystem']):
+                raise SDKException(
+                    'RecoveryTarget', '101',
+                    'Each custom image must contain imageGUID, imageName, and operatingSystem'
+                )
+            if image['operatingSystem'] not in ['UNIX', 'WINDOWS']:
+                raise SDKException(
+                    'RecoveryTarget', '101',
+                    'operatingSystem must be either UNIX or WINDOWS'
+                )
+
+        # Update custom images in payload
+        target_payload['infrastructure']['advancedSettings']['customImages'] = custom_images
+        # Only set vmSize when provided to avoid clearing existing value unintentionally
+        if infra_vm_size is not None:
+            target_payload['infrastructure']['advancedSettings']['vmSize'] = infra_vm_size
+
+        # Make PUT request to update target
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT',
+            self._EDIT_RUNBOOK_TARGET_API,
+            payload=target_payload
+        )
+
+        if not flag:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+        # Refresh target properties after update
+        self.refresh()
 
     def _get_cleanroom_target_properties(self) -> dict:
         """Retrieve the properties of the cleanroom target.

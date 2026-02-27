@@ -244,7 +244,7 @@ SERVICES_DICT_TEMPLATE = {
     'INSTANCE_BROWSE': '{0}Client/%s/%s/Instance/%s/Browse',
     'CLOUD_DATABASE_BROWSE': '{0}BrowseRDSBackups',
     'GET_AWS_CFT': '{0}v4/Cloud/AWS/ExpressConfig/QuickCreateLink/AccessNodeCFT?platform=%s&regionName=%s&authentication=%s',
-
+    'CLOUD_CONTENT_BROWSE': '{0}CloudApps/CloudDBContentPreview',
     'SQL_RESTORE_OPTIONS': '{0}SQL/RestoreOptions',
 
     'EXECUTE_QCOMMAND': '{0}Qcommand/qoperation execute',
@@ -595,6 +595,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'SNAP_OPERATIONS': '{0}/Snaps/Operations',
     'STORAGE_ARRAYS': '{0}/StorageArrays',
+    'ATLAS_ARRAYS': '{0}V4/StorageArrays',
 
     'GET_NETWORK_SUMMARY': '{0}/FirewallSummary/%s',
     'NETWORK_TOPOLOGIES': '{0}FirewallTopology',
@@ -644,6 +645,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_ALL_RECOVERY_TARGETS': '{0}V4/RecoveryTargets',
     'GET_RECOVERY_TARGET': '{0}V4/RecoveryTarget/%s',
     'GET_RUNBOOK_TARGET': '{0}V4/Cleanroom/Target/%s',
+    'EDIT_RUNBOOK_TARGET_API': '{0}Cleanroom/Target/%s',
 
     'RETIRE': '{0}Client/%s/Retire',
     'GET_REMOTE_CACHE_CLIENTS': '{0}RemoteCacheClients',

@@ -132,6 +132,8 @@ Clients
 
     add_azure_cosmosdb_client()             --  add client for azure cosmosdb cloud account
 
+    add_mongodb_atlas_client()              --  add client for MongoDB Atlas cloud account
+
     get(client_name)                      --  returns the Client class object of the input client
     name
 
@@ -6249,6 +6251,101 @@ class Clients(object):
                             "vcenterHostName": ""
                         },
                         "vsInstanceType": 7
+                    }
+                }
+            },
+            "entity": {
+                "clientName": client_name
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['GET_ALL_CLIENTS'], payload=request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json(
+                        )['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(
+                            error_string)
+
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+                        return self.get(client_name)
+
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(
+                        error_string)
+
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException(
+                'Response',
+                '101',
+                self._update_response_(
+                    response.text))
+
+    def add_mongodb_atlas_client(self,client_name: str ,
+                                 access_nodes: str,
+                                 credential_name: str,
+                                 description: str):
+        """
+        adds a new cloud account for mongodb atlas
+
+        Args :
+
+        client_name         :   str         # cloud Account Name
+        access_nodes        :   List[str]   # Access Node to be associated with cloud account
+        credential_name     :   str         # credentail to be associated with cloud account .
+        description         :   str         # description for cloud account
+
+        """
+        request_json={
+            "clientInfo": {
+                "clientType": 15,
+                "cloudClonnectorProperties": {
+                    "instanceType": 40,
+                    "instance": {
+                        "cloudAppsInstance": {
+                            "instanceType": 40,
+                            "generalCloudProperties": {
+                                "credentials": {
+                                    "credentialId": 0,
+                                    "credentialName": credential_name,
+                                    "recordType": 23,
+                                    "description": description,
+                                    "selected": True
+                                },
+                                "accessNodes": {
+                                    "memberServers": [
+                                        {
+                                            "client": {
+                                                "clientId": 0,
+                                                "clientName": access_nodes[0],
+                                                "_type_": 3,
+                                                "isClientGroup": False,
+                                                "displayLabel": access_nodes[0],
+                                                "typeLabel": "Access nodes",
+                                                "selected": True
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
                     }
                 }
             },

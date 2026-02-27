@@ -244,6 +244,7 @@ class Install(object):
         selected_clients = []
         selected_client_groups = []
         schedule_pattern = kwargs.get('schedule_pattern', None)
+        direct_upgrade = version >= 36 and not schedule_pattern
         if schedule_pattern:
             if not isinstance(schedule_pattern, dict):
                 raise SDKException("Install", "101")
@@ -264,7 +265,7 @@ class Install(object):
             client_computers = [x.lower() for x in client_computers]
             if not set(client_computers).issubset(commcell_client_computers):
                 raise SDKException('Install', '102')
-            if version >= 36:
+            if direct_upgrade:
                 for client in client_computers:
                     selected_clients.append({"id": int(commcell_client_computers[client]['id']),
                                             "type": "CLIENT_ENTITY"})
@@ -276,7 +277,7 @@ class Install(object):
             if not set(client_computer_groups).issubset(commcell_client_computer_groups):
                 raise SDKException('Install', '103')
 
-            if version >= 36:
+            if direct_upgrade:
                 for client_group in client_computer_groups:
                     selected_client_groups.append({"id": int(commcell_client_computer_groups[client_group]),
                                                     "type": "CLIENT_GROUP_ENTITY"})
@@ -293,7 +294,7 @@ class Install(object):
             selected_client_groups = [{"_type_": 27}]
 
         all_clients = selected_clients + selected_client_groups
-        if version >= 36:
+        if direct_upgrade:
             request_json = {
                 "rebootIfRequired": reboot_client,
                 "runDBMaintenance": run_db_maintenance,
@@ -363,8 +364,8 @@ class Install(object):
                 adminOpts = request_json['taskInfo']['subTasks'][0]['options']['adminOpts']
                 adminOpts['updateOption']['installUpdateOptions'] = install_update_options
 
-        method = 'PUT' if version >= 36 else 'POST'
-        url = self._services['UPGRADE_SOFTWARE'] if version >= 36 else self._services['CREATE_TASK']
+        method = 'PUT' if direct_upgrade else 'POST'
+        url = self._services['UPGRADE_SOFTWARE'] if direct_upgrade else self._services['CREATE_TASK']
 
         flag, response = self._cvpysdk_object.make_request(
             method, url, request_json

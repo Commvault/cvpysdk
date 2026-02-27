@@ -29,6 +29,7 @@ JobOperationsOnStorageCopy:     Enum for different job operations on Storage Cop
     PREVENT_COPY                --  Performs prevent copy operation on the jobs on a Storage Copy
     ALLOW_COPY                  --  Performs allow copy operation on the jobs on a Storage Copy
     RECOPY                      --  Performs recopy operation on the jobs on a Storage Copy
+	RETAIN                      --  Performs manual retention operation on the jobs on a Copy
 
 StoragePolicies:
     __init__(commcell_object)    --  initialize the StoragePolicies instance for the commcell
@@ -195,6 +196,8 @@ StoragePolicyCopy:
     delete_job()                            --  delete a job from storage policy copy node
 
     _mark_jobs_on_copy()                    --  marks job(s) for given operation on a secondary copy
+	
+	retain_jobs_on_copy()                   --  manually retain job(s) for given operation on a given copy
 
     pick_for_copy()                         --  marks job(s) to be Picked for Copy to a secondary copy
 
@@ -305,7 +308,7 @@ class JobOperationsOnStorageCopy:
         PREVENT_COPY (str): Represents the 'DISALLOW_COPY' operation.
         ALLOW_COPY (str): Represents the 'ALLOW_COPY' operation.
         RECOPY (str): Represents the 'RECOPY' operation.
-
+        RETAIN: (str): Represents the 'RETAIN' operation
     Usage:
         >>> operation = JobOperationsOnStorageCopy.DELETE
     """
@@ -316,6 +319,7 @@ class JobOperationsOnStorageCopy:
     PICK_FOR_VERIFICATION: str = 'pickForVerification'
     MARK_JOBS_BAD: str = 'markJobsBad'
     PICK_FOR_BACKUPCOPY: str = 'pickforbackupcopy'
+    RETAIN : str = 'RETAIN'
 
 class StoragePolicyCopyType(IntEnum):
     """Enum for different storage policy copy types.
@@ -4643,12 +4647,13 @@ class StoragePolicyCopy(object):
             raise SDKException('Response', '101', response_string) 
 
 
-    def _run_job_operations_on_storage_copy(self, job_id: Union[int, str, list], operation: str) -> None:
+    def _run_job_operations_on_storage_copy(self, job_id: Union[int, str, list], operation: str , retaintime=0) -> None:
         """Run different job operations for a Storage Copy
 
         Args:
             job_id    (int or str or list): Job Id(s) that needs to be marked
             operation (str): Operation to be performed on the job(s)
+            retaintime (int) : unix timestamp
 
         Raises:
             SDKException:
@@ -4660,7 +4665,17 @@ class StoragePolicyCopy(object):
         Usage:
             This is a private method and should not be called directly.
         """
-        payload_template = {
+        if operation == JobOperationsOnStorageCopy.RETAIN:
+            payload_template = {
+                "opType": operation,
+                "jobIds": [],
+                "commcellId": 2,
+                "copyId": int(self.copy_id),
+                "storagePolicyId": int(self.storage_policy_id),
+                "retainUntilTime" : retaintime
+            }
+        else:
+            payload_template = {
             "opType": operation,
             "jobIds": [],
             "commcellId": 2,
@@ -4687,6 +4702,7 @@ class StoragePolicyCopy(object):
             JobOperationsOnStorageCopy.PREVENT_COPY,
             JobOperationsOnStorageCopy.ALLOW_COPY,
             JobOperationsOnStorageCopy.RECOPY,
+            JobOperationsOnStorageCopy.RETAIN
         ]:
             raise SDKException('Storage', '101', f'Invalid operation type: {operation}')
 
@@ -4891,6 +4907,22 @@ class StoragePolicyCopy(object):
             job_id=job_id,
             operation=JobOperationsOnStorageCopy.PREVENT_COPY
         )
+
+    def retain_jobs_on_copy(self, job_id: Union[int, str, list], retain_until_time_unix) -> None:
+        """Retains job(s) on a copy
+
+        Args:
+            job_id (int or str or list): Job Id(s) that needs to be marked
+            retain_until_time_unix  : unix timestamp to retain job until
+        Usage:
+            >>> storage_policy_copy.retain_jobs_on_copy(job_id='1234',retain_until_time_unix='1772261149')
+        """
+        self._run_job_operations_on_storage_copy(
+            job_id=job_id,
+            operation=JobOperationsOnStorageCopy.RETAIN,
+            retaintime = retain_until_time_unix
+        )
+
 
 
     def pick_jobs_for_data_verification(self, job_id: Union[int, str, list]) -> None:

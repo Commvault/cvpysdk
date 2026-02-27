@@ -73,6 +73,7 @@ class CloudAppsSubclient(Subclient):
             36: TeamsSubclient,  # Office 365 Apps -> MS Teams
             37: GoogleSpannerSubclient,  # Google Cloud Spanner Subclient
             44: AzureCosmosDBSubclient, # Azure Cosmos DB Cloud Apps Instance
+            40: CloudDatabaseSubclient,  # MongoDB Atlas
             51: AzureCosmosDBSubclient,  # Azure Cosmos DB MongoDBAPI Instance
             60: PowerBISubclient    # Power Platform PowerBi Subclient
         }

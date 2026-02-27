@@ -69,6 +69,8 @@ Instances:
 
     add_cosmosdb_instance()         --  Method to add new cosmosdb instance
 
+    add_atlas_instance ()           --  Method to add new MongoDB Atlas Instance
+
     _set_general_properties_json()  --  setter for general cloud properties while adding a new
     cloud storage instance
 
@@ -1882,6 +1884,62 @@ class Instances(object):
 
         self._process_add_response(request_json)
 
+    def add_atlas_instance(self, instance_name, **instance_options):
+        """Adds new MongoDB Atlas Instance to given Client
+            Args:
+                instance_name       (str)   --  instance_name
+                instance_options       (dict)  --  dict of keyword arguments as follows:
+                    Example:
+                       instance_options = {
+                            'plan_name': 'server plan',
+                            'cloudaccount_name': 'hotsname:port',
+                            'cloudinstancetype': 'instancetype',
+                        }
+
+            Returns:
+                object - instance of the Instance class
+
+            Raises:
+                SDKException:
+                    if instance with same name already exists
+                    if given plan name does not exists in commcell
+        """
+        if self.has_instance(instance_name):
+            raise SDKException(
+                'Instance', '102', 'Instance "{0}" already exists.'.format(
+                    instance_name)
+            )
+
+        if not self._commcell_object.plans.has_plan(
+                instance_options.get("plan_name")):
+            raise SDKException(
+                'Instance',
+                '102',
+                'Storage Policy: "{0}" does not exist in the Commcell'.format(
+                    instance_options.get("plan_name"))
+            )
+
+        request_json = {
+            "instanceProperties": {
+                "cloudAppsInstance": {
+                    "instanceType": instance_options.get("cloudinstancetype",""),
+                    "rdsInstance": {
+                    }
+                },
+                "instance": {
+                    "applicationId": 134,
+                    "clientId": int(self._client_object.client_id),
+                    "clientName": instance_options.get("cloudaccount_name",""),
+                    "instanceName": instance_name
+                },
+                "planEntity": {
+                    "planName": instance_options.get("plan_name")
+                }
+            }
+        }
+
+        self._process_add_response(request_json)
+
     def refresh(self):
         """Refresh the instances associated with the Agent of the selected Client."""
         self._instances = self._get_instances()
@@ -1984,6 +2042,7 @@ class Instance(object):
         self._RESTORE = self._services['RESTORE']
         self._DELETE = self._services['DELETE']
         self._SEARCH_DURING_RESTORE = self._services['DO_WEB_SEARCH']
+        self._DOBROWSE = self._services['BROWSE']
         self._properties = None
         self._restore_association = None
 

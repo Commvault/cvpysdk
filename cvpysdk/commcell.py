@@ -4071,7 +4071,6 @@ class Commcell(object):
             reboot_client=reboot_client,
             run_db_maintenance=run_db_maintenance,
             maintenance_release_only=maintenance_release_only,
-            schedule_pattern=schedule_pattern,
             **kwargs
         )
 

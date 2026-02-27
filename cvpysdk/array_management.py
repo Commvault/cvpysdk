@@ -45,6 +45,8 @@ ArrayManagement:
 
     edit_array()                --  Method to Update Snap Configuration and Array Access Node MA
                                     for the given Array
+    add_atlas_array ()          --  Creates an Array for MongoDB Atlas
+
 """
 
 from __future__ import unicode_literals
@@ -97,6 +99,7 @@ class ArrayManagement(object):
         self._commcell_object = commcell_object
         self._SNAP_OPS = self._commcell_object._services['SNAP_OPERATIONS']
         self.storage_arrays = self._commcell_object._services['STORAGE_ARRAYS']
+        self.atlas_array = self._commcell_object._services['ATLAS_ARRAYS']
 
     def _snap_operation(
         self,
@@ -804,3 +807,76 @@ class ArrayManagement(object):
                 raise SDKException('StorageArray', '103', o_str)
         else:
             raise SDKException('StorageArray', '103')
+
+    def add_atlas_array(self, arraydict:dict) -> str:
+        """Add a new array entry to the array management system.
+
+        This method registers a new storage array with the specified configuration and credentials.
+        It supports specifying vendor details, credential vault, configuration data, and optional
+        control host and access nodes.
+
+        Args:
+            arraydict (dict): Dictionary containing array detils
+
+        Returns:
+            str: An error message if the operation fails, or an empty string if successful.
+
+        Example:
+            >>> error = array_mgmt.add_array(arraydict)
+            >>> if error:
+            ...     print(f"Failed to add array: {error}")
+            ... else:
+            ...     print("Array added successfully")
+
+        #ai-gen-doc
+        """
+        # get List of existing arrays
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self.atlas_array
+        )
+        array_json = response.json()
+
+        # check if any array exists with name MongoDB Atlas else create a new one
+
+        if not (any(item["name"]=="MongoDB Atlas" for item in array_json["arrays"])):
+
+            request_json = {
+                              "snapConfigurations": [],
+                              "general": {
+                                "name": arraydict["array_name"],
+                                "controlHost": arraydict["control_host"],
+                                "snapVendor": "MongoDB Atlas",
+                                "savedCredential": {
+                                  "id":arraydict["credential_vault_id"],
+                                  "name": arraydict["credential_vault_name"]
+                                },
+                                "description": "MongoDB Atlas Array"
+                              },
+                              "accessNodes": [
+                                {
+                                  "name": arraydict["array_access_node"],
+                                  "id":arraydict["array_access_node_id"],
+                                  "pruning": True
+                                }
+                              ]
+                            }
+
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'POST', self.atlas_array, request_json
+            )
+
+            if response.json() and 'errorCode' in response.json():
+                error_code = response.json()['errorCode']
+                error_message = response.json()['errorMessage']
+
+                if error_code != 0:
+                    if error_code in [1, 10]:
+                        raise SDKException('StorageArray', '101')
+
+                    error_message = response.json().get('errorMessage', '')
+                    o_str = 'Error: "{0}"'.format(error_message)
+                    raise SDKException('StorageArray', '102', o_str)
+                return error_message
+            else:
+                raise SDKException('StorageArray', '102')

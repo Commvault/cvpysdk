@@ -102,6 +102,9 @@ Subclient:
     _get_preview_metadata()     --  gets the preview metadata for the file
 
     _get_preview()              --  gets the preview for the file
+    _restore_atlas_option_json()--  Creates Restore JSON for atlas and runs restore
+
+    update_atlas_instance()     --  Update Atlas subclient
 
     update_properties()         --  To update the subclient properties
 
@@ -1745,12 +1748,14 @@ class Subclient(object):
             self._subclient_id = self._get_subclient_id()
 
         self._SUBCLIENT = self._services['SUBCLIENT'] % (self.subclient_id)
+        self._CLOUD_CONTENT_BROWSE = self._services['CLOUD_CONTENT_BROWSE']
 
         self._BROWSE = self._services['BROWSE']
 
         self._RESTORE = self._services['RESTORE']
 
         self._PREVIEW_CONTENT = self._services['GET_DOC_PREVIEW']
+        self._DOBROWSE = self._services['BROWSE']
 
         self._subclient_properties = {}
         self._content = []
@@ -2229,6 +2234,177 @@ class Subclient(object):
             return None
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+    
+    def _restore_atlas_option_json(self, restore_dict: dict) :
+        """Setter for Atlas restore option in restore JSON. and launching restore job"""
+
+        # Before running restore we need to browse for backed up Data to get cluster path
+
+        entity_json = {
+            "backupsetId": restore_dict["backupsetId"],
+            "instanceId": restore_dict["instanceId"],
+            "subclientId": restore_dict["subclientId"],
+            "clientId": restore_dict["clientId"],
+            "applicationId": 134
+        }
+
+        browse_json = {
+            "opType": 0,
+            "queries": [
+                {
+                    "type": 0,
+                    "queryId": "0"
+                }
+            ],
+            "paths": [
+                {
+                    "path": "/"
+                }
+            ],
+            "timeRange": {
+                "toTime": 0
+            },
+            "entity": entity_json
+        }
+
+        flag, response = self._cvpysdk_object.make_request('POST', self._DOBROWSE, browse_json)
+        response = response.json()
+        result = response['browseResponses'][0]['browseResult']['dataResultSet'][0]
+        if 'displayName' not in result or 'displayPath' not in result:
+            raise SDKException('Response', '102')
+        display_name = result['displayName']
+        display_path = result['displayPath']
+
+        restore_json = {
+            "taskInfo": {
+                "associations": [entity_json],
+                "task": {"taskType": 1},
+                "subTasks": [
+                    {
+                        "subTask": {
+                            "subTaskType": 3,
+                            "operationType": 1001
+                        },
+                        "options": {
+                            "restoreOptions": {
+                                "browseOption": {
+                                    "commCellId": 2,
+                                    "timeRange": {
+                                        "fromTime": 0,
+                                        "toTime": 0
+                                    }
+                                },
+                                "destination": {
+                                    "destClient": entity_json,
+                                    "destinationInstance": entity_json
+                                },
+                                "fileOption": {
+                                    "sourceItem": [display_path]
+
+                                },
+                                "commonOptions": {},
+                                "jobIds": [],
+                                "cloudAppsRestoreOptions": {
+                                    "instanceType": 40,
+                                    "mongoDBAtlasRestoreOptions": {
+                                        "targetClusterNamesList": [display_name],
+                                        "isOutOfPlaceRestore": False,
+                                        "isRestoreToLatest": True,
+                                        "isRestoreToPIT": False,
+                                        "sourceProjectAppId": restore_dict["subclientId"]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
+            }}
+
+        flag, response = self._cvpysdk_object.make_request('POST', self._RESTORE, restore_json)
+
+        self._restore_association = None
+
+        if flag:
+            if response.json():
+                if "jobIds" in response.json():
+                    return Job(self._commcell_object, response.json()['jobIds'][0])
+
+                elif "taskId" in response.json():
+                    return Schedules(self._commcell_object).get(task_id=response.json()['taskId'])
+
+                elif "errorCode" in response.json():
+                    error_message = response.json()['errorMessage']
+
+                    o_str = 'Restore job failed\nError: "{0}"'.format(error_message)
+                    raise SDKException('Subclient', '102', o_str)
+                else:
+                    raise SDKException('Subclient', '102', 'Failed to run the restore job')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def update_atlas_instance(self, update_dict: dict) -> None:
+        """
+        updates the property of Subclient using the provided dictionary
+        for atlas we need an additional step to browse path of provided cluster and
+        this needs to be updated in subclient property
+        """
+
+        browse_json = {
+            "instanceType": 40,
+            "clientEntity": {
+                "clientId": update_dict["clientId"],
+                "clientName": update_dict["clientName"],
+            },
+            "appId": {
+                "clientName":update_dict["clientName"],
+                "clientId": update_dict["clientId"],
+                "instanceId": update_dict["instanceId"],
+                "applicationId": 134
+            },
+            "browseTargetType": {}
+        }
+
+        flag, response = self._cvpysdk_object.make_request('POST', self._CLOUD_CONTENT_BROWSE, browse_json)
+        if not flag:
+            raise SDKException ('Response','101',self._update_response_(response.text))
+        response= response.json()
+        org_name = response ["cloudDBEntity"]["children"][0]["name"]
+        project_name = update_dict["AtlasProjectName"]
+        browse_json["browsePath"] = f"{org_name}/{project_name}"
+
+        flag, response = self._cvpysdk_object.make_request('POST', self._CLOUD_CONTENT_BROWSE, browse_json)
+        if not flag:
+            raise SDKException ('Response','101',self._update_response_(response.text))
+        response= response.json()
+        path = response["cloudDBEntity"]["children"][0]["path"]
+
+        properties_dict = {
+            "cloudAppsSubClientProp": {
+                "instanceType": 4
+            },
+            "cloudDbContent": {
+                "children": [
+                    {
+                        "allOrAnyChildren": True,
+                        "displayName": update_dict["AtlasClusterName"],
+                        "name": update_dict["AtlasClusterName"],
+                        "path": path,
+                        "negation": False,
+                        "type": 48,
+                        "value": f"{org_name}/{project_name}/{update_dict['AtlasClusterName']}"
+                    }
+                ]
+            },
+            "cloudDbFilter": {
+            },
+            "commonProperties": {
+                "numberOfBackupStreams": 2
+            }
+        }
+
+        self.update_properties(properties_dict)
 
     def update_properties(self, properties_dict: dict) -> None:
         """Update the properties of the subclient using the provided dictionary.

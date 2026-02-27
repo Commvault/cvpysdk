@@ -71,6 +71,8 @@ Credentials:
 
     add_bigdata_creds()         --  Creates bigdata credential on this commcell for a given database type
 
+    add_atlas_creds()           --  Creates Credential for MongoDB Atlas
+
 Credential:
     __init__()                  --  initiaizes the credential class object
 
@@ -1463,6 +1465,63 @@ class Credentials(object):
             raise SDKException('Response', '101', response_string)
         self.refresh()
         return Credential(self._commcell_object, credential_name, id)
+
+    def add_atlas_creds(self, credential_name: str, **kwargs: Any) -> None:
+
+        """Create Atlas  credentials on the Commcell
+        This method adds a new MongoDB Atlas credential  to the Commcell
+
+        Args:
+            credential_name: Name to assign to the credential account.
+            **kwargs: Additional parameters required for the specific credential type.
+        Raises:
+            SDKException: If arguments are invalid, the credential already exists, or the response is unsuccessful.
+        Example:
+            >>> # Add AWS Access Key credentials
+            >>> creds = Credentials()
+            >>> creds.add_atlas_creds(
+            ...     credential_name="MyAccessKey",
+            ...     access_key="AKIA...",
+            ...     secret="mySecretKey",
+            ...     description="Atlas credentials"
+            ... )
+        #ai-gen-doc
+        """
+        access_key = kwargs.get('access_key')
+        secret = kwargs.get('secret')
+        description = kwargs.get('description', "")
+        encoded_secret = b64encode(secret.encode('utf-8')).decode('utf-8')
+        if not secret or not isinstance(secret, str):
+            raise SDKException("Credential", "102", "Invalid or missing secret key.")
+
+        create_credential = {
+            "accountType": "CLOUD_ACCOUNT",
+            "vendorType": "MONGODB_ATLAS_ACCESS_KEY",
+            "name": credential_name,
+            "accessKeyId": access_key,
+            "secretAccessKey": encoded_secret,
+            "description": description
+        }
+
+        request = self._services['ADD_CREDENTIALS']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', request, create_credential
+        )
+
+        if flag:
+            if response.json():
+                response_json = response.json().get('error', {})
+                error_code = response_json.get('errorCode', 0)
+                error_message = response_json.get('errorMessage', '')
+                if error_code != 0:
+                    raise SDKException('Response', '102', error_message)
+            else:
+                raise SDKException('Response', '102', "Empty response received.")
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        self.refresh()
 
 
 class Credential(object):
