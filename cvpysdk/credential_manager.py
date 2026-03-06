@@ -98,6 +98,7 @@ Credential:
 
     _update_credential_props()  -- Updates credential account properties
 
+    update_azure_app_credential() -- Update the Azure application registration credential with new values.
 
 """
 import json
@@ -1943,6 +1944,60 @@ class Credential(object):
             request_json['credentialRecordInfo'][0].update(securityAssociations=properties_dict['securityAssociations'])
 
         request = self._services['CREDENTIAL']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'PUT', request, request_json
+        )
+
+        if not flag:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
+
+    def update_azure_app_credential(self, app_secret, credential_name=None, app_id=None, tenant_id=None, description=None):
+        """Update the Azure application registration credential with new values.
+
+        This method updates the Azure application registration credential properties such as application secret, application ID, tenant ID, and description.
+
+        Args:
+            app_secret: The new application secret key as a string.
+            app_id: The new Azure application ID as a string (optional).
+            tenant_id: The new Azure tenant ID as a string (optional).
+            description: The new description for the credential (optional).
+
+        Raises:
+            SDKException: If the update operation fails or if the response is unsuccessful.
+
+        Example:
+            >>> credential = Credential(...)
+            >>> credential.update_azure_app_credential(
+            ...     app_secret="new_app_secret",
+            ...     app_id="new_app_id",
+            ...     tenant_id="new_tenant_id",
+            ...     description="Updated Azure app registration credential"
+            ... )
+            >>> print("Azure application registration credential updated successfully")
+        #ai-gen-doc
+        """
+        encoded_app_secret = b64encode(app_secret.encode()).decode()
+        request_json = {
+                          "accountType": "CLOUD_ACCOUNT",
+                          "vendorType": "MICROSOFT_AZURE_TYPE",
+                          "authType": "AZUREACCOUNT",
+                          "name": self._credential_name,
+                          "applicationId": app_id if app_id else self._credential_properties.get('applicationId'),
+                          "tenantId": tenant_id if tenant_id else self._credential_properties.get('tenantId'),
+                          "applicationSecret": encoded_app_secret,
+                          "description": description if description else self._credential_properties.get('description'),
+                          "environment": "AzureCloud",
+                          "id": self.credential_id,
+                          "newName": credential_name if credential_name else self._credential_name,
+                          "endpoints": {
+                            "activeDirectory": "https://login.microsoftonline.com/",
+                            "storage": "blob.core.windows.net",
+                            "resourceManager": "https://management.azure.com/"
+                          }
+                        }
+        request = self._services['V5_CREDENTIAL'] % (self._credential_id)
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'PUT', request, request_json
         )

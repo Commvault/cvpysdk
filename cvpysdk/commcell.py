@@ -244,6 +244,9 @@ Commcell instance Attributes
     **content_analyzers**       --  returns the instance of the `ContentAnalyzers` class,
     to interact with the CA cloud deployed on the Commcell
 
+    **scale_targets**           --  returns the instance of the `ScaleTargets` class,
+    to interact with scale targets configured on the Commcell
+
     **activate**                --  returns the instance of the `Activate` class,
     to interact with activate apps on the Commcell
 
@@ -407,6 +410,7 @@ from .clientgroup import ClientGroups
 from .globalfilter import GlobalFilters
 from .datacube.datacube import Datacube
 from .content_analyzer import ContentAnalyzers
+from .scale_target import ScaleTargets
 from .network_topology import NetworkTopologies
 from .plan import Plans
 from .job import JobController, Job
@@ -712,6 +716,7 @@ class Commcell(object):
         self._activate = None
         self._export_sets = None
         self._content_analyzers = None
+        self._scale_targets = None
         self._resource_pool = None
         self._plans = None
         self._job_controller = None
@@ -2183,6 +2188,29 @@ class Commcell(object):
             return USER_LOGGED_OUT_MESSAGE
 
     @property
+    def scale_targets(self) -> 'ScaleTargets':
+        """Get the ScaleTargets instance associated with this Commcell.
+
+        Returns:
+            ScaleTargets: An instance for managing scale targets in the Commcell.
+
+        Example:
+            >>> commcell = Commcell('hostname', 'username', 'password')
+            >>> scale_targets = commcell.scale_targets  # Access the ScaleTargets property
+            >>> print(scale_targets)
+            >>> # The returned ScaleTargets object can be used for scale target management
+
+        #ai-gen-doc
+        """
+        try:
+            if self._scale_targets is None:
+                self._scale_targets = ScaleTargets(self)
+
+            return self._scale_targets
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
     def resource_pool(self) -> 'ResourcePools':
         """Get the ResourcePools instance associated with this Commcell.
 
@@ -3464,6 +3492,7 @@ class Commcell(object):
         self._activate = None
         self._threat_indicators = None
         self._content_analyzers = None
+        self._scale_targets = None
         self._resource_pool = None
         self._plans = None
         self._job_controller = None

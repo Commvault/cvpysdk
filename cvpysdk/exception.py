@@ -273,6 +273,14 @@ EXCEPTION_DICT = {
         '102': '',
         '103': 'Failed to get ContentAnalyzer cloud details'
     },
+    'ScaleTarget': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Failed to get Scale Target details',
+        '104': 'Failed to create Scale Target',
+        '105': 'Failed to delete Scale Target',
+        '106': 'Failed to update Scale Target'
+    },
     'ActivateEntity': {
         '101': 'Data type of the input(s) is not valid',
         '102': '',

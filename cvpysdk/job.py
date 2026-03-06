@@ -506,7 +506,7 @@ class JobController(object):
         """
         return self._commcell_object.wrap_request(
             'POST', 'ACTIVE_JOBS_SUMMARY',
-            req_kwargs={"payload": {}},
+            req_kwargs={"payload": {"jobSummaryAggregationType":1}},
             error_check=False
         )
 

@@ -54,6 +54,7 @@ class AzureSubclient(VirtualServerSubclient):
                                      run_security_scan=False,
                                      copy_precedence=0,
                                      restore_option=None,
+                                     to_time: int = 0,
                                      **kwargs):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
             at the specified destination location.
@@ -76,6 +77,9 @@ class AzureSubclient(VirtualServerSubclient):
 
                 restore_option      (dict)     --  complete dictionary with all advanced optio
                     default: {}
+
+                to_time             (Int)         --  End time to select the job for restore
+                                                    default: 0
 
                 **kwargs                         : Arbitrary keyword arguments Properties as of
                                                      full_vm_restore_out_of_place
@@ -122,7 +126,8 @@ class AzureSubclient(VirtualServerSubclient):
             datastore=storage_account,
             client_name=proxy_client,
             out_place=True,
-            restore_new_name=restore_new_name
+            restore_new_name=restore_new_name,
+            to_time=to_time
         )
 
         # set attr for all the option in restore xml from user inputs
@@ -135,6 +140,7 @@ class AzureSubclient(VirtualServerSubclient):
                                  overwrite=True,
                                  power_on=True,
                                  copy_precedence=0,
+                                 to_time=0,
                                  **kwargs):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
             to the location same as source .
@@ -149,6 +155,9 @@ class AzureSubclient(VirtualServerSubclient):
                                                         default: True
 
                 copy_precedence       (int)         --  copy precedence value
+                                                        default: 0
+
+                to_time                 (int)       -- End time to select the job for restore
                                                         default: 0
 
                 **kwargs                         : Arbitrary keyword arguments Properties as of
@@ -182,7 +191,8 @@ class AzureSubclient(VirtualServerSubclient):
             power_on=power_on,
             copy_preceedence=copy_precedence,
             volume_level_restore=1,
-            out_place=False
+            out_place=False,
+            to_time=to_time
         )
         request_json = self._prepare_fullvm_restore_json(restore_option)
         return self._process_restore_response(request_json)
