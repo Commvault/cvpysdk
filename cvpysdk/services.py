@@ -405,6 +405,7 @@ SERVICES_DICT_TEMPLATE = {
     'DELETE_RECORD': '{0}/Commcell/Credentials/action/delete',
 
     'ADD_CREDENTIALS': '{0}V4/Credential',
+    'V5_CREDENTIAL': '{0}V5/credential/%s',
 
     'GET_SECURITY_ROLES': '{0}Security/Roles',
     'SECURITY_ASSOCIATION': '{0}Security',

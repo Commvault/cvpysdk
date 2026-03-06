@@ -807,8 +807,8 @@ class Credential(object):
         self._record_type = None
         self._credential_password = ""
         self._record_types = {
-            1: 'Windows',
-            2: 'Linux'
+            'WINDOWSACCOUNT': 'Windows',
+            'LINUXACCOUNT': 'Linux'
         }
         self._get_credential_properties()
 
@@ -932,33 +932,51 @@ class Credential(object):
         """Refresh the properties of the Credentials."""
         self._get_credential_properties()
 
-    def _get_credential_properties(self):
-        """Gets the properties of this Credential record"""
-        property_request = self._services['ONE_CREDENTIAL'] % (
-            self._credential_name)
+    def _get_credential_properties(self) -> None:
+        """Retrieve and update the properties of this Credential record from the Commcell.
+
+        This method fetches the credential details from the Commcell server and updates
+        the internal properties of the Credential object, such as credential ID, name,
+        user name, record type, and associated security information.
+
+        Raises:
+            SDKException: If the response from the Commcell server is invalid or if the
+                request fails.
+
+        Example:
+            >>> credential = Credential(commcell_object, credential_name)
+            >>> credential._get_credential_properties()
+            >>> print(f"Credential ID: {credential._credential_id}")
+            >>> print(f"Credential Name: {credential._credential_name}")
+            >>> print(f"User Name: {credential._credential_user_name}")
+            >>> print(f"Record Type: {credential._record_type}")
+            >>> print(f"Security Associations: {credential._credential_security_assoc}")
+        #ai-gen-doc
+        """
+        property_request = self._services['V5_CREDENTIAL'] % (
+            self._credential_id)
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', property_request
         )
 
         if flag:
-            if response.json() and 'credentialRecordInfo' in response.json():
-                json_resp = response.json()
-                self._credential_properties = response.json()['credentialRecordInfo'][0]
-
-                self._credential_id = self._credential_properties['credentialRecord'].get(
-                    'credentialId')
-                self._credential_name = self._credential_properties['credentialRecord'].get(
-                    'credentialName')
-                self._credential_user_name = self._credential_properties['record']['userName']
-                self._record_type = self._credential_properties['recordType']
-                security = self._credential_properties.get('securityAssociations', {})
-                if "associations" in security:
-                    for each in security['associations']:
-                        for userorgroup in each["userOrGroup"]:
-                            if "userName" in userorgroup:
-                                self._credential_security_assoc.append(userorgroup["userName"])
-                            else:
-                                self._credential_security_assoc.append(userorgroup["userGroupName"])
+            if response.json():
+                self._credential_properties = response.json()
+                self._credential_id = self._credential_properties.get('id')
+                self._credential_name = self._credential_properties.get('name')
+                self._credential_user_name = self._credential_properties.get('userAccount')
+                self._record_type = self._credential_properties.get('accountType')
+                security = self._credential_properties.get('security', {})
+                associations = security.get('associations', [])
+                for association in associations:
+                    if 'user' in association:
+                        self._credential_security_assoc.append({
+                            'user': association['user']['name']
+                        })
+                    elif 'userGroup' in association:
+                        self._credential_security_assoc.append({
+                            'userGroup': association['userGroup']['name']
+                        })
             else:
                 raise SDKException('Response', '102')
 
