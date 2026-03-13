@@ -51,6 +51,7 @@ if TYPE_CHECKING:
     from .security.user import User
     from .security.usergroup import UserGroup
     from .commcell import Commcell
+    from .subclient import Subclient
 
 
 class AdditionalSettings(object):
@@ -77,6 +78,7 @@ class AdditionalSettings(object):
     """
     entity_type_ids_map: Dict[str, int] = {
         'Client': 3,
+        'Subclient': 7,
         'ClientGroup': 28,
         'Organization': 189,
         'User': 13,
@@ -84,6 +86,7 @@ class AdditionalSettings(object):
     }
     entity_id_prop: Dict[str, str] = {
         'Client': 'client_id',
+        'Subclient': 'subclient_id',
         'ClientGroup': 'clientgroup_id',
         'Organization': 'organization_id',
         'User': 'user_id',

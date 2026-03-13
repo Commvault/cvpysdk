@@ -193,6 +193,7 @@ from .job import Job
 from .job import JobController
 from .schedules import SchedulePattern
 from .schedules import Schedules
+from .additional_settings import AdditionalSettings
 
 class Subclients(object):
     """
@@ -1759,6 +1760,7 @@ class Subclient(object):
 
         self._subclient_properties = {}
         self._content = []
+        self._additional_settings = None
 
         self.schedules = None
         self.refresh()
@@ -4358,6 +4360,34 @@ class Subclient(object):
             })
         else:
             raise SDKException('Subclient', '101')
+
+    @property
+    def additional_settings(self) -> AdditionalSettings:
+        """Returns the AdditionalSettings instance for managing additional settings on this subclient.
+
+        This property provides access to the AdditionalSettings API for the subclient entity,
+        allowing you to add, edit, delete, and retrieve additional settings specific to this subclient.
+
+        Returns:
+            AdditionalSettings: An instance of the AdditionalSettings class for this subclient.
+
+        Example:
+            >>> subclient = self.agent.instances.get("instance_name").backupsets.get("backupset_name").subclients.get("subclient_name")
+            >>> subclient.additional_settings.add_additional_setting(
+            ...     key_name="",
+            ...     category="",
+            ...     data_type="",
+            ...     value="",
+            ...     comment="",
+            ...     enabled=True
+            ... )
+        """
+        try:
+            self._additional_settings = AdditionalSettings(self)
+        except Exception as e:
+            raise SDKException('Subclient', '102', 
+                'Failed to initialize AdditionalSettings: "{0}"'.format(str(e)))
+        return self._additional_settings
 
     def _get_preview_metadata(self, file_path: str) -> Optional[dict]:
         """Retrieve the preview metadata for a specified file in the subclient.

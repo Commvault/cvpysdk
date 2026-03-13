@@ -144,7 +144,7 @@ class InformixInstance(Instance):
 
         # windows instance will have credentials associated with it, linux will just have username in instance prop
         if self.credentials:
-            return self._commcell_object.credentials.get(self.credentials).credential_user_name
+            return self._commcell_object.credentials.get(self.credentials)._credential_properties.get("userName")
 
         return self._properties['informixInstance']['informixUser'].get('userName', None)
 

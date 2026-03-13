@@ -120,6 +120,9 @@ EdiscoveryDataSources:
 
     add_fs_data_source()                    --  adds file system data source
 
+    add_bulk_fs_data_source()               --  This method allows creating multiple file system data sources in a single
+                                                API call
+
     add_o365_sdg_data_source()              --  Adds Office365 SDG data source to a project
 
     refresh()                               --  refresh the data sources details associated with client
@@ -2048,6 +2051,54 @@ class EdiscoveryDataSources():
                         f"Creation of data source failed with error - {error['errorCode']}")
             raise SDKException('EdiscoveryClients', '115')
         self._response_not_success(response)
+
+    def add_bulk_fs_data_source(self, fs_datasource_req_list: list[dict]) -> dict:
+        """Adds multiple file system data sources in bulk.
+
+        This method allows creating multiple file system data sources in a single
+        API call for improved performance when adding many data sources.
+
+        Args:
+            fs_datasource_req_list (list[dict]): List of file system data source
+                request dictionaries. Each dictionary should contain the complete
+                configuration for a single data source.
+
+        Returns:
+            dict: Response from server containing creation status and details.
+
+        Raises:
+            SDKException:
+                EdiscoveryClients, 102: If the bulk creation fails with an error.
+                EdiscoveryClients, 115: If response format is unexpected.
+                Response, 101: If the API request fails.
+
+        Example:
+            >>> datasources = [
+            ...     {"datasourceName": "ds1", "properties": [...]},
+            ...     {"datasourceName": "ds2", "properties": [...]}
+            ... ]
+            >>> result = data_sources.add_bulk_fs_data_source(datasources)
+        """
+        request_json = {"clientDataSources": fs_datasource_req_list}
+        add_bulk_fs_ds_url = self._services['EDISCOVERY_CREATE_DATA_SOURCE_BULK']
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', add_bulk_fs_ds_url, request_json)
+
+        if flag:
+            if response.json() and 'errorCode' in response.json():
+                if response.json()['errorCode'] != 0:
+                    error_msg = response.json().get('errorMessage', '')
+                    raise SDKException(
+                        'EdiscoveryClients', '102',
+                        f"Failed to create data sources in bulk with error [{error_msg}]")
+            else:
+                raise SDKException('EdiscoveryClients', '115')
+        else:
+            raise SDKException(
+                'Response', '101', self._commcell_object._update_response_(response.text))
+
+        return response.json()
 
     def add_o365_sdg_data_source(self, server_name, data_source_name, plan_name,
                                  datasource_type=EdiscoveryConstants.ClientType.ONEDRIVE, **kwargs):

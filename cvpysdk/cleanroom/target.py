@@ -539,6 +539,7 @@ class CleanroomTarget:
 
         self._maxNoOfAccessNodes = None
         self._infra_security_group = None
+        self._infra_vpc = None
         self._infra_virtual_network = None
         self._natGatewayPublicIPSettings = None
         self._infraPublicIPprefix = None
@@ -818,6 +819,9 @@ class CleanroomTarget:
                     # Infrastructure network settings
                     self._maxNoOfAccessNodes = (self._cleanroom_target_properties.get('infrastructure', {})
                                                 .get('maxNoOfAccessNodes', ''))
+                    self._infra_vpc = (self._cleanroom_target_properties.get('infrastructure', {})
+                                                   .get('networkSettings', {}).get('vpc', {})
+                                                   .get('name', ''))
                     self._infra_virtual_network = (self._cleanroom_target_properties.get('infrastructure', {})
                                                    .get('networkSettings', {}).get('virtualNetwork', {})
                                                    .get('name', ''))
@@ -1650,6 +1654,22 @@ class CleanroomTarget:
         #ai-gen-doc
         """
         return getattr(self, '_infra_create_public_ip', False)
+
+    @property
+    def infra_vpc(self) -> str:
+        """Get the AWS infrastructure VPC name for the cleanroom target.
+
+        Returns:
+            The infrastructure VPC name as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> infra_vpc_name = target.infra_vpc
+            >>> print(f"Infrastructure VPC: {infra_vpc_name}")
+
+        #ai-gen-doc
+        """
+        return getattr(self, '_infra_vpc', None)
 
     @property
     def endpoint_subnet(self) -> str:

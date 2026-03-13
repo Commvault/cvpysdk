@@ -122,6 +122,8 @@ Clients
 
     add_nutanix_files_client()                  --  adds a new nutanix files client
 
+    add_lustre_client()                     -- adds a new lustre client
+    
     add_onedrive_client()                 --  adds a new onedrive client
 
     add_cassandra_client()                --  add cassandra client
@@ -530,6 +532,7 @@ class Clients(object):
         self._ADD_NAS_CLIENT = self._services['CREATE_NAS_CLIENT']
         self._ADD_ONEDRIVE_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
         self._ADD_MONGODB_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
+        self._ADD_LUSTRE_CLIENT = self._services['CREATE_LUSTRE_CLIENT']
         self._clients = None
         self._hidden_clients = None
         self._virtualization_clients = None
@@ -5569,6 +5572,170 @@ class Clients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def add_lustre_client(
+        self,
+        client_name: str,
+        data_access_nodes: List[str],
+        plan_name: str,
+        content: List[str],
+        isAzureManagedLustre: bool = False
+    ):
+        """Add a new Lustre client to the Commcell environment.
+
+        This method creates a Lustre distributed file system client with the specified configuration,
+        including data access nodes, plan association, and content paths. It supports both standard
+        Lustre and Azure Managed Lustre configurations.
+
+        Args:
+            client_name (str): Name for the new Lustre client to be created.
+            
+            data_access_nodes (List[str]): List of client names to be used as data access nodes 
+                for the Lustre client. These nodes handle data transfer operations.
+            
+            plan_name (str): Name of the backup plan to associate with the client. The plan must 
+                exist in the Commcell.
+            
+            content (List[str]): List of file system paths to be included in the backup content.
+                Example: ["/lustre/data", "/lustre/home"]
+            
+            isAzureManagedLustre (bool, optional): If True, configures the client as an Azure 
+                Managed Lustre client. Default is False.
+
+        Returns:
+            Client: Instance of the Client class representing the newly created Lustre client.
+
+        Raises:
+            SDKException: If the plan name is invalid or not found in the Commcell
+            SDKException: If the client creation fails
+
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> 
+            >>> # Initialize Commcell connection
+            >>> commcell = Commcell('commserv.example.com', 'admin', 'password')
+            >>> 
+            >>> # Create a standard Lustre client
+            >>> lustre_client = commcell.clients.add_lustre_client(
+            ...     client_name="LustreFS01",
+            ...     data_access_nodes=["AccessNode01", "AccessNode02"],
+            ...     plan_name="LustreBackupPlan",
+            ...     content=["/lustre/data", "/lustre/projects"]
+            ... )
+            >>> print(f"Created Lustre client: {lustre_client.client_name}")
+            >>> 
+            >>> # Create an Azure Managed Lustre client
+            >>> azure_lustre = commcell.clients.add_lustre_client(
+            ...     client_name="AzureLustreFS",
+            ...     data_access_nodes=["AzureNode01"],
+            ...     plan_name="AzureLustrePlan",
+            ...     content=["/mnt/lustre"],
+            ...     isAzureManagedLustre=True
+            ... )
+            >>> print(f"Created Azure Managed Lustre client: {azure_lustre.client_name}")
+
+        Note:
+            - Data access nodes must exist in the Commcell before creating the client
+            - Content paths should be valid Lustre mount points
+            - For Azure Managed Lustre, ensure Azure-specific configurations are in place
+            - The method refreshes the clients list after successful creation
+            - Uses client type 29 (Distributed Cluster) with cluster type 13 (Lustre)
+            - Application ID 64 is used for Distributed Apps
+        """
+
+        content_temp = []
+        for path in content:
+            content_temp.append({"path": path})
+
+        access_nodes = []
+        for node in data_access_nodes:
+            access_nodes.append({"clientName": node})
+
+        if self._commcell_object.plans.has_plan(plan_name):
+            plan_object = self._commcell_object.plans.get(plan_name)
+            plan_id = int(plan_object.plan_id)
+        else:
+            raise SDKException('Plan', '102', 'Provide Valid Plan Name')
+
+        request_json = {
+            "createPseudoClientRequest": {
+                "clientInfo": {
+                    "clientType": 29,
+                    "plan": {
+                        "planName": plan_name,
+                        "planId": plan_id
+                    },
+                    "distributedClusterInstanceProperties": {
+                        "clusterType": 13,
+                        "opType": 2,
+                        "instance": {
+                            "instanceId": 0,
+                            "instanceName": client_name,
+                            "clientName": client_name,
+                            "applicationId": 64
+                        },
+                        "clusterConfig": {
+                            "uxfsConfig": {}
+                        },
+                        "dataAccessNodes" : {
+                            "dataAccessNodes" : access_nodes
+                        }
+                    },
+                    "subclientInfo": {
+                        "useLocalContent": True,
+                        "contentOperationType": 1,
+                        "fsSubClientProp": {},
+                        "dfsSubclientProp": {
+                            "useGPFSSnapshot": False
+                        },
+                        "content": content_temp
+                    }
+                },
+                "entity": {
+                    "clientName": client_name
+                }
+            }
+        }
+
+        if isAzureManagedLustre:
+            request_json["createPseudoClientRequest"]["clientInfo"]["cloudFileShareWorkloadType"] = 6028
+        
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._ADD_LUSTRE_CLIENT, payload=request_json
+        )
+
+        if flag and response:
+            response_json = response.json()
+            if 'response' in response_json:
+                # errorCode is nested inside 'response' key
+                error_code = response_json.get('response', {}).get('errorCode', 0)
+
+                if error_code != 0:
+                    error_string = response_json.get('response', {}).get('errorMessage', 'Unknown error')
+                    o_str = 'Failed to create client\nError: "{0}"'.format(
+                        error_string)
+
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    # initialize the clients again
+                    # so the client object has all the clients
+                    self.refresh()
+                    return self.get(client_name)
+
+            elif 'errorMessage' in response_json:
+                error_string = response_json.get('errorMessage')
+                o_str = 'Failed to create client\nError: "{0}"'.format(
+                    error_string)
+
+                raise SDKException('Client', '102', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException(
+                'Response',
+                '101',
+                self._update_response_(
+                    response.text))
+        
     def add_cassandra_client(
         self,
         new_client_name: str,

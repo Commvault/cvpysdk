@@ -565,7 +565,8 @@ SERVICES_DICT_TEMPLATE = {
     'DELETE_DOCUMENTS': '{0}/DeleteDocuments',
 
     'CREATE_NUTANIX_CLIENT': '{0}Client/Nutanix',
-
+    'CREATE_LUSTRE_CLIENT': '{0}Client/Lustre',
+    
     'GET_EVENTS': '{0}Events',
     'GET_EVENT': '{0}Events/%s',
 

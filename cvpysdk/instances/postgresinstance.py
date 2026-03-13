@@ -241,7 +241,7 @@ class PostgreSQLInstance(Instance):
         #ai-gen-doc
         """
         if self.credentials:
-            return self._commcell_object.credentials.get(self.credentials).credential_user_name
+            return self._commcell_object.credentials.get(self.credentials)._credential_properties.get("userName")
         else:
             if self._properties['postGreSQLInstance']['SAUser']['userName']:
                 return self._properties['postGreSQLInstance']['SAUser']['userName']
