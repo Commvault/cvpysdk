@@ -206,6 +206,8 @@ Client
 
                 START / STOP / RESTART
 
+    _set_patch_options()         --  set the patch options for the client
+
     _make_request()              --  makes the upload request to the server
 
     _process_update_request()    --  to process the request using API call
@@ -237,6 +239,10 @@ Client
     enable_intelli_snap()        --  enables intelli snap for the client
 
     disable_intelli_snap()       --  disables intelli snap for the client
+
+    set_windows_os_updates()     -- Sets Windows OS updates for the client
+
+    set_microsoft_sql_server_updates()  -- Sets Microsoft SQL Server updates for the client
 
     upload_file()                --  uploads the specified file on controller to the client machine
 
@@ -6360,29 +6366,41 @@ class Clients(object):
         password = b64encode(azure_options.get("password").encode()).decode()
 
         memberservers = []
-        for node in access_nodes:
-            client_object = self._commcell_object.clients.get(node)
-            client_object._get_client_properties()
-            client_id = int(client_object.client_id)
-            clienttype = int(client_object._client_type_id)
-            access_node = {
-                "client": {
-                    "_type_": clienttype,
-                    "clientId": client_id,
-                    "clientName": client_object.client_name,
-                    "groupLabel": "Access nodes",
-                    "selected": True
+        cloudAppInstanceInfo = {}
+        emptyMemberServers = False
+
+        if any(access_nodes):
+            for node in access_nodes:
+                client_object = self._commcell_object.clients.get(node)
+                client_object._get_client_properties()
+                client_id = int(client_object.client_id)
+                clienttype = int(client_object._client_type_id)
+                access_node = {
+                    "client": {
+                        "_type_": clienttype,
+                        "clientId": client_id,
+                        "clientName": client_object.client_name,
+                        "groupLabel": "Access nodes",
+                        "selected": True
+                    }
+                }
+                memberservers.append(access_node)
+
+        if azure_options.get("useHosted"):
+            emptyMemberServers = True
+            memberservers = []
+            cloudAppInstanceInfo = {
+                "generalCloudProperties": {
+                    "regionEndPoints": azure_options.get("region")
                 }
             }
-            memberservers.append(access_node)
-
         request_json = {
             "clientInfo": {
                 "clientType": 12,
                 "idaInfo": {
                 },
                 "virtualServerClientProperties": {
-                    "allowEmptyMemberServers": False,
+                    "allowEmptyMemberServers": emptyMemberServers,
                     "appTypes": [
                         {
                             "applicationId": 106
@@ -6404,7 +6422,7 @@ class Clients(object):
                             "tenantId": "",
                             "useManagedIdentity": False
                         },
-                        "cloudAppInstanceInfoList": [
+                        "cloudAppInstanceInfoList": [cloudAppInstanceInfo
                         ],
                         "skipCredentialValidation": False,
                         "virtualServerCredentialinfo": {
@@ -7639,6 +7657,47 @@ class Client(object):
                 raise SDKException('Client', '109')
         else:
             raise SDKException('Client', '109')
+
+    def _set_patch_options(self, option_type: int, enable: bool = True) -> None:
+        """Set patch management options for this Client.
+
+        This method enables or disables patch management options (e.g., Windows OS updates).
+
+        Args:
+            option_type: The type of patch option to set (e.g., 2 for Windows OS updates).
+            enable: True to enable the patch option, False to disable. Default: True.
+
+        Raises:
+            SDKException: If the request fails or the response indicates an error.
+
+        Example:
+            >>> client = Client(...)
+            >>> # Enable Windows OS updates
+            >>> client._set_patch_options(option_type=2, enable=True)
+            >>> # Enable Microsoft SQL Server updates
+            >>> client._set_patch_options(option_type=1, enable=True)
+        #ai-gen-doc
+        """
+        request_json = {
+            "clientID": int(self.client_id),
+            "optionType": option_type,
+            "value": enable
+        }
+
+        flag, response = self._cvpysdk_object.make_request('POST', self._services['SET_PATCH_OPTIONS'], request_json)
+
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', 0)
+                if error_code != 0:
+                    raise SDKException(
+                        'Response', '101',
+                        self._commcell_object._update_response_(response.text)
+                    )
+                return
+            raise SDKException('Response', '102')
+        raise SDKException(
+            'Response', '101', self._commcell_object._update_response_(response.text))
 
     def _process_update_request(self, request_json: Dict[str, Any]) -> None:
         """Run the Client update API with the provided request payload.
@@ -9338,6 +9397,52 @@ class Client(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def set_windows_os_updates(self, enable: bool = True) -> None:
+        """Set Windows os updates for this client.
+
+        This method sends a request to set Windows os updates for the current client instance.
+        If the operation fails, an SDKException is raised with details about the failure.
+
+        Args:
+            enable: True to enable the option, False to disable. Default: True.
+
+        Raises:
+            SDKException: If setting Windows os updates fails, the response is empty, or the response indicates an
+                          error.
+
+        Example:
+            >>> client = Client(...)
+            >>> client.set_windows_os_updates()
+            >>> print("windows os updates enabled successfully for the client.")
+            # If an error occurs, SDKException will be raised with the error details.
+
+        #ai-gen-doc
+        """
+        self._set_patch_options(option_type=2, enable=enable)
+
+    def set_microsoft_sql_server_updates(self, enable: bool = True) -> None:
+        """Set Microsoft SQL Server updates for this client.
+
+        This method sends a request to set Microsoft SQL server updates for the current client instance.
+        If the operation fails, an SDKException is raised with details about the failure.
+
+        Args:
+            enable: True to enable the option, False to disable. Default: True.
+
+        Raises:
+            SDKException: If setting Microsoft SQL server updates fails, the response is empty, or the response
+                          indicates an error.
+
+        Example:
+            >>> client = Client(...)
+            >>> client.set_microsoft_sql_server_updates()
+            >>> print("Microsoft SQL Server updates enabled successfully for the client.")
+            # If an error occurs, SDKException will be raised with the error details.
+
+        #ai-gen-doc
+        """
+        self._set_patch_options(option_type=1, enable=enable)
 
     @property
     def is_ready(self) -> bool:

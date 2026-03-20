@@ -111,6 +111,7 @@ Instance:
     _restore_destination_json()     --  setter for destination options property in restore
 
     _restore_fileoption_json()      --  setter for file option property in restore
+    _restore_cosmos_option_json()   --  Browse JSON for Backed up data
 
     _restore_virtual_rst_option_json --  setter for the virtualServer restore option in restore JSON
 
@@ -1881,7 +1882,22 @@ class Instances(object):
                 }
             }
         }
-
+        if (instance_options.get("useHosted")):
+            cloudprop = {
+                       "regionEndPoints": instance_options.get("region"),
+                       "regionInfo": {
+                         "name": instance_options.get("region"),
+                         "regionType": "AZURE",
+                         "associatedRegionBasedPlans": 0,
+                         "selected": True,
+                         "regionName": instance_options.get("region")
+                       },
+                       "accessNodes": {
+                         "memberServers": []
+                       }
+                    }
+            request_json["instanceProperties"]["cloudAppsInstance"]["generalCloudProperties"] = cloudprop
+            request_json["instanceProperties"]["useResourcePoolInfo"] = True
         self._process_add_response(request_json)
 
     def add_atlas_instance(self, instance_name, **instance_options):
@@ -3430,6 +3446,40 @@ class Instance(object):
 
         request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["distributedAppsRestoreOptions"] = distributed_restore_json
         return request_json
+    def _restore_cosmos_option_json(self,restore_dict: dict) -> dict:
+       """
+       Browse for backed up data and validates DB was backed up
+       """
+       browse_json = {
+           "opType":0,
+           "queries":[{"type":0,"queryId":"0"},
+                {"type":1,"queryId":"1"}],
+           "paths":
+               [{"path":f"/{restore_dict['srcstorageaccount']}"}],
+           "options":
+               {"restoreIndex":True,
+                "skipIndexRestore":False,
+                "hideUserHidden":True,
+                "showDeletedFiles":False},
+           "advOptions":{
+               "stubAsData":True},
+           "timeRange":
+               {"toTime":0},
+           "entity":
+               {"applicationId":134,
+                "backupsetId":restore_dict["backupsetId"],
+                "clientId":restore_dict["clientId"],
+                "instanceId":restore_dict["instanceId"]
+                },}
+       flag, response = self._cvpysdk_object.make_request('POST', self._DOBROWSE, browse_json)
+       response = response.json()
+       result= response['browseResponses'][0]['browseResult']['dataResultSet']
+       for name in result:
+           if 'displayName' in name:
+               if name['displayName'] == restore_dict["sourcedatabase"]:
+                   break
+           else:
+               raise SDKException('Response','102','DB not found in backed up data')
 
     def _restore_virtual_rst_option_json(self, value):
         """setter for the virtualServer restore option in restore JSON"""

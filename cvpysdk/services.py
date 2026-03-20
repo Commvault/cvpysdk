@@ -71,6 +71,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_VIRTUALIZATION_ACCESS_NODES': '{0}VSAClientAndClientGroupList',
     'GET_FILE_SERVER_CLIENTS': '{0}/v4/FileServers',
     'CLIENTFORCEDELETE': '{0}Client/%s?forceDelete=1',
+    'SET_PATCH_OPTIONS': '{0}client/setPatchOptions',
     'CLIENT': '{0}Client/%s',
     'CLIENT_LOGS': '{0}Client/%s/Logs/Read',
     'GET_ADDITIIONAL_SETTINGS': '{0}Client/%s/AdditionalSettings',
@@ -690,6 +691,9 @@ SERVICES_DICT_TEMPLATE = {
     'EDIT_REGION': '{0}/entity/%s/%s/region',
     'GET_REGION': '{0}/entity/%s/%s/region?entityRegionType=%s',
     'CALCULATE_REGION': '{0}/entity/%s/%s/region?calculate=True&entityRegionType=%s',
+    'GET_REGIONS': '{0}/Regions?type=%s',
+    'GET_SUPPORTED_REGIONS_MAPI': '{0}mapi/supported-regions?feature=%s&regionType=%s',
+    'GET_CLOUD_REGIONS': '{0}Cloud/Regions?vendor=%s',
 
     'GET_OEM_ID': '{0}/GetOemId',
 

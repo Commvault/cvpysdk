@@ -38,6 +38,14 @@ cleanroomTargets:
 
     refresh()                   --  refresh the targets present in the client
 
+    get_supported_regions_smart_folder()    --  retrieves supported cloud regions from smart folder
+
+    get_supported_regions_resource_pool()   --  retrieves supported cloud regions from resource pool
+
+    get_supported_regions_cloud()           --  retrieves AWS cloud regions from vendor API
+
+    get_all_supported_regions()            --  retrieves all supported regions for SW
+
     create()                    --  creates a cleanroom target with the specified payload
 
     populate_payload()        --  builds the payload with the required fields for creating a cleanroom target
@@ -84,13 +92,33 @@ CleanroomTarget Attributes
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from typing import Dict, TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING, Optional
 from json.decoder import JSONDecodeError
 
 from cvpysdk.exception import SDKException
 
 if TYPE_CHECKING:
     from cvpysdk.commcell import Commcell
+
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class CleanroomSiteRegionParams:
+    """
+    Common parameters used by region APIs.
+    """
+    # Supported Regions MAPI for smart folder
+    feature: Optional[int] = 18
+    workload_id: Optional[int] = 15001
+    region_type: Optional[int] = None
+
+    # Cloud Regions API
+    vendor: Optional[int] = None
+
+    # V4 Regions API for resource pool
+    workload_type: Optional[int] = None
+    cloud_type: Optional[str] = None
+
 
 class CleanroomTargets:
     """
@@ -137,7 +165,17 @@ class CleanroomTargets:
         self._update_response_ = commcell_object._update_response_
         self._RECOVERY_TARGETS_API = self._services['GET_ALL_RECOVERY_TARGETS']
         self._TARGET_URL = self._services['CREATE_RUNBOOK_TARGET']
+        self._GET_ALL_REGIONS_API = f"{self._services['GET_REGIONS']}&useDefaultLocaleId=true"
+        self._SUPPORTED_REGIONS_MAPI = self._services['GET_SUPPORTED_REGIONS_MAPI']
+        self._CLOUD_REGIONS_API = self._services['GET_CLOUD_REGIONS']
+        self._RESOURCE_POOL_REGIONS_API = (
+            f"{self._services['REGIONS']}?workloadId=%s&type=%s"
+        )
 
+        self._SITE_VENDOR_REGION_PARAMS = {
+            'AMAZON': CleanroomSiteRegionParams(region_type=2, vendor=4, workload_type=0, cloud_type='AWS'),
+            'AZURE_V2': CleanroomSiteRegionParams(region_type=1, vendor =7, workload_type=0, cloud_type='AZURE')
+        }
         self._cleanroom_targets = None
         self.refresh()
 
@@ -296,6 +334,94 @@ class CleanroomTargets:
         #ai-gen-doc
         """
         self._cleanroom_targets = self._get_cleanroom_targets()
+
+    def get_supported_regions_smart_folder(self, vendor: str) -> dict:
+        """Return supported regions for the vendor from Smart Folder config (MAPI)."""
+
+        params = getattr(self, '_SITE_VENDOR_REGION_PARAMS', {}).get(vendor.upper())
+        if not params:
+            raise SDKException('CleanroomSite', '101', f'Unsupported vendor: {vendor}')
+
+        if params.feature is None or params.region_type is None:
+            raise SDKException('CleanroomSite', '101', f'Missing feature/region_type for vendor: {vendor}')
+
+        api_url = self._SUPPORTED_REGIONS_MAPI % (params.feature, params.region_type)
+        flag, response = self._cvpysdk_object.make_request('GET', api_url)
+
+        if not flag:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+        try:
+            response_json = response.json()
+            return (response_json or {}).get('data', {}).get('regions', []) or []
+        except JSONDecodeError:
+            raise SDKException('Response', '102', 'Invalid JSON response received from the server.')
+
+    def get_supported_regions_resource_pool(self, vendor: str) -> dict:
+        """Return supported regions for the vendor from Resource Pool (V4 Regions) endpoint."""
+
+        params = getattr(self, '_SITE_VENDOR_REGION_PARAMS', {}).get(vendor.upper())
+        if not params:
+            raise SDKException('CleanroomSite', '101', f'Unsupported vendor: {vendor}')
+
+        if params.workload_id is None or not params.cloud_type:
+            raise SDKException('CleanroomSite', '101', f'Missing workload_id/cloud_type for vendor: {vendor}')
+
+        api_url = self._RESOURCE_POOL_REGIONS_API % (params.workload_id, params.cloud_type)
+        flag, response = self._cvpysdk_object.make_request('GET', api_url)
+
+        if not flag:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+        try:
+            response_json = response.json()
+            return (response_json or {}).get('regions', []) or []
+        except JSONDecodeError:
+            raise SDKException('Response', '102', 'Invalid JSON response received from the server.')
+
+    def get_supported_regions_cloud(self, vendor: str) -> dict:
+        """Return supported regions for the vendor from Cloud/Regions endpoint."""
+
+        params = getattr(self, '_SITE_VENDOR_REGION_PARAMS', {}).get(vendor.upper())
+        if not params:
+            raise SDKException('CleanroomSite', '101', f'Unsupported vendor: {vendor}')
+
+        if params.vendor is None:
+            raise SDKException('CleanroomSite', '101', f'Missing vendor id for vendor: {vendor}')
+
+        api_url = self._CLOUD_REGIONS_API % (params.vendor,)
+        flag, response = self._cvpysdk_object.make_request('GET', api_url)
+
+        if not flag:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+        try:
+            response_json = response.json()
+            return (response_json or {}).get('regions', []) or []
+        except JSONDecodeError:
+            raise SDKException('Response', '102', 'Invalid JSON response received from the server.')
+
+    def get_all_supported_regions(self, vendor: str) -> list[dict]:
+        """Return all supported regions for SW."""
+
+        params = getattr(self, '_SITE_VENDOR_REGION_PARAMS', {}).get(vendor.upper())
+        if not params:
+            raise SDKException('CleanroomSite', '101', f'Unsupported vendor: {vendor!r}')
+
+        if not params.region_type:
+            raise SDKException('CleanroomSite', '101', f'Missing type for vendor: {vendor!r}')
+
+        api_url = self._GET_ALL_REGIONS_API % params.region_type
+        flag, response = self._cvpysdk_object.make_request('GET', api_url)
+
+        if not flag:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+        try:
+            response_json = response.json()
+            return (response_json or {}).get('regions', []) or []
+        except JSONDecodeError:
+            raise SDKException('Response', '102', 'Invalid JSON response received from the server.')
 
     def create(self, payload: dict = dict()) -> dict:
         """Create a new cleanroom target with the specified payload.

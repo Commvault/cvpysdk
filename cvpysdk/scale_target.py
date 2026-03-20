@@ -18,6 +18,15 @@
 
 """Main file for performing operations on scale targets configured in the Commserv.
 
+This module supports creating and managing scale targets for both Azure and AWS cloud platforms,
+enabling automatic scaling of compute resources based on demand.
+
+Supported Scale Target Types:
+    - AZURE_VM (type=1): Azure Virtual Machine scale targets
+    - AMAZON_VM (type=2): AWS EC2 instance scale targets
+    - GCP_VM (type=3): Google Cloud Platform VM scale targets
+    - AZURE_KEDA (type=4): Azure KEDA-based scale targets
+
 `ScaleTargets`, 'ScaleTargetType' and `ScaleTarget` are 3 classes defined in this file.
 
 ScaleTargets:    Class for representing all the Scale Targets configured in the Commserv.
@@ -45,9 +54,13 @@ ScaleTargets:
 
     has()                               --  Checks whether given scale target exists in commcell or not
 
-    add()                               --  Adds a new scale target to the commcell
+    add()                               --  Adds a new scale target to the commcell (supports Azure and AWS)
 
     delete()                            --  Deletes a scale target from the commcell
+
+    _build_azure_region_info()          --  Builds Azure region info dictionary structure
+
+    _build_aws_region_detail()          --  Builds AWS region detail dictionary structure
 
 
 ScaleTarget:
@@ -59,7 +72,7 @@ ScaleTarget:
 
     _get_scale_target_properties()      --  Gets all the details of associated scale target
 
-    edit()                              --  Edit specific properties of the scale target
+    edit()                              --  Edit specific properties of the scale target (supports Azure and AWS)
 
     has_region()                        --  Checks if a specific region is configured in the scale target or not
 
@@ -67,32 +80,35 @@ ScaleTarget:
 ScaleTarget Attributes
 -----------------
 
-    **scale_target_id**     --  returns the scale target id
+    **scale_target_id**           --  returns the scale target id
 
-    **scale_target_name**   --  returns the name of the scale target
+    **scale_target_name**         --  returns the name of the scale target
 
-    **description**         --  returns the description of the scale target
+    **description**               --  returns the description of the scale target
 
-    **type**                --  returns the type of the scale target
+    **type**                      --  returns the type of the scale target (Azure/AWS/GCP/Azure KEDA)
 
-    **max_computes_spawned** --  returns the max computes that can be spawned
+    **max_computes_spawned**      --  returns the max computes that can be spawned
 
-    **use_public_ips**      --  returns whether public IPs are used
+    **use_public_ips**            --  returns whether public IPs are used
 
-    **auth_type**           --  returns the authentication type
+    **auth_type**                 --  returns the authentication type
 
-    **compute_tags**        --  returns the compute tags
+    **compute_tags**              --  returns the compute tags
 
-    **azure_target_details** --  returns the Azure-specific target details
+    **azure_target_details**      --  returns the Azure-specific target details (VPC, subnets, regions)
 
-    **access_nodes**        --  returns the access nodes list
+    **amazon_target_details**     --  returns the AWS-specific target details (VPC, subnets, IAM role)
 
-    **credential_entity**   --  returns the credential entity details
+    **access_nodes**              --  returns the access nodes list
 
-    **region_specific_info_list** --  returns the list of region-specific information for the scale target
+    **credential_entity**         --  returns the credential entity details
+
+    **region_specific_info_list** --  returns the list of region-specific information (applicable for both Azure and AWS targets)
 
 """
 from enum import Enum
+import copy
 from .exception import SDKException
 
 
@@ -284,6 +300,74 @@ class ScaleTargets(object):
         """
         self._scale_targets = self._get_all_scale_targets()
 
+    @staticmethod
+    def _build_azure_region_info(region_config: dict) -> dict:
+        """Build Azure region info dictionary from region config.
+
+        Args:
+            region_config: Region configuration dictionary containing:
+                - region: Region name
+                - virtual_network_id: Virtual network resource ID
+                - virtual_network_name: Virtual network name
+                - subnet_id: Subnet resource ID
+                - subnet_name: Subnet name
+                - storage_account_id: Storage account resource ID
+                - storage_account_name: Storage account name
+
+        Returns:
+            Dictionary with Azure region information structure.
+
+        #ai-gen-doc
+        """
+        return {
+            "region": region_config.get('region', ""),
+            "virtualNetworkDetails": {
+                "id": region_config.get('virtual_network_id', ""),
+                "name": region_config.get('virtual_network_name', "")
+            },
+            "subnetDetails": {
+                "id": region_config.get('subnet_id', ""),
+                "name": region_config.get('subnet_name', "")
+            },
+            "storageAccountDetails": {
+                "id": region_config.get('storage_account_id', ""),
+                "name": region_config.get('storage_account_name', "")
+            }
+        }
+
+    @staticmethod
+    def _build_aws_region_detail(region_config: dict) -> dict:
+        """Build AWS region detail dictionary from region config.
+
+        Args:
+            region_config: AWS region configuration dictionary containing:
+                - region: AWS region name
+                - vpc_id: VPC resource ID
+                - vpc_name: VPC name
+                - subnet_id: Subnet resource ID
+                - availability_zones: List of availability zones
+                - network_security_group_details: Network security group details
+
+        Returns:
+            Dictionary with AWS region detail structure.
+
+        #ai-gen-doc
+        """
+        return {
+            "regionDetails": {
+                "name": region_config.get('region', ""),
+                "availabilityZones": region_config.get('availability_zones', [])
+            },
+            "vpcDetails": {
+                "id": region_config.get('vpc_id', ""),
+                "name": region_config.get('vpc_name', "")
+            },
+            "subnetDetails": {
+                "id": region_config.get('subnet_id', "")
+            },
+            "networkSecurityGroupDetails": region_config.get('network_security_group_details', {})
+        }
+
     def get(self, scale_target_name: str) -> 'ScaleTarget':
         """Retrieve a ScaleTarget object for the specified scale target name.
 
@@ -337,28 +421,35 @@ class ScaleTargets(object):
 
     def add(self,
             scale_target_name: str,
-            subscription_id: str,
             scale_manager_client_name: str,
-            app_credential_name: str,
-            resource_group_name: str,
+            app_credential_name: str = None,
             scale_target_type: ScaleTargetType = ScaleTargetType.AZURE_VM,
             **kwargs) -> 'ScaleTarget':
         """Add a new scale target to the Commcell.
 
+        This method supports creating both Azure and AWS scale targets. The target-specific
+        parameters are provided through kwargs based on the scale_target_type.
+
         Args:
             scale_target_name: Name of the scale target to be created.
-            subscription_id: Azure subscription ID.
             scale_manager_client_name: Name of the scale manager client.
             app_credential_name: Name of the application credential.
-            resource_group_name: Azure resource group name.
+                For Azure targets: Optional. If not provided, managed identity (authType=1) will be used.
+                For AWS targets: Mandatory. Required for AWS authentication.
+                SDKException raised if AWS target created without credentials.
             scale_target_type: Type of scale target (default: AZURE_VM).
+                Can be AZURE_VM (1), AMAZON_VM (2), GCP_VM (3), or AZURE_KEDA (4).
             **kwargs: Additional optional parameters such as:
                 - max_computes_spawned: Maximum computes to spawn (default: 50)
                 - description: Description of the scale target
                 - use_public_ips: Whether to use public IPs (default: False)
-                - compute_tags: List of compute tags (default: [])
-                - auth_type: Authentication type (default: 0)
+                - compute_tags: List of compute tags with 'key' and 'value' (default: [])
+                - auth_type: Authentication type (default: 0 for Azure, 3 for AWS)
                 - fallback_scale_manager_client_name: Fallback scale manager client name
+                
+                For Azure Target (type=1):
+                - subscription_id: Azure subscription ID
+                - resource_group_name: Azure resource group name
                 - regions_config: List of region configurations, each containing:
                     - region: Region name (e.g., "eastus2")
                     - virtual_network_id: Virtual network resource ID
@@ -367,6 +458,18 @@ class ScaleTargets(object):
                     - subnet_name: Subnet name
                     - storage_account_id: Storage account resource ID
                     - storage_account_name: Storage account name
+                
+                For AWS Target (type=2):
+                - auth_type: Authentication type for AWS (typically 3)
+                - aws_regions_config: List of AWS region configurations, each containing:
+                    - region: AWS region name (e.g., "eu-north-1")
+                    - vpc_id: VPC resource ID
+                    - vpc_name: VPC name
+                    - subnet_id: Subnet resource ID
+                    - availability_zones: List of availability zones, each containing:
+                        - name: AZ name (e.g., "eu-north-1b")
+                    - network_security_group_details: Network security group details (dict)
+                - role_arn: IAM Role ARN for AWS
 
         Returns:
             ScaleTarget: An instance of the newly created ScaleTarget.
@@ -374,29 +477,67 @@ class ScaleTargets(object):
         Raises:
             SDKException: If the add operation fails or input validation fails.
 
-        Example:
+        Example - Azure:
             >>> scale_targets = ScaleTargets(commcell_object)
             >>> regions_config = [
             ...     {
             ...         "region": "eastus2",
-            ...         "virtual_network_id": "/subscriptions/xxx/resourceGroups/rg/providers/Microsoft.Network/virtualNetworks/vnet",
+            ...         "virtual_network_id": "/subscriptions/<subscription-id>/resourceGroups/rg/providers/Microsoft.Network/virtualNetworks/vnet",
             ...         "virtual_network_name": "my-vnet",
-            ...         "subnet_id": "/subscriptions/xxx/resourceGroups/rg/providers/Microsoft.Network/virtualNetworks/vnet/subnets/default",
+            ...         "subnet_id": "/subscriptions/<subscription-id>/resourceGroups/rg/providers/Microsoft.Network/virtualNetworks/vnet/subnets/default",
             ...         "subnet_name": "default",
-            ...         "storage_account_id": "/subscriptions/xxx/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/storage",
+            ...         "storage_account_id": "/subscriptions/<subscription-id>/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/storage",
             ...         "storage_account_name": "storage"
             ...     }
             ... ]
             >>> new_target = scale_targets.add(
             ...     scale_target_name="MyScaleTarget",
-            ...     subscription_id="4e621aa1-91cf-48c4-88fe-4eea77276df6",
             ...     scale_manager_client_name="yarascalemgr",
             ...     app_credential_name="AutoScaleApp",
+            ...     scale_target_type=ScaleTargetType.AZURE_VM,
+            ...     subscription_id="<subscription-id>",
             ...     resource_group_name="my_resource_group",
             ...     max_computes_spawned=100,
             ...     regions_config=regions_config
             ... )
             >>> print(f"Created: {new_target.scale_target_name}")
+            
+            >>> # Azure with Managed Identity (no credentials)
+            >>> azure_managed_target = scale_targets.add(
+            ...     scale_target_name="ManagedIdentityTarget",
+            ...     scale_manager_client_name="yarascalemgr",
+            ...     scale_target_type=ScaleTargetType.AZURE_VM,
+            ...     subscription_id="<subscription-id>",
+            ...     resource_group_name="my_resource_group",
+            ...     regions_config=regions_config
+            ... )
+            >>> print(f"Created with managed identity: {azure_managed_target.scale_target_name}")
+            
+            Example - AWS:
+            >>> aws_regions_config = [
+            ...     {
+            ...         "region": "eu-north-1",
+            ...         "vpc_id": "vpc-<vpc-id>",
+            ...         "vpc_name": "vpc-<vpc-id>",
+            ...         "subnet_id": "subnet-<subnet-id>",
+            ...         "availability_zones": [
+            ...             {"name": "eu-north-1b"}
+            ...         ],
+            ...         "network_security_group_details": {}
+            ...     }
+            ... ]
+            >>> aws_target = scale_targets.add(
+            ...     scale_target_name="DemoAws",
+            ...     scale_manager_client_name="<scale-manager-client>",
+            ...     app_credential_name="AutoScaleAWS",
+            ...     scale_target_type=ScaleTargetType.AMAZON_VM,
+            ...     auth_type=3,
+            ...     max_computes_spawned=5,
+            ...     use_public_ips=False,
+            ...     aws_regions_config=aws_regions_config,
+            ...     role_arn="CommvaultAdminRole"
+            ... )
+            >>> print(f"Created AWS target: {aws_target.scale_target_name}")
 
         #ai-gen-doc
         """
@@ -413,37 +554,32 @@ class ScaleTargets(object):
             fallback_scale_manager_client = self._commcell_object.clients.get(fallback_scale_manager_name)
             fallback_scale_manager_id = int(fallback_scale_manager_client.client_id)
         
-        # Get credential details
-        credentials = self._commcell_object.credentials.get(app_credential_name)
-
-        # Build region-specific info list from regions_config
-        region_specific_info_list = []
-        regions_config = kwargs.get('regions_config', [])
-        for region_config in regions_config:
-            region_info = {
-                "region": region_config.get('region', ""),
-                "virtualNetworkDetails": {
-                    "id": region_config.get('virtual_network_id', ""),
-                    "name": region_config.get('virtual_network_name', "")
-                },
-                "subnetDetails": {
-                    "id": region_config.get('subnet_id', ""),
-                    "name": region_config.get('subnet_name', "")
-                },
-                "storageAccountDetails": {
-                    "id": region_config.get('storage_account_id', ""),
-                    "name": region_config.get('storage_account_name', "")
-                }
+        # Determine the scale target type first for validation
+        target_type = scale_target_type.value if isinstance(scale_target_type, ScaleTargetType) else scale_target_type
+        
+        # Validate credentials for AWS targets (mandatory)
+        if target_type == ScaleTargetType.AMAZON_VM.value or target_type == 2:
+            if not app_credential_name:
+                raise SDKException('ScaleTarget', '102', 
+                    "app_credential_name is mandatory for AWS scale targets")
+        
+        # Get credential details (optional for Azure, mandatory for AWS)
+        credential_entity = {}
+        if app_credential_name:
+            credentials = self._commcell_object.credentials.get(app_credential_name)
+            credential_entity = {
+                "credentialId": int(credentials.credential_id),
+                "credentialName": app_credential_name
             }
-            region_specific_info_list.append(region_info)
+
+
 
         # Build the payload
         payload = {
             "maxComputesSpawned": kwargs.get('max_computes_spawned', 50),
             "use_public_ips": kwargs.get('use_public_ips', False),
             "description": kwargs.get('description', ""),
-            "type": scale_target_type.value if isinstance(scale_target_type, ScaleTargetType) else scale_target_type,
-            "authType": kwargs.get('auth_type', 0),
+            "type": target_type,
             "entity": {
                 "scaleTargetName": scale_target_name
             },
@@ -455,10 +591,7 @@ class ScaleTargets(object):
                 }
             ],
             "computeTags": kwargs.get('compute_tags', []),
-            "credEntity": {
-                "credentialId": int(credentials.credential_id),
-                "credentialName": app_credential_name
-            },
+            "credEntity": credential_entity,
             "fallbackScalemanagerId": {
                 "entity": {
                     "clientName": fallback_scale_manager_name,
@@ -466,8 +599,36 @@ class ScaleTargets(object):
                     "_type_": 3
                 },
                 "type": 3
-            },
-            "azureTargetDetails": {
+            }
+        }
+
+        # Build type-specific target details
+        if target_type == ScaleTargetType.AZURE_VM.value or target_type == 1:
+            # Azure-specific configuration
+            # If app_credential_name is not provided, use managed identity (authType=1)
+            if not app_credential_name:
+                payload["authType"] = kwargs.get('auth_type', 1)
+            else:
+                payload["authType"] = kwargs.get('auth_type', 0)
+            
+            subscription_id = kwargs.get('subscription_id')
+            if not subscription_id:
+                raise SDKException('ScaleTarget', '102', 
+                    "subscription_id is required for Azure scale targets")
+            
+            resource_group_name = kwargs.get('resource_group_name')
+            if not resource_group_name:
+                raise SDKException('ScaleTarget', '102', 
+                    "resource_group_name is required for Azure scale targets")
+            
+            # Build region-specific info list from regions_config
+            region_specific_info_list = []
+            regions_config = kwargs.get('regions_config', [])
+            for region_config in regions_config:
+                region_info = self._build_azure_region_info(region_config)
+                region_specific_info_list.append(region_info)
+
+            payload["azureTargetDetails"] = {
                 "subscriptionDetails": {
                     "id": subscription_id
                 },
@@ -476,9 +637,32 @@ class ScaleTargets(object):
                 },
                 "regionSpecificInfoList": region_specific_info_list
             }
-        }
-
         
+        elif target_type == ScaleTargetType.AMAZON_VM.value or target_type == 2:
+            # AWS-specific configuration
+            payload["authType"] = kwargs.get('auth_type', 3)
+            
+            role_arn = kwargs.get('role_arn')
+            if not role_arn:
+                raise SDKException('ScaleTarget', '102', 
+                    "role_arn is required for AWS scale targets")
+            
+            # Build region-specific details from aws_regions_config
+            region_specific_details = []
+            aws_regions_config = kwargs.get('aws_regions_config', [])
+            for region_config in aws_regions_config:
+                region_detail = self._build_aws_region_detail(region_config)
+                region_specific_details.append(region_detail)
+
+            payload["amazonTargetDetails"] = {
+                "regionSpecificDetails": region_specific_details,
+                "roleARN": role_arn
+            }
+        
+        else:
+            # For other types (GCP_VM, AZURE_KEDA, etc.) set default auth_type
+            payload["authType"] = kwargs.get('auth_type', 0)
+
         # Make API call
         api_endpoint = self._services['CREATE_SCALE_TARGET']
         flag, response = self._cvpysdk_object.make_request(
@@ -587,6 +771,7 @@ class ScaleTarget(object):
         self._auth_type = None
         self._compute_tags = None
         self._azure_target_details = None
+        self._amazon_target_details = None
         self._access_nodes = None
         self._credential_entity = None
         self._fallback_scale_manager_id = None
@@ -598,7 +783,7 @@ class ScaleTarget(object):
         """Retrieve detailed properties for this scale target from the Commcell.
 
         This method gathers and updates all configuration properties for this scale target,
-        including compute limits, authentication details, Azure configurations, access nodes,
+        including compute limits, authentication details, Azure/AWS configurations, access nodes,
         and credential information.
 
         Raises:
@@ -624,12 +809,13 @@ class ScaleTarget(object):
             if response.json():
                 response_data = response.json()
                 self._description = response_data.get('description', "")
-                self._type = response_data.get('type', 0)
+                self._type = int(response_data.get('type', 0))
                 self._max_computes_spawned = response_data.get('maxComputesSpawned', 0)
                 self._use_public_ips = response_data.get('use_public_ips', False)
                 self._auth_type = response_data.get('authType', 0)
                 self._compute_tags = response_data.get('computeTags', [])
                 self._azure_target_details = response_data.get('azureTargetDetails', {})
+                self._amazon_target_details = response_data.get('amazonTargetDetails', {})
                 self._access_nodes = response_data.get('accessNodes', [])
                 self._credential_entity = response_data.get('credEntity', {})
                 self._fallback_scale_manager_id = response_data.get('fallbackScalemanagerId', {
@@ -796,6 +982,23 @@ class ScaleTarget(object):
         return self._azure_target_details
 
     @property
+    def amazon_target_details(self) -> dict:
+        """Get the AWS-specific target details.
+
+        Returns:
+            A dictionary containing AWS configuration details including region-specific details,
+            VPC information, subnet details, and IAM role ARN.
+
+        Example:
+            >>> target = ScaleTarget()
+            >>> aws_details = target.amazon_target_details
+            >>> print(f"AWS Details: {aws_details}")
+
+        #ai-gen-doc
+        """
+        return self._amazon_target_details
+
+    @property
     def access_nodes(self) -> list:
         """Get the list of access nodes for the Scale Target.
 
@@ -832,8 +1035,11 @@ class ScaleTarget(object):
         """Get the list of region-specific information for the Scale Target.
 
         Returns:
-            A list of region configuration dictionaries, each containing region name,
-            virtual network details, subnet details, and storage account details.
+            For Azure targets: A list of Azure region configuration dictionaries, each containing region name,
+                              virtual network details, subnet details, and storage account details.
+            For AWS targets: A list of AWS region detail dictionaries, each containing region details,
+                            VPC details, subnet details, and network security group details.
+            For other types: An empty list.
 
         Example:
             >>> target = ScaleTarget()
@@ -842,7 +1048,16 @@ class ScaleTarget(object):
 
         #ai-gen-doc
         """
-        return self._azure_target_details.get('regionSpecificInfoList', [])
+        # For Azure targets, return regionSpecificInfoList
+        if self._type == ScaleTargetType.AZURE_VM.value:
+            return self._azure_target_details.get('regionSpecificInfoList', [])
+        
+        # For AWS targets, return regionSpecificDetails
+        elif self._type == ScaleTargetType.AMAZON_VM.value:
+            return self._amazon_target_details.get('regionSpecificDetails', [])
+        
+        # For other types, return empty list
+        return []
 
     def has_region(self, region_name: str) -> bool:
         """Check if a specific region is configured in the Scale Target.
@@ -866,10 +1081,21 @@ class ScaleTarget(object):
         #ai-gen-doc
         """
         if not isinstance(region_name, str):
-            raise SDKException('ScaleTarget', '101', "Region name must be a string")
+            raise SDKException('ScaleTarget', '101')
         
         region_list = self.region_specific_info_list
-        configured_regions = [r.get('region', '').lower() for r in region_list]
+        
+        # Extract region names based on target type
+        if self._type == ScaleTargetType.AZURE_VM.value:
+            # For Azure targets, region is at top level
+            configured_regions = [r.get('region', '').lower() for r in region_list]
+        elif self._type == ScaleTargetType.AMAZON_VM.value:
+            # For AWS targets, region is under regionDetails.name
+            configured_regions = [r.get('regionDetails', {}).get('name', '').lower() for r in region_list]
+        else:
+            # For other types, return empty list
+            configured_regions = []
+        
         return region_name.lower() in configured_regions
 
     def edit(self, **kwargs) -> None:
@@ -878,7 +1104,7 @@ class ScaleTarget(object):
         This method allows updating specific properties of a scale target. Only the properties
         provided in kwargs will be updated; all other properties will retain their current values.
         After a successful update, the scale target object is automatically refreshed to reflect
-        the changes.
+        the changes. Supports both Azure and AWS scale targets.
 
         Args:
             **kwargs: Optional parameters to update, including:
@@ -888,10 +1114,20 @@ class ScaleTarget(object):
                 - use_public_ips: Whether to use public IPs (default: current value)
                 - auth_type: Authentication type (default: current value)
                 - compute_tags: List of compute tags (default: current value)
-                - app_credential_name: Name of the application credential to update (optional)
+                - app_credential_name: Name of the application credential to update (optional).
+                    For Azure targets: Pass a credential name to use credential auth, or pass empty string/None 
+                    to switch to managed identity. authType will be automatically set (0 for credentials, 1 for managed identity).
+                    For AWS targets: Cannot be empty or None. Must provide a credential name. SDKException raised if attempted to clear.
+                - region_action: Action to perform with regions_config. Options:
+                    - 'replace': Replace all regions with provided regions_config (default)
+                    - 'add': Add provided regions to existing regions
+                    - 'remove': Remove specified regions by region name from existing regions
+                    - Invalid values raise SDKException
                 - access_node_names: List of access node client names to update. Each client will be fetched 
                     and added as an access node with clientId and name
                 - fallback_scale_manager_client_name: Name of the fallback scale manager client to update (optional)
+                
+                For Azure Scale Target (type=1):
                 - regions_config: List of region configurations. Behavior controlled by region_action parameter.
                     Each region object should contain:
                     - region: Region name (e.g., "eastus2")
@@ -905,11 +1141,27 @@ class ScaleTarget(object):
                     - 'replace': Replace all regions with provided regions_config (default)
                     - 'add': Add provided regions to existing regions
                     - 'remove': Remove specified regions by region name from existing regions
+                
+                For AWS Scale Target (type=2):
+                - role_arn: IAM Role ARN for AWS (to update)
+                - aws_regions_config: List of AWS region configurations. Behavior controlled by region_action parameter.
+                    Each region object should contain:
+                    - region: AWS region name (e.g., "eu-north-1")
+                    - vpc_id: VPC resource ID
+                    - vpc_name: VPC name
+                    - subnet_id: Subnet resource ID
+                    - availability_zones: List of availability zones, each containing:
+                        - name: AZ name (e.g., "eu-north-1b")
+                    - network_security_group_details: Network security group details (dict)
+                - region_action: Action to perform with aws_regions_config. Options:
+                    - 'replace': Replace all regions with provided regions_config (default)
+                    - 'add': Add provided regions to existing regions
+                    - 'remove': Remove specified regions by region name from existing regions
 
         Raises:
             SDKException: If the edit operation fails or input validation fails.
 
-        Example:
+        Example - Azure:
             >>> target = ScaleTarget(commcell_object, 'FS_AutoscaleDemo')
             >>> target.edit(
             ...     description="Updated description",
@@ -917,36 +1169,47 @@ class ScaleTarget(object):
             ... )
             >>> print(f"Updated description: {target.description}")
             
-            >>> # Rename scale target
-            >>> target.edit(scale_target_name="FS_AutoscaleDemo_New")
-            >>> print(f"New name: {target.scale_target_name}")
+            >>> # Switch from credentials to managed identity (Azure only)
+            >>> target.edit(app_credential_name="")  # Pass empty string to clear credentials
+            >>> print(f"Auth Type (1=managed identity): {target.auth_type}")
             
-            >>> # Replace all regions
+            >>> # Switch from managed identity to credentials (Azure only)
+            >>> target.edit(app_credential_name="NewAzureApp")  # Pass credential name
+            >>> print(f"Auth Type (0=credentials): {target.auth_type}")
+            
+            >>> # Replace all Azure regions
             >>> regions_config = [
             ...     {
             ...         "region": "westus2",
-            ...         "virtual_network_id": "/subscriptions/xxx/...",
+            ...         "virtual_network_id": "/subscriptions/<subscription-id>/...",
             ...         "virtual_network_name": "new-vnet",
-            ...         "subnet_id": "/subscriptions/xxx/...",
+            ...         "subnet_id": "/subscriptions/<subscription-id>/...",
             ...         "subnet_name": "new-subnet",
-            ...         "storage_account_id": "/subscriptions/xxx/...",
+            ...         "storage_account_id": "/subscriptions/<subscription-id>/...",
             ...         "storage_account_name": "newstorage"
             ...     }
             ... ]
             >>> target.edit(regions_config=regions_config, region_action='replace')
             
-            >>> # Add new regions to existing ones
-            >>> target.edit(regions_config=regions_config, region_action='add')
+            Example - AWS:
+            >>> aws_target = ScaleTarget(commcell_object, 'DemoAws')
+            >>> aws_target.edit(
+            ...     max_computes_spawned=10,
+            ...     description="Updated AWS description"
+            ... )
             
-            >>> # Remove specific regions by name
-            >>> regions_to_remove = [{"region": "eastus2"}]
-            >>> target.edit(regions_config=regions_to_remove, region_action='remove')
-            
-            >>> # Update access nodes
-            >>> target.edit(access_node_names=['yarascalemgr1', 'yarascalemgr2'])
-            
-            >>> # Update fallback scale manager
-            >>> target.edit(fallback_scale_manager_client_name='fallback_scalemgr')
+            >>> # Update AWS regions
+            >>> aws_regions_config = [
+            ...     {
+            ...         "region": "us-east-1",
+            ...         "vpc_id": "<vpc-id>",
+            ...         "vpc_name": "<vpc-name>",
+            ...         "subnet_id": "<subnet-id>",
+            ...         "availability_zones": [{"name": "us-east-1a"}],
+            ...         "network_security_group_details": {}
+            ...     }
+            ... ]
+            >>> aws_target.edit(aws_regions_config=aws_regions_config, role_arn="NewRole", region_action='replace')
 
         #ai-gen-doc
         """
@@ -959,11 +1222,22 @@ class ScaleTarget(object):
         credential_entity = self._credential_entity
         if 'app_credential_name' in kwargs:
             app_credential_name = kwargs.get('app_credential_name')
-            credentials = self._commcell_object.credentials.get(app_credential_name)
-            credential_entity = {
-                "credentialId": credentials.credential_id,
-                "credentialName": app_credential_name
-            }
+            # For AWS targets, credentials are mandatory - cannot be cleared
+            if self._type == ScaleTargetType.AMAZON_VM.value:
+                if not app_credential_name:
+                    raise SDKException('ScaleTarget', '102', 
+                        "app_credential_name cannot be empty for AWS scale targets (credentials are mandatory)")
+            
+            if app_credential_name:
+                # User provided a credential name
+                credentials = self._commcell_object.credentials.get(app_credential_name)
+                credential_entity = {
+                    "credentialId": int(credentials.credential_id),
+                    "credentialName": app_credential_name
+                }
+            else:
+                # User explicitly cleared credentials (for Azure managed identity only)
+                credential_entity = {}
         
         # Update access nodes if access_node_names is provided
         access_nodes = self._access_nodes
@@ -1004,78 +1278,12 @@ class ScaleTarget(object):
                     "type": 3
                 }
         
-        # Build region-specific info list if regions_config is provided
-        azure_target_details = self._azure_target_details.copy()
-        
-        if 'regions_config' in kwargs:
-            regions_config = kwargs.get('regions_config', [])
-            region_action = kwargs.get('region_action', 'replace').lower()
-            current_regions = azure_target_details.get('regionSpecificInfoList', [])
-            region_specific_info_list = []
-            
-            if region_action == 'replace':
-                # Replace all regions with new ones
-                for region_config in regions_config:
-                    region_info = {
-                        "region": region_config.get('region', ""),
-                        "virtualNetworkDetails": {
-                            "id": region_config.get('virtual_network_id', ""),
-                            "name": region_config.get('virtual_network_name', "")
-                        },
-                        "subnetDetails": {
-                            "id": region_config.get('subnet_id', ""),
-                            "name": region_config.get('subnet_name', "")
-                        },
-                        "storageAccountDetails": {
-                            "id": region_config.get('storage_account_id', ""),
-                            "name": region_config.get('storage_account_name', "")
-                        }
-                    }
-                    region_specific_info_list.append(region_info)
-            
-            elif region_action == 'add':
-                # Add new regions to existing ones
-                region_specific_info_list = current_regions.copy()
-                existing_region_names = {r.get('region') for r in current_regions}
-                
-                for region_config in regions_config:
-                    region_name = region_config.get('region', "")
-                    # Only add if region doesn't already exist
-                    if region_name not in existing_region_names:
-                        region_info = {
-                            "region": region_name,
-                            "virtualNetworkDetails": {
-                                "id": region_config.get('virtual_network_id', ""),
-                                "name": region_config.get('virtual_network_name', "")
-                            },
-                            "subnetDetails": {
-                                "id": region_config.get('subnet_id', ""),
-                                "name": region_config.get('subnet_name', "")
-                            },
-                            "storageAccountDetails": {
-                                "id": region_config.get('storage_account_id', ""),
-                                "name": region_config.get('storage_account_name', "")
-                            }
-                        }
-                        region_specific_info_list.append(region_info)
-            
-            elif region_action == 'remove':
-                # Remove specified regions by region name
-                regions_to_remove = {r.get('region') for r in regions_config}
-                region_specific_info_list = [
-                    r for r in current_regions 
-                    if r.get('region') not in regions_to_remove
-                ]
-            
-            azure_target_details['regionSpecificInfoList'] = region_specific_info_list
-        
         # Build the complete payload using current values + updates
         payload = {
             "description": kwargs.get('description', self._description),
             "type": self._type,
             "maxComputesSpawned": kwargs.get('max_computes_spawned', self._max_computes_spawned),
             "use_public_ips": kwargs.get('use_public_ips', self._use_public_ips),
-            "authType": kwargs.get('auth_type', self._auth_type),
             "entity": {
                 "scaleTargetName": scale_target_name,
                 "scaleTargetId": int(self._scale_target_id),
@@ -1083,9 +1291,116 @@ class ScaleTarget(object):
             "accessNodes": access_nodes,
             "computeTags": kwargs.get('compute_tags', self._compute_tags),
             "credEntity": credential_entity,
-            "fallbackScalemanagerId": fallback_scale_manager_id,
-            "azureTargetDetails": azure_target_details
-        }        
+            "fallbackScalemanagerId": fallback_scale_manager_id
+        }
+        
+        # Validate region_action if regions are being updated
+        region_action = kwargs.get('region_action', 'replace').lower() if ('regions_config' in kwargs or 'aws_regions_config' in kwargs) else None
+        if region_action and region_action not in ['replace', 'add', 'remove']:
+            raise SDKException('ScaleTarget', '102', 
+                f"Invalid region_action '{region_action}'. Must be 'replace', 'add', or 'remove'")
+        
+        # Determine authType - intelligently set based on credential status for Azure
+        if self._type == ScaleTargetType.AZURE_VM.value:
+            # For Azure, check if user is changing credentials
+            if 'app_credential_name' in kwargs:
+                # User is explicitly changing credentials
+                if credential_entity:
+                    # Credentials provided - use credential auth (authType=0)
+                    payload["authType"] = kwargs.get('auth_type', 0)
+                else:
+                    # No credentials provided - use managed identity (authType=1)
+                    payload["authType"] = kwargs.get('auth_type', 1)
+            else:
+                # User is not changing credentials, use provided auth_type or keep current
+                payload["authType"] = kwargs.get('auth_type', self._auth_type)
+        else:
+            # For AWS and other types
+            payload["authType"] = kwargs.get('auth_type', self._auth_type)
+        
+        # Handle Azure-specific updates
+        if self._type == ScaleTargetType.AZURE_VM.value:
+            azure_target_details = copy.deepcopy(self._azure_target_details)
+            
+            if 'regions_config' in kwargs:
+                regions_config = kwargs.get('regions_config', [])
+                region_action = kwargs.get('region_action', 'replace').lower()
+                current_regions = azure_target_details.get('regionSpecificInfoList', [])
+                region_specific_info_list = []
+                
+                if region_action == 'replace':
+                    # Replace all regions with new ones
+                    for region_config in regions_config:
+                        region_info = ScaleTargets._build_azure_region_info(region_config)
+                        region_specific_info_list.append(region_info)
+                
+                elif region_action == 'add':
+                    # Add new regions to existing ones
+                    region_specific_info_list = current_regions.copy()
+                    existing_region_names = {r.get('region', '').lower() for r in current_regions}
+                    
+                    for region_config in regions_config:
+                        region_name = region_config.get('region', "").lower()
+                        # Only add if region doesn't already exist
+                        if region_name not in existing_region_names:
+                            region_info = ScaleTargets._build_azure_region_info(region_config)
+                            region_specific_info_list.append(region_info)
+                
+                elif region_action == 'remove':
+                    # Remove specified regions by region name
+                    regions_to_remove = {r.get('region', '').lower() for r in regions_config}
+                    region_specific_info_list = [
+                        r for r in current_regions 
+                        if r.get('region', '').lower() not in regions_to_remove
+                    ]
+                
+                azure_target_details['regionSpecificInfoList'] = region_specific_info_list
+            
+            payload["azureTargetDetails"] = azure_target_details
+        
+        # Handle AWS-specific updates
+        elif self._type == ScaleTargetType.AMAZON_VM.value:
+            amazon_target_details = copy.deepcopy(self._amazon_target_details)
+            
+            # Update role ARN if provided
+            if 'role_arn' in kwargs:
+                amazon_target_details['roleARN'] = kwargs.get('role_arn')
+            
+            if 'aws_regions_config' in kwargs:
+                aws_regions_config = kwargs.get('aws_regions_config', [])
+                region_action = kwargs.get('region_action', 'replace').lower()
+                current_regions = amazon_target_details.get('regionSpecificDetails', [])
+                region_specific_details = []
+                
+                if region_action == 'replace':
+                    # Replace all regions with new ones
+                    for region_config in aws_regions_config:
+                        region_detail = ScaleTargets._build_aws_region_detail(region_config)
+                        region_specific_details.append(region_detail)
+                
+                elif region_action == 'add':
+                    # Add new regions to existing ones
+                    region_specific_details = current_regions.copy()
+                    existing_region_names = {r.get('regionDetails', {}).get('name', '').lower() for r in current_regions}
+                    
+                    for region_config in aws_regions_config:
+                        region_name = region_config.get('region', "").lower()
+                        # Only add if region doesn't already exist
+                        if region_name not in existing_region_names:
+                            region_detail = ScaleTargets._build_aws_region_detail(region_config)
+                            region_specific_details.append(region_detail)
+                
+                elif region_action == 'remove':
+                    # Remove specified regions by region name
+                    regions_to_remove = {r.get('region', '').lower() for r in aws_regions_config}
+                    region_specific_details = [
+                        r for r in current_regions 
+                        if r.get('regionDetails', {}).get('name', '').lower() not in regions_to_remove
+                    ]
+                
+                amazon_target_details['regionSpecificDetails'] = region_specific_details
+            
+            payload["amazonTargetDetails"] = amazon_target_details        
 
         # Make API call
         api_endpoint = self._services['UPDATE_SCALE_TARGET'] % self._scale_target_id

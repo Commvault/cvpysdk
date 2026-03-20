@@ -349,7 +349,7 @@ class MongoDBInstance(BigDataAppsInstance):
 
         required = [
             "instance_id", "master_node", "master_hostname", "master_client_id",
-            "port", "bin_path", "db_user", "os_user", "db_credential_id", "ssl_credential_id"
+            "port", "bin_path", "os_user", "db_credential_id", "ssl_credential_id"
         ]
 
         # check for missing keys

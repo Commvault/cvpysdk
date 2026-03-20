@@ -102,6 +102,7 @@ Subclient:
     _get_preview_metadata()     --  gets the preview metadata for the file
 
     _get_preview()              --  gets the preview for the file
+    browse_Cosmos_Content()     --  Browse Cosmos Account content to validate Backup Account exists
     _restore_atlas_option_json()--  Creates Restore JSON for atlas and runs restore
 
     update_atlas_instance()     --  Update Atlas subclient
@@ -2236,7 +2237,33 @@ class Subclient(object):
             return None
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
-    
+
+    def browse_Cosmos_Content(self, update_dict: dict):
+        """
+        Does a cloud content browse to validate the Backup Account exists
+        """
+        browse_json = {
+            "instanceType": 51,
+            "clientEntity":
+                {
+                    "clientId": update_dict["clientId"],
+                    "clientName": update_dict["clientName"]
+                },
+            "appId":
+                {
+                    "clientName": update_dict["clientName"],
+                    "clientId": update_dict["clientId"],
+                    "instanceId": update_dict["instanceId"],
+                    "applicationId": 134
+                },
+            "browseTargetType": {}
+        }
+        flag, response = self._cvpysdk_object.make_request('POST', self._CLOUD_CONTENT_BROWSE, browse_json)
+        if flag:
+            return response.json()
+        else:
+            raise SDKException('Subclient','102','Browse Failed')
+
     def _restore_atlas_option_json(self, restore_dict: dict) :
         """Setter for Atlas restore option in restore JSON. and launching restore job"""
 
