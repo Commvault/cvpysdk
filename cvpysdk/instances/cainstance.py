@@ -110,6 +110,7 @@ class CloudAppsInstance(Instance):
         from .cloudapps.azure_cosmosdb_instance import AzureCosmosDBInstance
         from .cloudapps.powerbi_instance import PowerBIInstance
         from .cloudapps.cloud_database_instance import CloudDatabaseInstance
+        from .cloudapps.pinecone_instance import PineConeInstance
 
         instance_type = {
             1: GoogleInstance,
@@ -134,6 +135,7 @@ class CloudAppsInstance(Instance):
             40: CloudDatabaseInstance,  # MongoDB Atlas
             44: AzureCosmosDBInstance,  # Azure Cosmos DB Cloud Apps Instance
             51: AzureCosmosDBInstance,   # Azure Cosmos DB MongoDBAPI Instance
+            58: PineConeInstance,  # PineCone Instance
             60: PowerBIInstance     # Power Platform PowerBi Instance
         }
 

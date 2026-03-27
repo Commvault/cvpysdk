@@ -204,6 +204,8 @@ SERVICES_DICT_TEMPLATE = {
 
     'CLIENTGROUPS': '{0}ClientGroup',
     'CLIENTGROUP': '{0}ClientGroup/%s',
+    'CLIENTGROUP_CLOUD_POWER_MGMT_GET': '{0}ClientGroup/%s/CloudVMPowerManagement',
+    'CLIENTGROUP_CLOUD_POWER_MGMT': '{0}ClientGroup/CloudVMPowerManagement',
     'SERVERGROUPS_V4': '{0}V4/ServerGroup',
     'HTTP_PROXY': '{0}HttpProxySettings',
 
@@ -259,6 +261,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'CREATE_TASK': '{0}CreateTask',
     'ADD_INSTANCE': '{0}Instance',
+    'ADD_PINECONE_INSTANCE': '{0}V4/AI/Pinecone/Instance',
     'MASKING_POLICY': '{0}MaskingPolicy',
 
     'DO_COMPLIANCE_SEARCH': '{0}Search',
@@ -485,6 +488,7 @@ SERVICES_DICT_TEMPLATE = {
     'COMPANY_ENTITIES': '{0}Company/%s/AssociatedEntities',
     'MIGRATE_CLIENTS': '{0}Company/%s/company-association',
     'COMPANY_OPERATORS': '{0}V4/Company/Operator',
+    'COMPANY_ENTITY_ASSOCIATION': '{0}/company/%s/%s/security', #entityType and entityID to be used in order
     "ORGANIZATION_ADDITIONAL_SETTINGS": '{0}v4/workload/AdditionalSettings',
 
     'STORAGE_POOL': '{0}StoragePool',

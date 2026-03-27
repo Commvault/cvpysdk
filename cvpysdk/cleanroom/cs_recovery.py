@@ -251,8 +251,11 @@ class CommServeRecovery:
         else:
             raise SDKException('CommserveRecovery', '105', "Failed to close recovery request")
 
-    def _get_active_recovery_requests(self) -> list:
+    def _get_active_recovery_requests(self, staged:bool=True) -> list:
         """Retrieve the list of currently active CommServe recovery requests.
+
+        Args:
+            staged: If True, retrieves only active requests. If False, retrieves all requests. Defaults to True.
 
         Returns:
             list: A list containing details of all active CommServe recovery requests.
@@ -266,7 +269,7 @@ class CommServeRecovery:
         #ai-gen-doc
         """
 
-        url = f'{self._CS_RECOVERY_API}?csGuid={self.cs_guid}&showOnlyActiveRequests=true'
+        url = f'{self._CS_RECOVERY_API}?csGuid={self.cs_guid}&showOnlyActiveRequests={staged}'
 
         states = {
             1: 'SUBMITTED',
@@ -286,11 +289,12 @@ class CommServeRecovery:
             if response.get("errorCode") == 6:
                 raise SDKException('CommserveRecovery', '101')
 
-            map_vm_info = lambda vm_info: {
-                                    "commandcenter_url": f"https://{vm_info['ipAddress']}/commandcenter",
-                                    "vm_expiration_time": vm_info['vmExpirationTime'],
-                                    "username": vm_info['credentials']['sUsername'],
-                                    'password': vm_info['credentials']['sPassword']
+            map_vm_info = lambda request: {
+                                    "commandcenter_url": f"https://{request['vmInfo']['ipAddress']}/commandcenter" if request['status'] == 5 else '',
+                                    "vm_expiration_time": request['vmInfo']['vmExpirationTime'],
+                                    "username": request['vmInfo'].get('credentials',{}).get('sUsername'),
+                                    'password': request['vmInfo'].get('credentials',{}).get('sPassword'),
+                                    'vmName': request['vmInfo'].get('name')
                                 }
             return {
                         request["id"]: {
@@ -300,7 +304,7 @@ class CommServeRecovery:
                             "start_time": request["createdTime"],
                             "end_time": request["vmInfo"]['vmExpirationTime'],
                             "status": states[request["status"]],
-                            "vmInfo": map_vm_info(request['vmInfo']) if request['status'] == 5 else {}
+                            "vmInfo": map_vm_info(request)
                         }
                         for request in response.get('requests', [])
                     }
@@ -308,11 +312,12 @@ class CommServeRecovery:
         else:
             raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
 
-    def _get_vm_details(self, requestid: int) -> dict:
+    def _get_vm_details(self, requestid: int, staged:bool=True) -> dict:
         """Retrieve access details for a virtual machine associated with a specific request ID.
 
         Args:
             requestid: The unique identifier for the VM access request.
+            staged: If True, retrieves from cached active requests. If False, makes fresh API call.
 
         Returns:
             A dictionary containing the VM access details, such as connection information and credentials.
@@ -326,7 +331,9 @@ class CommServeRecovery:
         #ai-gen-doc
         """
         try:
-            return self.active_recovery_requests[requestid]['vmInfo']
+            if staged:
+                return self.active_recovery_requests[requestid]['vmInfo']
+            return self._get_active_recovery_requests(staged=False)[requestid]['vmInfo']
         except KeyError:
             raise SDKException('CommserveRecovery', '103')
 
@@ -553,7 +560,7 @@ class CommServeRecovery:
         """
         return self._close_recovery_request(request_id)
 
-    def get_vm_details(self, request_id: int) -> dict:
+    def get_vm_details(self, request_id: int, staged=True) -> dict:
         """Retrieve VM details for a specific recovery request.
 
         Given a recovery request ID, this method returns a dictionary containing
@@ -562,6 +569,7 @@ class CommServeRecovery:
 
         Args:
             request_id: The unique identifier for the recovery request.
+            staged: If True, retrieves from cached active requests. If False, makes fresh API call. Defaults to True.
 
         Returns:
             dict: A dictionary with VM details, for example:
@@ -580,4 +588,4 @@ class CommServeRecovery:
 
         #ai-gen-doc
         """
-        return self._get_vm_details(request_id)
+        return self._get_vm_details(request_id, staged)

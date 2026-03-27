@@ -1017,6 +1017,11 @@ class VirtualServerSubclient(Subclient):
                 nics["networkName"] = network_card_dict['name']
                 nics["name"] = ''
 
+            # setting nics for Nutanix Prism central instance
+            if self._instance_object.instance_name == HypervisorType.NUTANIX_PRISM_CENTRAL.value.lower():
+                if vm_nics_list:
+                        nics["networkName"] = vm_nics_list[0].get("sourceNetwork")
+
             # setting nics for azureRM instance
             if value.get('destination_instance').lower() == HypervisorType.AZURE_V2.value.lower():
                 if value.get('subnet_id'):

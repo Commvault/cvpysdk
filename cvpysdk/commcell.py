@@ -119,6 +119,8 @@ Commcell:
 
     disable_tfa()                          --  Disables two-factor authentication on this commcell
 
+    allow_users_to_manage_tfa()            -- Enables or disables the option for users to manage tfa on this commcell
+
     _get_commserv_metadata()               -- Returns back the commserv metadata on this commcell
 
     _get_commserv_oem_id()               -- Returns back the commserv OEM ID on this commcell
@@ -5525,6 +5527,58 @@ class Commcell(object):
         #ai-gen-doc
         """
         self.two_factor_authentication.disable_tfa(otp=otp)
+
+    def allow_users_to_manage_tfa(self, action: bool, otp: str = None) -> None:
+        """Enables or Disables allow users to manage two-factor authentication (TFA) on this Commcell.
+        Args:
+            action (bool): Set to True to allow users to manage TFA for the Commcell, False to disallow.
+            otp (str): otp for two-factor authentication operation.
+
+        This method turns on or off allow users to manage TFA for the Commcell,
+        allowing end users to configure second authentication factor.
+
+        Example:
+            >>> commcell = Commcell()
+            >>> commcell.allow_users_to_manage_tfa(action=True)
+            >>> print("Allow two-factor authentication has been enabled.")
+
+        #ai-gen-doc
+        """
+        commcell_organization_id = 0
+        req_url = self._services['UPDATE_ORGANIZATION'] % commcell_organization_id
+        req_json = {
+                "organizationInfo": {
+                    "organization": {
+                        "shortName": {
+                            "id": 0
+                        }
+                    },
+                    "organizationProperties": {
+                        "allowUserToChangeTFA": action
+                        }
+                    }
+                }
+        headers = None
+        if otp:
+            headers = self._headers.copy()
+            headers["otp"] = otp
+
+        flag, response = self._cvpysdk_object.make_request('PUT', req_url, req_json, headers=headers)
+
+        if flag:
+            if response.json():
+                if 'error' in response.json():
+                    error_code = response.json()['error']['errorCode']
+                    if error_code != 0:
+                        error_message = response.json()['error']['errorMessage']
+                        raise SDKException('Organization', '110', 'Error: {0}'.format(error_message))
+            else:
+                raise SDKException('Organization', '110')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        self.refresh()
 
     def _get_commserv_metadata(self) -> Dict[str, Any]:
         """Load and retrieve metadata for the CommServ associated with this Commcell instance.

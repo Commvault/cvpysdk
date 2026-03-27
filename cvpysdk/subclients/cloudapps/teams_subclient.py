@@ -305,7 +305,9 @@ class TeamsSubclient(CloudAppsSubclient):
             is_team_instance = True
             if isinstance(teams[0], str):
                 is_team_instance = False
-                discovered_teams = self.discover(refresh_cache=False, discovery_type=discovery_type)
+                discovered_teams = self.discover(refresh_cache=False)
+                if not discovered_teams:
+                    raise SDKException('Subclient', '102', 'No teams discovered. Please check Azure app details associated with client.')
                 teams = [discovered_teams[team] for team in teams]
 
             team_json_list = []

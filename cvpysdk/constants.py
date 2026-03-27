@@ -744,6 +744,16 @@ class StoragePoolConstants:
                 "vendorId": 2,
                 "displayVendorId": 456,
             }
+        },
+        "STACKIT": {
+            "FREQUENT ACCESS": {
+                "vendorId": 216,
+                "displayVendorId": 496,
+            },
+            "INFREQUENT ACCESS": {
+                "vendorId": 216,
+                "displayVendorId": 497,
+            },
         }
     }
 

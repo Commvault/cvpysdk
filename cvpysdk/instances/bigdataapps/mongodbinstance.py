@@ -22,6 +22,8 @@ MongoDBInstance:
     agent_object, instance name and instance id
     restore()                       -- Submits a restore request based on restore options
     restore_collection()            -- collection based restore.
+    get_restore_json_for_out_of_place() -- Get restore JSON for out-of-place restore
+    restore_out_of_place()          -- Out-of-place restore for MongoDB instance
     discover_mongodb_nodes()        -- Runs machine calss discovery
     refresh_mongo_instance()        -- Refresh mongoDB call by yaking machine response as input
 
@@ -216,6 +218,200 @@ class MongoDBInstance(BigDataAppsInstance):
 
         request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
                 "distributedAppsRestoreOptions"] = distributed_restore_json
+        return self._process_restore_response(request_json)
+    
+    def get_restore_json_for_out_of_place(self, restore_options: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Get the JSON payload for an out-of-place restore operation based on the provided restore options.
+
+        Args:
+            restore_options: Dictionary of keyword arguments required to submit a MongoDB restore job.
+                The dictionary should include keys such as:
+                    "subclient_id": ID of the subclient (int),
+                    "backupset_id": ID of the backupset (int),
+
+                    "src_client_id": ID of the source client (int),
+                    "src_client_name": Name of the source client (str),
+                    "src_instance_id": ID of the source instance (int),
+                    "src_instance_name": Name of the source instance (str),
+                    "src_shard_name": Name of the source shard (str),
+                    "src_host_name": Hostname of the source (str),
+                    "src_port": Port number of the source (int),
+                    "src_dbpath": Database path of the source (str),
+                    "src_client_id_secondary": ID of the secondary source client (int),
+
+                    "dest_client_id": ID of the destination client (int),
+                    "dest_client_name": Name of the destination client (str),
+                    "dest_instance_id": ID of the destination instance (int),
+                    "dest_instance_name": Name of the destination instance (str),
+                    "dest_cluster_config": Configuration of the destination cluster (dict),
+
+                    "recover": recover_db,
+                    "auto_db_shutdown": auto_restore
+
+        Returns:
+            dict: Returns a dictionary representing the JSON payload for the restore operation, which can be used to submit an out-of-place restore job.
+
+        """
+
+        request_json = {
+            "taskInfo": {
+                "associations": [
+                    {
+                        "subclientId": int(restore_options.get("subclient_id", -1)),
+                        "applicationId": 64,
+                        "clientName": restore_options.get("src_instance_name"),
+                        "backupsetId": int(restore_options.get("backupset_id")),
+                        "instanceId": int(restore_options.get("src_instance_id")),
+                        "clientId": int(restore_options.get("src_client_id")),
+                        "commCellId": 2,
+                        "_type_": 5
+                    }
+                ],
+                "task": {
+                    "taskType": 1,
+                    "initiatedFrom": 2
+                },
+                "subTasks": [
+                    {
+                        "subTask": {
+                            "subTaskType": "RESTORE",
+                            "operationType": "RESTORE"
+                        },
+                        "options": {
+                            "restoreOptions": {
+                                "commonOptions": {
+                                    "unconditionalOverwrite": False
+                                },
+                                "browseOption": {
+                                    "commCellId": 2,
+                                    "backupset": {
+                                        "backupsetId": int(restore_options.get("backupset_id")),
+                                        "clientId": int(restore_options.get("src_client_id")),
+                                    },
+                                    "timeRange": {}
+                                },
+                                "destination": {
+                                    "noOfStreams": 2,
+                                    "destClient": {
+                                        "clientId": int(restore_options.get("dest_client_id")),
+                                        "clientName": restore_options.get("dest_instance_name")
+                                    },
+                                    "destinationInstance": {
+                                        "clientId": int(restore_options.get("dest_client_id")),
+                                        "clientName": restore_options.get("dest_instance_name"),
+                                        "applicationId": 64,
+                                        "appName": "Big Data Apps",
+                                        "instanceId": int(restore_options.get("dest_instance_id")),
+                                        "instanceName": restore_options.get("dest_instance_name")
+                                    }
+                                },
+                                "fileOption": {
+                                    "sourceItem": [
+                                        "/"
+                                    ]
+                                },
+                                "distributedAppsRestoreOptions": {
+                                    "distributedRestore": True,
+                                    "mongoDBRestoreOptions": {
+                                        "destShardList": [],
+                                        "destGranularEntityList": [],
+                                        "recover": restore_options.get("recover", True),
+                                        "latestOpLogSync": True,
+                                        "pointInTimeToEndOfBackup": True,
+                                        "latestEndOfBackup": True,
+                                        "isGranularRecovery": False,
+                                        "autoDBShutDown": restore_options.get("auto_db_shutdown", True)
+                                    }
+                                },
+                                "qrOption": {
+                                    "destAppTypeId": 64
+                                }
+                            },
+                            "commonOpts": {
+                                "notifyUserOnJobCompletion": True,
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        if restore_options.get("dest_cluster_config"):
+            for host_info in restore_options.get("dest_cluster_config"):
+                shard_name = host_info.get("replSet", "")
+                hostname = host_info.get("host", "")
+                port = int(host_info.get("port", ""))
+                clientname = host_info.get("clientname", "")
+                clientid = int(host_info.get("clientid", ""))
+                dbpath =  host_info.get("dbpath", "")
+
+                shard_entry = {
+                    "srcShardName": restore_options.get("src_shard_name"),
+                    "destShardName": shard_name,
+                    "target": {
+                        "hostName": hostname,
+                        "clientName": clientname,
+                        "clientId": int(clientid)
+                    },
+                    "destHostName": hostname,
+                    "destPortNumber": int(port),
+                    "destDataDir": dbpath,
+                    "bkpSecondary": {
+                        "clientName": restore_options.get("src_client_name"),
+                        "hostName": restore_options.get("src_hostname"),
+                        "clientId": int(restore_options.get("src_client_id_secondary"))
+                    },
+                    "bkpHostName": restore_options.get("src_hostname"),
+                    "bkpPortNumber": int(restore_options.get("src_port")),
+                    "bkpDataDir": restore_options.get("src_dbpath"),
+                    "useDestAsSecondary": False,
+                    "primaryPortNumber": int(restore_options.get("src_port"))
+                }
+
+                request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+                    "distributedAppsRestoreOptions"]["mongoDBRestoreOptions"]["destShardList"].append(shard_entry)
+
+
+        return request_json
+    
+    def restore_out_of_place(self, restore_options: Dict[str, Any]) -> 'Job':
+        """
+        Restore the content of this MongoDB instance to a different location using the specified options.
+
+        Args:
+            restore_options: Dictionary of keyword arguments required to submit a MongoDB restore job.
+                The dictionary should include keys such as:
+                    "subclient_id": ID of the subclient (int),
+                    "backupset_id": ID of the backupset (int),
+
+                    "src_client_id": ID of the source client (int),
+                    "src_client_name": Name of the source client (str),
+                    "src_instance_id": ID of the source instance (int),
+                    "src_instance_name": Name of the source instance (str),
+                    "src_shard_name": Name of the source shard (str),
+                    "src_host_name": Hostname of the source (str),
+                    "src_port": Port number of the source (int),
+                    "src_dbpath": Database path of the source (str),
+                    "src_client_id_secondary": ID of the secondary source client (int),
+
+                    "dest_client_id": ID of the destination client (int),
+                    "dest_client_name": Name of the destination client (str),
+                    "dest_instance_id": ID of the destination instance (int),
+                    "dest_instance_name": Name of the destination instance (str),
+                    "dest_cluster_config": Configuration of the destination cluster (dict),
+
+                    "recover": recover_db,
+                    "auto_db_shutdown": auto_restore
+
+        Returns:
+            Job: An instance of the Job class representing the submitted restore job.
+        """
+        if not (isinstance(restore_options, dict)):
+            raise SDKException('Instance', '101')
+        
+        request_json = self.get_restore_json_for_out_of_place(restore_options)
+
         return self._process_restore_response(request_json)
 
     def restore_collection(self, restore_options: dict) -> 'Job':

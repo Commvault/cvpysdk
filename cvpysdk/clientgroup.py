@@ -3115,7 +3115,7 @@ class ClientGroup(object):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
-
+        
     @property
     def additional_settings(self) -> dict:
         """Get the additional settings associated with this client group.
@@ -3134,3 +3134,90 @@ class ClientGroup(object):
         if self._additional_settings is None:
             self._additional_settings = AdditionalSettings(self)
         return self._additional_settings
+
+    def get_power_management(self) -> dict:
+        """Retrieve the current cloud VM power management configuration for this client group.
+
+        Returns:
+            dict: The ``powerManagementInfo`` dictionary from the API response, containing
+            fields such as ``isPowerManagementEnabled``, ``isPowerMgmtAllowed``,
+            ``isPowerMgmtSupported``, ``isPowerMgmtAllowedCheck``, and
+            ``selectedCloudController``.
+
+        Raises:
+            SDKException: If the response is empty or the request fails.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> info = client_group.get_power_management()
+            >>> print(info)
+            {'isPowerManagementEnabled': True, 'isPowerMgmtAllowed': True, ...}
+        """
+        get_url = self._services['CLIENTGROUP_CLOUD_POWER_MGMT_GET'] % self.clientgroup_id
+        flag, response = self._cvpysdk_object.make_request('GET', get_url)
+
+        if not flag:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        if not response.json():
+            raise SDKException('Response', '102')
+
+        return response.json().get('powerManagementInfo', {})
+
+    def set_power_management(self, cloud_controller_client: str, enable: bool = False) -> None:
+        """Enable or disable cloud VM power management for this client group.
+
+        Calls :meth:`get_power_management` to fetch the current ``isPowerMgmtAllowed``,
+        ``isPowerMgmtSupported``, and ``isPowerMgmtAllowedCheck`` values, then issues
+        a PUT request updating only ``isPowerManagementEnabled``.
+
+        Args:
+            cloud_controller_client: Name of the cloud controller client (hypervisor) to
+                associate with power management.
+            enable: ``True`` to enable power management, ``False`` to disable it.
+                Defaults to ``False``.
+
+        Raises:
+            SDKException: If the client does not exist, or if the GET/PUT request fails.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> # Enable power management
+            >>> client_group.set_power_management('TestGroup-Target-Hypervisor', enable=True)
+            >>> # Disable power management
+            >>> client_group.set_power_management('TestGroup-Target-Hypervisor', enable=False)
+        """
+        cloud_client = self._commcell_object.clients.get(cloud_controller_client)
+        cloud_client_id = int(cloud_client.client_id)
+
+        power_info = self.get_power_management()
+
+        request_json = {
+            "cgId": int(self.clientgroup_id),
+            "powerManagementInfo": {
+                "isPowerManagementEnabled": enable,
+                "isPowerMgmtAllowed": power_info.get('isPowerMgmtAllowed', True),
+                "isPowerMgmtSupported": power_info.get('isPowerMgmtSupported', True),
+                "isPowerMgmtAllowedCheck": power_info.get('isPowerMgmtAllowedCheck', True),
+                "selectedCloudController": {
+                    "clientId": cloud_client_id,
+                    "clientName": cloud_controller_client
+                }
+            }
+        }
+
+        put_url = self._services['CLIENTGROUP_CLOUD_POWER_MGMT']
+        flag, response = self._cvpysdk_object.make_request('PUT', put_url, request_json)
+
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', 0)
+                if error_code != 0:
+                    error_message = response.json().get('errorMessage', 'Failed to update power management.')
+                    raise SDKException('ClientGroup', '102', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)

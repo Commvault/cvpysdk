@@ -1956,6 +1956,156 @@ class Instances(object):
 
         self._process_add_response(request_json)
 
+    def add_pinecone_instance(self, instance_name, **instance_options):
+        """Adds new Pinecone Instance to given Client
+            Args:
+                instance_name       (str)   --  instance_name
+                instance_options    (dict)  --  dict of keyword arguments as follows:
+                    Example:
+                       instance_options = {
+                            'credential_name': 'pinecone_cred',
+                            'credential_id': 47,
+                            'plan_name': 'CS_Plan',
+                            'plan_id': 1,
+                            'account_name': 'Auto_test',
+                            'staging_path': '/stage_path',
+                            'staging_credential_id': 31,
+                            'staging_credential_name': 'staging_cred'
+                        }
+
+            Returns:
+                object - instance of the Instance class
+
+            Raises:
+                SDKException:
+                    if instance with same name already exists
+                    if given plan name does not exist in commcell
+                    if given credential name does not exist in commcell
+        """
+        if self.has_instance(instance_name):
+            raise SDKException(
+                'Instance', '102', 'Instance "{0}" already exists.'.format(
+                    instance_name)
+            )
+
+        if instance_options.get("plan_name"):
+            if not self._commcell_object.plans.has_plan(instance_options.get("plan_name")):
+                raise SDKException(
+                    'Instance',
+                    '102',
+                    'Plan: "{0}" does not exist in the Commcell'.format(
+                        instance_options.get("plan_name"))
+                )
+
+        if instance_options.get("credential_name"):
+            if not self._commcell_object.credentials.has_credential(instance_options.get("credential_name")):
+                raise SDKException(
+                    'Instance',
+                    '102',
+                    'Credential: "{0}" does not exist in the Commcell'.format(
+                        instance_options.get("credential_name"))
+                )
+
+        # Build custom properties JSON string
+        custom_props = {}
+        if instance_options.get("staging_path"):
+            custom_props["stagingPath"] = instance_options.get("staging_path")
+        if instance_options.get("staging_credential_id"):
+            custom_props["stagingCredentialId"] = instance_options.get("staging_credential_id")
+        if instance_options.get("staging_credential_name"):
+            custom_props["stagingCredentialName"] = instance_options.get("staging_credential_name")
+
+        import json
+        custom_props_json = json.dumps(custom_props) if custom_props else "{}"
+
+        # Build the request JSON matching the API structure
+        request_json = {
+            "instanceName": instance_name,
+            "instanceType": "PINECONE"
+        }
+
+        # Add plan if provided
+        if instance_options.get("plan_name"):
+            plan_obj = self._commcell_object.plans.get(instance_options.get("plan_name"))
+            request_json["plan"] = {
+                "id": int(plan_obj.plan_id) if not instance_options.get("plan_id") else int(instance_options.get("plan_id")),
+                "name": instance_options.get("plan_name")
+            }
+
+        # Add account if provided
+        account_name = instance_options.get("account_name", instance_name)
+        request_json["account"] = {
+            "name": account_name
+        }
+
+        # Add content configuration
+        content_list = instance_options.get("content", ["/"])
+        exclude_content = instance_options.get("exclude_content", [])
+        exceptions = instance_options.get("exceptions", [])
+        request_json["content"] = {
+            "content": content_list,
+            "excludeContent": exclude_content,
+            "exceptions": exceptions
+        }
+
+        # Add credentials if provided
+        if instance_options.get("credential_name"):
+            credential_obj = self._commcell_object.credentials.get(instance_options.get("credential_name"))
+            credential_id = int(credential_obj.credential_id) if not instance_options.get("credential_id") else int(instance_options.get("credential_id"))
+            request_json["credential"] = {
+                "id": credential_id,
+                "name": instance_options.get("credential_name")
+            }
+
+        # Add custom properties if provided
+        if custom_props:
+            request_json["customProperties"] = {
+                "nameValues": [
+                    {
+                        "name": "WorkloadInstanceCustomProperties",
+                        "value": custom_props_json
+                    }
+                ]
+            }
+
+        flag, response = self._cvpysdk_object.make_request('POST', self._services['ADD_PINECONE_INSTANCE'], request_json)
+        if flag:
+            if response.json():
+                response_data = response.json()
+                
+                # Handle V4 API successful response format: {'id': 24, 'name': 'instance_name'}
+                if 'id' in response_data and 'name' in response_data:
+                    # Successful creation - refresh and return instance
+                    instance_name = response_data['name']
+                    self.refresh()
+                    return self.get(instance_name)
+                # Handle legacy response wrapper format
+                elif 'response' in response_data:
+                    error_code = response_data['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response_data['response']['errorString']
+                        o_str = 'Failed to create instance\nError: "{0}"'.format(error_string)
+                        raise SDKException('Instance', '102', o_str)
+                    else:
+                        # initialize the instances again
+                        # so the instance object has all the instances
+                        instance_name = response_data['response']['entity']['instanceName']
+                        self.refresh()
+                        return self.get(instance_name)
+                # Handle error message format
+                elif 'errorMessage' in response_data:
+                    error_string = response_data['errorMessage']
+                    error_code = response_data.get('errorCode', '')
+                    o_str = 'Failed to create instance\nError: "{0}" (Code: {1})'.format(error_string, error_code)
+                    raise SDKException('Instance', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
     def refresh(self):
         """Refresh the instances associated with the Agent of the selected Client."""
         self._instances = self._get_instances()

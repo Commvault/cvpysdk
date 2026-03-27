@@ -146,6 +146,8 @@ Plan
 
     remove_region()             --  method to remove a region from the plan
 
+    associate_company()         -- method to associate a company with the plan
+
     get_schedule_properties()   --  method to get the schedule properties of the plan
 
     add_schedule()              --  method to add a schedule to the plan
@@ -239,6 +241,7 @@ if TYPE_CHECKING:
 
 from functools import reduce
 ARCHIVER_PLAN_MIN_RETENTION = 1825  # 5 years in days
+PLAN_ENTITY_TYPE = 158 # Entity type id for plan``
 class PlanTypes(Enum):
     """Class Enum to represent different plan types
 
@@ -2745,9 +2748,10 @@ class Plan(object):
         self._PLAN = self._services['PLAN'] % (self.plan_id)
         self._V4_PLAN = self._services['V4_SERVER_PLAN'] % (self.plan_id)
         self._V4_DC_PLAN = self._services['V4_DC_PLAN'] % (self.plan_id)
-        self._V5_SERVER_PLAN_COPY_CLONE = self._services['V5_SERVER_PLAN_COPY_CLONE']
-        self._V5_LAPTOP_PLAN_COPY_CLONE = self._services['V5_LAPTOP_PLAN_COPY_CLONE']
+        self._V5_SERVER_PLAN_COPY_CLONE = self._services['V5_SERVER_PLAN_COPY_CLONE'] 
+        self._V5_LAPTOP_PLAN_COPY_CLONE = self._services['V5_LAPTOP_PLAN_COPY_CLONE'] 
         self._V5_ARCHIVER_PLAN_COPY_CLONE = self._services['V5_ARCHIVER_PLAN_COPY_CLONE']
+        self._COMPANY_ASSOCIATION = self._services['COMPANY_ENTITY_ASSOCIATION'] % (PLAN_ENTITY_TYPE, self.plan_id)
         self._PLAN_RPO = self._services['SERVER_PLAN_RPO'] % (self.plan_id)
         self._PLAN_RPO_RUN = self._services['SERVER_PLAN_RPO_RUN'] % (self.plan_id)
         self._ADD_USERS_TO_PLAN = self._services['ADD_USERS_TO_PLAN'] % (self.plan_id)
@@ -3737,6 +3741,36 @@ class Plan(object):
         flag, response = self._cvpysdk_object.make_request('DELETE', self._services['SERVER_PLAN_REGIONS'] % (self.plan_id, region_id))
 
         self.__handle_response(flag, response, custom_error_message=f'Failed to remove region from the plan: [{self.plan_name}]')
+    
+    def associate_company(self, company_name: str | list[str]) -> None: 
+        """Method to associate a company to the plan
+
+        Args:
+            company_name (str) | List<str>: name of the company that is being associated
+
+        Raises:
+            SDKException:
+                -   if failed to associate the company to the plan
+
+        Usage:
+            plan.associate_company(company_name='company1')
+        """
+        if isinstance(company_name, str):
+            company_id = self._commcell_object.organizations.get(company_name).organization_id
+            companies = [{"providerId": company_id}]
+        elif isinstance(company_name, list):
+            companies = [{"providerId": self._commcell_object.organizations.get(name).organization_id} for name in company_name]
+        else:
+            raise SDKException('Plan', '102', f'Invalid type for company_name: {type(company_name)}')
+
+        request_json = {
+            "associationsOperationType": "OVERWRITE",
+            "companies": companies
+            }
+
+        flag, response = self._cvpysdk_object.make_request('PUT', self._COMPANY_ASSOCIATION, request_json)
+
+        self.__handle_response(flag, response, custom_error_message=f'Failed to associate company to the plan : [{self.plan_name}]')
 
 
     def get_schedule_properties(self, schedule_filter: dict) -> dict:

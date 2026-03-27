@@ -842,7 +842,7 @@ class OracleInstance(DatabaseInstance):
             }
         }
 
-    def _process_browse_response(self, request_json: dict) -> list:
+    def _process_browse_response(self, request_json: dict, use_cache: bool = True) -> list:
         """Process the response from the DBBrowse API using the provided request JSON.
 
         This method sends the given JSON request to the DBBrowse API, parses the response,
@@ -850,6 +850,7 @@ class OracleInstance(DatabaseInstance):
 
         Args:
             request_json: Dictionary containing the JSON request to be sent to the DBBrowse API.
+            use_cache: Whether to use cached tablespaces or not.
 
         Returns:
             A list containing tablespaces for the Oracle instance.
@@ -865,7 +866,7 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        if 'tablespaces' in self._instanceprop:
+        if use_cache and 'tablespaces' in self._instanceprop:
             return self._instanceprop['tablespaces']
 
         browse_service = self._commcell_object._services['ORACLE_INSTANCE_BROWSE'] % (
@@ -1070,7 +1071,21 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        return [ts['tableSpace'] for ts in self.browse()]
+        tablespaces = []
+        browse_response = self.browse()
+        if browse_response:
+            for db in browse_response:
+                if 'tablespace' in db:
+                    tablespaces.append(db['tablespace'])
+
+                # In the case of CDB, we may have to browse through each
+                # individual database (PDB) to fetch all the tablespaces
+                elif 'database' in db:
+                    options = self._get_browse_options()
+                    options['path'] = f"/{db['database']}"
+                    tablespaces.extend(self.browse(use_cache=False, **options))
+        return tablespaces
+
 
     def browse(self, *args: Any, **kwargs: Any) -> Any:
         """Browse Oracle database tablespaces.
@@ -1088,13 +1103,14 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
+        use_cache = kwargs.pop('use_cache', True)
         if args and isinstance(args[0], dict):
             options = args[0]
         elif kwargs:
             options = kwargs
         else:
             options = self._get_browse_options()
-        return self._process_browse_response(options)
+        return self._process_browse_response(options, use_cache)
 
     def backup(self, subclient_name: str = "default") -> None:
         """Initiate a backup operation for the Oracle database using the specified subclient.
