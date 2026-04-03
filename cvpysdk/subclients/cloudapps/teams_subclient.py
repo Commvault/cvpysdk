@@ -64,6 +64,8 @@ TeamsSubclient:
     preview_backed_file()                       --  Method to preview the backed up content
     run_restore_for_chat_to_onedrive()  -- Restore user chats to onedrive.
     restore_to_azure_blob()                     --  Restore teams/users to azure blob
+    get_associated_users()                      --  Retrieve all associated users (discoverByType 28) for the client
+    remove_user_association()                   --  Remove user (type 28) associations from a Teams client
 """
 
 from __future__ import unicode_literals
@@ -238,6 +240,7 @@ class TeamsSubclient(CloudAppsSubclient):
                 user_account_json['user'] = user_json
                 useraccounts.append(user_account_json)
             request_json['cloudAppAssociation']['cloudAppDiscoverinfo']['userAccounts'] = useraccounts
+            request_json['cloudAppAssociation']['cloudAppDiscoverinfo']['discoverByType'] = discovery_type.value
 
         elif discovery_type.value == 27:
             discovered_teams = self.discover(discovery_type=const.ClOUD_APP_EDISCOVER_TYPE['Groups'])
@@ -396,7 +399,7 @@ class TeamsSubclient(CloudAppsSubclient):
         if not kwargs.get("dest_subclient_obj"):
             destination_team = discovered_teams[destination_team]
         else:
-            dest_discovered_teams = kwargs.get("dest_subclient_obj").discover()
+            dest_discovered_teams = kwargs.get("dest_subclient_obj").discover(refresh_cache=False)
             destination_team = dest_discovered_teams[destination_team]
         request_json = {
             "taskInfo": {
@@ -628,7 +631,7 @@ class TeamsSubclient(CloudAppsSubclient):
         _msTeamsRestoreOptions = {
             "restoreAllMatching": False,
             "overWriteItems": kwargs.get("unconditionalOverwrite", False),
-            "restoreToTeams": True,
+            "restoreToTeams": kwargs.get("restoreToTeams", True),
             "destLocation": kwargs.get("destination_team").get("displayName") if kwargs.get("destination_team", {}).get(
                 "displayName") else "",
             "restorePostsAsHtml": kwargs.get("restorePostsAsHtml", False),
@@ -636,6 +639,9 @@ class TeamsSubclient(CloudAppsSubclient):
             "selectedItemsToRestore": selectedItemsToRestore,
             "findQuery": self._json_restoreoptions_findquery(teams)
         }
+        if kwargs.get("restoreToBlob", False):
+            _msTeamsRestoreOptions["restoreToBlob"] = True
+            _msTeamsRestoreOptions["blobContainerCredId"] = kwargs.get("blobContainerId")
         if kwargs.get("destination_team", None):
             _msTeamsRestoreOptions["destinationTeamInfo"] = {
                 "tabId": "",
@@ -1016,6 +1022,55 @@ class TeamsSubclient(CloudAppsSubclient):
                     "userAccounts": user_assoc,
                     "groups": [],
                     "discoverByType": 12
+                }
+            }
+        }
+        self._process_remove_association(request_json)
+
+    def get_associated_users(self) -> list:
+        """Retrieve all associated users (discoverByType 28) for the client."""
+        request_json = {
+            "cloudAppAssociation": {
+                "subclientEntity": {"subclientId": int(self._subclient_id)}
+            },
+            "bIncludeDeleted": False,
+            "discoverByType": 28,
+            "searchInfo": {"isSearch": 0, "searchKey": ""},
+            "sortInfo": {
+                "sortColumn": "O365Field_AUTO_DISCOVER", "sortOrder": 0
+            }
+        }
+        url = self._services['USER_POLICY_ASSOCIATION']
+        flag, response = self._cvpysdk_object.make_request('POST', url, request_json)
+        if flag:
+            resp = response.json()
+            if resp:
+                if 'errorMessage' in resp:
+                    raise SDKException('Subclient', '102',
+                                       f'Failed to get associated users\nError: "{resp.get("errorMessage")}"')
+                return resp.get('associations')
+        else:
+            raise SDKException('Response', '101', response.text)
+
+    def remove_user_association(self, user_assoc: list) -> None:
+        """Remove user (type 28) associations from a Teams client.
+        Args:
+            user_assoc: List of user association objects to be removed from the Teams client.
+
+        Example:
+            >>> users_to_remove = [user1_assoc, user2_assoc]
+            >>> result = teams_subclient.remove_user_association(users_to_remove)
+            >>> print(f"Associations removed: {result}")
+        """
+        request_json = {
+            "LaunchAutoDiscovery": False,
+            "cloudAppAssociation": {
+                "accountStatus": "DELETED",
+                "subclientEntity": self._json_subclient_entity(),
+                "cloudAppDiscoverinfo": {
+                    "userAccounts": user_assoc,
+                    "groups": [],
+                    "discoverByType": 28
                 }
             }
         }

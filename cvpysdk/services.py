@@ -73,6 +73,8 @@ SERVICES_DICT_TEMPLATE = {
     'CLIENTFORCEDELETE': '{0}Client/%s?forceDelete=1',
     'SET_PATCH_OPTIONS': '{0}client/setPatchOptions',
     'CLIENT': '{0}Client/%s',
+    'CLIENT_PASSKEY': '{0}Client/%s/Passkey',
+    'CLIENT_AUTH_RESTORE': '{0}Client/%s/AuthRestore',
     'CLIENT_LOGS': '{0}Client/%s/Logs/Read',
     'GET_ADDITIIONAL_SETTINGS': '{0}Client/%s/AdditionalSettings',
     'FILTER_CLIENTS': '{0}Client?%s',
@@ -261,6 +263,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'CREATE_TASK': '{0}CreateTask',
     'ADD_INSTANCE': '{0}Instance',
+    'ADD_SNOWFLAKE_INSTANCE': '{0}V4/AI/Snowflake/Instance',
     'ADD_PINECONE_INSTANCE': '{0}V4/AI/Pinecone/Instance',
     'MASKING_POLICY': '{0}MaskingPolicy',
 

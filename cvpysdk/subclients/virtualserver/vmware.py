@@ -395,7 +395,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                      copy_precedence=0,
                      convert_to=None,
                      media_agent=None,
-                     snap_proxy=None):
+                     snap_proxy=None,
+                     **kwargs):
         """Restores the disk specified in the input paths list to the same location
 
             Args:

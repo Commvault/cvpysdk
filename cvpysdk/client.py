@@ -315,6 +315,10 @@ Client
     add_http_proxy()                    --  Adds HTTP proxy for the client
 
     remove_http_proxy()                 --  Removes HTTP proxy for the client
+    
+    passkey_for_restores()                 --  Enables or disables passkey for restores for the client
+    
+    passkey_authorize_for_restore()       --  Authorizes or deauthorizes passkey for restores for the client
 
 Client Attributes
 -----------------
@@ -11306,6 +11310,122 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
 
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        self.refresh()
+
+    def passkey_for_restores(self, current_password: str, action: str) -> None:
+        """Enable or disable the client setting "Require passkey for restores".
+
+        Args:
+            current_password: Passkey value used in request payload.
+            action: Operation to perform. Supported values: ``enable`` or ``disable``.
+
+        Raises:
+            SDKException: If action is invalid, request fails, or API returns an error.
+        
+        Example:
+            >>> client = Client(...)
+            >>> client.passkey_for_restores(current_password="mySecretPasskey", action="enable")
+            >>> print("Passkey for restores enabled.")
+            >>> client.passkey_for_restores(current_password="mySecretPasskey", action="disable")
+            >>> print("Passkey for restores disabled.")
+            
+        # ai-gen-doc
+        """
+        encoded_password = b64encode(current_password.encode()).decode()
+
+        req_url = self._services['CLIENT_PASSKEY'] % self.client_id
+        if action.lower() == 'enable':
+            req_json = {
+                "passkeyOpType": 1,
+                "newPasskey": encoded_password
+            }  
+        elif action.lower() == 'disable':
+            req_json = {
+                "passkeyOpType": 3,
+                "currentPasskey": encoded_password
+            }
+        else:
+            raise SDKException('Client', '102', 'Invalid action specified. Use "enable" or "disable".')
+
+        flag, response = self._cvpysdk_object.make_request('POST', req_url, req_json)
+
+        if flag:
+            if response.json():
+                if 'error' in response.json():
+                    error_message = response.json()['error']['errorCode']
+                    if error_message != 0:
+                        error_message = response.json()['error']['errorMessage']
+                    raise SDKException('Client', '110', 'Error: {0}'.format(error_message))
+            else:
+                raise SDKException('Commcell', '110')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        self.refresh()
+
+    def passkey_authorize_for_restore(self, current_password: str, action: str, expiration_time: int = 1800) -> None:
+        """Enable or disable the client setting "Authorize for restore".
+
+        This operation is allowed only when client property
+        ``advancedPrivacySettings.isPasskeyFeatureEnabled`` is True.
+
+        Args:
+            current_password: Passkey value used in request payload.
+            action: Operation to perform. Supported values: ``enable`` or ``disable``.
+            expiration_time: Expiry in seconds for authorization when enabling.
+
+        Raises:
+            SDKException: If passkey feature is not enabled, action is invalid,
+                request fails, or API returns an error.
+                
+        Example:
+            >>> client = Client(...)
+            >>> client.passkey_authorize_for_restore(current_password="mySecretPasskey", action="enable", expiration_time=3600)
+            >>> print("Passkey authorization for restore enabled.")
+            >>> client.passkey_authorize_for_restore(current_password="mySecretPasskey", action="disable")
+            >>> print("Passkey authorization for restore disabled.")
+            
+        # ai-gen-doc
+        """
+        encoded_password = b64encode(current_password.encode()).decode()
+
+        req_url = self._services['CLIENT_AUTH_RESTORE'] % self.client_id
+        if action.lower() == 'enable':
+            req_json = {
+                "passkey": encoded_password,
+                "passkeySettings": {
+                    "enableAuthorizeForRestore": True,
+                    "passkeyExpirationInterval": {
+                        "toTime": expiration_time
+                    }
+                }
+            } 
+        elif action.lower() == 'disable':
+            req_json = {
+                "passkeySettings": {
+                    "enableAuthorizeForRestore": False,
+                    "passkeyExpirationInterval": {}
+                }
+            }
+        else:
+            raise SDKException('Client', '102', 'Invalid action specified. Use "enable" or "disable".')
+
+        flag, response = self._cvpysdk_object.make_request('POST', req_url, req_json)
+
+        if flag:
+            if response.json():
+                if 'error' in response.json():
+                    error_code = response.json()['error']['errorCode']
+                    if error_code != 0:
+                        error_message = response.json()['error']['errorMessage']
+                        raise SDKException('Commcell', '110', 'Error: {0}'.format(error_message))
+            else:
+                raise SDKException('Commcell', '110')
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)

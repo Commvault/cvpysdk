@@ -111,6 +111,7 @@ class CloudAppsInstance(Instance):
         from .cloudapps.powerbi_instance import PowerBIInstance
         from .cloudapps.cloud_database_instance import CloudDatabaseInstance
         from .cloudapps.pinecone_instance import PineConeInstance
+        from .cloudapps.snowflake_instance import SnowflakeInstance
 
         instance_type = {
             1: GoogleInstance,
@@ -136,7 +137,8 @@ class CloudAppsInstance(Instance):
             44: AzureCosmosDBInstance,  # Azure Cosmos DB Cloud Apps Instance
             51: AzureCosmosDBInstance,   # Azure Cosmos DB MongoDBAPI Instance
             58: PineConeInstance,  # PineCone Instance
-            60: PowerBIInstance     # Power Platform PowerBi Instance
+            60: PowerBIInstance,     # Power Platform PowerBi Instance
+            61: SnowflakeInstance   # Snowflake Instance
         }
 
         commcell_object = agent_object._commcell_object

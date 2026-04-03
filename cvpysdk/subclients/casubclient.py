@@ -52,6 +52,7 @@ class CloudAppsSubclient(Subclient):
         from .cloudapps.azure_cosmosdb_subclient import AzureCosmosDBSubclient
         from .cloudapps.powerbi_subclient import PowerBISubclient
         from .cloudapps.pinecone_subclient import PineConeSubclient
+        from .cloudapps.snowflake_subclient import SnowflakeSubclient
 
         instance_types = {
             1: GoogleSubclient,
@@ -77,7 +78,8 @@ class CloudAppsSubclient(Subclient):
             40: CloudDatabaseSubclient,  # MongoDB Atlas
             51: AzureCosmosDBSubclient,  # Azure Cosmos DB MongoDBAPI Instance
             58: PineConeSubclient,  # PineCone Subclient
-            60: PowerBISubclient    # Power Platform PowerBi Subclient
+            60: PowerBISubclient,    # Power Platform PowerBi Subclient
+            61: SnowflakeSubclient   # Snowflake Subclient
         }
 
         cloud_apps_instance_type = backupset_object._instance_object._properties[

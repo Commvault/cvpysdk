@@ -69,6 +69,8 @@ Instances:
 
     add_cosmosdb_instance()         --  Method to add new cosmosdb instance
 
+    add_snowflake_instance()        --  Method to add new snowflake instance
+
     add_atlas_instance ()           --  Method to add new MongoDB Atlas Instance
 
     _set_general_properties_json()  --  setter for general cloud properties while adding a new
@@ -2099,6 +2101,89 @@ class Instances(object):
                     error_code = response_data.get('errorCode', '')
                     o_str = 'Failed to create instance\nError: "{0}" (Code: {1})'.format(error_string, error_code)
                     raise SDKException('Instance', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+
+    def add_snowflake_instance(self, instance_name, plan_name, sf_client_credential_name, db_names):
+        """Add a new Snowflake Cloud Apps instance to the Commcell.
+
+        Creates a Snowflake instance using the V4 AI API.
+        The caller provides plain database name strings which are internally
+        wrapped into the CloudDBEntity XML format.
+
+        Args:
+            instance_name (str):               Name for the new Snowflake instance.
+            plan_name (str):                   Name of the plan to associate with the instance.
+            sf_client_credential_name (str):   Name of the Snowflake client_credential entity.
+                                               Velocity workloads use the same entity for both credential and client.
+                                               It's id and name are used as the "account" field in the API payload
+                                               (ref : fetching entity details from servers page in CC)
+
+            db_names (list):                   List of Snowflake database name strings to
+                                               back up, e.g. ["MY_DB", "ANOTHER_DB"].
+
+        Returns:
+            Instance: The newly created Snowflake instance object.
+
+        Raises:
+            SDKException: If the plan or credential does not exist, if instance
+                          creation fails, or the server returns an error.
+        """
+        from .subclients.cloudapps.snowflake_subclient import SnowflakeSubclient
+
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException(
+                'Instance', '102',
+                'Plan "{0}" does not exist in the Commcell'.format(plan_name)
+            )
+
+        if not self._commcell_object.credentials.has_credential(sf_client_credential_name):
+            raise SDKException(
+                'Instance', '102',
+                'Credential "{0}" does not exist in the Commcell'.format(sf_client_credential_name)
+            )
+
+        plan = self._commcell_object.plans.get(plan_name)
+        sf_client_cred = self._commcell_object.clients.get(sf_client_credential_name)
+
+        content = SnowflakeSubclient._build_content_xml(db_names)
+
+        request_json = {
+            "instanceName": instance_name,
+            "instanceType": "SNOWFLAKE",
+            "plan": {
+                "id": int(plan.plan_id),
+                "name": plan_name
+            },
+            "account": {
+                "id": int(sf_client_cred.client_id),
+                "name": sf_client_credential_name
+            },
+            "content": [content]
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['ADD_SNOWFLAKE_INSTANCE'], request_json
+        )
+
+        if flag:
+            if response.json():
+                response_data = response.json()
+                if 'id' in response_data and 'name' in response_data:
+                    self.refresh()
+                    return self.get(response_data['name'])
+                elif 'errorMessage' in response_data:
+                    raise SDKException(
+                        'Instance', '102',
+                        'Failed to create Snowflake instance\nError: "{0}"'.format(
+                            response_data['errorMessage']
+                        )
+                    )
                 else:
                     raise SDKException('Response', '102')
             else:

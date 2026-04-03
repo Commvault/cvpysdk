@@ -277,8 +277,12 @@ class ServiceCommcells:
         if not cc_url.endswith("/commandcenter"):
             cc_url = cc_url.rstrip('/')
             cc_url += '/commandcenter'
-        if not cc_url.startswith("https://") or cc_url.startswith("http://"):
-            cc_url = "http://" + cc_url
+
+        # only https is allowed
+        if cc_url.startswith("http://"):
+            cc_url = "https://" + cc_url[len("http://"):]
+        elif not cc_url.startswith("https://"):
+            cc_url = "https://" + cc_url
 
         payload = {
             "serviceCommcelWebconsoleUrl": cc_url,

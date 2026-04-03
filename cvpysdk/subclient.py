@@ -3563,7 +3563,7 @@ class Subclient(object):
         else:
             options = kwargs
 
-        options['_subclient_id'] = self._subclient_id
+        options['_subclient_id'] = kwargs.get('subclient_id', self._subclient_id)
 
         return self._backupset_object.browse(options)
 

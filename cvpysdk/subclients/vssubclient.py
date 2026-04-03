@@ -1549,7 +1549,8 @@ class VirtualServerSubclient(Subclient):
             to_date=0,
             copy_precedence=0,
             vm_files_browse=False,
-            media_agent=""):
+            media_agent="",
+            *args, **kwargs):
         """Gets the content of the backup for this subclient
                 at the path specified in the time range specified.
 
@@ -1618,7 +1619,7 @@ class VirtualServerSubclient(Subclient):
             show_deleted=show_deleted_files, restore_index=restore_index,
             vm_disk_browse=vm_disk_browse,
             from_time=from_date, to_time=to_date, copy_precedence=copy_precedence,
-            path=vm_path, vs_file_browse=vm_files_browse, media_agent=media_agent)
+            path=vm_path, vs_file_browse=vm_files_browse, media_agent=media_agent, *args, **kwargs)
         if not vm_ids:
             for key, val in browse_content[1].items():
                 vm_ids[val['snap_display_name']] = val['name']
@@ -1706,7 +1707,8 @@ class VirtualServerSubclient(Subclient):
             from_date=0,
             to_date=0,
             copy_precedence=0,
-            media_agent=""):
+            media_agent="",
+            *args, **kwargs):
         """Browses the Files and Folders inside a Virtual Machine in the time
            range specified.
 
@@ -1766,7 +1768,7 @@ class VirtualServerSubclient(Subclient):
         """
         return self.browse_in_time(
             vm_path, show_deleted_files, restore_index, False, from_date, to_date, copy_precedence,
-            vm_files_browse=True, media_agent=media_agent)
+            vm_files_browse=True, media_agent=media_agent, *args, **kwargs)
 
     def _check_folder_in_browse(
             self,
@@ -1775,7 +1777,8 @@ class VirtualServerSubclient(Subclient):
             from_date,
             to_date,
             copy_precedence,
-            media_agent):
+            media_agent,
+            *args, **kwargs):
         """
         Check if the particular folder is present in browse of the subclient
         in particular VM
@@ -1819,7 +1822,7 @@ class VirtualServerSubclient(Subclient):
 
         _browse_files, _browse_files_dict = self.guest_files_browse(
             _source_path, from_date=from_date, to_date=to_date,
-            copy_precedence=copy_precedence, media_agent=media_agent)
+            copy_precedence=copy_precedence, media_agent=media_agent, *args, **kwargs)
 
         for _path in _browse_files_dict:
             _browse_folder_name = _path.split("\\")[-1]
@@ -1905,7 +1908,9 @@ class VirtualServerSubclient(Subclient):
                     from_date,
                     to_date,
                     copy_precedence,
-                    media_agent=browse_ma
+                    media_agent=browse_ma,
+                    subclient_id = kwargs.get('subclient_id', self._subclient_id)
+
                 )
             else:
                 # Converting native path to VM path

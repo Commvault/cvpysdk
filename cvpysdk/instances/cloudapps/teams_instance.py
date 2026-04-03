@@ -148,28 +148,19 @@ class TeamsInstance(CloudAppsInstance):
             refresh_cache = False
 
             if flag:
+                resp = response.json() if response.text else {}
+                if 'userAccounts' in resp:
+                    self.discovered_users = {team['smtpAddress']: team for team in resp['userAccounts']}
+                    return self.discovered_users
+                elif 'groups' in resp:
+                    self.discovered_users = {team['name']: team for team in resp['groups']}
+                    return self.discovered_users
+                # Empty or unexpected response - retry (team may still be provisioning)
+                if retry == max_retries - 1:
+                    raise SDKException('Response', '102', 'Please check Azure app details associated with client. Discovery has returned invalid response')
 
-                if response.json():
-                    resp = response.json()
-                    if 'userAccounts' in resp:
-                        self.discovered_users = {team['smtpAddress']: team for team in resp['userAccounts']}
-                        return self.discovered_users
-                    elif 'groups' in resp:
-                        self.discovered_users = {team['name']: team for team in resp['groups']}
-                        return self.discovered_users
-                    elif not resp:
-                        if retry == max_retries - 1:
-                            raise SDKException('Response', '102', 'Please check Azure app details associated with client. Discovery has returned invalid response')
-                        time.sleep(30)
-                        continue
-
-                    if retry == max_retries-1:
-                        raise SDKException('Response', '102', 'Please check Azure app details associated with client. Discovery has returned invalid response')
-
-                    time.sleep(30)
-                    continue  # TO AVOID RAISING EXCEPTION
-
-                raise SDKException('Response', '102', 'Please check Azure app details associated with client. Discovery has returned invalid response')
+                time.sleep(30 * (retry + 1))
+                continue
 
             if response.json():
                 response_string = self._commcell_object._update_response_(response.text)
