@@ -72,14 +72,12 @@ Classes:
 
         Methods:
             __init__()              - Initialize the AzureConnections manager.
-            add_express_connection() - Add a new Azure express connection.
+            add_connection()        - Add a new Azure connection (express or custom).
             delete_connection()     - Delete an existing Azure connection.
             get_connection()        - Get an Azure connection by name.
             has_connection()        - Check if an Azure connection exists.
             refresh()               - Refresh the Azure connections cache.
             _get_all_connections()  - Retrieve all Azure connections from the backend.
-            add_custom_connection() - Add a new connection with the specified credential and configuration.
-            _get_configs()          - Get all configuration name-value pairs for this connection.
 
         Properties:
             all_connections         - Get all Azure connections managed by this instance.
@@ -106,7 +104,7 @@ Classes:
 
         Methods:
             __init__()              - Initialize the AWSConnections manager.
-            add_express_connection() - Add a new AWS express connection.
+            add_connection()        - Add a new AWS cloud connection.
             delete_connection()     - Delete an existing AWS connection.
             get_connection()        - Get an AWS connection by name.
             has_connection()        - Check if an AWS connection exists.
@@ -119,12 +117,13 @@ Classes:
             all_connections         - Get all AWS connections managed by this instance.
 """
 from abc import ABC, abstractmethod
-from cvpysdk.clouddiscovery import constants as cs
 from typing import Dict, Optional, TYPE_CHECKING, List, Any
-from .constants import AssetProvider, AZURE_CUSTOM, AWS, AZURE, AWS_EXPRESS_CONNECTION_PAYLOAD, \
-    AWS_EXPRESS_CONNECTION_PAYLOAD, AZURE_EXPRESS_CONNECTION_PAYLOAD, AWS_CONNECTION_TYPE_ORG, AzureConfigType
+from .constants import AssetProvider, AZURE_CUSTOM, AWS, AZURE, AZURE_EXPRESS, AWS_EXPRESS_CONNECTION_PAYLOAD, \
+    AWS_EXPRESS_CONNECTION_PAYLOAD, AZURE_EXPRESS_CONNECTION_PAYLOAD, AWS_CONNECTION_TYPE_ORG, AzureConfigType, \
+    AWS_CLOUD_CONNECTION_CRED
 from .resources import DiscoveredResource
 from ..exception import SDKException
+
 if TYPE_CHECKING:
     from ..commcell import Commcell
 
@@ -210,9 +209,9 @@ class Connections(ABC):
         pass
 
     @abstractmethod
-    def add_express_connection(self, connection_name: str, account_id: str, connection_type: str,
-                               regions: list, accounts: list, discoverAllAccounts: bool) -> Connection:
-        """Add a new express connection."""
+    def add_connection(self, connection_name: str, connection_type: str,
+                       **kwargs) -> Connection:
+        """Add a new connection with connection-specific parameters."""
         pass
 
 
@@ -251,11 +250,11 @@ class AzureConnection(Connection):
         return self._config_type
 
     @property
-    def credential_id(self) -> int:
+    def credential_id(self) -> Optional[int]:
         """Get the credential ID for this connection.
 
         Returns:
-            The credential ID.
+            The credential ID, or None if not available for this config type.
         """
         return self._commcell.credentials.get(self._credential_name).credential_id
 
@@ -358,35 +357,12 @@ class AzureConnections(Connections):
             raise SDKException('Connections', '103')
 
         connection = self.get_connection(connection_name)
-        if connection.config_type == AzureConfigType.EXPRESS:
-            url = self._services['RETIRE'] % connection.connection_id
-            flag, response = self._cvpysdk_object.make_request('DELETE', url=url)
-            if flag and response.json() and response.json().get('errorCode') == 0:
-                self.refresh()
-                return True
-            raise SDKException('Connections', '102')
-        else:
-            if self.has_connection(connection_name):
-                requests_json = {
-                    "credentials": [
-                        {
-                            "id": self._commcell.credentials.get(connection_name).credential_id,
-                            "operation": "DELETE"
-                        }
-                    ]
-                }
-                request = self._services['CONFIGURE_DISCOVERY']
-                flag, response = self._cvpysdk_object.make_request('PUT', request, requests_json)
-                if flag:
-                    if response.json():
-                        if response.json().get('errorCode') == 0:
-                            self.refresh()
-                            return True
-                    raise SDKException('Response', '102')
-                else:
-                    raise SDKException('Response', '101', self._update_response_(response.text))
-            else:
-                raise SDKException('Connections', '103')
+        url = self._services['RETIRE'] % connection.connection_id
+        flag, response = self._cvpysdk_object.make_request('DELETE', url=url)
+        if flag and response.json() and response.json().get('response', {}).get('errorCode', 0) == 0:
+            self.refresh()
+            return True
+        raise SDKException('Connections', '102')
 
     def refresh(self) -> None:
         """Refresh the Azure connections cache by fetching the latest data."""
@@ -398,61 +374,65 @@ class AzureConnections(Connections):
         Returns:
             List[Dict[str, str]]: A list of dictionaries containing Azure cloud connection details.
         """
-        request = self._services['CONFIGURE_DISCOVERY']
+        request = self._services['GET_AZURE_CLOUD_CONNECTIONS']
         flag, response = self._cvpysdk_object.make_request('GET', request)
         if flag:
-            if response.json():
-                if response.json().get('errorCode') == 0:
-                    credentials = response.json().get('credentials', [])
-                    if not credentials:
-                        return []
-                    return [
-                        AzureConnection(
-                            self._commcell,
-                            credential.get('name'),
-                            credential.get('id'),
-                            config_type=credential.get('configType')
-                        )
-                        for credential in credentials
-                    ]
-            raise SDKException('Response', '102')
+            if response.json().get('errorCode', 0) == 0:
+                cloud_connections = response.json().get('cloudConnections', [])
+                if not cloud_connections:
+                    return []
+                return [
+                    AzureConnection(
+                        self._commcell,
+                        connection.get('displayName'),
+                        connection.get('id'),
+                        config_type=connection.get('configType')
+                    )
+                    for connection in cloud_connections
+                ]
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def add_express_connection(
+    def add_connection(
             self,
             connection_name: str,
+            connection_type: str,
             credential_id: int,
-            tenant_id: str,
-            tenant_name: str,
+            tenant_id: str = None,
+            tenant_name: str = None,
             environment: str = "AzureCloud",
             discover_all_subscription: bool = True,
-            assign_reader_role: bool = False
+            start_discovery: bool = True,
+            subscriptions: Optional[list[dict]] = None
     ) -> Connection:
         """Add a new Azure cloud connection with the specified parameters.
 
         Args:
             connection_name (str): Unique identifier for the connection.
+            connection_type (str): Type of the connection (e.g., "Express", "Custom").
             credential_id (int): Credential ID for the Azure connection.
             tenant_id (str): Azure tenant ID.
             tenant_name (str): Azure tenant name.
             environment (str, optional): Azure environment (default: "AzureCloud").
             discover_all_subscription (bool, optional): Whether to discover all subscriptions (default: True).
-            assign_reader_role (bool, optional): Whether to assign the reader role (default: False).
+            start_discovery (bool, optional): Start discovery job (default: True).
+            subscriptions (Optional[list[dict]]): List of dictionaries containing subscription details
 
         Returns:
             Connection: The newly created Connection object.
 
         Example:
-            >>> instance = Connections()
-            >>> conn = instance.add_express_connection(
+            >>> instance = AzureConnections(commcell)
+            >>> conn = instance.add_connection(
             ...     connection_name="azure_connection_1",
+            ...     connection_type="azure",
             ...     credential_id=12345,
             ...     tenant_id="2838672e-50ba-4f26-9a23-5aa12d24e499",
             ...     tenant_name="azureuser1@commvault365.onmicrosoft.com",
             ...     environment="AzureCloud",
-            ...     discover_all_subscription=True,
-            ...     assign_reader_role=False
+            ...     discover_all_subscription=False,
+            ...     assign_reader_role=False,
+            ...     subscriptions=[{"name": "subscriptionname", "id": "11111111111111"}]
             ... )
             >>> print(conn.connection_id)
             123
@@ -460,12 +440,30 @@ class AzureConnections(Connections):
 
         payload = AZURE_EXPRESS_CONNECTION_PAYLOAD.copy()
         payload["name"] = connection_name
+        payload["startDiscoveryJob"] = start_discovery
         payload["credentials"]["credentialId"] = credential_id
-        payload["cloudSpecificConfiguration"]["azure"]["tenantId"] = tenant_id
-        payload["cloudSpecificConfiguration"]["azure"]["tenantName"] = tenant_name
+
         payload["cloudSpecificConfiguration"]["azure"]["environment"] = environment
-        payload["cloudSpecificConfiguration"]["azure"]["discoverAllSubscription"] = discover_all_subscription
-        payload["cloudSpecificConfiguration"]["azure"]["assignReaderRole"] = assign_reader_role
+        if discover_all_subscription:
+            payload["cloudSpecificConfiguration"]["azure"]["discoverAllSubscription"] = discover_all_subscription
+        else:
+            if subscriptions is None:
+                raise SDKException('Connections', '101',
+                                   "subscriptions parameter is required when not discovering all subscriptions.")
+
+            payload["cloudSpecificConfiguration"]["azure"]["subscriptions"] = subscriptions
+
+        if connection_type.lower() == AZURE_EXPRESS.lower():
+            if not tenant_id or not tenant_name:
+                raise SDKException('Connections', '101',
+                                   "tenant_id and tenant_name are required for Express connection.")
+            payload["cloudSpecificConfiguration"]["azure"]["tenantId"] = tenant_id
+            payload["cloudSpecificConfiguration"]["azure"]["tenantName"] = tenant_name
+        elif connection_type.lower() == AZURE_CUSTOM.lower():
+            payload["cloudSpecificConfiguration"]["azure"]["isCustomConfig"] = True
+        else:
+            raise SDKException('Connections', '101',
+                               "Invalid connection type specified. Must be 'Express' or 'Custom'.")
 
         url = self._services['ADD_EXPRESS_CONNECTION']
         flag, response = self._cvpysdk_object.make_request('POST', url=url, payload=payload)
@@ -473,106 +471,10 @@ class AzureConnections(Connections):
         if flag:
             if response.json() and 'id' in response.json():
                 connection_id = response.json().get('id', None)
+                self.refresh()
                 return AzureConnection(self._commcell, connection_name, connection_id)
             else:
                 raise SDKException('Connections', '107')
-        else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
-
-    def add_custom_connection(
-            self,
-            credential_name: str,
-            config_list: Optional[List[str]] = None,
-            include_all_configs: bool = False,
-    ) -> AzureConnection:
-        """Add a new connection with the specified credential and configuration.
-
-        Args:
-            credential_name: Unique identifier for the credential
-            config_list: Configuration parameters for the connection (default: empty list)
-            include_all_configs: Whether to include all available configurations (default: False)
-
-        Returns:
-            The newly created Connection object
-
-        Example:
-            >>> instance = Connections()
-            >>> conn = instance.add_custom_connection("cred_123", config_list=["US East (N. Virginia)", "US East (Ohio)"])
-            >>> print(conn.credential_id)
-            123
-
-        Raises:
-            SDKException:
-                        Response was not success
-        """
-        if not isinstance(credential_name, str):
-            raise SDKException('Connections', '101', "Credential name must be a string.")
-        if not config_list and not include_all_configs:
-            raise SDKException('Connections', '101', "Either config_list or include_all_configs must be provided.")
-        cred_id = self._commcell.credentials.get(credential_name).credential_id
-        requests_json = {
-            "credentials": [
-                {
-                    "id": cred_id,
-                    "operation": "ADD"
-                }
-            ]
-        }
-
-        if not include_all_configs:
-            discovery_criteria = self._get_configs(cred_id)
-            discovery_criteria_config = [
-                {"name": detail["name"], "value": detail["value"]}
-                for detail in discovery_criteria.get("details", [])
-                if detail["name"] in config_list
-            ]
-            requests_json["configProperties"] = [
-                {
-                    "credentialId": cred_id,
-                    "discoveryCriteria": {"details": discovery_criteria_config},
-                }
-            ]
-
-        request = self._services['CONFIGURE_DISCOVERY']
-        flag, response = self._cvpysdk_object.make_request(
-            'PUT', request, requests_json
-        )
-        if flag:
-            if response.json():
-                if response.json().get('errorCode') == 0:
-                    return AzureConnection(self._commcell, credential_name, cred_id, AzureConfigType.CUSTOM)
-                else:
-                    raise SDKException('Connections', '107')
-            raise SDKException('Response', '102')
-        else:
-            raise SDKException('Response', '101', self._update_response_(response.text))
-
-    def _get_configs(self, credential_id) -> List[Dict[str, str]]:
-        """Get all configuration name-value pairs (regions/subscriptions) for this connection.
-
-        Returns:
-            Dictionary containing configuration key-value pairs
-
-        Raises:
-            SDKException:
-                        Response was not success
-
-        Example:
-            >>> azure_connection = AzureConnection(commcell)
-            >>> configs = azure_connection.get_configs()
-            >>> print(configs)
-            [{'region': 'us-east-1'}, {'region': 'us-west-2'}]
-        """
-        url = self._services['CLOUD_DISCOVERY_CRITERIA'] % credential_id
-        flag, response = self._cvpysdk_object.make_request('GET', url=url)
-        if flag:
-            if response.json():
-                if not response.json().get('errorMessage', None):
-                    if response.json().get('discoveryCriteria', {}):
-                        return response.json().get('discoveryCriteria')
-                    else:
-                        raise SDKException("Connections", "101", "No discovery criteria found for the given connection.")
-            raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
@@ -586,13 +488,13 @@ class AWSConnection(Connection):
 
         Args:
             commcell: The Commcell object for API operations.
-            credential_name: Unique identifier for the credential.
-            connection_id: The connection ID for the AWS connection (optional).
+            connection_name (str): Unique display name for the connection.
+            connection_id (int): The unique connection ID returned by the API.
         """
         super().__init__(commcell, connection_name, AssetProvider.AWS)
         self._connection_id = connection_id
         self._commcell = commcell
-        self._credential_name = cs.AWS_CLOUD_CONNECTION_CRED % connection_name
+        self._credential_name = AWS_CLOUD_CONNECTION_CRED % connection_name
         self._connection_name = connection_name
         self._cvpysdk_object = self._commcell._cvpysdk_object
         self._services = self._commcell._services
@@ -600,10 +502,10 @@ class AWSConnection(Connection):
 
     @property
     def connection_id(self) -> Optional[int]:
-        """Get the AWS account ID for this connection.
+        """Get the connection ID for this AWS connection.
 
         Returns:
-            The AWS account ID if applicable, None otherwise.
+            The connection ID if available, None otherwise.
         """
         return self._connection_id
 
@@ -665,9 +567,9 @@ class AWSConnection(Connection):
             SDKException: If the response was not successful.
 
         Example:
-            >>> connection = Connections().get_connection("cred123")
-            >>> aws_details = connection._get_aws_connection_details()
-            >>> print(aws_details)
+            >>> aws_connection = AWSConnection(commcell, "my_conn", 12345)
+            >>> details = aws_connection.connection_details
+            >>> print(details)
             {'account_id': '123456789012', 'regions': ['us-east-1', 'us-west-2']}
         """
         return self._get_aws_connection_details(self._connection_id)
@@ -694,7 +596,7 @@ class AWSConnection(Connection):
         flag, response = self._cvpysdk_object.make_request('GET', url=url)
         if flag:
             if response.json():
-                if not response.json().get('errorMessage', None):
+                if response.json().get('errorCode', 0) == 0:
                     return response.json()
                 else:
                     raise SDKException("Connections", "106")
@@ -763,9 +665,9 @@ class AWSConnections(Connections):
         self.refresh()
         return self._connections
 
-    def add_express_connection(self, connection_name: str, account_id: str, connection_type: str,
-                               regions: Optional[str] = None, accounts: Optional[list] = None,
-                               discoverAllAccounts: bool = True) -> AWSConnection:
+    def add_connection(self, connection_name: str, account_id: str, connection_type: str,
+                       regions: Optional[str] = None, accounts: Optional[list[dict]] = None,
+                       discoverAllAccounts: bool = False, start_discovery: bool = True) -> AWSConnection:
         """
         Add a new AWS cloud connection with the specified parameters.
 
@@ -777,8 +679,9 @@ class AWSConnections(Connections):
                     - "CloudAccountLevel": Connection at the account level.
                     - "OrganizationLevel": Connection at the organization level.
             regions (str): List of AWS regions to include. | "us-east-1,ap-southeast-2"
-            accounts (list): List of AWS accounts for organization-level connections. Defaults to an empty list.
-            discoverAllAccounts (bool): Whether to discover all accounts in the organization. Defaults to True.
+            accounts (list[dict]): List of AWS accounts for organization-level connections. Defaults to an empty list.
+            start_discovery (bool, optional): Start discovery job (default: True).
+            discoverAllAccounts (bool): Whether to discover all accounts in the organization. Defaults to False.
 
         Returns:
             AWSConnection: The created AWS connection object.
@@ -788,13 +691,16 @@ class AWSConnections(Connections):
                 connection_name="MyAWSConnection",
                 account_id="123456789012",
                 connection_type="CloudAccountLevel",
-                regions="us-east-1,us-west-2"
+                regions="us-east-1,us-west-2",
+                accounts= [{"accountId": "123456789012", "accountName": "Account1"},
+                        {"accountId": "987654321098", "accountName": "Account2"}]
             )
         """
         payload = AWS_EXPRESS_CONNECTION_PAYLOAD.copy()
         if not self._validate_aws_cloud_connection(account_id, connection_type):
             raise SDKException('Connections', '105')
         payload["name"] = connection_name
+        payload["startDiscoveryJob"] = start_discovery
         payload["connectionType"] = connection_type
         payload["cloudSpecificConfiguration"]["aws"]["regions"] = regions
         payload["cloudSpecificConfiguration"]["aws"]["iamRoleAccountId"] = account_id
@@ -847,9 +753,8 @@ class AWSConnections(Connections):
         url = self._services['VALIDATE_AWS_CONNECTION']
         flag, response = self._cvpysdk_object.make_request('POST', url=url, payload=payload)
         if flag:
-            if response.json():
-                if response.json().get('errorCode') == 0:
-                    return True
+            if response.json().get('errorCode', 0) == 0:
+                return True
             raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
@@ -892,7 +797,7 @@ class AWSConnections(Connections):
         if connection:
             url = self._services['RETIRE'] % connection.connection_id
             flag, response = self._cvpysdk_object.make_request('DELETE', url=url)
-            if flag and response.json().get('errorCode') == 0:
+            if flag and response.json().get('errorCode', 0) == 0:
                 self.refresh()
                 return True
             raise SDKException('Response', '102')
@@ -902,7 +807,6 @@ class AWSConnections(Connections):
         """Refresh the AWS connections cache by fetching the latest data."""
         self._connections = self._get_all_connections()
         self._commcell.credentials.refresh()
-
 
     def _get_aws_cloud_connections(self) -> List[Dict[str, str]]:
         """Get all AWS cloud connections as name-value pairs.

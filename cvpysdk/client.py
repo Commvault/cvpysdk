@@ -11802,6 +11802,33 @@ class Client(object):
         else:
             raise SDKException('Response', '101', response.text)
 
+    def get_mongodb_config(self, refresh: bool = False) -> Dict[str, Any]:
+        """Retrieve the MongoDB configuration details for this client.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing MongoDB configuration details for the client.
+
+        Raises:
+            SDKException: If the configuration cannot be retrieved or the response is invalid.
+
+        Example:
+            >>> client = Client(...)
+            >>> mongodb_config = client.get_mongodb_config()
+            >>> print(mongodb_config)
+        """
+        url = self._services['MONGODB_CLIENT_CONFIG'] % self.client_id + "?refresh={0}".format(str(refresh).lower())
+        flag, response = self._cvpysdk_object.make_request(
+            "GET",url
+        )
+        if not flag:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        if not response.json():
+            raise SDKException('Response', '102')
+
+        return response.json()
+
 class _Readiness:
     """
     Class for assessing and reporting the readiness status of a client connection.

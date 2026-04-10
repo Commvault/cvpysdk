@@ -22,6 +22,15 @@ RESOURCE_GROUP_PAYLOAD_MANUAL = {
               }
             }
 
+RESOURCE_GROUP_PAYLOAD_MANUAL_UPDATE = {
+    "serverGroup":{"id":0,"name":""},
+    "serverGroupType":"MANUAL",
+    "manualAssociation":{
+        "associatedservers":[
+            ]
+            }
+            }
+
 RESOURCE_GROUP_PAYLOAD_AUTOMATIC = {
     "name": "",
     "serverGroupType": "AUTOMATIC",

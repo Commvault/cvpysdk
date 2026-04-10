@@ -297,3 +297,12 @@ class PineConeInstance(CloudAppsInstance):
         #ai-gen-doc
         """
         return self._proxy_client
+
+    @property
+    def ca_instance_type(self) -> Optional[str]:
+        """Get the cloud apps instance type for this Pinecone instance.
+
+        Returns:
+            The instance type string, or None if not configured.
+        """
+        return self._ca_instance_type

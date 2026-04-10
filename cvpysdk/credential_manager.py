@@ -159,6 +159,7 @@ class Credentials(object):
         self._commcell_object = commcell_object
         self._services = commcell_object._services
         self._credentials = self._get_credentials()
+        self._vaults = self._get_credential_vaults()
         self.record_type = {
             'windows': 1,
             'linux': 2
@@ -250,6 +251,47 @@ class Credentials(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+
+    def _get_credential_vaults(self) -> Dict[str, int]:
+        """Retrieve the credential vaults configured on this Commcell.
+
+        This method fetches all credential vaults from the Commcell and returns a dictionary
+        mapping vault names (in lowercase) to their corresponding vault IDs.
+
+        Returns:
+            Dictionary where keys are vault names (str) and values are vault IDs (int).
+
+        Raises:
+            Exception: If the response from the Commcell is not successful.
+
+        Example:
+            >>> credentials = Credentials(commcell_object)
+            >>> vaults_dict = credentials._get_credential_vaults()
+            >>> print(vaults_dict)
+            >>> # Output: {'azure': 101, 'delinea': 102}
+
+        #ai-gen-doc
+        """
+        get_all_credential_service = self._services['ALL_CREDENTIAL_VAULTS']
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', get_all_credential_service
+        )
+
+        if flag:
+            credentials_dict = {}
+            if response.json() and 'credentialManager' in response.json():
+
+                for credential in response.json()['credentialManager']:
+                    temp_id = credential['id']
+                    temp_name = credential['name'].lower()
+                    credentials_dict[temp_name] = temp_id
+
+            return credentials_dict
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     @property
     def all_credentials(self) -> Dict[str, int]:
         """Get all credentials present in the Commcell.
@@ -268,6 +310,25 @@ class Credentials(object):
         #ai-gen-doc
         """
         return self._credentials
+
+    @property
+    def all_credential_vaults(self) -> Dict[str, int]:
+        """Get all vaults present in the Commcell.
+
+        Returns:
+            List of dictionaries, each containing details of a vault.
+
+        Example:
+            >>> credentials = Credentials(commcell_object)
+            >>> all_vaults= credentials.all_credential_vaults  # Use dot notation for property access
+            >>> print(f"Total vaults found: {len(all_vaults)}")
+            >>> # Access details of the first credential
+            >>> if all_vaults:
+            >>>     print(f"First vault details: {all_vaults}")
+
+        #ai-gen-doc
+        """
+        return self._vaults
 
     def has_credential(self, credential_name: str) -> bool:
         """Check if a credential with the specified name exists on this Commcell.
@@ -293,6 +354,31 @@ class Credentials(object):
             raise SDKException('Credentials', '101')
 
         return self._credentials and credential_name.lower() in self._credentials
+
+    def has_credential_vault(self, vault_name: str) -> bool:
+        """Check if a vault with the specified name exists on this Commcell.
+
+        Args:
+            vault_name: The name of the vault to check for existence.
+
+        Returns:
+            True if the specified vault is present on the Commcell, False otherwise.
+
+        Raises:
+            SDKException: If the data type of the input is invalid.
+
+        Example:
+            >>> credentials = Credentials(commcell_object)
+            >>> exists = credentials.has_credential_vault("BackupAdmin")
+            >>> print(f"Vaults exists: {exists}")
+            >>> # Output: Vault exists: True or False
+
+        #ai-gen-doc
+        """
+        if not isinstance(vault_name, str):
+            raise SDKException('Credentials', '101')
+
+        return self._vaults and vault_name.lower() in self._vaults
 
     def get(self, credential_name: str) -> 'Credential':
         """Retrieve the Credential object for the specified credential name.
@@ -430,7 +516,7 @@ class Credentials(object):
 
         #ai-gen-doc
         """
-        if not self.has_credential(credential_name):
+        if not (self.has_credential(credential_name) or self.has_credential_vault(credential_name)):
             raise SDKException(
                 'Credential', '102', "credential {0} doesn't exists on this commcell.".format(
                     credential_name)

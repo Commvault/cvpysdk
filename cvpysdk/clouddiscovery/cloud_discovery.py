@@ -66,7 +66,6 @@ if TYPE_CHECKING:
     from ..credential_manager import Credentials
 
 
-
 class CloudDiscovery(ABC):
     """Base class for cloud discovery operations.
     
@@ -75,7 +74,7 @@ class CloudDiscovery(ABC):
     and credential management for cloud environments.
     """
 
-    def __init__(self, commcell:'Commcell') -> None:
+    def __init__(self, commcell: 'Commcell') -> None:
         """Initialize the CloudDiscovery instance.
         
         Args:
@@ -169,9 +168,10 @@ class CloudDiscovery(ABC):
         flag, response = self._cvpysdk_object.make_request('GET', url=url)
         if flag:
             if response.json():
-                if not response.json().get('errorMessage', None):
-                    if response.json().get('jobId', None):
-                        return response.json().get('jobId')
+                if response.json().get('errorCode', 0) == 0:
+                    job_id = response.json().get('jobId', None)
+                    if job_id:
+                        return job_id
                     else:
                         raise SDKException("Discovery", "101")
             raise SDKException('Response', '102')
@@ -303,4 +303,3 @@ class AWSDiscovery(CloudDiscovery):
             NotImplementedError: This method is not yet implemented
         """
         raise NotImplementedError("AWS cost estimation is not yet implemented")
-

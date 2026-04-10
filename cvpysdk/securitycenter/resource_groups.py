@@ -65,6 +65,8 @@ ResourceGroup:
 
     update_ti_plan(plan_name)      -- associates a Threat Intelligence plan with the resource group
 
+    update_manual_associations(clients) -- updates the client associations for the resource group
+
 ResourceGroup Attributes
 ------------------------
 
@@ -81,7 +83,7 @@ from enum import Enum
 from cvpysdk.clientgroup import ClientGroup, ClientGroups
 from cvpysdk.exception import SDKException
 from cvpysdk.securitycenter.constants import FQ_PARAMETERS, UPDATE_TI_PLAN_JSON, RESOURCE_GROUP_PAYLOAD_MANUAL, \
-    RESOURCE_GROUP_PAYLOAD_AUTOMATIC, FL_PARAMETERS
+    RESOURCE_GROUP_PAYLOAD_AUTOMATIC, FL_PARAMETERS, RESOURCE_GROUP_PAYLOAD_MANUAL_UPDATE
 
 
 class ResourceTypes(Enum):
@@ -244,7 +246,8 @@ class ResourceGroups():
             if self.has(resource_group_name):
                 return ResourceGroup(
                     self._commcell_object,
-                    resource_group_name
+                    resource_group_name,
+                    self._resource_groups[resource_group_name]
                 )
 
             raise SDKException(
@@ -322,27 +325,28 @@ class ResourceGroups():
 
         if flag:
             response_json = response.json()
-            if 'error' in response_json:
+            if 'serverGroupInfo' in response_json:
+                resource_group_id = response_json['serverGroupInfo'].get('id',0)
+                resource_group = ResourceGroup(self._commcell_object, resource_group_name, resource_group_id)
+                resource_group.update_ti_plan(plan_name)
+                self._commcell_object.client_groups.refresh()
+                return resource_group
+            elif 'error' in response_json:
                 error_code = response_json['error']['errorCode']
                 if error_code != 0:
                     error_message = response_json['error']['errorMessage']
-                    raise SDKException('ClientGroup', '102', error_message)
+                    raise SDKException('ResourceGroup', '102', error_message)
         else:
             response_json = response.json()
             if 'error' in response_json:
                 error_code = response_json['error']['errorCode']
                 if error_code != 0:
                     error_message = response_json['error']['errorMessage']
-                    raise SDKException('ClientGroup', '102', error_message)
+                    raise SDKException('ResourceGroup', '102', error_message)
 
             else:
                 raise SDKException('Response', '102', 'Invalid response received from server')
-
-        resource_group = ResourceGroup(
-            self._commcell_object, resource_group_name
-        )
-        resource_group.update_ti_plan(plan_name)
-        return resource_group
+       
 
     def delete(self, resource_group_name):
         """Deletes the specified resource group from the Commcell.
@@ -361,12 +365,13 @@ class ResourceGroups():
 
                     if response is not success
         """
-        self._commcell_object.client_groups.delete(resource_group_name)
+        self._commcell_object.client_groups.delete(resource_group_name)        
+        self.refresh()
 
 class ResourceGroup(ClientGroup):
     """Class for representing a single resource group."""
 
-    def __init__(self, commcell_object, resource_group_name):
+    def __init__(self, commcell_object, resource_group_name, resource_group_id=None):
         """Initializes an instance of the ResourceGroup class.
 
         Args:
@@ -379,7 +384,7 @@ class ResourceGroup(ClientGroup):
         super().__init__(commcell_object, resource_group_name)
         self._commcell_object = commcell_object
         self._resource_group_name = resource_group_name
-        self._resource_group_id = None
+        self._resource_group_id = resource_group_id
 
     def __repr__(self):
         """Returns a string representation of the ResourceGroup class instance.
@@ -426,16 +431,71 @@ class ResourceGroup(ClientGroup):
                 error_code = response_json['error']['errorCode']
                 if error_code != 0:
                     error_message = response_json['error']['errorMessage']
-                    raise SDKException('ClientGroup', '102', error_message)
+                    raise SDKException('ResourceGroup', '102', error_message)
         else:
             response_json = response.json()
             if 'error' in response_json:
                 error_code = response_json['error']['errorCode']
                 if error_code != 0:
                     error_message = response_json['error']['errorMessage']
-                    raise SDKException('ClientGroup', '102', error_message)
+                    raise SDKException('ResourceGroup', '102', error_message)
 
             else:
                 raise SDKException('Response', '102', 'Invalid response received from server')
+
+    def update_manual_associations(self, clients: list) -> None:
+        """Updates the client associations for the resource group.
+
+        Args:
+            clients (list): List of client names to associate with the resource group.
+
+        Returns:
+            None
+
+        Raises:
+            SDKException:
+                if type of clients is not of type list
+
+                if response is empty
+
+                if response is not success
+
+        Example:
+        
+            >>> rg = resource_groups.get('resource_group_1')
+            >>> rg.update_manual_associations(['client1', 'client2'])
+        """
+        if not isinstance(clients, list):
+            raise SDKException('ResourceGroup', '101')
+
+        # Build the request JSON
+        request_json = copy.deepcopy(RESOURCE_GROUP_PAYLOAD_MANUAL_UPDATE)
+        request_json['serverGroup']['id'] = int(self._resource_group_id)
+        request_json['serverGroup']['name'] = self._resource_group_name
+
+        # Add each client to the associatedservers list
+        for client in clients:
+            client = str(client)
+            request_json['manualAssociation']['associatedservers'].append(
+                {"id": int(self._commcell_object.clients.get(client).client_id)}
+            )
+
+        # Get the ServerGroup API endpoint
+        servergroup_url = self._commcell_object._services['SERVERGROUPS_V4'] + f"/{self._resource_group_id}"
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'PUT', servergroup_url, request_json
+        )
+
+        if flag:
+            response_json = response.json()
+            if 'errorCode' in response_json:
+                error_code = response_json['errorCode']
+                if error_code != 0:
+                    error_message = response_json['errorMessage']
+                    raise SDKException('ResourceGroup', '102', error_message)
+                return
+            raise SDKException('Response', '102', 'Failed to update client association to resource group')
+        raise SDKException('Response', '101', self._update_response_(response.text))
 
 

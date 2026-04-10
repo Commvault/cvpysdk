@@ -475,8 +475,8 @@ class DiscoveredResources:
                 "searchParams": [
                     {"key": "q", "value": QUERY},
                     {"key": "wt", "value": RESPONSE_FORMAT},
-                    {"key": "start", "value": start},
-                    {"key": "rows", "value": rows},
+                    {"key": "start", "value": f"{start}"},
+                    {"key": "rows", "value": f"{rows}"},
                     {"key": "fq", "value": ITEM_STATE},
                     {"key": "fq", "value": ASSET_SUB_TYPE},
                     {"key": "fq", "value": f"Provider:{self._asset_provider.value}"},
@@ -514,7 +514,7 @@ class DiscoveredResources:
                             )
                             for resource in resources_data
                         ])
-                        if len(resources_data) < rows or start + rows >= count:
+                        if start + rows >= count:
                             break
                         start += rows
                         rows = min(ROWS, count - start)

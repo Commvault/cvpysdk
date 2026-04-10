@@ -33,6 +33,8 @@ PineConeSubclient:
 
     _set_content()                      --  sets the content of the subclient
 
+    update_content_xml()                --  overwrites subclient content with a pre-built CloudDBEntity XML string
+
     browse()                            --  Browse and returns the content of this subclient's instance backups
 
     restore()                           --  Restores Pinecone data from the specified source and restore options
@@ -184,6 +186,35 @@ class PineConeSubclient(CloudAppsSubclient):
         else:
             raise SDKException(
                 'Subclient', '102', 'Subclient content should be a non-empty list'
+            )
+
+    def update_content_xml(self, cloud_db_entity_xml: str) -> None:
+        """Overwrite subclient content using a pre-built CloudDBEntity XML string.
+
+        Args:
+            cloud_db_entity_xml (str): Fully formed CloudDBEntity XML to set as content.
+
+        Raises:
+            SDKException: If the API request fails.
+        """
+        payload = {
+            "subClientProperties": {
+                "contentOperationType": "OVERWRITE",
+                "content": [{"path": cloud_db_entity_xml}],
+                "cloudAppsSubClientProp": {
+                    "instanceType": self._backupset_object._instance_object.ca_instance_type
+                }
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._SUBCLIENT, payload
+        )
+
+        if not flag:
+            raise SDKException(
+                'Subclient', '102',
+                f'Failed to update subclient content: {response}'
             )
 
     def browse(self, *args: Any, **kwargs: Any) -> dict:

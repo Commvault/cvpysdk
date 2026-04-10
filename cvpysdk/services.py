@@ -446,6 +446,7 @@ SERVICES_DICT_TEMPLATE = {
     'PERMISSIONS': '{0}V4/Permissions',
 
     'ALL_CREDENTIALS': '{0}/CommCell/Credentials?propertyLevel=30',
+    'ALL_CREDENTIAL_VAULTS': '{0}v4/Credential?recordType=1000',
     'ONE_CREDENTIAL': '{0}/CommCell/Credentials/%s?propertyLevel=30',
     'CREDENTIAL':   '{0}/Commcell/Credentials',
     'DELETE_RECORD': '{0}/Commcell/Credentials/action/delete',
@@ -804,9 +805,13 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_AWS_CLOUD_CONNECTIONS': '{0}/V4/Cloud/CloudConnection?vendor=aws',
 
+    'GET_AZURE_CLOUD_CONNECTIONS': '{0}/V4/Cloud/CloudConnection?vendor=azure',
+
     'GET_AWS_CONNECTION_DETAILS': '{0}/V4/Cloud/CloudConnection/%s',
 
     'GET_AWS_ORG_ACCOUNTS': '{0}/V4/Cloud/CloudConnection/%s/accounts',
+
+    'GET_DISCOVERY_SCHEDULES': '{0}/Schedules?seaDataSourceId=%s&operationType=5025',
 
     'SNMP': '{0}/V4/Snmp',
 
@@ -829,6 +834,8 @@ SERVICES_DICT_TEMPLATE = {
     'DRIVE_OPERATION': '{0}/DriveOperations',
 
     'VIEW_LOGS_BY_TRACE_ID': '{0}TraceId/%s/Logs',
+
+    "MONGODB_CLIENT_CONFIG": "{0}v4/clients/mongodb/%s/config"
 
 }
 

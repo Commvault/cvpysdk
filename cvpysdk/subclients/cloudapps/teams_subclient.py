@@ -641,7 +641,13 @@ class TeamsSubclient(CloudAppsSubclient):
         }
         if kwargs.get("restoreToBlob", False):
             _msTeamsRestoreOptions["restoreToBlob"] = True
-            _msTeamsRestoreOptions["blobContainerCredId"] = kwargs.get("blobContainerId")
+            _msTeamsRestoreOptions["blobContainerId"] = kwargs.get("blobContainerId")
+            _msTeamsRestoreOptions["containerCredentials"] = {
+                "savedCredential": {
+                    "credentialId": kwargs.get("blobContainerId"),
+                    "credentialName": kwargs.get("blobCredentialName")
+                }
+            }
         if kwargs.get("destination_team", None):
             _msTeamsRestoreOptions["destinationTeamInfo"] = {
                 "tabId": "",

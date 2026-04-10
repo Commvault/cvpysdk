@@ -42,6 +42,7 @@ class WorkloadType(IntEnum):
     DATABASE = 3
     SECURITY = 4
     APPLICATION = 5
+    EFS = 7
 
 
 class AssetType(IntEnum):
@@ -79,6 +80,7 @@ class AssetType(IntEnum):
     AMAZON_DOCUMENT_DB = 24
     AMAZON_ELASTIC_KUBERNETES_SERVICE = 29
     AMAZON_FSX_FILE_SYSTEM = 30
+    AMAZON_EFS = 47
 
     # Microsoft 365 Assets
     M365_ONEDRIVE_APP = 25
@@ -104,6 +106,7 @@ class AssetCVProtectionStatus(IntEnum):
     PROTECTION_CONFIGURED = 3
     PROTECTED = 4
     PROTECTION_FAILED = 5
+    PROTECTION_CONFIGURED_COMMVAULT = 6
 
 
 class AssetCVProtectedBY(IntEnum):
@@ -254,18 +257,18 @@ AWS_EXPRESS_CONNECTION_PAYLOAD = {
 
 AZURE_EXPRESS_CONNECTION_PAYLOAD = {
     "name": None,
+    "startDiscoveryJob": False,
     "cloudType": "azure",
     "credentials": {"credentialId": None},
     "cloudSpecificConfiguration": {
         "azure": {
-            "tenantId": None,
-            "tenantName": None,
+
             "environment": "AzureCloud",
-            "discoverAllSubscription": True,
-            "assignReaderRole": False
+            "discoverAllSubscription": False,
         }
     }
 }
+
 
 # Constants for AWS Cloud Connection
 
@@ -273,5 +276,6 @@ AWS_CLOUD_CONNECTION_CRED = "cloud-connection-%s-credential"
 AWS_CONNECTION_TYPE_ORG = "OrganizationLevel"
 AWS_CONNECTION_TYPE_SINGLE = "CloudAccountLevel"
 AZURE_CUSTOM = "azure_custom"
+AZURE_EXPRESS = "azure_express"
 AZURE = "azure"
 AWS = "aws"

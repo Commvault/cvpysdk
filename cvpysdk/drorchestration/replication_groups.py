@@ -374,6 +374,7 @@ class ReplicationGroup:
 
         self._subclient = None
         self._vm_pairs = None
+        self._replication_schedule = None
 
         self.refresh()
 
@@ -429,6 +430,8 @@ class ReplicationGroup:
 
         if flag:
             if response.json().get('replicationInfo', {}).get('replicationTargets', {}).get('taskInfo'):
+                if response.json().get('replicationInfo', {}).get('schedule', {}):
+                    self._replication_schedule = response.json().get('replicationInfo', {}).get('schedule')
                 return response.json().get('replicationInfo', {}).get('replicationTargets', {}).get('taskInfo')[0]
             if response.json().get('taskInfo'):
                 return response.json().get('taskInfo')
@@ -458,6 +461,14 @@ class ReplicationGroup:
     def task_id(self):
         """Returns: (str) Returns the ID of the task associated to the replication group"""
         return str(self._replication_group_properties.get('task', {}).get('taskId'))
+
+    @property
+    def schedule_task_id(self):
+        """Returns: (str) Returns the ID of the task associated to the replication group schedule"""
+        if self._replication_schedule:
+            return str(self._replication_schedule.get('task', {}).get('taskId'))
+        else:
+            return None
 
     @property
     def replication_type(self):

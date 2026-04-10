@@ -695,7 +695,8 @@ EXCEPTION_DICT = {
         '101': 'The response does not contain the discovery Job.Please verify the connection',
         '102': 'The response does not contain the discovery criteria.Please verify the connection',
         '103': 'Failed to get resources',
-        '104': 'Unsupported cloud type'
+        '104': 'Unsupported cloud type',
+        '105': 'The response does not contain the discovery schedule task ID. Please verify the datasource ID'
     },
     'Connections': {
         '101': '',

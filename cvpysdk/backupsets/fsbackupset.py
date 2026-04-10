@@ -710,7 +710,7 @@ class FSBackupset(Backupset):
 
         self._instance_object._restore_association = self._backupset_association
 
-        hwconfig, ipconfig, cs_username, cs_password = self._get_responsefile()
+        hwconfig, ipconfig, cs_username, cs_password, cs_token = self._get_responsefile()
         response_json = self._restore_json(paths=[''])
 
         restore_json_system_state = self._restore_bmr_admin_json(ipconfig, hwconfig)
