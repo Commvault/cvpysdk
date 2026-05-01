@@ -93,7 +93,6 @@ from __future__ import unicode_literals
 
 from ..instance import Instance
 from ..exception import SDKException
-from ..credential_manager import Credential
 from ..job import Job
 
 from typing import Optional, TYPE_CHECKING
@@ -167,8 +166,11 @@ class MYSQLInstance(Instance):
 
         #ai-gen-doc
         """
-        credential_name = self._properties.get('credentialEntity', {}).get('credentialName', None)
-        return Credential(self._commcell_object, credential_name).credential_user_name
+        if self.credentials:
+            credential_obj = self._commcell_object.credentials.get(self.credentials)
+            if credential_obj:
+                return credential_obj._credential_properties.get('userName')
+        return self._properties.get('mySqlInstance', {}).get('SAUser', {}).get('userName', None)
 
     @property
     def nt_username(self) -> str:

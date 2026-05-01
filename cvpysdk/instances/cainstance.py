@@ -57,7 +57,7 @@ from __future__ import unicode_literals
 from ..instance import Instance
 from ..exception import SDKException
 
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from ..agent import Agent
 
@@ -70,13 +70,105 @@ class CloudAppsInstance(Instance):
     including its association with a specific agent object, instance name, and instance ID.
     It provides a specialized constructor for creating new Cloud Apps agent instances.
 
-    Key Features:
-        - Represents a Cloud Apps agent instance
-        - Associates with an agent object, instance name, and instance ID
-        - Custom instantiation logic via __new__
+    Common cloud apps properties (instance type, proxy client, credential, plan, account)
+    are parsed here so that derived classes only need to handle workload-specific properties.
 
     #ai-gen-doc
     """
+
+    def __init__(self, agent_object, instance_name, instance_id=None):
+        """Initialize a CloudAppsInstance object.
+
+        Args:
+            agent_object: The agent object associated with this instance.
+            instance_name: The name of the cloud application instance.
+            instance_id: Optional unique identifier for the instance.
+        """
+        self._ca_instance_type = None
+        self._proxy_client = None
+        self._credential_name = None
+        self._credential_id = None
+        self._plan_name = None
+        self._account_name = None
+
+        super(CloudAppsInstance, self).__init__(
+            agent_object,
+            instance_name,
+            instance_id
+        )
+
+    def _get_instance_properties(self):
+        """Retrieve and parse common cloud apps instance properties.
+
+        Extracts instance type, proxy client, credential, plan, and account
+        from the instance properties response. Derived classes should call
+        super()._get_instance_properties() and then parse workload-specific
+        properties (e.g. custom properties).
+        """
+        super(CloudAppsInstance, self)._get_instance_properties()
+
+        self._ca_instance_type = None
+        self._proxy_client = None
+        self._credential_name = None
+        self._credential_id = None
+        self._plan_name = None
+        self._account_name = None
+
+        if 'cloudAppsInstance' in self._properties:
+            cloud_apps_instance = self._properties['cloudAppsInstance']
+            self._ca_instance_type = cloud_apps_instance.get('instanceType')
+
+            if 'generalCloudProperties' in cloud_apps_instance:
+                general_props = cloud_apps_instance['generalCloudProperties']
+
+                # Proxy client
+                proxy_servers = general_props.get('proxyServers', [])
+                if proxy_servers:
+                    self._proxy_client = proxy_servers[0].get('clientName')
+
+                # Credential
+                if 'credentials' in general_props:
+                    creds = general_props['credentials']
+                    self._credential_name = creds.get('credentialName')
+                    self._credential_id = creds.get('credentialId')
+
+        # Plan
+        plan = self._properties.get('planEntity', {})
+        self._plan_name = plan.get('planName')
+
+        # Account name (client name)
+        instance_info = self._properties.get('instance', {})
+        self._account_name = instance_info.get('clientName')
+
+    @property
+    def ca_instance_type(self):
+        """Returns the cloud apps instance type."""
+        return self._ca_instance_type
+
+    @property
+    def proxy_client(self) -> Optional[str]:
+        """Returns the proxy client name for this instance."""
+        return self._proxy_client
+
+    @property
+    def credential_name(self) -> Optional[str]:
+        """Returns the credential name used for authentication."""
+        return self._credential_name
+
+    @property
+    def credential_id(self) -> Optional[int]:
+        """Returns the credential ID used for authentication."""
+        return self._credential_id
+
+    @property
+    def plan_name(self) -> Optional[str]:
+        """Returns the plan name associated with this instance."""
+        return self._plan_name
+
+    @property
+    def account_name(self) -> Optional[str]:
+        """Returns the account name (client name) for this instance."""
+        return self._account_name
 
     def __new__(cls, agent_object: 'Agent', instance_name: str, instance_id: int) -> object:
         """Create and return a new instance of the CloudAppsInstance class.
@@ -136,6 +228,7 @@ class CloudAppsInstance(Instance):
             40: CloudDatabaseInstance,  # MongoDB Atlas
             44: AzureCosmosDBInstance,  # Azure Cosmos DB Cloud Apps Instance
             51: AzureCosmosDBInstance,   # Azure Cosmos DB MongoDBAPI Instance
+            56: CloudStorageInstance,  # S3 Compatible Instance
             58: PineConeInstance,  # PineCone Instance
             60: PowerBIInstance,     # Power Platform PowerBi Instance
             61: SnowflakeInstance   # Snowflake Instance

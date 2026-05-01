@@ -145,6 +145,8 @@ User
     unlock()                            --  Unlocks user account
 
     reset_tenant_password()             --  resets password of a tenant admin using token received in email
+    
+    get_sessions()                      --  returns the active sessions for the user
 """
 
 from base64 import b64encode
@@ -2604,6 +2606,34 @@ class User(object):
                 if error_code and error_code != 1133:
                     error_string = response.json().get('errorMessage')
                     raise SDKException('Response', '102', error_string)
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+    
+    def get_sessions(self) -> list:
+        """
+        Get active sessions for the user
+
+        Returns:
+            list: A list of active sessions for the user.
+
+        Raises:
+            SDKException:
+                - 'Response', '101': If the HTTP request fails.
+                - 'Response', '102': If the response is empty or invalid.
+
+        Usage:
+            sessions = user.get_sessions()
+        """
+        get_sessions_api_url = self._commcell_object._services['SESSION'] % self._user_id
+        headers = self._commcell_object._headers.copy()
+        headers['ONLY-ACTIVE-SESSIONS'] = 'true'
+        flag, response = self._commcell_object._cvpysdk_object.make_request('GET', get_sessions_api_url, headers=headers)
+        if flag:
+            if response.json():
+                return response.json().get('sessions', [])
+            else:
+                raise SDKException('Response', '102', 'Empty response or invalid JSON format.')
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)

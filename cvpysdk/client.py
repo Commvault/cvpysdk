@@ -136,6 +136,14 @@ Clients
 
     add_mongodb_atlas_client()              --  add client for MongoDB Atlas cloud account
 
+    add_s3_compatible_client()             --  add client for S3 Compatible object storage
+
+    add_google_cloud_object_storage_client() -- add client for google cloud object storage
+
+    add_ibm_cos_object_storage_client()     -- add client for IBM cloud object storage
+
+    add_alibaba_oss_object_storage_client() -- add client for Alibaba cloud object storage
+
     get(client_name)                      --  returns the Client class object of the input client
     name
 
@@ -4803,6 +4811,438 @@ class Clients(object):
 
         self._process_add_response(request_json)
 
+    def add_s3_compatible_client(
+            self,
+            client_name: str,
+            plan_name: str,
+            credential_name: str,
+            host_url: str,
+            access_nodes: List[str],
+            use_iam_role: bool = False,
+            is_cloud_encryption_key_set: bool = False
+    ) -> 'Client':
+        """Add an S3-Compatible Object Storage pseudo client using POST /Client.
+
+        Args:
+            client_name: Name for the new S3-Compatible client (also becomes the instanceName).
+            plan_name: Plan name to associate.
+            credential_name: Existing credential name configured on Commcell.
+            host_url: S3-compatible endpoint URL (e.g. http://backup.labs.vast.com/).
+            access_nodes: Required list of access node client names (member servers).
+            use_iam_role: Whether to use IAM Role auth. Defaults to False.
+            is_cloud_encryption_key_set: Whether cloud encryption key is set. Defaults to False.
+
+        Returns:
+            Client object for the created S3-Compatible client.
+
+        Raises:
+            SDKException: If client already exists, plan/credential/access node not found,
+                          or API returns an error.
+        """
+        if self.has_client(client_name):
+            raise SDKException('Client', '102', f'Client "{client_name}" already exists.')
+
+        if not access_nodes or not isinstance(access_nodes, list):
+            raise SDKException('Client', '101')
+
+        if not self._commcell_object.credentials.has_credential(credential_name):
+            raise SDKException('Client', '102', f'Credential "{credential_name}" does not exist.')
+        credential = self._commcell_object.credentials.get(credential_name)
+
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException('Client', '102', f'Plan "{plan_name}" does not exist.')
+        plan = self._commcell_object.plans.get(plan_name)
+
+        member_servers = []
+        for node in access_nodes:
+            if not isinstance(node, str) or not node.strip():
+                raise SDKException('Client', '101')
+            node = node.strip()
+            if not self.has_client(node):
+                raise SDKException('Client', '102', f'Access node "{node}" does not exist.')
+            node_client = self.get(node)
+            member_servers.append({
+                'client': {
+                    'clientId': int(node_client.client_id),
+                    'clientName': node_client.client_name,
+                    '_type_': 3
+                }
+            })
+
+        request_json = {
+            'clientInfo': {
+                'clientType': 15,
+                'cloudClonnectorProperties': {
+                    'instanceType': 'S3_COMPATIBLE',
+                    'instance': {
+                        'instance': {
+                            'instanceName': client_name,
+                            'applicationId': 134
+                        },
+                        'cloudAppsInstance': {
+                            'instanceTypeDisplayName': 'S3 Compatible',
+                            'instanceType': 'S3_COMPATIBLE',
+                            'generalCloudProperties': {
+                                'numberOfBackupStreams': 0,
+                                'memberServers': member_servers,
+                                'credentials': {
+                                    'credentialId': int(credential.credential_id),
+                                    'credentialName': credential_name
+                                }
+                            },
+                            'objectStorageInstance': {
+                                'isCloudEncryptionKeySet': bool(is_cloud_encryption_key_set)
+                            },
+                            's3CompatibleInstance': {
+                                'hostURL': host_url.strip(),
+                                'useIamRole': bool(use_iam_role)
+                            },
+                            'credentialType': 'AMAZON_S3'
+                        },
+                        'useResourcePoolInfo': False
+                    }
+                },
+                'plan': {
+                    'planId': int(plan.plan_id),
+                    'planName': plan_name
+                }
+            },
+            'entity': {
+                'clientName': client_name
+            }
+        }
+
+        return self._process_add_response(request_json)
+
+    def add_google_cloud_object_storage_client(
+            self,
+            client_name: str,
+            plan_name: str,
+            credential_name: str,
+            access_nodes: List[str],
+            server_name: str = 'storage.googleapis.com',
+            is_cloud_encryption_key_set: bool = False
+    ) -> 'Client':
+        """Add a Google Cloud Object Storage pseudo client using POST /Client.
+
+        Args:
+            client_name: Name for the new Google Cloud client (also becomes the instanceName).
+            plan_name: Plan name to associate.
+            credential_name: Existing credential name configured on Commcell.
+            access_nodes: Required list of access node client names (member servers).
+            server_name: Google Cloud Storage server endpoint. Defaults to 'storage.googleapis.com'.
+            is_cloud_encryption_key_set: Whether cloud encryption key is set. Defaults to False.
+
+        Returns:
+            Client object for the created Google Cloud Object Storage client.
+
+        Raises:
+            SDKException: If client already exists, plan/credential/access node not found,
+                          or API returns an error.
+
+        Example:
+            >>> clients = commcell_obj.clients
+            >>> new_client = clients.add_google_cloud_object_storage_client(
+            ...     client_name='gcp-obj-storage-01',
+            ...     plan_name='my-plan',
+            ...     credential_name='gcp-creds',
+            ...     access_nodes=['proxy-node-01']
+            ... )
+        """
+        if self.has_client(client_name):
+            raise SDKException('Client', '102', f'Client "{client_name}" already exists.')
+
+        if not access_nodes or not isinstance(access_nodes, list):
+            raise SDKException('Client', '101')
+
+        if not self._commcell_object.credentials.has_credential(credential_name):
+            raise SDKException('Client', '102', f'Credential "{credential_name}" does not exist.')
+        credential = self._commcell_object.credentials.get(credential_name)
+
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException('Client', '102', f'Plan "{plan_name}" does not exist.')
+        plan = self._commcell_object.plans.get(plan_name)
+
+        member_servers = []
+        for node in access_nodes:
+            if not isinstance(node, str) or not node.strip():
+                raise SDKException('Client', '101')
+            node = node.strip()
+            if not self.has_client(node):
+                raise SDKException('Client', '102', f'Access node "{node}" does not exist.')
+            node_client = self.get(node)
+            member_servers.append({
+                'client': {
+                    'clientId': int(node_client.client_id),
+                    'clientName': node_client.client_name,
+                    '_type_': 3
+                }
+            })
+
+        request_json = {
+            'clientInfo': {
+                'clientType': 15,
+                'cloudClonnectorProperties': {
+                    'instanceType': 'GOOGLE_CLOUD',
+                    'instance': {
+                        'instance': {
+                            'instanceName': client_name,
+                            'applicationId': 134
+                        },
+                        'cloudAppsInstance': {
+                            'instanceTypeDisplayName': 'Google Cloud',
+                            'instanceType': 'GOOGLE_CLOUD',
+                            'generalCloudProperties': {
+                                'numberOfBackupStreams': 0,
+                                'memberServers': member_servers,
+                                'credentials': {
+                                    'credentialId': int(credential.credential_id),
+                                    'credentialName': credential_name
+                                }
+                            },
+                            'objectStorageInstance': {
+                                'isCloudEncryptionKeySet': bool(is_cloud_encryption_key_set)
+                            },
+                            'googleCloudInstance': {
+                                'serverName': server_name.strip()
+                            },
+                            'credentialType': 'GOOGLE_CLOUD'
+                        },
+                        'useResourcePoolInfo': False
+                    }
+                },
+                'plan': {
+                    'planId': int(plan.plan_id),
+                    'planName': plan_name
+                }
+            },
+            'entity': {
+                'clientName': client_name
+            }
+        }
+
+        return self._process_add_response(request_json)
+
+    def add_ibm_cos_object_storage_client(
+            self,
+            client_name: str,
+            plan_name: str,
+            credential_name: str,
+            access_nodes: List[str],
+            host_url: str = 's3.us-east.cloud-object-storage.appdomain.cloud',
+            is_cloud_encryption_key_set: bool = False
+    ) -> 'Client':
+        """Add an IBM Cloud Object Storage pseudo client using POST /Client.
+
+        Args:
+            client_name: Name for the new IBM COS client (also becomes the instanceName).
+            plan_name: Plan name to associate.
+            credential_name: Existing credential name configured on Commcell.
+            access_nodes: Required list of access node client names (member servers).
+            host_url: IBM COS S3-compatible endpoint. Defaults to US-East regional endpoint.
+            is_cloud_encryption_key_set: Whether cloud encryption key is set. Defaults to False.
+
+        Returns:
+            Client object for the created IBM COS client.
+
+        Raises:
+            SDKException: If client already exists, plan/credential/access node not found,
+                          or API returns an error.
+
+        Example:
+            >>> clients = commcell_obj.clients
+            >>> new_client = clients.add_ibm_cos_object_storage_client(
+            ...     client_name='ibm-cos-01',
+            ...     plan_name='my-plan',
+            ...     credential_name='ibm-creds',
+            ...     access_nodes=['proxy-node-01'],
+            ...     host_url='s3.us-east.cloud-object-storage.appdomain.cloud'
+            ... )
+        """
+        if self.has_client(client_name):
+            raise SDKException('Client', '102', f'Client "{client_name}" already exists.')
+
+        if not access_nodes or not isinstance(access_nodes, list):
+            raise SDKException('Client', '101')
+
+        if not self._commcell_object.credentials.has_credential(credential_name):
+            raise SDKException('Client', '102', f'Credential "{credential_name}" does not exist.')
+        credential = self._commcell_object.credentials.get(credential_name)
+
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException('Client', '102', f'Plan "{plan_name}" does not exist.')
+        plan = self._commcell_object.plans.get(plan_name)
+
+        member_servers = []
+        for node in access_nodes:
+            if not isinstance(node, str) or not node.strip():
+                raise SDKException('Client', '101')
+            node = node.strip()
+            if not self.has_client(node):
+                raise SDKException('Client', '102', f'Access node "{node}" does not exist.')
+            node_client = self.get(node)
+            member_servers.append({
+                'client': {
+                    'clientId': int(node_client.client_id),
+                    'clientName': node_client.client_name,
+                    '_type_': 3
+                }
+            })
+
+        request_json = {
+            'clientInfo': {
+                'clientType': 15,
+                'cloudClonnectorProperties': {
+                    'instanceType': 'IBM_COS',
+                    'instance': {
+                        'instance': {
+                            'instanceName': client_name,
+                            'applicationId': 134
+                        },
+                        'cloudAppsInstance': {
+                            'instanceTypeDisplayName': 'IBM Cloud Object Storage',
+                            'instanceType': 'IBM_COS',
+                            'generalCloudProperties': {
+                                'numberOfBackupStreams': 0,
+                                'memberServers': member_servers,
+                                'credentials': {
+                                    'credentialId': int(credential.credential_id),
+                                    'credentialName': credential_name
+                                }
+                            },
+                            'objectStorageInstance': {
+                                'isCloudEncryptionKeySet': bool(is_cloud_encryption_key_set)
+                            },
+                            'ibmCosInstance': {
+                                'hostURL': host_url.strip()
+                            },
+                            'credentialType': 'IBM_CLOUD'
+                        },
+                        'useResourcePoolInfo': False
+                    }
+                },
+                'plan': {
+                    'planId': int(plan.plan_id),
+                    'planName': plan_name
+                }
+            },
+            'entity': {
+                'clientName': client_name
+            }
+        }
+
+        return self._process_add_response(request_json)
+
+    def add_alibaba_oss_object_storage_client(
+            self,
+            client_name: str,
+            plan_name: str,
+            credential_name: str,
+            access_nodes: List[str],
+            host_url: str = 'oss-us-east-1.aliyuncs.com',
+            is_cloud_encryption_key_set: bool = False
+    ) -> 'Client':
+        """Add an Alibaba Cloud OSS pseudo client using POST /Client.
+
+        Args:
+            client_name: Name for the new Alibaba OSS client (also becomes the instanceName).
+            plan_name: Plan name to associate.
+            credential_name: Existing credential name configured on Commcell.
+            access_nodes: Required list of access node client names (member servers).
+            host_url: Alibaba OSS endpoint. Defaults to US-East-1 regional endpoint.
+            is_cloud_encryption_key_set: Whether cloud encryption key is set. Defaults to False.
+
+        Returns:
+            Client object for the created Alibaba OSS client.
+
+        Raises:
+            SDKException: If client already exists, plan/credential/access node not found,
+                          or API returns an error.
+
+        Example:
+            >>> clients = commcell_obj.clients
+            >>> new_client = clients.add_alibaba_oss_object_storage_client(
+            ...     client_name='alibaba-oss-01',
+            ...     plan_name='my-plan',
+            ...     credential_name='ali-creds',
+            ...     access_nodes=['proxy-node-01'],
+            ...     host_url='oss-us-east-1.aliyuncs.com'
+            ... )
+        """
+        if self.has_client(client_name):
+            raise SDKException('Client', '102', f'Client "{client_name}" already exists.')
+
+        if not access_nodes or not isinstance(access_nodes, list):
+            raise SDKException('Client', '101')
+
+        if not self._commcell_object.credentials.has_credential(credential_name):
+            raise SDKException('Client', '102', f'Credential "{credential_name}" does not exist.')
+        credential = self._commcell_object.credentials.get(credential_name)
+
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException('Client', '102', f'Plan "{plan_name}" does not exist.')
+        plan = self._commcell_object.plans.get(plan_name)
+
+        member_servers = []
+        for node in access_nodes:
+            if not isinstance(node, str) or not node.strip():
+                raise SDKException('Client', '101')
+            node = node.strip()
+            if not self.has_client(node):
+                raise SDKException('Client', '102', f'Access node "{node}" does not exist.')
+            node_client = self.get(node)
+            member_servers.append({
+                'client': {
+                    'clientId': int(node_client.client_id),
+                    'clientName': node_client.client_name,
+                    '_type_': 3
+                }
+            })
+
+        request_json = {
+            'clientInfo': {
+                'clientType': 15,
+                'cloudClonnectorProperties': {
+                    'instanceType': 'ALIBABA_OSS',
+                    'instance': {
+                        'instance': {
+                            'instanceName': client_name,
+                            'applicationId': 134
+                        },
+                        'cloudAppsInstance': {
+                            'instanceTypeDisplayName': 'Alibaba Cloud OSS',
+                            'instanceType': 'ALIBABA_OSS',
+                            'generalCloudProperties': {
+                                'numberOfBackupStreams': 0,
+                                'memberServers': member_servers,
+                                'credentials': {
+                                    'credentialId': int(credential.credential_id),
+                                    'credentialName': credential_name
+                                }
+                            },
+                            'objectStorageInstance': {
+                                'isCloudEncryptionKeySet': bool(is_cloud_encryption_key_set)
+                            },
+                            'alibabaInstance': {
+                                'hostURL': host_url.strip()
+                            },
+                            'credentialType': 'ALICLOUD_OSS'
+                        },
+                        'useResourcePoolInfo': False
+                    }
+                },
+                'plan': {
+                    'planId': int(plan.plan_id),
+                    'planName': plan_name
+                }
+            },
+            'entity': {
+                'clientName': client_name
+            }
+        }
+
+        return self._process_add_response(request_json)
+
     def add_teams_client(
         self,
         client_name: str,
@@ -7637,9 +8077,7 @@ class Client(object):
                     operations_dict[operation]['exception_message'].format(service_name, output)
                 )
         elif 'unix' in self.os_info.lower():
-            commvault = r'/usr/bin/commvault'
-            if 'darwin' in self.os_info.lower():
-                commvault = r'/usr/local/bin/commvault'
+            commvault = f"{self.install_directory}/Base/commvault"
 
             if self.instance:
                 command = '{0} -instance {1} {2} {3}'.format(
@@ -7647,18 +8085,21 @@ class Client(object):
                     self.instance,
                     f"-service {service_name}" if service_name != 'ALL' else "",
                     operations_dict[operation]['unix_command'])
-
-                __, __, error = self.execute_command(command, wait_for_completion=False)
-
-                if error:
-                    raise SDKException(
-                        'Client', '102', 'Failed to {0} services.\nError: {1}'.format(
-                            operations_dict[operation]['unix_command'],
-                            error
-                        )
-                    )
             else:
-                raise SDKException('Client', '109')
+                command = '{0} {1} {2}'.format(
+                    commvault,
+                    f"-service {service_name}" if service_name != 'ALL' else "",
+                    operations_dict[operation]['unix_command'])
+
+            __, __, error = self.execute_command(command, wait_for_completion=False)
+
+            if error:
+                raise SDKException(
+                    'Client', '102', 'Failed to {0} services.\nError: {1}'.format(
+                        operations_dict[operation]['unix_command'],
+                        error
+                    )
+                )
         else:
             raise SDKException('Client', '109')
 

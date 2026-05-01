@@ -171,6 +171,7 @@ class CleanroomTargets:
         self._RESOURCE_POOL_REGIONS_API = (
             f"{self._services['REGIONS']}?workloadId=%s&type=%s"
         )
+        self._CLEANROOM_SITE_URL = self._services['CLEANROOM_SITE']
 
         self._SITE_VENDOR_REGION_PARAMS = {
             'AMAZON': CleanroomSiteRegionParams(region_type=2, vendor=4, workload_type=0, cloud_type='AWS'),
@@ -575,6 +576,52 @@ class CleanroomTargets:
                     api_payload['options'].update(options)
         return api_payload
 
+    def create_cleanroom_site(self, payload: dict) -> dict:
+        """Create a cleanroom site via POST ``Cleanroom/Site``.
+
+        Args:
+            payload: Full POST request body dict (as expected by the API).
+
+        Returns:
+            dict: API response, e.g. ``{'id': 1234, 'name': 'MySite'}``.
+
+        Raises:
+            SDKException: On non-200 API response or invalid JSON.
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._CLEANROOM_SITE_URL, payload=payload
+        )
+        if flag:
+            try:
+                response_json = response.json()
+                if not response_json:
+                    raise SDKException('Response', '102', 'Empty response received from server')
+                return response_json
+            except JSONDecodeError:
+                raise SDKException('Response', '102', 'Invalid JSON response received from server')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def delete_cleanroom_site(self, target_id) -> bool:
+        """Delete a cleanroom site by its numeric target ID.
+
+        Uses ``DELETE V4/RecoveryTarget/{id}``.
+
+        Args:
+            target_id: Integer or string ID of the cleanroom target to delete.
+
+        Returns:
+            bool: ``True`` on success.
+
+        Raises:
+            SDKException: If the DELETE request fails.
+        """
+        delete_url = self._services['GET_RECOVERY_TARGET'] % str(target_id)
+        flag, response = self._cvpysdk_object.make_request('DELETE', delete_url)
+        if not flag:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+        return True
+
 
 class CleanroomTarget:
     """
@@ -685,6 +732,13 @@ class CleanroomTarget:
         self._volume_type = None
         self._network_subnet = None
         self._security_group = None
+
+        self._esx_server = None
+        self._datastore = None
+        self._destination_network = None
+        self._resource_pool = None
+        self._folder_path = None
+        self._storage_policy_name = None
         self.refresh()
 
     def _get_cleanroom_target_id(self) -> str:
@@ -746,6 +800,8 @@ class CleanroomTarget:
             self._policy_type = 7
         elif policy_type in ["VMW_BACKUP_LABTEMPLATE", "VMW_LIVEMOUNT"]:
             self._policy_type = 13
+        elif policy_type == "VMW":
+            self._policy_type = 0
         else:
             self._policy_type = -1
 
@@ -1054,6 +1110,15 @@ class CleanroomTarget:
                                                     .get("securityGroupRules", {}).get("recoveredEntity", [{}]))
                     self._infra_SecurityRules = (self._cleanroom_target_properties.get('advanced', {})
                                                  .get("securityGroupRules", {}).get("infrastructure", [{}]))
+
+                if self._policy_type == 0:
+                    recovery = self._cleanroom_target_properties.get('recovery', {})
+                    self._esx_server = recovery.get('esxServer', {}).get('name', '')
+                    self._datastore = recovery.get('dataStore', {}).get('name', '')
+                    self._destination_network = recovery.get('destinationNetwork', {}).get('name', '')
+                    self._resource_pool = recovery.get('resourcePool', {}).get('name', '')
+                    self._folder_path = recovery.get('folderPath', {}).get('name', '')
+                    self._storage_policy_name = recovery.get('storagePolicy', {}).get('name', '')
             else:
                 raise SDKException('Response', '102')
         else:
@@ -1670,6 +1735,36 @@ class CleanroomTarget:
         return self._key_pair
 
     @property
+    def esx_server(self) -> str:
+        """Get the ESX server name for the VMware cleanroom target."""
+        return self._esx_server
+
+    @property
+    def datastore(self) -> str:
+        """Get the datastore name for the VMware cleanroom target."""
+        return self._datastore
+
+    @property
+    def destination_network(self) -> str:
+        """Get the destination network name for the VMware cleanroom target."""
+        return self._destination_network
+
+    @property
+    def resource_pool(self) -> str:
+        """Get the resource pool name for the VMware cleanroom target."""
+        return self._resource_pool
+
+    @property
+    def folder_path(self) -> str:
+        """Get the VM folder path for the VMware cleanroom target."""
+        return self._folder_path
+
+    @property
+    def storage_policy_name(self) -> str:
+        """Get the storage policy name for the VMware cleanroom target."""
+        return self._storage_policy_name
+
+    @property
     def vpc(self) -> str:
         """Get the AWS VPC name for the cleanroom target.
 
@@ -1828,6 +1923,131 @@ class CleanroomTarget:
         #ai-gen-doc
         """
         return getattr(self, '_publicSubnet', '')
+
+    def edit_cleanroom_site(self, edit_fields: dict) -> dict:
+        """Edit this cleanroom site via ``PUT Cleanroom/Target/{id}``.
+
+        Fetches the current configuration, applies *edit_fields* for
+        the appropriate vendor (determined by :attr:`policy_type`), then
+        PUTs the updated payload back.  Calls :meth:`refresh` afterwards.
+
+        Common keys (all vendors):
+            - ``name``   (str)  -- New display name for the site.
+            - ``suffix`` (str)  -- New VM display-name suffix.
+
+        VMware-specific keys (policy_type == 0):
+            - ``destination_network`` (dict) ``{name, guid, type}``
+            - ``resource_pool``       (dict) ``{name, guid, type}``
+            - ``folder_path``         (dict) ``{name, guid, type}``
+            - ``storage_policy``      (dict) ``{name, type}``
+
+        Azure-specific keys (policy_type == 7):
+            - ``region``           (dict) ``{guid, name, type}``
+            - ``storage_account``  (dict) ``{guid, name}``
+            - ``virtual_network``  (dict) ``{guid, name}``
+            - ``security_group``   (dict) ``{guid, name}``
+            - ``resource_group``   (dict) ``{guid, name}``
+            - ``vm_size``          (dict) ``{guid, name}``
+            - ``availability_zone`` (dict) ``{guid, name}``
+
+        AWS-specific keys (policy_type == 1):
+            - ``region``           (dict) ``{guid, name}``
+            - ``vpc``              (dict) ``{guid, name}``
+            - ``security_groups``  (list)
+            - ``instance_type``    (dict) ``{guid, name}``
+            - ``volume_type``      (str)
+            - ``key_pair``         (dict) ``{name}``
+            - ``iam_role``         (dict) ``{guid, name}``
+            - ``encryption_key``   (dict) ``{guid, name}``
+            - ``availability_zone`` (dict) ``{guid, name}``
+
+        Args:
+            edit_fields: Dict of fields to change.
+
+        Returns:
+            dict: API response body (may be empty for 204 responses).
+
+        Raises:
+            SDKException: If the GET or PUT request fails.
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._RUNBOOK_TARGET_API)
+        if not flag:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+        if not response.json():
+            raise SDKException('Response', '102', 'Empty response received from server')
+
+        payload = response.json()
+
+        # --- Common fields (all vendors) ---
+        if 'name' in edit_fields:
+            payload.setdefault('general', {}).setdefault('target', {})['name'] = edit_fields['name']
+            self._cleanroom_target_name = edit_fields['name'].lower()
+
+        if 'suffix' in edit_fields:
+            payload.setdefault('general', {}).setdefault('entityDisplayName', {})['suffix'] = edit_fields['suffix']
+
+        recovery = payload.setdefault('recovery', {})
+
+        # --- VMware (policy_type == 0) ---
+        if self._policy_type == 0:
+            if 'destination_network' in edit_fields:
+                recovery['destinationNetwork'] = edit_fields['destination_network']
+            if 'resource_pool' in edit_fields:
+                recovery['resourcePool'] = edit_fields['resource_pool']
+            if 'folder_path' in edit_fields:
+                recovery['folderPath'] = edit_fields['folder_path']
+            if 'storage_policy' in edit_fields:
+                recovery['storagePolicy'] = edit_fields['storage_policy']
+
+        # --- Azure (policy_type == 7) ---
+        elif self._policy_type == 7:
+            if 'region' in edit_fields:
+                recovery['region'] = edit_fields['region']
+            if 'storage_account' in edit_fields:
+                recovery['storageAccount'] = edit_fields['storage_account']
+            if 'virtual_network' in edit_fields:
+                recovery['virtualNetwork'] = edit_fields['virtual_network']
+            if 'security_group' in edit_fields:
+                recovery['securityGroup'] = edit_fields['security_group']
+            if 'resource_group' in edit_fields:
+                recovery['resourceGroup'] = edit_fields['resource_group']
+            if 'vm_size' in edit_fields:
+                recovery['vmSize'] = edit_fields['vm_size']
+            if 'availability_zone' in edit_fields:
+                recovery['availabilityZone'] = edit_fields['availability_zone']
+
+        # --- AWS (policy_type == 1) ---
+        elif self._policy_type == 1:
+            if 'region' in edit_fields:
+                recovery['region'] = edit_fields['region']
+            if 'vpc' in edit_fields:
+                recovery['vpc'] = edit_fields['vpc']
+            if 'security_groups' in edit_fields:
+                recovery['securityGroups'] = edit_fields['security_groups']
+            if 'instance_type' in edit_fields:
+                recovery['instanceType'] = edit_fields['instance_type']
+            if 'volume_type' in edit_fields:
+                recovery['volumeType'] = edit_fields['volume_type']
+            if 'key_pair' in edit_fields:
+                recovery['keyPair'] = edit_fields['key_pair']
+            if 'iam_role' in edit_fields:
+                recovery['iamRole'] = edit_fields['iam_role']
+            if 'encryption_key' in edit_fields:
+                recovery['encryptionKey'] = edit_fields['encryption_key']
+            if 'availability_zone' in edit_fields:
+                recovery['availabilityZone'] = edit_fields['availability_zone']
+
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', self._EDIT_RUNBOOK_TARGET_API, payload=payload
+        )
+        if not flag:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+        self.refresh()
+        try:
+            return response.json() if response.text else {}
+        except JSONDecodeError:
+            return {}
 
     def refresh(self) -> None:
         """Reload the properties of the cleanroom target.

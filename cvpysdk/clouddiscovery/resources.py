@@ -505,7 +505,7 @@ class DiscoveredResources:
                                 connection_type=resource.get('ConnectionType'),
                                 last_discovered_time=datetime.fromisoformat(
                                     resource.get('LastSyncedAt')) if resource.get('LastSyncedAt') else None,
-                                tags=resource.get('Tags', {}),
+                                tags=resource.get('EntityTags', {}),
                                 last_backup=datetime.fromisoformat(resource.get('LastBackup')) if resource.get(
                                     'LastBackup') else None,
                                 recovery_points=resource.get('RecoveryPoints'),

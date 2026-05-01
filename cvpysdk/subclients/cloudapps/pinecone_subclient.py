@@ -45,7 +45,6 @@ from typing import Any, Dict, Optional, List
 
 from ..casubclient import CloudAppsSubclient
 from ...exception import SDKException
-from ...job import Job
 
 
 class PineConeSubclient(CloudAppsSubclient):
@@ -216,72 +215,3 @@ class PineConeSubclient(CloudAppsSubclient):
                 'Subclient', '102',
                 f'Failed to update subclient content: {response}'
             )
-
-    def browse(self, *args: Any, **kwargs: Any) -> dict:
-        """Browse the content of this Pinecone subclient's instance backups.
-
-        This method allows you to retrieve snapshot information and other details
-        by specifying browse options either as positional arguments (typically a dictionary)
-        or as keyword arguments.
-
-        Args:
-            *args: Optional positional arguments, typically a dictionary of browse options.
-            **kwargs: Optional keyword arguments for browse options.
-
-        Returns:
-            dict: A dictionary containing the browse results with keys such as 'paths', 
-                 'snapshots', etc.
-
-        Example:
-            >>> subclient = PineConeSubclient(backupset_object, 'default')
-            >>> browse_result = subclient.browse()
-            >>> print(browse_result)
-            >>> # Or with specific options
-            >>> browse_result = subclient.browse({'show_deleted': False})
-
-        #ai-gen-doc
-        """
-        return self._backupset_object._instance_object.browse(*args, **kwargs)
-
-    def restore(
-            self,
-            paths: List[str],
-            overwrite: bool = True,
-            copy_precedence: int = 0,
-            **kwargs: Any
-    ) -> Job:
-        """Restore Pinecone data from the specified backup.
-
-        This method submits a restore job to restore Pinecone vector database content
-        from a backup to the original or alternate location.
-
-        Args:
-            paths: List of paths or items to restore.
-            overwrite: Whether to overwrite existing data during restore. Defaults to True.
-            copy_precedence: The copy precedence to use for restore. Defaults to 0 (latest backup).
-            **kwargs: Additional keyword arguments for restore options.
-
-        Returns:
-            Job: A Job object representing the restore job that was submitted.
-
-        Raises:
-            SDKException: If the restore operation fails or if invalid parameters are provided.
-
-        Example:
-            >>> subclient = PineConeSubclient(backupset_object, 'default')
-            >>> restore_job = subclient.restore(
-            ...     paths=['/index1'],
-            ...     overwrite=True,
-            ...     copy_precedence=0
-            ... )
-            >>> restore_job.wait_for_completion()
-            >>> print(f"Restore job completed: {restore_job.job_id}")
-
-        #ai-gen-doc
-        """
-        return self._backupset_object._instance_object.restore_in_place(
-            paths=paths,
-            overwrite=overwrite,
-            copy_precedence=copy_precedence,
-            **kwargs
-        )

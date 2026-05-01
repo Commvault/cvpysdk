@@ -85,6 +85,7 @@ class UnixDownloadFeatures(Enum):
     INFORMIX = 1201
     SYBASE = 1202
     WEB_SERVER = 1174
+    MYSQL = 1208
 
 
 class WindowsDownloadFeatures(Enum):
@@ -119,6 +120,7 @@ class WindowsDownloadFeatures(Enum):
     INFORMIX = 360
     SYBASE = 1202
     WEB_SERVER = 252
+    MYSQL = 358
 
 
 class OSNameIDMapping(Enum):

@@ -98,6 +98,10 @@ OneDriveSubclient:
 
     restore_user_to_azure_blob()                                        -- Runs restore to azure blob for specified users on OneDrive for business client
 
+    discover_onedrive_for_business_client()                             -- Discover users and groups for OneDrive for Business client
+    
+    verify_subclient_content_onedrive_for_business_client()             -- Verifies the subclient content of OneDrive for Business client against the expected content
+
 """
 
 from __future__ import unicode_literals
@@ -2109,3 +2113,82 @@ class OneDriveSubclient(CloudAppsSubclient):
                     if response is not success
         """
         return self._get_preview(file_path)
+    
+    def discovery_onedrive_for_business_client(self, content_type):
+        """Discovers the content for onedrive subclient.
+            
+            Params:
+                content_type (str) -- type of content to be discovered. Possible values are 'USERS' and 'GROUPS'
+            Returns:
+                dict:   A dictionary containing the discovered content details. The structure of the dictionary will depend on the content type.
+            Raises:
+                SDKException: No content discovered or API call failed
+        """
+        
+        if content_type.upper() == 'USERS':
+            disc_type = 8
+        elif content_type.upper() == 'GROUPS':
+            disc_type = 5
+        
+        _get_users = self._services['GET_CLOUDAPPS_USERS'] % (self._instance_object.instance_id,
+                                                              self._client_object.client_id,
+                                                              disc_type)
+
+        flag, response = self._cvpysdk_object.make_request('GET', _get_users)
+        
+        if flag:
+                if response.json():
+                    return response.json()
+                else:
+                    raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+        
+        
+    def verify_subclient_content_onedrive_for_business_client(self, input_content: dict): 
+        """Verifies the content for onedrive subclient with the given input content.
+            This method is used for complete content verification after discovery, not for partial verification.
+            
+        Params:
+            input_content (dict) -- dictionary containing the content details to be verified. It should have the following structure:
+            {
+                'groups_dict': {
+                    group_name: {
+                        'planName': plan_name,
+                        'members_dict': {
+                            user_mail: planName
+                        }
+                    }
+                },
+                'users_dict': {
+                    user_mail: planName
+                }
+            }
+            
+        Returns:
+            bool -- True if the content matches, False otherwise
+        """
+        
+        groups_dict = input_content.get('groups_dict', {})
+        users_dict = input_content.get('users_dict', {})
+        
+        # dict compare = count, keys, key-values
+        # complete content verification (not partial)
+        if groups_dict: # group-name : { planName, members_dict:(mail:planName)}
+            content, count = self.browse_for_content(discovery_type=2)
+            
+            subclient_groups_dict = {group_name: details.get('planName', "") for group_name, details in content.items()}
+            input_groups_dict = {group_name: details.get('planName', "") for group_name, details in groups_dict.items()}
+            if subclient_groups_dict != input_groups_dict: return False
+            
+            for group_name, details in groups_dict.items():
+                members_dict = details.get('members_dict', {})
+                users_dict.update(members_dict)
+        
+        if users_dict: # user-mail(only users, not group-members) : planName  
+            content, count = self.browse_for_content(discovery_type=1)
+
+            subclient_users_dict = {user_mail: details.get('planName', "") for user_mail, details in content.items()}
+            if subclient_users_dict != users_dict: return False
+            
+        return True

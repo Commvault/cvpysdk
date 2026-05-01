@@ -162,8 +162,7 @@ class OracleInstance(DatabaseInstance):
                         destination_client: str,
                         destination_path: str,
                         backup_job_ids: list,
-                        user_name: str,
-                        password: str) -> 'Job':
+                        credentialName: str) -> 'Job':
         """Perform an application-free restore of Oracle data to disk.
 
         This method restores Oracle backup data to a specified path on a destination client
@@ -174,8 +173,7 @@ class OracleInstance(DatabaseInstance):
             destination_client: The name of the destination client where data will be restored.
             destination_path: The full path on the destination client where the data will be restored.
             backup_job_ids: List of backup job IDs to use for the disk restore.
-            user_name: The impersonation username for the destination client.
-            password: The impersonation user password for the destination client.
+            credentialName: The saved credential name for impersonation on the destination client.
 
         Returns:
             Job: An object containing details of the restore job.
@@ -189,8 +187,7 @@ class OracleInstance(DatabaseInstance):
             ...     destination_client="dbserver01",
             ...     destination_path="/restore/oracle",
             ...     backup_job_ids=[12345, 12346],
-            ...     user_name="oracle_user",
-            ...     password="secure_password"
+            ...     credentialName="oracle_cred"
             ... )
             >>> print(f"Restore job started with ID: {job.job_id}")
 
@@ -203,8 +200,7 @@ class OracleInstance(DatabaseInstance):
             destination_client,
             destination_path,
             backup_job_ids,
-            user_name,
-            password
+            credentialName
         )
 
         return self._process_restore_response(request_json)
@@ -309,6 +305,8 @@ class OracleInstance(DatabaseInstance):
                 "appName": value.get("app_name", "Oracle")
             }
         })
+        if value.get("destination_path"):
+            self._destination_restore_json["destPath"] = [value.get("destination_path")]
 
     def _get_live_sync_oracleopt_json(self, **kwargs: dict) -> None:
         """Construct a JSON dictionary with Oracle agent-specific options for configuring live sync.
@@ -1387,6 +1385,8 @@ class OracleInstance(DatabaseInstance):
                 self._oracle_restore_json["endLSNNum"] = value.get("end_lsn")
             if value.get("log_dest", None):
                 self._oracle_restore_json["logTarget"] = value.get("log_dest")
+        if value.get("restore_to_disk", False):
+            self._oracle_restore_json.pop("sourcePaths", None)
 
     def _restore_json(self, **kwargs) -> dict:
         """Generate the JSON request payload for the restore API based on user-selected options.

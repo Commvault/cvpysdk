@@ -292,8 +292,8 @@ class CommServeRecovery:
             map_vm_info = lambda request: {
                                     "commandcenter_url": f"https://{request['vmInfo']['ipAddress']}/commandcenter" if request['status'] == 5 else '',
                                     "vm_expiration_time": request['vmInfo']['vmExpirationTime'],
-                                    "username": request['vmInfo'].get('credentials',{}).get('sUsername'),
-                                    'password': request['vmInfo'].get('credentials',{}).get('sPassword'),
+                                    "username": request['vmInfo'].get('credentials',{}).get('sUsername') if request['status'] == 5 else '',
+                                    'password': request['vmInfo'].get('credentials',{}).get('sPassword') if request['status'] == 5 else '',
                                     'vmName': request['vmInfo'].get('name')
                                 }
             return {

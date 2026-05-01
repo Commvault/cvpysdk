@@ -2689,9 +2689,11 @@ class Job(object):
 
         self._status = self._summary['status']
 
-        if self._summary['lastUpdateTime'] != 0:
+        end_time_key = 'lastUpdateTime' if 'lastUpdateTime' in self._summary else 'jobEndTime'
+
+        if self._summary[end_time_key] != 0:
             self._end_time = time.strftime(
-                '%Y-%m-%d %H:%M:%S', time.gmtime(self._summary['lastUpdateTime'])
+                '%Y-%m-%d %H:%M:%S', time.gmtime(self._summary[end_time_key])
             )
 
         return ('completed' in self._status.lower() or

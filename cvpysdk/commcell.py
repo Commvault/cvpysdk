@@ -4679,6 +4679,41 @@ class Commcell(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def set_password_encryption_config(self, kms_name: str, rotate_master_key: bool = True) -> None:
+        """Set the password encryption configuration for the Commcell.
+
+        Args:
+            kms_name: The name of the Key Management Server (KMS) to use for password encryption.
+                      Use "Built-in" to revert to the built-in CommVault KMS.
+            rotate_master_key: If True, rotates the master key after switching the KMS. Defaults to True.
+
+        Raises:
+            SDKException: If the API response is not successful or the response is empty.
+
+        Example:
+            >>> commcell = Commcell()
+            >>> commcell.set_password_encryption_config("my-passphrase-kms")
+            >>> commcell.set_password_encryption_config("Built-in")  # revert to built-in KMS
+        """
+        url = self._services['PASSWORD_ENCRYPTION_CONFIG']
+        payload = {
+            "newKeyProviderName": kms_name,
+            "rotateMasterKey": rotate_master_key
+        }
+        flag, response = self._cvpysdk_object.make_request('PUT', url=url, payload=payload)
+
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', 0)
+                if error_code != 0:
+                    response_string = self._update_response_(response.text)
+                    raise SDKException('Response', '101', response_string)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     def get_security_associations(self) -> Dict[str, List[List[str]]]:
         """Retrieve the security associations configured for the Commcell.
 

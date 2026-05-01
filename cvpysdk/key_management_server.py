@@ -66,6 +66,8 @@ KeyManagementServers:
     _add_azure_key_vault_iam_auth() -- Configure Azure Key Management Server with IAM managed identity based authentication
     
     _add_kmip_certificate()         --  Configure KMIP supported Key Management Server with certificate based authentication
+
+    _add_passphrase_kms()           --  Configure Passphrase based Key Management Server
     
     _kms_api_call() --              call KMS API
     
@@ -87,6 +89,7 @@ KeyManagementServer Attributes
 
 """
 
+import base64
 from abc import ABC
 from typing import Any, Dict, Optional
 
@@ -136,7 +139,8 @@ class KeyManagementServerConstants(ABC):
             "AZURE_KEY_VAULT_CERTIFICATE": 1,
             "AZURE_KEY_VAULT_IAM": 3,
             "AZURE_KEY_VAULT_KEY": 2,
-            "KMIP_CERTIFICATE": 99
+            "KMIP_CERTIFICATE": 99,
+            "PASSPHRASE": 0
         }
 
 class KeyManagementServers(KeyManagementServerConstants):
@@ -857,6 +861,9 @@ class KeyManagementServers(KeyManagementServerConstants):
 
         if kms_details['KEY_PROVIDER_TYPE'] == "KEY_PROVIDER_KMIP":
             self._add_kmip_certificate(kms_details)
+
+        if kms_details['KEY_PROVIDER_TYPE'] == "KEY_PROVIDER_PASSPHRASE":
+            self._add_passphrase_kms(kms_details)
             
         return self.get(kms_details['KMS_NAME'])
 
@@ -1121,6 +1128,84 @@ class KeyManagementServers(KeyManagementServerConstants):
 
         self._kms_api_call(payload)
         
+
+    def _add_passphrase_kms(self, kms_details: dict) -> None:
+        """Configure a Passphrase-based Key Management Server.
+
+        Args:
+            kms_details: A dictionary containing the passphrase KMS configuration details.
+
+                Required keys:
+                    - KMS_NAME (str): Name of the Key Management Server.
+                    - PASSPHRASE (str): Plain-text passphrase.
+                    - PASSPHRASE_CLIENTS (list): List of dicts, each with:
+                        - clientName (str): Client hostname/name.
+                        - filePath (str): Path on the client where the passphrase file is stored.
+
+                Optional keys:
+                    - ENCRYPTION_KEY_LENGTH (int): Encryption key length in bits. Defaults to 256.
+
+        Raises:
+            SDKException: If required keys are missing or if the API call fails.
+
+        Example:
+            >>> kms_details = {
+            ...     "KEY_PROVIDER_TYPE": "KEY_PROVIDER_PASSPHRASE",
+            ...     "KEY_PROVIDER_AUTH_TYPE": "PASSPHRASE",
+            ...     "KMS_NAME": "test",
+            ...     "PASSPHRASE": "test123",
+            ...     "ENCRYPTION_KEY_LENGTH": 256,
+            ...     "PASSPHRASE_CLIENTS": [
+            ...         {
+            ...             "clientName": "commserve client name",
+            ...             "filePath": "/usr/test1"
+            ...         }
+            ...     ]
+            ... }
+            >>> kms_mgr.add(kms_details)
+
+        #ai-gen-doc
+        """
+        for required_key in ("KMS_NAME", "PASSPHRASE", "PASSPHRASE_CLIENTS"):
+            if required_key not in kms_details:
+                raise SDKException(
+                    "KeyManagementServer", 101,
+                    f"Missing required key '{required_key}' in kms_details for PASSPHRASE KMS."
+                )
+
+        enc_key_length = kms_details.get("ENCRYPTION_KEY_LENGTH", 256)
+        passphrase_b64 = base64.b64encode(kms_details["PASSPHRASE"].encode("utf-8")).decode("utf-8")
+
+        passphrase_client_list = []
+        for client_entry in kms_details["PASSPHRASE_CLIENTS"]:
+            passphrase_client_list.append(
+                {
+                    "client": {
+                        "clientName": client_entry["clientName"]
+                    },
+                    "filePath": {
+                        "path": client_entry["filePath"]
+                    }
+                }
+            )
+
+        payload = {
+            "keyProvider": {
+                "encryptionKeyLength": enc_key_length,
+                "encryptionType": 3,
+                "keyProviderType": 6,
+                "properties": {
+                    "passphrase": passphrase_b64,
+                    "passphraseClient": passphrase_client_list
+                },
+                "provider": {
+                    "keyProviderName": kms_details["KMS_NAME"]
+                }
+            },
+            "useSaveLabel": True
+        }
+
+        self._kms_api_call(payload)
 
     def _kms_api_call(self, payload: dict) -> dict:
         """Call the Key Management Server (KMS) API with the specified payload.

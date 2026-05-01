@@ -91,13 +91,17 @@ SchedulePolicy:
     enable                          -- Enables a schedule policy
 
     disable                         -- Disables a schedule policy
+    
+    _perform_task_operation         -- Perform task operation request for schedule policy
 
+    decouple_schedule_policy_from_subclient  -- Decouple the current schedule policy from subclient entities
 
 
 """
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
+import xml.etree.ElementTree as ET
 from typing import TYPE_CHECKING
 
 from ..exception import SDKException
@@ -634,6 +638,7 @@ class SchedulePolicy:
             self.schedule_policy_id)
         self._MODIFY_SCHEDULE_POLICY = self._commcell_object._services[
             'CREATE_UPDATE_SCHEDULE_POLICY']
+        self._TASK_OPERATION = self._commcell_object._services['TASK_OPERATION']
 
         self._associations = []
         self._subtasks = []
@@ -1210,3 +1215,80 @@ class SchedulePolicy:
             schedule_policy.refresh()
         """
         self._get_schedule_policy_properties()
+
+    def _perform_task_operation(self, request_xml: str) -> dict:
+        """Perform task operation request for schedule policy.
+
+        Args:
+            request_xml (str): XML request body for task operation.
+            <TMMsg_TaskOperationReq>
+            </TMMsg_TaskOperationReq>
+
+        Returns:
+            dict: JSON response from task operation API.
+
+        Raises:
+            SDKException: If request fails or operation returns error.
+        """
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._TASK_OPERATION, request_xml)
+
+        if not flag:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        response_json = response.json()
+        if isinstance(response_json, dict) and 'errorCode' in response_json:
+            if str(response_json['errorCode']) == '0':
+                return response_json
+            raise SDKException(
+                'Schedules', '102', response_json.get('errorMessage', 'Task operation failed'))
+
+        raise SDKException('Response', '101', response.text)
+
+    def decouple_schedule_policy_from_subclient(self, entities: list) -> None:
+        """Decouple the current schedule policy from subclient entities.
+
+        This method forms and sends the below XML request to task operations API:
+
+            <TMMsg_TaskOperationReq opType="4">
+                <taskIds val="{schedule_policy_id}"/>
+                <taskEntities taskId="{schedule_policy_id}"/>
+                <entities ...>
+                    <flags exclude="0"/>
+                </entities>
+            </TMMsg_TaskOperationReq>
+
+        Args:
+            entities (list): List of entity dictionaries. Each entity must contain
+                keys required by TaskOperations, such as:
+                    instanceName, appName, clientName, subclientName, backupsetName
+
+        Raises:
+            SDKException: If input is invalid or API call fails.
+        """
+        if not isinstance(entities, list) or not entities:
+            raise SDKException(
+                'Schedules', '102', 'entities should be a non-empty list of dictionaries')
+
+        request_root = ET.Element('TMMsg_TaskOperationReq', {'opType': '4'})
+        schedule_policy_id = str(self.schedule_policy_id)
+
+        ET.SubElement(request_root, 'taskIds', {'val': schedule_policy_id})
+        ET.SubElement(request_root, 'taskEntities', {'taskId': schedule_policy_id})
+
+        for entity in entities:
+            if not isinstance(entity, dict):
+                raise SDKException('Schedules', '102', 'each entity should be a dictionary')
+
+            entity_attributes = {
+                key: str(value) for key, value in entity.items()
+                if value is not None
+            }
+
+            entity_element = ET.SubElement(request_root, 'entities', entity_attributes)
+
+            ET.SubElement(entity_element, 'flags', {'exclude': '0'})
+
+        request_xml = ET.tostring(request_root, encoding='unicode')
+        self._perform_task_operation(request_xml)

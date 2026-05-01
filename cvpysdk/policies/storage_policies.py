@@ -265,8 +265,6 @@ Attributes
 
     **associations**                            --  Returns the associations of the copy
 
-    **selective_copy_rules**                     --  Returns the selective copy rules on storage policy copy
-
     **multiplexing_factor**                    --  Returns the multiplexing factor for the storage policy copy
 
     **store_priming**                    --  Sets the value of DDB store priming under copy dedupe properties
@@ -5103,15 +5101,7 @@ class StoragePolicyCopy(object):
             dict: A dictionary containing the associations of the storage policy copy.
         """
         return self._copy_properties.get('associations', {})
-    
-    @property
-    def selective_copy_rules(self) -> dict:
-        """Returns the selective copy rules of the storage policy copy.
 
-        Returns:
-            dict: A dictionary containing the selective copy rules of the storage policy copy.
-        """
-        return self._copy_properties.get('selectiveCopyRules', {})
     
     @property
     def multiplexing_factor(self) -> int:

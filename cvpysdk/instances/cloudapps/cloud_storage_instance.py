@@ -195,6 +195,12 @@ class CloudStorageInstance(CloudAppsInstance):
                 self._host_url = ibminstance.get('hostURL', '')
                 self._access_key = ibminstance.get('credentials', {}).get('username', '')
 
+            # S3 Compatible
+            if 's3CompatibleInstance' in cloud_apps_instance:
+                s3compat_instance = cloud_apps_instance.get('s3CompatibleInstance', {})
+
+                self._host_url = s3compat_instance.get('hostURL', '')
+
             if 'generalCloudProperties' in cloud_apps_instance:
                 self._access_node = cloud_apps_instance.get(
                     'generalCloudProperties', {}).get(
@@ -456,9 +462,7 @@ class CloudStorageInstance(CloudAppsInstance):
             "cloudAppsRestoreOptions"] = self._set_cloud_restore_options_json
         cloud_restore_json["taskInfo"]["subTasks"][0]["options"][
             "restoreOptions"]["commonOptions"] = self._common_options_json
-        cloud_restore_json["taskInfo"]["associations"][0]["backupsetId"] = int(self._agent_object.backupsets.get(
-            'defaultBackupSet').backupset_id)
-
+        
         return cloud_restore_json
 
     def restore_in_place(

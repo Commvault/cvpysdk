@@ -462,6 +462,22 @@ class ExchangeSubclient(Subclient):
             "pstSize": value.get("pst_size", 2048)
         }
 
+    def _json_msg_restore_exchange_restore_option(self, value):
+        """Setter for  the Exchange Mailbox MSG restore option in restore json
+            Args:
+                value   (dict)  --  restore option need to be included
+        """
+
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        self._exchange_msg_option_restore_json = {
+            "exchangeRestoreChoice": 3,
+            "exchangeRestoreDrive": 1,
+            "isJournalReport": value.get("journal_report", False),
+            "diskFilePath": value.get("destination_path")
+        }
+
     @property
     def _json_content_indexing_subtasks(self):
         """Getter for the contentindexing subtask in restore JSON.
@@ -513,6 +529,51 @@ class ExchangeSubclient(Subclient):
         request_json['taskInfo']['subTasks'][0][
             'options']['restoreOptions'][
                 'exchangeOption'] = self._exchange_pst_option_restore_json
+
+        request_json["taskInfo"]["subTasks"][0]["options"][
+            "restoreOptions"]["browseOption"]['backupset'] = self._exchange_backupset_json
+
+        return request_json
+
+    def _prepare_msg_restore_json(self, _msg_restore_option=None):
+        """
+        Prepare MSG restore Json with all getters
+
+        Args:
+            _msg_restore_option - dictionary with all PST restore options
+
+            value:
+                paths                   (list)  --  list of paths of mailboxes/folders to restore
+
+                destination_client              --  client where the mailboxes needs to be restored
+                destination_path                --  MSG path where the mailboxes needs to be
+                                                    restored
+                unconditional_overwrite (bool)  --  unconditional overwrite files during restore
+                    default: True
+                journal_report          (bool)  --  Journal report is true for journal and
+                                                    contentStore Mailbox
+                    default: False
+
+        returns:
+            request_json   -- complete json for performing PST Restore options
+        """
+
+        if _msg_restore_option is None:
+            _msg_restore_option = {}
+
+        paths = self._filter_paths(_msg_restore_option['paths'])
+        self._json_msg_restore_exchange_restore_option(_msg_restore_option)
+        self._json_backupset()
+
+        _msg_restore_option['paths'] = paths
+
+        # set the setters
+        self._instance_object._restore_association = self._subClientEntity
+        request_json = self._restore_json(restore_option=_msg_restore_option)
+
+        request_json['taskInfo']['subTasks'][0][
+            'options']['restoreOptions'][
+                'exchangeOption'] = self._exchange_msg_option_restore_json
 
         request_json["taskInfo"]["subTasks"][0]["options"][
             "restoreOptions"]["browseOption"]['backupset'] = self._exchange_backupset_json
@@ -883,6 +944,51 @@ class ExchangeSubclient(Subclient):
         restore_option['destination_path'] = pst_path
 
         request_json = self._prepare_pst_restore_json(restore_option)
+        return self._process_restore_response(request_json)
+
+    def msg_restore(
+            self,
+            paths,
+            destination_client,
+            msg_path,
+            overwrite=True,
+            journal_report=False):
+        """Restores the Mailbox/Emails specified in the input paths list to the MSG PATH location.
+
+            Args:
+                paths                   (list)  --  list of paths of mailboxes/folders to restore
+
+                overwrite               (bool)  --  unconditional overwrite files during restore
+                    default: True
+                journal_report          (bool)  --  Journal report is true for journal and
+                                                    contentStore Mailbox
+                    default: False
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+
+        restore_option = {}
+        if paths == []:
+            raise SDKException('Subclient', '104')
+        restore_option['journal_report'] = journal_report
+        restore_option['unconditional_overwrite'] = overwrite
+        restore_option['paths'] = paths
+        restore_option['client'] = destination_client
+        restore_option['destination_path'] = msg_path
+
+        request_json = self._prepare_msg_restore_json(restore_option)
         return self._process_restore_response(request_json)
 
     def pst_ingestion(self):

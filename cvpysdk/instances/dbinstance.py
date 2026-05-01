@@ -81,8 +81,7 @@ class DatabaseInstance(Instance):
         destination_client: str,
         destination_path: str,
         backup_job_ids: list,
-        user_name: str,
-        password: str
+        credentialName: str
     ) -> dict:
         """Create a JSON payload for application-free restore to disk.
 
@@ -94,8 +93,7 @@ class DatabaseInstance(Instance):
             destination_client: The name of the destination client where data will be restored.
             destination_path: The file system path on the destination client for the restore.
             backup_job_ids: List of backup job IDs to be used for the disk restore.
-            user_name: Impersonation username for restore operations on the destination client.
-            password: Password for the impersonation user.
+            credentialName: The saved credential name for impersonation on the destination client.
 
         Returns:
             dict: A dictionary representing the application-free restore JSON payload.
@@ -105,23 +103,20 @@ class DatabaseInstance(Instance):
             ...     destination_client="client01",
             ...     destination_path="/restore/location",
             ...     backup_job_ids=[12345, 12346],
-            ...     user_name="admin",
-            ...     password="password123"
+            ...     credentialName="oracle_cred"
             ... )
             >>> print(restore_json)
             # The returned dictionary can be used to initiate a restore operation.
 
         #ai-gen-doc
         """
-        encoded_password = b64encode(password.encode()).decode()
         restore_json = self._restore_json(
             destination_client=destination_client,
             destination_path=destination_path,
             index_free_restore=True,
             restore_jobs=backup_job_ids,
             restore_to_disk=True,
-            impersonate_user=user_name,
-            impersonate_password=encoded_password
+            credentialName=credentialName
         )
         restore_json["taskInfo"]["subTasks"][0]["options"][
             "restoreOptions"]["jobIds"] = backup_job_ids

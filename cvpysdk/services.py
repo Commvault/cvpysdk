@@ -102,7 +102,6 @@ SERVICES_DICT_TEMPLATE = {
     'APPLICATION_INSTANCE': '{0}Application/%s',
     'APPLICATION': '{0}Application',
     'INSTANCE_CREDENTIALS': '{0}v4/Hypervisor/%s/Credentials',
-
     'GET_ALL_SUBCLIENTS': '{0}Subclient?clientId=%s&applicationId=%s&propertyLevel=20',
     'ADD_SUBCLIENT': '{0}Subclient',
     'SUBCLIENT': '{0}Subclient/%s',
@@ -150,6 +149,7 @@ SERVICES_DICT_TEMPLATE = {
     'DELETE_STORAGE_POLICY_COPY': '{0}StoragePolicy?Action=deleteCopy',
     'SCHEDULE_POLICY': '{0}SchedulePolicy',
     'CREATE_UPDATE_SCHEDULE_POLICY': '{0}Task',
+    'TASK_OPERATION': '{0}TaskOperation',
     'GET_SCHEDULE_POLICY': '{0}SchedulePolicy/%s',
     'MEDIA_AGENT': '{0}MediaAgent/%s',
     'CLOUD_MEDIA_AGENT': '{0}MediaAgent/%s/CloudVMPowerManagement',
@@ -436,6 +436,7 @@ SERVICES_DICT_TEMPLATE = {
     'V4_DELETE_USER': '{0}v4/User/%s?newUserId=%s&newUserGroupId=%s',
     'OTP': '{0}User/%s/preferences/OTP',
     'GENERATE_OTP': '{0}user/otp/generate?dM2ClientType=AdminConsole',
+    'SESSION': '{0}Session?userId=%s',
 
     'UNLOCK': '{0}User/Unlock',
 
@@ -445,7 +446,7 @@ SERVICES_DICT_TEMPLATE = {
     'V4_ROLE': '{0}V4/Role/%s',
     'PERMISSIONS': '{0}V4/Permissions',
 
-    'ALL_CREDENTIALS': '{0}/CommCell/Credentials?propertyLevel=30',
+    'ALL_CREDENTIALS': '{0}/CommCell/Credentials?propertyLevel=10',
     'ALL_CREDENTIAL_VAULTS': '{0}v4/Credential?recordType=1000',
     'ONE_CREDENTIAL': '{0}/CommCell/Credentials/%s?propertyLevel=30',
     'CREDENTIAL':   '{0}/Commcell/Credentials',
@@ -725,7 +726,8 @@ SERVICES_DICT_TEMPLATE = {
     'RECOVERY_GROUP_RECOVER': '{0}RecoveryGroup/%s/Recover',
     'CLEANUP_RECOVERY_GROUP': '{0}RecoveryGroup/CleanupRecovery',
     'CREATE_CLEANROOM_RUNBOOK': '{0}Cleanroom/Runbook',
-    'CREATE_RUNBOOK_TARGET': '{0}Cleanroom/Target',    
+    'CREATE_RUNBOOK_TARGET': '{0}Cleanroom/Target',
+    'CLEANROOM_SITE': '{0}Cleanroom/Site',
     'RECOVERY_ENTITY': '{0}RecoveryEntity/%s',
     'RECOVERY_GROUP_RECOVERY_ENTITY': '{0}RecoveryGroup/%s/entity/%s',
     'RECOVERY_GROUP_THREATS_COUNT': '{0}RecoveryGroup/%s/KPI',

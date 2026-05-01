@@ -176,7 +176,7 @@ class SnowflakeSubclient(CloudAppsSubclient):
                 "subClientEntity": self._subClientEntity,
                 "commonProperties": self._commonProperties,
                 "cloudAppsSubClientProp": {
-                    "instanceType": self._backupset_object._instance_object._ca_instance_type
+                    "instanceType": self._backupset_object._instance_object.ca_instance_type
                 },
                 "content": self._snowflake_content
             }

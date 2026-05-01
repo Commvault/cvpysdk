@@ -1863,6 +1863,27 @@ class FileSystemSubclient(Subclient):
 
         if fs_options is not None and fs_options.get('no_of_streams', 1) > 1 and not fs_options.get('destination_appTypeId', False):
             fs_options['destination_appTypeId'] = int(self._client_object.agents.all_agents.get('file system', self._client_object.agents.all_agents.get('windows file system', self._client_object.agents.all_agents.get('linux file system', self._client_object.agents.all_agents.get('big data apps', self._client_object.agents.all_agents.get('cloud apps', 0))))))
+
+            agents = getattr(self._client_object, 'agents', None)
+            agent_mapping = agents.all_agents if agents else {}
+            try:
+                agent_ids = {int(app_id) for app_id in agent_mapping.values() if app_id}
+                if agent_ids == {29, 33}:
+                    os_type = self._client_object.os_type
+                    if os_type and hasattr(os_type, 'name'):
+                        if os_type.name == 'UNIX':
+                            fs_options['destination_appTypeId'] = 29
+                        elif os_type.name == 'WINDOWS':
+                            fs_options['destination_appTypeId'] = 33
+
+            except (ValueError, AttributeError) as e:
+                raise SDKException(
+                    'Subclient',
+                    '102',
+                    'Unable to determine destination app type for multi-stream restore. '
+                    'Verify FS agent/protocols Configured properly. Details: {0}'.format(e)
+                )
+
             if not fs_options['destination_appTypeId']:
                 del fs_options['destination_appTypeId']
 

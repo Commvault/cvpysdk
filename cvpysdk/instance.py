@@ -83,6 +83,8 @@ Instances:
     
     add_mysql_instance()            --  Method to add new mysql Instance
 
+    add_redshift_instance()         --  Adds a new Amazon Redshift instance to the given client
+
 
 Instance:
     __init__()                      --  initialise object of Instance with the specified instance
@@ -1965,14 +1967,12 @@ class Instances(object):
                 instance_options    (dict)  --  dict of keyword arguments as follows:
                     Example:
                        instance_options = {
-                            'credential_name': 'pinecone_cred',
-                            'credential_id': 47,
                             'plan_name': 'CS_Plan',
-                            'plan_id': 1,
-                            'account_name': 'Auto_test',
+                            'account_name': 'PineconeAccountB',
+                            'storage_integration_id': 'someid',
                             'staging_path': '/stage_path',
-                            'staging_credential_id': 31,
-                            'staging_credential_name': 'staging_cred'
+                            'staging_credential_name': 'staging_cred',
+                            'content': ['<CloudDBEntity>...</CloudDBEntity>']
                         }
 
             Returns:
@@ -1982,7 +1982,6 @@ class Instances(object):
                 SDKException:
                     if instance with same name already exists
                     if given plan name does not exist in commcell
-                    if given credential name does not exist in commcell
         """
         if self.has_instance(instance_name):
             raise SDKException(
@@ -1999,23 +1998,16 @@ class Instances(object):
                         instance_options.get("plan_name"))
                 )
 
-        if instance_options.get("credential_name"):
-            if not self._commcell_object.credentials.has_credential(instance_options.get("credential_name")):
-                raise SDKException(
-                    'Instance',
-                    '102',
-                    'Credential: "{0}" does not exist in the Commcell'.format(
-                        instance_options.get("credential_name"))
-                )
-
         # Build custom properties JSON string
         custom_props = {}
+        if instance_options.get("storage_integration_id"):
+            custom_props["storageIntegrationId"] = instance_options.get("storage_integration_id")
         if instance_options.get("staging_path"):
             custom_props["stagingPath"] = instance_options.get("staging_path")
-        if instance_options.get("staging_credential_id"):
-            custom_props["stagingCredentialId"] = instance_options.get("staging_credential_id")
         if instance_options.get("staging_credential_name"):
             custom_props["stagingCredentialName"] = instance_options.get("staging_credential_name")
+            staging_cred_obj = self._commcell_object.credentials.get(instance_options.get("staging_credential_name"))
+            custom_props["stagingCredentialId"] = int(staging_cred_obj.credential_id)
 
         import json
         custom_props_json = json.dumps(custom_props) if custom_props else "{}"
@@ -2026,38 +2018,25 @@ class Instances(object):
             "instanceType": "PINECONE"
         }
 
-        # Add plan if provided
+        # Add plan if provided (resolve id from name)
         if instance_options.get("plan_name"):
             plan_obj = self._commcell_object.plans.get(instance_options.get("plan_name"))
             request_json["plan"] = {
-                "id": int(plan_obj.plan_id) if not instance_options.get("plan_id") else int(instance_options.get("plan_id")),
+                "id": int(plan_obj.plan_id),
                 "name": instance_options.get("plan_name")
             }
 
-        # Add account if provided
+        # Add account (resolve id from name if client exists)
         account_name = instance_options.get("account_name", instance_name)
-        request_json["account"] = {
-            "name": account_name
-        }
+        account = {"name": account_name}
+        if self._commcell_object.clients.has_client(account_name):
+            client_obj = self._commcell_object.clients.get(account_name)
+            account["id"] = int(client_obj.client_id)
+        request_json["account"] = account
 
-        # Add content configuration
-        content_list = instance_options.get("content", ["/"])
-        exclude_content = instance_options.get("exclude_content", [])
-        exceptions = instance_options.get("exceptions", [])
-        request_json["content"] = {
-            "content": content_list,
-            "excludeContent": exclude_content,
-            "exceptions": exceptions
-        }
-
-        # Add credentials if provided
-        if instance_options.get("credential_name"):
-            credential_obj = self._commcell_object.credentials.get(instance_options.get("credential_name"))
-            credential_id = int(credential_obj.credential_id) if not instance_options.get("credential_id") else int(instance_options.get("credential_id"))
-            request_json["credential"] = {
-                "id": credential_id,
-                "name": instance_options.get("credential_name")
-            }
+        # Add content as a list of XML strings
+        if instance_options.get("content"):
+            request_json["content"] = instance_options.get("content")
 
         # Add custom properties if provided
         if custom_props:
@@ -2107,6 +2086,133 @@ class Instances(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_object_storage_s3_instance(
+            self,
+            instance_name,
+            plan_name,
+            credential_name,
+            access_nodes=None,
+            host_url='s3.amazonaws.com',
+            use_iam_role=True,
+            vendor_type=5,
+            number_of_backup_streams=4,
+            is_cloud_encryption_key_set=True,
+            description=''
+        ):
+        """Add an Object Storage (Amazon S3) Cloud Apps instance.
+
+        This is intended for environments where Object Storage accounts are modeled as Cloud Apps
+        instances (visible under `GET Instance/CloudStorage`), and creation is done via `POST /Instance`.
+
+        Unlike `add_cloud_storage_instance`, this method supports referencing an existing credential
+        by name and specifying a `vendor_type` (e.g., Amazon S3 = 5, S3 Compatible = 56).
+
+        Args:
+            instance_name: Name of the object storage instance/account to create.
+            plan_name: Plan name to associate.
+            credential_name: Existing credential name configured on Commcell.
+            access_nodes: Optional list of access node client names.
+            host_url: S3 host URL.
+            use_iam_role: Whether to use IAM Role auth.
+            vendor_type: Vendor type integer (Amazon S3 typically 5).
+            number_of_backup_streams: Number of backup streams.
+            is_cloud_encryption_key_set: Whether cloud encryption key is set.
+            description: Optional description.
+
+        Returns:
+            Instance: The created instance object.
+
+        Raises:
+            SDKException: For invalid inputs or API failures.
+
+        #ai-gen-doc
+        """
+        if not isinstance(instance_name, str) or not instance_name.strip():
+            raise SDKException('Instance', '101')
+        if not isinstance(plan_name, str) or not plan_name.strip():
+            raise SDKException('Plan', '101')
+        if not isinstance(credential_name, str) or not credential_name.strip():
+            raise SDKException('Credential', '101')
+
+        instance_name = instance_name.strip()
+
+        if self.has_instance(instance_name):
+            raise SDKException('Instance', '102', f'Instance "{instance_name}" already exists.')
+
+        if access_nodes is None:
+            access_nodes = []
+        if not isinstance(access_nodes, list):
+            raise SDKException('Instance', '101')
+
+        member_servers = []
+        for node in access_nodes:
+            if not isinstance(node, str) or not node.strip():
+                raise SDKException('Instance', '101')
+            member_servers.append({
+                'client': {
+                    'clientName': node.strip(),
+                    '_type_': 3
+                }
+            })
+
+        general_cloud_properties = {
+            'memberServers': member_servers,
+            'credentials': {
+                'credentialName': credential_name.strip()
+            }
+        }
+        # NOTE: Intentionally omit `numberOfBackupStreams` to keep streams as AUTO.
+        # This makes the server pick the appropriate number of streams by default.
+
+        request_json = {
+            'instanceProperties': {
+                'description': description or '',
+                'instance': {
+                    'clientName': self._client_object.client_name,
+                    'instanceName': instance_name,
+                    'appName': self._agent_object.agent_name,
+                },
+                'cloudAppsInstance': {
+                    'instanceType': 5,
+                    'vendorType': int(vendor_type),
+                    'generalCloudProperties': general_cloud_properties,
+                    'objectStorageInstance': {
+                        'isCloudEncryptionKeySet': bool(is_cloud_encryption_key_set)
+                    },
+                    's3Instance': {
+                        'hostURL': host_url,
+                        'useIamRole': bool(use_iam_role)
+                    }
+                },
+                'planEntity': {
+                    'planName': plan_name.strip()
+                }
+            }
+        }
+
+        add_instance = self._commcell_object._services['ADD_INSTANCE']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', add_instance, request_json
+        )
+
+        if flag:
+            response_data = response.json()
+            if response_data and 'response' in response_data:
+                response_obj = response_data['response']
+                error_code = response_obj.get('errorCode', 0)
+                if error_code != 0:
+                    error_string = response_obj.get('errorString', '')
+                    raise SDKException('Instance', '102', f'Error while creating instance\nError: "{error_string}"')
+        
+                created_name = response_obj.get('entity', {}).get('instanceName')
+                if not created_name:
+                    raise SDKException('Response', '102', 'Missing instance name in response')
+                self.refresh()
+                return self.get(created_name)
+            raise SDKException('Response', '102')
+
+        raise SDKException('Response', '101', self._update_response_(response.text))
 
 
     def add_snowflake_instance(self, instance_name, plan_name, sf_client_credential_name, db_names):
@@ -2190,6 +2296,156 @@ class Instances(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+
+    def add_redshift_instance(self, instance_name, **instance_options):
+        """Adds a new Amazon Redshift Instance to the given Client.
+
+        Creates the instance via the Commvault REST API and associates it with
+        the specified access node, credential, plan, and AWS region. The instance
+        display name is set to ``<instance_name> [<region>]``.
+
+            Args:
+                instance_name       (str)   --  Name of the Redshift instance to create.
+
+                instance_options    (dict)  --  Optional keyword arguments:
+
+                    credential_name     (str)   --  Name of the saved credential in Commcell
+                                                    used to authenticate against the Redshift
+                                                    cluster.
+
+                    plan_name           (str)   --  Name of the server plan to associate with
+                                                    this instance.
+
+                    access_node_name    (str)   --  EC2 instance ID or client name of the
+                                                    backup gateway / access node that will
+                                                    communicate with the Redshift cluster.
+
+                    region              (str)   --  AWS region where the Redshift cluster
+                                                    resides (e.g. ``'us-east-1'``).
+                                                    Defaults to ``'us-east-1'``.
+
+            Returns:
+                object  -   Instance of the :class:`Instance` class for the newly created
+                            Redshift instance.
+
+            Raises:
+                SDKException:
+                    if an instance with the same name already exists
+
+                    if the given plan name does not exist in the Commcell
+
+                    if the given credential name does not exist in the Commcell
+        """
+        if self.has_instance(instance_name):
+            raise SDKException(
+                'Instance', '102', 'Instance "{0}" already exists.'.format(
+                    instance_name)
+            )
+
+        if instance_options.get("plan_name"):
+            if not self._commcell_object.plans.has_plan(instance_options.get("plan_name")):
+                raise SDKException(
+                    'Instance',
+                    '102',
+                    'Plan: "{0}" does not exist in the Commcell'.format(
+                        instance_options.get("plan_name"))
+                )
+
+        if instance_options.get("credential_name"):
+            if not self._commcell_object.credentials.has_credential(instance_options.get("credential_name")):
+                raise SDKException(
+                    'Instance',
+                    '102',
+                    'Credential: "{0}" does not exist in the Commcell'.format(
+                        instance_options.get("credential_name"))
+                )
+
+        client_name = self._agent_object._client_object.client_name
+        client = self._commcell_object.clients.get(client_name)
+        access_node_name = instance_options.get('access_node_name')
+        access_node_client = None
+        if access_node_name and self._commcell_object.clients.has_client(access_node_name):
+            access_node_client = self._commcell_object.clients.get(access_node_name)
+        region = instance_options.get('region', 'us-east-1')
+        instance_display_name = f"{instance_name} [{region}]"
+        member_servers = []
+        if access_node_client:
+            member_servers = [{
+                "client": {
+                    "hostName": access_node_client.client_hostname,
+                    "displayName": f"{access_node_name} ({access_node_client.client_hostname})",
+                    "clientId": int(access_node_client.client_id),
+                    "name": access_node_name,
+                    "clientName": access_node_name
+                }
+            }]
+        
+        # Build the complete request JSON
+        request_json = {
+            "instanceProperties": {
+                "instance": {
+                    "instanceName": instance_display_name,
+                    "applicationId": 134,
+                    "clientId": int(client.client_id),
+                    "clientName": client_name
+                },
+                "cloudAppsInstance": {
+                    "instanceType": "AMAZON_REDSHIFT",
+                    "rdsInstance": {},
+                    "generalCloudProperties": {
+                        "accessNodes": {
+                            "memberServers": member_servers,
+                            "usePredefinedAccessNodes": False
+                        },
+                        "regionEndPoints": region,
+                        "regionInfo": {
+                            "regionName": region
+                        }
+                    },
+                    "amazonDynamoDB": {},
+                    "azureTableStorageInstance": {},
+                    "cloudSpannerInstance": {},
+                    "cloudBigtableInstance": {},
+                    "cloudBigQueryInstance": {},
+                    "azureResourceDiscoveryInstance": {}
+                },
+                "planEntity": {
+                    "planName": instance_options.get("plan_name")
+                },
+                "useResourcePoolInfo": False
+            }
+        }
+        
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['ADD_INSTANCE'], request_json
+        )
+        
+        if flag:
+            if response.json():
+                response_data = response.json()
+                if 'id' in response_data and 'name' in response_data:
+                    self.refresh()
+                    return self.get(response_data['name'])
+                elif 'response' in response_data:
+                    # Legacy response wrapper format
+                    error_code = response_data['response'].get('errorCode', 0)
+                    if error_code == 0:
+                        response_instance_name = response_data['response'].get('entity', {}).get('instanceName')
+                        self.refresh()
+                        return self.get(response_instance_name) if response_instance_name else self.get(instance_display_name)
+                    else:
+                        error_string = response_data['response'].get('errorString', 'Unknown error')
+                        o_str = 'Failed to create Redshift instance\nError: "{0}"'.format(error_string)
+                        raise SDKException('Instance', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+        
 
     def refresh(self):
         """Refresh the instances associated with the Agent of the selected Client."""
@@ -3359,12 +3615,12 @@ class Instance(object):
         if not isinstance(value, dict):
             raise SDKException('Subclient', '101')
 
-        use_impersonate = bool(value.get("impersonate_user"))
+        use_impersonate = bool(value.get("credentialName"))
 
         self._impersonation_json_ = {
             "useImpersonation": use_impersonate,
             "user": {
-                "savedCredential":{
+                "savedCredential": {
                     "credentialName": value.get("credentialName", "")
                 }
 
@@ -3436,6 +3692,9 @@ class Instance(object):
 
         if value.get('cvcBrowse'):
             self._browse_restore_json["cvcBrowse"] = True
+
+        if value.get("restore_to_disk", False):
+            self._browse_restore_json.pop("backupset", None)
 
     def _restore_common_opts_json(self, value):
         """ Method to set commonOpts for restore
@@ -3574,8 +3833,9 @@ class Instance(object):
                     "clientName": value.get("client_name", ""),
                 }
             }
-            # removing 'destPath' if restoring in place
-            self._destination_restore_json.pop('destPath') if value.get("in_place", True) else None
+            # removing 'destPath' if restoring in place (but keep it for restore_to_disk)
+            if value.get("in_place", True) and not value.get("restore_to_disk", False):
+                self._destination_restore_json.pop('destPath', None)
 
         if value.get("multinode_restore", False) or value.get("no_of_streams", 1) > 1:
             self._destination_restore_json["destinationInstance"] = {
