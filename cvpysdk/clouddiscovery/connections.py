@@ -109,9 +109,11 @@ Classes:
             get_connection()        - Get an AWS connection by name.
             has_connection()        - Check if an AWS connection exists.
             refresh()               - Refresh the AWS connections cache.
+            aws_stack_info()        - Get AWS permissions CFT articles for a given account ID; returns List[Dict], cached per account ID.
             _get_all_connections()  - Retrieve all AWS connections from the backend.
             _get_aws_cloud_connections() - Get all AWS cloud connections as name-value pairs.
             _validate_aws_cloud_connection() - Validate AWS cloud connection for the specified account ID.
+            _fetch_aws_stack_info() - Fetch the AWS permissions CFT stack info from the API.
 
         Properties:
             all_connections         - Get all AWS connections managed by this instance.
@@ -653,6 +655,8 @@ class AWSConnections(Connections):
         self._cvpysdk_object = self._commcell._cvpysdk_object
         self._services = self._commcell._services
         self._update_response_ = self._commcell._update_response_
+        self._aws_stack_info: Optional[List[Dict]] = None    # cached cloudConnectionArticlesList
+        self._aws_stack_info_account_id: Optional[str] = None  # account ID used for the cached response
         self.refresh()
 
     @property
@@ -855,3 +859,76 @@ class AWSConnections(Connections):
             )
             for conn in connections
         ]
+
+    def aws_stack_info(self, account_id: str) -> List[Dict]:
+        """Get the AWS permissions CFT stack info for the given account ID.
+
+        Returns the cached ``cloudConnectionArticlesList`` if already fetched for
+        this account ID; otherwise calls the API, extracts the list, and caches it.
+
+        Each article in the list contains:
+            - ``cloudConnectionType`` (str): ``"CLOUD_ACCOUNT"`` or ``"ORGANIZATION"``
+            - ``iamRoleArn``          (str): Full ARN of the IAM role to create/trust
+            - ``externalId``          (str): External ID to embed in the trust policy
+            - ``hostedInfrastructureCftUrl`` (str): CloudFormation quick-create URL
+            - ``memberAccountArticles`` (dict, optional): Present only for ORGANIZATION type
+
+        Args:
+            account_id (str): The AWS account ID (12-digit) to query.
+
+        Returns:
+            List[Dict]: The ``cloudConnectionArticlesList`` from the PermissionsCFT API response.
+
+        Raises:
+            SDKException: If the API call fails, returns an unexpected response,
+                          or the ``cloudConnectionArticlesList`` key is missing.
+
+        Example:
+            >>> aws_connections = AWSConnections(commcell)
+            >>> articles = aws_connections.aws_stack_info('123456789012')
+            >>> for article in articles:
+            ...     print(article['cloudConnectionType'], article['externalId'])
+            CLOUD_ACCOUNT 800AF153AAEBB9B26F818A81A0324278E037C77DB91D478A9C181AE6B4161861
+            ORGANIZATION  800AF153AAEBB9B26F818A81A0324278E037C77DB91D478A9C181AE6B4161861
+        """
+        # Return cached value when the same account ID is requested again
+        if self._aws_stack_info is not None and self._aws_stack_info_account_id == account_id:
+            return self._aws_stack_info
+
+        self._aws_stack_info = self._fetch_aws_stack_info(account_id)
+        self._aws_stack_info_account_id = account_id
+        return self._aws_stack_info
+
+    def _fetch_aws_stack_info(self, aws_account_id: str) -> List[Dict]:
+        """Fetch the AWS permissions CFT stack info from the API.
+
+        Calls ``GET v4/Cloud/AWS/ExpressConfig/QuickCreateLink/PermissionsCFT?iamRoleAccountId={awsAccountId}``
+        and returns the raw JSON response.
+
+        Args:
+            aws_account_id (str): The AWS account ID (12-digit) to query.
+
+        Returns:
+            List[Dict]: The ``cloudConnectionArticlesList`` from the PermissionsCFT API response.
+
+        Raises:
+            SDKException: If the API call fails or returns an unexpected response.
+
+        Example:
+            >>> aws_connections = AWSConnections(commcell)
+            >>> info = aws_connections._fetch_aws_stack_info('123456789012')
+            >>> print(info['cloudConnectionArticlesList'][0]['externalId'])
+            800AF153AAEBB9B26F818A81A0324278E037C77DB91D478A9C181AE6B4161861
+        """
+        url = self._services['GET_AWS_PERMISSIONS_CFT'] % aws_account_id
+        flag, response = self._cvpysdk_object.make_request('GET', url=url)
+        if flag:
+            if response.json():
+                articles = response.json().get('cloudConnectionArticlesList')
+                if articles is None:
+                    raise SDKException('Connections', '108')
+                return articles
+            raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+

@@ -69,6 +69,7 @@ class DRJobPhases(Enum):
     SECURITY_SCAN = 88
     CLEANUP_DEPLOYED_RESOURCES = 90
     CREATE_ACCESS_NODE = 83
+    WAIT_BACKUPCOPY_JOB = 85
 
 class DRJobPhaseToText(Enum):
     SCRIPT_EXECUTION = "Script Execution"
@@ -128,3 +129,4 @@ class DRJobPhaseToText(Enum):
     CLEANUP_DEPLOYED_RESOURCES = "Cleanup Deployed Resources"
     SECURITY_SCAN = "Security Scan"
     CREATE_ACCESS_NODE = "Create Access Node"
+    WAIT_BACKUPCOPY_JOB = "Waiting on Backup copy job"

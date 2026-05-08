@@ -448,6 +448,7 @@ import re
 import time
 from base64 import b64encode
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from urllib.parse import quote
 
 import requests
 
@@ -8978,8 +8979,11 @@ class Client(object):
         if self._instance is None:
             try:
                 self._instance = self._get_instance_of_client()
-            except SDKException:
-                # pass silently if failed to get the value of instance
+            except SDKException as e:
+                import logging
+                logging.getLogger(__name__).warning(
+                    f"_get_instance_of_client failed for client '{self.client_name}': {e}"
+                )
                 pass
 
         return self._instance
@@ -11977,6 +11981,66 @@ class Client(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def available_log_files(self, path: str = "/") -> Dict[str, Any]:
+        """List log files and folders under a path on this client (log browser root is ``/``).
+
+        Args:
+            path: Folder to list; default is the log root.
+
+        Returns:
+            Parsed JSON (typically ``path`` and ``browseItems``).
+
+        Raises:
+            SDKException: If the request fails or the response is empty.
+
+        """
+        if not path.startswith('/'):
+            path = '/' + path
+        path_param = quote(path, safe='')
+        url = self._services['CLIENT_LOGS_BROWSE'] % self.client_id + '?path={0}'.format(path_param)
+        flag, response = self._cvpysdk_object.make_request('GET', url)
+        if flag:
+            if response.json():
+                return response.json()
+            raise SDKException('Response', '102')
+        raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def set_debug_level(
+        self,
+        log_name: str,
+        debug_level: int,
+        file_size_mb: int = 5,
+        file_versions: int = 1,
+    ) -> Dict[str, Any]:
+        """Set debug level and log file rotation for a named log (e.g. ``CommandCenter``, ``Webserver``).
+
+        Args:
+            log_name: Log to update, as shown in the client log viewer.
+            debug_level: Debug level.
+            file_size_mb: Maximum log file size in MB.
+            file_versions: How many rotated log files to keep.
+
+        Returns:
+            Server response body (often empty or minimal).
+
+        Raises:
+            SDKException: If the request fails.
+
+        """
+        path_segment = quote(str(log_name), safe='')
+        url = self._services['CLIENT_LOG_SERVICE'] % (self.client_id, path_segment)
+        payload = {
+            'debugLevel': debug_level,
+            'fileSizeInMB': file_size_mb,
+            'fileVersions': file_versions,
+        }
+        flag, response = self._cvpysdk_object.make_request('POST', url, payload=payload)
+        if flag:
+            if response.json():
+                return response.json()
+            return {}
+        raise SDKException('Response', '101', self._update_response_(response.text))
 
     def add_http_proxy(self, use_client_os_proxy_settings=False, proxy_server="", proxy_port=0,
                        use_authentication=False, use_with_network_topology=False,

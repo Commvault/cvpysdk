@@ -302,6 +302,26 @@ EXCEPTION_DICT = {
         '108': 'Model Data Training failed on this classifier',
         '109': 'Cancel Training failed on this classifier'
     },
+    'YaraRule': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Failed to get yara rule details from commcell',
+        '104': 'Unable to create yara rule in the commcell',
+        '105': 'Unable to delete yara rule in the commcell',
+        '106': 'Unable to modify yara rule in the commcell',
+        '107': 'Failed to get yara rule container details from commcell',
+        '108': 'Failed to find yara rule from commcell'
+    },
+    'HashFeed': {
+        '101': 'Data type of the input(s) is not valid',
+        '102': '',
+        '103': 'Failed to get hash feed details from commcell',
+        '104': 'Unable to create hash feed in the commcell',
+        '105': 'Unable to delete hash feed in the commcell',
+        '106': 'Unable to modify hash feed in the commcell',
+        '107': 'Failed to get hash feed container details from commcell',
+        '108': 'Failed to find hash feed from commcell'
+    },
     'Tags': {
         '101': 'Data type of the input(s) is not valid',
         '102': '',
@@ -705,7 +725,8 @@ EXCEPTION_DICT = {
         '104': 'Failed to start discovery job',
         '105': 'Failed to validate account id',
         '106': 'Failed to get connection details',
-        '107': 'Failed to add connection'
+        '107': 'Failed to add connection',
+        '108': 'Failed to get AWSStackInfo'
     }
 }
 

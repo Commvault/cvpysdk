@@ -104,7 +104,6 @@ OracleInstance:
 
 """
 from __future__ import unicode_literals
-from base64 import b64encode
 import json
 
 from ..exception import SDKException
@@ -1283,16 +1282,13 @@ class OracleInstance(DatabaseInstance):
 
         self._db_dump_restore_json = {
             "importToDatabase": True,
-            "parallelism": 2,
+            "parallelism": value.get("parallelism", 2),
             "restorePath": value.get("destination_path", ""),
-            "overwriteTable": False,
+            "overwriteTable": value.get("overwrite_table", False),
             "enabled": True,
-            "connectDetails": {
-                "password": b64encode(value.get("db_password", "").encode()).decode(),
-                "domainName": (self._properties.get("oracleInstance", {}).
-                               get("sqlConnect", {}).get("domainName", "")),
-                "userName": (self._properties.get("oracleInstance", {}).
-                             get("sqlConnect", {}).get("userName", ""))
+            "dbConnectCredential": {
+                "credentialId": value.get("credential_id", 0),
+                "credentialName": value.get("credential_name", "")
             }
         }
 
@@ -1424,11 +1420,12 @@ class OracleInstance(DatabaseInstance):
 
     def restore_in_place(
         self,
-        db_password: str,
         path: list,
         dest_client_name: str,
         dest_instance_name: str,
         dest_path: str = None,
+        credential_name: str = "",
+        parallelism: int = 2,
         restore_oracle_options_type: str = None,
         start_lsn: str = None,
         end_lsn: str = None,
@@ -1437,15 +1434,16 @@ class OracleInstance(DatabaseInstance):
         """Restore Oracle logical dump data or log files to their original location.
 
         This method restores the specified Oracle database or log files, as provided in the `path` list,
-        to the same location on the destination client and instance. Additional options such as destination
-        path, restore options type, LSN range, and log destination can be specified for advanced restore scenarios.
+        to the same location on the destination client and instance. The credential ID is resolved
+        automatically from the Commvault credential store using `credential_name`.
 
         Args:
-            db_password: Password for the Oracle database.
             path: List of database or log file paths to be restored.
             dest_client_name: Name of the destination client where files will be restored.
             dest_instance_name: Name of the destination Oracle instance on the destination client.
             dest_path: Optional; destination path for the restore operation. Defaults to None.
+            credential_name: Name of the saved credential in the Commvault credential store.
+            parallelism: Number of parallel streams for the restore. Defaults to 2.
             restore_oracle_options_type: Optional; type of Oracle restore options to use. Defaults to None.
             start_lsn: Optional; starting Log Sequence Number for log restore. Defaults to None.
             end_lsn: Optional; ending Log Sequence Number for log restore. Defaults to None.
@@ -1461,28 +1459,28 @@ class OracleInstance(DatabaseInstance):
         Example:
             >>> oracle_instance = OracleInstance()
             >>> job = oracle_instance.restore_in_place(
-            ...     db_password="oracle_pwd",
-            ...     path=["/backup/db1.dmp", "/backup/db2.dmp"],
+            ...     path=["/"],
             ...     dest_client_name="oracle_client",
-            ...     dest_instance_name="orcl",
-            ...     dest_path="/oracle/restore",
-            ...     restore_oracle_options_type="FULL",
-            ...     start_lsn="1000",
-            ...     end_lsn="2000",
-            ...     log_dest="/oracle/logs"
+            ...     dest_instance_name="cdb1",
+            ...     dest_path="/dump_staging",
+            ...     credential_name="cdb1-nk",
+            ...     parallelism=2
             ... )
             >>> print(f"Restore job started with ID: {job.job_id}")
 
         #ai-gen-doc
         """
-        if not (isinstance(path, list) and
-                isinstance(db_password, str)):
+        if not isinstance(path, list):
             raise SDKException('Instance', '101')
         if not path:
             raise SDKException('Instance', '103')
 
+        credential_id = self._commcell_object.credentials.get(credential_name).credential_id
+
         request_json = self._restore_json(
-            db_password=db_password,
+            credential_name=credential_name,
+            credential_id=credential_id,
+            parallelism=parallelism,
             paths=path,
             destination_client=dest_client_name,
             destination_instance=dest_instance_name,

@@ -53,6 +53,8 @@ Class: KubernetesVirtualServerSubclient:    Derived class from VirtualServerSubC
         guest_file_restore()            --  Restore the files and folders to file system destionation
                                             or to target PVC
 
+        kubevirt_vm_guest_file_restore_to_fs() --  KubeVirt VM guest FLR to FS destination (VM path mode)
+
         guest_files_browse()            --  Browse files in a application at any point in time
 
         namespace_restore_in_place()    --  Perform a namespace level restore in-place
@@ -943,6 +945,21 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
 
                 in_place (bool): If restore job is inplace
 
+                include_disk_name_in_source_path (bool): If True (default), each source path
+                    includes ``disk_name`` after the VM snap id (PVC / disk-relative restore).
+                    If False, paths are ``\\{snap}\\{restore_list item}`` only — use for VM guest
+                    files indexed under the application root (e.g. KubeVirt FLR under ``mnt\\data``).
+
+                restore_association_override (dict, optional): If set, merged into
+                    ``taskInfo.associations[0]`` after building the restore request (e.g. ``subclientId``,
+                    ``clientId``, ``backupsetId`` from a VM browse row). Browse in this method always
+                    uses the application-group subclient; use this so the submitted job matches a
+                    child association without constructing a separate ``Subclient``.
+
+                virtual_server_flr_browse (bool): If True, sets ``disk_browse`` / ``file_browse`` on
+                    ``virtualServerRstOption`` for file-level FLR. Used by
+                    :meth:`kubevirt_vm_guest_file_restore_to_fs` only; leave unset for other callers.
+
         Raises:
             SDKException:
                 - inputs are not of correct type as per definition
@@ -959,6 +976,12 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
             # k8s_subclient.guest_file_restore(application_name="my_app", destination_path="/dest", volume_level_restore=6, disk_name="my_pvc", restore_list=["file1.txt"], copy_precedence=1, unconditional_overwrite=True)
             pass
         """
+        # Optional: merge into task associations after building the request. Used when the restore
+        # job must be tied to a child browse row (e.g. KubeVirt VM synthetic subclient) while all
+        # browse calls in this method still run on the application-group subclient (``self``).
+        restore_association_override = kwargs.pop("restore_association_override", None)
+        virtual_server_flr_browse = kwargs.pop("virtual_server_flr_browse", False)
+
         vm_names, vm_ids = self._get_vm_ids_and_names_dict_from_browse()
         _guest_file_rst_options = {}
         _advanced_restore_options = {}
@@ -969,6 +992,11 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         unconditional_overwrite = kwargs.get('unconditional_overwrite', False)
         show_deleted_files = kwargs.get('show_deleted_files', False)
         in_place = kwargs.get('in_place', False)
+        # When True (default), sourceItem is \\{snap}\\{disk_name}\\{item} (PVC / disk-relative).
+        # When False, sourceItem is \\{snap}\\{item} for guest paths indexed directly under the VM
+        # (e.g. KubeVirt VM FLR: mnt\\data\\...).
+        include_disk_name_in_source_path = kwargs.pop(
+            'include_disk_name_in_source_path', True)
 
         # check if inputs are correct
         if not (isinstance(application_name, str) and
@@ -1001,7 +1029,11 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         src_item_list = []
         for each_item in restore_list:
             item = "\\".join(each_item.split('/'))
-            src_item_list.append( "\\" + vm_ids[application_name] + "\\" + disk_name + "\\" + item)
+            _base = "\\" + vm_ids[application_name] + "\\"
+            if include_disk_name_in_source_path:
+                src_item_list.append(_base + disk_name + "\\" + item)
+            else:
+                src_item_list.append(_base + item)
 
         _guest_file_rst_options['paths'] = src_item_list
 
@@ -1044,6 +1076,10 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         advanced_options_dict = self._json_restore_advancedRestoreOptions(_advanced_restore_options)
         self._advanced_restore_option_list.append(advanced_options_dict)
 
+        if virtual_server_flr_browse:
+            _guest_file_rst_options["disk_browse"] = False
+            _guest_file_rst_options["file_browse"] = True
+
         self._set_restore_inputs(
             _guest_file_rst_options,
             in_place=False,
@@ -1053,6 +1089,10 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         )
 
         request_json = self._prepare_disk_restore_json(_guest_file_rst_options)
+        if restore_association_override:
+            _assoc = request_json.get("taskInfo", {}).get("associations")
+            if _assoc and isinstance(_assoc, list) and _assoc:
+                _assoc[0].update(restore_association_override)
 
         # Populate the advancedRestoreOptions section
         self._virtualserver_option_restore_json["diskLevelVMRestoreOption"][
@@ -1060,6 +1100,49 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         self._advanced_restore_option_list = []
 
         return self._process_restore_response(request_json)
+
+    def kubevirt_vm_guest_file_restore_to_fs(
+            self,
+            application_name: str,
+            destination_path: str,
+            disk_name: str,
+            proxy_client: Optional[str] = None,
+            restore_list: Optional[List[str]] = None,
+            **kwargs) -> None:
+        """Guest file restore to a filesystem destination for KubeVirt VM guest paths (e.g. testcase 73372).
+
+        Sets ``include_disk_name_in_source_path=False`` so ``sourceItem`` is ``\\\\{snap}\\\\{path}``
+        without a PVC segment (e.g. ``mnt\\\\data\\\\...``). For standard pod/PVC FS destination
+        restores (62119), use :meth:`guest_file_restore` with default path mode.
+
+        Args:
+            application_name (str): Application / VM name from browse.
+            destination_path (str): Absolute path on the destination client.
+            disk_name (str): Disk segment from ``disk_level_browse`` for advanced options.
+            proxy_client (str, optional): Destination / access node client name.
+            restore_list (list, optional): Guest-relative paths with forward slashes.
+
+        **kwargs:
+            Passed to :meth:`guest_file_restore` (e.g. ``restore_association_override``,
+            ``copy_precedence``, ``unconditional_overwrite``). Sets ``virtual_server_flr_browse``
+            so the restore request uses file-level ``virtualServerRstOption`` (not disk browse).
+
+        Returns:
+            Job object from :meth:`guest_file_restore`.
+        """
+        extra = dict(kwargs)
+        extra.pop('include_disk_name_in_source_path', None)
+        extra.pop('virtual_server_flr_browse', None)
+        return self.guest_file_restore(
+            application_name=application_name,
+            destination_path=destination_path,
+            volume_level_restore=7,
+            disk_name=disk_name,
+            proxy_client=proxy_client,
+            restore_list=restore_list,
+            include_disk_name_in_source_path=False,
+            virtual_server_flr_browse=True,
+            **extra)
 
     def guest_files_browse(
             self,
@@ -1128,7 +1211,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
                 pass
         """
         return self.browse_in_time(
-            vm_path, show_deleted_files, restore_index, False, from_date, to_date, copy_precedence,
+            application_path, show_deleted_files, restore_index, False, from_date, to_date, copy_precedence,
             vm_files_browse=False, media_agent=media_agent)
 
     def _get_apps_in_namespace(self, namespaces: List[str]) -> Tuple[List[str], Dict[str, str]]:

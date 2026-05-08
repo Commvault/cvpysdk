@@ -227,6 +227,8 @@ from enum import Enum
 from typing import List, Dict, Union, Any, Optional, TYPE_CHECKING
 import math
 
+from .activateapps.entity_manager import EntityManagerTypes
+
 from .constants import threat_detection_plan_json
 from .exception import SDKException
 from .security.security_association import SecurityAssociation
@@ -5560,32 +5562,161 @@ class Plan(object):
             raise SDKException(
                 'Plan', 102, f"Failed to disable log backup to disk for plan '{self.plan_name}'")
 
-    def update_threat_detection_plan(self, malware_detection = True, encryption_detection = True, anomaly_detection = True):
-        """Update the threat detection plan
+    def update_threat_detection_plan(self, malware_detection: bool = None, encryption_detection: bool = None, 
+                                     anomaly_detection: bool = None, yara_rules: list = None, 
+                                     ioc_rules: list = None, enable_yara: bool = None, 
+                                     use_custom_hash_feed: bool = None, 
+                                     use_commvault_hash_feed: bool = False) -> None:
+        """Update threat detection plan with detection types and/or IOC rules.
+        
         Args:
-            malware_detection (bool) : Enable or disable malware detection
-            encryption_detection (bool) : Enable or disable encryption detection
-            anomaly_detection (bool) : Enable or disable anomaly detection
+            malware_detection (bool, optional): Enable or disable malware detection (Default: True)
+            encryption_detection (bool, optional): Enable or disable encryption detection (Default: True)
+            anomaly_detection (bool, optional): Enable or disable anomaly detection (Default: True)
+            yara_rules (list, optional): List of YARA rule names (strings) to add to the plan
+                                        Example: ['rule1', 'rule2']
+            ioc_rules (list, optional): List of IOC rule names (strings) to add to the plan
+                                       Example: ['ioc_rule1', 'ioc_rule2']
+            enable_yara (bool, optional): Flag to enable YARA rule scanning. 
+                                         Automatically set to True if yara_rules provided
+            use_custom_hash_feed (bool, optional): Enable custom hash feed. 
+                                                  Automatically set to True if ioc_rules provided
+            use_commvault_hash_feed (bool): Enable Commvault hash feed (default: False)
 
-            Set True to enable and False to disable the respective detection
+        Raises:
+            SDKException:
+                if failed to update the plan
+                if yara_rule or ioc_rule does not exist in commcell
+                if invalid rule names format
+                if no detection types or IOC rules are provided
+
+        Usage:
+            # Update detection types only
+            plan.update_threat_detection_plan(malware_detection=True, encryption_detection=True)
+
+            # Update with YARA rules only
+            plan.update_threat_detection_plan(yara_rules=['custoyara'])
+
+            # Update with both detection types and IOC rules
+            plan.update_threat_detection_plan(
+                malware_detection=True, 
+                encryption_detection=True,
+                yara_rules=['custoyara', 'rule2'],
+                ioc_rules=['ioc1', 'ioc2']
+            )
         """
-        if not malware_detection and not encryption_detection and not anomaly_detection:
-            raise SDKException('Plan', '102', 'At least one detection type must be enabled')
-        request_json = {
-            "threatIndicator": {
-                "threatScan": {
-                    "threatAnalysis": malware_detection,
-                    "fileDataAnalysis": encryption_detection
-                },
-                "threatDetection": {
-                    "fileActivity": anomaly_detection,
-                    "backupSize": anomaly_detection,
-                    "fileType": anomaly_detection,
-                    "canaryFile": anomaly_detection,
-                    "fileExtension": anomaly_detection
-                }
-            }
-        }
+        request_json = {"threatIndicator": {}}
+
+        # Handle threat detection settings (malware, encryption, anomaly)
+        has_detection_settings = malware_detection is not None or encryption_detection is not None or anomaly_detection is not None
+        
+        if has_detection_settings:
+            # Only set what the user explicitly provided
+            if not malware_detection and not encryption_detection and not anomaly_detection:
+                raise SDKException('Plan', '102', 'At least one detection type must be enabled')
+            
+            request_json["threatIndicator"]["threatScan"] = {}
+            request_json["threatIndicator"]["threatDetection"] = {}
+            
+            # Only include explicitly provided parameters
+            if malware_detection is not None:
+                request_json["threatIndicator"]["threatScan"]["threatAnalysis"] = malware_detection
+            if encryption_detection is not None:
+                request_json["threatIndicator"]["threatScan"]["fileDataAnalysis"] = encryption_detection
+            if anomaly_detection is not None:
+                request_json["threatIndicator"]["threatDetection"]["fileActivity"] = anomaly_detection
+                request_json["threatIndicator"]["threatDetection"]["backupSize"] = anomaly_detection
+                request_json["threatIndicator"]["threatDetection"]["fileType"] = anomaly_detection
+                request_json["threatIndicator"]["threatDetection"]["canaryFile"] = anomaly_detection
+                request_json["threatIndicator"]["threatDetection"]["fileExtension"] = anomaly_detection
+
+        # Handle IOC/YARA rules
+        # Check if user explicitly provided any IOC parameters BEFORE auto-setting
+        has_ioc_settings = (yara_rules is not None or ioc_rules is not None or 
+                            enable_yara is not None or use_custom_hash_feed is not None)
+        
+        # Auto-set flags based on provided rules
+        if yara_rules and isinstance(yara_rules, list) and len(yara_rules) > 0:
+            enable_yara = True
+        elif enable_yara is None:
+            enable_yara = False
+
+        if ioc_rules and isinstance(ioc_rules, list) and len(ioc_rules) > 0:
+            use_custom_hash_feed = True
+        elif use_custom_hash_feed is None:
+            use_custom_hash_feed = False
+
+        # Process YARA rules - look up rule names and get IDs
+        processed_yara_rules = []
+        if yara_rules:
+            if not isinstance(yara_rules, list):
+                raise SDKException('Plan', '102', 'yara_rules must be a list of strings')
+            
+            # Get YaraRules manager from activate
+            yara_rules_manager = self._commcell_object.activate.entity_manager(entity_type=EntityManagerTypes.YARA_RULES)
+            
+            for rule_name in yara_rules:
+                if not isinstance(rule_name, str):
+                    raise SDKException('Plan', '102', f'Each yara_rule name must be a string, got {type(rule_name)}')
+                
+                # Check if rule exists
+                if not yara_rules_manager.has_yara_rule(rule_name):
+                    raise SDKException('Plan', '102', f'YARA rule "{rule_name}" does not exist in commcell')
+                
+                # Get rule properties and extract ID
+                rule_props = yara_rules_manager.get_properties(rule_name)
+                rule_id = rule_props.get('entityId')
+                
+                processed_yara_rules.append({
+                    'id': rule_id,
+                    'name': rule_name
+                })
+
+        # Process IOC rules - look up rule names and get IDs
+        processed_ioc_rules = []
+        if ioc_rules:
+            if not isinstance(ioc_rules, list):
+                raise SDKException('Plan', '102', 'ioc_rules must be a list of strings')
+            
+            # Get HashFeeds manager from activate
+            hash_feeds_manager = self._commcell_object.activate.entity_manager(entity_type=EntityManagerTypes.HASH_FEEDS)
+            
+            for rule_name in ioc_rules:
+                if not isinstance(rule_name, str):
+                    raise SDKException('Plan', '102', f'Each ioc_rule name must be a string, got {type(rule_name)}')
+                
+                # Check if hash feed exists
+                if not hash_feeds_manager.has_hash_feed(rule_name):
+                    raise SDKException('Plan', '102', f'Hash feed (IOC rule) "{rule_name}" does not exist in commcell')
+                
+                # Get hash feed properties and extract ID
+                feed_props = hash_feeds_manager.get_properties(rule_name)
+                feed_id = feed_props.get('entityId')
+                
+                processed_ioc_rules.append({
+                    'id': feed_id,
+                    'name': rule_name
+                })
+
+
+        # Add IOC-related settings if any IOC parameters are provided
+        if has_ioc_settings:
+            if "threatScan" not in request_json["threatIndicator"]:
+                request_json["threatIndicator"]["threatScan"] = {}
+            
+            request_json["threatIndicator"]["threatScan"]["yaraRule"] = enable_yara
+            request_json["threatIndicator"]["threatScan"]["useCustomHashFeed"] = use_custom_hash_feed
+            request_json["threatIndicator"]["threatScan"]["useCommvaultHashFeed"] = use_commvault_hash_feed
+            
+            if processed_yara_rules:
+                request_json["threatIndicator"]["threatScan"]["yaraRules"] = processed_yara_rules
+            
+            if processed_ioc_rules:
+                request_json["threatIndicator"]["threatScan"]["iocRules"] = processed_ioc_rules
+
+        # Ensure at least something was provided
+        if not has_detection_settings and not has_ioc_settings:
+            raise SDKException('Plan', '102', 'At least one parameter must be provided to update the threat detection plan')
 
         flag, response = self._cvpysdk_object.make_request('PUT', self._V4_DC_PLAN, request_json)
 

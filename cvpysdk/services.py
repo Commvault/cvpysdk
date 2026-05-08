@@ -76,6 +76,8 @@ SERVICES_DICT_TEMPLATE = {
     'CLIENT_PASSKEY': '{0}Client/%s/Passkey',
     'CLIENT_AUTH_RESTORE': '{0}Client/%s/AuthRestore',
     'CLIENT_LOGS': '{0}Client/%s/Logs/Read',
+    'CLIENT_LOGS_BROWSE': '{0}Client/%s/Logs/Browse',
+    'CLIENT_LOG_SERVICE': '{0}Client/%s/Logs/%s',
     'GET_ADDITIIONAL_SETTINGS': '{0}Client/%s/AdditionalSettings',
     'FILTER_CLIENTS': '{0}Client?%s',
     'GET_ALL_CLIENTS_PLUS_HIDDEN': '{0}Client?hiddenclients=true',
@@ -382,6 +384,9 @@ SERVICES_DICT_TEMPLATE = {
     'V4_GLOBAL_SERVER_PLANS': '{0}/V4/Global/ServerPlan',
     'V4_ARCHIVER_PLAN': '{0}V4/ArchivePlan',
     'V4_SERVER_PLAN_BACKUP_DESTINATION': '{0}V4/ServerPlan/%s/BackupDestination',
+    'V4_DRBACKUP_BACKUP_DESTINATIONS': '{0}V4/DRBackup/BackupDestinations',
+    'V4_DRBACKUP_BACKUP_DESTINATION_DELETE': '{0}V4/DRBackup/BackupDestination/%s',
+    'V4_DRBACKUP_STORAGE_POLICY': '{0}V4/DRBackup/StoragePolicy',
     'V4_SERVER_PLAN_COPY': '{0}V4/ServerPlan/%s/BackupDestination/%s',
     'V4_DC_PLANS': '{0}V4/DCPlan',
     'V4_DC_PLAN': '{0}V4/DCPlan/%s',
@@ -812,6 +817,8 @@ SERVICES_DICT_TEMPLATE = {
     'GET_AWS_CONNECTION_DETAILS': '{0}/V4/Cloud/CloudConnection/%s',
 
     'GET_AWS_ORG_ACCOUNTS': '{0}/V4/Cloud/CloudConnection/%s/accounts',
+
+    'GET_AWS_PERMISSIONS_CFT': '{0}/V4/Cloud/AWS/ExpressConfig/QuickCreateLink/PermissionsCFT?iamRoleAccountId=%s',
 
     'GET_DISCOVERY_SCHEDULES': '{0}/Schedules?seaDataSourceId=%s&operationType=5025',
 

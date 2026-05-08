@@ -33,6 +33,14 @@ DisasterRecovery:
 
     _process_drbackup_response()  --    process the disaster recovery backup request
 
+    has_dr_copy()                 --    check if a specific DR backup copy is configured
+
+    get_dr_copies()               --    get a list of all DR backup copies configured on the CommServe server
+
+    add_dr_copy()                 --    add a DR backup copy to the CommServe server with the specified storage pool and retention settings.
+
+    delete_dr_copy()              --    delete a DR backup copy from the CommServe server.
+
     restore_out_of_place()        --    function to run DR restore operation
 
     _advanced_dr_backup()         --    includes advance dr backup options
@@ -100,12 +108,13 @@ DisasterRecoveryManagement Attributes:
 """
 from base64 import b64encode
 
-from cvpysdk.policies.storage_policies import StoragePolicy
+from cvpysdk.policies.storage_policies import StoragePolicy, StoragePolicyCopy
 from cvpysdk.storage import DiskLibrary
 from .job import Job
 from .exception import SDKException
 from .client import Client
 from .constants import AppIDAType
+from .storage_pool import StorageType, StoragePoolType
 
 from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -155,6 +164,9 @@ class DisasterRecovery(object):
         self.path = self.client.install_directory
         self._RESTORE = self.commcell._services['RESTORE']
         self._CREATE_TASK = self.commcell._services['CREATE_TASK']
+        self._V4_DRBACKUP_BACKUP_DESTINATIONS = self.commcell._services['V4_DRBACKUP_BACKUP_DESTINATIONS']
+        self._V4_DRBACKUP_BACKUP_DESTINATION_DELETE = self.commcell._services['V4_DRBACKUP_BACKUP_DESTINATION_DELETE']
+        self._V4_DRBACKUP_STORAGE_POLICY = self.commcell._services['V4_DRBACKUP_STORAGE_POLICY']
         self.advbackup = False
         self._disaster_recovery_management = None
         self.reset_to_defaults()
@@ -344,6 +356,185 @@ class DisasterRecovery(object):
             to_time=to_time,
             fs_options=fs_options,
             restore_jobs=restore_jobs)
+
+    def get_dr_copies(self):
+        """Get a mapping of the storage policies and DR backup copies configured on the CommServe server."""
+        flag, response = self.commcell._cvpysdk_object.make_request('GET', self._V4_DRBACKUP_BACKUP_DESTINATIONS)
+        if flag:
+            if response.json():
+                backup_destinations = response.json().get('backupdestinations', [])
+            else:
+                response_string = self.commcell._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
+        else:
+            raise SDKException('DisasterRecovery', '102', 'Failed to retrieve DR backup copies')
+        
+        flag, response = self.commcell._cvpysdk_object.make_request('GET', self._V4_DRBACKUP_STORAGE_POLICY)
+        if flag:
+            if response.json():
+                storage_policy_name = response.json().get('name', '')
+            else:
+                response_string = self.commcell._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
+        else:
+            raise SDKException('DisasterRecovery', '102', 'Failed to retrieve storage policies for DR backup copies')
+        
+        # Extract name and copy id from each backup destination
+        processed_destinations = []
+        for destination in backup_destinations:
+            if 'planBackupDestination' in destination:
+                copy_name = destination['planBackupDestination'].get('name')
+                copy_id = destination['planBackupDestination'].get('id')
+                if copy_name and copy_id:
+                    processed_destinations.append({copy_name: copy_id})
+        
+        dr_copies = {'StoragePolicy': storage_policy_name, 'BackupDestinations': processed_destinations}
+        return dr_copies
+
+    def has_dr_copy(self, copy_name) -> bool:
+        """Check if a specific DR backup copy is configured on the CommServe server.
+        
+        Args:
+        
+            copy_name: The name of the DR backup copy to check for existence."""
+        
+        copies = self.get_dr_copies()
+        return any(copy_name in destination for destination in copies['BackupDestinations'])
+
+    def add_dr_copy(self, copy_name: str, storage_pool: str, retention: int=0, extended_retention: dict=None) -> 'StoragePolicyCopy':
+        """Add a DR backup copy to the CommServe server with the specified storage pool and retention settings.
+
+        This method creates a new DR backup copy using the provided parameters, allowing for additional redundancy
+        and protection of the CommServe database. The copy will be associated with the specified storage pool and
+        configured with the given retention settings.
+
+        Args:
+            copy_name: The name for the new DR backup copy.
+            storage_pool: The name of the storage pool where the DR backup copy will be stored.
+            retention: Retention period in days for the DR backup copy. Default is 0 (no retention).
+            extended_retention: Optional dictionary specifying extended retention rules for the DR backup copy. 
+
+        Raises:
+            SDKException: If input parameters are invalid or if adding the DR backup copy fails.
+
+        Example:
+            >>> dr = DisasterRecovery()
+            >>> dr.add_dr_copy(
+            ...     copy_name='DR_Copy_01',
+            ...     storage_pool='StoragePool01',
+            ...     retention=30,
+            ...     extended_retention={
+            ...     "firstExtendedRetentionRule": {
+                    "isInfiniteRetention": False,
+                    "type": "WEEKLY_FULLS",
+                    "retentionPeriodDays": 90
+                    },
+            ...     "secondExtendedRetentionRule": {
+                    "type": "MONTHLY_FULLS",
+                    "retentionPeriodDays": 365,
+                    "isInfiniteRetention": False
+                    },
+            ...     "thirdExtendedRetentionRule": {
+                    "type": "YEARLY_FULLS",
+                    "retentionPeriodDays": 1825,
+                    "isInfiniteRetention": False
+                }
+            }
+            >>> print("DR backup copy added successfully")
+
+        #ai-gen-doc
+        """
+        #Make changes for defaults if its Tape pool
+        copy_payload = {"backupDestinationName": copy_name, "overrideRetentionSettings": True, "backupStartTime": -1, "useExtendedRetentionRules": False}
+        storage_pool_obj = self.commcell.storage_pools.get(storage_pool)
+        copy_payload['storagePool'] = {"id": int(storage_pool_obj.storage_pool_id), "name": storage_pool_obj.storage_pool_name}
+        if storage_pool_obj.storage_type == StorageType.TAPE.value:
+            copy_payload['storagePool']['type'] = StoragePoolType.SECONDARY_COPY.value #To fetch maxstreamNums from the pool to inherit in copy
+            if retention: # If retention is provided, use it
+                copy_payload['retentionPeriodDays'] = retention
+            else:
+                copy_payload.update({'overrideRetentionSettings': False})
+                copy_payload['retentionPeriodDays'] = storage_pool_obj.get_copy().copy_retention['days']  # Default retention -> inherit from tape pools
+            copy_payload['backupsToCopy'] = "MONTHLY_FULLS" # Default backups to copy for tape pools
+            copy_payload['fullBackupTypesToCopy'] = "LAST"  # Default full backup types to copy for tape pools
+        else:
+            if retention:
+                copy_payload['retentionPeriodDays'] = retention
+            else:
+                copy_payload['retentionPeriodDays'] = 30  # Default retention for non-tape pools
+        if storage_pool_obj.is_worm_storage_lock_enabled: #copies inhering worm pools should not be overriding pool retention
+            if 'retentionPeriodDays' in copy_payload:
+                del copy_payload['retentionPeriodDays']
+            copy_payload.update({'overrideRetentionSettings': False})
+        if extended_retention:
+            if (storage_pool_obj.storage_type == StorageType.TAPE.value or storage_pool_obj.is_worm_storage_lock_enabled) and retention is None:
+                raise SDKException('Plan', '102', 'Retention period days must be specified when adding extended retention rules for Tape storage pool')
+            copy_payload.update({'useExtendedRetentionRules': True})
+            copy_payload.update({"extendedRetentionRules": extended_retention})
+
+        request_json = {
+            'destinations': [copy_payload]
+        }
+        flag, response = self.commcell._cvpysdk_object.make_request('POST', self._V4_DRBACKUP_BACKUP_DESTINATIONS, request_json)
+
+        dr_copies = self.get_dr_copies()
+        storage_policy = dr_copies['StoragePolicy']
+        if flag:
+            if response.json():
+                response_json = response.json()
+                if "planBackupDestination" in response_json and len(response_json['planBackupDestination']) > 0:
+                    return StoragePolicyCopy(self.commcell, storage_policy, response_json['planBackupDestination'][0]['name'])
+                if "errorCode" in response_json and response_json['errorCode'] != 0:
+                    error_message = response_json['errorMessage']
+                    o_str = 'Adding DR backup copy failed\nError: "{0}"'.format(error_message)
+                    raise SDKException('Response', '102', o_str)
+            else:
+                response_string = self.commcell._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
+            
+    def delete_dr_copy(self, copy: Union[str, StoragePolicyCopy, int]) -> None:
+        """Delete a DR backup copy from the CommServe server.
+
+        This method removes the specified DR backup copy, which can help manage storage resources and maintain
+        an organized set of backup copies. The copy to be deleted can be identified by its name or by providing
+        a StoragePolicyCopy object.
+
+        Args:
+            copy: The DR backup copy to delete. Can be the copy name (str) or a StoragePolicyCopy object.
+
+        Raises:
+            SDKException: If the specified copy does not exist or if the deletion operation fails.
+
+        Example:
+            >>> dr = DisasterRecovery()
+            >>> dr.delete_dr_copy('DR_Copy_01')
+            >>> print("DR backup copy deleted successfully")
+
+        #ai-gen-doc
+        """
+        dr_copies = self.get_dr_copies()
+        storage_policy = dr_copies['StoragePolicy']
+        if isinstance(copy, StoragePolicyCopy):
+            copy_id = copy.copy_id
+        elif isinstance(copy, str):
+            copy_id = StoragePolicyCopy(self.commcell, storage_policy, copy).copy_id
+        elif isinstance(copy, int):
+            copy_id = copy
+        else:
+            raise SDKException('DisasterRecovery', '101')
+
+        flag, response = self.commcell._cvpysdk_object.make_request('DELETE', self._V4_DRBACKUP_BACKUP_DESTINATION_DELETE % copy_id)
+
+        if flag:
+            if response.json():
+                response_json = response.json()
+                if "errorCode" in response_json and response_json['errorCode'] != 0:
+                    error_message = response_json['errorMessage']
+                    o_str = 'Deleting DR backup copy failed\nError: "{0}"'.format(error_message)
+                    raise SDKException('Response', '102', o_str)
+            else:
+                response_string = self.commcell._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
 
     def _advanced_dr_backup(self) -> Job:
         """Run an advanced Disaster Recovery (DR) backup job using JSON input.

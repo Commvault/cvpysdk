@@ -3861,6 +3861,15 @@ class Commcell(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def refresh_updates(self) -> Optional[str]:
+        """Perform check latest updates.
+        
+        Returns:
+            Optional[str]: Error string if available, None otherwise.
+        """
+        download = Download(self)
+        return download.refresh_updates()
+        
     def sync_remote_cache(self, client_list: Optional[List[str]] = None, schedule_pattern: Optional[Dict[str, Any]] = None) -> 'Job':
         """Synchronize the remote cache for specified clients.
 

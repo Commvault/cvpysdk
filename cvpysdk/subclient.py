@@ -186,7 +186,6 @@ from __future__ import unicode_literals
 import copy
 import math
 import time
-from base64 import b64encode
 from typing import Any, Dict, List, Optional, Union
 
 from .exception import SDKException
@@ -790,10 +789,8 @@ class Subclients(object):
             subclient_name: str,
             storage_policy: str,
             dump_dir: str,
-            user_name: str,
-            domain_name: str,
-            password: str,
             full_mode: bool,
+            credential_name: str = "",
             schema_value: Optional[list] = None
         ) -> 'Subclient':
         """Add a subclient for Oracle logical dump backup.
@@ -806,10 +803,8 @@ class Subclients(object):
             subclient_name: Name of the subclient for logical dump.
             storage_policy: Storage policy to associate with the subclient.
             dump_dir: Directory path where dumps will be stored.
-            user_name: Username for the Oracle database.
-            domain_name: Domain name for the Oracle database.
-            password: Password for the Oracle database (should be encrypted/decrypted as required).
             full_mode: If True, creates a subclient in full mode; if False, creates in schema mode.
+            credential_name: Name of the saved credential in the Commvault credential store for the Oracle database connection.
             schema_value: List of schema names for schema mode subclient. Should be None for full mode.
 
         Returns:
@@ -828,10 +823,8 @@ class Subclients(object):
             ...     subclient_name="FullDumpSubclient",
             ...     storage_policy="OracleStoragePolicy",
             ...     dump_dir="/oracle/dumps",
-            ...     user_name="oracle_user",
-            ...     domain_name="oracle_domain",
-            ...     password="encrypted_password",
-            ...     full_mode=True
+            ...     full_mode=True,
+            ...     credential_name="oracle-cred"
             ... )
             >>> print(f"Created subclient: {subclient}")
 
@@ -840,10 +833,8 @@ class Subclients(object):
             ...     subclient_name="SchemaDumpSubclient",
             ...     storage_policy="OracleStoragePolicy",
             ...     dump_dir="/oracle/dumps",
-            ...     user_name="oracle_user",
-            ...     domain_name="oracle_domain",
-            ...     password="encrypted_password",
             ...     full_mode=False,
+            ...     credential_name="oracle-cred",
             ...     schema_value=["HR", "FINANCE"]
             ... )
             >>> print(f"Created schema mode subclient: {subclient}")
@@ -853,14 +844,13 @@ class Subclients(object):
         if not (isinstance(subclient_name, str) and
                 isinstance(storage_policy, str) and
                 isinstance(dump_dir, str) and
-                isinstance(user_name, str) and
-                isinstance(domain_name, str) and
-                isinstance(password, str) and
                 isinstance(full_mode, bool)):
             raise SDKException('Subclient', '101')
         if (full_mode == False and not
         isinstance(schema_value, list)):
             raise SDKException('Subclient', '101')
+
+        credential_id = self._commcell_object.credentials.get(credential_name).credential_id
 
         if self.has_subclient(subclient_name):
             raise SDKException(
@@ -925,10 +915,9 @@ class Subclients(object):
                         "dumpDir": dump_dir,
                         "parallelism": 2,
                         "overrideInstanceUser": True,
-                        "sqlConnect": {
-                            "password": b64encode(password.encode()).decode(),
-                            "domainName": domain_name,
-                            "userName": user_name
+                        "dbConnectCredential": {
+                            "credentialId": credential_id,
+                            "credentialName": credential_name
                         }
                     },
                     "storageDevice": {

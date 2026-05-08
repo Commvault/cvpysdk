@@ -661,17 +661,15 @@ class OracleSubclient(DatabaseSubclient):
 
     def restore_in_place(
             self,
-            db_password=None,
             database_list=None,
             dest_client_name=None,
             dest_instance_name=None,
-            destination_path=None):
+            destination_path=None,
+            credential_name=""):
         """
         Method to restore the logical dump
 
             Args:
-
-                db_password             (str)  -- password for oracle database
 
                 database_list           (List) -- List of databases
 
@@ -679,9 +677,14 @@ class OracleSubclient(DatabaseSubclient):
 
                 dest_instance_name      (str)  -- Destination Instance name
 
-                destination_path        (str)   --  destination path for restore
+                destination_path        (str)  -- destination path for restore
 
                     default: None
+
+                credential_name         (str)  -- name of the saved credential in the Commvault
+                                                  credential store for Oracle DB connection
+
+                    default: ""
 
             Returns:
                 object -- Job containing restore details
@@ -697,8 +700,8 @@ class OracleSubclient(DatabaseSubclient):
         instance_object._restore_association = self._subclient_properties["subClientEntity"]
 
         return instance_object.restore_in_place(
-            db_password,
-            database_list,
-            dest_client_name,
-            dest_instance_name,
-            dest_path=destination_path)
+            path=database_list,
+            dest_client_name=dest_client_name,
+            dest_instance_name=dest_instance_name,
+            dest_path=destination_path,
+            credential_name=credential_name)

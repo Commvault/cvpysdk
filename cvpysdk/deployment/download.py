@@ -391,7 +391,7 @@ class Download(object):
                 else:
                     flag_1, response_1 = self._cvpysdkcommcell_object.make_request('GET', self._services['SOFTWARE_CACHE'])
                     cache_list = []
-                    for obj in response_1.json()['softwareCacheDetailList']:
+                    for obj in response_1.json().get('softwareCacheDetailList', []):
                         if obj['cache']['id'] != 2:
                             cache_list.append(obj['cache']['name'])
                     for client in cache_list:

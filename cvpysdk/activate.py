@@ -54,7 +54,7 @@ from .activateapps.inventory_manager import Inventories
 
 from .activateapps.request_manager import Requests
 
-from .activateapps.entity_manager import EntityManagerTypes, ActivateEntities, Tags, Classifiers
+from .activateapps.entity_manager import EntityManagerTypes, ActivateEntities, Tags, Classifiers, YaraRules, HashFeeds
 
 from .activateapps.compliance_utils import ComplianceSearchUtils
 
@@ -97,6 +97,8 @@ class Activate(object):
         self._entity = None
         self._tags = None
         self._classifiers = None
+        self._yara_rules = None
+        self._hash_feeds = None
         self._inventories = None
         self._fso_servers = None
         self._fso_server_groups = None
@@ -120,6 +122,8 @@ class Activate(object):
         del self._entity
         del self._tags
         del self._classifiers
+        del self._yara_rules
+        del self._hash_feeds
         del self._inventories
         del self._fso_servers
         del self._fso_server_groups
@@ -242,17 +246,20 @@ class Activate(object):
         """Retrieve the appropriate entity manager object based on the specified entity type.
 
         Depending on the provided entity_type, this method returns an instance of ActivateEntities,
-        Classifiers, or Tags for managing entities, classifiers, or tagsets within Activate.
+        Classifiers, Tags, YaraRules, or HashFeeds for managing entities, classifiers, tagsets, YARA rules,
+        or hash feeds within Activate.
 
         Args:
             entity_type: An EntityManagerTypes enum value specifying which entity manager to retrieve.
                 - EntityManagerTypes.ENTITIES: Returns ActivateEntities instance.
                 - EntityManagerTypes.TAGS: Returns Tags instance.
                 - EntityManagerTypes.CLASSIFIERS: Returns Classifiers instance.
+                - EntityManagerTypes.YARA_RULES: Returns YaraRules instance.
+                - EntityManagerTypes.HASH_FEEDS: Returns HashFeeds instance.
                 Default is EntityManagerTypes.ENTITIES.
 
         Returns:
-            An instance of ActivateEntities, Classifiers, or Tags corresponding to the entity_type.
+            An instance of ActivateEntities, Classifiers, Tags, YaraRules, or HashFeeds corresponding to the entity_type.
 
         Raises:
             SDKException: If the input data is not valid or the entity type is not supported.
@@ -265,6 +272,10 @@ class Activate(object):
             >>> print(f"Tags manager: {tags}")
             >>> classifiers = activate.entity_manager(EntityManagerTypes.CLASSIFIERS)
             >>> print(f"Classifiers manager: {classifiers}")
+            >>> yara_rules = activate.entity_manager(EntityManagerTypes.YARA_RULES)
+            >>> print(f"YARA Rules manager: {yara_rules}")
+            >>> hash_feeds = activate.entity_manager(EntityManagerTypes.HASH_FEEDS)
+            >>> print(f"Hash Feeds manager: {hash_feeds}")
 
         #ai-gen-doc
         """
@@ -282,4 +293,12 @@ class Activate(object):
             if self._classifiers is None:
                 self._classifiers = Classifiers(self._commcell_object)
             return self._classifiers
+        elif entity_type.value == EntityManagerTypes.YARA_RULES.value:            
+            if self._yara_rules is None:
+                self._yara_rules = YaraRules(self._commcell_object)
+            return self._yara_rules
+        elif entity_type.value == EntityManagerTypes.HASH_FEEDS.value:            
+            if self._hash_feeds is None:
+                self._hash_feeds = HashFeeds(self._commcell_object)
+            return self._hash_feeds
         raise SDKException('EntityManager', '102', 'Unsupported entity type specified')

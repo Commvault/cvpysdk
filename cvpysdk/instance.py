@@ -3854,6 +3854,9 @@ class Instance(object):
             "sourceItem": value["instant_clone_options"]["instant_clone_src_path"] if value.get("instant_clone_options", None) else value.get("paths", []),
             "browseFilters": value.get("browse_filters", [])
         }
+        
+        if value.get("run_threat_analysis", False):
+            self._fileoption_restore_json["runThreatAnalysis"] = True
 
         if value.get("instant_clone_options", None):
             self._fileoption_restore_json["fsCloneOptions"] = {

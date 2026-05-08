@@ -1039,6 +1039,40 @@ class ActivateEntityConstants:
             "keywords": "",
             "isSystemDefinedEntity": False,
             "userDefinedKeywords" : ""
+        }     
+    }
+
+    YARA_RULE_REQUEST_JSON = {
+        "regularExpression": "",
+        "displayName": "",
+        "description": "",
+        "enabled": True,
+        "entityName": "",
+        "entityType": 5,
+        "entityXML": {
+            "userDefinedKeywords": "",
+            "isSystemDefinedEntity": False,
+            "inheritBaseWords": False
+        },
+        "yaraRulesDetails": {
+            "yaraRulesString": ""
+        }
+    }
+
+    HASH_FEED_REQUEST_JSON = {
+        "regularExpression": "",
+        "displayName": "",
+        "description": "",
+        "enabled": True,
+        "entityName": "",
+        "entityType": 6,
+        "entityXML": {
+            "userDefinedKeywords": "",
+            "isSystemDefinedEntity": False,
+            "inheritBaseWords": False,
+            "threatIOCDetails": {
+                "iOCFileHashDetails": []
+            }
         }
     }
 
