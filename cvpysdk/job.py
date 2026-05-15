@@ -49,6 +49,10 @@ JobController
 
     get_active_job_summary()    --  Returns a dict with summary of active jobs
 
+    all_active_jobs_prop        --  Returns the raw list of active job summaries from POST /Jobs
+
+    get_active_jobs_cache()     --  Returns active jobs from the CommcellEntityCache MongoDB
+
     all_jobs()                  --  returns all the jobs on this commcell
 
     active_jobs()               --  returns the dict of active jobs and their details
@@ -339,10 +343,163 @@ class JobController(object):
         #ai-gen-doc
         """
         self._commcell_object = commcell_object
-
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
         self._update_response_ = commcell_object._update_response_
+        self._ACTIVE_JOBS = self._services['ACTIVE_JOBS']
+        self.filter_query_count: int = 0
+        self._valid_columns: Optional[Dict[str, str]] = None
+
+    def _init_valid_columns(self) -> Dict[str, str]:
+        """Build (once) the map of short column name → MongoDB field path for /Jobs/active."""
+        if self._valid_columns is None:
+            self._valid_columns = {
+                'jobId':                   'jobs.jobSummary.jobId',
+                'status':                  'jobs.jobSummary.status',
+                'localizedOperationName':  'jobs.jobSummary.localizedOperationName',
+                'percentComplete':         'jobs.jobSummary.percentComplete',
+                'localizedBackupLevelName': 'jobs.jobSummary.localizedBackupLevelName',
+                'appTypeName':             'jobs.jobSummary.appTypeName',
+                'jobType':                 'jobs.jobSummary.jobType',
+                'pendingReason':           'jobs.jobSummary.pendingReason',
+                'clientId':                'jobs.jobSummary.subclient.clientId',
+                'clientName':              'jobs.jobSummary.subclient.clientName',
+                'subclientId':             'jobs.jobSummary.subclient.subclientId',
+                'jobStartTime':            'jobs.jobSummary.jobStartTime',
+                'jobElapsedTime':          'jobs.jobSummary.jobElapsedTime',
+                'subclientName':           'jobs.jobSummary.subclientName',
+                'backupsetName':           'jobs.jobSummary.subclient.backupsetName',
+                'instanceName':            'jobs.jobSummary.subclient.instanceName',
+                'agentName':               'jobs.jobSummary.subclient.appName',
+                'currentPhaseName':        'jobs.jobSummary.currentPhaseName',
+            }
+        return self._valid_columns
+
+    def _get_fl_parameters(self, fl: Optional[List[str]] = None) -> str:
+        """Build the ``fl`` query-string fragment for /Jobs/active."""
+        valid = self._init_valid_columns()
+        default = 'jobs.jobSummary'
+        if fl:
+            invalid = [c for c in fl if c not in valid]
+            if invalid:
+                raise SDKException('Job', '102', f'Invalid column name(s) passed: {invalid}')
+            return f'&fl={default},{",".join(valid[c] for c in fl)}'
+        return f'&fl={default}'
+
+    def _get_sort_parameters(self, sort: Optional[List] = None) -> str:
+        """Build the ``sort`` query-string fragment for /Jobs/active."""
+        valid = self._init_valid_columns()
+        col, sort_type = sort[0], str(sort[1])
+        if col not in valid or sort_type not in ('1', '-1'):
+            raise SDKException('Job', '102', f'Invalid sort column or sort type: {col}, {sort_type}')
+        return f'&sort={valid[col]}:{sort_type}'
+
+    def _get_fq_parameters(self, fq: Optional[List[List]] = None) -> str:
+        """Build the ``fq`` query-string fragment for /Jobs/active.
+
+        Supported conditions:
+            Text fields:    contains, notContain, eq, neq, isEmpty, isNotEmpty, startsWith
+            Numeric fields: eq, neq, gt, lt, gteq, lteq, between (value as 'start-end')
+        """
+        valid = self._init_valid_columns()
+        text_conditions = {'contains', 'notContain', 'eq', 'neq', 'startsWith'}
+        numeric_conditions = {'gt', 'lt', 'gteq', 'lteq'}
+        params: List[str] = []
+        for column, condition, *value in (fq or []):
+            if column not in valid:
+                raise SDKException('Job', '102', f'Invalid fq column: {column}')
+            mongo_field = valid[column]
+            if condition in text_conditions or condition in numeric_conditions:
+                params.append(f'&fq={mongo_field}:{condition}:{value[0]}')
+            elif condition == 'isEmpty':
+                params.append(f'&fq={mongo_field}:in:null,')
+            elif condition == 'isNotEmpty':
+                params.append(f'&fq={mongo_field}:nin:null,')
+            elif condition == 'between' and value and '-' in str(value[0]):
+                start, end = str(value[0]).split('-', 1)
+                params.append(f'&fq={mongo_field}:gteq:{start}')
+                params.append(f'&fq={mongo_field}:lteq:{end}')
+            else:
+                raise SDKException('Job', '102', f'Invalid fq condition: {condition}')
+        return ''.join(params)
+
+    def get_active_jobs_cache(self, hard: bool = False, **kwargs) -> Dict[str, Dict[str, Any]]:
+        """Return active jobs from the CommcellEntityCache MongoDB (GET /Jobs/active).
+
+        Supports the same fl / sort / limit / search / fq kwargs used by
+        ``get_clients_cache``, ``get_plans_cache``, etc., so the cache helper
+        infrastructure works without modification.
+
+        Args:
+            hard (bool): Perform a hard refresh of the cache. Defaults to False.
+            **kwargs:
+                fl (list):     Column names to include in the response.
+                sort (list):   [columnName, '1' | '-1']
+                limit (list):  [start, count]   e.g. ['0', '100']
+                search (str):  Free-text search string.
+                fq (list):     [[column, condition, value], ...]
+
+        Returns:
+            Dict[str, Dict[str, Any]]: Mapping of ``str(jobId)`` → flat job properties dict.
+
+        Raises:
+            SDKException: On HTTP failure or invalid filter parameters.
+        """
+        valid = self._init_valid_columns()
+
+        fl_param    = self._get_fl_parameters(kwargs.get('fl'))
+        fq_param    = self._get_fq_parameters(kwargs.get('fq'))
+        sort_param  = self._get_sort_parameters(kwargs.get('sort')) if kwargs.get('sort') else ''
+        limit       = kwargs.get('limit')
+        limit_param = f'start={limit[0]}&limit={limit[1]}' if limit else ''
+        hard_param  = '&hardRefresh=true' if hard else ''
+
+        searchable = ['localizedOperationName', 'appTypeName', 'clientName', 'subclientName']
+        search_param = (
+            f'&search={",".join(valid[c] for c in searchable)}:contains:{kwargs["search"]}'
+            if kwargs.get('search') else ''
+        )
+
+        url = self._ACTIVE_JOBS + '?' + ''.join(
+            [limit_param, sort_param, fl_param, hard_param, search_param, fq_param]
+        )
+
+        flag, response = self._cvpysdk_object.make_request('GET', url)
+        if not flag:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+        jobs_cache: Dict[str, Dict[str, Any]] = {}
+        data = response.json() or {}
+        self.filter_query_count = data.get('filterQueryCount', 0)
+
+        for job in data.get('jobs', []):
+            summary = job.get('jobSummary', {})
+            if not summary.get('isVisible', True):
+                continue
+            job_id = str(summary.get('jobId', ''))
+            subclient = summary.get('subclient', {})
+            jobs_cache[job_id] = {
+                'jobId':                  summary.get('jobId'),
+                'status':                 summary.get('status'),
+                'localizedOperationName': summary.get('localizedOperationName', ''),
+                'percentComplete':        summary.get('percentComplete'),
+                'localizedBackupLevelName': summary.get('localizedBackupLevelName', ''),
+                'appTypeName':            summary.get('appTypeName', ''),
+                'jobType':                summary.get('jobType', ''),
+                'pendingReason':          summary.get('pendingReason', ''),
+                'clientId':               subclient.get('clientId'),
+                'clientName':             subclient.get('clientName', ''),
+                'subclientId':            subclient.get('subclientId', 0),
+                'jobStartTime':           summary.get('jobStartTime'),
+                'jobElapsedTime':         summary.get('jobElapsedTime'),
+                'subclientName':          summary.get('subclientName', ''),
+                'backupsetName':          subclient.get('backupsetName', ''),
+                'instanceName':           subclient.get('instanceName', ''),
+                'agentName':              subclient.get('appName', ''),
+                'currentPhaseName':       summary.get('currentPhaseName', ''),
+            }
+
+        return jobs_cache
 
     def __str__(self) -> str:
         """Return a formatted string representation of all active jobs on this Commcell.

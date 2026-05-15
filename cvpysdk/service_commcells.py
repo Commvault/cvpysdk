@@ -57,6 +57,8 @@ ServiceCommcell: Class for performing operations on a single service commcell
         role_string                 --  returns the role string of the service commcell
         details                     --  returns detailed properties of the service commcell
         associations                --  Associations object for managing associations of this service commcell
+        active_management           --  returns/sets whether active management is enabled for the service commcell
+        aggregation                 --  returns/sets whether aggregation is enabled for the service commcell
 
 
 Associations:  Class for managing associations of service commcell(s)
@@ -828,6 +830,87 @@ class ServiceCommcell:
         if self._mongo_status is None:
             self._mongo_status = self._commcell.service_commcells.global_mongo_status.get(self.commcell_name)
         return self._mongo_status
+
+    @property
+    def active_management(self) -> bool:
+        """
+        Returns whether active management (AM) is enabled for the service commcell.
+        Set to True to enable AM, False to disable it.
+
+        Returns:
+            bool: True if active management is enabled, False otherwise.
+
+        Usage:
+            >>> if service_commcell.active_management:
+            ...     print("AM is enabled")
+            >>> service_commcell.active_management = True   # enable
+            >>> service_commcell.active_management = False  # disable
+        """
+        return bool(self.props.get('activeManagementStatus'))
+
+    @active_management.setter
+    def active_management(self, value: bool) -> None:
+        """
+        Enables or disables active management for the service commcell.
+
+        Args:
+            value (bool): True to enable active management, False to disable it.
+
+        Usage:
+            >>> service_commcell.active_management = True
+            >>> service_commcell.active_management = False
+        """
+        if value:
+            self._commcell.wrap_request(
+                'PUT', 'ACTIVE_MANAGEMENT_ENABLE', (self.commcell_id,),
+                req_kwargs={'payload': {'userPassword': {}}},
+                sdk_exception=('ServiceCommcells', '109'),
+                error_read=lambda r: (
+                    r.get('errorResponse', {}).get('errorCode', r.get('errorCode', 0)),
+                    r.get('errorResponse', {}).get('errorMessage', r.get('errorMessage', ''))
+                ),
+            )
+        else:
+            self._commcell.wrap_request(
+                'PUT', 'ACTIVE_MANAGEMENT_DISABLE', (self.commcell_id, 'false'),
+                sdk_exception=('ServiceCommcells', '110'),
+                error_read=lambda r: (
+                    r.get('errorResponse', {}).get('errorCode', r.get('errorCode', 0)),
+                    r.get('errorResponse', {}).get('errorMessage', r.get('errorMessage', ''))
+                ),
+            )
+        self.refresh()
+
+    @property
+    def aggregation(self) -> bool:
+        """
+        Returns whether aggregation is enabled for the service commcell.
+        Set to True to enable aggregation, False to disable it.
+
+        Returns:
+            bool: True if aggregation is enabled, False otherwise.
+
+        Usage:
+            >>> if service_commcell.aggregation:
+            ...     print("Aggregation is enabled")
+            >>> service_commcell.aggregation = True   # enable
+            >>> service_commcell.aggregation = False  # disable
+        """
+        return not self.props.get('disableAggregation', False)
+
+    @aggregation.setter
+    def aggregation(self, value: bool) -> None:
+        """
+        Enables or disables aggregation for the service commcell.
+
+        Args:
+            value (bool): True to enable aggregation, False to disable it.
+
+        Usage:
+            >>> service_commcell.aggregation = True
+            >>> service_commcell.aggregation = False
+        """
+        self.update({'disableAggregation': not value, 'commCellId': self.commcell_id})
 
 class Associations:
     """

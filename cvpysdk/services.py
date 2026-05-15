@@ -120,6 +120,7 @@ SERVICES_DICT_TEMPLATE = {
     'KILL_JOB': '{0}Job/%s/action/kill',
     'RESUBMIT_JOB': '{0}Job/%s/action/Resubmit',
     'ALL_JOBS': '{0}Jobs',
+    'ACTIVE_JOBS': '{0}Jobs/active',
     'ACTIVE_JOBS_SUMMARY': '{0}Jobs/aggregations/summary',
     'JOB_EVENTS': '{0}Events?jobId=%s',
     'JOB_MANAGEMENT_SETTINGS': '{0}CommServ/JobManagementSetting',
@@ -649,6 +650,8 @@ SERVICES_DICT_TEMPLATE = {
     'SERVICE_COMMCELL_SEC': '{0}V4/MultiCommcell/Security',
     'SERVICE_COMMCELL_COMP': '{0}v4/MultiCommcell/Companies',
     'SYNC_SERVICE_COMMCELL': '{0}RouterCommcell/SyncUserSpace?commcellId=%s',
+    'ACTIVE_MANAGEMENT_ENABLE': '{0}Multicommcell/Cloud/ActiveManagement/Enable?commUniId=%s',
+    'ACTIVE_MANAGEMENT_DISABLE': '{0}Multicommcell/Cloud/ActiveManagement/Disable?commUniId=%s&forceDisableActiveManagement=%s',
 
     'DASHBOARD_ENVIRONMENT_TILE': '{0}clients/count?type=fileserver,vm,laptop',
     'DASHBOARD_ENVIRONMENT_TILE_USERS': '{0}/v4/user/aggregate?func=count&fq=users.isExtendedUser%3Aeq%3Afalse',

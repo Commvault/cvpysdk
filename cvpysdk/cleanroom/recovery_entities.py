@@ -42,12 +42,14 @@ WORKLOADS = {
 
 INSTANCES = {
     'AZURE_V2': 'Azure Resource Manager',
-    'AMAZON': 'Amazon Web Services'
+    'AMAZON': 'Amazon Web Services',
+    'VMW': 'VMware'
 }
 
 RecoveryDestinationVendor = {
     7 : 'azure',
-    1 : 'amazon'
+    1 : 'amazon',
+    0 : 'vmw',
 }
 
 class RecoveryStatus(Enum):

@@ -1862,27 +1862,18 @@ class FileSystemSubclient(Subclient):
             fs_options['no_of_streams'] = 10
 
         if fs_options is not None and fs_options.get('no_of_streams', 1) > 1 and not fs_options.get('destination_appTypeId', False):
-            fs_options['destination_appTypeId'] = int(self._client_object.agents.all_agents.get('file system', self._client_object.agents.all_agents.get('windows file system', self._client_object.agents.all_agents.get('linux file system', self._client_object.agents.all_agents.get('big data apps', self._client_object.agents.all_agents.get('cloud apps', 0))))))
 
-            agents = getattr(self._client_object, 'agents', None)
-            agent_mapping = agents.all_agents if agents else {}
-            try:
-                agent_ids = {int(app_id) for app_id in agent_mapping.values() if app_id}
-                if agent_ids == {29, 33}:
-                    os_type = self._client_object.os_type
-                    if os_type and hasattr(os_type, 'name'):
-                        if os_type.name == 'UNIX':
-                            fs_options['destination_appTypeId'] = 29
-                        elif os_type.name == 'WINDOWS':
-                            fs_options['destination_appTypeId'] = 33
+            # If no_of_streams is set, then destination_appTypeId is mandatory for FS agents
+            # For in-place restore, first set destination app type of the current client
+            if 'file system' in self._agent_object.agent_name.lower():
+                fs_options['destination_appTypeId'] = self._agent_object.agent_id
 
-            except (ValueError, AttributeError) as e:
-                raise SDKException(
-                    'Subclient',
-                    '102',
-                    'Unable to determine destination app type for multi-stream restore. '
-                    'Verify FS agent/protocols Configured properly. Details: {0}'.format(e)
-                )
+            # If proxy client/access node is set, then set it's File System agent as destination app type
+            if proxy_client:
+                proxy_client_obj = self._commcell_object.clients.get(proxy_client)
+                proxy_client_agents = proxy_client_obj.agents.all_agents if hasattr(proxy_client_obj, 'agents') else {}
+                if 'file system' in proxy_client_agents:
+                    fs_options['destination_appTypeId'] = int(proxy_client_agents['file system'])
 
             if not fs_options['destination_appTypeId']:
                 del fs_options['destination_appTypeId']
@@ -2041,8 +2032,7 @@ class FileSystemSubclient(Subclient):
             if not fs_options['destination_appTypeId']:
                 del fs_options['destination_appTypeId']
 
-            # check to find whether file level Restore/ Volume level restore for blocklevel.
-
+        # check to find whether file level Restore/ Volume level restore for blocklevel.
         if fs_options is not None and fs_options.get('is_vlr_restore', False):
             if not (isinstance(paths, list) and
                     isinstance(overwrite, bool) and
