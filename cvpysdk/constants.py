@@ -693,69 +693,84 @@ class StoragePoolConstants:
             "FREQUENT ACCESS": {
                 "vendorId": 3,
                 "displayVendorId": 401,
+                "licenseType": 100042,
             },
             "INFREQUENT ACCESS": {
                 "vendorId": 3,
                 "displayVendorId": 402,
+                "licenseType": 100041,
             },
             "ARCHIVE": {
                 "vendorId": 3,
                 "displayVendorId": 414,
+                "licenseType": 100088,
             }
         },
         "ORACLE CLOUD INFRASTRUCTURE OBJECT STORAGE": {
             "FREQUENT ACCESS": {
                 "vendorId": 26,
                 "displayVendorId": 403,
+                "licenseType": 100064,
             },
             "INFREQUENT ACCESS": {
                 "vendorId": 26,
                 "displayVendorId": 404,
+                "licenseType": 100050,
             },
             "ARCHIVE": {
                 "vendorId": 26,
                 "displayVendorId": 444,
+                "licenseType": 100100,
             }
         },
         "GOOGLE CLOUD STORAGE": {
             "FREQUENT ACCESS": {
                 "vendorId": 19,
                 "displayVendorId": 482,
+                "licenseType": 100062,
             },
             "INFREQUENT ACCESS": {
                 "vendorId": 19,
                 "displayVendorId": 483,
+                "licenseType": 100063,
             },
             "ARCHIVE": {
                 "vendorId": 19,
                 "displayVendorId": 484,
+                "licenseType": 100102,
             }
         },
         "AMAZON S3": {
             "FREQUENT ACCESS": {
                 "vendorId": 2,
                 "displayVendorId": 451,
+                "licenseType": 100043,
             },
             "INFREQUENT ACCESS": {
                 "vendorId": 2,
                 "displayVendorId": 452,
+                "licenseType": 100048,
             },
             "ARCHIVE": {
                 "vendorId": 2,
                 "displayVendorId": 456,
+                "licenseType": 100094,
             }
         },
         "STACKIT": {
             "FREQUENT ACCESS": {
                 "vendorId": 216,
                 "displayVendorId": 496,
+                "licenseType": 100085,
             },
             "INFREQUENT ACCESS": {
                 "vendorId": 216,
                 "displayVendorId": 497,
+                "licenseType": 100091,
             },
         }
     }
+
 
 
 class CommcellEntity(Enum):

@@ -111,9 +111,10 @@ class ResourcePoolTypes(enum.Enum):
     GOOGLE_DRIVE = 19
     GOOGLE_WORKSPACE = 20
     SERVICENOW = 21
-    THREATSCAN = 22
+    THREATINDICATOR = 22
     DEVOPS = 23
     RISK_ANALYSIS = 24
+    THREATSCAN = 25
     GOOGLE_CLOUD_PLATFORM = 50001
 
 
@@ -216,15 +217,15 @@ class ResourcePools:
             return output
         self._response_not_success(response)
 
-    def create(self, name: str, resource_type: 'ResourcePoolTypes', **kwargs: str) -> 'ResourcePool':
+    def create(self, name: str, resource_type: 'ResourcePoolTypes', access_nodes: list, is_client_group: bool = True) -> 'ResourcePool':
         """Create a new resource pool in the CommServe.
 
         Args:
             name: The name of the resource pool to create.
-            resource_type: The type of resource pool, specified as a ResourcePoolTypes enum.
-            **kwargs: Additional keyword arguments for resource pool creation.
-                For Threat Scan resource pools, you may specify:
-                    index_server (str): The name of the index server to associate with the pool.
+            resource_type: The type of resource pool (appType 25 for Cleanroom).
+            access_nodes: List of client group names or client names to associate with the resource pool.
+            is_client_group: Flag to determine if access_nodes contains client groups (True) or clients (False).
+                            Default is True for client groups.
 
         Returns:
             ResourcePool: An instance representing the newly created resource pool.
@@ -233,21 +234,50 @@ class ResourcePools:
             SDKException: If the resource pool creation fails or if a resource pool with the given name already exists.
 
         Example:
+            >>> # Create with client groups
             >>> pool = resource_pools.create(
-            ...     name="ThreatScanPool",
-            ...     resource_type=ResourcePoolTypes.THREATSCAN,
-            ...     index_server="IndexServer01"
+            ...     name="CleanroomPool",
+            ...     resource_type=ResourcePoolTypes(25),
+            ...     access_nodes=["AdminHyperVAWS"],
+            ...     is_client_group=True
             ... )
-            >>> print(f"Created resource pool: {pool}")
+            
+            >>> # Create with clients
+            >>> pool = resource_pools.create(
+            ...     name="CleanroomPool",
+            ...     resource_type=ResourcePoolTypes(25),
+            ...     access_nodes=["lego"],
+            ...     is_client_group=False
+            ... )
 
         #ai-gen-doc
         """
-        if resource_type.value not in [ResourcePoolTypes.THREATSCAN.value]:
-            raise SDKException('ResourcePools', '102', 'Resource pool creation is not supported for this resource type')
-        if resource_type.value == ResourcePoolTypes.THREATSCAN.value and 'index_server' not in kwargs:
-            raise SDKException('ResourcePools', '102', 'Index server name is missing in kwargs')
+        if resource_type.value != ResourcePoolTypes.THREATSCAN.value:
+            raise SDKException('ResourcePools', '102', 'Resource pool creation is only supported for appType ThreatScan (25)')
+        if not access_nodes:
+            raise SDKException('ResourcePools', '102', 'Access nodes list cannot be empty')
         if self.has(name=name):
             raise SDKException('ResourcePools', '107')
+        
+        client_groups = []
+        clients = []
+        
+        # Build client groups or clients based on flag
+        if is_client_group:
+            for node_name in access_nodes:
+                client_group = self._commcell_object.client_groups.get(node_name)
+                client_groups.append({
+                    "clientGroupId": int(client_group.clientgroup_id),
+                    "clientGroupName": node_name
+                })
+        else:
+            for client_name in access_nodes:
+                client = self._commcell_object.clients.get(client_name)
+                clients.append({
+                    "clientId": int(client.client_id),
+                    "clientName": client_name
+                })
+        
         _request_json = {
             "resourcePool": {
                 "appType": resource_type.value,
@@ -263,15 +293,10 @@ class ResourcePools:
                     "jobResultsDirPath": ""},
                 "roleId": None,
                 "indexServerMembers": [],
-                "indexServer": {
-                    "clientId": self._commcell_object.index_servers.get(
-                        kwargs.get('index_server')).index_server_client_id if resource_type.value == ResourcePoolTypes.THREATSCAN.value else 0,
-                    "clientName": kwargs.get('index_server') if resource_type.value == ResourcePoolTypes.THREATSCAN.value else '',
-                    "displayName": kwargs.get('index_server') if resource_type.value == ResourcePoolTypes.THREATSCAN.value else '',
-                    "selected": True},
                 "accessNodes": {
-                    "clientGroups": [],
-                    "clients": []}}}
+                    "clientGroups": client_groups,
+                    "clients": clients}}}
+        
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._API_CREATE_RESOURCE_POOL, _request_json)
         if flag:
@@ -367,10 +392,14 @@ class ResourcePools:
         """
         resource_pools = {}
         for pool_name, pool_details in self._pools.items():
-            for sol in pool_details.get('solutions', []):
-                if sol.get('id') == solution_id:
+            if solution_id == ResourcePoolTypes.THREATINDICATOR.value:
+                 if pool_details.get('solutionType') == "THREAT_INDICATORS":
                     resource_pools[pool_name] = pool_details
-                    break
+            else:
+                for sol in pool_details.get('solutions', []):
+                    if sol.get('id') == solution_id:
+                        resource_pools[pool_name] = pool_details
+                        break
         return resource_pools
 
     def get_resource_pools_by_region(self, region_name: str) -> dict:

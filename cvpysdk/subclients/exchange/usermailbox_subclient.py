@@ -694,9 +694,6 @@ class UsermailboxSubclient(ExchangeSubclient):
                 children = subclient_content['associations']
 
                 for child in children:
-                    archive_policy = None
-                    cleanup_policy = None
-                    retention_policy = None
                     plan_name = None
                     plan_id = None
                     display_name = str(child['userMailBoxInfo']['displayName'])
@@ -709,14 +706,7 @@ class UsermailboxSubclient(ExchangeSubclient):
                     mailbox_type = int(child['userMailBoxInfo']['msExchRecipientTypeDetails'])
                     exchange_version = int(child['userMailBoxInfo']['exchangeVersion'])
                     last_archive_job_ran_time = child['userMailBoxInfo']['lastArchiveJobRanTime']
-                    if 'emailPolicies' in child['policies']:
-                        for policy in child['policies']['emailPolicies']:
-                            if policy['detail'].get('emailPolicy', {}).get('emailPolicyType') == 1:
-                                archive_policy = str(policy['policyEntity']['policyName'])
-                            elif policy['detail'].get('emailPolicy', {}).get('emailPolicyType') == 2:
-                                cleanup_policy = str(policy['policyEntity']['policyName'])
-                            elif policy['detail'].get('emailPolicy', {}).get('emailPolicyType') == 3:
-                                retention_policy = str(policy['policyEntity']['policyName'])
+
                     if 'plan' in child:
                         plan_name = child.get('plan').get('planName')
                         plan_id = child.get('plan').get('planId')
@@ -729,9 +719,6 @@ class UsermailboxSubclient(ExchangeSubclient):
                         'exchange_server': exchange_server,
                         'user_guid': user_guid,
                         'is_auto_discover_user': is_auto_discover_user,
-                        'archive_policy': archive_policy,
-                        'cleanup_policy': cleanup_policy,
-                        'retention_policy': retention_policy,
                         'plan_name': plan_name,
                         'plan_id': plan_id,
                         'mailbox_type': mailbox_type,
@@ -829,26 +816,22 @@ class UsermailboxSubclient(ExchangeSubclient):
                 children = subclient_content['associations']
 
                 for child in children:
-                    archive_policy = None
-                    cleanup_policy = None
-                    retention_policy = None
+                    planName = None
+                    planId = None
                     adgroup_name = str(child['adGroupsInfo']['adGroupName'])
                     is_auto_discover_user = str(child['additionalOptions']['enableAutoDiscovery'])
 
-                    for policy in child['policies']['emailPolicies']:
-                        if policy['detail']['emailPolicy']['emailPolicyType'] == 1:
-                            archive_policy = str(policy['policyEntity']['policyName'])
-                        elif policy['detail']['emailPolicy']['emailPolicyType'] == 2:
-                            cleanup_policy = str(policy['policyEntity']['policyName'])
-                        elif policy['detail']['emailPolicy']['emailPolicyType'] == 3:
-                            retention_policy = str(policy['policyEntity']['policyName'])
+                    if 'plan' in child:
+                        planName = child['plan']['planName']
+                        planId = child['plan']['planId']
+                    else:
+                        raise Exception('Plan details are not available')
 
                     temp_dict = {
                         'adgroup_name': adgroup_name,
                         'is_auto_discover_user': is_auto_discover_user,
-                        'archive_policy': archive_policy,
-                        'cleanup_policy': cleanup_policy,
-                        'retention_policy': retention_policy
+                        'planName': planName,
+                        'planId': planId
                     }
 
                     adgroups.append(temp_dict)

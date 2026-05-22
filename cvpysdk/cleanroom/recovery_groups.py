@@ -1175,3 +1175,23 @@ class RecoveryGroup:
                 raise SDKException('Response', '102', 'Job id not found in response')
         else:
             raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
+
+    @property
+    def crr_resources(self) -> List[Dict]:
+        """Return the list of CRR resources for this recovery group.
+
+        Returns:
+            list: The raw list of resource dicts from ``crrResourcesInfo.resources``,
+            each containing ``resourceId``, ``resourceStatus``, ``resourceType``,
+            ``resourceURL``, ``scope``, and ``resourceInfo`` (with ``name`` and ``guid``).
+
+        Example:
+            >>> for r in recovery_group.crr_resources:
+            ...     print(r['resourceInfo']['name'], r['resourceStatus'])
+        """
+        return (
+            self._properties
+            .get('recoveryGroup', {})
+            .get('crrResourcesInfo', {})
+            .get('resources', [])
+        )

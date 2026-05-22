@@ -709,6 +709,7 @@ class CleanroomTarget:
         self._resource_group = None
         self._restore_as_managed_vm = None
         self._infra_server_group_name = None
+        self._infra_server_group_id = None
 
         self._maxNoOfAccessNodes = None
         self._infra_security_group = None
@@ -1110,6 +1111,9 @@ class CleanroomTarget:
                                                     .get("securityGroupRules", {}).get("recoveredEntity", [{}]))
                     self._infra_SecurityRules = (self._cleanroom_target_properties.get('advanced', {})
                                                  .get("securityGroupRules", {}).get("infrastructure", [{}]))
+                self._infra_server_group_id = (self._cleanroom_target_properties.get('infrastructure', {})
+                                               .get('networkTopologySettings', {}).get('infrastructureServerGroup', {})
+                                               .get('id'))
 
                 if self._policy_type == 0:
                     recovery = self._cleanroom_target_properties.get('recovery', {})
@@ -1588,6 +1592,22 @@ class CleanroomTarget:
         #ai-gen-doc
         """
         return self._infra_server_group_name
+
+    @property
+    def infra_server_group_id(self) -> int:
+        """Get the ID of the infrastructure server group used for autoscale operations.
+
+        Returns:
+            The ID of the infrastructure server group
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> group_id = target.infra_server_group_id
+            >>> print(f"Infrastructure server group ID: {group_id}")
+
+        #ai-gen-doc
+        """
+        return self._infra_server_group_id
 
     @property
     def infra_resource_group(self) -> str:

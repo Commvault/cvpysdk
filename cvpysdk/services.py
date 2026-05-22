@@ -486,6 +486,7 @@ SERVICES_DICT_TEMPLATE = {
     'ORGANIZATION_ASSOCIATION': '{0}company/%s/company-association',
     'ENABLE_PRIVACY_COMPANY_DATA': '{0}V2/Organization/%s/Privacy/Action/Lock',
     'DISABLE_PRIVACY_COMPANY_DATA': '{0}V2/Organization/%s/Privacy/Action/Unlock',
+    'BREAKGLASS_ACCOUNT': '{0}BreakGlassAccount',
     'ORGANIZATION_THEME': '{0}V2/Organization/%s/Customization',
     'GET_ORGANIZATION_THEME': '{0}Organization/%s/Customization',
     'EXTEND_ORGANIZATION': '{0}V4/ThirdParty/App/Company/Extend',

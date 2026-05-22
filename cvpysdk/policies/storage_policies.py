@@ -296,6 +296,7 @@ from ..storage import MediaAgent
 
 if TYPE_CHECKING:
     from ..commcell import Commcell
+    from ..subclient import Subclient
     from .storage_policies import StoragePolicyCopy
 
 class JobOperationsOnStorageCopy:
@@ -2343,12 +2344,12 @@ class StoragePolicy(object):
             raise SDKException('Response', '101', response_string)
 
 
-    def run_backup_copy(self) -> 'Job':
+    def run_backup_copy(self, subclient: Optional['Subclient'] = None) -> 'Job':
         """
-        Runs the backup copy from Commcell for the given storage policy
+        Runs the backup copy from Commcell for the given storage policy or subclient.
 
         Args:
-            None
+            subclient (Subclient, optional): Subclient object to associate with the backup copy request.
 
         Returns:
             Job: instance of the Job class for this backup copy job
@@ -2363,13 +2364,28 @@ class StoragePolicy(object):
 
         Usage:
             job = storage_policy.run_backup_copy()
+
+            job = storage_policy.run_backup_copy(subclient=subclient)
         """
+
+        associations = {
+            "storagePolicyName": self.storage_policy_name
+        }
+
+        if subclient:
+            associations.update({
+                "_type_": "SUBCLIENT_ENTITY",
+                "clientName": subclient._client_object.client_name,
+                "appName": subclient._agent_object.agent_name,
+                "instanceName": subclient._instance_object.instance_name,
+                "backupsetName": subclient._backupset_object.backupset_name,
+                "subclientName": subclient.subclient_name
+            })
+
         request_json = {
             "taskInfo": {
                 "associations": [
-                    {
-                        "storagePolicyName": self.storage_policy_name
-                    }
+                    associations
                 ],
                 "task": {
                     "initiatedFrom": 2,
@@ -2439,12 +2455,13 @@ class StoragePolicy(object):
                        '''.format(self.storage_policy_name, int(enable))
         self._commcell_object.qoperation_execute(request_xml)
 
-    def run_snapshot_cataloging(self) -> 'Job':
+    def run_snapshot_cataloging(self, subclient: Optional['Subclient'] = None) -> 'Job':
         """
         Runs the deferred catalog job from Commcell for the given storage policy
 
         Args:
-                None
+                subclient (Subclient, optional): Subclient object to associate with
+                    the deferred catalog request.
 
         Returns:
                 object - instance of the Job class for this snapshot cataloging job
@@ -2459,12 +2476,24 @@ class StoragePolicy(object):
                     if response is not success
         """
 
+        associations = {
+            "storagePolicyName": self.storage_policy_name
+        }
+
+        if subclient:
+            associations.update({
+                "_type_": "SUBCLIENT_ENTITY",
+                "clientName": subclient._client_object.client_name,
+                "appName": subclient._agent_object.agent_name,
+                "instanceName": subclient._instance_object.instance_name,
+                "backupsetName": subclient._backupset_object.backupset_name,
+                "subclientName": subclient.subclient_name
+            })
+
         request_json = {
             "taskInfo": {
                 "associations": [
-                    {
-                        "storagePolicyName": self.storage_policy_name
-                    }
+                    associations
                 ],
                 "task": {
                     "taskType": 1,

@@ -25,6 +25,8 @@ RecoveryJob(Job):
             job_id)                 -- Initialise object of RecoveryJob
     _get_recovery_job_stats()       -- Gets the Recovery job statistics
     get_phases()                    -- Gets the phases of the Recovery job
+    get_restore_vm_from_recovery_job()  -- Waits for RESTORE_VM phase and returns its job ID
+    wait_for_restore_phase_completion() -- Waits for all RESTORE_VM phases to complete
 """
 
 import time
@@ -226,8 +228,8 @@ class RecoveryJob(Job):
         #ai-gen-doc
         """
         for attempt in range(max_retries):
-            recovery_job_obj = RecoveryJob(self._commcell_object, self.job_id)
-            phases = recovery_job_obj.get_phases().get(entity, [])
+            self._initialize_job_properties()
+            phases = self.get_phases().get(entity, [])
 
             for phase in phases:
                 if phase.get('phase_name').name == "RESTORE_VM":
@@ -237,3 +239,87 @@ class RecoveryJob(Job):
             time.sleep(check_frequency)
 
         raise Exception(f"Failed to locate RESTORE_VM phase for VM '{entity}' in job {self.job_id}")
+
+    def wait_for_restore_phase_completion(self, max_retries: int = 30, check_frequency: int = 10) -> dict:
+        """Wait for RESTORE_VM jobs to complete for all entities in this recovery job.
+
+        Polls until all VM entities appear in the job phases, then calls
+        ``get_restore_vm_from_recovery_job`` for each entity and waits for every
+        restore job to finish.
+
+        Args:
+            max_retries: The maximum number of polling attempts when waiting for entities. Default is 30.
+            check_frequency: The interval in seconds between each polling attempt. Default is 10.
+
+        Raises:
+            Exception: If no entities appear in the job phases after all retries.
+
+        Returns:
+            dict: Mapping of entity name to completed Job object, e.g. ``{'VM1': <Job 123>}``.
+
+        Example:
+            >>> recovery_job = RecoveryJob(commcell, 2829114)
+            >>> restore_jobs = recovery_job.wait_for_restore_phase_completion()
+
+        #ai-gen-doc
+        """
+        entities = []
+        for _ in range(max_retries):
+            self._initialize_job_properties()
+            all_phases = self.get_phases()
+            entities = [entity for entity in all_phases.keys() if entity]  # skip job-level '' key
+            if entities:
+                break
+            time.sleep(check_frequency)
+        else:
+            raise Exception(
+                f"No VM entities found in job {self.job_id} after {max_retries} retries"
+            )
+
+        restore_jobs = {}
+        for entity in entities:
+            restore_job_id = self.get_restore_vm_from_recovery_job(entity, max_retries, check_frequency)
+            restore_job = Job(self._commcell_object, int(restore_job_id))
+            restore_job.wait_for_completion()
+            restore_jobs[entity] = restore_job
+        return restore_jobs
+        
+    def wait_for_create_access_node_phase(self, max_retries: int = 30, check_frequency: int = 10) -> int:
+        """Wait until the Create Access Node phase (phase 83) has started and return its job ID.
+
+        The CREATE_ACCESS_NODE phase is a job-level phase (not tied to a specific VM pair),
+        so it is stored under the empty-string key in get_phases().
+
+        Args:
+            max_retries: The maximum number of polling attempts. Default is 30.
+            check_frequency: The interval in seconds between each polling attempt. Default is 10.
+
+        Returns:
+            The job ID (int) of the Create Access Node job.
+
+        Raises:
+            Exception: If the CREATE_ACCESS_NODE phase is not found after the specified number of retries.
+
+        Example:
+            >>> recovery_job = RecoveryJob(commcell, 2829114)
+            >>> access_node_job_id = recovery_job.wait_for_create_access_node_phase()
+            >>> print(f"Create Access Node job ID: {access_node_job_id}")
+
+        #ai-gen-doc
+        """
+        for attempt in range(max_retries):
+            self._initialize_job_properties()
+            # CREATE_ACCESS_NODE is a job-level phase with no clientName, keyed as '' in get_phases()
+            phases = self.get_phases().get('', [])
+
+            for phase in phases:
+                if phase.get('phase_name') and phase.get('phase_name').name == "CREATE_ACCESS_NODE":
+                    job_id = phase.get('job_id')
+                    if job_id is not None:
+                        return int(job_id)
+
+            time.sleep(check_frequency)
+
+        raise Exception(
+            f"Failed to locate CREATE_ACCESS_NODE phase in job {self.job_id} after {max_retries} retries"
+        )

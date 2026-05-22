@@ -175,6 +175,8 @@ Organization
     retire_offline_laptops()           -- Updates Company Laptops Retire / Delete settings
 
     passkey()                          -- Handles Enable / Disable / Authorise / Change Passkey functionalities for Organisation
+    
+    configure_breakglass_account()   -- Configures the BreakGlass account for the organization
 
     allow_owners_to_enable_passkey()   -- Enables option to allow owners to enable / disable passkey
 
@@ -4031,6 +4033,74 @@ class Organization:
             raise SDKException('Response', '101', response_string)
 
         self.refresh()
+
+    def configure_breakglass_account(
+            self,
+            password: str,
+            user_name: Optional[str] = None,
+            force_reset: bool = False,
+            is_password_encoded: bool = False
+    ) -> dict:
+        """Configures Break Glass Account for an organization.
+
+        Args:
+            password (str): Break glass account password. Plain text by default.
+            user_name (Optional[str]): Existing break glass username. Ignored when force_reset is True.
+            force_reset (bool): If True, calls API with forceReset=true and sends userName as null.
+            is_password_encoded (bool): Set to True if password is already base64 encoded.
+
+        Returns:
+            dict: API response payload.
+
+        Example:
+            org.configure_breakglass_account(password='6Cap_6Small_6Symbol_6Num', user_name='bga_testuser')
+            org.configure_breakglass_account(password='6Cap_6Small_6Symbol_6Num', force_reset=True)
+        """
+        if not isinstance(password, str):
+            raise SDKException('Organization', '101', 'password must be a string')
+
+        if user_name is not None and not isinstance(user_name, str):
+            raise SDKException('Organization', '101', 'user_name must be a string')
+
+        encoded_password = password if is_password_encoded else b64encode(password.encode()).decode()
+        api_url = self._services['BREAKGLASS_ACCOUNT']
+
+        if force_reset:
+            user_name = None
+            api_url = f"{api_url}?forceReset=true"
+
+        request_json = {
+            "users": [
+                {
+                    "password": encoded_password,
+                    "userEntity": {
+                        "userName": user_name
+                    }
+                }
+            ]
+        }
+
+        flag, response = self._cvpysdk_object.make_request('POST', api_url, request_json)
+
+        if flag:
+            if response.json():
+                response_json = response.json()
+                if 'error' in response_json:
+                    error_code = response_json['error'].get('errorCode', 0)
+                    error_message = response_json['error'].get('errorMessage', '')
+                else:
+                    error_code = response_json.get('errorCode', 0)
+                    error_message = response_json.get('errorMessage', '')
+
+                if error_code != 0:
+                    raise SDKException('Organization', '110', 'Error: {0}'.format(error_message))
+
+                return response_json
+
+            raise SDKException('Response', '102')
+
+        response_string = self._update_response_(response.text)
+        raise SDKException('Response', '101', response_string)
 
     def enable_owner_data_privacy(self) -> None:
         """To enable company privacy to allow owner to enable data privacy
