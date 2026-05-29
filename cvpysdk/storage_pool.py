@@ -162,6 +162,7 @@ from .storage import MediaAgent
 from .security.security_association import SecurityAssociation
 from .constants import StoragePoolConstants
 
+
 class StorageType(IntEnum):
     """
     Enumeration class to represent different storage types.
@@ -182,6 +183,7 @@ class StorageType(IntEnum):
     CLOUD = 2,
     HYPERSCALE = 3,
     TAPE = 4
+
 
 class StoragePools:
     """
@@ -874,25 +876,34 @@ class StoragePools:
         Args:
             storage_pool_name: Name of the new storage pool to add.
             mountpath: Mount path for the storage pool.
-            media_agent: Name or instance of the media agent to associate with the storage pool.
-            ddb_ma: (Optional) Name, instance, or list of names/instances of the deduplication media agent(s).
-            dedup_path: (Optional) Path or list of paths where the DDB (Deduplication Database) should be stored.
+            media_agent: Name or instance of the media agent to associate with the storage pool.Supported values:
+                - str media agent name
+                - MediaAgent object
+                - "automatic" (special value for automatic MA selection using storage resource pool)
+            ddb_ma: (Optional) deduplication media agent input. Supported values:
+                - str media agent name
+                - MediaAgent object
+                - list of names and/or MediaAgent objects
+                - "automatic" (special value for automatic MA selection using storage resource pool)
+            dedup_path: (Optional) DDB path input. Supported values:
+                - str path
+                - list of str paths
+                - None (if ddb_ma is specified but no path is provided then configured ddb paths for that media agent will be used)
             **kwargs: Additional optional parameters for storage pool creation, such as:
                 - username (str): Username to access the mount path.
                 - password (str): Password to access the mount path.
                 - credential_name (str): Credential manager name.
-                - cloud_server_type (int): Cloud vendor server type. Please refer to mediaagentconstants.CLOUD_SERVER_TYPES to fetch the required ID.
+                - cloud_server_type (int): Cloud vendor server type.
                 - region (str): Geographical region for storage.
                 - vendor_id (int): Cloud vendor ID (e.g., 3 for Azure).
                 - display_vendor_id (int): Storage class ID for the vendor (e.g., 401 for Azure Hot).
                 - region_id (int): Cloud hypervisor-specific region ID.
-                - tape_storage (bool): Whether the library is a tape library.
 
         Returns:
             StoragePool: The created StoragePool object if creation is successful.
 
         Raises:
-            Exception: If the storage pool creation is unsuccessful.
+            SDKException: If validation fails, storage creation fails, or response indicates an error.
 
         Example:
             >>> storage_pools = StoragePools(commcell_object)
@@ -907,60 +918,126 @@ class StoragePools:
             ... )
             >>> print(f"Storage pool created: {pool}")
 
+            >>> auto_pool = storage_pools.add(
+            ...     storage_pool_name="CloudAutoPool",
+            ...     mountpath="container",
+            ...     media_agent="automatic",
+            ...     ddb_ma="automatic",
+            ...     cloud_server_type=3,
+            ...     username="UserName//Formatted@ForCloud",
+            ...     credential_name="CloudCredential",
+            ...     region="eastus2"
+            ... )
+            >>> print(auto_pool.storage_pool_name)
+
         #ai-gen-doc
         """
+        # Placeholder object for automatic MediaAgent selection
+        _AUTOMATIC_MA = type('', (), {'media_agent_id': 0, 'media_agent_name': 'Automatic'})()
+
+        # variables declaration
+        tape_storage = False
+
+        # Extract additional parameters from kwargs
         username = kwargs.get('username', None)
         password = kwargs.get('password', None)
         credential_name = kwargs.get('credential_name', None)
         cloud_server_type = kwargs.get('cloud_server_type', None)
         library_name = kwargs.get('library_name', None)
-        tape_storage = False
-
         region = kwargs.get('region', None)
         vendor_id = kwargs.get('vendor_id', None)
         display_vendor_id = kwargs.get('display_vendor_id', None)
         region_id = kwargs.get('region_id', None)
+
+        # Validate input parameters data types
+        if not isinstance(storage_pool_name, str):
+            raise SDKException('Storage', '101', 'storage name must be a string.')
+        if mountpath is not None and not isinstance(mountpath, str):
+            raise SDKException('Storage', '101', 'mountpath must be a string or None.')
+        if not (isinstance(media_agent, str) or isinstance(media_agent, MediaAgent)):
+            raise SDKException('Storage', '103')
+        if not (isinstance(ddb_ma, list) or isinstance(ddb_ma, str) or isinstance(ddb_ma, MediaAgent) or ddb_ma is None):
+            raise SDKException('Storage', '101', 'ddb_ma must be a string, MediaAgent object, list or None.')
+        if dedup_path is not None and not (isinstance(dedup_path, str) or isinstance(dedup_path, list)):
+            raise SDKException('Storage', '101', 'dedup_path must be a string, list or None.')
+        if region is not None and not isinstance(region, str):
+            raise SDKException('Storage', '101', 'region must be a string or None.')
+        if region_id is not None and not isinstance(region_id, int):
+            raise SDKException('Storage', '101', 'region_id must be an integer or None.')
+
+        # Validate inputs parameters data is in expected format
+        if ddb_ma is None and dedup_path is not None:
+            raise SDKException('Storage', '110',
+                               'dedup_path cannot be specified without ddb_ma')
+        if isinstance(ddb_ma, list) and len(ddb_ma) == 0:
+            raise SDKException('Storage', '110',
+                               'ddb_ma list cannot be empty. At least one DDB media agent must be specified.')
+        if isinstance(dedup_path, list) and len(dedup_path) == 0:
+            raise SDKException('Storage', '110',
+                               'dedup_path list cannot be empty. At least one ddb path must be specified.')
+        if region_id is not None and region_id <= 0:
+            raise SDKException('Storage', '110',
+                               'region_id must be a positive integer.')
+        if library_name is not None and mountpath != '' and (cloud_server_type is None or cloud_server_type not in (300, 58, 59)):
+            raise SDKException('Storage', '110',
+                               'library_name specified with mountpath.')
 
         if library_name and (cloud_server_type is None or cloud_server_type not in (300, 58, 59)):
             library_object = self._commcell_object.disk_libraries.get(library_name)
             library_type = library_object.library_properties.get('libraryType', None)
             tape_storage = True if library_type == 1 else tape_storage
 
-
-        if ((ddb_ma is not None and not (isinstance(dedup_path, str) or isinstance(dedup_path, list))) or
-                not (isinstance(storage_pool_name, str) or not isinstance(mountpath, str))):
-            raise SDKException('Storage', '101')
-
         if isinstance(media_agent, MediaAgent):
             media_agent = media_agent
+        elif isinstance(media_agent, str) and media_agent.lower() == 'automatic':
+            media_agent = _AUTOMATIC_MA
+            if region is None and region_id is None:
+                raise SDKException('Storage', '110',
+                                   'Region must be specified when media agent is set to Automatic.')
         elif isinstance(media_agent, str):
             media_agent = MediaAgent(self._commcell_object, media_agent)
-        else:
-            raise SDKException('Storage', '103')
-
-        if (isinstance(ddb_ma, str) or isinstance(ddb_ma, MediaAgent)) and isinstance(dedup_path, str):
-            ddb_ma = [ddb_ma]
-            dedup_path = [dedup_path]
-
-        if isinstance(ddb_ma, list) and isinstance(dedup_path, list):
-            if len(ddb_ma) != len(dedup_path):
-                raise SDKException('Storage', '101')
-
-        if library_name is not None and mountpath != '' and (cloud_server_type is None or cloud_server_type not in (300, 58, 59)):
-            raise SDKException('Storage', '101')
-
-        if ddb_ma is not None and (len(ddb_ma) > 6 or len(dedup_path) > 6):
-            raise SDKException('Storage', '110')
 
         if ddb_ma is not None:
+            # Normalize ddb_ma and dedup_path to lists for consistent processing
+            if isinstance(ddb_ma, str) and ddb_ma.lower() == 'automatic':
+                ddb_ma = [_AUTOMATIC_MA]
+                dedup_path = [None]  # ignore path if provided for automatic MA
+                if region is None and region_id is None:
+                    raise SDKException('Storage', '110',
+                                       'Region must be specified when media agent is set to Automatic.')
+
+            elif isinstance(ddb_ma, list) and dedup_path is None:
+                dedup_path = [None] * len(ddb_ma)
+            elif ddb_ma is not None and not isinstance(ddb_ma, list):
+                ddb_ma = [ddb_ma]
+                if dedup_path is None:
+                    dedup_path = [None]
+                elif isinstance(dedup_path, str):
+                    dedup_path = [dedup_path]
+
+            # Validate both ddb_ma and dedup_path inputs data type
+            if isinstance(ddb_ma, list) and isinstance(dedup_path, list):
+                if len(ddb_ma) != len(dedup_path):
+                    raise SDKException('Storage', '110',
+                                       'If both ddb_ma and dedup_path are lists, they must be of the same length.')
+            if len(ddb_ma) > 6:
+                raise SDKException('Storage', '110',
+                                   'Maximum of 6 DDB media agents can be specified.')
+
             for i in range(len(ddb_ma)):
-                if isinstance(ddb_ma[i], MediaAgent):
-                    ddb_ma[i] = ddb_ma[i]
+                if hasattr(ddb_ma[i], 'media_agent_id'):
+                    pass # already a media agent object or placeholder for automatic MA
+                elif isinstance(ddb_ma[i], str) and ddb_ma[i].lower() == 'automatic':
+                    ddb_ma[i] = _AUTOMATIC_MA
+                    if region is None and region_id is None:
+                        raise SDKException('Storage', '110',
+                                           'Region must be specified when media agent is set to Automatic.')
                 elif isinstance(ddb_ma[i], str):
                     ddb_ma[i] = MediaAgent(self._commcell_object, ddb_ma[i])
                 else:
                     raise SDKException('Storage', '103')
 
+        # Construct the request JSON for creating the storage pool
         request_json = {
             "storagePolicyName": storage_pool_name,
             "type": "CVA_REGULAR_SP",
@@ -1002,22 +1079,12 @@ class StoragePools:
         if cloud_server_type and int(cloud_server_type) > 0:
             request_json["storage"][0]["deviceType"] = cloud_server_type
 
-        if region_id is not None:
-            request_json["storage"][0]["metallicStorageInfo"] = {
-                "region": [
-                    {
-                        "regionId": region_id
-                    }
-                ],
-                "storageClass": [
-                    "CONTAINER_DEFAULT"
-                ],
-                "replication": [
-                    "NONE"
-                ]
-            }
-            if cloud_server_type != 59: # not for HPE Catalyst
-                request_json["region"] = {"regionId": region_id}
+        if cloud_server_type != 59 and (region is not None or region_id is not None):
+            request_json["region"] = {}
+            if region is not None:
+                request_json["region"]["regionName"] = region
+            if region_id is not None:
+                request_json["region"]["regionId"] = region_id
 
         if username is not None:
             request_json["storage"][0]["credentials"] = {"userName": username}
@@ -1035,20 +1102,21 @@ class StoragePools:
         if ddb_ma is not None or dedup_path is not None:
             maInfoList = []
             for ma, path in zip(ddb_ma, dedup_path):
+                sub_store = {
+                    "diskFreeThresholdMB": 5120,
+                    "diskFreeWarningThreshholdMB": 10240
+                }
+                if path is not None:
+                    sub_store["accessPath"] = {"path": path}
                 maInfoList.append({
                     "mediaAgent": {
                         "mediaAgentId": int(ma.media_agent_id),
                         "mediaAgentName": ma.media_agent_name
                     },
-                    "subStoreList": [
-                        {
-                            "accessPath": {
-                                "path": path
-                            },
-                            "diskFreeThresholdMB": 5120,
-                            "diskFreeWarningThreshholdMB": 10240
-                        }]
+                    "subStoreList": [sub_store]
                 })
+
+            ddb_partition_info = {"maInfoList": maInfoList}
 
             request_json["storagePolicyCopyInfo"].update({
                 "storagePolicyFlags": {
@@ -1060,9 +1128,7 @@ class StoragePools:
                     "enableDASHFull": "SET_TRUE",
                     "hostGlobalDedupStore": "SET_TRUE"
                 },
-                "DDBPartitionInfo": {
-                    "maInfoList": maInfoList
-                }
+                "DDBPartitionInfo": ddb_partition_info
             })
         elif tape_storage:
             request_json["storagePolicyCopyInfo"].update({
@@ -1107,13 +1173,13 @@ class StoragePools:
         
         if cloud_server_type == 59: # HPE Catalyst
             request_json["storage"][0]["savedCredential"] = {"credentialId": 0}
-
         
-        #data domain boost storage (300, 58) and HPE Catalyst (59)
+        # data domain boost storage (300, 58) and HPE Catalyst (59)
         if cloud_server_type in (300, 58, 59):
             request_json["storagePolicyCopyInfo"]["library"]["libraryName"] = library_name
             request_json["clientGroup"] = {"clientGroupId": 0}
 
+        # Make the API request to create the storage pool
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._add_storage_pool_api, request_json
         )

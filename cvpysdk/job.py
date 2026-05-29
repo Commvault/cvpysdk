@@ -2807,7 +2807,7 @@ class Job(object):
 
             if pending_time > timeout or waiting_time > timeout:
                 self.kill()
-                if len(email_ids):
+                if len(email_ids) and not self._is_send_logs_job():
                     self.send_logs(email_ids=email_ids)
                 break
 
@@ -2817,10 +2817,21 @@ class Job(object):
             if self._status.lower() not in ["failed", "killed", "failed to start"]:
                return True
             else:
-                if len(email_ids):
+                if len(email_ids) and not self._is_send_logs_job():
                     self.send_logs(email_ids=email_ids)
                 return False
         return False
+
+    def _is_send_logs_job(self) -> bool:
+        """Return True if the current job is a Send Log Files job."""
+        job_type = (self.job_type or '').strip().lower()
+        if job_type in ('send log files', 'send logs'):
+            return True
+        op_type = self._summary.get('opType')
+        try:
+            return int(op_type) == 92
+        except (TypeError, ValueError):
+            return False
 
     @property
     def is_finished(self) -> bool:

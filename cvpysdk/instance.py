@@ -3669,11 +3669,11 @@ class Instance(object):
                 "clientName": self._agent_object._client_object.client_name,
                 "appName": self._agent_object.agent_name
             },
-            "timeZone": {
-                "TimeZoneName": options.get("timezone", self._commcell_object.default_timezone)
-            },
             "timeRange": time_range_dict
         }
+
+        if options.get("timezone"):
+            self._browse_restore_json["timeZone"] = {"TimeZoneName": options["timezone"]}
 
         if "browse_job_id" in value:
             self._browse_restore_json["browseJobId"] = value.get("browse_job_id", False)

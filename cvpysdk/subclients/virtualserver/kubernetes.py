@@ -960,6 +960,12 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
                     ``virtualServerRstOption`` for file-level FLR. Used by
                     :meth:`kubevirt_vm_guest_file_restore_to_fs` only; leave unset for other callers.
 
+                agentless_vm_restore_option (dict, optional): If set, patches restore request for
+                    KubeVirt agentless destination flow. Expected keys:
+                    ``source_dest_client`` with ``clientId`` / ``clientName``,
+                    ``fileLevelVMRestoreOption`` with ``serverName`` / ``vmGuid`` / ``vmName`` /
+                    ``savedCredentialId``, and optional ``vCenterInstance`` block.
+
         Raises:
             SDKException:
                 - inputs are not of correct type as per definition
@@ -981,6 +987,7 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
         # browse calls in this method still run on the application-group subclient (``self``).
         restore_association_override = kwargs.pop("restore_association_override", None)
         virtual_server_flr_browse = kwargs.pop("virtual_server_flr_browse", False)
+        agentless_vm_restore_option = kwargs.pop("agentless_vm_restore_option", None)
 
         vm_names, vm_ids = self._get_vm_ids_and_names_dict_from_browse()
         _guest_file_rst_options = {}
@@ -1093,6 +1100,41 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
             _assoc = request_json.get("taskInfo", {}).get("associations")
             if _assoc and isinstance(_assoc, list) and _assoc:
                 _assoc[0].update(restore_association_override)
+
+        if agentless_vm_restore_option:
+            restore_options = request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]
+            destination = restore_options.get("destination", {})
+            src_dest_client = agentless_vm_restore_option.get("source_dest_client", {})
+            if src_dest_client:
+                destination["destClient"] = {
+                    "clientId": int(src_dest_client.get("clientId", 0)),
+                    "clientName": src_dest_client.get("clientName", "")
+                }
+                restore_options["destination"] = destination
+
+            vs_option = restore_options.setdefault("virtualServerRstOption", {})
+            vs_option["isFileBrowse"] = True
+            vs_option["viewType"] = "DEFAULT"
+
+            filelevel_option = agentless_vm_restore_option.get("fileLevelVMRestoreOption", {})
+            if filelevel_option:
+                saved_cred_id = int(filelevel_option.get("savedCredentialId", 0))
+                vm_filelevel = {
+                    "serverName": filelevel_option.get("serverName", ""),
+                    "vmGuid": filelevel_option.get("vmGuid", ""),
+                    "vmName": filelevel_option.get("vmName", "")
+                }
+                if saved_cred_id:
+                    vm_filelevel["guestUserPassword"] = {
+                        "savedCredential": {
+                            "credentialId": saved_cred_id
+                        }
+                    }
+                vs_option["fileLevelVMRestoreOption"] = vm_filelevel
+
+            vcenter_instance = agentless_vm_restore_option.get("vCenterInstance", {})
+            if vcenter_instance:
+                vs_option["vCenterInstance"] = vcenter_instance
 
         # Populate the advancedRestoreOptions section
         self._virtualserver_option_restore_json["diskLevelVMRestoreOption"][

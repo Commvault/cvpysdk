@@ -1157,6 +1157,87 @@ class Credentials(object):
             raise SDKException('Response', '101', response_string)
         self.refresh()
 
+    def add_access_token_credential(
+            self,
+            credential_name: str,
+            access_token: str,
+            description: str = "",
+            key_expiry_interval: int = 90
+    ) -> None:
+        """Create an access token credential on this Commcell.
+
+        This is a generic method to create credentials that use an access token
+        for authentication (e.g., Azure Communication Services access keys).
+
+        Args:
+            credential_name: Name to assign to the credential account.
+            access_token: The access token/key string.
+            description: Optional description for the credential.
+            key_expiry_interval: Key expiry interval in days (default: 90).
+
+        Raises:
+            SDKException: If argument types are incorrect, credential already exists,
+                or the response is not successful.
+
+        Example:
+            >>> creds = Credentials(commcell_object)
+            >>> creds.add_access_token_credential(
+            ...     credential_name="ACS_AccessKey",
+            ...     access_token="my-access-key-value",
+            ...     description="ACS access key credential"
+            ... )
+        """
+        if not (isinstance(credential_name, str) and isinstance(access_token, str)):
+            raise SDKException("Credential", "101")
+
+        if self.has_credential(credential_name):
+            raise SDKException(
+                'Credential', '102',
+                "Credential {0} already exists on this commcell.".format(credential_name)
+            )
+
+        encoded_token = b64encode(access_token.encode()).decode()
+
+        create_credential_account = {
+            "credentialRecordInfo": [
+                {
+                    "credentialRecord": {
+                        "credentialName": credential_name
+                    },
+                    "description": description,
+                    "record": {
+                        "password": encoded_token
+                    },
+                    "recordType": "ACCESS_TOKEN",
+                    "keyExpiryInterval": key_expiry_interval,
+                    "createAs": {},
+                    "securityAssociations": {
+                        "associations": [],
+                        "associationsOperationType": 1
+                    }
+                }
+            ]
+        }
+
+        request = self._services['CREDENTIAL']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', request, create_credential_account
+        )
+        if flag:
+            if response.json():
+                response_json = response.json()['error']
+                error_code = response_json['errorCode']
+                error_message = response_json['errorMessage']
+                if not error_code == 0:
+                    raise SDKException('Response', '101', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
+
     def add_k8s_credentials(self, api_endpoint, ca_certificate, description, name, service_account, service_token):
         """Creates k8s credential on this commcell
             Args:

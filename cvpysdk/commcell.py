@@ -4634,6 +4634,8 @@ class Commcell(object):
                                  "password": username,
                                  "userName": password
                              },
+                             "providerType": 0,
+                             "useModernAuth": False,
                              "senderInfo": {
                                  "senderName": sender_name,
                                  "senderAddress": sender_email
@@ -4644,6 +4646,148 @@ class Commcell(object):
         flag, response = self._cvpysdk_object.make_request(
             'POST', url, request_json
         )
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', 0)
+                if error_code != 0:
+                    raise SDKException('Response', '101', self._update_response_(response.text))
+                return
+            raise SDKException('Response', '102')
+        raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def set_acs_email_settings(
+            self,
+            communication_service_endpoint: str,
+            sender_email: str,
+            credential_name: str = None,
+            auth_type: str = "access_key",
+            max_mail_server_size: int = 3072,
+            **kwargs
+    ) -> None:
+        """Configure Azure Communication Services (ACS) email settings for the Commcell.
+
+        This method configures ACS as the email provider for the Commcell. It supports two
+        authentication types: 'access_key' and 'entra' (Azure AD app registration).
+
+        If credential_name is provided, the method looks up the existing credential by name.
+        If credential_name is not provided, the method auto-creates a new credential using
+        the authentication details supplied in kwargs.
+
+        Args:
+            communication_service_endpoint: ACS endpoint URL
+                (e.g., 'https://myacs.communication.azure.com/').
+            sender_email: Sender email address provisioned in ACS.
+            credential_name: Name of an existing credential in the Credential Manager.
+                If None, a new credential will be auto-created from kwargs.
+            auth_type: Authentication type - either 'access_key' or 'entra' (default: 'access_key').
+            max_mail_server_size: Maximum mail server size in KB (default: 3072).
+            **kwargs: Additional arguments for credential creation when credential_name is None:
+                - new_credential_name (str): Name for the auto-created credential
+                    (auto-generated if not provided).
+                - access_token (str): Required for 'access_key' auth_type.
+                - tenant_id (str): Required for 'entra' auth_type.
+                - application_id (str): Required for 'entra' auth_type.
+                - application_secret (str): Required for 'entra' auth_type.
+
+        Raises:
+            SDKException: If invalid arguments or response failure.
+            ValueError: If auth_type is not 'access_key' or 'entra', or required kwargs are missing.
+
+        Example:
+            >>> # With existing credential name
+            >>> commcell.set_acs_email_settings(
+            ...     communication_service_endpoint='https://myacs.communication.azure.com/',
+            ...     sender_email='DoNotReply@domain.azurecomm.net',
+            ...     credential_name='my_acs_cred',
+            ...     auth_type='access_key'
+            ... )
+            >>> # Auto-create access key credential
+            >>> commcell.set_acs_email_settings(
+            ...     communication_service_endpoint='https://myacs.communication.azure.com/',
+            ...     sender_email='DoNotReply@domain.azurecomm.net',
+            ...     auth_type='access_key',
+            ...     access_token='my-access-key-value'
+            ... )
+            >>> # Auto-create entra credential with custom name
+            >>> commcell.set_acs_email_settings(
+            ...     communication_service_endpoint='https://myacs.communication.azure.com/',
+            ...     sender_email='DoNotReply@domain.azurecomm.net',
+            ...     auth_type='entra',
+            ...     tenant_id='tenant-id',
+            ...     application_id='app-id',
+            ...     application_secret='app-secret',
+            ...     new_credential_name='my_entra_cred'
+            ... )
+        """
+        import time as _time
+
+        if not (isinstance(communication_service_endpoint, str) and isinstance(sender_email, str)):
+            raise SDKException("Commcell", "101")
+
+        if auth_type not in ("access_key", "entra"):
+            raise ValueError(f"Invalid auth_type '{auth_type}'. Must be 'access_key' or 'entra'.")
+
+        # Resolve credential ID
+        if credential_name is not None:
+            if not isinstance(credential_name, str):
+                raise ValueError("'credential_name' must be a string.")
+            cred_obj = self.credentials.get(credential_name)
+            credential_id = cred_obj.credential_id
+        else:
+            # Auto-create credential
+            cred_name = kwargs.get('new_credential_name',
+                                   f"ACS_auto_{auth_type}_{int(_time.time())}")
+
+            if auth_type == "access_key":
+                access_token = kwargs.get('access_token')
+                if not access_token:
+                    raise ValueError(
+                        "'access_token' is required when credential_name is None "
+                        "and auth_type is 'access_key'."
+                    )
+                self.credentials.add_access_token_credential(
+                    credential_name=cred_name,
+                    access_token=access_token,
+                    description="Auto-created ACS access key credential"
+                )
+            else:  # entra
+                tenant_id = kwargs.get('tenant_id')
+                application_id = kwargs.get('application_id')
+                application_secret = kwargs.get('application_secret')
+                if not all([tenant_id, application_id, application_secret]):
+                    raise ValueError(
+                        "'tenant_id', 'application_id', and 'application_secret' are required "
+                        "when credential_name is None and auth_type is 'entra'."
+                    )
+                self.credentials.add_azure_app_registration_creds(
+                    credential_name=cred_name,
+                    tenant_id=tenant_id,
+                    application_id=application_id,
+                    application_secret=application_secret,
+                    description="Auto-created ACS entra credential"
+                )
+
+            cred_obj = self.credentials.get(cred_name)
+            credential_id = cred_obj.credential_id
+
+        request_json = {
+            "smtpInfo": {
+                "communicationServiceEndpoint": communication_service_endpoint,
+                "maxMailServerSize": max_mail_server_size,
+                "providerType": 1,
+                "senderInfo": {
+                    "senderAddress": sender_email
+                }
+            }
+        }
+
+        if auth_type == "access_key":
+            request_json["smtpInfo"]["accessKey"] = {"credentialId": credential_id}
+        else:
+            request_json["smtpInfo"]["entraCredentials"] = {"credentialId": credential_id}
+
+        url = self._services['EMAIL_SERVER']
+        flag, response = self._cvpysdk_object.make_request('POST', url, request_json)
         if flag:
             if response.json():
                 error_code = response.json().get('errorCode', 0)
