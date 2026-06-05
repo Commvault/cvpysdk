@@ -1862,6 +1862,7 @@ class VirtualServerSubclient(Subclient):
         browse_ma = options.get('browse_ma', "")
         agentless = options.get('agentless', "")
         in_place = options.get('in_place', False)
+        is_synthetic_recovery = options.get('is_synthetic_recovery', False)
 
         _vm_names, _vm_ids = self._get_vm_ids_and_names_dict_from_browse()
         _file_restore_option = {}
@@ -1950,6 +1951,9 @@ class VirtualServerSubclient(Subclient):
             _file_restore_option["password"] = agentless['vm_pass']
             _file_restore_option["agentless"] = True
 
+        # set synthetic recovery option
+        if is_synthetic_recovery:
+            _file_restore_option["is_synthetic_recovery"] = True
         # prepare and execute the Json
         request_json = self._prepare_filelevel_restore_json(_file_restore_option)
         return self._process_restore_response(request_json)

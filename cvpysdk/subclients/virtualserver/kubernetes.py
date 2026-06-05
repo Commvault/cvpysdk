@@ -1038,7 +1038,12 @@ class KubernetesVirtualServerSubclient(VirtualServerSubclient):
             item = "\\".join(each_item.split('/'))
             _base = "\\" + vm_ids[application_name] + "\\"
             if include_disk_name_in_source_path:
-                src_item_list.append(_base + disk_name + "\\" + item)
+                # When item is empty (restore_list=["/"]), omit trailing separator
+                # so the server treats it as a full-disk restore with no extra subpath.
+                if item in ('', '\\'):
+                    src_item_list.append(_base + disk_name)
+                else:
+                    src_item_list.append(_base + disk_name + "\\" + item)
             else:
                 src_item_list.append(_base + item)
 

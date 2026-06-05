@@ -1627,7 +1627,8 @@ class Subclient(object):
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
         _subclients_dict = {
-            'big data apps': BigDataAppsSubclient,
+            'big data apps': BigDataAppsSubclient, # SP42.100 or lower CS honors big data apps as the Agent Name
+            'distributed data platforms': BigDataAppsSubclient, # SP42.110 and above CS honors distributed data platforms as the Agent Name
             'file system': FileSystemSubclient,
             'virtual server': [VirtualServerSubclient, VMInstanceSubclient],
             'cloud apps': CloudAppsSubclient,

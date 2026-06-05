@@ -235,6 +235,7 @@ from base64 import b64encode
 from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
 
 from .exception import SDKException
+from .policies.vaulttracker_policies import VaultTrackerPolicies
 
 if TYPE_CHECKING:
     from .job import Job
@@ -4236,3 +4237,35 @@ class TapeLibrary(object):
         self.verify_media_status(barcode_list, 'Full Media')
     
     # === Media Handling Methods Complete ===
+
+    # === VaultTracker Policy Methods ===
+
+    def _get_vault_tracker_policies_from_properties(self) -> dict[str, tuple[str, int]]:
+        """Return a mapping of {policy_name_lower: (policy_name, policy_id)} from library properties.
+
+        Vault tracker policies are embedded inside the tape library properties response
+        (key: ``vaultTrackerPolicies``).  Each entry carries ``trackingPolicy.trackingPolicyName``
+        and ``trackingPolicy.trackingPolicyId``.
+
+        Returns:
+            dict: ``{lower_case_policy_name: (original_policy_name, policy_id)}``
+        """
+        policies = {}
+        for entry in self.library_properties.get('vaultTrackerPolicies', []):
+            tracking = entry.get('trackingPolicy', {})
+            name = tracking.get('trackingPolicyName', '')
+            pid = tracking.get('trackingPolicyId')
+            if name and pid is not None:
+                policies[name.lower()] = (name, int(pid))
+        return policies
+
+    @property
+    def vault_tracker_policies(self) -> 'VaultTrackerPolicies':
+        """Return a :class:`VaultTrackerPolicies` collection for this tape library.
+
+        Returns:
+            VaultTrackerPolicies: Collection object with ``has``, ``get``, ``delete``, and ``refresh``.
+        """
+        return VaultTrackerPolicies(self._commcell_object, self)
+
+    # === VaultTracker Policy Methods Complete ===

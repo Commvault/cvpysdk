@@ -843,6 +843,10 @@ SERVICES_DICT_TEMPLATE = {
     'MEDIA_IN_TAPE': '{0}/V4/Library/%s/Media?filterMediaType=%s&isExported=%s',
 
     'MEDIA_OPERATION': '{0}/V4/Storage/Tape/%s/Media',
+
+    'VAULT_TRACKER_POLICY': '{0}VaultTrackerPolicy/%s',
+
+    'GET_VAULT_TRACKER_ACTIONS': '{0}V4/VaultTrackerAction?libraryId=%s',
     
     'DRIVE_OPERATION': '{0}/DriveOperations',
 

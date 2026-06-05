@@ -1866,7 +1866,7 @@ class FileSystemSubclient(Subclient):
             # If no_of_streams is set, then destination_appTypeId is mandatory for FS agents
             # For in-place restore, first set destination app type of the current client
             if 'file system' in self._agent_object.agent_name.lower():
-                fs_options['destination_appTypeId'] = self._agent_object.agent_id
+                fs_options['destination_appTypeId'] = int(self._agent_object.agent_id)
 
             # If proxy client/access node is set, then set it's File System agent as destination app type
             if proxy_client:

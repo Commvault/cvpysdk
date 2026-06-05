@@ -2961,7 +2961,7 @@ class Clients(object):
             if self.has_client(index_server):
                 index_server_cloud = self.get(index_server)
 
-                if index_server_cloud.agents.has_agent(AppIDAName.BIG_DATA_APPS.value):
+                if index_server_cloud.agents.has_agent(AppIDAName.DISTRIBUTED_DATA_PLATFORM.value):
                     index_server_dict = {
                         "mediaAgentId": int(index_server_cloud.client_id),
                         "_type_": 11,
@@ -11801,10 +11801,10 @@ class Client(object):
         if flag:
             if response.json():
                 if 'error' in response.json():
-                    error_message = response.json()['error']['errorCode']
-                    if error_message != 0:
+                    error_code = response.json()['error']['errorCode']
+                    if error_code != 0:
                         error_message = response.json()['error']['errorMessage']
-                    raise SDKException('Client', '110', 'Error: {0}'.format(error_message))
+                        raise SDKException('Client', '110', 'Error: {0}'.format(error_message))
             else:
                 raise SDKException('Commcell', '110')
         else:

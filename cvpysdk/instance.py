@@ -3696,6 +3696,9 @@ class Instance(object):
         if value.get("restore_to_disk", False):
             self._browse_restore_json.pop("backupset", None)
 
+        if value.get('is_synthetic_recovery', False):
+            self._browse_restore_json["isSyntheticRecovery"] = True
+
     def _restore_common_opts_json(self, value):
         """ Method to set commonOpts for restore
 
@@ -3867,6 +3870,9 @@ class Instance(object):
                 self._fileoption_restore_json["fsCloneOptions"]["cloneCleanupOptions"] = {
                     "cleanupScriptPath": value.get("instant_clone_options").get("clone_cleanup_script")
                 }
+
+        if value.get("run_threat_analysis", False):
+            self._fileoption_restore_json["runThreatAnalysis"] = True
         
         if value.get('advanced_options'):
             if value['advanced_options'].get("mapFiles"):

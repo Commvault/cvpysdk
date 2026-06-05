@@ -1111,7 +1111,8 @@ class Store(object):
                     "associations": {
                         "copyName": self.copy_name,
                         "storagePolicyName": self.storage_policy_name,
-                        "sidbStoreName": self.store_name
+                        "sidbStoreName": self.store_name,
+                        "sidbStoreId": self.store_id
                     },
                     "subTasks": {
                         "subTask": {
