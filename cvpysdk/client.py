@@ -3834,12 +3834,12 @@ class Clients(object):
         if self.has_client(index_server):
             index_server_cloud = self.get(index_server)
 
-            if index_server_cloud.agents.has_agent(AppIDAName.BIG_DATA_APPS.value):
+            if index_server_cloud.agents.has_agent(AppIDAName.DISTRIBUTED_DATA_PLATFORM.value):
                 index_server_dict = {
-                    "mediaAgentId": int(index_server_cloud.client_id),
-                    "_type_": 11,
-                    "mediaAgentName": index_server_cloud.client_name
-                }
+                        "mediaAgentId": int(index_server_cloud.client_id),
+                        "_type_": 11,
+                        "mediaAgentName": index_server_cloud.client_name
+                    }
 
         if self._commcell_object.plans.has_plan(server_plan):
             server_plan_object = self._commcell_object.plans.get(server_plan)
@@ -9704,8 +9704,25 @@ class Client(object):
         if not isinstance(command, str):
             raise SDKException('Client', '101')
 
-
-        script_arguments = '' if script_arguments is None else script_arguments
+        # If script_arguments is None, split the command string properly
+        # handling quoted paths (e.g., "C:\Program Files\app.exe" -arg1)
+        if script_arguments is None:
+            command = command.strip()
+            # Check if command is properly quoted with matching closing quote
+            if command.startswith(('"', "'")) and command.find(command[0], 1) > 0:
+                quote_char = command[0]
+                closing_quote_idx = command.find(quote_char, 1)
+                script_arguments = command[closing_quote_idx + 1:].strip()
+                command = command[1:closing_quote_idx]
+            else:
+                # No quotes or malformed quotes - split at first whitespace
+                command_parts = command.split(None, 1)
+                if len(command_parts) > 1:
+                    command = command_parts[0]
+                    script_arguments = command_parts[1]
+                else:
+                    script_arguments = ''
+        
         execute_command_payload = {
             "App_ExecuteCommandReq": {
                 "arguments": f"{script_arguments}",
@@ -9739,7 +9756,7 @@ class Client(object):
                 "userName": f"{self._username}",
                 "password": f"{self._password}"
             }
-
+            
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['EXECUTE_QCOMMAND'], execute_command_payload
         )

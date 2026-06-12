@@ -85,6 +85,8 @@ Agent:
 
     is_restore_enabled()        --   returns boolean specifying whether restore is enabled or not
 
+    access_nodes                --   gets or sets the access nodes for the agent
+
     refresh()                   --   refresh the object properties
 
 """
@@ -95,7 +97,7 @@ from __future__ import unicode_literals
 import copy
 import string
 import time
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from .constants import AppIDAName
 from .instance import Instances
@@ -578,10 +580,12 @@ class Agent(object):
         #ai-gen-doc
         """
         from cvpysdk.agents.exchange_database_agent import ExchangeDatabaseAgent
+        from cvpysdk.agents.exchange_online_agent import ExchangeOnlineAgent
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
         _agents_dict = {
-            'exchange database': ExchangeDatabaseAgent
+            'exchange database': ExchangeDatabaseAgent,
+            'exchange mailbox': ExchangeOnlineAgent
         }
 
         if agent_name in _agents_dict:
@@ -1053,6 +1057,54 @@ class Agent(object):
             self._schedules = Schedules(self)
 
         return self._schedules
+
+    @property
+    def access_nodes(self) -> List[Dict[str, Any]]:
+        """Get the list of access nodes configured for this agent.
+
+        Returns:
+            list: List of dictionaries representing the access nodes.
+                  Each dictionary contains node details such as clientName, clientId, etc.
+                  Returns an empty list if no access nodes are configured.
+
+        Example:
+            >>> agent = Agent(...)
+            >>> nodes = agent.access_nodes
+            >>> print(nodes)
+            >>> # [{'displayName': 'node1', 'clientId': 123, 'clientName': 'node1'}]
+
+        """
+        return self._agent_properties.get('backupConfiguration', {}).get('backupDataAccessNodes', [])
+
+    @access_nodes.setter
+    def access_nodes(self, value: List[Dict[str, Any]]) -> None:
+        """Set the access nodes for this agent.
+
+        Args:
+            value: List of dictionaries representing the access nodes.
+                   Each dictionary should contain node identification details.
+                   For client nodes, include 'clientName'.
+                   For client group nodes, include 'clientGroupName'.
+
+        Raises:
+            SDKException: If value is not a list.
+
+        Example:
+            >>> agent = Agent(...)
+            >>> agent.access_nodes = [
+            ...     {'clientName': 'node1'},
+            ...     {'clientGroupName': 'group1'}
+            ... ]
+
+        """
+        if not isinstance(value, list):
+            raise SDKException('Agent', '101')
+
+        update_properties = self.properties
+        if 'backupConfiguration' not in update_properties:
+            update_properties['backupConfiguration'] = {}
+        update_properties['backupConfiguration']['backupDataAccessNodes'] = value
+        self.update_properties(update_properties)
 
     def enable_backup(self) -> None:
         """Enable backup operations for this Agent.

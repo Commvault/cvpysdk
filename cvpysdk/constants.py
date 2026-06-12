@@ -554,6 +554,7 @@ class AppIDAName(Enum):
     FILE_SYSTEM = 'File System'
     VIRTUAL_SERVER = 'Virtual Server'
     BIG_DATA_APPS = 'big data apps'
+    DISTRIBUTED_DATA_PLATFORM = 'distributed data platforms'
 
 
 class VSAObjects(Enum):

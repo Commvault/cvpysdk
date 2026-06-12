@@ -3149,6 +3149,8 @@ class Instance(object):
 
                         no_of_streams   (int)       -- Number of streams to be used for restore
 
+                        allowEncryptedFilesRestore: Flag to allow encrypted files restore (Threat Scan restore)
+
                 proxy_client    (str)          -- Proxy client used during FS under NAS operations
 
                 restore_jobs    (list)          --  list of jobs to be restored if the job is index free restore
@@ -3272,6 +3274,10 @@ class Instance(object):
                         validate_only       : To validate data backed up for restore
 
                         no_of_streams   (int)       -- Number of streams to be used for restore
+
+                        allowEncryptedFilesRestore: Flag to allow encrypted files restore (Threat Scan restore)
+
+                        allowInfectedFilesRestore: Flag to allow infected (malware) files restore (Threat Scan restore)
 
                 proxy_client    (str)          -- Proxy client used during FS under NAS operations
 
@@ -3699,6 +3705,16 @@ class Instance(object):
         if value.get('is_synthetic_recovery', False):
             self._browse_restore_json["isSyntheticRecovery"] = True
 
+        if "allowEncryptedFilesRestore" in value:
+            self._browse_restore_json["allowEncryptedFilesRestore"] = value.get(
+                "allowEncryptedFilesRestore"
+            )
+
+        if "allowInfectedFilesRestore" in value:
+            self._browse_restore_json["allowInfectedFilesRestore"] = value.get(
+                "allowInfectedFilesRestore"
+            )
+
     def _restore_common_opts_json(self, value):
         """ Method to set commonOpts for restore
 
@@ -3818,7 +3834,7 @@ class Instance(object):
 
         # For Index server restore, we need to set proxy client & in-place flag
         elif value.get("proxy_client") is not None and \
-                (self._agent_object.agent_name).upper() == "BIG DATA APPS" and \
+                (self._agent_object.agent_name).upper() in ["DISTRIBUTED DATA PLATFORMS","BIG DATA APPS"] and \
                 self.name.upper() == "DYNAMICINDEXINSTANCE":
             self._destination_restore_json = {
                 "inPlace": value.get("in_place", True),

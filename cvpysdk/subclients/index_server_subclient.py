@@ -76,7 +76,8 @@ class IndexServerSubclient(BigDataAppsSubclient):
         self._restore_options = {
             "destination_instance_id": self._instance_obj.instance_id,
             "multinode_restore": True,
-            "client_type": 29
+            "client_type": 29,
+            "destination_appTypeId": 64
         }
 
     def _get_path_for_restore(self, roles=None, core_name=None, client=None):
