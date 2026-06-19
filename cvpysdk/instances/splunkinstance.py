@@ -98,10 +98,10 @@ class SplunkInstance(BigDataAppsInstance):
             ["restoreOptions"]["browseOption"]["backupset"]["clientId"] = int(client_id)
 
         rest_json["taskInfo"]["subTasks"][0]["options"] \
-            ["restoreOptions"]["commonOptions"]["unconditionalOverwrite"] = True
+            ["restoreOptions"]["commonOptions"]["unconditionalOverwrite"] = False
 
         rest_json["taskInfo"]["subTasks"][0]["options"] \
-            ["restoreOptions"]["commonOptions"]["skip"] = False
+            ["restoreOptions"]["commonOptions"]["skip"] = True
 
         rest_json["taskInfo"]["subTasks"][0]["options"] \
             ["restoreOptions"]["destination"] \

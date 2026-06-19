@@ -18,7 +18,25 @@
 """
 File for operating on a Oracle Instance.
 
-OracleInstance is the only class defined in this file.
+OracleRestoreOptions, OracleRecoverOptions, and OracleInstance are the classes defined in this file.
+
+OracleRestoreOptions: IntEnum representing the `restoreFrom` values in the oracle restore JSON payload.
+
+    CURRENT_TIME                        --  Restore in-place to current time (value: 0)
+
+    POINT_IN_TIME                       --  Restore to a specified point in time (value: 1)
+
+    MOST_RECENT_BACKUP                  --  Restore from the most recent backup (value: 3)
+
+OracleRecoverOptions: IntEnum representing the `recoverFrom` values in the oracle restore JSON payload.
+
+    CURRENT_TIME                        --  Recover to current time; in-place only (value: 0)
+
+    POINT_IN_TIME                       --  Recover to a specified point in time (value: 1)
+
+    SCN                                 --  Recover to a specific SCN (value: 2)
+
+    MOST_RECENT_BACKUP                  --  Recover using the most recent backup (value: 3)
 
 OracleInstance: Derived class from Instance Base class, representing an
                             oracle instance, and to perform operations on that instance
@@ -104,15 +122,60 @@ OracleInstance:
 
 """
 from __future__ import unicode_literals
+from base64 import b64encode
+from enum import IntEnum
 import json
 
 from ..exception import SDKException
 from ..job import Job
 from .dbinstance import DatabaseInstance
 
-from typing import Any, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from ..agent import Agent
+
+
+class OracleRestoreOptions(IntEnum):
+    """
+    Values for `restoreFrom` in oracleOpt request payload to CommServer.
+    Controls which backup to restore data files from (RMAN RESTORE phase).
+
+    Source:
+    - web/cc/src/apps/dbs/components/DbRestore/components/oracle/
+        constants/OracleRestoreOptions.constant.js (PitTypes, L8-16)
+    - web/cc/src/apps/dbs/components/DbRestore/components/oracle/
+        utils/agentSpecificOptions.util.js (L79-99)
+
+    Note:
+    SCN (2) is never sent as restoreFrom — the payload builder overrides
+    it to POINT_IN_TIME (1) and sends the SCN via recoverSCN instead.
+    (agentSpecificOptions.util.js:88-90)
+    """
+    CURRENT_TIME = 0  # In-place restores only
+    POINT_IN_TIME = 1  # Requires restoreTime
+    MOST_RECENT_BACKUP = 3  # no restoreTime needed
+
+    DEFAULT = MOST_RECENT_BACKUP
+
+
+class OracleRecoverOptions(IntEnum):
+    """
+    Values for `recoverFrom` in oracleOpt request payload to CommServer.
+    Controls how far archive logs are applied (RMAN RECOVER phase).
+
+    Source:
+    - web/cc/src/apps/dbs/components/DbRestore/components/oracle/
+        constants/OracleRestoreOptions.constant.js (PitTypes, L8-16)
+    - web/cc/src/apps/dbs/components/DbRestore/components/common/
+        RecoverToOptions/recoverToOptions.util.js (L7-112)
+    - MilkyWay/OpenAPISpecifications/OracleDB.yaml (L4097-4104)
+    """
+    CURRENT_TIME = 0  # In-place restores only; no recoverTime needed
+    POINT_IN_TIME = 1  # Requires recoverTime (epoch timestamp)
+    SCN = 2  # Requires recoverSCN (SCN value)
+    MOST_RECENT_BACKUP = 3  # no recoverTime or recoverSCN needed
+
+    DEFAULT = MOST_RECENT_BACKUP
 
 
 class OracleInstance(DatabaseInstance):
@@ -292,17 +355,32 @@ class OracleInstance(DatabaseInstance):
 
         if not isinstance(value, dict):
             raise SDKException('Instance', '101')
+        
+        destination_client = value.get("destination_client")
+        destination_instance = value.get("destination_instance") or value.get("instance_name")
+        
+        destination_client_obj = self._commcell_object.clients.get(destination_client)
+        destination_agent_object = destination_client_obj.agents.get('oracle')
+        destination_instance_object = destination_agent_object.instances.get(destination_instance)
+
+        common_destination_payload = {
+            "clientName": destination_client_obj.name,
+            "instanceName": destination_instance_object.name,
+            "displayName": destination_client_obj.display_name,
+            "instanceId": int(destination_instance_object.instance_id),
+            "instanceGUID": destination_instance_object.properties['instance']['instanceGUID'],
+            "clientId": int(destination_client_obj.client_id),
+            "appName": destination_agent_object.name,
+            "applicationId": int(destination_agent_object.agent_id),
+            "entityInfo": destination_instance_object.properties['instance']['entityInfo'],
+            "entityName": destination_instance_object.name,
+            "isVirtualServerDiscoveredClient": destination_client_obj.properties['clientProps']['isVirtualServerDiscoveredClient'],
+        }
 
         self._destination_restore_json = ({
             "noOfStreams": value.get("number_of_streams", 2),
-            "destClient": {
-                "clientName": value.get("destination_client", "")
-            },
-            "destinationInstance": {
-                "clientName": value.get("destination_client", ""),
-                "instanceName": value.get("destination_instance", ""),
-                "appName": value.get("app_name", "Oracle")
-            }
+            "destClient": common_destination_payload,
+            "destinationInstance": common_destination_payload
         })
         if value.get("destination_path"):
             self._destination_restore_json["destPath"] = [value.get("destination_path")]
@@ -736,12 +814,13 @@ class OracleInstance(DatabaseInstance):
             self,
             destination_client: str,
             instance_name: str,
-            tablespaces: list,
+            default_content: list,
             files: dict,
             browse_option: dict,
             common_options: dict,
             oracle_options: dict,
-            destination: dict = None
+            destination: Optional[dict] = None,
+            **kwargs: Any
     ) -> dict:
         """Generate and modify the restore JSON for Oracle database restores.
 
@@ -751,12 +830,13 @@ class OracleInstance(DatabaseInstance):
         Args:
             destination_client: Name of the destination client where the restore will be performed.
             instance_name: Name of the Oracle instance to restore.
-            tablespaces: List of tablespace names to be restored.
+            default_content: List of default content to be restored.
             files: Dictionary specifying file options for the restore.
             browse_option: Dictionary containing browse options for the restore operation.
             common_options: Dictionary containing common restore options.
             oracle_options: Dictionary containing additional Oracle-specific restore options.
             destination: Optional; dictionary specifying destination client and instance names. Defaults to None.
+            destination_instance: Optional; name of the destination instance for the restore. Defaults to None.
 
         Returns:
             dict: JSON-formatted dictionary containing all options required to restore the Oracle database.
@@ -780,33 +860,37 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        if not isinstance(tablespaces, list):
+        if not isinstance(default_content, list):
             raise SDKException(
                 'Instance',
-                '101', 'Expecting a list for tablespaces')
-        if files is not None:
-            if not isinstance(files, dict):
-                raise SDKException(
-                    'Instance',
-                    '101', 'Expecting a dict for files')
+                '101', 'Expecting a list for default_content (PDB names or tablespaces)')
 
-        destination_id = int(self._commcell_object.clients.get(
-            destination_client).client_id)
-        tslist = ["SID: {0} Tablespace: {1}".format(
-            instance_name, ts) for ts in tablespaces]
-        restore_json = self._restore_json(paths=r'/')
+        tslist = [f"SID: {instance_name} Tablespace: {item}" for item in default_content]
+
+        # Base restore payload generation invokes destination shaping again; ensure
+        # destination fields are present so in-place restore paths do not pass None.
+        destination_instance = instance_name
+        if isinstance(destination, dict):
+            destination_instance = destination.get("destination_instance") or instance_name
+
+        restore_json = self._restore_json(
+            paths=r'/',
+            destination_client=destination_client,
+            destination_instance=destination_instance
+        )
         if common_options is not None:
             restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
                 "commonOptions"] = common_options
         restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
             "oracleOpt"] = oracle_options
+
         if destination:
             if not isinstance(destination, dict):
                 raise SDKException(
                     'Instance',
                     '101', 'Expecting a dict for destination details')
             restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["destination"] = destination
-        if files is None:
+        if not files:
             restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["fileOption"] = {
                 "sourceItem": tslist
             }
@@ -814,9 +898,27 @@ class OracleInstance(DatabaseInstance):
             restore_json["taskInfo"]["subTasks"][0]["options"][
                 "restoreOptions"]["fileOption"] = files
 
-        if browse_option is not None:
+        browse_option = browse_option if isinstance(browse_option, dict) else {}
+
+        if (copy_precedence := kwargs.get('copy_precedence')) is not None:
+            browse_option["mediaOption"] = {
+                "copyPrecedence": {
+                    "copyPrecedenceApplicable": True,
+                    "copyPrecedence": copy_precedence
+                }
+            }
+
+        if to_time := kwargs.get("to_time"):
+            browse_option["timeRange"] = {
+                "fromTime": kwargs.get("from_time", 0),
+                "toTime": to_time
+            }
+
+        if browse_option != {}:
+            browse_option["commcellId"] = self._commcell_object.commcell_id
             restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
                 "browseOption"] = browse_option
+
         return restore_json
 
     def _get_browse_options(self) -> dict:
@@ -1072,8 +1174,8 @@ class OracleInstance(DatabaseInstance):
         browse_response = self.browse()
         if browse_response:
             for db in browse_response:
-                if 'tablespace' in db:
-                    tablespaces.append(db['tablespace'])
+                if 'tableSpace' in db:
+                    tablespaces.append(db['tableSpace'])
 
                 # In the case of CDB, we may have to browse through each
                 # individual database (PDB) to fetch all the tablespaces
@@ -1088,7 +1190,7 @@ class OracleInstance(DatabaseInstance):
         """Browse Oracle database tablespaces.
 
         This method allows browsing of Oracle database tablespaces associated with the instance.
-        The arguments and keyword arguments can be used to specify browse options such as 
+        The arguments and keyword arguments can be used to specify browse options such as
         filters, levels, or specific tablespaces.
 
         Args:
@@ -1113,7 +1215,7 @@ class OracleInstance(DatabaseInstance):
         """Initiate a backup operation for the Oracle database using the specified subclient.
 
         Args:
-            subclient_name: The name of the subclient to use for the backup operation. 
+            subclient_name: The name of the subclient to use for the backup operation.
                 Defaults to "default" if not specified.
 
         #ai-gen-doc
@@ -1129,7 +1231,8 @@ class OracleInstance(DatabaseInstance):
         oracle_options: dict = None,
         tag: str = None,
         destination_instance: str = None,
-        streams: int = 2
+        streams: int = 2,
+        **kwargs: Any
     ) -> 'Job':
         """Perform a full or partial Oracle database restore using the latest backup or a backup copy.
 
@@ -1185,9 +1288,9 @@ class OracleInstance(DatabaseInstance):
             "switchDatabaseMode": True,
             "noCatalog": True,
             "recover": True,
-            "recoverFrom": 3,
+            "recoverFrom": OracleRecoverOptions.DEFAULT.value,
             "restoreData": True,
-            "restoreFrom": 3
+            "restoreFrom": OracleRestoreOptions.DEFAULT.value
         }
         if oracle_options is None:
             oracle_options = {}
@@ -1204,8 +1307,9 @@ class OracleInstance(DatabaseInstance):
                 oracle_options.setdefault(key, val)
 
         try:
-            if destination_client is None or destination_instance is None:
+            if destination_client is None:
                 destination_client = self._properties['instance']['clientName']
+            if destination_instance is None:
                 destination_instance = self._properties['instance']['instanceName']
             destination = {
                 "destination_client": destination_client,
@@ -1217,27 +1321,27 @@ class OracleInstance(DatabaseInstance):
                 oracle_options.update(stream_allocation)
                 destination["app_name"] = "Oracle RAC"
             self._restore_destination_json(destination)
-        except SDKException:
-            raise SDKException("Instance", "105")
+        except SDKException as exp:
+            raise SDKException("Instance", "105") from exp
         else:
             # subclient = self.subclients.get(subclient_name)
-            if destination_client and destination_instance:
-                options = self._get_oracle_restore_json(destination_client=destination_client,
-                                                        destination=self._destination_restore_json,
-                                                        instance_name=self.instance_name,
-                                                        tablespaces=self.tablespaces,
-                                                        files=files,
-                                                        browse_option=browse_option,
-                                                        common_options=common_options,
-                                                        oracle_options=oracle_options)
+            default_content = self.browse()
+            if all("pdbSize" in item for item in default_content):
+                default_content = [item["database"] for item in default_content]
             else:
-                options = self._get_oracle_restore_json(destination_client=destination_client,
-                                                        instance_name=self.instance_name,
-                                                        tablespaces=self.tablespaces,
-                                                        files=files,
-                                                        browse_option=browse_option,
-                                                        common_options=common_options,
-                                                        oracle_options=oracle_options)
+                default_content = self.tablespaces
+            options = self._get_oracle_restore_json(
+                destination_client=destination_client,
+                destination=self._destination_restore_json if (destination_client and destination_instance) else None,
+                instance_name=self.instance_name,
+                default_content=default_content,
+                files=files,
+                browse_option=browse_option,
+                common_options=common_options,
+                oracle_options=oracle_options,
+                **kwargs
+            )
+
             return self._process_restore_response(options)
 
     def _get_rac_stream_allocation(self, destination_client: str, destination_instance: str, streams: int) -> dict:
@@ -1361,7 +1465,7 @@ class OracleInstance(DatabaseInstance):
                 "specifySPFile": False,
                 "restoreSPFile": False,
                 "recover": False,
-                "recoverFrom": 4,
+                "recoverFrom": OracleRecoverOptions.DEFAULT.value,
                 "archiveLog": True,
                 "endLSNNum": "",
                 "autoDetectDevice": True,
@@ -1370,7 +1474,7 @@ class OracleInstance(DatabaseInstance):
                 "useStartLog": True,
                 "logTarget": "",
                 "restoreData": False,
-                "restoreFrom": 0,
+                "restoreFrom": OracleRestoreOptions.DEFAULT.value,
                 "duplicateToSkipReadOnly": False
             }
             if value.get("start_lsn", None):
@@ -1403,9 +1507,10 @@ class OracleInstance(DatabaseInstance):
         restore_option = {}
         if kwargs.get("restore_option"):
             restore_option = kwargs["restore_option"]
-            for key in kwargs:
-                if not key == "restore_option":
-                    restore_option[key] = kwargs[key]
+            restore_option.update({
+                key: value for key, value in kwargs.items()
+                if key != "restore_option"
+            })
         else:
             restore_option.update(kwargs)
 

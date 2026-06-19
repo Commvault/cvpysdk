@@ -69,6 +69,8 @@ OracleSubclient:
 
     is_snapenabled()                    --  Check if intellisnap has been enabled in the subclient
 
+    get_backupcopy_interface()          --  Getter for backup copy interface for the subclient
+
 """
 from __future__ import unicode_literals
 from .dbsubclient import DatabaseSubclient
@@ -98,14 +100,16 @@ class OracleSubclient(DatabaseSubclient):
 
     def _oracle_backup_json(
             self,
-            backup_level="full",
+            backup_level=InstanceBackupType.FULL.value,
             schedule_pattern=None,
-            options=None):
+            options=None,
+            cumulative=False,
+            run_backup_copy_immediately=False):
         """Runs a backup job for the subclient of the level specified.
 
             Args:
                 backup_level            (str)   --  level of backup the user wish to run
-                                                    Full / Incremental
+                                                    Full / Incremental / Synthetic Full
 
                 schedule_pattern (dict) -- scheduling options to be included for the task
 
@@ -114,6 +118,8 @@ class OracleSubclient(DatabaseSubclient):
 
                 options          (dict) --  dictionary containing other oracle options
 
+                cumulative       (bool) --  flag to indicate if cumulative backup is to be run
+
             Returns:
                 dict    -- dict containing request JSON
 
@@ -121,17 +127,28 @@ class OracleSubclient(DatabaseSubclient):
         oracle_options = {
             "oracleOptions": {}
         }
+
+        backup_copy_interface = self.get_backupcopy_interface()
+
         if options is not None:
             oracle_options.update(options)
         request_json = self._backup_json(
-            backup_level,
-            False,
-            "BEFORE_SYNTH",
+            backup_level=backup_level,
+            incremental_backup=False,
+            incremental_level="BEFORE_SYNTH",
             schedule_pattern=schedule_pattern
         )
 
         # Add option to run RMAN cumulatives
-        oracle_options["oracleOptions"]["cumulative"] = True
+        oracle_options["oracleOptions"]["cumulative"] = cumulative
+
+        if run_backup_copy_immediately:
+            data_opt = {
+                "createBackupCopyImmediately": True,
+            }
+            if backup_level == InstanceBackupType.FULL.value:
+                data_opt["backupCopyType"] = 1 if backup_copy_interface == 'VOLUME_COPY' else 2
+            request_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"]['dataOpt'] = data_opt
 
         request_json["taskInfo"]["subTasks"][0]["options"]["backupOpts"].update(
             oracle_options
@@ -479,9 +496,13 @@ class OracleSubclient(DatabaseSubclient):
         self._set_subclient_properties(
             "_oracle_subclient_properties['enableTableBrowse']", False
         )
+    
+    def get_backupcopy_interface(self):
+        """Getter for backup copy interface for the subclient"""
+        return self._commonProperties['snapCopyInfo']['backupCopyInterface']
 
     def set_backupcopy_interface(self, interface):
-        """Sets the backup copy interafce for the subclient.
+        """Sets the backup copy interface for the subclient.
 
             Args:
                 interface (str) -- type of the backup copy interface
@@ -507,13 +528,14 @@ class OracleSubclient(DatabaseSubclient):
             backup_level=InstanceBackupType.FULL.value,
             cumulative=False,
             schedule_pattern=None,
-            options=None):
+            options=None,
+            run_backup_copy_immediately=False):
         """
 
         Args:
 
             backup_level            (str)   --  level of backup the user wish to run
-                                                Full / Incremental
+                                                Full / Incremental / Synthetic Full
                                                     default: Full
 
             cumulative (Bool) -- True if cumulative backup is required
@@ -525,6 +547,8 @@ class OracleSubclient(DatabaseSubclient):
                                                                     doc for the types of Jsons
 
             options          (dict) --  dictionary containing other oracle options
+
+            run_backup_copy_immediately (bool) -- True if backup copy is to be run immediately after backup
 
         Returns:
             object - instance of the Job class for this backup job if its an immediate Job
@@ -540,10 +564,14 @@ class OracleSubclient(DatabaseSubclient):
                 if response does not succeed
 
         """
-        if backup_level not in ['full', 'incremental']:
+        if backup_level not in [
+            InstanceBackupType.FULL.value,
+            InstanceBackupType.INCREMENTAL.value,
+            InstanceBackupType.SYNTHETIC.value
+        ]:
             raise SDKException(r'Subclient', r'103')
 
-        if not (cumulative or schedule_pattern or options):
+        if not (cumulative or schedule_pattern or options or run_backup_copy_immediately):
             return super(OracleSubclient, self).backup(backup_level)
 
         if cumulative:
@@ -551,7 +579,9 @@ class OracleSubclient(DatabaseSubclient):
         request_json = self._oracle_backup_json(
             backup_level,
             schedule_pattern,
-            options
+            options,
+            cumulative=cumulative,
+            run_backup_copy_immediately=run_backup_copy_immediately
         )
         backup_service = self._commcell_object._services['CREATE_TASK']
         flag, response = self._commcell_object._cvpysdk_object.make_request(

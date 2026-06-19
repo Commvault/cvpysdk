@@ -63,13 +63,20 @@ class SplunkSubclient(BigDataAppsSubclient):
         backupset_id = int(subclient_properties["backupsetId"])
 
         for count, ele in enumerate(index_list):
-            index_list[count] = "/Indexes/" + ele
+            index_value = str(ele)
+            index_list[count] = index_value if index_value.startswith("/Indexes/") else "/Indexes/" + index_value
 
         instance_obj = self._instance_object
+        application_id = int(instance_obj.properties["instance"].get("applicationId", 64))
 
         instance_obj._restore_association = self._subClientEntity
-        parameter_dict = self._restore_json(paths=index_list, copy_precedence=copy_precedence, from_time=from_time,
-                                            to_time=to_time)
+        parameter_dict = self._restore_json(
+            paths=index_list,
+            copy_precedence=copy_precedence,
+            from_time=from_time,
+            to_time=to_time,
+            destination_appTypeId=application_id
+        )
         parameter_dict["taskInfo"]["associations"] \
             [0]["subclientId"] = subclient_id
         parameter_dict["taskInfo"]["associations"] \

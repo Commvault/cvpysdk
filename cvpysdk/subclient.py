@@ -1729,9 +1729,9 @@ class Subclient(object):
         ]
 
         self._backupcopy_interfaces = {
-            'FILESYSTEM': 1,
-            'RMAN': 2,
-            'VOLUME': 3
+            'FILESYSTEM': 'FILE_SYSTEM',
+            'RMAN': 'RMAN',
+            'VOLUME': 'VOLUME_COPY'
         }
 
         if subclient_id:

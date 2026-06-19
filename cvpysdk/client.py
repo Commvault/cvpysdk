@@ -7903,11 +7903,12 @@ class Client(object):
         #ai-gen-doc
         """
         if 'windows' in self.os_info.lower():
-            command = 'powershell.exe Get-Content "{0}"'.format(
-                os.path.join(self.install_directory.replace(' ', '` '), 'Base', 'QinetixVM')
-            )
+            qinetixvm_path = os.path.join(self.install_directory, 'Base', 'QinetixVM')
+            script = "Get-Content -LiteralPath '{0}'".format(
+                    qinetixvm_path.replace("'", "''")
+                )
 
-            exit_code, output, __ = self.execute_command(command)
+            exit_code, output, __ = self.execute_script('PowerShell', script)
 
             if exit_code == 0:
                 return output.strip()

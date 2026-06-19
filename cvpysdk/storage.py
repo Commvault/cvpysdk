@@ -2363,7 +2363,12 @@ class DiskLibrary(object):
 
                     if 'errorCode' in _response:
                         if _response['errorCode'] != 0:
-                            raise SDKException('Storage', '102', _response['errorMessage'])
+                            error_msg = _response.get('errorMessage') or _response.get('errorString', 'Unknown error')
+                            # Silently allow errorCode 500 with device controller warning
+                            if _response['errorCode'] == 500 and 'Please update device controllers manually' in error_msg:
+                                pass
+                            else:
+                                raise SDKException('Storage', '102', error_msg)
                 else:
                     raise SDKException('Response', '102')
             else:

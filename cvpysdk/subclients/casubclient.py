@@ -53,6 +53,7 @@ class CloudAppsSubclient(Subclient):
         from .cloudapps.onedrive_subclient import OneDriveSubclient
         from .cloudapps.azure_cosmosdb_subclient import AzureCosmosDBSubclient
         from .cloudapps.powerbi_subclient import PowerBISubclient
+        from .cloudapps.clickhouse_subclient import ClickHouseSubclient
         from .cloudapps.pinecone_subclient import PineConeSubclient
         from .cloudapps.snowflake_subclient import SnowflakeSubclient
 
@@ -82,6 +83,7 @@ class CloudAppsSubclient(Subclient):
             56: CloudStorageSubclient,  # S3 Compatible Subclient
             58: PineConeSubclient,  # PineCone Subclient
             60: PowerBISubclient,    # Power Platform PowerBi Subclient
+            84: ClickHouseSubclient,  # ClickHouse Subclient
             61: SnowflakeSubclient   # Snowflake Subclient
         }
 

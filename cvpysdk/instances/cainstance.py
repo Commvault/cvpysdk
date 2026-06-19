@@ -202,6 +202,7 @@ class CloudAppsInstance(Instance):
         from .cloudapps.azure_cosmosdb_instance import AzureCosmosDBInstance
         from .cloudapps.powerbi_instance import PowerBIInstance
         from .cloudapps.cloud_database_instance import CloudDatabaseInstance
+        from .cloudapps.clickhouse_instance import ClickHouseInstance
         from .cloudapps.pinecone_instance import PineConeInstance
         from .cloudapps.snowflake_instance import SnowflakeInstance
 
@@ -231,6 +232,7 @@ class CloudAppsInstance(Instance):
             56: CloudStorageInstance,  # S3 Compatible Instance
             58: PineConeInstance,  # PineCone Instance
             60: PowerBIInstance,     # Power Platform PowerBi Instance
+            84: ClickHouseInstance,  # ClickHouse Instance
             61: SnowflakeInstance   # Snowflake Instance
         }
 

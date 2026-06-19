@@ -68,6 +68,8 @@ Instances:
     add_postgresql_instance()       --  Method to add a new postgresql instance
 
     add_cosmosdb_instance()         --  Method to add new cosmosdb instance
+    
+    add_clickhouse_instance()       --  Method to add new ClickHouse instance
 
     add_snowflake_instance()        --  Method to add new snowflake instance
 
@@ -2214,6 +2216,93 @@ class Instances(object):
 
         raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def add_clickhouse_instance(self, instance_name, plan_name, ch_client_credential_name, db_names):
+        """Add a new ClickHouse Cloud Apps instance to the Commcell.
+
+        Creates a ClickHouse instance using the V4 AI API.
+        The caller provides plain database name strings which are internally
+        wrapped into the CloudDBEntity XML format.
+
+        Args:
+            instance_name (str):                Name for the new ClickHouse instance.
+            plan_name (str):                    Name of the plan to associate with the instance.
+            ch_client_credential_name (str):    Name of the ClickHouse credential entity.
+                                                Velocity workloads use the same entity for both
+                                                credential and account. Its id and name are used
+                                                as the "credential" and "account" fields in the
+                                                API payload.
+            db_names (list):                    List of ClickHouse database name strings to
+                                                back up, e.g. ["my_db", "another_db"].
+
+        Returns:
+            Instance: The newly created ClickHouse instance object.
+
+        Raises:
+            SDKException: If the plan or credential does not exist, if instance
+                          creation fails, or the server returns an error.
+        """
+        from .subclients.cloudapps.clickhouse_subclient import ClickHouseSubclient
+
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException(
+                'Instance', '102',
+                'Plan "{0}" does not exist in the Commcell'.format(plan_name)
+            )
+
+        if not self._commcell_object.credentials.has_credential(ch_client_credential_name):
+            raise SDKException(
+                'Instance', '102',
+                'Credential "{0}" does not exist in the Commcell'.format(ch_client_credential_name)
+            )
+
+        plan = self._commcell_object.plans.get(plan_name)
+        credential = self._commcell_object.credentials.get(ch_client_credential_name)
+
+        content = [ClickHouseSubclient._build_content_xml(db) for db in db_names]
+
+        request_json = {
+            "instanceName": instance_name,
+            "instanceType": "CLICKHOUSE",
+            "plan": {
+                "id": int(plan.plan_id),
+                "name": plan_name
+            },
+            "account": {
+                "name": ch_client_credential_name
+            },
+            "content": content,
+            "credential": {
+                "id": int(credential.credential_id),
+                "name": ch_client_credential_name
+            },
+            "useResourcePoolInfo": True
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['ADD_CLICKHOUSE_INSTANCE'], request_json
+        )
+
+        if flag:
+            if response.json():
+                response_data = response.json()
+                if 'id' in response_data and 'name' in response_data:
+                    self.refresh()
+                    return self.get(response_data['name'])
+                elif 'errorMessage' in response_data:
+                    raise SDKException(
+                        'Instance', '102',
+                        'Failed to create ClickHouse instance\nError: "{0}"'.format(
+                            response_data['errorMessage']
+                        )
+                    )
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+
 
     def add_snowflake_instance(self, instance_name, plan_name, sf_client_credential_name, db_names):
         """Add a new Snowflake Cloud Apps instance to the Commcell.
@@ -2511,6 +2600,18 @@ class Instance(object):
                 return object.__new__(_class)
             return _class.__new__(_class, agent_object, instance_name, instance_id)
         else:
+            # Fall back to appTypeId (applicationId) check for agents whose display name
+            # differs from the registered key (e.g. 'Distributed Apps' instead of 'Big Data Apps').
+            try:
+                app_type_id = str(
+                    agent_object._client_object.agents.all_agents.get(agent_name, '')
+                )
+            except Exception:
+                app_type_id = ''
+            if app_type_id == '64':
+                return BigDataAppsInstance.__new__(
+                    BigDataAppsInstance, agent_object, instance_name, instance_id
+                )
             return object.__new__(cls)
 
     def __init__(self, agent_object, instance_name, instance_id=None):
@@ -3701,7 +3802,6 @@ class Instance(object):
 
         if value.get("restore_to_disk", False):
             self._browse_restore_json.pop("backupset", None)
-
         if value.get('is_synthetic_recovery', False):
             self._browse_restore_json["isSyntheticRecovery"] = True
 

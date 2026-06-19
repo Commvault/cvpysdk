@@ -605,9 +605,10 @@ class VSAObjects(Enum):
 
 class InstanceBackupType(Enum):
     """Class to maintain type of instance backup"""
-    FULL = 'full'
-    INCREMENTAL = 'incremental'
-    CUMULATIVE = 'incremental'      # cumulative backups pull incremental backup JSON
+    FULL = 'FULL'
+    INCREMENTAL = 'INCREMENTAL'
+    CUMULATIVE = 'INCREMENTAL'      # cumulative backups pull incremental backup JSON
+    SYNTHETIC = 'SYNTHETIC_FULL'
 
 
 class SQLDefines:
@@ -691,7 +692,7 @@ class StoragePoolConstants:
 
     AIR_GAP_PROTECT_STORAGE_TYPES = {
         "MICROSOFT AZURE STORAGE": {
-            "FREQUENT ACCESS": {
+            "FREQUENT ACCESS (MULTI REGION)": {
                 "vendorId": 3,
                 "displayVendorId": 401,
                 "licenseType": 100042,
@@ -705,6 +706,11 @@ class StoragePoolConstants:
                 "vendorId": 3,
                 "displayVendorId": 414,
                 "licenseType": 100088,
+            },
+            "FREQUENT ACCESS": {
+                "vendorId": 3,
+                "displayVendorId": 415,
+                "licenseType": 100081,
             }
         },
         "ORACLE CLOUD INFRASTRUCTURE OBJECT STORAGE": {

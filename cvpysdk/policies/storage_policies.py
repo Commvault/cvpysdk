@@ -3990,50 +3990,45 @@ class StoragePolicyCopy(object):
         Returns the selective copy rules for this storage policy copy.
 
         Returns:
-            dict: Selective copy rules if present, else None.
+            dict: All selective copy rule properties as returned by the API, empty dict if not present.
+                  Typical keys: selectMostRecentJob, firstFullBackup, selectiveRule,
+                                monthStartsOn, isUserSetDayNumber.
         """
         rules = self._copy_properties.get('selectiveCopyRules')
         if not rules:
             return {}
-        selective_rule_map = {
-            2: 'all',
-            4: 'weekly',
-            8: 'monthly',
-            16: 'quarterly',
-            32: 'halfyearly',
-            64: 'yearly',
-            262144: 'hourly',
-            524288: 'daily',
-            16777216: 'advanced'
-        }
-        selective_rule = rules['selectiveRule']
-        return {
-            'selectMostRecentJob': rules['selectMostRecentJob'],
-            'firstFullBackup': rules['firstFullBackup'],
-            'selectiveRule': selective_rule_map.get(selective_rule, selective_rule)
-        }
+        return dict(rules)
 
     @selective_copy_rules.setter
-    def selective_copy_rules(self, selective_rules: tuple) -> None:
+    def selective_copy_rules(self, selective_rules: dict) -> None:
         """
         Sets the selective copy rules for this storage policy copy.
 
         Args:
-            selective_rules (tuple):
+            selective_rules (dict): Dict containing any of the following keys:
 
-                tuple:
-                    **int** -   value to specify selectMostRecentJob
-                    **int** -   value to specify firstFullBackup
-                    **str** -   value to specify selectiveRule
+                **selectMostRecentJob**  (int)       -- 1 to select most recent job, 0 otherwise
+                **firstFullBackup**      (int)       -- 1 to include first full backup, 0 otherwise
+                **selectiveRule**        (int/str)   -- rule as int or name string.
+                    Valid strings: 'all'(2), 'weekly'(4), 'monthly'(8), 'quarterly'(16),
+                                   'halfyearly'(32), 'yearly'(64), 'hourly'(262144),
+                                   'daily'(524288), 'advanced'(16777216)
+                **monthStartsOn**        (int)       -- day of month the period starts on
+                **isUserSetDayNumber**   (int)       -- 1 if user has explicitly set the day number
 
-                    e.g. :
-                            storage_policy_copy.selective_copy_rules = (1, 0, 'monthly')
-
+                    e.g.:
+                        storage_policy_copy.selective_copy_rules = {
+                            'selectMostRecentJob': 1,
+                            'firstFullBackup': 0,
+                            'selectiveRule': 'monthly',
+                            'monthStartsOn': 1,
+                            'isUserSetDayNumber': 0
+                        }
 
         Raises:
-            SDKException: if failed to update selective copy rules on the copy
+            SDKException: if input is not a dict or API call fails.
         """
-        if not (isinstance(selective_rules, tuple) and len(selective_rules) == 3):
+        if not isinstance(selective_rules, dict):
             raise SDKException('Storage', '101')
 
         selective_rule_map = {
@@ -4049,9 +4044,10 @@ class StoragePolicyCopy(object):
         }
 
         rules = self._copy_properties.get('selectiveCopyRules', {})
-        rules['selectMostRecentJob'] = selective_rules[0]
-        rules['firstFullBackup'] = selective_rules[1]
-        rules['selectiveRule'] = selective_rule_map.get(selective_rules[2], selective_rules[2])
+        rules.update(selective_rules)
+
+        if isinstance(rules.get('selectiveRule'), str):
+            rules['selectiveRule'] = selective_rule_map.get(rules['selectiveRule'], rules['selectiveRule'])
 
         self._copy_properties['selectiveCopyRules'] = rules
         self._set_copy_properties()

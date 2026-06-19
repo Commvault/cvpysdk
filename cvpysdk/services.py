@@ -266,6 +266,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'CREATE_TASK': '{0}CreateTask',
     'ADD_INSTANCE': '{0}Instance',
+    'ADD_CLICKHOUSE_INSTANCE': '{0}V4/AI/ClickHouse/Instance',
     'ADD_SNOWFLAKE_INSTANCE': '{0}V4/AI/Snowflake/Instance',
     'ADD_PINECONE_INSTANCE': '{0}V4/AI/Pinecone/Instance',
     'MASKING_POLICY': '{0}MaskingPolicy',
