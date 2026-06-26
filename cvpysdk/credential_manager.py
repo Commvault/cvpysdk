@@ -65,6 +65,8 @@ Credentials:
     add_azure_app_registration_creds()  --  Creates credential for azure using azure application
 	                                id and application secret key
 
+	add_gcp_credential()        --  Create a GCP service account credential for cloud discovery.
+
     add_aws_s3_creds()          --  Creates aws s3 credential
 
     add_aws_creds()  -- Creates AWS credentials on this commcell based on the credential type
@@ -101,6 +103,7 @@ Credential:
     update_azure_app_credential() -- Update the Azure application registration credential with new values.
 
 """
+import base64
 import json
 from base64 import b64encode
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
@@ -1156,6 +1159,69 @@ class Credentials(object):
                 response.text)
             raise SDKException('Response', '101', response_string)
         self.refresh()
+
+
+    def add_gcp_credential(
+        self,
+        credential_name: str,
+        key_file_path: str,
+        description: str = "",
+        key_expiry_interval: int = 90
+    ) -> int:
+        """Create a GCP service account credential for cloud discovery.
+
+        Args:
+            credential_name: Unique name for the credential.
+            key_file_path: path to the service account json key file
+            description: Optional description for the credential.
+            key_expiry_interval: Key expiry interval in days (default: 90).
+
+        Returns:
+            int: The credential ID assigned by the server.
+
+        Raises:
+            SDKException: If credential creation fails.
+
+        Example:
+            >>> cred_id = credential_manager.add_gcp_credential(
+            ...     credential_name="gcp_cred_1",
+            ...     key_file_path="gcp_cred_1.json",
+            ...     description="GCP creds for TC 000012",
+            ...     key_expiry_interval=30
+            ... )
+        """
+        with open(key_file_path, 'r') as f:
+            key_data = json.load(f)
+
+        service_account_email = key_data.get("client_email", "")
+        private_key = key_data.get("private_key", "")
+        private_key_b64 = base64.b64encode(private_key.encode("utf-8")).decode("utf-8")
+        project_id = key_data.get("project_id")
+        payload = {
+            "vendorType": "GOOGLE_CLOUD_PLATFORM",
+            "authType": "GOOGLE_SERVICE_ACCOUNT",
+            "name": credential_name,
+            "description": description,
+            "keyExpiryInterval": key_expiry_interval,
+            "userAccount": service_account_email,
+            "accountType": "CLOUD_ACCOUNT",
+            "password": "",
+            "certificate": private_key_b64,
+            "projectId": project_id,
+            "connectString": "",
+            "dbName": "",
+        }
+        url = self._services['ADD_CREDENTIALS']
+        flag, response = self._commcell_object._cvpysdk_object.make_request('POST', url, payload)
+        if flag:
+            if response.json():
+                cred_id = response.json().get("id", 0)
+                if cred_id:
+                    return cred_id
+                raise SDKException('Response', '102', "Credential creation response did not include credential ID.")
+            raise SDKException('Response', '102', "Empty response received while creating GCP credential.")
+        else:
+            raise SDKException('Response', '101', self._commcell_object._update_response_(response.text))
 
     def add_access_token_credential(
             self,

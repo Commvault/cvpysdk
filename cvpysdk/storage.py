@@ -867,7 +867,7 @@ class MediaAgent(object):
         if wait_till_stopped == True and self.current_power_status != "Stopped":
             self.wait_for_power_status("Stopped")
 
-    def wait_for_power_status(self, expected_power_status: str, time_out_sec: int = 600) -> None:
+    def wait_for_power_status(self, expected_power_status: str, time_out_sec: int = 1200) -> None:
         """Wait until the MediaAgent reaches the specified power status or the timeout is reached.
 
         This method blocks execution until the MediaAgent's power status matches the expected value,
@@ -880,7 +880,7 @@ class MediaAgent(object):
                 - "Online"
                 - "Stopping"
                 - "Stopped"
-            time_out_sec: Maximum number of seconds to wait for the expected power status. Defaults to 600 seconds.
+            time_out_sec: Maximum number of seconds to wait for the expected power status. Defaults to 1200 seconds.
 
         Raises:
             SDKException: If `time_out_sec` is not an integer and not None, or if the expected power status

@@ -107,6 +107,15 @@ class AssetType(IntEnum):
     GOOGLE_CLOUD_MYSQL_DATABASE = 48
     GOOGLE_CLOUD_SQL_SERVER_DATABASE = 49
     GOOGLE_CLOUD_POSTGRESQL_DATABASE = 50
+    GOOGLE_CLOUD_BIG_TABLE_DATABASE = 53
+    GOOGLE_CLOUD_FIRE_STORE_DATABASE = 54
+    GOOGLE_CLOUD_MEMORY_STORE_DATABASE = 55
+    GOOGLE_CLOUD_KUBERNETES_ENGINE = 56
+    GOOGLE_CLOUD_MEMORY_STORE_REDIS_INSTANCE = 67
+    GOOGLE_CLOUD_MEMORY_STORE_REDIS_CLUSTER = 68
+    GOOGLE_CLOUD_MEMORY_STORE_VALKEY = 69
+    GOOGLE_CLOUD_MEMORY_STORE_MEMCACHED = 70
+    GOOGLE_CLOUD_FILESTORE_FILESHARE = 71
 
 
 class AssetCVProtectionStatus(IntEnum):
@@ -126,6 +135,7 @@ class AssetCVProtectedBY(IntEnum):
 
     AZURE_MANAGED = 1
     AWS_MANAGED = 2
+    GCP_MANAGED = 3
     COMMVAULT_PROTECTED = 6
 
 
@@ -143,7 +153,7 @@ START = 0
 ROWS = 100
 ITEM_STATE = "ItemState:1"
 ASSET_SUB_TYPE = ("AssetSubType:0 OR AssetSubType:38 OR AssetSubType:39 OR AssetSubType:40 OR AssetSubType:41 OR"
-                  " AssetSubType:42 OR AssetSubType:43")
+                  " AssetSubType:42 OR AssetSubType:43 OR AssetSubType:48 OR AssetSubType:49 OR AssetSubType:50")
 FILTER_QUERY = "Provider:1"
 FACET_JSON = {
     "CredentialName": {
@@ -291,3 +301,29 @@ AZURE_CUSTOM = "azure_custom"
 AZURE_EXPRESS = "azure_express"
 AZURE = "azure"
 AWS = "aws"
+GCP = "googleCloud"
+
+# GCP Connection Payload Template
+GCP_CONNECTION_PAYLOAD = {
+    "name": None,
+    "startDiscoveryJob": False,
+    "cloudType": "googleCloud",
+    "credentials": {"credentialId": None},
+    "cloudSpecificConfiguration": {
+        "googleCloud": {
+            "projects": [],
+            "discoverAllProjects": True
+        }
+    }
+}
+
+# GCP Validate Credential Payload Template
+GCP_VALIDATE_CREDENTIAL_PAYLOAD = {
+    "cloudType": "googleCloud",
+    "credentials": {"credentialId": None},
+    "cloudSpecificConfiguration": {
+        "googleCloud": {
+            "isCustomConfig": True
+        }
+    }
+}

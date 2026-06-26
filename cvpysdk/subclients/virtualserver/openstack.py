@@ -471,7 +471,12 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
         """
         vm_names, vm_ids = self._get_vm_ids_and_names_dict_from_browse()
         _attach_disk_restore_option = {}
-        disk_name = []
+
+        # Respect caller-specified disk list; default to all source disks when omitted.
+        if disk_name is None:
+            disk_name = []
+        elif isinstance(disk_name, str):
+            disk_name = [disk_name]
 
         # check if inputs are correct
         if not (isinstance(vm_name, str) and
@@ -489,11 +494,24 @@ class OpenStackVirtualServerSubclient(VirtualServerSubclient):
             for each_disk_path in disk_list:
                 disk_name.append(each_disk_path.split('\\')[-1])
 
-        else:  # else, check if the given VM has a disk with the list of disks in disk_name.
+        else:  # else, resolve the given disk names against browse results.
+            available_disk_names = [path.split('\\')[-1] for path in disk_list]
+            resolved_disk_names = []
             for each_disk in disk_name:
-                each_disk_path = "\\" + str(vm_name) + "\\" + each_disk
-                if each_disk_path not in disk_list:
+                # Exact match first
+                if each_disk in available_disk_names:
+                    resolved_disk_names.append(each_disk)
+                    continue
+
+                # Fallback: case-insensitive substring match against available names
+                lowered = str(each_disk).lower()
+                candidates = [d for d in available_disk_names if lowered in str(d).lower()]
+                if len(candidates) == 1:
+                    resolved_disk_names.append(candidates[0])
+                else:
                     raise SDKException('Subclient', '111')
+
+            disk_name = resolved_disk_names
 
         if proxy_client is not None:
             _attach_disk_restore_option['client'] = proxy_client

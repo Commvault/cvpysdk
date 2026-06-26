@@ -813,11 +813,19 @@ SERVICES_DICT_TEMPLATE = {
 
     'VALIDATE_AWS_CONNECTION': '{0}/V4/Cloud/CloudConnection/credentials/validate',
 
+    'VALIDATE_CLOUD_CONNECTION_CREDENTIAL': '{0}/V4/Cloud/CloudConnection/credentials/validate',
+
     'ADD_EXPRESS_CONNECTION': '{0}/V4/Cloud/CloudConnection',
 
     'GET_AWS_CLOUD_CONNECTIONS': '{0}/V4/Cloud/CloudConnection?vendor=aws',
 
     'GET_AZURE_CLOUD_CONNECTIONS': '{0}/V4/Cloud/CloudConnection?vendor=azure',
+
+    'GET_GCP_CLOUD_CONNECTIONS': '{0}/V4/Cloud/CloudConnection?vendor=googleCloud',
+
+    'GET_GCP_PROJECTS': '{0}/V4/Cloud/GCP/ExpressConfig/Projects',
+
+    'GET_CLOUD_CONNECTION_DETAILS': '{0}/V4/Cloud/CloudConnection/%s',
 
     'GET_AWS_CONNECTION_DETAILS': '{0}/V4/Cloud/CloudConnection/%s',
 

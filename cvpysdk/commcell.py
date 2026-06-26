@@ -368,6 +368,8 @@ Commcell instance Attributes
 
     **aws_discovery**            -- Returns the instance of the AWSDiscovery class
 
+    **gcp_discovery**            -- Returns the instance of the GCPDiscovery class
+
 """
 
 from __future__ import absolute_import
@@ -391,7 +393,7 @@ from requests.exceptions import ConnectionError as RequestsConnectionError
 
 from .activate import Activate
 from .activateapps.compliance_utils import ExportSets
-from .clouddiscovery.cloud_discovery import AzureDiscovery, AWSDiscovery
+from .clouddiscovery.cloud_discovery import AzureDiscovery, AWSDiscovery, GCPDiscovery
 from .constants import UserRole
 from .activateapps.tco import CostAssessment
 from .services import get_services
@@ -770,6 +772,7 @@ class Commcell(object):
         self._cost_assessment = None
         self._azure_discovery = None
         self._aws_discovery = None
+        self._gcp_discovery = None
         self._commserv_details_loaded = False
         self._commserv_details_set = False
         self._job_logs_emails = []
@@ -3529,6 +3532,9 @@ class Commcell(object):
         self._user_mappings = None
         self._user_role = None
         self._user_org = None
+        self._azure_discovery = None
+        self._aws_discovery = None
+        self._gcp_discovery = None
 
     def get_remote_cache(self, client_name: str) -> 'RemoteCache':
         """Retrieve the RemoteCache instance for a specified client.
@@ -6675,6 +6681,26 @@ class Commcell(object):
                 self._aws_discovery = AWSDiscovery(self)
 
             return self._aws_discovery
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def gcp_discovery(self) -> 'GCPDiscovery':
+        """Get the GCPDiscovery instance associated with this Commcell.
+
+        Returns:
+            GCPDiscovery: An object for discovering and analyzing discovered GCP resources.
+
+        Example:
+            >>> commcell = Commcell()
+            >>> gcp_discovery = commcell.gcp_discovery
+            >>> print(f"GCP Discovery object: {gcp_discovery}")
+        """
+        try:
+            if self._gcp_discovery is None:
+                self._gcp_discovery = GCPDiscovery(self)
+
+            return self._gcp_discovery
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
 

@@ -726,7 +726,8 @@ EXCEPTION_DICT = {
         '105': 'Failed to validate account id',
         '106': 'Failed to get connection details',
         '107': 'Failed to add connection',
-        '108': 'Failed to get AWSStackInfo'
+        '108': 'Failed to get AWSStackInfo',
+        '109': 'Failed to get GCP projects for the given connection'
     }
 }
 

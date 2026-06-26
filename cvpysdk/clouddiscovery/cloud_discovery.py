@@ -52,12 +52,23 @@ Classes:
 
         Properties:
             asset_provider      - Get the asset provider for this AWS discovery instance.
+
+    GCPDiscovery:
+        GCP-specific cloud discovery implementation.
+
+        Methods:
+            __init__()          - Initialize the GCPDiscovery instance.
+            estimate_cost()     - Estimate the cost of discovered resources and protection plans.
+
+        Properties:
+            asset_provider      - Get the asset provider for this GCP discovery instance.
+
 """
 
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, TYPE_CHECKING
 from .constants import AssetProvider
-from .connections import Connections, Connection, AWSConnections, AzureConnections
+from .connections import Connections, Connection, AWSConnections, AzureConnections, GCPConnections
 from .resources import DiscoveredResources
 from ..exception import SDKException
 
@@ -85,6 +96,8 @@ class CloudDiscovery(ABC):
             self._connections = AWSConnections(commcell)
         elif self.asset_provider == AssetProvider.AZURE:
             self._connections = AzureConnections(commcell)
+        elif self.asset_provider == AssetProvider.GCP:
+            self._connections = GCPConnections(commcell)
         else:
             raise SDKException('Discovery', '104')
         self._resources = DiscoveredResources(commcell, self.asset_provider)
@@ -303,3 +316,49 @@ class AWSDiscovery(CloudDiscovery):
             NotImplementedError: This method is not yet implemented
         """
         raise NotImplementedError("AWS cost estimation is not yet implemented")
+
+
+class GCPDiscovery(CloudDiscovery):
+    """GCP cloud discovery implementation.
+
+    This class provides GCP-specific cloud discovery operations including
+    resource discovery, connection management, and credential handling using
+    GCP service accounts.
+
+    Example:
+        >>> from cvpysdk.commcell import Commcell
+        >>> commcell = Commcell('webconsole', 'user', 'password')
+        >>> gcp_discovery = commcell.gcp_discovery
+        >>> connections = gcp_discovery.connections.all_connections
+        >>> resources = gcp_discovery.resources.all_resources
+    """
+
+    def __init__(self, commcell: 'Commcell') -> None:
+        """Initialize the GCPDiscovery instance.
+
+        Args:
+            commcell: The Commcell object for API operations
+        """
+        super().__init__(commcell)
+
+    @property
+    def asset_provider(self) -> AssetProvider:
+        """Get the asset provider for GCP discovery.
+
+        Returns:
+            AssetProvider.GCP
+        """
+        return AssetProvider.GCP
+
+    def estimate_cost(self) -> Dict[str, Any]:
+        """Estimate the cost of GCP resources and protection plans.
+
+        Returns:
+            Dictionary containing GCP cost estimation details.
+
+        Raises:
+            NotImplementedError: This method is not yet implemented.
+        """
+        raise NotImplementedError("GCP cost estimation is not yet implemented")
+
+
