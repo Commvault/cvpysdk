@@ -56,6 +56,9 @@ class CloudAppsSubclient(Subclient):
         from .cloudapps.clickhouse_subclient import ClickHouseSubclient
         from .cloudapps.pinecone_subclient import PineConeSubclient
         from .cloudapps.snowflake_subclient import SnowflakeSubclient
+        from .cloudapps.gcp_memorystore_subclient import GcpMemorystoreSubclient
+        from .cloudapps.hubspot_subclient import HubSpotSubclient
+        from .cloudapps.aws_s3_vectors_subclient import AwsS3VectorsSubclient
 
         instance_types = {
             1: GoogleSubclient,
@@ -84,7 +87,10 @@ class CloudAppsSubclient(Subclient):
             58: PineConeSubclient,  # PineCone Subclient
             60: PowerBISubclient,    # Power Platform PowerBi Subclient
             84: ClickHouseSubclient,  # ClickHouse Subclient
-            61: SnowflakeSubclient   # Snowflake Subclient
+            61: SnowflakeSubclient,  # Snowflake Subclient
+            82: GcpMemorystoreSubclient,  # GCP Memorystore Subclient
+                94: AwsS3VectorsSubclient,   # AWS S3 Vectors Subclient
+                98: HubSpotSubclient   # HubSpot Subclient
         }
 
         cloud_apps_instance_type = backupset_object._instance_object._properties[

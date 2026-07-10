@@ -126,6 +126,7 @@ from base64 import b64encode
 from enum import IntEnum
 import json
 
+from ..constants import InstanceBackupType
 from ..exception import SDKException
 from ..job import Job
 from .dbinstance import DatabaseInstance
@@ -557,7 +558,7 @@ class OracleInstance(DatabaseInstance):
         """
         source_backupset_id = int(self.backupsets.get('default').backupset_id)
         subclient_obj = self.subclients.get('default')
-        baseline_job_object = subclient_obj.backup(backup_level='full')
+        baseline_job_object = subclient_obj.backup(backup_level=InstanceBackupType.FULL.value)
         if not baseline_job_object.wait_for_completion():
             raise SDKException('Instance', '102', baseline_job_object.delay_reason)
         baseline_ref_time = baseline_job_object.summary['jobStartTime']
@@ -1220,7 +1221,7 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
-        return self.subclients.get(subclient_name).backup(r'full')
+        return self.subclients.get(subclient_name).backup(InstanceBackupType.FULL.value)
 
     def restore(
         self,
@@ -1325,11 +1326,15 @@ class OracleInstance(DatabaseInstance):
             raise SDKException("Instance", "105") from exp
         else:
             # subclient = self.subclients.get(subclient_name)
-            default_content = self.browse()
-            if all("pdbSize" in item for item in default_content):
-                default_content = [item["database"] for item in default_content]
+            browse_response = self.browse(use_cache=False)
+            if not browse_response:
+                raise SDKException("Instance", "101", "Browse response is empty")
+            if all("tableSpace" in item for item in browse_response):
+                default_content = [item["tableSpace"] for item in browse_response]
+            elif all("database" in item for item in browse_response):
+                default_content = [item["database"] for item in browse_response]
             else:
-                default_content = self.tablespaces
+                raise SDKException("Instance", "101", "Browse response does not contain the tablespaces or databases")
             options = self._get_oracle_restore_json(
                 destination_client=destination_client,
                 destination=self._destination_restore_json if (destination_client and destination_instance) else None,

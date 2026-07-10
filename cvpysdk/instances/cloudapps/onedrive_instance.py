@@ -47,6 +47,8 @@ OneDriveInstance:
     delete_data_from_browse()       --  Deletes items for the backupset in the Index and makes them unavailable for
                                         browsing and recovery
 
+    discover_azure_storage_containers()  --  Discovers the Azure Storage Containers associated with the OneDrive instance                                    
+
 """
 
 from __future__ import unicode_literals
@@ -1095,3 +1097,58 @@ class OneDriveInstance(CloudAppsInstance):
 
         request_json = self._prepare_delete_json_onedrive_v2(item_guids, include_deleted_items=include_deleted_items, folder=folder)
         return self._process_delete_response(request_json)
+
+    def discover_azure_storage_containers(self, base_url: str, credential_id: int, subclient_id: int) -> dict:
+        """Discovers Azure Blob Storage containers available for restore-to-blob operations.
+
+        Constructs the full request URL by appending the Office365/AzureStorage/Containers
+        service path (with credential and subclient query parameters) to the provided
+        base URL, then issues a GET request to retrieve the list of containers.
+
+        Args:
+            base_url (str):         The web service base URL of the CommServ
+                                    (e.g. ``'http://cs_host/webconsole/api/'``).
+                                    This is prepended to the service path since the
+                                    service entry does not include the ``{0}`` placeholder.
+            credential_id (int):    ID of the Azure Blob storage credential configured
+                                    in the Credential Manager (obtained via
+                                    ``commcell.credentials.get(name).credential_id``).
+            subclient_id (int):     Subclient ID of the OneDrive default subclient
+                                    (obtained via ``instance.subclients['default']['id']``).
+
+        Returns:
+            dict: JSON response containing discovered container information.
+            Typical structure includes a list of container objects with names,
+            properties, and associated metadata.
+
+        Raises:
+            SDKException:
+                - ('Response', '102') -- if the response body is empty.
+                - ('Response', '101') -- if the HTTP request itself failed.
+
+        Example:
+            >>> base_url = commcell._web_service
+            >>> cred_id = commcell.credentials.get('AzureBlobCred').credential_id
+            >>> sc_id = int(instance.subclients['default']['id'])
+            >>> result = instance.discover_azure_storage_containers(base_url, cred_id, sc_id)
+            >>> for container in result.get('containers', []):
+            ...     print(container['name'])
+        """
+        request_url = base_url + self._commcell_object._services['OFFICE365_AZURE_STORAGE_CONTAINERS'] % (
+            credential_id,
+            subclient_id
+        )
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET',
+            request_url
+        )
+
+        if flag:
+            if response.json():
+                return response.json()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)

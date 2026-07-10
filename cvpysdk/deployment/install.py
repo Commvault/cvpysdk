@@ -38,6 +38,7 @@ from ..exception import SDKException
 from ..deployment.deploymentconstants import UnixDownloadFeatures, WindowsDownloadFeatures, InstallUpdateOptions
 from ..schedules import SchedulePattern, Schedules
 from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING
+import requests.exceptions
 
 if TYPE_CHECKING:
     from ..commcell import Commcell
@@ -204,7 +205,7 @@ class Install(object):
             reboot_client: bool = False,
             run_db_maintenance: bool = True,
             maintenance_release_only: bool = False,
-            **kwargs: Dict[str, Any]) -> Union[Job, Schedules]:
+            **kwargs: Dict[str, Any]) -> Union[Job, Schedules, int]:
         """Installs the software packages on the clients
 
         Args:
@@ -223,7 +224,9 @@ class Install(object):
                                                         by tenant admin
 
         Returns:
-            Job or Schedules: instance of the Job/Schedules class for this download
+            Job, Schedules, or JobID: instance of the Job/Schedules class for this download,
+                or job ID (int) if services are unavailable during Job object creation
+                (e.g., during CS upgrade)
 
         Raises:
             SDKException:
@@ -374,8 +377,12 @@ class Install(object):
         if flag:
             if response.json():
                 if "jobIds" in response.json() or "jobId" in response.json():
-                    return Job(self.commcell_object, response.json()['jobId']) if version >= 36 \
-                        else Job(self.commcell_object, response.json()['jobIds'][0])
+                    job_id = response.json()['jobId'] if version >= 36 else response.json()['jobIds'][0]
+                    try:
+                        return Job(self.commcell_object, job_id)
+                    except (requests.exceptions.JSONDecodeError, requests.exceptions.ConnectionError):
+                        # Services may be down during CS upgrade, return job ID instead for precert machines
+                        return job_id
 
                 elif schedule_pattern and "taskId" in response.json():
                     return Schedules(self.commcell_object).get(task_id=response.json()['taskId'])

@@ -71,8 +71,14 @@ OracleSubclient:
 
     get_backupcopy_interface()          --  Getter for backup copy interface for the subclient
 
+    use_rman_for_log_backup()           --  Getter and Setter for use rman for log backup
+
+    enable_intelli_snap()               --  Enable intellisnap for the subclient
+
+    delete_intelli_snap()               --  Delete intellisnap for the subclient
 """
 from __future__ import unicode_literals
+from typing import Optional
 from .dbsubclient import DatabaseSubclient
 from ..exception import SDKException
 from ..constants import InstanceBackupType
@@ -178,7 +184,7 @@ class OracleSubclient(DatabaseSubclient):
         }
         return subclient_json
 
-    def set_prop_for_orcle_subclient(self, storage_policy, snap_engine=None, archivefilebfs=32):
+    def set_prop_for_orcle_subclient(self, storage_policy, snap_engine=None, archivefilebfs=32, use_rman_for_log_backup=True):
         """Updates the subclient properties.
 
             Args:
@@ -189,6 +195,11 @@ class OracleSubclient(DatabaseSubclient):
                 snap_engine         (str)   --  Snap Engine to be set for subclient (optional)
 
                     default: None
+                archivefilebfs      (int)   --  Number of archive files per BFS
+                    default: 32
+                use_rman_for_log_backup (bool) --  True if use rman for log backup to be enabled
+                                                    on the subclient, Else False
+                    default: True
 
             Raises:
                 SDKException:
@@ -210,7 +221,7 @@ class OracleSubclient(DatabaseSubclient):
 
         self.storage_policy = storage_policy
         if snap_engine:
-            self.enable_intelli_snap(snap_engine)
+            self.enable_intelli_snap(snap_engine, use_rman_for_log_backup=use_rman_for_log_backup)
 
     @property
     def data(self):
@@ -279,6 +290,29 @@ class OracleSubclient(DatabaseSubclient):
         """
         self._set_subclient_properties(
             "_oracle_subclient_properties['archiveDelete']", archive_delete)
+    
+    @property
+    def use_rman_for_log_backup(self):
+        """
+        Getter to fetch if use rman for log backup enabled or not
+
+            Returns:
+                    bool     --  True if use rman for log backup is enabled on the subclient, Else False
+
+        """
+        return self._oracle_subclient_properties.get("useRmanForLogBackup")
+
+    @use_rman_for_log_backup.setter
+    def use_rman_for_log_backup(self, use_rman_for_log_backup: bool):
+        """
+        Setter to enable use rman for log backup in oracle subclient
+
+            Args:
+                use_rman_for_log_backup    (bool)    --  True if use rman for log backup to be enabled
+                                                        on the subclient, Else False
+        """
+        self._set_subclient_properties(
+            "_oracle_subclient_properties['useRmanForLogBackup']", use_rman_for_log_backup)
 
     @property
     def selective_online_full(self):
@@ -497,6 +531,23 @@ class OracleSubclient(DatabaseSubclient):
             "_oracle_subclient_properties['enableTableBrowse']", False
         )
     
+    def enable_intelli_snap(self, snap_engine_name: str, proxy_options: Optional[dict] = None, use_rman_for_log_backup: bool = True):
+        """Enables intellisnap for the subclient.
+        
+        Args:
+            snap_engine_name (str): Name of the snap engine to be associated with the subclient
+            proxy_options (dict, optional): Dictionary containing proxy options. Defaults to None.
+            use_rman_for_log_backup (bool, optional): True if 'Use RMAN for log backup' option to be enabled
+        """
+        super(OracleSubclient, self).enable_intelli_snap(snap_engine_name, proxy_options)
+        if self.backup_archive_log:
+            self.use_rman_for_log_backup = use_rman_for_log_backup
+
+    def disable_intelli_snap(self):
+        """Disables intellisnap for the subclient."""
+        self.use_rman_for_log_backup = False
+        super(OracleSubclient, self).disable_intelli_snap()
+
     def get_backupcopy_interface(self):
         """Getter for backup copy interface for the subclient"""
         return self._commonProperties['snapCopyInfo']['backupCopyInterface']
@@ -608,7 +659,7 @@ class OracleSubclient(DatabaseSubclient):
                 if response does not succeed
 
         """
-        if backup_level not in ['full', 'incremental']:
+        if backup_level not in [InstanceBackupType.FULL.value, InstanceBackupType.INCREMENTAL.value]:
             raise SDKException(r'Subclient', r'103')
 
         backupcopy_level = 1

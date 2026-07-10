@@ -191,6 +191,10 @@ class CloudAppsInstance(Instance):
         from .cloudapps.google_instance import GoogleInstance
         from .cloudapps.salesforce_instance import SalesforceInstance
         from .cloudapps.cloud_storage_instance import CloudStorageInstance
+        from .cloudapps.azure_blob_instance import AzureBlobStorageInstance
+        from .cloudapps.azure_blob_instance import AzureDataLakeStorageInstance
+        from .cloudapps.azure_blob_instance import AzureBlobDiscoveryInstance
+        from .cloudapps.azure_blob_instance import AzureFilesStorageInstance
         from .cloudapps.amazon_instance import AmazonRedshiftInstance
         from .cloudapps.amazon_instance import AmazonDocumentDBInstance
         from .cloudapps.amazon_instance import AmazonRDSInstance
@@ -205,19 +209,24 @@ class CloudAppsInstance(Instance):
         from .cloudapps.clickhouse_instance import ClickHouseInstance
         from .cloudapps.pinecone_instance import PineConeInstance
         from .cloudapps.snowflake_instance import SnowflakeInstance
+        from .cloudapps.gcp_memorystore_instance import GcpMemorystoreInstance
+        from .cloudapps.hubspot_instance import HubSpotInstance
+        from .cloudapps.aws_s3_vectors_instance import AwsS3VectorsInstance
+        from .cloudapps.miro_instance import MiroInstance
 
+        
         instance_type = {
             1: GoogleInstance,
             2: GoogleInstance,
             3: SalesforceInstance,
             4: AmazonRDSInstance,  # Amazon RDS Instance
             5: CloudStorageInstance,  # AmazonS3 Instance
-            6: CloudStorageInstance,  # AzureBlob Instance
+            6: AzureBlobStorageInstance,  # AzureBlob Instance
             7: OneDriveInstance,  # OneDrive Instance
             14: CloudStorageInstance,  # OracleCloud Instance
             15: CloudStorageInstance,  # Openstack Instance
             20: CloudStorageInstance,  # Google Cloud Instance
-            21: CloudStorageInstance,  # azure data lake gen2
+            21: AzureDataLakeStorageInstance,  # azure data lake gen2
             26: AmazonRedshiftInstance,  # Amazon Redshift
             27: AmazonDocumentDBInstance,  # Amazon Document DB
             25: CloudStorageInstance,  # AliBaba
@@ -229,11 +238,17 @@ class CloudAppsInstance(Instance):
             40: CloudDatabaseInstance,  # MongoDB Atlas
             44: AzureCosmosDBInstance,  # Azure Cosmos DB Cloud Apps Instance
             51: AzureCosmosDBInstance,   # Azure Cosmos DB MongoDBAPI Instance
+            55: AzureFilesStorageInstance,  # Azure Files Storage Instance
             56: CloudStorageInstance,  # S3 Compatible Instance
+            45: AzureBlobDiscoveryInstance,  # Azure Blob Discovery GRP Instance
             58: PineConeInstance,  # PineCone Instance
             60: PowerBIInstance,     # Power Platform PowerBi Instance
             84: ClickHouseInstance,  # ClickHouse Instance
-            61: SnowflakeInstance   # Snowflake Instance
+            61: SnowflakeInstance,  # Snowflake Instance
+            82: GcpMemorystoreInstance,  # GCP Memorystore Instance
+            94: AwsS3VectorsInstance,  # AWS S3 Vectors Instance
+            98: HubSpotInstance,   # HubSpot Instance
+            104: MiroInstance,  # Miro Instance
         }
 
         commcell_object = agent_object._commcell_object

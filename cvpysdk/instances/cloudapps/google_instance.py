@@ -38,6 +38,8 @@ GoogleInstance:
 
     modify_accessnodes()        --  Method to modify accessnodes
 
+    discover_storage_buckets()   --  Method to discover storage buckets associated with the Google instance
+
 """
 
 from __future__ import unicode_literals
@@ -995,3 +997,55 @@ class GoogleInstance(CloudAppsInstance):
         }
 
         self.update_properties(properties_dict=update_dict)
+        
+    def discover_storage_buckets(self, credential_id: int, subclient_id: int) -> dict:
+        """Discovers Google Cloud Storage buckets available for restore-to-bucket operations.
+
+        Posts a discovery request to the GoogleWorkspace/StorageBuckets endpoint to
+        retrieve all GCS buckets accessible with the given credential, scoped to the
+        specified subclient.
+
+        Args:
+            credential_id (int):    ID of the Google Cloud storage credential configured
+                                    in the Credential Manager (obtained via
+                                    ``commcell.credentials.get(name).credential_id``).
+            subclient_id (int):     Subclient ID of the Google Drive default subclient
+                                    (obtained via ``instance.subclients['default']['id']``
+                                    or ``subclient.subclient_id``).
+
+        Returns:
+            dict: JSON response from the server containing discovered bucket
+            information. Typical keys include ``'Buckets'`` with a list of
+            bucket objects (name, region, storage class, etc.).
+
+        Raises:
+            SDKException:
+                - ('Response', '102') -- if the response body is empty.
+                - ('Response', '101') -- if the HTTP request itself failed.
+
+        Example:
+            >>> cred_id = commcell.credentials.get('GCSCredential').credential_id
+            >>> sc_id = int(instance.subclients['default']['id'])
+            >>> result = instance.discover_storage_buckets(cred_id, sc_id)
+            >>> for bucket in result.get('Buckets', []):
+            ...     print(bucket['name'])
+        """
+        request_json = {
+            "CredentialId": credential_id,
+            "subclientId": subclient_id
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST',
+            self._commcell_object._services['GOOGLEWORKSPACE_STORAGE_BUCKETS'],
+            request_json
+        )
+
+        if flag:
+            if response.json():
+                return response.json()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)

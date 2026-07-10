@@ -799,7 +799,7 @@ class StoragePools:
             SDKException if creation is unsuccessful
         """
         username = storeonce_host+"//"+username
-        return self.add(storage_pool_name=storage_pool_name, mountpath=store, media_agent=media_agent, cloud_server_type=59, username=username, password=password, library_name=store, region_id = 0)
+        return self.add(storage_pool_name=storage_pool_name, mountpath=store, media_agent=media_agent, cloud_server_type=59, username=username, password=password, library_name=store)
         
     def add_data_domain_boost_storage(
         self,

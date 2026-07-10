@@ -195,32 +195,75 @@ class CVPySDK(object):
             )
 
             if flag:
-                if response.json():
-                    if "userName" in response.json() and "token" in response.json():
-                        return response.json()['token']
+                try:
+                    response_json = response.json()
+                except ValueError:
+                    # Login API is expected to return JSON. If a proxy/webserver returns
+                    # HTML/text (e.g., redirect/login page/maintenance page), fail safely.
+                    response_text = (response.text or '').strip()
+                    response_preview = response_text.replace('\n', ' ')[:300]
+                    response_meta = 'status={0}, content-type={1}'.format(
+                        response.status_code,
+                        response.headers.get('Content-Type', 'unknown')
+                    )
+                    response_string = self._commcell_object._update_response_(response_preview)
+                    raise SDKException(
+                        'Response',
+                        '101',
+                        'Login API returned invalid JSON ({0}). Body preview: {1}'.format(
+                            response_meta, response_string
+                        )
+                    )
+
+                if response_json:
+                    if "userName" in response_json and "token" in response_json:
+                        return response_json['token']
                     else:
-                        error_message = response.json()['errList'][0]['errLogMessage']
+                        default_error_message = 'Login failed with unexpected response format'
+                        err_list = response_json.get('errList')
+                        if isinstance(err_list, list) and err_list and isinstance(err_list[0], dict):
+                            error_message = err_list[0].get('errLogMessage', default_error_message)
+                        else:
+                            error_message = default_error_message
                         err_msg = 'Error: "{0}"'.format(error_message)
-                        if response.json().get('isAccountLocked', False) and response.json().get('remainingLockTime',0) > 0:
-                            locktime = response.json().get('remainingLockTime',0)
+                        if response_json.get('isAccountLocked', False) and response_json.get('remainingLockTime', 0) > 0:
+                            locktime = response_json.get('remainingLockTime', 0)
                             lock_hours = locktime // 3600
                             rem_secs = locktime % 3600
                             lock_mins = rem_secs // 60
-                            err_msg = 'Error: "User account is locked for {0} hour(s) {1} minute(s)."'.format(lock_hours,lock_mins)
+                            err_msg = 'Error: "User account is locked for {0} hour(s) {1} minute(s)."'.format(lock_hours, lock_mins)
                         raise SDKException('CVPySDK', '101', err_msg)
                 else:
                     raise SDKException('Response', '102')
             else:
                 if response is not None:
-                    response_json = response.json()
-                    if ("errorMessage" in response_json and "Access denied" in response_json["errorMessage"] and
-                        "errorCode" in response_json and response_json["errorCode"] == 5):
+                    response_text = response.text or ''
+                    response_text_lower = response_text.lower()
+                    try:
+                        response_json = response.json()
+                    except ValueError:
+                        response_json = {}
+
+                    has_ssl_access_denied_json = (
+                        "errorMessage" in response_json and
+                        "Access denied" in response_json["errorMessage"] and
+                        "errorCode" in response_json and
+                        response_json["errorCode"] == 5
+                    )
+                    # Some proxy/webserver failures return non-JSON content with access denied text.
+                    has_ssl_access_denied_text = "access denied" in response_text_lower and (
+                        "ssl" in response_text_lower or
+                        "certificate" in response_text_lower
+                    )
+
+                    if has_ssl_access_denied_json or has_ssl_access_denied_text:
                         raise SDKException('Response', '101', "Commcell was reachable "
                             "but there may be a problem with the SSL certificate. "
                             "You can try providing the certificate file using the certificate_path parameter. "
                             "Alternatively, you can ignore this check by setting verify_ssl=False.")
-                response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                    response_string = self._commcell_object._update_response_(response.text)
+                    raise SDKException('Response', '101', response_string)
+                raise SDKException('Response', '101', 'Response is None. Unable to login to the Commcell.')
         except requests.exceptions.ConnectionError as con_err:
             raise con_err
 

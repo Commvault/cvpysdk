@@ -601,6 +601,8 @@ class CloudStorageInstance(CloudAppsInstance):
             copy_precedence=copy_precedence,
             no_of_streams=no_of_streams,
             restore_To_FileSystem=False,
+            destination_appTypeId=int(self._agent_object.agent_id),
+            useAutoStreamCalculation=True,
             **kwargs)
 
         return self._process_restore_response(request_json)
@@ -675,6 +677,9 @@ class CloudStorageInstance(CloudAppsInstance):
             no_of_streams=no_of_streams,
             destination_appTypeId=destination_appTypeId)
 
+        restore_options = request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]
+        restore_options["useAutoStreamCalculation"] = True
+
         return self._process_restore_response(request_json)
 
     def _set_destination_options_json(self, value: dict) -> None:
@@ -745,6 +750,10 @@ class CloudStorageInstance(CloudAppsInstance):
                 destination_client_object = self._commcell_object.clients.get(dest_client)
                 destination_agent_object = destination_client_object.agents.get('cloud apps')
                 destination_instance_object = destination_agent_object.instances.get(dest_instance)
+                regular_instance_restore_json["destClient"]["clientId"] = int(
+                    destination_client_object.client_id)
+                regular_instance_restore_json["destAppId"] = int(
+                    destination_agent_object.agent_id)
                 destination_instance_details = {
                     "destinationInstance": {
                         "instanceName": value.get("destination_instance_name"),
@@ -802,9 +811,7 @@ class CloudStorageInstance(CloudAppsInstance):
             raise SDKException('Instance', '101')
 
         self._common_options_json = {
-            "overwriteFiles": True,
-            "unconditionalOverwrite": value.get("overwrite", False),
-            "stripLevelType": 1
+            "overwriteFiles": value.get("overwrite", True)
         }
 
     def _set_proxy_credential_json(self, destination_cloud: dict) -> None:
@@ -993,8 +1000,6 @@ class CloudStorageInstance(CloudAppsInstance):
                 'Instance', '102', 'only one cloud vendor details can'
                                    'be passed.Multiple entries not allowed')
 
-        cloud_vendors = ["google_cloud", "amazon_s3", "azure_blob"]
-        # Check if destination cloud falls within supported cloud vendors
         cloud_vendors = ["google_cloud", "amazon_s3", "azure_blob"]
         # Check if destination cloud falls within supported cloud vendors
         dict_keys = list(destination_cloud.keys())

@@ -605,9 +605,9 @@ class VSAObjects(Enum):
 
 class InstanceBackupType(Enum):
     """Class to maintain type of instance backup"""
-    FULL = 'FULL'
-    INCREMENTAL = 'INCREMENTAL'
-    CUMULATIVE = 'INCREMENTAL'      # cumulative backups pull incremental backup JSON
+    FULL = 'full'
+    INCREMENTAL = 'incremental'
+    CUMULATIVE = 'incremental'      # cumulative backups pull incremental backup JSON
     SYNTHETIC = 'SYNTHETIC_FULL'
 
 

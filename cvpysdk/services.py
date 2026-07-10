@@ -269,6 +269,9 @@ SERVICES_DICT_TEMPLATE = {
     'ADD_CLICKHOUSE_INSTANCE': '{0}V4/AI/ClickHouse/Instance',
     'ADD_SNOWFLAKE_INSTANCE': '{0}V4/AI/Snowflake/Instance',
     'ADD_PINECONE_INSTANCE': '{0}V4/AI/Pinecone/Instance',
+    'ADD_GCP_MEMORYSTORE_INSTANCE': '{0}V4/AI/GCPMemorystore/Instance',
+    'ADD_HUBSPOT_INSTANCE': '{0}V4/SAAS/HubSpot/Instance',
+    'ADD_AWS_S3_VECTORS_INSTANCE': '{0}V4/AI/AwsS3Vectors/Instance',
     'MASKING_POLICY': '{0}MaskingPolicy',
 
     'DO_COMPLIANCE_SEARCH': '{0}Search',
@@ -566,6 +569,8 @@ SERVICES_DICT_TEMPLATE = {
     'GMAIL_UPDATE_USERS': '{0}GoogleWorkspace/GMail/UpdateUsers',
     'GDRIVE_GET_USERS': '{0}GoogleWorkspace/GDrive/GetUsers',
     'GMAIL_GET_USERS': '{0}GoogleWorkspace/GMail/GetUsers',
+    'GOOGLEWORKSPACE_STORAGE_BUCKETS': '{0}GoogleWorkspace/StorageBuckets',
+    'OFFICE365_AZURE_STORAGE_CONTAINERS': 'Office365/AzureStorage/Containers?CredentialId=%s&subclientId=%s',
     'OFFICE365_MOVE_JOB_RESULT_DIRECTORY': '{0}Office365/MoveJobResultsDirectory',
     'OFFICE365_PROCESS_INDEX_RETENTION_RULES': '{0}Office365/ProcessIdxRetentionRules',
     'OFFICE365_POPULATE_INDEX_STATS': '{0}Office365/PopulateIdxStats',

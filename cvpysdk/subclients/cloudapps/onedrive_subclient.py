@@ -1141,12 +1141,20 @@ class OneDriveSubclient(CloudAppsSubclient):
         """
         user_guid_list = []
         for user_id in users:
-            user = self.search_for_user(user_id)
-            if len(user) != 0 and user[0].get('user', {}).get('userGUID') is not None:
-                user_guid_list.append(user[0].get('user').get('userGUID'))
+            search_result = self.search_for_user(user_id)
+            if len(search_result) != 0:
+                user_guid = None
+                for item in search_result:
+                    if item.get('smtpAddress', '') == user_id and item.get('user', {}).get('userGUID') is not None:
+                        user_guid = item.get('user', {}).get('userGUID')
+                        break
+                if user_guid is None:
+                    raise SDKException('Subclient', '102',
+                                       f'User details for user {user_id} not found in discovered data')
+                user_guid_list.append(user_guid)
             else:
                 raise SDKException('Subclient', '102',
-                                   'User details not found in discovered data')
+                                   f'User details for user {user_id} not found in discovered data')
         return user_guid_list
 
     def process_index_retention_rules(self, index_app_type_id, index_server_client_name):

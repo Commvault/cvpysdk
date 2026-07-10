@@ -71,7 +71,13 @@ Instances:
     
     add_clickhouse_instance()       --  Method to add new ClickHouse instance
 
+    add_hubspot_instance()          --  Method to add new HubSpot instance
+
     add_snowflake_instance()        --  Method to add new snowflake instance
+ 
+    create_azure_blob_discovery_grp()   -- Method to create azure blob discovery group
+
+    add_gcp_memorystore_instance()  --  Method to add new GCP Memorystore instance
 
     add_atlas_instance ()           --  Method to add new MongoDB Atlas Instance
 
@@ -2304,6 +2310,252 @@ class Instances(object):
 
 
 
+    def create_azure_blob_discovery_grp(
+            self,
+            grp_name,
+            plan_name,
+            access_nodes=None,
+            region=None
+        ):
+        """Create an Azure Blob Discovery GRP (Group) instance.
+
+        Step 1 of the GRP-based Azure Blob instance creation workflow.
+
+        Args:
+            grp_name: Name for the discovery GRP instance.
+            plan_name: Plan name to associate.
+            access_nodes: Optional list of access node client names.
+            region: Optional dict for hosted infrastructure mode with keys:
+                    - id (int): Region ID (e.g. 8)
+                    - name (str): Region internal name (e.g. 'eastus2')
+                    - displayName (str): Region display name (e.g. '(US) East US 2')
+                    When provided, hosted infra is used instead of access nodes.
+
+        Returns:
+            int: The created GRP instance ID.
+
+        Raises:
+            SDKException: For invalid inputs or API failures.
+        """
+        if not isinstance(grp_name, str) or not grp_name.strip():
+            raise SDKException('Instance', '101')
+        if not isinstance(plan_name, str) or not plan_name.strip():
+            raise SDKException('Plan', '101')
+
+        grp_name = grp_name.strip()
+
+        if access_nodes is None:
+            access_nodes = []
+
+        member_servers = []
+        for node in access_nodes:
+            if isinstance(node, str) and node.strip():
+                node_name = node.strip()
+                if self._commcell_object.client_groups.has_clientgroup(node_name):
+                    member_servers.append({
+                        'client': {
+                            'clientGroupName': node_name,
+                            '_type_': 28
+                        }
+                    })
+                else:
+                    member_servers.append({
+                        'client': {
+                            'clientName': node_name,
+                            '_type_': 3
+                        }
+                    })
+
+        plan_id = None
+        if self._commcell_object.plans.has_plan(plan_name.strip()):
+            plan_obj = self._commcell_object.plans.get(plan_name.strip())
+            plan_id = int(plan_obj.plan_id)
+
+        plan_entity = {'planId': plan_id} if plan_id else {}
+
+        use_hosted_infra = bool(region)
+
+        # Build discovery rules
+        discovery_rule = {
+            'matchCriteria': 1,
+            'discoveryTargetType': {
+                'targetInstanceType': 6,
+                'targetAppType': 134
+            }
+        }
+
+        object_storage_instance = {}
+
+        if use_hosted_infra:
+            # Hosted infra: add region to discovery rule and regionInfo to objectStorageInstance
+            discovery_rule['region'] = {
+                'id': region.get('id'),
+                'name': region.get('name'),
+                'displayName': region.get('displayName'),
+                'regionType': 'AZURE',
+                'associatedRegionBasedPlans': 0,
+                'selected': True,
+                'regionId': region.get('id'),
+                'regionName': region.get('name')
+            }
+            object_storage_instance = {
+                'regionInfo': {
+                    'regionId': region.get('id'),
+                    'regionName': region.get('name'),
+                    'displayName': region.get('displayName')
+                }
+            }
+            # No access nodes for hosted infra
+            member_servers = []
+
+        request_json = {
+            'instanceProperties': {
+                'instance': {
+                    'clientName': self._client_object.client_name,
+                    'clientId': int(self._client_object.client_id),
+                    'instanceName': grp_name,
+                    'instanceId': -1,
+                    'applicationId': 134,
+                    '_type_': 5,
+                },
+                'cloudAppsInstance': {
+                    'instanceType': 45,
+                    'azureResourceDiscoveryInstance': {
+                        'crdInstanceType': {
+                            'discoveryTarget': {
+                                'targetInstanceType': 6,
+                                'targetAppType': 134
+                            }
+                        },
+                        'discoveryRules': {
+                            'rules': [discovery_rule]
+                        }
+                    },
+                    'generalCloudProperties': {
+                        'memberServers': member_servers
+                    },
+                    'objectStorageInstance': object_storage_instance
+                },
+                'planEntity': plan_entity
+            },
+            'useResourcePoolInfo': False
+        }
+
+        add_instance = self._commcell_object._services['ADD_INSTANCE']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', add_instance, request_json
+        )
+
+        if flag:
+            response_data = response.json()
+            if response_data and 'response' in response_data:
+                response_obj = response_data['response']
+                error_code = response_obj.get('errorCode', 0)
+                if error_code != 0:
+                    error_string = response_obj.get('errorString', '')
+                    raise SDKException('Instance', '102',
+                                       f'Error creating GRP\nError: "{error_string}"')
+                instance_id = response_obj.get('entity', {}).get('instanceId')
+                if not instance_id:
+                    raise SDKException('Response', '102', 'Missing instanceId in GRP creation response')
+                self.refresh()
+                return int(instance_id)
+            # Handle top-level response format (entity at root level)
+            if response_data and 'entity' in response_data:
+                instance_id = response_data['entity'].get('instanceId')
+                if instance_id:
+                    self.refresh()
+                    return int(instance_id)
+            raise SDKException('Response', '102')
+
+        raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_hubspot_instance(self, instance_name, plan_name, hubspot_account_name, module_names):
+        """Add a new HubSpot Cloud Apps instance to the Commcell.
+
+        Creates a HubSpot instance using the V4 SAAS API.
+        The caller provides plain module name strings (e.g. ["CRM", "Marketing"]) which are
+        internally wrapped into the CloudDBEntity XML format required by the API.
+
+        Args:
+            instance_name (str):            Name for the new HubSpot instance.
+            plan_name (str):                Name of the plan to associate with the instance.
+            hubspot_account_name (str):     Name of the HubSpot account/credential entity.
+                                            Velocity workloads use the same entity for both
+                                            credential and account.
+            module_names (list):            List of HubSpot module name strings to back up,
+                                            e.g. ["CRM", "Marketing", "Sales"].
+
+        Returns:
+            Instance: The newly created HubSpot instance object.
+
+        Raises:
+            SDKException: If the plan or credential does not exist, if instance
+                          creation fails, or the server returns an error.
+
+        #ai-gen-doc
+        """
+        from .subclients.cloudapps.hubspot_subclient import HubSpotSubclient
+
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException(
+                'Instance', '102',
+                'Plan "{0}" does not exist in the Commcell'.format(plan_name)
+            )
+
+        if not self._commcell_object.credentials.has_credential(hubspot_account_name):
+            raise SDKException(
+                'Instance', '102',
+                'Credential "{0}" does not exist in the Commcell'.format(hubspot_account_name)
+            )
+
+        plan = self._commcell_object.plans.get(plan_name)
+        credential = self._commcell_object.credentials.get(hubspot_account_name)
+
+        content = [HubSpotSubclient._build_content_xml(module_names)]
+
+        request_json = {
+            "instanceName": instance_name,
+            "instanceType": "HUBSPOT",
+            "plan": {
+                "id": int(plan.plan_id),
+                "name": plan_name
+            },
+            "account": {
+                "name": hubspot_account_name
+            },
+            "content": content,
+            "credential": {
+                "id": int(credential.credential_id),
+                "name": hubspot_account_name
+            },
+            "useResourcePoolInfo": True
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['ADD_HUBSPOT_INSTANCE'], request_json
+        )
+
+        if flag:
+            if response.json():
+                response_data = response.json()
+                if 'id' in response_data and 'name' in response_data:
+                    self.refresh()
+                    return self.get(response_data['name'])
+                elif 'errorMessage' in response_data:
+                    raise SDKException(
+                        'Instance', '102',
+                        'Failed to create HubSpot instance\nError: "{0}"'.format(
+                            response_data['errorMessage']
+                        )
+                    )
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
     def add_snowflake_instance(self, instance_name, plan_name, sf_client_credential_name, db_names):
         """Add a new Snowflake Cloud Apps instance to the Commcell.
 
@@ -2386,6 +2638,185 @@ class Instances(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def add_gcp_memorystore_instance(self, instance_name, plan_name, gcp_sa_credential_name, content_paths):
+        """Add a new GCP Memorystore Cloud Apps instance to the Commcell.
+
+        Creates a GCP Memorystore instance using the V4 AI API.  The caller provides
+        plain GCP region name strings (e.g. "us-central1") which are internally
+        wrapped into the CloudDBEntity XML format.
+
+        Args:
+            instance_name (str):            Name for the new GCP Memorystore instance.
+                                            Also used as the Commvault connection entity name.
+            plan_name (str):                Name of the plan to associate with the instance.
+            gcp_sa_credential_name (str):   Name of the GCP service account credential stored
+                                            in Commvault Credentials.  Used for GCP API
+                                            authentication.
+            content_paths (list):           List of GCP region name strings to back up,
+                                            e.g. ["us-central1"].
+
+        Returns:
+            Instance: The newly created GCP Memorystore instance object.
+
+        Raises:
+            SDKException: If the plan or credential does not exist, if instance
+                          creation fails, or the server returns an error.
+        """
+        from .subclients.cloudapps.gcp_memorystore_subclient import GcpMemorystoreSubclient
+
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException(
+                'Instance', '102',
+                'Plan "{0}" does not exist in the Commcell'.format(plan_name)
+            )
+
+        if not self._commcell_object.credentials.has_credential(gcp_sa_credential_name):
+            raise SDKException(
+                'Instance', '102',
+                'Credential "{0}" does not exist in the Commcell'.format(gcp_sa_credential_name)
+            )
+
+        plan = self._commcell_object.plans.get(plan_name)
+        cred_obj = self._commcell_object.credentials.get(gcp_sa_credential_name)
+
+        content = [
+            GcpMemorystoreSubclient._build_content_item(region)['path']
+            for region in (content_paths or [])
+        ]
+
+        request_json = {
+            "instanceName": instance_name,
+            "instanceType": "GCP_MEMORYSTORE",
+            "plan": {
+                "id": int(plan.plan_id),
+                "name": plan_name
+            },
+            "account": {
+                "name": instance_name
+            },
+            "credential": {
+                "id": int(cred_obj.credential_id),
+                "name": instance_name
+            },
+            "customProperties": {
+                "nameValues": [
+                    {
+                        "name": "WorkloadInstanceCustomProperties",
+                        "value": "{\"engine_type\":\"redis\"}"
+                    }
+                ]
+            }
+        }
+
+        if content:
+            request_json["content"] = content
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['ADD_GCP_MEMORYSTORE_INSTANCE'], request_json
+        )
+
+        if flag:
+            if response.json():
+                response_data = response.json()
+                if 'id' in response_data and 'name' in response_data:
+                    self.refresh()
+                    return self.get(response_data['name'])
+                elif 'errorMessage' in response_data:
+                    raise SDKException(
+                        'Instance', '102',
+                        'Failed to create GCP Memorystore instance\nError: "{0}"'.format(
+                            response_data['errorMessage']
+                        )
+                    )
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_aws_s3_vectors_instance(self, instance_name, plan_name, credential_name, region_names):
+        """Add a new AWS S3 Vectors Cloud Apps instance to the Commcell.
+
+        Creates an AWS S3 Vectors instance using the V4 AI API.
+        The caller provides plain region name strings which are internally
+        wrapped into the CloudDBEntity XML format.
+
+        Args:
+            instance_name (str):        Name for the new AWS S3 Vectors instance.
+            plan_name (str):            Name of the plan to associate with the instance.
+            credential_name (str):      Name of the credential entity (AWS credential).
+                                        The credential's name is also used as the account name.
+            region_names (list):        List of AWS region name strings to back up,
+                                        e.g. ["us-east-1", "ap-south-1"].
+
+        Returns:
+            Instance: The newly created AWS S3 Vectors instance object.
+
+        Raises:
+            SDKException: If the plan or credential does not exist, if instance
+                          creation fails, or the server returns an error.
+        """
+        from .subclients.cloudapps.aws_s3_vectors_subclient import AwsS3VectorsSubclient
+
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException(
+                'Instance', '102',
+                'Plan "{0}" does not exist in the Commcell'.format(plan_name)
+            )
+
+        if not self._commcell_object.credentials.has_credential(credential_name):
+            raise SDKException(
+                'Instance', '102',
+                'Credential "{0}" does not exist in the Commcell'.format(credential_name)
+            )
+
+        plan = self._commcell_object.plans.get(plan_name)
+        credential = self._commcell_object.credentials.get(credential_name)
+
+        content = AwsS3VectorsSubclient._build_content_xml(region_names)
+
+        request_json = {
+            "instanceName": instance_name,
+            "instanceType": "AWSS3VECTORS",
+            "plan": {
+                "id": int(plan.plan_id),
+                "name": plan_name
+            },
+            "account": {
+                "name": instance_name
+            },
+            "content": [content],
+            "credential": {
+                "id": int(credential.credential_id),
+                "name": credential_name
+            },
+            "useResourcePoolInfo": True
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['ADD_AWS_S3_VECTORS_INSTANCE'], request_json
+        )
+
+        if flag:
+            if response.json():
+                response_data = response.json()
+                if 'id' in response_data and 'name' in response_data:
+                    self.refresh()
+                    return self.get(response_data['name'])
+                elif 'errorMessage' in response_data:
+                    raise SDKException(
+                        'Instance', '102',
+                        'Failed to create AWS S3 Vectors instance\nError: "{0}"'.format(
+                            response_data['errorMessage']
+                        )
+                    )
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def add_redshift_instance(self, instance_name, **instance_options):
         """Adds a new Amazon Redshift Instance to the given Client.
