@@ -59,6 +59,8 @@ class CloudAppsSubclient(Subclient):
         from .cloudapps.gcp_memorystore_subclient import GcpMemorystoreSubclient
         from .cloudapps.hubspot_subclient import HubSpotSubclient
         from .cloudapps.aws_s3_vectors_subclient import AwsS3VectorsSubclient
+        from .cloudapps.servicenow_subclient import ServiceNowSubclient
+        from .cloudapps.trello_subclient import TrelloSubclient
 
         instance_types = {
             1: GoogleSubclient,
@@ -89,8 +91,11 @@ class CloudAppsSubclient(Subclient):
             84: ClickHouseSubclient,  # ClickHouse Subclient
             61: SnowflakeSubclient,  # Snowflake Subclient
             82: GcpMemorystoreSubclient,  # GCP Memorystore Subclient
-                94: AwsS3VectorsSubclient,   # AWS S3 Vectors Subclient
-                98: HubSpotSubclient   # HubSpot Subclient
+            94: AwsS3VectorsSubclient,   # AWS S3 Vectors Subclient
+            103: TrelloSubclient,  # Trello Subclient
+            134: TrelloSubclient,  # Trello Subclient (legacy/inferred id)
+            98: HubSpotSubclient,   # HubSpot Subclient
+            49: ServiceNowSubclient,  # ServiceNow Subclient (numeric cloud app type)
         }
 
         cloud_apps_instance_type = backupset_object._instance_object._properties[

@@ -93,6 +93,8 @@ Instances:
 
     add_redshift_instance()         --  Adds a new Amazon Redshift instance to the given client
 
+    add_trello_instance()           --  Adds a new Trello instance to the given client
+
 
 Instance:
     __init__()                      --  initialise object of Instance with the specified instance
@@ -2556,6 +2558,97 @@ class Instances(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def add_servicenow_instance(self, instance_name, plan_name, sn_credential_name, table_names=None):
+        """Add a new ServiceNow Cloud Apps instance to the Commcell.
+
+        Creates a ServiceNow instance using the V4 SAAS API.
+        The caller optionally provides plain table name strings (e.g. ["incident", "change_request"])
+        which are internally wrapped into the CloudDBEntity XML format required by the API.
+        When table_names is None or empty, all tables are selected (default behaviour).
+
+        Args:
+            instance_name (str):        Name for the new ServiceNow instance.
+            plan_name (str):            Name of the plan to associate with the instance.
+            sn_credential_name (str):   Name of the ServiceNow credential entity.
+                                        Velocity workloads use the same entity for both
+                                        credential and account.
+            table_names (list):         Optional list of ServiceNow table name strings to
+                                        back up, e.g. ["incident", "change_request"].
+                                        Pass None or an empty list to back up all tables.
+
+        Returns:
+            Instance: The newly created ServiceNow instance object.
+
+        Raises:
+            SDKException: If the plan or credential does not exist, if instance
+                          creation fails, or the server returns an error.
+
+        #ai-gen-doc
+        """
+        from .subclients.cloudapps.servicenow_subclient import ServiceNowSubclient
+
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException(
+                'Instance', '102',
+                'Plan "{0}" does not exist in the Commcell'.format(plan_name)
+            )
+
+        if not self._commcell_object.credentials.has_credential(sn_credential_name):
+            raise SDKException(
+                'Instance', '102',
+                'Credential "{0}" does not exist in the Commcell'.format(sn_credential_name)
+            )
+
+        plan = self._commcell_object.plans.get(plan_name)
+        credential = self._commcell_object.credentials.get(sn_credential_name)
+
+        if table_names:
+            content = [ServiceNowSubclient._build_content_xml(table_names)]
+        else:
+            content = ["<CloudDBEntity></CloudDBEntity>"]
+
+        request_json = {
+            "instanceName": instance_name,
+            "instanceType": "SERVICENOW",
+            "plan": {
+                "id": int(plan.plan_id),
+                "name": plan_name
+            },
+            "account": {
+                "name": sn_credential_name
+            },
+            "content": content,
+            "credential": {
+                "id": int(credential.credential_id),
+                "name": sn_credential_name
+            },
+            "useResourcePoolInfo": True
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['ADD_SERVICENOW_INSTANCE'], request_json
+        )
+
+        if flag:
+            if response.json():
+                response_data = response.json()
+                if 'id' in response_data and 'name' in response_data:
+                    self.refresh()
+                    return self.get(response_data['name'])
+                elif 'errorMessage' in response_data:
+                    raise SDKException(
+                        'Instance', '102',
+                        'Failed to create ServiceNow instance\nError: "{0}"'.format(
+                            response_data['errorMessage']
+                        )
+                    )
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
     def add_snowflake_instance(self, instance_name, plan_name, sf_client_credential_name, db_names):
         """Add a new Snowflake Cloud Apps instance to the Commcell.
 
@@ -2958,6 +3051,97 @@ class Instances(object):
                         error_string = response_data['response'].get('errorString', 'Unknown error')
                         o_str = 'Failed to create Redshift instance\nError: "{0}"'.format(error_string)
                         raise SDKException('Instance', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_trello_instance(self, instance_name, plan_name, connection_name, content, **kwargs):
+        """Add a new Trello Cloud Apps instance to the Commcell.
+
+        Creates a Trello instance using the V4 AI API.
+
+        Args:
+            instance_name (str): Name for the new Trello instance.
+            plan_name (str): Name of the plan to associate with the instance.
+            connection_name (str): Name of the Commvault connection entity.
+            content (list): List of content names to back up.
+            **kwargs: Additional workload-specific parameters.
+
+        Returns:
+            Instance: The newly created Trello instance object.
+
+        Raises:
+            SDKException: If plan/connection validation fails or instance creation fails.
+        """
+        if self.has_instance(instance_name):
+            raise SDKException(
+                'Instance', '102', 'Instance "{0}" already exists.'.format(instance_name)
+            )
+
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException(
+                'Instance', '102',
+                'Plan "{0}" does not exist in the Commcell'.format(plan_name)
+            )
+
+        has_client = self._commcell_object.clients.has_client(connection_name)
+        has_credential = self._commcell_object.credentials.has_credential(connection_name)
+        if not has_client and not has_credential:
+            raise SDKException(
+                'Instance', '102',
+                'Connection "{0}" does not exist as a client or credential in the Commcell'.format(
+                    connection_name
+                )
+            )
+
+        plan = self._commcell_object.plans.get(plan_name)
+
+        account = {"name": connection_name}
+        if has_client:
+            client_obj = self._commcell_object.clients.get(connection_name)
+            account["id"] = int(client_obj.client_id)
+
+        request_json = {
+            "instanceName": instance_name,
+            "instanceType": "TRELLO",
+            "plan": {
+                "id": int(plan.plan_id),
+                "name": plan_name
+            },
+            "account": account,
+            "content": ["<CloudDBEntity></CloudDBEntity>"],
+            "useResourcePoolInfo": True
+        }
+
+        if has_credential:
+            credential_obj = self._commcell_object.credentials.get(connection_name)
+            request_json["credential"] = {
+                "id": int(credential_obj.credential_id),
+                "name": connection_name
+            }
+
+        if kwargs:
+            request_json.update(kwargs)
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['ADD_TRELLO_INSTANCE'], request_json
+        )
+        if flag:
+            if response.json():
+                response_data = response.json()
+                if 'id' in response_data and 'name' in response_data:
+                    self.refresh()
+                    return self.get(response_data['name'])
+                elif 'errorMessage' in response_data:
+                    raise SDKException(
+                        'Instance', '102',
+                        'Failed to create Trello instance\nError: "{0}"'.format(
+                            response_data['errorMessage']
+                        )
+                    )
                 else:
                     raise SDKException('Response', '102')
             else:

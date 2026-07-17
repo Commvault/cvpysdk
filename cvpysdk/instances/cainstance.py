@@ -212,7 +212,9 @@ class CloudAppsInstance(Instance):
         from .cloudapps.gcp_memorystore_instance import GcpMemorystoreInstance
         from .cloudapps.hubspot_instance import HubSpotInstance
         from .cloudapps.aws_s3_vectors_instance import AwsS3VectorsInstance
+        from .cloudapps.trello_instance import TrelloInstance
         from .cloudapps.miro_instance import MiroInstance
+        from .cloudapps.servicenow_instance import ServiceNowInstance
 
         
         instance_type = {
@@ -249,6 +251,8 @@ class CloudAppsInstance(Instance):
             94: AwsS3VectorsInstance,  # AWS S3 Vectors Instance
             98: HubSpotInstance,   # HubSpot Instance
             104: MiroInstance,  # Miro Instance
+            49: ServiceNowInstance,  # ServiceNow Instance (numeric cloud app type)
+            134: TrelloInstance  # Trello Instance 
         }
 
         commcell_object = agent_object._commcell_object

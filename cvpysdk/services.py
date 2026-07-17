@@ -271,7 +271,9 @@ SERVICES_DICT_TEMPLATE = {
     'ADD_PINECONE_INSTANCE': '{0}V4/AI/Pinecone/Instance',
     'ADD_GCP_MEMORYSTORE_INSTANCE': '{0}V4/AI/GCPMemorystore/Instance',
     'ADD_HUBSPOT_INSTANCE': '{0}V4/SAAS/HubSpot/Instance',
+    'ADD_SERVICENOW_INSTANCE': '{0}V4/SAAS/ServiceNow/Instance',
     'ADD_AWS_S3_VECTORS_INSTANCE': '{0}V4/AI/AwsS3Vectors/Instance',
+    'ADD_TRELLO_INSTANCE': '{0}V4/SAAS/AtlassianTrello/Instance',
     'MASKING_POLICY': '{0}MaskingPolicy',
 
     'DO_COMPLIANCE_SEARCH': '{0}Search',

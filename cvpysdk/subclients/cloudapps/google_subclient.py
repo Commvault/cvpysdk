@@ -1318,7 +1318,8 @@ class GoogleSubclient(CloudAppsSubclient):
                 - skip_file_permissions (bool): If True, skip restoring file permissions (default: False).
                 - destination_type (str): Type of destination for out-of-place restore.
                 - end_time (int): Job end time for point-in-time restore (default: None).
-                - destination_label (str): Label where restore should be performed in the mailbox.
+                - destination_label (str): Destination Label where restore should be performed in the mailbox.
+                - include_deleted_items (bool): If True, restore of deleted items will be perfomred. (default: False)
 
         Returns:
             Job: An instance of the Job class representing the restore job.
@@ -1344,6 +1345,7 @@ class GoogleSubclient(CloudAppsSubclient):
         skip_file_permissions = kwargs.get('skip_file_permissions', False)
         end_time = kwargs.get('end_time', None)
         destination_label = kwargs.get('destination_label', "")
+        include_deleted_items = kwargs.get('include_deleted_items', False)
 
         if overwrite and restore_as_copy:
             raise SDKException('Subclient', '102', 'Either select overwrite or restore as copy for file options')
@@ -1370,7 +1372,8 @@ class GoogleSubclient(CloudAppsSubclient):
             'accountInfo': accountInfo,
             'destination_type': destination_type,
             'destination_path': destination_path,
-            'destination_label': destination_label
+            'destination_label': destination_label,
+            'include_deleted_items': include_deleted_items
         }
         restore_json = self._instance_object._prepare_restore_json(source_user_list, **kwargs)
         if end_time:

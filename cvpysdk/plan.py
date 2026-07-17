@@ -4730,7 +4730,7 @@ class Plan(object):
 
 
     @content_indexing.setter
-    def content_indexing(self, value: bool, **kwargs: Optional[dict]) -> None:
+    def content_indexing(self, value: bool, **kwargs: Any) -> None:
         """Sets content indexing value for O365 plan
 
         Args:
@@ -4740,7 +4740,7 @@ class Plan(object):
             plan.content_indexing = True
             plan.content_indexing = False
         """
-        self._enable_content_indexing_o365_plan(value, kwargs)
+        self._enable_content_indexing_o365_plan(value, **kwargs)
 
 
     @property
@@ -5156,7 +5156,7 @@ class Plan(object):
                                                                     f'[{self.plan_name}]')
 
 
-    def _enable_content_indexing_o365_plan(self, value: bool, **kwargs: dict) -> None:
+    def _enable_content_indexing_o365_plan(self, value: bool, **kwargs: Any) -> None:
         """Enable CI for O365 plan
 
         Args:
