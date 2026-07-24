@@ -267,6 +267,8 @@ SERVICES_DICT_TEMPLATE = {
     'CREATE_TASK': '{0}CreateTask',
     'ADD_INSTANCE': '{0}Instance',
     'ADD_CLICKHOUSE_INSTANCE': '{0}V4/AI/ClickHouse/Instance',
+    'ADD_AWS_BEDROCK_INSTANCE': '{0}V4/AI/AwsBedrock/Instance',
+    'ADD_AZURE_FOUNDRY_INSTANCE': '{0}V4/AI/AzureFoundry/Instance',
     'ADD_SNOWFLAKE_INSTANCE': '{0}V4/AI/Snowflake/Instance',
     'ADD_PINECONE_INSTANCE': '{0}V4/AI/Pinecone/Instance',
     'ADD_GCP_MEMORYSTORE_INSTANCE': '{0}V4/AI/GCPMemorystore/Instance',

@@ -207,6 +207,8 @@ class CloudAppsInstance(Instance):
         from .cloudapps.powerbi_instance import PowerBIInstance
         from .cloudapps.cloud_database_instance import CloudDatabaseInstance
         from .cloudapps.clickhouse_instance import ClickHouseInstance
+        from .cloudapps.aws_bedrock_instance import AwsBedrockInstance
+        from .cloudapps.azure_foundry_instance import AzureFoundryInstance
         from .cloudapps.pinecone_instance import PineConeInstance
         from .cloudapps.snowflake_instance import SnowflakeInstance
         from .cloudapps.gcp_memorystore_instance import GcpMemorystoreInstance
@@ -240,11 +242,14 @@ class CloudAppsInstance(Instance):
             40: CloudDatabaseInstance,  # MongoDB Atlas
             44: AzureCosmosDBInstance,  # Azure Cosmos DB Cloud Apps Instance
             51: AzureCosmosDBInstance,   # Azure Cosmos DB MongoDBAPI Instance
+            59: CloudAppsInstance,  # Okta
             55: AzureFilesStorageInstance,  # Azure Files Storage Instance
             56: CloudStorageInstance,  # S3 Compatible Instance
             45: AzureBlobDiscoveryInstance,  # Azure Blob Discovery GRP Instance
             58: PineConeInstance,  # PineCone Instance
             60: PowerBIInstance,     # Power Platform PowerBi Instance
+            77: AwsBedrockInstance,  # AWS Bedrock Instance
+            88: AzureFoundryInstance,  # Azure Foundry Instance
             84: ClickHouseInstance,  # ClickHouse Instance
             61: SnowflakeInstance,  # Snowflake Instance
             82: GcpMemorystoreInstance,  # GCP Memorystore Instance

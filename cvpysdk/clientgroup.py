@@ -771,6 +771,10 @@ class ClientGroups(object):
         filter_dict = {
             'equal to': 100,
             'not equal': 101,
+            'greater than': 102,
+            'less than': 103,
+            'greater than or equal to': 104,
+            'less than or equal to': 105,
             'any in selection': 108,
             'not in selection': 109,
             'is true': 1,
@@ -779,6 +783,8 @@ class ClientGroups(object):
             'starts with': 14,
             'ends with': 15,
             'does not contain': 11,
+            'is': 12,
+            'is not': 13,
             }
         prop_id_dict = {
             'Name': 1,
@@ -851,9 +857,11 @@ class ClientGroups(object):
             'Client CIDR Address Range': 81,
             'HAC Cluster': 85,
             'Client Display Name': 116,
+            'Client version v11 and feature release': 117,
             'Clients associated to any company': 158,
             'VMs not in any Subclient Content': 166,
             'Pseudo Clients': 115,
+            'Backup Set Name': 176,
             }
         ptype_dict = {
             'Name': 2,
@@ -926,9 +934,11 @@ class ClientGroups(object):
             'Client CIDR Address Range': 10,
             'HAC Cluster': 1,
             'Client Display Name': 2,
+            'Client version v11 and feature release': 9,
             'Clients associated to any company': 1,
             'VMs not in any Subclient Content': 1,
             'Pseudo Clients': 1,
+            'Backup Set Name': 2,
             }
 
         rule_mk = {

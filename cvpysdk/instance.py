@@ -71,6 +71,8 @@ Instances:
     
     add_clickhouse_instance()       --  Method to add new ClickHouse instance
 
+    add_aws_bedrock_instance()      --  Method to add new AWS Bedrock instance
+
     add_hubspot_instance()          --  Method to add new HubSpot instance
 
     add_snowflake_instance()        --  Method to add new snowflake instance
@@ -190,6 +192,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import copy
+import time
 
 from base64 import b64encode
 
@@ -2548,6 +2551,226 @@ class Instances(object):
                     raise SDKException(
                         'Instance', '102',
                         'Failed to create HubSpot instance\nError: "{0}"'.format(
+                            response_data['errorMessage']
+                        )
+                    )
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_aws_bedrock_instance(
+            self,
+            instance_name,
+            plan_name,
+            credential_name,
+            content,
+            account_name=None
+    ):
+        """Add a new AWS Bedrock Cloud Apps instance to the Commcell.
+
+        Creates an AWS Bedrock instance using the V4 AI API.
+
+        Args:
+            instance_name (str): Name for the new AWS Bedrock instance.
+            plan_name (str): Name of the plan to associate with the instance.
+            credential_name (str): Name of the credential entity to use.
+            content (list): List of CloudDBEntity XML strings representing selected content.
+            account_name (str): Optional account name. Defaults to instance_name when not provided.
+
+        Returns:
+            Instance: The newly created AWS Bedrock instance object.
+
+        Raises:
+            SDKException: If plan/credential validation fails or instance creation fails.
+
+        #ai-gen-doc
+        """
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException(
+                'Instance', '102',
+                'Plan "{0}" does not exist in the Commcell'.format(plan_name)
+            )
+
+        if not self._commcell_object.credentials.has_credential(credential_name):
+            raise SDKException(
+                'Instance', '102',
+                'Credential "{0}" does not exist in the Commcell'.format(credential_name)
+            )
+
+        if not isinstance(content, list) or not content:
+            raise SDKException('Instance', '101', 'content should be a non-empty list')
+
+        plan = self._commcell_object.plans.get(plan_name)
+        credential = self._commcell_object.credentials.get(credential_name)
+
+        request_json = {
+            "instanceName": instance_name,
+            "instanceType": "AWSBEDROCK",
+            "plan": {
+                "id": int(plan.plan_id),
+                "name": plan_name
+            },
+            "account": {
+                "name": account_name or instance_name
+            },
+            "content": content,
+            "credential": {
+                "id": int(credential.credential_id),
+                "name": credential_name
+            },
+            "useResourcePoolInfo": True
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['ADD_AWS_BEDROCK_INSTANCE'], request_json
+        )
+        if flag:
+            if response.json():
+                response_data = response.json()
+                if 'id' in response_data and 'name' in response_data:
+                    created_name = response_data.get('name') or instance_name
+                    created_id = int(response_data.get('id'))
+
+                    # V4 create can return before instance listing is fully consistent.
+                    # Retry refresh/get briefly instead of failing immediately.
+                    for _ in range(18):
+                        self.refresh()
+                        try:
+                            return self.get(created_name)
+                        except SDKException:
+                            try:
+                                return self.get(created_id)
+                            except SDKException:
+                                pass
+                            try:
+                                return self.get(instance_name)
+                            except SDKException:
+                                time.sleep(5)
+
+                    raise SDKException(
+                        'Instance', '102',
+                        'AWS Bedrock instance creation acknowledged but instance was not visible '
+                        'after retry window. Requested name: "{0}", response name: "{1}"'.format(
+                            instance_name, created_name
+                        )
+                    )
+                elif 'errorMessage' in response_data:
+                    raise SDKException(
+                        'Instance', '102',
+                        'Failed to create AWS Bedrock instance\nError: "{0}"'.format(
+                            response_data['errorMessage']
+                        )
+                    )
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_azure_foundry_instance(
+            self,
+            instance_name,
+            plan_name,
+            credential_name,
+            content,
+            account_name=None
+    ):
+        """Add a new Azure Foundry Cloud Apps instance to the Commcell.
+
+        Creates an Azure Foundry instance using the V4 AI API.
+
+        Args:
+            instance_name (str): Name for the new Azure Foundry instance.
+            plan_name (str): Name of the plan to associate with the instance.
+            credential_name (str): Name of the credential entity to use.
+            content (list): List of CloudDBEntity XML strings representing selected content.
+            account_name (str): Optional account name. Defaults to instance_name when not provided.
+
+        Returns:
+            Instance: The newly created Azure Foundry instance object.
+
+        Raises:
+            SDKException: If plan/credential validation fails or instance creation fails.
+
+        #ai-gen-doc
+        """
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException(
+                'Instance', '102',
+                'Plan "{0}" does not exist in the Commcell'.format(plan_name)
+            )
+
+        if not self._commcell_object.credentials.has_credential(credential_name):
+            raise SDKException(
+                'Instance', '102',
+                'Credential "{0}" does not exist in the Commcell'.format(credential_name)
+            )
+
+        if not isinstance(content, list) or not content:
+            raise SDKException('Instance', '101', 'content should be a non-empty list')
+
+        plan = self._commcell_object.plans.get(plan_name)
+        credential = self._commcell_object.credentials.get(credential_name)
+
+        request_json = {
+            "instanceName": instance_name,
+            "instanceType": "AZUREFOUNDRY",
+            "plan": {
+                "id": int(plan.plan_id),
+                "name": plan_name
+            },
+            "account": {
+                "name": account_name or instance_name
+            },
+            "content": content,
+            "credential": {
+                "id": int(credential.credential_id),
+                "name": credential_name
+            },
+            "useResourcePoolInfo": True
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['ADD_AZURE_FOUNDRY_INSTANCE'], request_json
+        )
+        if flag:
+            if response.json():
+                response_data = response.json()
+                if 'id' in response_data and 'name' in response_data:
+                    created_name = response_data.get('name') or instance_name
+                    created_id = int(response_data.get('id'))
+
+                    # V4 create can return before instance listing is fully consistent.
+                    # Retry refresh/get briefly instead of failing immediately.
+                    for _ in range(18):
+                        self.refresh()
+                        try:
+                            return self.get(created_name)
+                        except SDKException:
+                            try:
+                                return self.get(created_id)
+                            except SDKException:
+                                pass
+                            try:
+                                return self.get(instance_name)
+                            except SDKException:
+                                time.sleep(5)
+
+                    raise SDKException(
+                        'Instance', '102',
+                        'Azure Foundry instance creation acknowledged but instance was not visible '
+                        'after retry window. Requested name: "{0}", response name: "{1}"'.format(
+                            instance_name, created_name
+                        )
+                    )
+                elif 'errorMessage' in response_data:
+                    raise SDKException(
+                        'Instance', '102',
+                        'Failed to create Azure Foundry instance\nError: "{0}"'.format(
                             response_data['errorMessage']
                         )
                     )

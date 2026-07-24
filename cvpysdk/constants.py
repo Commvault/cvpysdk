@@ -539,7 +539,7 @@ class HypervisorType(Enum):
     PROXMOX = "Proxmox ve"
     NUTANIX_PRISM_CENTRAL = "nutanix prism central"
     MORPHEUS = "HPE Morpheus VM Essentials"
-
+    CLOUDSTACK = "Apache CloudStack"
 
 class AppIDAType(Enum):
     """Class to maintain all the app ida constants"""
@@ -898,7 +898,8 @@ class VsInstanceType:
         1503: "vcloud_director",
         1501: "kubernetes",
         1600: "proxmox_ve",
-        1700: "morpheus_data"
+        1700: "morpheus_data",
+        1800: "apache_cloudstack"
     }
 
 

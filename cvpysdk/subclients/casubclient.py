@@ -52,8 +52,11 @@ class CloudAppsSubclient(Subclient):
         from .cloudapps.spanner_subclient import GoogleSpannerSubclient
         from .cloudapps.onedrive_subclient import OneDriveSubclient
         from .cloudapps.azure_cosmosdb_subclient import AzureCosmosDBSubclient
+        from .cloudapps.okta_subclient import OktaSubclient
         from .cloudapps.powerbi_subclient import PowerBISubclient
         from .cloudapps.clickhouse_subclient import ClickHouseSubclient
+        from .cloudapps.aws_bedrock_subclient import AwsBedrockSubclient
+        from .cloudapps.azure_foundry_subclient import AzureFoundrySubclient
         from .cloudapps.pinecone_subclient import PineConeSubclient
         from .cloudapps.snowflake_subclient import SnowflakeSubclient
         from .cloudapps.gcp_memorystore_subclient import GcpMemorystoreSubclient
@@ -86,8 +89,11 @@ class CloudAppsSubclient(Subclient):
             40: CloudDatabaseSubclient,  # MongoDB Atlas
             51: AzureCosmosDBSubclient,  # Azure Cosmos DB MongoDBAPI Instance
             56: CloudStorageSubclient,  # S3 Compatible Subclient
-            58: PineConeSubclient,  # PineCone Subclient
+            58: PineConeSubclient,  # PineCone Subclient,
+            59: OktaSubclient,  # Okta
             60: PowerBISubclient,    # Power Platform PowerBi Subclient
+            77: AwsBedrockSubclient,  # AWS Bedrock Subclient
+            88: AzureFoundrySubclient,  # Azure Foundry Subclient
             84: ClickHouseSubclient,  # ClickHouse Subclient
             61: SnowflakeSubclient,  # Snowflake Subclient
             82: GcpMemorystoreSubclient,  # GCP Memorystore Subclient
