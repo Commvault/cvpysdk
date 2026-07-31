@@ -603,12 +603,15 @@ class PostgreSQLInstance(Instance):
         if not isinstance(value, dict):
             raise SDKException('Instance', '101')
 
+        point_in_time_value = bool(value.get("point_in_time", False) or value.get("to_time"))
+
         self.postgres_restore_json = self._postgres_restore_options = {
             "restoreToSameServer": False,
             "tableLevelRestore": value.get("table_level_restore", False),
             "instanceRestore": False,
             "fsBackupSetRestore": value.get("backupset_flag", ""),
             "isCloneRestore": value.get("clone_env", False),
+            "pointInTime": point_in_time_value,
             "refTime": {}
         }
 
@@ -631,9 +634,19 @@ class PostgreSQLInstance(Instance):
             for database_name in database_list:
                 self.postgres_restore_json["auxilaryMap"].append({"sourceDB": database_name})
 
+        if value.get("redirect_enabled"):
+            self.postgres_restore_json["redirectEnabled"] = True
         if value.get("redirect_path"):
             self.postgres_restore_json["redirectEnabled"] = True
             self.postgres_restore_json["redirectItems"] = [value.get("redirect_path")]
+
+        if value.get("db_cluster_restore_options") is not None:
+            self.postgres_restore_json["dbClusterRestoreOptions"] = value.get("db_cluster_restore_options")
+
+        self.postgres_restore_json["fullClusterRestore"] = bool(value.get("full_cluster_restore", False))
+        self.postgres_restore_json["cleanUpPgDirs"] = bool(value.get("clean_up_pg_dirs", False))
+        self.postgres_restore_json["noOwner"] = bool(value.get("no_owner", False))
+        self.postgres_restore_json["noACL"] = bool(value.get("no_acl", False))
 
         if value.get("restore_to_disk"):
             self.postgres_restore_json["fsBackupSetRestore"] = False
@@ -661,7 +674,13 @@ class PostgreSQLInstance(Instance):
         restore_to_disk: bool = False,
         restore_to_disk_job: int = None,
         destination_path: str = None,
-        revert: bool = False
+        revert: bool = False,
+        db_cluster_restore_options: list = None,
+        full_cluster_restore: bool = False,
+        clean_up_pg_dirs: bool = False,
+        point_in_time: bool = False,
+        no_owner: bool = False,
+        no_acl: bool = False,
     ) -> 'Job':
         """Restore PostgreSQL data or log files in place to their original location.
 
@@ -702,6 +721,12 @@ class PostgreSQLInstance(Instance):
             restore_to_disk_job: Backup job ID to restore to disk. Default is None.
             destination_path: Destination path for the restore. Default is None.
             revert: If True, perform a hardware revert during restore. Default is False.
+            db_cluster_restore_options: List of database cluster restore options. Default is None.
+            full_cluster_restore: If True, perform a full cluster restore. Default is False.
+            clean_up_pg_dirs: If True, clean up PostgreSQL directories. Default is False.
+            point_in_time: If True, perform a point in-time restore. Default is False.
+            no_owner: If True, perform a no-owner restore. Default is False.
+            no_acl: If True, perform a no-acl restore. Default is False.
 
         Returns:
             Job: An instance of the Job class representing the restore job.
@@ -747,7 +772,13 @@ class PostgreSQLInstance(Instance):
             restore_to_disk=restore_to_disk,
             index_free_restore=index_free_restore,
             destination_path=destination_path,
-            restore_jobs=restore_to_disk_job)
+            restore_jobs=restore_to_disk_job,
+            db_cluster_restore_options=db_cluster_restore_options,
+            full_cluster_restore=full_cluster_restore,
+            clean_up_pg_dirs=clean_up_pg_dirs,
+            point_in_time=point_in_time,
+            no_owner=no_owner,
+            no_acl=no_acl,)
 
         if volume_level_restore:
             request_json['taskInfo']['subTasks'][0]['options'][

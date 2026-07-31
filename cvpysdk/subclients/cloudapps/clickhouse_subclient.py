@@ -35,6 +35,8 @@ ClickHouseSubclient:
 
     _build_content_item()               --  Wraps a DB name in CloudDBEntity XML format
 
+    _build_content_xml()                --  Builds a single CloudDBEntity XML with all DBs as children
+
     _parse_db_name()                    --  Extracts a DB name from a CloudDBEntity XML dict
 
     browse()                            --  Browse and return content of this subclient's backups
@@ -86,26 +88,31 @@ class ClickHouseSubclient(CloudAppsSubclient):
         return {"path": xml}
 
     @staticmethod
-    def _build_content_xml(db_name: str) -> str:
-        """Build a CloudDBEntity XML string for a single database.
+    def _build_content_xml(db_names: List[str]) -> str:
+        """Build a single CloudDBEntity XML string with all DB names as children.
 
+        Combines multiple database names into one "<CloudDBEntity>" element
+        with a "<children>" block per database
         Args:
-            db_name: Plain ClickHouse database name string.
+            db_names: List of plain ClickHouse database name strings.
 
         Returns:
-            str: A CloudDBEntity XML string.
+            str: A single XML string with all databases as children.
 
         #ai-gen-doc
         """
-        return (
-            f'<CloudDBEntity><children>'
-            f'<name>{db_name}</name>'
-            f'<path>/{db_name}</path>'
-            f'<displayName>{db_name}</displayName>'
+        children = ''.join(
+            f'<children>'
+            f'<name>{db}</name>'
+            f'<path>/{db}</path>'
+            f'<displayName>{db}</displayName>'
             f'<type>1</type>'
             f'<workloadObjectType>1</workloadObjectType>'
-            f'</children></CloudDBEntity>'
+            f'<isContainer>false</isContainer>'
+            f'</children>'
+            for db in db_names
         )
+        return f'<CloudDBEntity>{children}</CloudDBEntity>'
 
     @staticmethod
     def _parse_db_name(path_dict: dict) -> Optional[str]:

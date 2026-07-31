@@ -67,6 +67,10 @@ Instances:
 
     add_postgresql_instance()       --  Method to add a new postgresql instance
 
+    add_postgresql_cluster_pseudo_client --Method to add a new postgresql cluster
+
+    add_postgresql_cluster          -- Method to add a new postgresql cluster instance
+
     add_cosmosdb_instance()         --  Method to add new cosmosdb instance
     
     add_clickhouse_instance()       --  Method to add new ClickHouse instance
@@ -1444,6 +1448,224 @@ class Instances(object):
         }
         self._process_add_response(request_json)
 
+    def add_postgresql_cluster_pseudo_client(self, pseudo_client_name, plan_name):
+        """Create PostgreSQL cluster pseudo client if missing and return client object."""
+        if not pseudo_client_name:
+            raise SDKException("Instance", "101", "pseudo_client_name is mandatory")
+        if not plan_name:
+            raise SDKException("Instance", "101", "plan_name is mandatory")
+        if self._commcell_object.clients.has_client(pseudo_client_name):
+            return self._commcell_object.clients.get(pseudo_client_name)
+
+        plan_obj = self._commcell_object.plans.get(plan_name)
+        request_json = {
+            "registerClient": False,
+            "clientInfo": {
+                "clientType": 43,
+                "dbClusterProperties": {
+                    "appType": {
+                        "applicationId": 125
+                    },
+                    "plan": {
+                        "planName": plan_obj.plan_name,
+                        "planId": int(plan_obj.plan_id)
+                    }
+                }
+            },
+            "entity": {
+                "hostName": pseudo_client_name,
+                "clientName": pseudo_client_name
+            }
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            "POST",
+            self._services["CREATE_PSEUDO_CLIENT"],
+            request_json
+        )
+        if not flag:
+            status_code = getattr(response, "status_code", None)
+            response_text = ""
+            if response is not None:
+                try:
+                    response_text = response.text
+                except Exception:
+                    response_text = ""
+            raise SDKException(
+                "Instance",
+                "102",
+                "Failed to execute pseudo client API call. status={0}, response={1}".format(
+                    status_code,
+                    response_text or "empty"
+                )
+            )
+        response_json = response.json() if response and response.content else {}
+        result = response_json.get("response", {})
+        if result.get("errorCode", -1) != 0:
+            raise SDKException(
+                "Instance",
+                "102",
+                "Failed to create PostgreSQL pseudo client {0}: {1}".format(
+                    pseudo_client_name,
+                    response_json
+                )
+            )
+        self._commcell_object.refresh()
+        if not self._commcell_object.clients.has_client(pseudo_client_name):
+            raise SDKException(
+                "Instance",
+                "102",
+                "Pseudo client \"{0}\" not found after create API success".format(
+                    pseudo_client_name
+                )
+            )
+        return self._commcell_object.clients.get(pseudo_client_name)
+
+    def add_postgresql_cluster_instance(self, instance_name, cluster_type=None, **kwargs):
+        """Adds new PostgreSQL cluster instance for a given cluster type."""
+        if self.has_instance(instance_name):
+            raise SDKException(
+                "Instance", "102", "Instance \"{0}\" already exists.".format(
+                    instance_name)
+            )
+        nodes = kwargs.get('nodes') or []
+        if not isinstance(nodes, list) or not nodes:
+            raise SDKException("Instance", "101", "nodes should be a non-empty list")
+        plan_name = kwargs.get('plan_name')
+        if not plan_name:
+            raise SDKException("Instance", "101", "plan_name is mandatory")
+        credential_name = kwargs.get('credential_name')
+        if not credential_name:
+            raise SDKException("Instance", "101", "credential_name is mandatory")
+
+        if not self._commcell_object.credentials.has_credential(credential_name):
+            raise SDKException(
+                "Instance",
+                "101",
+                "credential does not exist: {0}".format(credential_name)
+            )
+        cluster_type_from_kwargs = kwargs.pop("type", None)
+        if cluster_type is None:
+            cluster_type = cluster_type_from_kwargs
+        elif cluster_type_from_kwargs is not None and str(cluster_type_from_kwargs).strip().lower() != str(cluster_type).strip().lower():
+            raise SDKException(
+                "Instance",
+                "101",
+                "Conflicting cluster type values passed via cluster_type and type"
+            )
+        cluster_type_value = str(cluster_type or "native").strip().lower()
+        if not cluster_type_value:
+            cluster_type_value = "native"
+        cluster_manager_map = {
+            "native": "NATIVE",
+            "repmgr": "REPMGR",
+            "patroni": "PATRONI",
+            "edb_efm": "EDB_EFM"
+        }
+        if cluster_type_value not in cluster_manager_map:
+            raise SDKException(
+                "Instance",
+                "101",
+                "unsupported cluster_type: {0}. Supported values: native, repmgr, patroni, edb_efm".format(
+                    cluster_type
+                )
+            )
+        cluster_manager_value = cluster_manager_map[cluster_type_value]
+        normalized_nodes = []
+        for node in nodes:
+            if not isinstance(node, dict):
+                raise SDKException("Instance", "101", "each node should be a dict")
+            server_name = node.get("server") or node.get("name")
+            bin_dir = node.get("bin_dir")
+            lib_dir = node.get("lib_dir")
+            if not server_name or not bin_dir or not lib_dir:
+                raise SDKException(
+                    "Instance",
+                    "101",
+                    "each node should include server/name, bin_dir and lib_dir"
+                )
+            normalized_nodes.append({
+                "server": server_name,
+                "bin_dir": bin_dir,
+                "lib_dir": lib_dir
+            })
+        cluster_client_name = kwargs.get("cluster_client_name", instance_name)
+        self._commcell_object.clients.get(cluster_client_name)
+        self._commcell_object.plans.get(plan_name)
+        db_path = kwargs.get("db_path")
+        archive_dir = "{0}-wal".format(db_path) if db_path else None
+        credential_entity = {
+            "credentialName": credential_name
+        }
+        self._commcell_object.credentials.get(credential_name)
+        node_entries = []
+        for priority, node in enumerate(normalized_nodes):
+            client_obj = self._commcell_object.clients.get(node["server"])
+            postgres_props = {
+                "BinaryDirectory": node["bin_dir"],
+                "LibDirectory": node["lib_dir"],
+                "MaintainenceDB": kwargs.get("maintenance_db", "postgres"),
+                "port": str(kwargs.get("port", "5432")),
+                "dbClusterManager": cluster_manager_value,
+                "dbClusterNodesOperationType": "OVERWRITE"
+            }
+            if archive_dir:
+                postgres_props["ArchiveLogDirectory"] = archive_dir
+            node_entries.append({
+                "clusterPriority": priority,
+                "priority": priority,
+                "physicalClient": {
+                    "clientName": client_obj.client_name
+                },
+                "credentialEntity": {
+                    "credentialName": credential_name
+                },
+                "postgresProps": postgres_props
+            })
+        request_json = {
+            "instanceProperties": {
+                "instance": {
+                    "instanceName": instance_name,
+                    "clientName": cluster_client_name,
+                    "appName": "PostgreSQL"
+                },
+                "version": kwargs.get("version", "10.0"),
+                "planEntity": {
+                    "planName": plan_name
+                },
+                "credentialEntity": credential_entity,
+                "postGreSQLInstance": {
+                    "BinaryDirectory": normalized_nodes[0]["bin_dir"],
+                    "LibDirectory": normalized_nodes[0]["lib_dir"],
+                    "MaintainenceDB": kwargs.get("maintenance_db", "postgres"),
+                    "port": str(kwargs.get("port", "5432")),
+                    "dbClusterManager": cluster_manager_value,
+                    "dbClusterNodesOperationType": "OVERWRITE",
+                    "nodes": node_entries,
+                    "clusterNodes": node_entries,
+                    "clusterSettings": {
+                        "enableClusterBackup": kwargs.get("enable_cluster_backup", True),
+                        "enableFailOverToMaster": kwargs.get("enable_fail_over_to_master", True),
+                        "useMasterForDataBkp": kwargs.get("use_master_for_data_bkp", False),
+                        "useMasterForLogBkp": kwargs.get("use_master_for_log_bkp", False),
+                        "clusterNodes": node_entries
+                    },
+                    "credentialEntity": credential_entity
+                }
+            }
+        }
+        if archive_dir:
+            request_json["instanceProperties"]["postGreSQLInstance"]["ArchiveLogDirectory"] = archive_dir
+        self._process_add_response(request_json)
+        cluster_client_name = kwargs.get("cluster_client_name", instance_name)
+        if self._commcell_object.clients.has_client(cluster_client_name):
+            cluster_client = self._commcell_object.clients.get(cluster_client_name)
+            if cluster_client.agents.has_agent("postgresql"):
+                cluster_instances = cluster_client.agents.get("postgresql").instances
+                cluster_instances.refresh()
+                if cluster_instances.has_instance(instance_name):
+                    return cluster_instances.get(instance_name)
+
+        raise SDKException("Instance", "102", "Failed to locate instance after creation: {0}".format(instance_name))
 
     @property
     def _general_properties_json(self):
@@ -1612,7 +1834,7 @@ class Instances(object):
                 },
                 "generalCloudProperties": self._general_properties_json
             }
-    
+
     def add_mysql_instance(self, instance_name, database_options):
         """Adds new mysql Instance to given Client
             Args:
@@ -2066,7 +2288,7 @@ class Instances(object):
         if flag:
             if response.json():
                 response_data = response.json()
-                
+
                 # Handle V4 API successful response format: {'id': 24, 'name': 'instance_name'}
                 if 'id' in response_data and 'name' in response_data:
                     # Successful creation - refresh and return instance
@@ -2217,7 +2439,7 @@ class Instances(object):
                 if error_code != 0:
                     error_string = response_obj.get('errorString', '')
                     raise SDKException('Instance', '102', f'Error while creating instance\nError: "{error_string}"')
-        
+
                 created_name = response_obj.get('entity', {}).get('instanceName')
                 if not created_name:
                     raise SDKException('Response', '102', 'Missing instance name in response')
@@ -2269,7 +2491,7 @@ class Instances(object):
         plan = self._commcell_object.plans.get(plan_name)
         credential = self._commcell_object.credentials.get(ch_client_credential_name)
 
-        content = [ClickHouseSubclient._build_content_xml(db) for db in db_names]
+        content = [ClickHouseSubclient._build_content_xml(db_names)]
 
         request_json = {
             "instanceName": instance_name,
@@ -3216,7 +3438,7 @@ class Instances(object):
                     "clientName": access_node_name
                 }
             }]
-        
+
         # Build the complete request JSON
         request_json = {
             "instanceProperties": {
@@ -3252,11 +3474,11 @@ class Instances(object):
                 "useResourcePoolInfo": False
             }
         }
-        
+
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['ADD_INSTANCE'], request_json
         )
-        
+
         if flag:
             if response.json():
                 response_data = response.json()
@@ -3372,7 +3594,7 @@ class Instances(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-        
+
 
     def refresh(self):
         """Refresh the instances associated with the Agent of the selected Client."""
@@ -3852,14 +4074,14 @@ class Instance(object):
 
         if self._restore_association is None:
             self._restore_association = self._instance
-            
+
         if restore_option.get('deduce_bkset_subcl') == True:
             del self._restore_association['backupsetName']
             del self._restore_association['subclientName']
             del self._restore_association['backupsetId']
             del self._restore_association['subclientId']
             del self._restore_association['subclientGUID']
-            
+
 
         if restore_option.get('copy_precedence') is None:
             restore_option['copy_precedence'] = 0
@@ -3871,7 +4093,7 @@ class Instance(object):
             restore_option['liveBrowse'] = True
         else:
             restore_option['liveBrowse'] = False
-        
+
         if restore_option.get('file_browse'):
             restore_option['fileBrowse'] = True
         else:
@@ -4811,7 +5033,7 @@ class Instance(object):
             "sourceItem": value["instant_clone_options"]["instant_clone_src_path"] if value.get("instant_clone_options", None) else value.get("paths", []),
             "browseFilters": value.get("browse_filters", [])
         }
-        
+
         if value.get("run_threat_analysis", False):
             self._fileoption_restore_json["runThreatAnalysis"] = True
 
@@ -4827,7 +5049,7 @@ class Instance(object):
 
         if value.get("run_threat_analysis", False):
             self._fileoption_restore_json["runThreatAnalysis"] = True
-        
+
         if value.get('advanced_options'):
             if value['advanced_options'].get("mapFiles"):
                 map_file = value['advanced_options']["mapFiles"]

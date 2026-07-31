@@ -423,4 +423,10 @@ class PostgresSubclient(DatabaseSubclient):
             volume_level_restore=volume_level_restore,
             redirect_enabled=redirect_enabled,
             redirect_path=redirect_path,
-            revert=kwargs.get("revert", False))
+            revert=kwargs.get("revert", False),
+            db_cluster_restore_options=kwargs.get("db_cluster_restore_options", None),
+            full_cluster_restore=kwargs.get("full_cluster_restore", False),
+            clean_up_pg_dirs=kwargs.get("clean_up_pg_dirs", False),
+            point_in_time=kwargs.get("point_in_time", False),
+            no_owner=kwargs.get("no_owner", False),
+            no_acl=kwargs.get("no_acl", False))
