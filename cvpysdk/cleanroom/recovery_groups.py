@@ -451,6 +451,34 @@ class RecoveryGroup:
         return self._properties['recoveryGroup']['recoveryExpirationOptions']['isRescuedCommServe']
 
     @property
+    def is_expiration_option_enabled(self) -> bool:
+        """Check if expiration/cleanup option is enabled for this recovery group.
+        
+        Returns:
+            True if cleanup after X days is enabled, False otherwise.
+        
+        Example:
+            >>> rg = RecoveryGroup(commcell, 'MyRunbook')
+            >>> if rg.is_expiration_option_enabled:
+            ...     print(f"Cleanup enabled after {rg.days_to_expire} days")
+            ... else:
+            ...     print("Cleanup disabled")
+        
+        #ai-gen-doc
+        """
+        return bool(
+            self._properties.get("recoveryGroup", {}).get("recoveryExpirationOptions", {}).get("enableExpirationOption", False)
+        )
+
+    @property
+    def days_to_expire(self) -> Optional[int]:
+        """Get the number of days after recovery before resources are cleaned up."""
+        options = self._properties.get("recoveryGroup", {}).get("recoveryExpirationOptions", {})
+        if not options.get("enableExpirationOption", False):
+            return None
+        return options.get("daysToExpire")
+
+    @property
     def entities(self) -> List[Dict[str, Any]]:
         """Get all entity properties in the recovery group.
 

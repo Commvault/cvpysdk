@@ -104,6 +104,7 @@ SERVICES_DICT_TEMPLATE = {
     'APPLICATION_INSTANCE': '{0}Application/%s',
     'APPLICATION': '{0}Application',
     'INSTANCE_CREDENTIALS': '{0}v4/Hypervisor/%s/Credentials',
+    'GET_HYPERVISOR': '{0}v4/Hypervisor/%s',
     'GET_ALL_SUBCLIENTS': '{0}Subclient?clientId=%s&applicationId=%s&propertyLevel=20',
     'ADD_SUBCLIENT': '{0}Subclient',
     'SUBCLIENT': '{0}Subclient/%s',
@@ -276,6 +277,7 @@ SERVICES_DICT_TEMPLATE = {
     'ADD_SERVICENOW_INSTANCE': '{0}V4/SAAS/ServiceNow/Instance',
     'ADD_AWS_S3_VECTORS_INSTANCE': '{0}V4/AI/AwsS3Vectors/Instance',
     'ADD_TRELLO_INSTANCE': '{0}V4/SAAS/AtlassianTrello/Instance',
+    'ADD_GCP_FIRESTORE_INSTANCE': '{0}V4/AI/GCPFirestore/Instance',
     'MASKING_POLICY': '{0}MaskingPolicy',
 
     'DO_COMPLIANCE_SEARCH': '{0}Search',

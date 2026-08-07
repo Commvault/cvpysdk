@@ -87,6 +87,30 @@ class GcpMemorystoreSubclient(CloudAppsSubclient):
         return {"path": xml}
 
     @staticmethod
+    def _build_instance_content_item(instance_name: str) -> str:
+        """Wrap a plain GCP Memorystore instance name in CloudDBEntity XML for the API.
+
+        Used by the new onboarding flow where backup content is selected by instance name
+        (not region). The instance is a leaf node (isContainer=false, type=1).
+
+        Args:
+            instance_name: Short instance name, e.g. "ymidha-redis".
+
+        Returns:
+            str: CloudDBEntity XML string ready to include in the ``content`` list.
+        """
+        return (
+            f'<CloudDBEntity><children>'
+            f'<name>{instance_name}</name>'
+            f'<path>/{instance_name}</path>'
+            f'<displayName>{instance_name}</displayName>'
+            f'<type>1</type>'
+            f'<workloadObjectType>1</workloadObjectType>'
+            f'<isContainer>false</isContainer>'
+            f'</children></CloudDBEntity>'
+        )
+
+    @staticmethod
     def _parse_region_name(path_dict: dict) -> Optional[str]:
         """Extract the plain region name from a CloudDBEntity XML path dict.
 

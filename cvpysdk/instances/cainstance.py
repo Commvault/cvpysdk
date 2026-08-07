@@ -217,6 +217,7 @@ class CloudAppsInstance(Instance):
         from .cloudapps.trello_instance import TrelloInstance
         from .cloudapps.miro_instance import MiroInstance
         from .cloudapps.servicenow_instance import ServiceNowInstance
+        from .cloudapps.gcp_firestore_instance import GCPFirestoreInstance
 
         
         instance_type = {
@@ -257,7 +258,8 @@ class CloudAppsInstance(Instance):
             98: HubSpotInstance,   # HubSpot Instance
             104: MiroInstance,  # Miro Instance
             49: ServiceNowInstance,  # ServiceNow Instance (numeric cloud app type)
-            134: TrelloInstance  # Trello Instance 
+            134: TrelloInstance,  # Trello Instance 
+            89: GCPFirestoreInstance  # GCPFirestore Instance
         }
 
         commcell_object = agent_object._commcell_object

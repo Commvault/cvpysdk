@@ -64,6 +64,7 @@ class CloudAppsSubclient(Subclient):
         from .cloudapps.aws_s3_vectors_subclient import AwsS3VectorsSubclient
         from .cloudapps.servicenow_subclient import ServiceNowSubclient
         from .cloudapps.trello_subclient import TrelloSubclient
+        from .cloudapps.gcp_firestore_subclient import GCPFirestoreSubclient
 
         instance_types = {
             1: GoogleSubclient,
@@ -102,6 +103,7 @@ class CloudAppsSubclient(Subclient):
             134: TrelloSubclient,  # Trello Subclient (legacy/inferred id)
             98: HubSpotSubclient,   # HubSpot Subclient
             49: ServiceNowSubclient,  # ServiceNow Subclient (numeric cloud app type)
+            89: GCPFirestoreSubclient  # GCPFirestore Subclient
         }
 
         cloud_apps_instance_type = backupset_object._instance_object._properties[

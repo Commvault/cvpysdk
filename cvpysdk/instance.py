@@ -197,6 +197,7 @@ from __future__ import unicode_literals
 
 import copy
 import time
+import json
 
 from base64 import b64encode
 
@@ -3176,22 +3177,42 @@ class Instances(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def add_gcp_memorystore_instance(self, instance_name, plan_name, gcp_sa_credential_name, content_paths):
+    def add_gcp_memorystore_instance(
+        self,
+        instance_name,
+        plan_name,
+        gcp_sa_credential_name,
+        content_paths,
+        region,
+        project_id,
+        project_name='',
+        project_number='',
+        engine_type='redis',
+    ):
         """Add a new GCP Memorystore Cloud Apps instance to the Commcell.
 
         Creates a GCP Memorystore instance using the V4 AI API.  The caller provides
-        plain GCP region name strings (e.g. "us-central1") which are internally
+        plain GCP instance name strings (e.g. "my-redis-instance") which are internally
         wrapped into the CloudDBEntity XML format.
 
+        The full Commvault instance name is constructed as ``"{instance_name} ({region})"``
+        to match the format used by the Command Center onboarding wizard.
+
         Args:
-            instance_name (str):            Name for the new GCP Memorystore instance.
-                                            Also used as the Commvault connection entity name.
+            instance_name (str):            Base connection name (without region suffix).
+                                            The final instance name will be
+                                            ``"{instance_name} ({region})"``.
             plan_name (str):                Name of the plan to associate with the instance.
             gcp_sa_credential_name (str):   Name of the GCP service account credential stored
-                                            in Commvault Credentials.  Used for GCP API
-                                            authentication.
-            content_paths (list):           List of GCP region name strings to back up,
-                                            e.g. ["us-central1"].
+                                            in Commvault Credentials.
+            content_paths (list):           List of GCP Memorystore instance short names to
+                                            back up, e.g. ["my-redis-instance"].
+            region (str):                   GCP region, e.g. "us-central1".  Appended to the
+                                            instance name in the format ``"NAME (REGION)"``.
+            project_id (str):               GCP project ID, e.g. "dbteam-memorystore-support".
+            project_name (str):             GCP project display name (optional).
+            project_number (str):           GCP project number (optional).
+            engine_type (str):              Engine type string, default "redis".
 
         Returns:
             Instance: The newly created GCP Memorystore instance object.
@@ -3217,37 +3238,59 @@ class Instances(object):
         plan = self._commcell_object.plans.get(plan_name)
         cred_obj = self._commcell_object.credentials.get(gcp_sa_credential_name)
 
+        # Full instance name includes the region suffix as set by the UI wizard
+        full_instance_name = '{0} ({1})'.format(instance_name, region)
+
         content = [
-            GcpMemorystoreSubclient._build_content_item(region)['path']
-            for region in (content_paths or [])
+            GcpMemorystoreSubclient._build_instance_content_item(inst)
+            for inst in (content_paths or [])
         ]
 
+        custom_props = {
+            'engine_type': engine_type,
+            'project_id': project_id,
+        }
+        if project_name:
+            custom_props['project_name'] = project_name
+        if project_number:
+            custom_props['project_number'] = str(project_number)
+
+        region_obj = {'name': region}
+        try:
+            if self._commcell_object.regions.has_region(region):
+                region_obj['id'] = int(self._commcell_object.regions.get(region).region_id)
+        except Exception:
+            # Region id is optional for this payload; keep name-only fallback.
+            pass
+
         request_json = {
-            "instanceName": instance_name,
-            "instanceType": "GCP_MEMORYSTORE",
-            "plan": {
-                "id": int(plan.plan_id),
-                "name": plan_name
+            'instanceName': full_instance_name,
+            'instanceType': 'GCP_MEMORYSTORE',
+            'plan': {
+                'id': int(plan.plan_id),
+                'name': plan_name,
             },
-            "account": {
-                "name": instance_name
+            'account': {
+                'name': full_instance_name,
             },
-            "credential": {
-                "id": int(cred_obj.credential_id),
-                "name": instance_name
+            'credential': {
+                'id': int(cred_obj.credential_id),
+                'name': full_instance_name,
             },
-            "customProperties": {
-                "nameValues": [
+            'customProperties': {
+                'nameValues': [
                     {
-                        "name": "WorkloadInstanceCustomProperties",
-                        "value": "{\"engine_type\":\"redis\"}"
+                        'name': 'WorkloadInstanceCustomProperties',
+                        'value': json.dumps(custom_props),
                     }
                 ]
-            }
+            },
+            'useResourcePoolInfo': True,
+            'region': region_obj,
         }
 
         if content:
-            request_json["content"] = content
+            request_json['content'] = content
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['ADD_GCP_MEMORYSTORE_INSTANCE'], request_json
@@ -3257,8 +3300,43 @@ class Instances(object):
             if response.json():
                 response_data = response.json()
                 if 'id' in response_data and 'name' in response_data:
-                    self.refresh()
-                    return self.get(response_data['name'])
+                    # GCP Memorystore instances are created as NEW pseudoclients in Commvault,
+                    # not as sub-instances under the access-node agent used for the API call.
+                    # self.refresh() only refreshes the access-node agent's instance list and
+                    # will never see the newly created pseudoclient. Instead, poll the commcell
+                    # clients list until the new pseudoclient appears, then return its instance.
+                    created_client_name = full_instance_name  # "Name (region)"
+                    commcell = self._commcell_object
+                    self.log.info("ATTEMPTING TO FIND NEW PSEUDOCLIENT: {0}".format(created_client_name))
+
+                    for attempt in range(12):  # up to 60 seconds
+                        try:
+                            commcell.clients.refresh()
+                            if commcell.clients.has_client(created_client_name):
+                                new_client = commcell.clients.get(created_client_name)
+                                new_agent = new_client.agents.get('cloud apps')
+                                new_agent.instances.refresh()
+                                instance_keys = list(new_agent.instances.all_instances.keys())
+                                self.log.info("Found new pseudoclient with {0} instances: {1}".format(len(instance_keys), instance_keys))
+                                self.log.info(instance_keys[0])
+                                if instance_keys:
+                                    return new_agent.instances.get(instance_keys[0])
+                        except SDKException:
+                            pass
+                        except Exception:
+                            pass
+
+                        if attempt < 11:
+                            self.log.info("Sleeping")
+                            time.sleep(5)
+
+                    raise SDKException(
+                        'Instance', '102',
+                        'GCP Memorystore instance "{0}" was created (API returned id={1}) but '
+                        'the pseudoclient did not appear in commcell clients after 60s.'.format(
+                            created_client_name, response_data.get('id')
+                        )
+                    )
                 elif 'errorMessage' in response_data:
                     raise SDKException(
                         'Instance', '102',
@@ -3346,6 +3424,139 @@ class Instances(object):
                     raise SDKException(
                         'Instance', '102',
                         'Failed to create AWS S3 Vectors instance\nError: "{0}"'.format(
+                            response_data['errorMessage']
+                        )
+                    )
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_gcp_firestore_instance(self, instance_name, plan_name, credential_name, db_names,
+                                    project_id=None, project_name=None, project_number=None,
+                                    region_name=None, region_commvault_id=None):
+        """Add a new GCPFirestore Cloud Apps instance to the Commcell.
+
+        Creates a GCPFirestore instance using the V4 AI API.
+        The caller provides plain database name strings which are internally
+        wrapped into the CloudDBEntity XML format.
+
+        Args:
+            instance_name (str):            Name for the new GCPFirestore instance.
+            plan_name (str):                Name of the plan to associate with the instance.
+            credential_name (str):          Name of the credential entity (GCP service account credential).
+                                            Velocity workloads use the same entity for both credential and client.
+                                            It's id and name are used as the "account" field in the API payload.
+            db_names (list):                List of GCPFirestore database name strings to
+                                            back up, e.g. ["MY_DB", "ANOTHER_DB"].
+            project_id (str, optional):     GCP project ID (e.g., "gc-rds-sql-mysql")
+            project_name (str, optional):   GCP project name (e.g., "dev-gcp-databases")
+            project_number (str, optional): GCP project number (e.g., "984080636835")
+            region_name (str, optional):    GCP region name (e.g., "asia-south1")
+            region_commvault_id (int, optional): Commvault region ID (e.g., 120 for asia-south1)
+
+        Returns:
+            Instance: The newly created GCPFirestore instance object.
+
+        Raises:
+            SDKException: If the plan or credential does not exist, if instance
+                          creation fails, or the server returns an error.
+
+        Example:
+            >>> instance = instances.add_gcp_firestore_instance(
+            ...     instance_name="MyFirestoreInstance",
+            ...     plan_name="MyPlan",
+            ...     credential_name="MyGCPCredential",
+            ...     db_names=["database1", "database2"],
+            ...     project_id="my-project",
+            ...     project_name="My Project",
+            ...     project_number="123456789",
+            ...     region_name="asia-south1",
+            ...     region_commvault_id=120
+            ... )
+
+        #ai-gen-doc
+        """
+        from .subclients.cloudapps.gcp_firestore_subclient import GCPFirestoreSubclient
+
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException(
+                'Instance', '102',
+                'Plan "{0}" does not exist in the Commcell'.format(plan_name)
+            )
+
+        if not self._commcell_object.credentials.has_credential(credential_name):
+            raise SDKException(
+                'Instance', '102',
+                'Credential "{0}" does not exist in the Commcell'.format(credential_name)
+            )
+
+        plan = self._commcell_object.plans.get(plan_name)
+        credential = self._commcell_object.credentials.get(credential_name)
+
+        content = GCPFirestoreSubclient._build_content_xml(db_names)
+
+        request_json = {
+            "instanceName": instance_name,
+            "instanceType": "GCP_FIRESTORE",
+            "plan": {
+                "id": int(plan.plan_id),
+                "name": plan_name
+            },
+            "account": {
+                "name": instance_name
+            },
+            "content": [content],
+            "credential": {
+                "id": int(credential.credential_id),
+                "name": credential_name
+            },
+            "useResourcePoolInfo": True
+        }
+
+        # Add custom properties if provided
+        if project_id or project_name or project_number:
+            import json
+            custom_props = {}
+            if project_id:
+                custom_props["project_id"] = project_id
+            if project_name:
+                custom_props["project_name"] = project_name
+            if project_number:
+                custom_props["project_number"] = project_number
+            
+            request_json["customProperties"] = {
+                "nameValues": [
+                    {
+                        "name": "WorkloadInstanceCustomProperties",
+                        "value": json.dumps(custom_props)
+                    }
+                ]
+            }
+
+        # Add region if provided
+        if region_name and region_commvault_id:
+            request_json["region"] = {
+                "id": int(region_commvault_id),
+                "name": region_name
+            }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['ADD_GCP_FIRESTORE_INSTANCE'], request_json
+        )
+
+        if flag:
+            if response.json():
+                response_data = response.json()
+                if 'id' in response_data and 'name' in response_data:
+                    self.refresh()
+                    return self.get(response_data['name'])
+                elif 'errorMessage' in response_data:
+                    raise SDKException(
+                        'Instance', '102',
+                        'Failed to create GCPFirestore instance\nError: "{0}"'.format(
                             response_data['errorMessage']
                         )
                     )

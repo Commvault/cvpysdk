@@ -156,6 +156,12 @@ Plan
 
     delete_schedule()           --  method to delete a schedule from the plan
 
+    get_job_stagger_duration()  --  method to get the stagger duration for a schedule
+
+    set_job_stagger_duration()  --  method to set or clear the stagger duration for a schedule
+
+    is_job_staggering_enabled() --  method to check if job staggering is enabled for a schedule
+
     edit_snapshot_options()     --  method to edit snapshot options of the plan
 
     update_backup_content()     --  method to update backup content of the plan
@@ -3810,23 +3816,35 @@ class Plan(object):
         return copy.deepcopy(filtered_schedules[0]) # return a deep copy to avoid modifying the original schedule properties
 
 
-    def add_schedule(self, schedule_options: dict) -> None:
+    def add_schedule(self, schedule_options: dict) -> dict:
         """Method to add a new schedule to the plan
 
         Args:
             schedule_options (dict): schedule options to be added (backupType is mandatory)
+                                    Can include 'schedulePattern' with 'jobStaggerDurationInMins' for staggering
+
+        Returns:
+            dict: Dictionary containing the newly created schedule's IDs
+                  {'scheduleId': int, 'policyId': int}
 
         Raises:
             SDKException:
                 - if failed to add the schedule to the plan
 
         Usage:
-            # create schedule based on backup type and rest use default values
-            plan.add_schedule({"backupType": "INCREMENTAL"})
-            plan.add_schedule({"backupType": "TRANSACTIONLOG"})
+            # create schedule and get its IDs
+            result = plan.add_schedule({"backupType": "INCREMENTAL"})
+            schedule_id = result['scheduleId']
+            policy_id = result['policyId']
+
+            # create schedule with job staggering enabled (60 minutes)
+            result = plan.add_schedule({
+                "backupType": "INCREMENTAL",
+                "schedulePattern": {"jobStaggerDurationInMins": 60}
+            })
 
             # create schedule with advanced properties
-            plan.add_schedule({
+            result = plan.add_schedule({
                 "backupType": "FULL",
                 "schedulePattern": {
                     "scheduleFrequencyType": "DAILY",
@@ -3842,6 +3860,10 @@ class Plan(object):
             # advance properties for schedules
             plan.add_schedule({"backupType": "TRANSACTIONLOG", "scheduleOption": {"useDiskCacheForLogBackups": True}})
         """
+        # Capture existing schedule IDs before adding
+        existing_ids = {(s.get('scheduleId'), s.get('policyId')) 
+                        for s in self._v4_plan_properties['rpo']['backupFrequency']['schedules']}
+        
         schedule_payload = self.plan_v4_helper.get_schedule_payload(schedule_options)
 
         payload = {
@@ -3852,6 +3874,19 @@ class Plan(object):
         flag, response = self._cvpysdk_object.make_request('PUT', self._PLAN_RPO, payload)
 
         self.__handle_response(flag, response, custom_error_message=f'Failed to add new schedule to the plan: [{self.plan_name}]')
+        
+        # Refresh and find the newly added schedule using set difference
+        self.refresh()
+        
+        current_ids = {(s.get('scheduleId'), s.get('policyId')) 
+                       for s in self._v4_plan_properties['rpo']['backupFrequency']['schedules']}
+        new_ids = current_ids - existing_ids
+        
+        if not new_ids:
+            raise SDKException('Plan', '102', 'Failed to retrieve the newly added schedule IDs')
+        
+        schedule_id, policy_id = new_ids.pop()
+        return {'scheduleId': schedule_id, 'policyId': policy_id}
 
 
     def edit_schedule(self, schedule_options: dict, schedule_filter: dict) -> None:
@@ -3924,6 +3959,69 @@ class Plan(object):
 
         self.__handle_response(flag, response, custom_error_message=f'Failed to delete schedule from the plan: [{self.plan_name}]')
 
+
+    def get_job_stagger_duration(self, schedule_id: int) -> int:
+        """Returns the job stagger duration in minutes for the given schedule ID.
+
+        Args:
+            schedule_id (int): ID of the schedule
+
+        Returns:
+            int: stagger duration in minutes; 0 if staggering is not configured
+
+        Raises:
+            SDKException:
+                - if no schedule is found with the provided ID
+
+        Usage:
+            duration = plan.get_job_stagger_duration(123)
+        """
+        props = self.get_schedule_properties({'scheduleId': schedule_id})
+        return props.get('schedulePattern', {}).get('jobStaggerDurationInMins', 0)
+
+
+    def set_job_stagger_duration(self, schedule_id: int, duration_mins: int) -> None:
+        """Sets the job stagger duration in minutes for the given schedule ID.
+
+        Args:
+            schedule_id   (int): ID of the schedule
+            duration_mins (int): stagger window in minutes; pass 0 to disable staggering
+
+        Raises:
+            SDKException:
+                - if no schedule is found with the provided ID
+                - if the update request fails
+
+        Usage:
+            # Enable staggering with a 60-minute window
+            plan.set_job_stagger_duration(123, 60)
+
+            # Disable staggering
+            plan.set_job_stagger_duration(123, 0)
+        """
+        self.edit_schedule(
+            {'schedulePattern': {'jobStaggerDurationInMins': duration_mins}},
+            {'scheduleId': schedule_id}
+        )
+
+    def is_job_staggering_enabled(self, schedule_id: int) -> bool:
+        """Check if job staggering is enabled for the given schedule ID.
+
+        Args:
+            schedule_id (int): ID of the schedule
+
+        Returns:
+            bool: True if staggering is enabled (duration > 0), False otherwise
+
+        Raises:
+            SDKException:
+                - if no schedule is found with the provided ID
+
+        Usage:
+            if plan.is_job_staggering_enabled(123):
+                print("Staggering is enabled")
+        """
+        return self.get_job_stagger_duration(schedule_id) > 0
 
     def edit_snapshot_options(self, enable_backup_copy:bool=True, backup_copy_rpo: int=None) -> None:
         """Method to edit the snapshot options of the plan

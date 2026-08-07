@@ -414,7 +414,7 @@ class ResourceGroup(ClientGroup):
         """
         if not isinstance(plan_name, str):
             raise SDKException('ResourceGroup', '101')
-
+        self._commcell_object.plans.refresh()
         plan_id = int(self._commcell_object.plans.get(plan_name).plan_id)
         request_json = copy.deepcopy(UPDATE_TI_PLAN_JSON)
         request_json['clientGroupDetail']['tiPlan']['planName'] = plan_name

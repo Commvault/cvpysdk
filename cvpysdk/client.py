@@ -436,6 +436,9 @@ Client Attributes
     **is_infrastructure**           --  returns if the client is infrastructure
 
     **update_status**               --  returns the update status of the client
+
+    **is_hosted_infrastructure**    --  returns True if the hypervisor client uses hosted
+                                        infrastructure
 """
 
 from __future__ import absolute_import
@@ -7485,6 +7488,7 @@ class Client(object):
         self._is_deleted_client = None
         self._is_infrastructure = None
         self._network_status = None
+        self._is_hosted_infrastructure = None
         self._update_status = None
         self._additional_settings = None
         self.refresh()
@@ -8808,6 +8812,29 @@ class Client(object):
         #ai-gen-doc
         """
         return self._is_infrastructure
+
+    @property
+    def is_hosted_infrastructure(self) -> bool:
+        """Indicate whether this client is a HostedInfrastructure hypervisor.
+
+        Queries the v4/Hypervisor/{clientId} API and returns
+        the value of ``useHostedInfrastructure`` from the response.
+
+        Returns:
+            bool: True if the hypervisor uses hosted infrastructure, False otherwise.
+                  Defaults to False on any API failure.
+        """
+        if self._is_hosted_infrastructure is None:
+            try:
+                url = self._services['GET_HYPERVISOR'] % self._client_id
+                flag, response = self._cvpysdk_object.make_request('GET', url)
+                if flag and response.json():
+                    self._is_hosted_infrastructure = response.json().get('useHostedInfrastructure', False)
+                else:
+                    self._is_hosted_infrastructure = False
+            except Exception:
+                self._is_hosted_infrastructure = False
+        return self._is_hosted_infrastructure
 
     @property
     def update_status(self) -> int:

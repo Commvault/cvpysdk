@@ -82,6 +82,12 @@ SchedulePolicy:
 
     update_app_groups               -- Update the appgroups for the provided schedule policy
 
+    get_job_stagger_duration        -- Get the job stagger duration in minutes for a specific schedule
+
+    set_job_stagger_duration        -- Set the job stagger duration in minutes for a specific schedule
+
+    is_job_staggering_enabled       -- Check if job staggering is enabled for a specific schedule
+
     _modify_schedule_policy_properties -- Modifies the task properties of the schedule policy
 
     _process_schedule_policy_update_response -- processes the response received post update request
@@ -910,7 +916,77 @@ class SchedulePolicy:
             if search_dict in sub_task["subTask"].items():
                 return sub_task
 
-    def add_schedule(self, schedule_dict: dict) -> None:
+
+
+    def get_job_stagger_duration(self, schedule_id: int) -> int:
+        """Get the job stagger duration in minutes for a specific schedule.
+
+        This defines the time window over which scheduled jobs will be distributed
+        when job staggering is enabled.
+
+        Args:
+            schedule_id (int): ID of the schedule
+
+        Returns:
+            int: Stagger duration in minutes. Returns 0 if staggering is disabled.
+
+        Raises:
+            SDKException:
+                if schedule is not found
+
+        Usage:
+            >>> schedule_policy = plan.schedule_policies['data']
+            >>> duration = schedule_policy.get_job_stagger_duration(123)
+            >>> print(f'Jobs will be staggered over {duration} minutes')
+        """
+        schedule = self.get_schedule(schedule_id=schedule_id)
+        if not schedule:
+            raise SDKException('Schedules', '105')
+        
+        # Stagger duration is stored at the subtask level
+        return schedule.get('jobStaggerDurationInMins', 0)
+
+    def set_job_stagger_duration(self, schedule_id: int, duration_mins: int) -> None:
+        """Set the job stagger duration in minutes for a specific schedule.
+
+        Args:
+            schedule_id (int): ID of the schedule
+            duration_mins (int): Stagger duration in minutes. Pass 0 to disable staggering.
+
+        Raises:
+            SDKException:
+                if schedule is not found
+
+        Usage:
+            >>> schedule_policy.set_job_stagger_duration(123, 90)
+        """
+        schedule = self.get_schedule(schedule_id=schedule_id)
+        if not schedule:
+            raise SDKException('Schedules', '105')
+        
+        schedule['jobStaggerDurationInMins'] = duration_mins
+        self._modify_schedule_policy_properties()
+
+    def is_job_staggering_enabled(self, schedule_id: int) -> bool:
+        """Check if job staggering is enabled for the given schedule ID.
+
+        Args:
+            schedule_id (int): ID of the schedule
+
+        Returns:
+            bool: True if staggering is enabled (duration > 0), False otherwise
+
+        Raises:
+            SDKException:
+                if schedule is not found
+
+        Usage:
+            >>> if schedule_policy.is_job_staggering_enabled(123):
+            ...     print("Staggering is enabled")
+        """
+        return self.get_job_stagger_duration(schedule_id) > 0
+
+    def add_schedule(self, schedule_dict: dict) -> int:
         """Adds a new schedule to the schedule policy
 
         Args:
@@ -936,18 +1012,47 @@ class SchedulePolicy:
                                             "mediaAgentName": "<ANY MEDIAAGENT>"
                                         }
                                     }
+
+                    stagger: {} -- Job staggering options (optional)
+                                    eg: {
+                                        "jobStaggerDurationInMins": 60
+                                    }
                 }
+
+        Returns:
+            int: The schedule_id of the newly created schedule
 
         Sample:
 
-                sch_pol_obj.add_schedule({'pattern':{'freq_type': 'monthly'}})
+                schedule_id = sch_pol_obj.add_schedule({'pattern':{'freq_type': 'monthly'}})
+                schedule_id = sch_pol_obj.add_schedule({
+                    'pattern': {'freq_type': 'daily'},
+                    'stagger': {'jobStaggerDurationInMins': 60}
+                })
 
         """
+        # Capture existing schedule IDs before adding
+        existing_ids = {s['schedule_id'] for s in self._all_schedules}
+        
         sub_task = SchedulePolicies.schedule_json(
             self.policy_type, schedule_dict)
         sub_task["subTaskOperation"] = 2
+        
+        # Add staggering if specified in schedule_dict
+        if 'stagger' in schedule_dict and 'jobStaggerDurationInMins' in schedule_dict['stagger']:
+            sub_task['jobStaggerDurationInMins'] = schedule_dict['stagger']['jobStaggerDurationInMins']
+        
         self._subtasks.append(sub_task)
         self._modify_schedule_policy_properties()
+        
+        # Find and return the new schedule ID using set difference
+        current_ids = {s['schedule_id'] for s in self._all_schedules}
+        new_ids = current_ids - existing_ids
+        
+        if not new_ids:
+            return None
+        
+        return new_ids.pop()
 
     def modify_schedule(self, schedule_json: dict, schedule_id: int = None, schedule_name: str = None) -> None:
         """Modifies the schedule with the given schedule json inputs for the given schedule id or name
